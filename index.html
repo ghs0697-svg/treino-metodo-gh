@@ -658,8 +658,11 @@ async function loadFromSheets() {
       if (!r[0] && !r[1]) continue; // skip empty rows
 
       // Restrict row: col A is "restrict" (limitação física — NÃO exibir no app)
-      // Link row: col A is "link" (URL do app — NÃO exibir, só pra estagiária ver na planilha)
+      // Link row: col A is "link" OR col A empty + col B starts with "http" (URL do app — NÃO exibir)
       if (r[0] && (r[0].toLowerCase() === 'restrict' || r[0].toLowerCase() === 'link')) {
+        continue;
+      }
+      if (!r[0] && r[1] && r[1].toString().startsWith('http')) {
         continue;
       }
 
