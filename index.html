@@ -6,7 +6,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0D0D0D">
-<link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>Treino | Método GH</title>
 <style>
@@ -895,6 +894,32 @@ if (SHEET_ID && TAB_NAME) {
   const saved = localStorage.getItem('gh_admin_sheet_id');
   if (saved) document.getElementById('adminSheetId').value = saved;
 }
+
+// PWA: manifest dinâmico com start_url incluindo parâmetros do aluno
+(function() {
+  const startUrl = SHEET_ID && TAB_NAME
+    ? './index.html?sheet=' + encodeURIComponent(SHEET_ID) + '&tab=' + encodeURIComponent(TAB_NAME)
+    : './index.html';
+  const manifest = {
+    name: 'Treino | Método GH',
+    short_name: 'Método GH',
+    description: 'Protocolo de Treino — Método GH',
+    start_url: startUrl,
+    display: 'standalone',
+    background_color: '#0D0D0D',
+    theme_color: '#0D0D0D',
+    orientation: 'portrait',
+    icons: [
+      { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+      { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+    ]
+  };
+  const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+  const link = document.createElement('link');
+  link.rel = 'manifest';
+  link.href = URL.createObjectURL(blob);
+  document.head.appendChild(link);
+})();
 
 // Registrar Service Worker (PWA)
 if ('serviceWorker' in navigator) {
