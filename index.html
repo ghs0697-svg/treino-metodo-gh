@@ -512,6 +512,35 @@
   <p><span class="hl">Anote a carga da ÚLTIMA SÉRIE</span> (falha total). Essa é sua meta no próximo treino.</p>
 </div>
 
+<!-- ══ HIPOPRESSIVO ══ -->
+<div class="instructions-toggle" id="hipoToggle" onclick="toggleHipo()" style="display:none;">
+  Hipopressivo <span id="hipoArrow">&#9660;</span>
+</div>
+<div class="instructions-content" id="hipoContent">
+  <div id="hipoLevel" style="display:none; background:#222; border:1px solid var(--gold); border-radius:8px; padding:12px; margin-bottom:14px;">
+  </div>
+  <h3>Quando Praticar</h3>
+  <p><span class="hl">De manhã</span>, em <span class="hl">jejum</span>, após o <span class="hl">1º xixi</span> do dia.</p>
+  <h3>A Técnica (Motor de 4 Passos)</h3>
+  <p><span class="hl">1. Puxa o ar:</span> Pelo nariz, enchendo o peito (não a barriga).</p>
+  <p><span class="hl">2. Solta TUDO:</span> Pela boca (soprando uma vela), até sentir o pulmão vazio.</p>
+  <p><span class="hl">3. Trava (Apneia):</span> Feche a boca e o nariz. Não respire mais.</p>
+  <p><span class="hl">4. O Vácuo:</span> Sem respirar, sugue a barriga para dentro e para cima.</p>
+  <p style="color:var(--gold); font-style:italic; margin-top:6px;">Imagine colar o umbigo nas costas enquanto fecha o zíper de uma calça muito apertada.</p>
+  <h3>Nível 1 — Iniciante (5-8 seg)</h3>
+  <p><span class="hl">Posição 1 — Deitado:</span> Barriga para cima, joelhos dobrados, pés no chão. A gravidade ajuda o vácuo.</p>
+  <p><span class="hl">Posição 2 — Em pé apoiado:</span> Tronco inclinado, mãos firmes nas coxas. Olhe pra barriga e veja o vácuo.</p>
+  <p>Meta: <span class="hl">3 séries x 5-8 segundos</span></p>
+  <h3>Nível 2 — Intermediário (10-15 seg)</h3>
+  <p><span class="hl">Posição 1 — Inclinada Forte:</span> Mesma posição, mas ativa. Empurre a perna pra baixo, ative as costas.</p>
+  <p><span class="hl">Posição 2 — Empurrando a Parede:</span> Coluna reta, mãos na altura dos ombros. Faça força como se empurrasse uma parede.</p>
+  <p>Meta: <span class="hl">3 séries x 10-15 segundos</span></p>
+  <h3>Nível 3 — Avançado (15-20 seg)</h3>
+  <p><span class="hl">Posição 1 — 4 Apoios:</span> Barriga pendurada. A gravidade puxa tudo pra baixo — luta direta contra ela.</p>
+  <p><span class="hl">Posição 2 — Crescimento Máximo:</span> Em pé, braços pro teto, calcanhares no chão. Abdômen super esticado.</p>
+  <p>Meta: <span class="hl">3 séries x 15-20 segundos</span></p>
+</div>
+
 <div class="app-footer"><span>MÉTODO GH — @gh.scheuermann</span></div>
 
 <script>
@@ -603,6 +632,7 @@ async function loadFromSheets() {
     let studentFreq = params.get('freq') || '';
     let studentObj = params.get('obj') || '';
     let studentDur = params.get('dur') || `${TOTAL_WEEKS} semanas`;
+    let hipoData = null;
 
     for (let i = 1; i < rows.length; i++) {
       const r = rows[i];
@@ -614,6 +644,12 @@ async function loadFromSheets() {
         studentFreq = r[2] || studentFreq;
         studentObj = r[3] || studentObj;
         studentDur = r[4] || studentDur;
+        continue;
+      }
+
+      // Hipopressivo row: col A is "hipo"
+      if (r[0].toLowerCase() === 'hipo') {
+        hipoData = { nivel: r[1] || '', series: r[2] || '', tempo: r[3] || '', freq: r[4] || '', obs: r[5] || '' };
         continue;
       }
 
@@ -650,6 +686,22 @@ async function loadFromSheets() {
     document.getElementById('studentInfo').style.display = 'grid';
     document.getElementById('weekSelector').style.display = 'flex';
     document.getElementById('instrToggle').style.display = 'flex';
+    document.getElementById('hipoToggle').style.display = 'flex';
+
+    // Show hipo level if defined in sheet
+    if (hipoData) {
+      const hipoEl = document.getElementById('hipoLevel');
+      hipoEl.style.display = 'block';
+      hipoEl.innerHTML = `
+        <div style="color:var(--gold);font-weight:700;font-size:14px;margin-bottom:6px;">Seu Protocolo Atual</div>
+        <div style="color:var(--gray);font-size:13px;line-height:1.8;">
+          <span style="color:var(--white);font-weight:600;">${hipoData.nivel}</span><br>
+          ${hipoData.series ? `S\u00e9ries: <span style="color:var(--white)">${hipoData.series}</span><br>` : ''}
+          ${hipoData.tempo ? `Tempo: <span style="color:var(--white)">${hipoData.tempo}</span><br>` : ''}
+          ${hipoData.freq ? `Frequ\u00eancia: <span style="color:var(--white)">${hipoData.freq}</span><br>` : ''}
+          ${hipoData.obs ? `<span style="color:var(--muted);font-style:italic">${hipoData.obs}</span>` : ''}
+        </div>`;
+    }
 
     renderTabs();
     renderExercises();
@@ -762,6 +814,13 @@ function closeVideoOverlay(e) {
 function toggleInstructions() {
   const c = document.getElementById('instructionsContent');
   const a = document.getElementById('instrArrow');
+  c.classList.toggle('show');
+  a.innerHTML = c.classList.contains('show') ? '&#9650;' : '&#9660;';
+}
+
+function toggleHipo() {
+  const c = document.getElementById('hipoContent');
+  const a = document.getElementById('hipoArrow');
   c.classList.toggle('show');
   a.innerHTML = c.classList.contains('show') ? '&#9650;' : '&#9660;';
 }
