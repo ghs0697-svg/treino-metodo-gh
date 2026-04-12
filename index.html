@@ -550,8 +550,26 @@
 // ══ CONFIGURAÇÃO — lê parâmetros da URL ══
 // ══════════════════════════════════════════════════════════════
 const params = new URLSearchParams(window.location.search);
-const SHEET_ID = params.get('sheet');
-const TAB_NAME = params.get('tab');
+let SHEET_ID = params.get('sheet');
+let TAB_NAME = params.get('tab');
+
+// PWA: se abriu sem parâmetros, recuperar do localStorage (instalado na tela inicial)
+if (!SHEET_ID && !TAB_NAME) {
+  const saved = localStorage.getItem('gh_pwa_params');
+  if (saved) {
+    try {
+      const p = JSON.parse(saved);
+      SHEET_ID = p.sheet;
+      TAB_NAME = p.tab;
+    } catch(e) {}
+  }
+}
+
+// Salvar parâmetros para o PWA (só se veio pela URL)
+if (params.get('sheet') && params.get('tab')) {
+  localStorage.setItem('gh_pwa_params', JSON.stringify({ sheet: params.get('sheet'), tab: params.get('tab') }));
+}
+
 const STUDENT_ID = TAB_NAME ? TAB_NAME.toLowerCase().replace(/\s+/g, '_') : 'demo';
 const TOTAL_WEEKS = parseInt(params.get('weeks')) || 8;
 
@@ -650,7 +668,8 @@ async function loadFromSheets() {
       }
 
       // Restrict row: col A is "restrict" (limitação física — NÃO exibir no app)
-      if (r[0].toLowerCase() === 'restrict') {
+      // Link row: col A is "link" (URL do app — NÃO exibir, só pra estagiária ver na planilha)
+      if (r[0].toLowerCase() === 'restrict' || r[0].toLowerCase() === 'link') {
         continue;
       }
 
