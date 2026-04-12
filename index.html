@@ -6,6 +6,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0D0D0D">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>Treino | Método GH</title>
 <style>
   :root {
@@ -873,6 +875,11 @@ if (SHEET_ID && TAB_NAME) {
   // Recuperar sheet ID salvo
   const saved = localStorage.getItem('gh_admin_sheet_id');
   if (saved) document.getElementById('adminSheetId').value = saved;
+}
+
+// Registrar Service Worker (PWA)
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 </script>
 </body>
