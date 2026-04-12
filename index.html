@@ -647,6 +647,11 @@ async function loadFromSheets() {
         continue;
       }
 
+      // Restrict row: col A is "restrict" (limitação física — NÃO exibir no app)
+      if (r[0].toLowerCase() === 'restrict') {
+        continue;
+      }
+
       // Hipopressivo row: col A is "hipo"
       if (r[0].toLowerCase() === 'hipo') {
         hipoData = { nivel: r[1] || '', series: r[2] || '', tempo: r[3] || '', freq: r[4] || '', obs: r[5] || '' };
