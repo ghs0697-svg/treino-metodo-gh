@@ -657,18 +657,18 @@ async function loadFromSheets() {
       const r = rows[i];
       if (!r[0] && !r[1]) continue; // skip empty rows
 
+      // Restrict row: col A is "restrict" (limitação física — NÃO exibir no app)
+      // Link row: col A is "link" (URL do app — NÃO exibir, só pra estagiária ver na planilha)
+      if (r[0] && (r[0].toLowerCase() === 'restrict' || r[0].toLowerCase() === 'link')) {
+        continue;
+      }
+
       // Info row: col A is empty or "info", col B has student name
       if ((r[0] === '' || r[0].toLowerCase() === 'info') && r[1] && isNaN(parseInt(r[0]))) {
         studentName = r[1] || studentName;
         studentFreq = r[2] || studentFreq;
         studentObj = r[3] || studentObj;
         studentDur = r[4] || studentDur;
-        continue;
-      }
-
-      // Restrict row: col A is "restrict" (limitação física — NÃO exibir no app)
-      // Link row: col A is "link" (URL do app — NÃO exibir, só pra estagiária ver na planilha)
-      if (r[0].toLowerCase() === 'restrict' || r[0].toLowerCase() === 'link') {
         continue;
       }
 
