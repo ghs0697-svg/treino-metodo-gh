@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0D0D0D">
+<title>Treino | Método GH</title>
+<style>
+  :root {
+    --gold: #D4AF37;
+    --gold-dim: #8B7425;
+    --dark: #0D0D0D;
+    --card: #1A1A1A;
+    --header-bg: #2A2315;
+    --white: #F5F5F5;
+    --gray: #E0E0E0;
+    --muted: #777;
+    --green: #4CAF50;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--dark);
+    color: var(--white);
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+
+  /* ── Header ── */
+  .app-header {
+    text-align: center;
+    padding: 20px 16px 14px;
+    border-bottom: 2px solid var(--gold);
+    background: linear-gradient(180deg, #161208 0%, var(--dark) 100%);
+  }
+  .app-header h1 { color: var(--gold); font-size: 18px; letter-spacing: 3px; font-weight: 700; }
+  .app-header .subtitle { color: var(--muted); font-size: 12px; margin-top: 3px; letter-spacing: 1px; }
+
+  /* ── Student info ── */
+  .student-info {
+    background: var(--card);
+    border: 1px solid var(--gold);
+    border-radius: 10px;
+    margin: 14px;
+    padding: 14px 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .student-info .field { font-size: 13px; }
+  .student-info .label { color: var(--gold); font-weight: 600; }
+  .student-info .value { color: var(--gray); }
+
+  /* ── Loading ── */
+  .loading-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+  }
+  .loading-spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--card);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { color: var(--muted); font-size: 14px; }
+  .error-box {
+    background: var(--card);
+    border: 1px solid #c0392b;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 14px;
+    text-align: center;
+  }
+  .error-box h3 { color: #e74c3c; margin-bottom: 8px; font-size: 16px; }
+  .error-box p { color: var(--gray); font-size: 13px; line-height: 1.6; }
+
+  /* ── Day tabs ── */
+  .day-tabs {
+    display: flex;
+    overflow-x: auto;
+    gap: 8px;
+    padding: 14px 14px 10px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .day-tabs::-webkit-scrollbar { display: none; }
+  .day-tab {
+    flex-shrink: 0;
+    padding: 10px 18px;
+    background: var(--card);
+    border: 1px solid var(--gold-dim);
+    border-radius: 8px;
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .day-tab.active {
+    background: var(--gold);
+    color: var(--dark);
+    border-color: var(--gold);
+    box-shadow: 0 0 12px rgba(212, 175, 55, 0.3);
+  }
+
+  /* ── Week selector ── */
+  .week-selector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 0 16px 10px;
+  }
+  .week-btn {
+    background: var(--card);
+    border: 1px solid var(--gold-dim);
+    color: var(--gold);
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .week-btn:active { background: var(--gold); color: var(--dark); }
+  .week-label { color: var(--gold); font-weight: 600; font-size: 14px; min-width: 90px; text-align: center; }
+
+  /* ── Exercise card ── */
+  .day-content { padding: 0 12px; display: none; }
+  .day-content.active { display: block; }
+
+  .exercise-card {
+    background: var(--card);
+    border: 1px solid #2a2a2a;
+    border-left: 3px solid var(--gold);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .exercise-card.warmup { border-left-color: var(--muted); }
+  .exercise-card.has-video:active { border-color: var(--gold); }
+
+  .exercise-main {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    gap: 10px;
+    cursor: default;
+  }
+  .exercise-card.has-video .exercise-main { cursor: pointer; }
+
+  .exercise-info { flex: 1; min-width: 0; }
+  .exercise-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .exercise-card.has-video .exercise-name { color: var(--gold); }
+  .video-icon {
+    font-size: 11px;
+    background: var(--header-bg);
+    border: 1px solid var(--gold-dim);
+    color: var(--gold);
+    padding: 2px 6px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+
+  .exercise-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 6px;
+  }
+  .exercise-tag {
+    background: #222;
+    padding: 3px 7px;
+    border-radius: 4px;
+    font-size: 11px;
+    color: var(--gray);
+    white-space: nowrap;
+  }
+  .exercise-tag .tl { color: var(--gold-dim); margin-right: 3px; font-size: 10px; }
+  .exercise-obs {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+    font-style: italic;
+  }
+
+  /* ── Carga input ── */
+  .carga-section {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-top: 1px solid #222;
+    background: #141414;
+  }
+  .carga-label { color: var(--gold); font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .carga-input {
+    width: 65px;
+    background: #222;
+    border: 1px solid var(--gold-dim);
+    border-radius: 6px;
+    color: var(--white);
+    padding: 6px 8px;
+    font-size: 14px;
+    text-align: center;
+    outline: none;
+  }
+  .carga-input:focus { border-color: var(--gold); box-shadow: 0 0 6px rgba(212, 175, 55, 0.2); }
+  .carga-input::placeholder { color: #444; }
+  .carga-prev { font-size: 10px; color: var(--muted); white-space: nowrap; }
+  .carga-saved {
+    color: var(--green);
+    font-size: 11px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    white-space: nowrap;
+  }
+  .carga-saved.show { opacity: 1; }
+
+  /* ── VIDEO OVERLAY ── */
+  .video-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.92);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    padding: 20px;
+  }
+  .video-overlay.show { display: flex; }
+  .video-overlay-header {
+    width: 100%;
+    max-width: 640px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .video-overlay-title {
+    color: var(--gold);
+    font-size: 16px;
+    font-weight: 600;
+    flex: 1;
+    margin-right: 12px;
+  }
+  .video-close {
+    background: var(--card);
+    border: 1px solid var(--gold-dim);
+    color: var(--gold);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .video-close:active { background: var(--gold); color: var(--dark); }
+  .video-frame-container {
+    width: 100%;
+    max-width: 640px;
+    aspect-ratio: 9/16;
+    max-height: 75vh;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid var(--gold);
+    background: #000;
+  }
+  .video-frame-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+
+  /* ── Instructions ── */
+  .instructions-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 20px 14px 0;
+    padding: 14px;
+    background: var(--card);
+    border: 1px solid var(--gold);
+    border-radius: 10px;
+    color: var(--gold);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .instructions-content {
+    display: none;
+    margin: 0 14px 20px;
+    padding: 16px;
+    background: var(--card);
+    border: 1px solid var(--gold);
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+  }
+  .instructions-content.show { display: block; }
+  .instructions-content h3 {
+    color: var(--gold);
+    font-size: 14px;
+    margin: 14px 0 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--gold-dim);
+  }
+  .instructions-content h3:first-child { margin-top: 0; }
+  .instructions-content p {
+    color: var(--gray);
+    font-size: 12px;
+    line-height: 1.6;
+    margin: 3px 0;
+  }
+  .instructions-content .hl { color: var(--white); font-weight: 600; }
+
+  /* ── Footer ── */
+  .app-footer {
+    text-align: center;
+    padding: 20px;
+    border-top: 1px solid var(--gold-dim);
+    margin-top: 24px;
+  }
+  .app-footer span { color: var(--gold); font-size: 11px; letter-spacing: 1px; }
+
+  /* ── Admin panel ── */
+  .admin-panel {
+    background: var(--card);
+    border: 1px solid var(--gold);
+    border-radius: 10px;
+    margin: 14px;
+    padding: 20px 16px;
+  }
+  .admin-panel h2 { color: var(--gold); font-size: 16px; margin-bottom: 14px; text-align: center; }
+  .admin-field { margin-bottom: 12px; }
+  .admin-field label { display: block; color: var(--gold); font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+  .admin-field input, .admin-field select {
+    width: 100%;
+    background: #222;
+    border: 1px solid var(--gold-dim);
+    border-radius: 6px;
+    color: var(--white);
+    padding: 10px 12px;
+    font-size: 14px;
+    outline: none;
+  }
+  .admin-field input:focus, .admin-field select:focus { border-color: var(--gold); }
+  .admin-field input::placeholder { color: #555; }
+  .admin-btn {
+    width: 100%;
+    background: var(--gold);
+    color: var(--dark);
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 8px;
+    letter-spacing: 1px;
+  }
+  .admin-btn:active { opacity: 0.8; }
+  .admin-btn.secondary {
+    background: var(--card);
+    color: var(--gold);
+    border: 1px solid var(--gold);
+    margin-top: 8px;
+  }
+  .admin-result {
+    margin-top: 12px;
+    padding: 12px;
+    background: #222;
+    border-radius: 8px;
+    word-break: break-all;
+    display: none;
+  }
+  .admin-result .url-text { color: var(--gold); font-size: 12px; line-height: 1.6; }
+  .admin-result .copy-msg { color: var(--green); font-size: 12px; margin-top: 6px; display: none; }
+  .admin-help { color: var(--muted); font-size: 11px; line-height: 1.6; margin-top: 16px; padding-top: 12px; border-top: 1px solid #333; }
+  .admin-help strong { color: var(--gray); }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <h1>PROTOCOLO DE TREINO</h1>
+  <div class="subtitle">MÉTODO GH</div>
+</div>
+
+<!-- ══ LOADING STATE ══ -->
+<div id="loadingScreen" class="loading-screen" style="display:none;">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Carregando treino...</div>
+</div>
+
+<!-- ══ ERROR STATE ══ -->
+<div id="errorBox" class="error-box" style="display:none;">
+  <h3>Erro ao carregar</h3>
+  <p id="errorMsg"></p>
+</div>
+
+<!-- ══ ADMIN PANEL (shown when no sheet params) ══ -->
+<div id="adminPanel" class="admin-panel" style="display:none;">
+  <h2>PAINEL DO TREINADOR</h2>
+
+  <div class="admin-field">
+    <label>ID DA PLANILHA (Google Sheets)</label>
+    <input type="text" id="adminSheetId" placeholder="Cole o ID da planilha aqui">
+  </div>
+
+  <div class="admin-field">
+    <label>NOME DA ABA (nome do aluno)</label>
+    <input type="text" id="adminTabName" placeholder="Ex: João Silva">
+  </div>
+
+  <button class="admin-btn" onclick="generateLink()">GERAR LINK DO ALUNO</button>
+
+  <div class="admin-result" id="adminResult">
+    <div class="url-text" id="adminUrl"></div>
+    <button class="admin-btn secondary" onclick="copyLink()">COPIAR LINK</button>
+    <div class="copy-msg" id="copyMsg">Link copiado!</div>
+  </div>
+
+  <div class="admin-help">
+    <strong>Como usar:</strong><br>
+    1. Crie uma planilha no Google Sheets<br>
+    2. Monte os templates de treino (ex: aba "TEMPLATE-6X")<br>
+    3. Para cada aluno: duplique a aba do template e renomeie pro nome dele<br>
+    4. Publique a planilha: Arquivo > Compartilhar > Publicar na web > Publicar<br>
+    5. Cole o ID da planilha acima e gere o link<br><br>
+    <strong>ID da planilha:</strong> o trecho entre /d/ e /edit na URL<br>
+    Ex: docs.google.com/spreadsheets/d/<span style="color:var(--gold)">1abc2def3ghi</span>/edit
+  </div>
+</div>
+
+<!-- ══ STUDENT INFO ══ -->
+<div class="student-info" id="studentInfo" style="display:none;">
+  <div class="field"><span class="label">Aluno: </span><span class="value" id="infoNome">-</span></div>
+  <div class="field"><span class="label">Frequência: </span><span class="value" id="infoFreq">-</span></div>
+  <div class="field"><span class="label">Objetivo: </span><span class="value" id="infoObj">-</span></div>
+  <div class="field"><span class="label">Duração: </span><span class="value" id="infoDur">-</span></div>
+</div>
+
+<div class="day-tabs" id="dayTabs"></div>
+
+<div class="week-selector" id="weekSelector" style="display:none;">
+  <button class="week-btn" onclick="changeWeek(-1)">&#8249;</button>
+  <span class="week-label" id="weekLabel">Semana 1</span>
+  <button class="week-btn" onclick="changeWeek(1)">&#8250;</button>
+</div>
+
+<div id="exerciseContainer"></div>
+
+<!-- ══ VIDEO OVERLAY ══ -->
+<div class="video-overlay" id="videoOverlay" onclick="closeVideoOverlay(event)">
+  <div class="video-overlay-header">
+    <div class="video-overlay-title" id="videoTitle"></div>
+    <button class="video-close" onclick="closeVideo()">&#10005;</button>
+  </div>
+  <div class="video-frame-container">
+    <iframe id="videoFrame" src="" allow="accelerometer; autoplay; encrypted-media; gyroscope" allowfullscreen></iframe>
+  </div>
+</div>
+
+<!-- ══ INSTRUCTIONS ══ -->
+<div class="instructions-toggle" id="instrToggle" onclick="toggleInstructions()" style="display:none;">
+  Manual de Execução <span id="instrArrow">&#9660;</span>
+</div>
+<div class="instructions-content" id="instructionsContent">
+  <h3>A Física do Movimento</h3>
+  <p><span class="hl">Fase Positiva (Concêntrica):</span> Explosão em 1 segundo. SOPRE o ar.</p>
+  <p><span class="hl">Fase Negativa (Excêntrica):</span> Controle em 2 a 3 segundos. PUXE o ar. Nunca despenque o peso.</p>
+  <h3>Dicionário de Intensidade</h3>
+  <p><span class="hl">Isometria:</span> Pausar e segurar no ponto de maior tensão por 2 segundos.</p>
+  <p><span class="hl">Bi-Set:</span> Dois exercícios seguidos SEM descanso. Só descansa ao terminar os dois.</p>
+  <p><span class="hl">Drop-Set:</span> Falha total &rarr; Reduzir carga 20-30% &rarr; Falha novamente. Sem descanso.</p>
+  <p><span class="hl">Drop Mecânico:</span> Falha com postura estrita &rarr; mude a biomecânica &rarr; reps extras com MESMA carga.</p>
+  <h3>Protocolos de Séries</h3>
+  <p><span class="hl">Padrão de Margem (4X 8-12):</span> 1ª = aquecimento. 2ª = ajuste. 3ª e 4ª = AS VALENDO (falha entre 8-12).</p>
+  <p><span class="hl">Piramidal (15-20 | 10-15 | 8-12 | 6-10):</span> Reps caem, peso sobe OBRIGATORIAMENTE.</p>
+  <p><span class="hl">Aclimatização (12-15 | 4-6 | 8-12):</span> Aquecimento &rarr; Neuro (carga pesada, 4-6 reps) &rarr; Principal (falha total).</p>
+  <p><span class="hl">Progressão Pura (4X10):</span> Carga SOBE. Reps NÃO diminuem. Roubar permitido nas últimas.</p>
+  <h3>Aquecimento Inteligente</h3>
+  <p>Articulação fria? &rarr; 1ª série leve. Já aquecida? &rarr; Inicie com carga média/alta.</p>
+  <h3>Registro</h3>
+  <p><span class="hl">Anote a carga da ÚLTIMA SÉRIE</span> (falha total). Essa é sua meta no próximo treino.</p>
+</div>
+
+<div class="app-footer"><span>MÉTODO GH — @gh.scheuermann</span></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// ══ CONFIGURAÇÃO — lê parâmetros da URL ══
+// ══════════════════════════════════════════════════════════════
+const params = new URLSearchParams(window.location.search);
+const SHEET_ID = params.get('sheet');
+const TAB_NAME = params.get('tab');
+const STUDENT_ID = TAB_NAME ? TAB_NAME.toLowerCase().replace(/\s+/g, '_') : 'demo';
+const TOTAL_WEEKS = parseInt(params.get('weeks')) || 8;
+
+let WORKOUT = [];
+let currentDay = 0;
+let currentWeek = 1;
+
+// ══ localStorage helpers ══
+function storageKey(d, e, w) { return `gh_${STUDENT_ID}_d${d}_e${e}_w${w}`; }
+function loadCarga(d, e, w) { return localStorage.getItem(storageKey(d, e, w)) || ""; }
+function saveCarga(d, e, w, v) { localStorage.setItem(storageKey(d, e, w), v); }
+function getPrevCarga(d, e, w) { return w > 1 ? localStorage.getItem(storageKey(d, e, w - 1)) || null : null; }
+
+// ══ YouTube URL → embed URL ══
+function youtubeEmbed(url) {
+  if (!url) return "";
+  let id = "";
+  let m = url.match(/[?&]v=([^&]+)/);
+  if (m) id = m[1];
+  if (!id) { m = url.match(/shorts\/([^?&]+)/); if (m) id = m[1]; }
+  if (!id) { m = url.match(/youtu\.be\/([^?&]+)/); if (m) id = m[1]; }
+  return id ? `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1` : url;
+}
+
+// ══ CSV Parser (handles quoted fields with commas) ══
+function parseCSV(text) {
+  const rows = [];
+  const lines = text.split('\n');
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    const row = [];
+    let inQuotes = false;
+    let field = '';
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuotes && line[i + 1] === '"') { field += '"'; i++; }
+        else { inQuotes = !inQuotes; }
+      } else if (ch === ',' && !inQuotes) {
+        row.push(field.trim());
+        field = '';
+      } else {
+        field += ch;
+      }
+    }
+    row.push(field.trim());
+    rows.push(row);
+  }
+  return rows;
+}
+
+// ══════════════════════════════════════════════════════════════
+// ══ CARREGAR DADOS DA GOOGLE SHEETS ══
+// ══════════════════════════════════════════════════════════════
+// Estrutura da planilha:
+// Linha 1 (cabeçalho): dia | exercicio | series | repeticoes | intervalo | obs | video | aquecimento
+// Linha 2 (info):       info | Nome Aluno | 6x/semana | Hipertrofia | 8 semanas | | |
+// Linha 3+:             1 | Exercício | 4X | 8 a 12 | 60 seg | Obs | URL | sim/não
+// ══════════════════════════════════════════════════════════════
+
+async function loadFromSheets() {
+  document.getElementById('loadingScreen').style.display = 'flex';
+
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}&headers=1`;
+    const res = await fetch(url);
+
+    if (!res.ok) throw new Error('Não foi possível acessar a planilha. Verifique se ela está compartilhada (qualquer pessoa com link = leitor).');
+
+    const text = await res.text();
+    const rows = parseCSV(text);
+
+    if (rows.length < 3) throw new Error('Planilha vazia ou formato incorreto.');
+
+    // Row 0 = header (skip)
+    // Row with empty col A or "info" = student info
+    // Rest = exercises
+    const days = {};
+    let studentName = params.get('nome') || TAB_NAME;
+    let studentFreq = params.get('freq') || '';
+    let studentObj = params.get('obj') || '';
+    let studentDur = params.get('dur') || `${TOTAL_WEEKS} semanas`;
+
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r[0] && !r[1]) continue; // skip empty rows
+
+      // Info row: col A is empty or "info", col B has student name
+      if ((r[0] === '' || r[0].toLowerCase() === 'info') && r[1] && isNaN(parseInt(r[0]))) {
+        studentName = r[1] || studentName;
+        studentFreq = r[2] || studentFreq;
+        studentObj = r[3] || studentObj;
+        studentDur = r[4] || studentDur;
+        continue;
+      }
+
+      const dayNum = parseInt(r[0]);
+      if (isNaN(dayNum)) continue;
+
+      if (!days[dayNum]) days[dayNum] = [];
+      const isWarmup = (r[7] || '').toLowerCase() === 'sim';
+      days[dayNum].push({
+        name: r[1] || '',
+        series: r[2] || '',
+        reps: r[3] || '',
+        rest: r[4] || '',
+        obs: r[5] || '',
+        video: r[6] || '',
+        warmup: isWarmup
+      });
+    }
+
+    WORKOUT = Object.keys(days).sort((a, b) => a - b).map(d => ({
+      day: `DIA ${d}`,
+      exercises: days[d]
+    }));
+
+    if (WORKOUT.length === 0) throw new Error('Nenhum exercício encontrado na aba. Verifique o formato da planilha.');
+
+    // Update UI
+    document.getElementById('infoNome').textContent = studentName;
+    document.getElementById('infoFreq').textContent = studentFreq;
+    document.getElementById('infoObj').textContent = studentObj;
+    document.getElementById('infoDur').textContent = studentDur;
+
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('studentInfo').style.display = 'grid';
+    document.getElementById('weekSelector').style.display = 'flex';
+    document.getElementById('instrToggle').style.display = 'flex';
+
+    renderTabs();
+    renderExercises();
+
+  } catch (err) {
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('errorBox').style.display = 'block';
+    document.getElementById('errorMsg').textContent = err.message;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ══ RENDER ══
+// ══════════════════════════════════════════════════════════════
+function renderTabs() {
+  document.getElementById("dayTabs").innerHTML = WORKOUT.map((w, i) =>
+    `<div class="day-tab ${i === currentDay ? 'active' : ''}" onclick="selectDay(${i})">${w.day}</div>`
+  ).join("");
+}
+
+function renderExercises() {
+  const c = document.getElementById("exerciseContainer");
+  c.innerHTML = "";
+  WORKOUT.forEach((day, di) => {
+    const div = document.createElement("div");
+    div.className = `day-content ${di === currentDay ? 'active' : ''}`;
+    div.innerHTML = day.exercises.map((ex, ei) => {
+      const prev = getPrevCarga(di, ei, currentWeek);
+      const cur = loadCarga(di, ei, currentWeek);
+      const hasVid = ex.video && ex.video.length > 0;
+      const isWarmup = ex.warmup;
+      const tags = [];
+      if (ex.series) tags.push(`<span class="exercise-tag"><span class="tl">S</span>${ex.series}</span>`);
+      if (ex.reps) tags.push(`<span class="exercise-tag"><span class="tl">R</span>${ex.reps}</span>`);
+      if (ex.rest) tags.push(`<span class="exercise-tag"><span class="tl">I</span>${ex.rest}</span>`);
+
+      // Escape single quotes in name and video URL for onclick
+      const safeName = ex.name.replace(/'/g, "\\'");
+      const safeVideo = (ex.video || '').replace(/'/g, "\\'");
+
+      return `
+        <div class="exercise-card ${isWarmup ? 'warmup' : ''} ${hasVid ? 'has-video' : ''}">
+          <div class="exercise-main" ${hasVid ? `onclick="openVideo('${safeName}', '${safeVideo}')"` : ''}>
+            <div class="exercise-info">
+              <div class="exercise-name">
+                ${ex.name}
+                ${hasVid ? '<span class="video-icon">&#9654;</span>' : ''}
+              </div>
+              <div class="exercise-details">${tags.join("")}</div>
+              ${ex.obs ? `<div class="exercise-obs">${ex.obs}</div>` : ''}
+            </div>
+          </div>
+          ${!isWarmup ? `
+          <div class="carga-section">
+            <span class="carga-label">CARGA</span>
+            <input class="carga-input" type="number" inputmode="decimal" placeholder="kg"
+              value="${cur}" oninput="onCarga(${di},${ei},this)">
+            ${prev ? `<span class="carga-prev">Ant: ${prev}kg</span>` : ''}
+            <span class="carga-saved" id="sv-${di}-${ei}">&#10003; salvo</span>
+          </div>` : ''}
+        </div>`;
+    }).join("");
+    c.appendChild(div);
+  });
+}
+
+function selectDay(i) {
+  currentDay = i;
+  renderTabs();
+  document.querySelectorAll('.day-content').forEach((el, j) => el.classList.toggle('active', j === i));
+}
+
+function changeWeek(d) {
+  const n = currentWeek + d;
+  if (n < 1 || n > TOTAL_WEEKS) return;
+  currentWeek = n;
+  document.getElementById("weekLabel").textContent = `Semana ${currentWeek}`;
+  renderExercises();
+}
+
+let timers = {};
+function onCarga(di, ei, input) {
+  const k = `${di}-${ei}`;
+  clearTimeout(timers[k]);
+  timers[k] = setTimeout(() => {
+    saveCarga(di, ei, currentWeek, input.value);
+    const el = document.getElementById(`sv-${di}-${ei}`);
+    if (el) { el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 1500); }
+  }, 400);
+}
+
+// ══ Video overlay ══
+function openVideo(name, url) {
+  document.getElementById("videoTitle").textContent = name;
+  document.getElementById("videoFrame").src = youtubeEmbed(url);
+  document.getElementById("videoOverlay").classList.add("show");
+  document.body.style.overflow = "hidden";
+}
+
+function closeVideo() {
+  document.getElementById("videoFrame").src = "";
+  document.getElementById("videoOverlay").classList.remove("show");
+  document.body.style.overflow = "";
+}
+
+function closeVideoOverlay(e) {
+  if (e.target === document.getElementById("videoOverlay")) closeVideo();
+}
+
+function toggleInstructions() {
+  const c = document.getElementById('instructionsContent');
+  const a = document.getElementById('instrArrow');
+  c.classList.toggle('show');
+  a.innerHTML = c.classList.contains('show') ? '&#9650;' : '&#9660;';
+}
+
+// ══════════════════════════════════════════════════════════════
+// ══ ADMIN — Painel do Treinador (gerar links) ══
+// ══════════════════════════════════════════════════════════════
+function generateLink() {
+  const sheetId = document.getElementById('adminSheetId').value.trim();
+  const tabName = document.getElementById('adminTabName').value.trim();
+
+  if (!sheetId || !tabName) {
+    alert('Preencha o ID da planilha e o nome da aba (aluno).');
+    return;
+  }
+
+  // Save sheet ID for convenience
+  localStorage.setItem('gh_admin_sheet_id', sheetId);
+
+  const base = window.location.origin + window.location.pathname;
+  const link = `${base}?sheet=${encodeURIComponent(sheetId)}&tab=${encodeURIComponent(tabName)}`;
+
+  document.getElementById('adminUrl').textContent = link;
+  document.getElementById('adminResult').style.display = 'block';
+}
+
+function copyLink() {
+  const url = document.getElementById('adminUrl').textContent;
+  navigator.clipboard.writeText(url).then(() => {
+    const msg = document.getElementById('copyMsg');
+    msg.style.display = 'block';
+    setTimeout(() => msg.style.display = 'none', 2000);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// ══ INICIALIZAÇÃO ══
+// ══════════════════════════════════════════════════════════════
+if (SHEET_ID && TAB_NAME) {
+  // Modo aluno — carregar treino da planilha
+  loadFromSheets();
+} else {
+  // Modo treinador — mostrar painel admin
+  document.getElementById('adminPanel').style.display = 'block';
+  // Recuperar sheet ID salvo
+  const saved = localStorage.getItem('gh_admin_sheet_id');
+  if (saved) document.getElementById('adminSheetId').value = saved;
+}
+</script>
+</body>
+</html>
