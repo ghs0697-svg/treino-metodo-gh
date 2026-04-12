@@ -666,8 +666,8 @@ async function loadFromSheets() {
         continue;
       }
 
-      // Info row: col A is empty or "info", col B has student name
-      if ((r[0] === '' || r[0].toLowerCase() === 'info') && r[1] && isNaN(parseInt(r[0]))) {
+      // Info row: col A is empty or "info"
+      if ((r[0] === '' || r[0].toLowerCase() === 'info') && isNaN(parseInt(r[0])) && (r[1] || r[2] || r[3] || r[4])) {
         studentName = r[1] || studentName;
         studentFreq = r[2] || studentFreq;
         studentObj = r[3] || studentObj;
