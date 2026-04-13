@@ -441,9 +441,11 @@
   body.view-dieta #hipoToggle,
   body.view-dieta #hipoContent,
   body.view-dieta #errorBox,
-  body.view-dieta #loadingMsg { display: none !important; }
-  body:not(.view-dieta) #dietaView { display: none; }
-  body.view-dieta #dietaView { display: block; }
+  body.view-dieta #loadingScreen,
+  body.view-dieta #videoOverlay,
+  body.view-dieta #adminPanel { display: none !important; }
+  body:not(.view-dieta) #dietaView { display: none !important; }
+  body.view-dieta #dietaView { display: block !important; }
   body.view-dieta .nav-btn#navDieta { color: var(--gold); border-bottom-color: var(--gold); }
   body.view-dieta .nav-btn#navTreino { color: var(--gray); border-bottom-color: transparent; }
 
@@ -1178,7 +1180,8 @@ function parseDietData(rows) {
     refeicoes: [],
     total: { p: 0, c: 0, g: 0, kcal: 0 },
     orientacoes: [],
-    aerobicos: null
+    aerobicos: null,
+    protocolos: []
   };
 
   let currentRef = null;
@@ -1248,6 +1251,9 @@ function parseDietData(rows) {
         break;
       case 'nota':
         if (currentRef) currentRef.notas.push(r[1] || r[3] || '');
+        break;
+      case 'proto':
+        data.protocolos.push({ nome: r[1] || '', dose: r[2] || '', obs: r[3] || '' });
         break;
     }
   }
@@ -1346,6 +1352,16 @@ function renderDiet() {
     }
     d.orientacoes.forEach(o => {
       html += `<div class="diet-orient">${o.categoria ? `<span class="diet-orient-cat">${o.categoria}</span>` : ''}<span class="diet-orient-text">${o.texto}</span></div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Protocolos (hormonais/peptídeos)
+  if (d.protocolos.length > 0) {
+    html += `<div class="diet-section-toggle" onclick="toggleDietSection('proto')">Protocolo <span id="protoArrow">&#9660;</span></div>`;
+    html += `<div class="diet-section-content" id="protoContent">`;
+    d.protocolos.forEach(p => {
+      html += `<div class="diet-orient"><span class="diet-orient-cat">${p.nome}</span><span class="diet-orient-text">${p.dose}${p.obs ? ' — ' + p.obs : ''}</span></div>`;
     });
     html += `</div>`;
   }
