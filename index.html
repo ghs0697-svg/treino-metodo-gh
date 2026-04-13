@@ -449,28 +449,7 @@
   body.view-dieta .nav-btn#navDieta { color: var(--gold); border-bottom-color: var(--gold); }
   body.view-dieta .nav-btn#navTreino { color: var(--gray); border-bottom-color: transparent; }
 
-  /* ── Protocolo view toggling ── */
-  body.view-protocolo #studentInfo,
-  body.view-protocolo #dayTabs,
-  body.view-protocolo #weekSelector,
-  body.view-protocolo #exerciseContainer,
-  body.view-protocolo #instrToggle,
-  body.view-protocolo #instructionsContent,
-  body.view-protocolo #hipoToggle,
-  body.view-protocolo #hipoContent,
-  body.view-protocolo #errorBox,
-  body.view-protocolo #loadingScreen,
-  body.view-protocolo #videoOverlay,
-  body.view-protocolo #adminPanel,
-  body.view-protocolo #dietaView { display: none !important; }
-  body:not(.view-protocolo) #protocoloView { display: none !important; }
-  body.view-protocolo #protocoloView { display: block !important; }
-  body.view-protocolo .nav-btn#navProtocolo { color: var(--gold); border-bottom-color: var(--gold); }
-  body.view-protocolo .nav-btn#navTreino,
-  body.view-protocolo .nav-btn#navDieta { color: var(--gray); border-bottom-color: transparent; }
-  body.view-dieta #protocoloView { display: none !important; }
-
-  /* ── Protocolo styles ── */
+  /* ── Protocolo styles (dentro da dieta) ── */
   .proto-card {
     background: var(--card);
     border: 1px solid var(--gold-dim);
@@ -525,40 +504,6 @@
     font-size: 12px;
     color: var(--gray);
     line-height: 1.5;
-  }
-  .proto-empty {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--muted);
-  }
-  .proto-empty-icon { font-size: 48px; margin-bottom: 12px; }
-  .proto-empty-text { font-size: 14px; line-height: 1.6; }
-  .proto-phase-badge {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-  }
-  .proto-phase-on { background: #1a3a1a; color: #4CAF50; border: 1px solid #4CAF50; }
-  .proto-phase-off { background: #3a1a1a; color: #e74c3c; border: 1px solid #e74c3c; }
-  .proto-phase-tpc { background: #1a2a3a; color: #5ba8e0; border: 1px solid #5ba8e0; }
-  .proto-phase-cruise { background: #2a2a1a; color: var(--gold); border: 1px solid var(--gold-dim); }
-  .proto-summary {
-    background: var(--card);
-    border: 1px solid var(--gold);
-    border-radius: 10px;
-    margin: 14px;
-    padding: 14px 16px;
-  }
-  .proto-summary-title {
-    color: var(--gold);
-    font-weight: 700;
-    font-size: 14px;
-    margin-bottom: 8px;
-    text-align: center;
   }
 
   /* ── Diet Info Card ── */
@@ -801,7 +746,6 @@
 <div class="main-nav" id="mainNav" style="display:none;">
   <button class="nav-btn active" id="navTreino" onclick="switchView('treino')">TREINO</button>
   <button class="nav-btn" id="navDieta" onclick="switchView('dieta')">DIETA</button>
-  <button class="nav-btn" id="navProtocolo" onclick="switchView('protocolo')">PROTOCOLO</button>
 </div>
 
 <!-- ══ LOADING STATE ══ -->
@@ -945,18 +889,6 @@
   <div id="dietContent" style="display:none;"></div>
 </div>
 
-<!-- ══ PROTOCOLO VIEW ══ -->
-<div id="protocoloView">
-  <div id="protoLoading" class="loading-screen" style="display:none;">
-    <div class="loading-spinner"></div>
-    <div class="loading-text">Carregando protocolo...</div>
-  </div>
-  <div id="protoError" class="error-box" style="display:none;">
-    <h3>Protocolo não disponível</h3>
-    <p id="protoErrorMsg">Nenhum protocolo hormonal/peptídeo foi adicionado à sua planilha.</p>
-  </div>
-  <div id="protoContent" style="display:none;"></div>
-</div>
 
 <div class="app-footer"><span>MÉTODO GH — @gh.scheuermann</span></div>
 
@@ -1482,13 +1414,40 @@ function renderDiet() {
     html += `</div>`;
   }
 
-  // Protocolos (hormonais/peptídeos)
+  // Protocolos (hormonais/peptídeos) — cards detalhados
   if (d.protocolos.length > 0) {
-    html += `<div class="diet-section-toggle" onclick="toggleDietSection('proto')">Protocolo <span id="protoArrow">&#9660;</span></div>`;
+    html += `<div class="diet-section-toggle" onclick="toggleDietSection('proto')">Protocolo Hormonal <span id="protoArrow">&#9660;</span></div>`;
     html += `<div class="diet-section-content" id="protoContent">`;
+
+    const icons = {
+      'testo': '💪', 'testosterona': '💪', 'enantato': '💪', 'cipionato': '💪', 'propionato': '💪', 'sustanon': '💪',
+      'gh': '🧬', 'hgh': '🧬', 'somatropina': '🧬',
+      'bpc': '🩹', 'tb-500': '🩹', 'tb500': '🩹',
+      'mk-677': '🧪', 'ipamorelin': '🧪', 'cjc': '🧪', 'ghrp': '🧪', 'sermorelin': '🧪',
+      'oxan': '💊', 'stano': '💊', 'diana': '💊', 'primo': '💊', 'trembo': '💊', 'bolde': '💊', 'deca': '💊', 'masteron': '💊',
+      'hcg': '🔬', 'clomid': '🔬', 'tamox': '🔬', 'anastro': '🔬', 'exemestano': '🔬', 'letro': '🔬',
+      'insulina': '💉', 't3': '⚡', 't4': '⚡', 'clenbu': '⚡',
+      'melanotan': '☀️', 'pt-141': '☀️',
+      'sema': '💊', 'tirze': '💊', 'ozempic': '💊'
+    };
+
     d.protocolos.forEach(p => {
-      html += `<div class="diet-orient"><span class="diet-orient-cat">${p.nome}</span><span class="diet-orient-text">${p.dose}${p.obs ? ' — ' + p.obs : ''}</span></div>`;
+      const nameLower = p.nome.toLowerCase();
+      let icon = '💊';
+      for (const [key, emoji] of Object.entries(icons)) {
+        if (nameLower.includes(key)) { icon = emoji; break; }
+      }
+
+      html += `<div class="proto-card">`;
+      html += `<div class="proto-card-header">`;
+      html += `<div class="proto-icon">${icon}</div>`;
+      html += `<div><div class="proto-name">${p.nome}</div></div>`;
+      html += `</div>`;
+      if (p.dose) html += `<div class="proto-detail-row"><span class="proto-detail-label">Dose</span><span class="proto-detail-value">${p.dose}</span></div>`;
+      if (p.obs) html += `<div class="proto-obs">${p.obs}</div>`;
+      html += `</div>`;
     });
+
     html += `</div>`;
   }
 
@@ -1519,19 +1478,15 @@ function renderMacroBar(m) {
 }
 
 function switchView(view) {
-  document.body.classList.remove('view-dieta', 'view-protocolo');
   if (view === 'dieta') {
     document.body.classList.add('view-dieta');
     if (!dietLoaded) loadDietFromSheets();
-  } else if (view === 'protocolo') {
-    document.body.classList.add('view-protocolo');
-    if (!protoLoaded) loadProtocolFromSheets();
+  } else {
+    document.body.classList.remove('view-dieta');
   }
   document.getElementById('navTreino').classList.toggle('active', view === 'treino');
   document.getElementById('navDieta').classList.toggle('active', view === 'dieta');
-  document.getElementById('navProtocolo').classList.toggle('active', view === 'protocolo');
-  const titles = { treino: 'PROTOCOLO DE TREINO', dieta: 'PROTOCOLO ALIMENTAR', protocolo: 'PROTOCOLO HORMONAL' };
-  document.getElementById('headerTitle').textContent = titles[view] || 'PROTOCOLO DE TREINO';
+  document.getElementById('headerTitle').textContent = view === 'dieta' ? 'PROTOCOLO ALIMENTAR' : 'PROTOCOLO DE TREINO';
   window.scrollTo(0, 0);
 }
 
@@ -1581,175 +1536,11 @@ function copyLink() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// ══ SISTEMA DE PROTOCOLO HORMONAL ══
-// ══════════════════════════════════════════════════════════════
-let protoLoaded = false;
-let PROTO_DATA = null;
-
-async function loadProtocolFromSheets() {
-  if (protoLoaded) return;
-  const loading = document.getElementById('protoLoading');
-  const error = document.getElementById('protoError');
-  const content = document.getElementById('protoContent');
-  loading.style.display = 'flex';
-  error.style.display = 'none';
-  content.style.display = 'none';
-
-  try {
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('PROTOCOLO ATUAL')}&headers=1`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Aba não encontrada');
-    const text = await res.text();
-    if (!text.trim() || text.includes('error')) throw new Error('Sem dados');
-    PROTO_DATA = parseProtocolCSV(text);
-    renderProtocol();
-    protoLoaded = true;
-    loading.style.display = 'none';
-    content.style.display = 'block';
-  } catch (e) {
-    // Fallback: tentar pegar dados proto da aba DIETA ATUAL
-    try {
-      if (DIET_DATA && DIET_DATA.protocolos && DIET_DATA.protocolos.length > 0) {
-        PROTO_DATA = { fase: '', obs: '', itens: DIET_DATA.protocolos.map(p => ({
-          nome: p.nome, dose: p.dose, via: '', freq: '', horario: '', obs: p.obs
-        }))};
-        renderProtocol();
-        protoLoaded = true;
-        loading.style.display = 'none';
-        content.style.display = 'block';
-        return;
-      }
-    } catch(_) {}
-    loading.style.display = 'none';
-    error.style.display = 'block';
-    document.getElementById('protoErrorMsg').textContent = 'Nenhum protocolo hormonal/peptídeo cadastrado. Peça ao seu treinador para adicionar a aba "PROTOCOLO ATUAL" na planilha.';
-  }
-}
-
-function parseProtocolCSV(text) {
-  const rows = [];
-  const regex = /("(?:[^"]|"")*"|[^,\n]*)/g;
-  const lines = text.split('\n');
-  for (const line of lines) {
-    if (!line.trim()) continue;
-    const cols = [];
-    let m;
-    const r = /("(?:[^"]|"")*"|[^,]*)/g;
-    while ((m = r.exec(line)) !== null) {
-      let val = m[1].replace(/^"|"$/g, '').replace(/""/g, '"').trim();
-      cols.push(val);
-    }
-    rows.push(cols);
-  }
-
-  const data = { fase: '', obs: '', itens: [] };
-
-  for (let i = 0; i < rows.length; i++) {
-    const r = rows[i];
-    const tipo = (r[0] || '').toLowerCase().trim();
-
-    switch (tipo) {
-      case 'fase':
-        data.fase = r[1] || '';
-        if (r[2]) data.faseDetalhe = r[2];
-        break;
-      case 'obs':
-      case 'nota':
-        data.obs += (data.obs ? '\n' : '') + (r[1] || r[2] || '');
-        break;
-      case 'item':
-      case 'proto':
-        data.itens.push({
-          nome: r[1] || '',
-          dose: r[2] || '',
-          via: r[3] || '',
-          freq: r[4] || '',
-          horario: r[5] || '',
-          obs: r[6] || ''
-        });
-        break;
-    }
-  }
-  return data;
-}
-
-function renderProtocol() {
-  if (!PROTO_DATA) return;
-  const d = PROTO_DATA;
-  const container = document.getElementById('protoContent');
-  let html = '';
-
-  // Phase badge
-  if (d.fase) {
-    const fLower = d.fase.toLowerCase();
-    let phaseClass = 'proto-phase-on';
-    if (fLower.includes('off') || fLower.includes('descanso')) phaseClass = 'proto-phase-off';
-    else if (fLower.includes('tpc') || fLower.includes('pós')) phaseClass = 'proto-phase-tpc';
-    else if (fLower.includes('cruise') || fLower.includes('cruzeiro') || fLower.includes('manutenção')) phaseClass = 'proto-phase-cruise';
-
-    html += `<div class="proto-summary">`;
-    html += `<div class="proto-summary-title">Fase Atual</div>`;
-    html += `<div style="text-align:center;"><span class="proto-phase-badge ${phaseClass}">${d.fase}</span></div>`;
-    if (d.faseDetalhe) html += `<div style="text-align:center;color:var(--gray);font-size:12px;margin-top:8px;">${d.faseDetalhe}</div>`;
-    html += `</div>`;
-  }
-
-  // Items
-  if (d.itens.length === 0) {
-    html += `<div class="proto-empty">`;
-    html += `<div class="proto-empty-icon">💉</div>`;
-    html += `<div class="proto-empty-text">Nenhum composto cadastrado neste protocolo.</div>`;
-    html += `</div>`;
-  } else {
-    const icons = {
-      'testo': '💪', 'testosterona': '💪', 'enantato': '💪', 'cipionato': '💪', 'propionato': '💪', 'sustanon': '💪',
-      'gh': '🧬', 'hgh': '🧬', 'somatropina': '🧬', 'hormônio': '🧬',
-      'bpc': '🩹', 'tb-500': '🩹', 'tb500': '🩹',
-      'mk-677': '🧪', 'ipamorelin': '🧪', 'cjc': '🧪', 'ghrp': '🧪', 'sermorelin': '🧪',
-      'oxan': '💊', 'stano': '💊', 'diana': '💊', 'primo': '💊', 'trembo': '💊', 'bolde': '💊', 'deca': '💊', 'masteron': '💊',
-      'hcg': '🔬', 'clomid': '🔬', 'tamox': '🔬', 'anastro': '🔬', 'exemestano': '🔬', 'letro': '🔬',
-      'insulina': '💉', 't3': '⚡', 't4': '⚡', 'clenbu': '⚡',
-      'melanotan': '☀️', 'pt-141': '☀️',
-      'sema': '💊', 'tirze': '💊', 'ozempic': '💊'
-    };
-
-    d.itens.forEach(item => {
-      const nameLower = item.nome.toLowerCase();
-      let icon = '💊';
-      for (const [key, emoji] of Object.entries(icons)) {
-        if (nameLower.includes(key)) { icon = emoji; break; }
-      }
-
-      html += `<div class="proto-card">`;
-      html += `<div class="proto-card-header">`;
-      html += `<div class="proto-icon">${icon}</div>`;
-      html += `<div><div class="proto-name">${item.nome}</div>`;
-      if (item.via) html += `<div class="proto-subtitle">${item.via}</div>`;
-      html += `</div></div>`;
-
-      if (item.dose) html += `<div class="proto-detail-row"><span class="proto-detail-label">Dose</span><span class="proto-detail-value">${item.dose}</span></div>`;
-      if (item.freq) html += `<div class="proto-detail-row"><span class="proto-detail-label">Frequência</span><span class="proto-detail-value">${item.freq}</span></div>`;
-      if (item.horario) html += `<div class="proto-detail-row"><span class="proto-detail-label">Horário</span><span class="proto-detail-value">${item.horario}</span></div>`;
-      if (item.obs) html += `<div class="proto-obs">${item.obs}</div>`;
-
-      html += `</div>`;
-    });
-  }
-
-  // General obs
-  if (d.obs) {
-    html += `<div class="proto-obs" style="margin:14px;">${d.obs.replace(/\n/g, '<br>')}</div>`;
-  }
-
-  container.innerHTML = html;
-}
-
-// ══════════════════════════════════════════════════════════════
 // ══ INICIALIZAÇÃO ══
 // ══════════════════════════════════════════════════════════════
 if (SHEET_ID && TAB_NAME) {
-  // Modo aluno — carregar treino + dieta + protocolo da planilha
-  loadFromSheets().then(() => { loadDietFromSheets(); loadProtocolFromSheets(); });
+  // Modo aluno — carregar treino + dieta da planilha
+  loadFromSheets().then(() => loadDietFromSheets());
 } else {
   // Modo treinador — mostrar painel admin
   document.getElementById('adminPanel').style.display = 'block';
