@@ -406,14 +406,283 @@
   .admin-result .copy-msg { color: var(--green); font-size: 12px; margin-top: 6px; display: none; }
   .admin-help { color: var(--muted); font-size: 11px; line-height: 1.6; margin-top: 16px; padding-top: 12px; border-top: 1px solid #333; }
   .admin-help strong { color: var(--gray); }
+
+  /* ── Main Navigation ── */
+  .main-nav {
+    display: flex;
+    background: var(--card);
+  }
+  .nav-btn {
+    flex: 1;
+    padding: 12px;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-bottom: 3px solid transparent;
+  }
+  .nav-btn.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+    background: var(--header-bg);
+  }
+
+  /* ── View toggling ── */
+  body.view-dieta #studentInfo,
+  body.view-dieta #dayTabs,
+  body.view-dieta #weekSelector,
+  body.view-dieta #exerciseContainer,
+  body.view-dieta #instrToggle,
+  body.view-dieta #instructionsContent,
+  body.view-dieta #hipoToggle,
+  body.view-dieta #hipoContent { display: none !important; }
+  body:not(.view-dieta) #dietaView { display: none; }
+  body.view-dieta #dietaView { display: block; }
+
+  /* ── Diet Info Card ── */
+  .diet-info-card {
+    background: var(--card);
+    border: 1px solid var(--gold);
+    border-radius: 10px;
+    margin: 14px;
+    padding: 14px 16px;
+  }
+  .diet-info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 13px;
+  }
+  .diet-info-label { color: var(--gold); font-weight: 600; }
+  .diet-info-value { color: var(--gray); text-align: right; max-width: 60%; }
+
+  /* ── Diet Collapsible Sections ── */
+  .diet-section-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 12px 14px 0;
+    padding: 12px;
+    background: var(--card);
+    border: 1px solid var(--gold);
+    border-radius: 10px;
+    color: var(--gold);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .diet-section-content {
+    display: none;
+    margin: 0 14px;
+    padding: 12px 16px;
+    background: var(--card);
+    border: 1px solid var(--gold);
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+  }
+  .diet-section-content.show { display: block; }
+
+  /* ── Diet Rules ── */
+  .diet-rule {
+    padding: 6px 0;
+    border-bottom: 1px solid #222;
+    font-size: 12px;
+  }
+  .diet-rule:last-child { border-bottom: none; }
+  .diet-rule-name { color: var(--white); font-weight: 600; margin-right: 8px; }
+  .diet-rule-value { color: var(--gray); }
+
+  /* ── Diet Supplements ── */
+  .diet-supl-group { margin-bottom: 12px; }
+  .diet-supl-group:last-child { margin-bottom: 0; }
+  .diet-supl-timing {
+    color: var(--gold);
+    font-weight: 700;
+    font-size: 12px;
+    margin-bottom: 4px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .diet-supl-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 0;
+    font-size: 12px;
+  }
+  .diet-supl-name { color: var(--gray); }
+  .diet-supl-dose { color: var(--white); font-weight: 600; }
+
+  /* ── Diet Meal Card ── */
+  .diet-meal-card {
+    background: var(--card);
+    border: 1px solid #2a2a2a;
+    border-left: 3px solid var(--gold);
+    border-radius: 10px;
+    margin: 12px;
+    overflow: hidden;
+  }
+  .diet-meal-header {
+    background: var(--header-bg);
+    color: var(--gold);
+    font-weight: 700;
+    font-size: 14px;
+    padding: 12px 14px;
+    letter-spacing: 1px;
+  }
+  .diet-meal-instruction {
+    color: var(--muted);
+    font-size: 11px;
+    font-style: italic;
+    padding: 6px 14px 0;
+  }
+
+  /* ── Diet Option Tabs ── */
+  .diet-option-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 10px 14px 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .diet-option-tabs::-webkit-scrollbar { display: none; }
+  .diet-option-tab {
+    flex-shrink: 0;
+    padding: 6px 14px;
+    background: #222;
+    border: 1px solid var(--gold-dim);
+    border-radius: 6px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .diet-option-tab.active {
+    background: var(--gold);
+    color: var(--dark);
+    border-color: var(--gold);
+  }
+  .diet-option-content { display: none; }
+  .diet-option-content.active { display: block; }
+
+  /* ── Diet Food Item ── */
+  .diet-food-item {
+    padding: 8px 14px;
+    border-bottom: 1px solid #1f1f1f;
+  }
+  .diet-food-item:last-of-type { border-bottom: none; }
+  .diet-food-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .diet-food-name { color: var(--white); font-size: 13px; font-weight: 500; }
+  .diet-food-qty { color: var(--gold); font-size: 12px; font-weight: 600; white-space: nowrap; margin-left: 8px; }
+  .diet-food-obs { color: var(--muted); font-size: 11px; font-style: italic; margin-top: 2px; }
+  .diet-food-macros {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .diet-food-macros .fm {
+    font-size: 10px;
+    color: var(--muted);
+    background: #1a1a1a;
+    padding: 2px 5px;
+    border-radius: 3px;
+  }
+  .diet-food-macros .fm-kcal { color: var(--gold-dim); font-weight: 600; }
+
+  /* ── Diet Macro Bar (subtotal) ── */
+  .diet-macro-bar {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: #141414;
+    border-top: 1px solid var(--gold-dim);
+  }
+  .diet-macro-bar .mb {
+    font-size: 11px;
+    color: var(--gray);
+    font-weight: 600;
+  }
+  .diet-macro-bar .mb-kcal { color: var(--gold); }
+
+  .diet-meal-note {
+    padding: 6px 14px;
+    font-size: 11px;
+    color: var(--muted);
+    font-style: italic;
+    background: #141414;
+    border-top: 1px solid #1f1f1f;
+  }
+
+  /* ── Diet Total Card ── */
+  .diet-total-card {
+    background: var(--card);
+    border: 2px solid var(--gold);
+    border-radius: 10px;
+    margin: 16px 12px;
+    overflow: hidden;
+  }
+  .diet-total-title {
+    background: var(--gold);
+    color: var(--dark);
+    font-weight: 700;
+    font-size: 14px;
+    text-align: center;
+    padding: 10px;
+    letter-spacing: 2px;
+  }
+  .diet-total-macros {
+    display: flex;
+    justify-content: space-around;
+    padding: 14px;
+  }
+  .diet-macro { text-align: center; }
+  .diet-macro .macro-value {
+    display: block;
+    color: var(--white);
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .diet-macro .macro-label {
+    display: block;
+    color: var(--muted);
+    font-size: 10px;
+    margin-top: 2px;
+    letter-spacing: 0.5px;
+  }
+  .diet-macro-kcal .macro-value { color: var(--gold); }
+
+  /* ── Diet Orientações ── */
+  .diet-orient {
+    padding: 6px 0;
+    border-bottom: 1px solid #222;
+    font-size: 12px;
+  }
+  .diet-orient:last-child { border-bottom: none; }
+  .diet-orient-cat { color: var(--gold); font-weight: 600; display: block; margin-bottom: 2px; }
+  .diet-orient-text { color: var(--gray); line-height: 1.5; }
 </style>
 </head>
 <body>
 
 <div class="app-header">
   <img src="gh-logo.jpg" alt="Método GH" class="logo">
-  <h1>PROTOCOLO DE TREINO</h1>
+  <h1 id="headerTitle">PROTOCOLO DE TREINO</h1>
   <div class="subtitle">MÉTODO GH</div>
+</div>
+
+<!-- ══ MAIN NAVIGATION (Treino | Dieta) ══ -->
+<div class="main-nav" id="mainNav" style="display:none;">
+  <button class="nav-btn active" id="navTreino" onclick="switchView('treino')">TREINO</button>
+  <button class="nav-btn" id="navDieta" onclick="switchView('dieta')">DIETA</button>
 </div>
 
 <!-- ══ LOADING STATE ══ -->
@@ -542,6 +811,19 @@
   <p><span class="hl">Posição 1 — 4 Apoios:</span> Barriga pendurada. A gravidade puxa tudo pra baixo — luta direta contra ela.</p>
   <p><span class="hl">Posição 2 — Crescimento Máximo:</span> Em pé, braços pro teto, calcanhares no chão. Abdômen super esticado.</p>
   <p>Meta: <span class="hl">3 séries x 15-20 segundos</span></p>
+</div>
+
+<!-- ══ DIET VIEW ══ -->
+<div id="dietaView">
+  <div id="dietLoading" class="loading-screen" style="display:none;">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Carregando dieta...</div>
+  </div>
+  <div id="dietError" class="error-box" style="display:none;">
+    <h3>Dieta não disponível</h3>
+    <p id="dietErrorMsg">Protocolo alimentar ainda não foi adicionado à sua planilha.</p>
+  </div>
+  <div id="dietContent" style="display:none;"></div>
 </div>
 
 <div class="app-footer"><span>MÉTODO GH — @gh.scheuermann</span></div>
@@ -860,6 +1142,267 @@ function toggleHipo() {
 }
 
 // ══════════════════════════════════════════════════════════════
+// ══ SISTEMA DE DIETA ══
+// ══════════════════════════════════════════════════════════════
+let DIET_DATA = null;
+let dietLoaded = false;
+
+async function loadDietFromSheets() {
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('DIETA ATUAL')}&headers=1`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Tab não encontrada');
+    const text = await res.text();
+    const rows = parseCSV(text);
+    if (rows.length < 3) throw new Error('Vazia');
+
+    DIET_DATA = parseDietData(rows);
+    dietLoaded = true;
+    document.getElementById('mainNav').style.display = 'flex';
+    renderDiet();
+  } catch(e) {
+    dietLoaded = false;
+  }
+}
+
+function parseDietData(rows) {
+  const data = {
+    info: {},
+    metas: [],
+    regras: [],
+    supls: {},
+    refeicoes: [],
+    total: { p: 0, c: 0, g: 0, kcal: 0 },
+    orientacoes: [],
+    aerobicos: null
+  };
+
+  let currentRef = null;
+  let currentOp = null;
+
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    const secao = (r[0] || '').toLowerCase().trim();
+
+    switch(secao) {
+      case 'info':
+        data.info = { nome: r[1] || '', kcal: r[2] || '', objetivo: r[3] || '' };
+        break;
+      case 'meta':
+        data.metas.push({ campo: r[1] || '', valor: r[2] || '', detalhe: r[3] || '' });
+        break;
+      case 'regra':
+        data.regras.push({ nome: r[1] || '', valor: r[2] || '', detalhe: r[3] || '' });
+        break;
+      case 'supl': {
+        const timing = r[3] || 'Outros';
+        if (!data.supls[timing]) data.supls[timing] = [];
+        data.supls[timing].push({ nome: r[1] || '', dose: r[2] || '' });
+        break;
+      }
+      case 'ref':
+        currentRef = { nome: r[1] || '', instrucao: r[3] || '', opcoes: [], alimentos: [], macro: null, notas: [] };
+        currentOp = null;
+        data.refeicoes.push(currentRef);
+        break;
+      case 'op':
+        if (currentRef) {
+          currentOp = { nome: r[1] || '', alimentos: [], macro: null };
+          currentRef.opcoes.push(currentOp);
+        }
+        break;
+      case 'alimento': {
+        const food = {
+          nome: r[1] || '', qtd: r[2] || '', obs: r[3] || '',
+          p: parseFloat(r[4]) || 0, c: parseFloat(r[5]) || 0,
+          g: parseFloat(r[6]) || 0, kcal: parseFloat(r[7]) || 0
+        };
+        if (currentOp) currentOp.alimentos.push(food);
+        else if (currentRef) currentRef.alimentos.push(food);
+        break;
+      }
+      case 'macro': {
+        const macro = {
+          p: parseFloat(r[4]) || 0, c: parseFloat(r[5]) || 0,
+          g: parseFloat(r[6]) || 0, kcal: parseFloat(r[7]) || 0
+        };
+        if (currentOp) currentOp.macro = macro;
+        else if (currentRef) currentRef.macro = macro;
+        break;
+      }
+      case 'total':
+        data.total = {
+          p: parseFloat(r[4]) || 0, c: parseFloat(r[5]) || 0,
+          g: parseFloat(r[6]) || 0, kcal: parseFloat(r[7]) || 0
+        };
+        break;
+      case 'orient':
+        data.orientacoes.push({ categoria: r[1] || '', texto: r[3] || r[2] || '' });
+        break;
+      case 'aerob':
+        data.aerobicos = { freq: r[1] || '', duracao: r[2] || '', obs: r[3] || '' };
+        break;
+      case 'nota':
+        if (currentRef) currentRef.notas.push(r[1] || r[3] || '');
+        break;
+    }
+  }
+  return data;
+}
+
+function renderDiet() {
+  if (!DIET_DATA) return;
+  const d = DIET_DATA;
+  const container = document.getElementById('dietContent');
+  let html = '';
+
+  // Info card
+  html += `<div class="diet-info-card">`;
+  if (d.info.kcal) html += `<div class="diet-info-row"><span class="diet-info-label">Calorias:</span><span class="diet-info-value">${d.info.kcal}</span></div>`;
+  if (d.info.objetivo) html += `<div class="diet-info-row"><span class="diet-info-label">Objetivo:</span><span class="diet-info-value">${d.info.objetivo}</span></div>`;
+  d.metas.forEach(m => {
+    html += `<div class="diet-info-row"><span class="diet-info-label">${m.campo}:</span><span class="diet-info-value">${m.valor}${m.detalhe ? ' — ' + m.detalhe : ''}</span></div>`;
+  });
+  html += `</div>`;
+
+  // Regras gerais
+  if (d.regras.length > 0) {
+    html += `<div class="diet-section-toggle" onclick="toggleDietSection('regras')">Regras Gerais <span id="regrasArrow">&#9660;</span></div>`;
+    html += `<div class="diet-section-content" id="regrasContent">`;
+    d.regras.forEach(r => {
+      html += `<div class="diet-rule"><span class="diet-rule-name">${r.nome}:</span><span class="diet-rule-value">${r.valor || ''}${r.detalhe ? ' — ' + r.detalhe : ''}</span></div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Suplementação
+  const suplTimings = Object.keys(d.supls);
+  if (suplTimings.length > 0) {
+    html += `<div class="diet-section-toggle" onclick="toggleDietSection('supls')">Suplementação <span id="suplsArrow">&#9660;</span></div>`;
+    html += `<div class="diet-section-content" id="suplsContent">`;
+    suplTimings.forEach(timing => {
+      html += `<div class="diet-supl-group"><div class="diet-supl-timing">${timing}</div>`;
+      d.supls[timing].forEach(s => {
+        html += `<div class="diet-supl-item"><span class="diet-supl-name">${s.nome}</span><span class="diet-supl-dose">${s.dose}</span></div>`;
+      });
+      html += `</div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Refeições
+  d.refeicoes.forEach((ref, ri) => {
+    const hasOps = ref.opcoes.length > 0;
+    html += `<div class="diet-meal-card">`;
+    html += `<div class="diet-meal-header">${ref.nome}</div>`;
+    if (ref.instrucao) html += `<div class="diet-meal-instruction">${ref.instrucao}</div>`;
+
+    if (hasOps) {
+      html += `<div class="diet-option-tabs" id="optTabs${ri}">`;
+      ref.opcoes.forEach((op, oi) => {
+        html += `<button class="diet-option-tab ${oi === 0 ? 'active' : ''}" onclick="selectDietOption(${ri},${oi})">${op.nome}</button>`;
+      });
+      html += `</div>`;
+      ref.opcoes.forEach((op, oi) => {
+        html += `<div class="diet-option-content ${oi === 0 ? 'active' : ''}" id="opt${ri}_${oi}">`;
+        op.alimentos.forEach(a => { html += renderFoodItem(a); });
+        if (op.macro) html += renderMacroBar(op.macro);
+        html += `</div>`;
+      });
+    } else {
+      ref.alimentos.forEach(a => { html += renderFoodItem(a); });
+      if (ref.macro) html += renderMacroBar(ref.macro);
+    }
+
+    ref.notas.forEach(n => {
+      if (n) html += `<div class="diet-meal-note">${n}</div>`;
+    });
+    html += `</div>`;
+  });
+
+  // Total diário
+  if (d.total.kcal) {
+    html += `<div class="diet-total-card">
+      <div class="diet-total-title">TOTAL DIÁRIO</div>
+      <div class="diet-total-macros">
+        <div class="diet-macro"><span class="macro-value">${d.total.p.toFixed(0)}g</span><span class="macro-label">Proteína</span></div>
+        <div class="diet-macro"><span class="macro-value">${d.total.c.toFixed(0)}g</span><span class="macro-label">Carboidrato</span></div>
+        <div class="diet-macro"><span class="macro-value">${d.total.g.toFixed(0)}g</span><span class="macro-label">Gordura</span></div>
+        <div class="diet-macro diet-macro-kcal"><span class="macro-value">${d.total.kcal.toFixed(0)}</span><span class="macro-label">kcal</span></div>
+      </div>
+    </div>`;
+  }
+
+  // Orientações
+  if (d.orientacoes.length > 0 || d.aerobicos) {
+    html += `<div class="diet-section-toggle" onclick="toggleDietSection('orient')">Orientações <span id="orientArrow">&#9660;</span></div>`;
+    html += `<div class="diet-section-content" id="orientContent">`;
+    if (d.aerobicos) {
+      html += `<div class="diet-orient"><span class="diet-orient-cat">Aeróbicos</span><span class="diet-orient-text">${d.aerobicos.freq} — ${d.aerobicos.duracao}${d.aerobicos.obs ? ' — ' + d.aerobicos.obs : ''}</span></div>`;
+    }
+    d.orientacoes.forEach(o => {
+      html += `<div class="diet-orient">${o.categoria ? `<span class="diet-orient-cat">${o.categoria}</span>` : ''}<span class="diet-orient-text">${o.texto}</span></div>`;
+    });
+    html += `</div>`;
+  }
+
+  container.innerHTML = html;
+  container.style.display = 'block';
+}
+
+function renderFoodItem(a) {
+  return `<div class="diet-food-item">
+    <div class="diet-food-main"><span class="diet-food-name">${a.nome}</span><span class="diet-food-qty">${a.qtd}</span></div>
+    ${a.obs ? `<div class="diet-food-obs">${a.obs}</div>` : ''}
+    <div class="diet-food-macros">
+      <span class="fm">P:${a.p.toFixed(0)}g</span>
+      <span class="fm">C:${a.c.toFixed(0)}g</span>
+      <span class="fm">G:${a.g.toFixed(0)}g</span>
+      <span class="fm fm-kcal">${a.kcal.toFixed(0)}kcal</span>
+    </div>
+  </div>`;
+}
+
+function renderMacroBar(m) {
+  return `<div class="diet-macro-bar">
+    <span class="mb">P: ${m.p.toFixed(0)}g</span>
+    <span class="mb">C: ${m.c.toFixed(0)}g</span>
+    <span class="mb">G: ${m.g.toFixed(0)}g</span>
+    <span class="mb mb-kcal">${m.kcal.toFixed(0)} kcal</span>
+  </div>`;
+}
+
+function switchView(view) {
+  if (view === 'dieta') {
+    document.body.classList.add('view-dieta');
+  } else {
+    document.body.classList.remove('view-dieta');
+  }
+  document.getElementById('navTreino').classList.toggle('active', view === 'treino');
+  document.getElementById('navDieta').classList.toggle('active', view === 'dieta');
+  document.getElementById('headerTitle').textContent = view === 'dieta' ? 'PROTOCOLO ALIMENTAR' : 'PROTOCOLO DE TREINO';
+
+  if (view === 'dieta' && !dietLoaded) {
+    document.getElementById('dietError').style.display = 'block';
+    document.getElementById('dietContent').style.display = 'none';
+  }
+}
+
+function selectDietOption(refIdx, opIdx) {
+  const tabs = document.querySelectorAll(`#optTabs${refIdx} .diet-option-tab`);
+  tabs.forEach((t, i) => t.classList.toggle('active', i === opIdx));
+  const allOpts = document.querySelectorAll(`[id^="opt${refIdx}_"]`);
+  allOpts.forEach((c, i) => c.classList.toggle('active', i === opIdx));
+}
+
+function toggleDietSection(id) {
+  const content = document.getElementById(id + 'Content');
+  const arrow = document.getElementById(id + 'Arrow');
+  content.classList.toggle('show');
+  arrow.innerHTML = content.classList.contains('show') ? '&#9650;' : '&#9660;';
+}
+
+// ══════════════════════════════════════════════════════════════
 // ══ ADMIN — Painel do Treinador (gerar links) ══
 // ══════════════════════════════════════════════════════════════
 function generateLink() {
@@ -894,8 +1437,8 @@ function copyLink() {
 // ══ INICIALIZAÇÃO ══
 // ══════════════════════════════════════════════════════════════
 if (SHEET_ID && TAB_NAME) {
-  // Modo aluno — carregar treino da planilha
-  loadFromSheets();
+  // Modo aluno — carregar treino + dieta da planilha
+  loadFromSheets().then(() => loadDietFromSheets());
 } else {
   // Modo treinador — mostrar painel admin
   document.getElementById('adminPanel').style.display = 'block';
@@ -919,8 +1462,10 @@ if (SHEET_ID && TAB_NAME) {
     theme_color: '#0D0D0D',
     orientation: 'portrait',
     icons: [
-      { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
-      { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+      { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: 'icon-192-maskable.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+      { src: 'icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
     ]
   };
   const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
