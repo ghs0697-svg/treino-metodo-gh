@@ -38,7 +38,8 @@
     border-bottom: 2px solid var(--gold);
     background: linear-gradient(180deg, #161208 0%, var(--dark) 100%);
   }
-  .app-header h1 { color: var(--gold); font-size: 18px; letter-spacing: 3px; font-weight: 700; }
+  .app-header img.logo { width: 60px; height: auto; margin-bottom: 6px; }
+  .app-header h1 { color: var(--gold); font-size: 18px; letter-spacing: 3px; font-weight: 700; margin-top: 0; }
   .app-header .subtitle { color: var(--muted); font-size: 12px; margin-top: 3px; letter-spacing: 1px; }
 
   /* ── Student info ── */
@@ -410,6 +411,7 @@
 <body>
 
 <div class="app-header">
+  <img src="gh-logo.jpg" alt="Método GH" class="logo">
   <h1>PROTOCOLO DE TREINO</h1>
   <div class="subtitle">MÉTODO GH</div>
 </div>
@@ -552,15 +554,19 @@ const params = new URLSearchParams(window.location.search);
 let SHEET_ID = params.get('sheet');
 let TAB_NAME = params.get('tab');
 
-// PWA: se abriu sem parâmetros, recuperar do localStorage (instalado na tela inicial)
+// PWA: se abriu sem parâmetros mas com flag de instalação PWA do aluno, recuperar
+// Só recupera se NÃO estiver na raiz limpa (treinador) — detecta via referrer ou flag
 if (!SHEET_ID && !TAB_NAME) {
-  const saved = localStorage.getItem('gh_pwa_params');
-  if (saved) {
-    try {
-      const p = JSON.parse(saved);
-      SHEET_ID = p.sheet;
-      TAB_NAME = p.tab;
-    } catch(e) {}
+  const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  if (isPWA) {
+    const saved = localStorage.getItem('gh_pwa_params');
+    if (saved) {
+      try {
+        const p = JSON.parse(saved);
+        SHEET_ID = p.sheet;
+        TAB_NAME = p.tab;
+      } catch(e) {}
+    }
   }
 }
 

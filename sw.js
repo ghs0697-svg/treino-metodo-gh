@@ -1,8 +1,9 @@
-const CACHE_NAME = 'metodo-gh-v1';
+const CACHE_NAME = 'metodo-gh-v2';
 const ASSETS = [
   './',
   './index.html',
-  './manifest.json'
+  './manifest.json',
+  './gh-logo.jpg'
 ];
 
 self.addEventListener('install', e => {
