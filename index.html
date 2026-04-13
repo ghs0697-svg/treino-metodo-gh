@@ -439,9 +439,13 @@
   body.view-dieta #instrToggle,
   body.view-dieta #instructionsContent,
   body.view-dieta #hipoToggle,
-  body.view-dieta #hipoContent { display: none !important; }
+  body.view-dieta #hipoContent,
+  body.view-dieta #errorBox,
+  body.view-dieta #loadingMsg { display: none !important; }
   body:not(.view-dieta) #dietaView { display: none; }
   body.view-dieta #dietaView { display: block; }
+  body.view-dieta .nav-btn#navDieta { color: var(--gold); border-bottom-color: var(--gold); }
+  body.view-dieta .nav-btn#navTreino { color: var(--gray); border-bottom-color: transparent; }
 
   /* ── Diet Info Card ── */
   .diet-info-card {
@@ -1375,17 +1379,14 @@ function renderMacroBar(m) {
 function switchView(view) {
   if (view === 'dieta') {
     document.body.classList.add('view-dieta');
+    if (!dietLoaded) loadDietFromSheets();
   } else {
     document.body.classList.remove('view-dieta');
   }
   document.getElementById('navTreino').classList.toggle('active', view === 'treino');
   document.getElementById('navDieta').classList.toggle('active', view === 'dieta');
   document.getElementById('headerTitle').textContent = view === 'dieta' ? 'PROTOCOLO ALIMENTAR' : 'PROTOCOLO DE TREINO';
-
-  if (view === 'dieta' && !dietLoaded) {
-    document.getElementById('dietError').style.display = 'block';
-    document.getElementById('dietContent').style.display = 'none';
-  }
+  window.scrollTo(0, 0);
 }
 
 function selectDietOption(refIdx, opIdx) {
