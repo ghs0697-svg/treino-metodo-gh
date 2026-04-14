@@ -2179,7 +2179,10 @@ async function loadTreinoTemplate(name) {
     }
     const key = 'TREINO_' + name + '.csv';
     if (!treinoTemplateCache[key]) { alert('Template nao encontrado: ' + key); return; }
-    const csv = atob(treinoTemplateCache[key]);
+    const bin = atob(treinoTemplateCache[key]);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const csv = new TextDecoder('utf-8').decode(bytes);
     editorTreinoData = parseCSV(csv);
     // Pad all rows to 8 columns
     editorTreinoData = editorTreinoData.map(r => {
