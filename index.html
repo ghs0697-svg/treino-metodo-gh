@@ -1437,6 +1437,17 @@ async function loadDietFromSheets() {
   }
 }
 
+function pf(v) {
+  if (!v || v === '') return 0;
+  return parseFloat(String(v).replace(',', '.')) || 0;
+}
+
+function sumMacros(alimentos) {
+  const m = { p: 0, c: 0, g: 0, kcal: 0 };
+  alimentos.forEach(a => { m.p += a.p; m.c += a.c; m.g += a.g; m.kcal += a.kcal; });
+  return m;
+}
+
 function parseDietData(rows) {
   const data = {
     info: {},
@@ -1487,27 +1498,14 @@ function parseDietData(rows) {
       case 'alimento': {
         const food = {
           nome: r[1] || '', qtd: r[2] || '', obs: r[3] || '',
-          p: parseFloat(r[4]) || 0, c: parseFloat(r[5]) || 0,
-          g: parseFloat(r[6]) || 0, kcal: parseFloat(r[7]) || 0
+          p: pf(r[4]), c: pf(r[5]), g: pf(r[6]), kcal: pf(r[7])
         };
         if (currentOp) currentOp.alimentos.push(food);
         else if (currentRef) currentRef.alimentos.push(food);
         break;
       }
-      case 'macro': {
-        const macro = {
-          p: parseFloat(r[4]) || 0, c: parseFloat(r[5]) || 0,
-          g: parseFloat(r[6]) || 0, kcal: parseFloat(r[7]) || 0
-        };
-        if (currentOp) currentOp.macro = macro;
-        else if (currentRef) currentRef.macro = macro;
-        break;
-      }
+      case 'macro':
       case 'total':
-        data.total = {
-          p: parseFloat(r[4]) || 0, c: parseFloat(r[5]) || 0,
-          g: parseFloat(r[6]) || 0, kcal: parseFloat(r[7]) || 0
-        };
         break;
       case 'orient':
         data.orientacoes.push({ categoria: r[1] || '', texto: r[3] || r[2] || '' });
@@ -1523,6 +1521,23 @@ function parseDietData(rows) {
         break;
     }
   }
+
+  // Auto-calculate all macros from food items
+  const total = { p: 0, c: 0, g: 0, kcal: 0 };
+  data.refeicoes.forEach((ref, ri) => {
+    if (ref.opcoes.length > 0) {
+      ref.opcoes.forEach(op => { op.macro = sumMacros(op.alimentos); });
+      // Use first option for daily total
+      const first = ref.opcoes[0].macro;
+      total.p += first.p; total.c += first.c; total.g += first.g; total.kcal += first.kcal;
+      ref.macro = null;
+    } else {
+      ref.macro = sumMacros(ref.alimentos);
+      total.p += ref.macro.p; total.c += ref.macro.c; total.g += ref.macro.g; total.kcal += ref.macro.kcal;
+    }
+  });
+  data.total = total;
+
   return data;
 }
 
