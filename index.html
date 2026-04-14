@@ -1356,7 +1356,7 @@ async function loadFromSheets() {
   document.getElementById('loadingScreen').style.display = 'flex';
 
   try {
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}&headers=1`;
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}&headers=0`;
     const res = await fetch(url);
 
     if (!res.ok) throw new Error('Não foi possível acessar a planilha. Verifique se ela está compartilhada (qualquer pessoa com link = leitor).');
@@ -1591,7 +1591,7 @@ var dietLoaded = false;
 
 async function loadDietFromSheets() {
   try {
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('DIETA')}&headers=1`;
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('DIETA')}&headers=0`;
     const res = await fetch(url);
     if (!res.ok) throw new Error('Tab não encontrada');
     const text = await res.text();
