@@ -955,7 +955,7 @@
 
   <!-- ── Tab: Editar Dieta ── -->
   <div id="adminTabDieta" style="display:none;">
-    <div class="ed-section-label">MODELO BASE</div>
+    <div class="ed-section-label">NOVO TEMPLATE</div>
     <div class="editor-toolbar">
       <button class="ed-tpl-btn" data-key="1.8K" onclick="loadDietTemplate('1.8K')">1.8K</button>
       <button class="ed-tpl-btn" data-key="2K" onclick="loadDietTemplate('2K')">2K</button>
@@ -963,21 +963,24 @@
       <button class="ed-tpl-btn" data-key="2.7K" onclick="loadDietTemplate('2.7K')">2.7K</button>
       <button class="ed-tpl-btn" data-key="3K" onclick="loadDietTemplate('3K')">3K</button>
     </div>
+    <div class="editor-toolbar">
+      <button class="ed-tpl-btn" style="border-color:#4CAF50;color:#4CAF50;" onclick="loadFromSheet()">CARREGAR DA PLANILHA</button>
+    </div>
 
     <div id="editorTable"></div>
 
     <div class="ed-publish-bar" id="edPublishBar" style="display:none;">
-      <button class="admin-btn" id="publishDietBtn" onclick="publishDiet()">PUBLICAR NA PLANILHA</button>
+      <button class="admin-btn" id="copyDietBtn" onclick="copyDietCSV()">COPIAR CSV</button>
       <span class="ed-status" id="edStatus"></span>
     </div>
 
-    <div class="ed-script-setup" id="edScriptSetup">
-      <strong style="color:var(--gold);">Configurar Backend (1x)</strong><br><br>
-      1. Abra <a href="https://script.google.com" target="_blank" style="color:var(--gold)">script.google.com</a> e crie um novo projeto<br>
-      2. Cole o codigo do arquivo <code>editorBackend.gs</code><br>
-      3. Implemente > Nova Implantacao > App da Web > Qualquer pessoa > Implantar<br>
-      4. Cole a URL abaixo:<br>
-      <input type="text" class="ed-script-url-input" id="edScriptUrl" placeholder="https://script.google.com/macros/s/.../exec" oninput="saveScriptUrl(this.value)">
+    <div id="edCopyHelp" style="display:none;" class="admin-help">
+      <strong>Como colar na planilha:</strong><br>
+      1. Abra a planilha do aluno no Google Sheets<br>
+      2. Va na aba "DIETA ATUAL" (ou crie ela)<br>
+      3. Selecione a celula A1<br>
+      4. Ctrl+V (colar)<br>
+      5. Menu "Metodo GH" > Formatar Dieta
     </div>
   </div>
 
@@ -1919,47 +1922,63 @@ function cycleType(idx) {
   renderEditor();
 }
 
-async function publishDiet() {
-  const sheetId = document.getElementById('adminSheetId').value.trim();
-  const scriptUrl = getScriptUrl();
-
-  if (!sheetId) { alert('Preencha o ID da planilha do aluno.'); return; }
-  if (!scriptUrl) { alert('Configure a URL do Apps Script primeiro (abaixo).'); return; }
+function copyDietCSV() {
   if (editorData.length < 2) { alert('Carregue um template primeiro.'); return; }
 
-  const btn = document.getElementById('publishDietBtn');
-  const status = document.getElementById('edStatus');
-  btn.textContent = 'Publicando...';
-  btn.disabled = true;
-  status.style.display = 'none';
+  // Convert editorData to TSV (tab-separated for Google Sheets paste)
+  const tsv = editorData.map(row =>
+    row.map(cell => String(cell || '').replace(/\t/g, ' ')).join('\t')
+  ).join('\n');
+
+  navigator.clipboard.writeText(tsv).then(() => {
+    const status = document.getElementById('edStatus');
+    status.textContent = 'CSV copiado! Cole na planilha (Ctrl+V em A1)';
+    status.style.display = 'inline';
+    document.getElementById('edCopyHelp').style.display = 'block';
+    setTimeout(() => status.style.display = 'none', 5000);
+  }).catch(() => {
+    // Fallback: textarea
+    const ta = document.createElement('textarea');
+    ta.value = tsv;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    alert('CSV copiado!');
+  });
+}
+
+async function loadFromSheet() {
+  const sheetId = document.getElementById('adminSheetId').value.trim();
+  if (!sheetId) { alert('Preencha o ID da planilha do aluno primeiro.'); return; }
+
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=DIETA%20ATUAL`;
 
   try {
-    const resp = await fetch(scriptUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({
-        action: 'write',
-        sheetId: sheetId,
-        tab: 'DIETA ATUAL',
-        data: editorData
-      })
-    });
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('Planilha nao encontrada ou nao publicada');
     const text = await resp.text();
-    let result;
-    try { result = JSON.parse(text); } catch(e) { result = { ok: true }; }
+    const rows = parseCSV(text);
+    if (rows.length < 2) throw new Error('Planilha vazia');
 
-    if (result.error) {
-      alert('Erro: ' + result.error);
-    } else {
-      status.textContent = 'Publicado com sucesso!';
-      status.style.display = 'inline';
-      setTimeout(() => status.style.display = 'none', 4000);
-    }
+    // Normalize to 4 columns
+    editorData = rows.map(r => {
+      while (r.length < 4) r.push('');
+      return r.slice(0, 4);
+    });
+
+    // Clear template button highlights
+    document.querySelectorAll('.ed-tpl-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('edPublishBar').style.display = 'flex';
+    renderEditor();
+
+    const nome = editorData[1] ? editorData[1][1] : '';
+    const status = document.getElementById('edStatus');
+    status.textContent = 'Dados de ' + (nome || 'aluno') + ' carregados!';
+    status.style.display = 'inline';
+    setTimeout(() => status.style.display = 'none', 4000);
   } catch(e) {
-    alert('Erro de conexão: ' + e.message);
-  } finally {
-    btn.textContent = 'PUBLICAR NA PLANILHA';
-    btn.disabled = false;
+    alert('Erro ao carregar: ' + e.message + '\n\nVerifique se a planilha esta publicada na web.');
   }
 }
 
