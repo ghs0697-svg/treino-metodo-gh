@@ -732,6 +732,135 @@
   .diet-orient:last-child { border-bottom: none; }
   .diet-orient-cat { color: var(--gold); font-weight: 600; display: block; margin-bottom: 2px; }
   .diet-orient-text { color: var(--gray); line-height: 1.5; }
+  /* ── Install Guide Modal ── */
+  .install-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--gold);
+    color: var(--dark);
+    border: none;
+    font-size: 22px;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 999;
+    box-shadow: 0 4px 12px rgba(212,175,55,0.4);
+    display: none;
+  }
+  .install-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 1000;
+    overflow-y: auto;
+    padding: 20px 16px 40px;
+  }
+  .install-modal.active { display: block; }
+  .install-close {
+    position: sticky;
+    top: 0;
+    text-align: right;
+    padding: 8px 0;
+    z-index: 1001;
+  }
+  .install-close button {
+    background: var(--card);
+    border: 1px solid var(--gold-dim);
+    color: var(--gold);
+    font-size: 16px;
+    padding: 6px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .install-section {
+    max-width: 500px;
+    margin: 0 auto 28px;
+    text-align: center;
+  }
+  .install-section h2 {
+    color: var(--gold);
+    font-size: 18px;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+  }
+  .install-section h3 {
+    color: var(--gold);
+    font-size: 15px;
+    margin-bottom: 12px;
+  }
+  .install-section p {
+    color: var(--gray);
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 8px;
+  }
+  .install-steps {
+    text-align: left;
+    margin: 12px auto;
+    max-width: 400px;
+  }
+  .install-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+    background: var(--card);
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 14px;
+  }
+  .install-step .step-num {
+    background: var(--gold);
+    color: var(--dark);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .install-step .step-text {
+    color: var(--gray);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .install-step .step-text strong {
+    color: var(--white);
+  }
+  .install-divider {
+    border: none;
+    border-top: 1px solid var(--gold-dim);
+    margin: 24px auto;
+    max-width: 200px;
+  }
+  .install-feature {
+    background: var(--card);
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 12px;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: left;
+  }
+  .install-feature strong {
+    color: var(--gold);
+    font-size: 14px;
+  }
+  .install-feature span {
+    color: var(--muted);
+    font-size: 13px;
+    display: block;
+    margin-top: 4px;
+  }
 </style>
 </head>
 <body>
@@ -883,6 +1012,90 @@
   <div id="dietContent" style="display:none;"></div>
 </div>
 
+
+<!-- ══ INSTALL GUIDE BUTTON ══ -->
+<button class="install-btn" id="installBtn" onclick="toggleInstallGuide(true)" title="Como instalar o app">?</button>
+
+<!-- ══ INSTALL GUIDE MODAL ══ -->
+<div class="install-modal" id="installModal">
+  <div class="install-close"><button onclick="toggleInstallGuide(false)">FECHAR</button></div>
+
+  <div class="install-section">
+    <h2>INSTALAR NA TELA INICIAL</h2>
+    <p>Acesse seu treino e dieta com um toque, direto da tela do celular.</p>
+  </div>
+
+  <hr class="install-divider">
+
+  <div class="install-section">
+    <h3>iPhone (Safari)</h3>
+    <div class="install-steps">
+      <div class="install-step">
+        <div class="step-num">1</div>
+        <div class="step-text">Abra o link do treino exclusivamente no <strong>Safari</strong>.</div>
+      </div>
+      <div class="install-step">
+        <div class="step-num">2</div>
+        <div class="step-text">Toque no botao de <strong>Compartilhar</strong> na barra inferior.</div>
+      </div>
+      <div class="install-step">
+        <div class="step-num">3</div>
+        <div class="step-text">Role o menu e toque em <strong>"Adicionar a Tela de Inicio"</strong>.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="install-divider">
+
+  <div class="install-section">
+    <h3>Android (Chrome)</h3>
+    <div class="install-steps">
+      <div class="install-step">
+        <div class="step-num">1</div>
+        <div class="step-text">Abra o link do treino no <strong>Google Chrome</strong>.</div>
+      </div>
+      <div class="install-step">
+        <div class="step-num">2</div>
+        <div class="step-text">O Chrome deve mostrar um aviso automaticamente. Se nao aparecer, toque nos <strong>3 pontinhos</strong> no canto superior.</div>
+      </div>
+      <div class="install-step">
+        <div class="step-num">3</div>
+        <div class="step-text">Toque em <strong>"Instalar app"</strong> ou <strong>"Adicionar a tela inicial"</strong>.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="install-divider">
+
+  <div class="install-section">
+    <h3>Conhecendo seu Protocolo</h3>
+    <div class="install-feature">
+      <strong>Meta Semanal</strong>
+      <span>O plano macro sempre visivel no topo.</span>
+    </div>
+    <div class="install-feature">
+      <strong>Navegacao de Ciclo</strong>
+      <span>Alterne entre os dias da sua divisao.</span>
+    </div>
+    <div class="install-feature">
+      <strong>Blocos de Acao</strong>
+      <span>Seu protocolo do dia, organizado por ordem exata de execucao.</span>
+    </div>
+  </div>
+
+  <hr class="install-divider">
+
+  <div class="install-section">
+    <h3>Registro de Carga</h3>
+    <p>Anote a carga da <strong>ultima serie</strong> (a serie de falha total). Essa sera sua meta exata para quebrar no proximo treino.</p>
+  </div>
+
+  <hr class="install-divider">
+
+  <div class="install-section">
+    <p style="color:var(--gold);font-size:15px;font-weight:600;">Toque no icone dourado. Bom treino.</p>
+  </div>
+</div>
 
 <div class="app-footer"><span>MÉTODO GH — @gh.scheuermann</span></div>
 
@@ -1061,6 +1274,7 @@ async function loadFromSheets() {
     document.getElementById('weekSelector').style.display = 'flex';
     document.getElementById('instrToggle').style.display = 'flex';
     document.getElementById('hipoToggle').style.display = 'flex';
+    document.getElementById('installBtn').style.display = 'block';
 
     // Show hipo level if defined in sheet
     if (hipoData) {
@@ -1469,6 +1683,12 @@ function renderMacroBar(m) {
     <span class="mb">G: ${m.g.toFixed(0)}g</span>
     <span class="mb mb-kcal">${m.kcal.toFixed(0)} kcal</span>
   </div>`;
+}
+
+function toggleInstallGuide(show) {
+  document.getElementById('installModal').classList.toggle('active', show);
+  document.getElementById('installBtn').style.display = show ? 'none' : 'block';
+  if (show) window.scrollTo(0, 0);
 }
 
 function switchView(view) {
