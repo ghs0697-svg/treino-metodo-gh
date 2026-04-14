@@ -1368,13 +1368,15 @@ async function loadFromSheets() {
 
     // Row 0 = header (skip)
     // Row with empty col A or "info" = student info
-    // Rest = exercises
+    // gviz strips non-numeric col A values (info/restrict/link become "")
+    // so we detect by position: first empty-A row = info, rest = skip until exercises
     const days = {};
     let studentName = params.get('nome') || TAB_NAME;
     let studentFreq = params.get('freq') || '';
     let studentObj = params.get('obj') || '';
     let studentDur = params.get('dur') || `${TOTAL_WEEKS} semanas`;
     let hipoData = null;
+    let infoFound = false;
 
     for (let i = 1; i < rows.length; i++) {
       const r = rows[i];
@@ -1389,12 +1391,19 @@ async function loadFromSheets() {
         continue;
       }
 
-      // Info row: col A is empty or "info"
-      if ((r[0] === '' || r[0].toLowerCase() === 'info') && isNaN(parseInt(r[0])) && (r[1] || r[2] || r[3] || r[4])) {
+      // Info row: col A is empty or "info" — only accept the FIRST match
+      // (gviz strips "restrict" from col A too, so without this flag restrict overwrites info)
+      if (!infoFound && (r[0] === '' || r[0].toLowerCase() === 'info') && isNaN(parseInt(r[0])) && (r[1] || r[2] || r[3] || r[4])) {
         studentName = r[1] || studentName;
         studentFreq = r[2] || studentFreq;
         studentObj = r[3] || studentObj;
         studentDur = r[4] || studentDur;
+        infoFound = true;
+        continue;
+      }
+
+      // Skip restrict row (col A stripped by gviz, not a link, not an exercise)
+      if (infoFound && r[0] === '' && isNaN(parseInt(r[0])) && !(r[1] && r[1].toString().startsWith('http'))) {
         continue;
       }
 
