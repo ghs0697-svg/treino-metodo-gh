@@ -647,35 +647,6 @@
   .diet-food-name { color: var(--white); font-size: 13px; font-weight: 500; }
   .diet-food-qty { color: var(--gold); font-size: 12px; font-weight: 600; white-space: nowrap; margin-left: 8px; }
   .diet-food-obs { color: var(--muted); font-size: 11px; font-style: italic; margin-top: 2px; }
-  .diet-food-macros {
-    display: flex;
-    gap: 6px;
-    margin-top: 4px;
-  }
-  .diet-food-macros .fm {
-    font-size: 10px;
-    color: var(--muted);
-    background: #1a1a1a;
-    padding: 2px 5px;
-    border-radius: 3px;
-  }
-  .diet-food-macros .fm-kcal { color: var(--gold-dim); font-weight: 600; }
-
-  /* ── Diet Macro Bar (subtotal) ── */
-  .diet-macro-bar {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px 14px;
-    background: #141414;
-    border-top: 1px solid var(--gold-dim);
-  }
-  .diet-macro-bar .mb {
-    font-size: 11px;
-    color: var(--gray);
-    font-weight: 600;
-  }
-  .diet-macro-bar .mb-kcal { color: var(--gold); }
-
   .diet-meal-note {
     padding: 6px 14px;
     font-size: 11px;
@@ -686,43 +657,18 @@
   }
 
   /* ── Diet Total Card ── */
-  .diet-total-card {
-    background: var(--card);
-    border: 2px solid var(--gold);
-    border-radius: 10px;
-    margin: 16px 12px;
-    overflow: hidden;
-  }
-  .diet-total-title {
-    background: var(--gold);
-    color: var(--dark);
+  .diet-cycle-header {
+    background: linear-gradient(90deg, var(--gold-dim) 0%, transparent 100%);
+    color: var(--gold);
     font-weight: 700;
-    font-size: 14px;
-    text-align: center;
-    padding: 10px;
+    font-size: 16px;
     letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 12px 16px;
+    margin: 20px 12px 4px;
+    border-left: 4px solid var(--gold);
+    border-radius: 4px;
   }
-  .diet-total-macros {
-    display: flex;
-    justify-content: space-around;
-    padding: 14px;
-  }
-  .diet-macro { text-align: center; }
-  .diet-macro .macro-value {
-    display: block;
-    color: var(--white);
-    font-size: 18px;
-    font-weight: 700;
-  }
-  .diet-macro .macro-label {
-    display: block;
-    color: var(--muted);
-    font-size: 10px;
-    margin-top: 2px;
-    letter-spacing: 0.5px;
-  }
-  .diet-macro-kcal .macro-value { color: var(--gold); }
-
   /* ── Diet Orientações ── */
   .diet-orient {
     padding: 6px 0;
@@ -1437,32 +1383,22 @@ async function loadDietFromSheets() {
   }
 }
 
-function pf(v) {
-  if (!v || v === '') return 0;
-  return parseFloat(String(v).replace(',', '.')) || 0;
-}
-
-function sumMacros(alimentos) {
-  const m = { p: 0, c: 0, g: 0, kcal: 0 };
-  alimentos.forEach(a => { m.p += a.p; m.c += a.c; m.g += a.g; m.kcal += a.kcal; });
-  return m;
-}
-
 function parseDietData(rows) {
   const data = {
     info: {},
     metas: [],
     regras: [],
     supls: {},
-    refeicoes: [],
-    total: { p: 0, c: 0, g: 0, kcal: 0 },
+    ciclos: [],
     orientacoes: [],
     aerobicos: null,
     protocolos: []
   };
 
+  let currentCycle = { nome: null, refeicoes: [], notas: [] };
   let currentRef = null;
   let currentOp = null;
+  let hasCiclo = false;
 
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];
@@ -1470,6 +1406,7 @@ function parseDietData(rows) {
 
     switch(secao) {
       case 'info':
+      case 'aluno':
         data.info = { nome: r[1] || '', kcal: r[2] || '', objetivo: r[3] || '' };
         break;
       case 'meta':
@@ -1484,22 +1421,26 @@ function parseDietData(rows) {
         data.supls[timing].push({ nome: r[1] || '', dose: r[2] || '' });
         break;
       }
-      case 'ref':
-        currentRef = { nome: r[1] || '', instrucao: r[3] || '', opcoes: [], alimentos: [], macro: null, notas: [] };
+      case 'ciclo':
+        hasCiclo = true;
+        if (currentCycle.refeicoes.length > 0) data.ciclos.push(currentCycle);
+        currentCycle = { nome: r[1] || '', refeicoes: [], notas: [] };
+        currentRef = null;
         currentOp = null;
-        data.refeicoes.push(currentRef);
+        break;
+      case 'ref':
+        currentRef = { nome: r[1] || '', instrucao: r[3] || '', opcoes: [], alimentos: [], notas: [] };
+        currentOp = null;
+        currentCycle.refeicoes.push(currentRef);
         break;
       case 'op':
         if (currentRef) {
-          currentOp = { nome: r[1] || '', alimentos: [], macro: null };
+          currentOp = { nome: r[1] || '', alimentos: [] };
           currentRef.opcoes.push(currentOp);
         }
         break;
       case 'alimento': {
-        const food = {
-          nome: r[1] || '', qtd: r[2] || '', obs: r[3] || '',
-          p: pf(r[4]), c: pf(r[5]), g: pf(r[6]), kcal: pf(r[7])
-        };
+        const food = { nome: r[1] || '', qtd: r[2] || '', obs: r[3] || '' };
         if (currentOp) currentOp.alimentos.push(food);
         else if (currentRef) currentRef.alimentos.push(food);
         break;
@@ -1508,35 +1449,34 @@ function parseDietData(rows) {
       case 'total':
         break;
       case 'orient':
+      case 'dica':
         data.orientacoes.push({ categoria: r[1] || '', texto: r[3] || r[2] || '' });
         break;
       case 'aerob':
+      case 'cardio':
         data.aerobicos = { freq: r[1] || '', duracao: r[2] || '', obs: r[3] || '' };
         break;
       case 'nota':
+      case 'obs':
         if (currentRef) currentRef.notas.push(r[1] || r[3] || '');
+        else currentCycle.notas.push(r[1] || r[3] || '');
         break;
       case 'proto':
         data.protocolos.push({ nome: r[1] || '', dose: r[2] || '', obs: r[3] || '' });
         break;
+      default:
+        // Empty col A with content in B = food item (new simplified format)
+        if (secao === '' && (r[1] || '').trim() !== '') {
+          const food = { nome: r[1] || '', qtd: r[2] || '', obs: r[3] || '' };
+          if (currentOp) currentOp.alimentos.push(food);
+          else if (currentRef) currentRef.alimentos.push(food);
+        }
+        break;
     }
   }
 
-  // Auto-calculate all macros from food items
-  const total = { p: 0, c: 0, g: 0, kcal: 0 };
-  data.refeicoes.forEach((ref, ri) => {
-    if (ref.opcoes.length > 0) {
-      ref.opcoes.forEach(op => { op.macro = sumMacros(op.alimentos); });
-      // Use first option for daily total
-      const first = ref.opcoes[0].macro;
-      total.p += first.p; total.c += first.c; total.g += first.g; total.kcal += first.kcal;
-      ref.macro = null;
-    } else {
-      ref.macro = sumMacros(ref.alimentos);
-      total.p += ref.macro.p; total.c += ref.macro.c; total.g += ref.macro.g; total.kcal += ref.macro.kcal;
-    }
-  });
-  data.total = total;
+  // Push last cycle
+  if (currentCycle.refeicoes.length > 0) data.ciclos.push(currentCycle);
 
   return data;
 }
@@ -1581,48 +1521,42 @@ function renderDiet() {
     html += `</div>`;
   }
 
-  // Refeições
-  d.refeicoes.forEach((ref, ri) => {
-    const hasOps = ref.opcoes.length > 0;
-    html += `<div class="diet-meal-card">`;
-    html += `<div class="diet-meal-header">${ref.nome}</div>`;
-    if (ref.instrucao) html += `<div class="diet-meal-instruction">${ref.instrucao}</div>`;
-
-    if (hasOps) {
-      html += `<div class="diet-option-tabs" id="optTabs${ri}">`;
-      ref.opcoes.forEach((op, oi) => {
-        html += `<button class="diet-option-tab ${oi === 0 ? 'active' : ''}" onclick="selectDietOption(${ri},${oi})">${op.nome}</button>`;
-      });
-      html += `</div>`;
-      ref.opcoes.forEach((op, oi) => {
-        html += `<div class="diet-option-content ${oi === 0 ? 'active' : ''}" id="opt${ri}_${oi}">`;
-        op.alimentos.forEach(a => { html += renderFoodItem(a); });
-        if (op.macro) html += renderMacroBar(op.macro);
-        html += `</div>`;
-      });
-    } else {
-      ref.alimentos.forEach(a => { html += renderFoodItem(a); });
-      if (ref.macro) html += renderMacroBar(ref.macro);
+  // Ciclos (refeições + total por ciclo)
+  d.ciclos.forEach((cy, ci) => {
+    const prefix = `c${ci}_`;
+    if (cy.nome) {
+      html += `<div class="diet-cycle-header">${cy.nome}</div>`;
     }
 
-    ref.notas.forEach(n => {
-      if (n) html += `<div class="diet-meal-note">${n}</div>`;
-    });
-    html += `</div>`;
-  });
+    cy.refeicoes.forEach((ref, ri) => {
+      const uid = `${prefix}${ri}`;
+      const hasOps = ref.opcoes.length > 0;
+      html += `<div class="diet-meal-card">`;
+      html += `<div class="diet-meal-header">${ref.nome}</div>`;
+      if (ref.instrucao) html += `<div class="diet-meal-instruction">${ref.instrucao}</div>`;
 
-  // Total diário
-  if (d.total.kcal) {
-    html += `<div class="diet-total-card">
-      <div class="diet-total-title">TOTAL DIÁRIO</div>
-      <div class="diet-total-macros">
-        <div class="diet-macro"><span class="macro-value">${d.total.p.toFixed(0)}g</span><span class="macro-label">Proteína</span></div>
-        <div class="diet-macro"><span class="macro-value">${d.total.c.toFixed(0)}g</span><span class="macro-label">Carboidrato</span></div>
-        <div class="diet-macro"><span class="macro-value">${d.total.g.toFixed(0)}g</span><span class="macro-label">Gordura</span></div>
-        <div class="diet-macro diet-macro-kcal"><span class="macro-value">${d.total.kcal.toFixed(0)}</span><span class="macro-label">kcal</span></div>
-      </div>
-    </div>`;
-  }
+      if (hasOps) {
+        html += `<div class="diet-option-tabs" id="optTabs${uid}">`;
+        ref.opcoes.forEach((op, oi) => {
+          html += `<button class="diet-option-tab ${oi === 0 ? 'active' : ''}" onclick="selectDietOption('${uid}',${oi})">${op.nome}</button>`;
+        });
+        html += `</div>`;
+        ref.opcoes.forEach((op, oi) => {
+          html += `<div class="diet-option-content ${oi === 0 ? 'active' : ''}" id="opt${uid}_${oi}">`;
+          op.alimentos.forEach(a => { html += renderFoodItem(a); });
+          html += `</div>`;
+        });
+      } else {
+        ref.alimentos.forEach(a => { html += renderFoodItem(a); });
+      }
+
+      ref.notas.forEach(n => {
+        if (n) html += `<div class="diet-meal-note">${n}</div>`;
+      });
+      html += `</div>`;
+    });
+
+  });
 
   // Orientações
   if (d.orientacoes.length > 0 || d.aerobicos) {
@@ -1680,23 +1614,8 @@ function renderDiet() {
 
 function renderFoodItem(a) {
   return `<div class="diet-food-item">
-    <div class="diet-food-main"><span class="diet-food-name">${a.nome}</span><span class="diet-food-qty">${a.qtd}</span></div>
+    <div class="diet-food-main"><span class="diet-food-name">${a.nome}</span>${a.qtd ? `<span class="diet-food-qty">${a.qtd}</span>` : ''}</div>
     ${a.obs ? `<div class="diet-food-obs">${a.obs}</div>` : ''}
-    <div class="diet-food-macros">
-      <span class="fm">P:${a.p.toFixed(0)}g</span>
-      <span class="fm">C:${a.c.toFixed(0)}g</span>
-      <span class="fm">G:${a.g.toFixed(0)}g</span>
-      <span class="fm fm-kcal">${a.kcal.toFixed(0)}kcal</span>
-    </div>
-  </div>`;
-}
-
-function renderMacroBar(m) {
-  return `<div class="diet-macro-bar">
-    <span class="mb">P: ${m.p.toFixed(0)}g</span>
-    <span class="mb">C: ${m.c.toFixed(0)}g</span>
-    <span class="mb">G: ${m.g.toFixed(0)}g</span>
-    <span class="mb mb-kcal">${m.kcal.toFixed(0)} kcal</span>
   </div>`;
 }
 
@@ -1719,10 +1638,10 @@ function switchView(view) {
   window.scrollTo(0, 0);
 }
 
-function selectDietOption(refIdx, opIdx) {
-  const tabs = document.querySelectorAll(`#optTabs${refIdx} .diet-option-tab`);
+function selectDietOption(uid, opIdx) {
+  const tabs = document.querySelectorAll(`#optTabs${uid} .diet-option-tab`);
   tabs.forEach((t, i) => t.classList.toggle('active', i === opIdx));
-  const allOpts = document.querySelectorAll(`[id^="opt${refIdx}_"]`);
+  const allOpts = document.querySelectorAll(`[id^="opt${uid}_"]`);
   allOpts.forEach((c, i) => c.classList.toggle('active', i === opIdx));
 }
 
