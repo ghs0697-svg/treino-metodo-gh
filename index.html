@@ -997,10 +997,7 @@
     <label>ID DA PLANILHA DO ALUNO</label>
     <input type="text" id="adminSheetId" placeholder="Cole o ID da planilha aqui">
   </div>
-  <div class="admin-field" style="margin-top:4px;">
-    <label style="font-size:10px;color:#888;">WEBHOOK MAKE (opcional)</label>
-    <input type="text" id="adminWebhookUrl" placeholder="URL do webhook Make.com" style="font-size:11px;">
-  </div>
+  <input type="hidden" id="adminWebhookUrl" value="https://script.google.com/macros/s/AKfycby0Kej7V7Gi2gIDKorBookSLofBMHOF50UFWq4Q1fTmstCD8ed8O9XLyCaZo8QIeUPfeQ/exec">
 
   <!-- ── Tab: Gerar Link ── -->
   <div id="adminTabLink">
@@ -2370,30 +2367,34 @@ function copyTreinoCSV() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// ══ PUBLICAR NA PLANILHA (via Make.com webhook) ══
+// ══ PUBLICAR NA PLANILHA (via Google Apps Script) ══
 // ══════════════════════════════════════════════════════════════
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby0Kej7V7Gi2gIDKorBookSLofBMHOF50UFWq4Q1fTmstCD8ed8O9XLyCaZo8QIeUPfeQ/exec';
+
 async function publishToSheet(tab) {
   const sheetId = document.getElementById('adminSheetId').value.trim();
-  const webhookUrl = document.getElementById('adminWebhookUrl').value.trim();
   if (!sheetId) { alert('Preencha o ID da planilha do aluno.'); return; }
-  if (!webhookUrl) { alert('Preencha a URL do webhook Make.'); return; }
   const data = tab === 'DIETA' ? editorData : editorTreinoData;
   if (!data || data.length < 2) { alert('Carregue um template primeiro.'); return; }
   const statusEl = document.getElementById(tab === 'DIETA' ? 'edStatus' : 'treinoStatus');
   statusEl.textContent = 'Publicando...';
   statusEl.style.display = 'inline';
   try {
-    const resp = await fetch(webhookUrl, {
+    const resp = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sheetId, tab, payload: JSON.stringify({ values: data }) })
+      body: JSON.stringify({ sheetId, tab, values: data })
     });
-    if (!resp.ok) throw new Error('Webhook retornou erro ' + resp.status);
-    const result = await resp.json().catch(() => ({}));
+    const text = await resp.text();
+    let result;
+    try { result = JSON.parse(text); } catch(e) {
+      if (text.includes('Erro') || text.includes('Error')) throw new Error('Apps Script retornou erro');
+      result = {};
+    }
+    if (result.success === false) throw new Error(result.error || 'Erro desconhecido');
     statusEl.textContent = 'Publicado com sucesso na aba ' + tab + '!';
     statusEl.style.color = '#4CAF50';
     setTimeout(() => { statusEl.style.display = 'none'; statusEl.style.color = ''; }, 5000);
-    localStorage.setItem('gh_webhook_url', webhookUrl);
   } catch(e) {
     statusEl.textContent = 'Erro: ' + e.message;
     statusEl.style.color = '#f44336';
@@ -2443,8 +2444,6 @@ if (SHEET_ID && TAB_NAME) {
   // Recuperar sheet ID e script URL salvos
   const saved = localStorage.getItem('gh_admin_sheet_id');
   if (saved) document.getElementById('adminSheetId').value = saved;
-  const savedWebhook = localStorage.getItem('gh_webhook_url');
-  if (savedWebhook) document.getElementById('adminWebhookUrl').value = savedWebhook;
   const savedUrl = getScriptUrl();
   if (savedUrl) document.getElementById('edScriptUrl').value = savedUrl;
 }
