@@ -891,6 +891,51 @@
     .ed-row { grid-template-columns: 45px 1fr 80px 1fr 24px; font-size: 11px; }
     .ed-input { font-size: 11px; padding: 3px 4px; }
   }
+
+  /* ── Training Editor ── */
+  .ed-treino-row {
+    display: grid; grid-template-columns: 35px 1fr 55px 75px 65px 1fr 28px;
+    gap: 3px; align-items: center; padding: 3px 4px; border-radius: 3px; min-height: 30px;
+    background: #1A1A1A;
+  }
+  .ed-treino-row.t-header { background: #5D4037; }
+  .ed-treino-row.t-info { background: #2A2515; }
+  .ed-treino-row.t-warmup { background: #1A2A1A; }
+  .ed-treino-row.t-sep { background: #1A1815; min-height: 4px; padding: 0; }
+  .ed-treino-day {
+    font-size: 10px; color: var(--gold); font-weight: 700; text-align: center;
+  }
+  .ed-video-indicator {
+    font-size: 10px; text-align: center; cursor: pointer; user-select: none;
+  }
+  .ed-video-indicator.has-video { color: #4CAF50; }
+  .ed-video-indicator.no-video { color: #555; }
+  .ed-freq-group { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; margin-bottom: 8px; }
+  .ed-ver-group { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; }
+  .ed-ver-btn {
+    padding: 6px 10px; background: var(--card); border: 1px solid #333;
+    border-radius: 4px; color: #aaa; font-size: 11px; cursor: pointer;
+  }
+  .ed-ver-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+  .ed-ver-btn.special { border-color: #c62828; color: #ef9a9a; }
+
+  /* ── Autocomplete ── */
+  .ed-ac-wrap { position: relative; }
+  .ed-ac-drop {
+    position: absolute; top: 100%; left: 0; right: 0; z-index: 100;
+    background: #222; border: 1px solid var(--gold-dim); border-radius: 4px;
+    max-height: 200px; overflow-y: auto; display: none;
+  }
+  .ed-ac-item {
+    padding: 6px 8px; font-size: 12px; color: var(--white); cursor: pointer;
+    border-bottom: 1px solid #333;
+  }
+  .ed-ac-item:hover { background: var(--gold-dim); color: var(--dark); }
+  .ed-ac-item small { color: #888; font-size: 10px; margin-left: 6px; }
+
+  @media (max-width: 600px) {
+    .ed-treino-row { grid-template-columns: 28px 1fr 40px 55px 50px 1fr 24px; font-size: 10px; }
+  }
 </style>
 </head>
 <body>
@@ -986,7 +1031,25 @@
 
   <!-- ── Tab: Editar Treino ── -->
   <div id="adminTabTreino" style="display:none;">
-    <p style="color:var(--muted); text-align:center; padding: 40px 0;">Editor de Treino — em breve</p>
+    <div class="ed-section-label">FREQUÊNCIA</div>
+    <div class="ed-freq-group">
+      <button class="ed-tpl-btn" onclick="showTreinoVersions('3X')">3X</button>
+      <button class="ed-tpl-btn" onclick="showTreinoVersions('4X')">4X</button>
+      <button class="ed-tpl-btn" onclick="showTreinoVersions('5X')">5X</button>
+      <button class="ed-tpl-btn" onclick="showTreinoVersions('6X')">6X</button>
+      <button class="ed-tpl-btn" onclick="showTreinoVersions('7X')">7X</button>
+    </div>
+    <div id="treinoVersions" class="ed-ver-group" style="display:none;"></div>
+    <div class="editor-toolbar" style="margin-top:8px;">
+      <button class="ed-tpl-btn" style="border-color:#4CAF50;color:#4CAF50;" onclick="loadTreinoFromSheet()">CARREGAR DA PLANILHA</button>
+    </div>
+
+    <div id="treinoEditorTable"></div>
+
+    <div class="ed-publish-bar" id="treinoPublishBar" style="display:none;">
+      <button class="admin-btn" onclick="copyTreinoCSV()">COPIAR CSV</button>
+      <span class="ed-status" id="treinoStatus"></span>
+    </div>
   </div>
 </div>
 
@@ -1980,6 +2043,226 @@ async function loadFromSheet() {
   } catch(e) {
     alert('Erro ao carregar: ' + e.message + '\n\nVerifique se a planilha esta publicada na web.');
   }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ══ EDITOR DE TREINO ══
+// ══════════════════════════════════════════════════════════════
+let editorTreinoData = [];
+let treinoTemplateCache = null;
+
+const TREINO_TEMPLATES = {
+  '3X': ['1.0','1.0_50min','2.0','2.0_50min','3.0','3.0_50min','4.0','4.0_50min','5.0','5.0_50min','6.0','6.0_50min','ARTROSE_JOELHO','HERNIA_LOMBAR'],
+  '4X': ['1.0','1.0_50min','2.0','2.0_50min','3.0','3.0_50min','4.0','4.0_50min','5.0','5.0_50min','6.0','6.0_50min','CASA'],
+  '5X': ['1.0','1.0_50min','2.0','2.0_50min','3.0','3.0_50min','4.0','4.0_50min','5.0','5.0_50min','6.0','6.0_50min','HERNIA_LOMBAR','LCA_ROMPIDO','TALVEZ_6X'],
+  '6X': ['1.0','1.0_50min','2.0','2.0_50min','3.0','3.0_50min','4.0','4.0_50min','5.0','5.0_50min','6.0','6.0_50min','LESAO_BICEPS'],
+  '7X': ['1.0','1.0_50min','2.0','2.0_50min','3.0','3.0_50min','4.0','4.0_50min','5.0','5.0_50min','6.0','6.0_50min'],
+  'CASA': ['5X','6X']
+};
+
+function showTreinoVersions(freq) {
+  document.querySelectorAll('.ed-freq-group .ed-tpl-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  const versions = TREINO_TEMPLATES[freq] || [];
+  const container = document.getElementById('treinoVersions');
+  let html = '';
+  versions.forEach(v => {
+    const isSpecial = isNaN(parseFloat(v));
+    const label = v.replace('_50min',' (50min)').replace(/_/g,' ');
+    const fullName = freq === 'CASA' ? `CASA_${v}` : `${freq}_${v}`;
+    html += `<button class="ed-ver-btn${isSpecial ? ' special' : ''}" onclick="loadTreinoTemplate('${fullName}')">${label}</button>`;
+  });
+  container.innerHTML = html;
+  container.style.display = 'flex';
+}
+
+async function loadTreinoTemplate(name) {
+  try {
+    if (!treinoTemplateCache) {
+      const resp = await fetch('csv_base64.json');
+      treinoTemplateCache = await resp.json();
+    }
+    const key = 'TREINO_' + name + '.csv';
+    if (!treinoTemplateCache[key]) { alert('Template nao encontrado: ' + key); return; }
+    const csv = atob(treinoTemplateCache[key]);
+    editorTreinoData = parseCSV(csv);
+    // Pad all rows to 8 columns
+    editorTreinoData = editorTreinoData.map(r => {
+      while (r.length < 8) r.push('');
+      return r.slice(0, 8);
+    });
+    document.getElementById('treinoPublishBar').style.display = 'flex';
+    renderTreinoEditor();
+  } catch(e) {
+    alert('Erro ao carregar template: ' + e.message);
+  }
+}
+
+async function loadTreinoFromSheet() {
+  const sheetId = document.getElementById('adminSheetId').value.trim();
+  if (!sheetId) { alert('Preencha o ID da planilha do aluno primeiro.'); return; }
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=ATUAL`;
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('Planilha nao encontrada');
+    const text = await resp.text();
+    editorTreinoData = parseCSV(text).map(r => {
+      while (r.length < 8) r.push('');
+      return r.slice(0, 8);
+    });
+    if (editorTreinoData.length < 2) throw new Error('Aba ATUAL vazia');
+    document.getElementById('treinoPublishBar').style.display = 'flex';
+    renderTreinoEditor();
+    const status = document.getElementById('treinoStatus');
+    status.textContent = 'Treino carregado!';
+    status.style.display = 'inline';
+    setTimeout(() => status.style.display = 'none', 3000);
+  } catch(e) {
+    alert('Erro: ' + e.message);
+  }
+}
+
+function renderTreinoEditor() {
+  const c = document.getElementById('treinoEditorTable');
+  let html = '';
+  let lastDay = '';
+
+  for (let i = 0; i < editorTreinoData.length; i++) {
+    const r = editorTreinoData[i];
+    if (i === 0) continue; // skip header
+
+    const col0 = (r[0] || '').trim();
+    const col0L = col0.toLowerCase();
+
+    // Info row
+    if (col0L === 'info') {
+      html += `<div class="ed-treino-row t-info">`;
+      html += `<div class="ed-treino-day">info</div>`;
+      html += `<input class="ed-input col-b" value="${escH(r[1])}" placeholder="Nome" oninput="editorTreinoData[${i}][1]=this.value">`;
+      html += `<input class="ed-input col-c" value="${escH(r[2])}" placeholder="Freq" oninput="editorTreinoData[${i}][2]=this.value">`;
+      html += `<input class="ed-input" value="${escH(r[3])}" placeholder="Objetivo" oninput="editorTreinoData[${i}][3]=this.value">`;
+      html += `<input class="ed-input" value="${escH(r[4])}" placeholder="Duracao" oninput="editorTreinoData[${i}][4]=this.value">`;
+      html += `<div></div><div></div>`;
+      html += `</div>`;
+      continue;
+    }
+
+    // Restrict/link rows - show but simplified
+    if (col0L === 'restrict' || col0L === 'link') {
+      html += `<div class="ed-treino-row" style="background:#111;">`;
+      html += `<div class="ed-treino-day" style="font-size:7px;color:#666;">${col0L}</div>`;
+      html += `<input class="ed-input col-d" value="${escH(r[1])}" oninput="editorTreinoData[${i}][1]=this.value" style="grid-column:2/-2;">`;
+      html += `<div></div>`;
+      html += `</div>`;
+      continue;
+    }
+
+    // Day separator
+    const dayNum = col0;
+    if (dayNum !== lastDay && dayNum !== '') {
+      html += `<div class="ed-treino-row t-header">`;
+      html += `<div style="grid-column:1/-1;color:#fff;font-weight:700;font-size:13px;letter-spacing:1px;padding:4px 0;">DIA ${dayNum}</div>`;
+      html += `</div>`;
+      lastDay = dayNum;
+    }
+
+    const isWarmup = (r[7] || '').toLowerCase() === 'sim';
+    const hasVideo = (r[6] || '').trim() !== '';
+    const rowClass = isWarmup ? 't-warmup' : '';
+
+    html += `<div class="ed-treino-row ${rowClass}" data-i="${i}">`;
+    html += `<div class="ed-treino-day">${isWarmup ? 'AQ' : ''}</div>`;
+
+    // Exercise name with autocomplete
+    html += `<div class="ed-ac-wrap">`;
+    html += `<input class="ed-input col-b" value="${escH(r[1])}" placeholder="Exercicio" oninput="editorTreinoData[${i}][1]=this.value;showAC(this,${i})" onfocus="showAC(this,${i})" onblur="setTimeout(()=>hideAC(this),200)">`;
+    html += `<div class="ed-ac-drop"></div>`;
+    html += `</div>`;
+
+    html += `<input class="ed-input col-c" value="${escH(r[2])}" placeholder="Series" oninput="editorTreinoData[${i}][2]=this.value">`;
+    html += `<input class="ed-input" value="${escH(r[3])}" placeholder="Reps" oninput="editorTreinoData[${i}][3]=this.value" style="font-size:10px;">`;
+    html += `<input class="ed-input" value="${escH(r[4])}" placeholder="Interv" oninput="editorTreinoData[${i}][4]=this.value" style="font-size:10px;">`;
+    html += `<input class="ed-input col-d" value="${escH(r[5])}" placeholder="Obs" oninput="editorTreinoData[${i}][5]=this.value">`;
+
+    // Video indicator + delete
+    html += `<button class="ed-del" onclick="edTreinoDel(${i})" title="Remover">×</button>`;
+    html += `</div>`;
+
+    // Video URL (hidden editable row below if has video)
+    if (hasVideo) {
+      html += `<div style="padding:0 4px 2px 38px;"><input class="ed-input col-d" value="${escH(r[6])}" placeholder="URL do video" oninput="editorTreinoData[${i}][6]=this.value" style="font-size:9px;color:#4CAF50;"></div>`;
+    }
+  }
+
+  // Add exercise button
+  html += `<div class="ed-add-bar" style="margin-top:8px;">`;
+  const days = [...new Set(editorTreinoData.slice(1).map(r => r[0]).filter(d => d && !isNaN(d)))];
+  days.forEach(d => {
+    html += `<button class="ed-add-btn" onclick="edTreinoAddExercise('${d}')">+ Dia ${d}</button>`;
+  });
+  html += `</div>`;
+
+  c.innerHTML = html;
+}
+
+// ── Autocomplete ──
+function showAC(input, rowIdx) {
+  const q = input.value.toLowerCase();
+  const drop = input.parentElement.querySelector('.ed-ac-drop');
+  if (q.length < 2 || typeof EXERCISE_DB === 'undefined') { drop.style.display = 'none'; return; }
+  const matches = EXERCISE_DB.filter(e => e.n.toLowerCase().includes(q)).slice(0, 8);
+  if (matches.length === 0) { drop.style.display = 'none'; return; }
+  drop.innerHTML = matches.map(m =>
+    `<div class="ed-ac-item" onmousedown="selectAC(${rowIdx},'${escH(m.n)}','${escH(m.v)}')">${m.n}</div>`
+  ).join('');
+  drop.style.display = 'block';
+}
+
+function hideAC(input) {
+  const drop = input.parentElement.querySelector('.ed-ac-drop');
+  if (drop) drop.style.display = 'none';
+}
+
+function selectAC(rowIdx, name, video) {
+  editorTreinoData[rowIdx][1] = name;
+  editorTreinoData[rowIdx][6] = video;
+  renderTreinoEditor();
+}
+
+function edTreinoDel(idx) {
+  editorTreinoData.splice(idx, 1);
+  renderTreinoEditor();
+}
+
+function edTreinoAddExercise(day) {
+  // Find last exercise of this day
+  let lastIdx = editorTreinoData.length - 1;
+  for (let i = editorTreinoData.length - 1; i >= 0; i--) {
+    if (editorTreinoData[i][0] === day) { lastIdx = i; break; }
+  }
+  editorTreinoData.splice(lastIdx + 1, 0, [day, '', '4X', '8 a 12', '90 seg', '', '', '']);
+  renderTreinoEditor();
+}
+
+function copyTreinoCSV() {
+  if (editorTreinoData.length < 2) { alert('Carregue um template primeiro.'); return; }
+  const tsv = editorTreinoData.map(row =>
+    row.map(cell => String(cell || '').replace(/\t/g, ' ')).join('\t')
+  ).join('\n');
+  navigator.clipboard.writeText(tsv).then(() => {
+    const status = document.getElementById('treinoStatus');
+    status.textContent = 'CSV copiado! Cole na aba ATUAL (Ctrl+V em A1)';
+    status.style.display = 'inline';
+    setTimeout(() => status.style.display = 'none', 5000);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = tsv;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    alert('CSV copiado!');
+  });
 }
 
 // ══════════════════════════════════════════════════════════════
