@@ -769,11 +769,6 @@
     <input type="text" id="adminSheetId" placeholder="Cole o ID da planilha aqui">
   </div>
 
-  <div class="admin-field">
-    <label>NOME DA ABA (nome do aluno)</label>
-    <input type="text" id="adminTabName" placeholder="Ex: João Silva">
-  </div>
-
   <button class="admin-btn" onclick="generateLink()">GERAR LINK DO ALUNO</button>
 
   <div class="admin-result" id="adminResult">
@@ -784,11 +779,10 @@
 
   <div class="admin-help">
     <strong>Como usar:</strong><br>
-    1. Crie uma planilha no Google Sheets<br>
-    2. Monte os templates de treino (ex: aba "TEMPLATE-6X")<br>
-    3. Para cada aluno: duplique a aba do template e renomeie pro nome dele<br>
-    4. Publique a planilha: Arquivo > Compartilhar > Publicar na web > Publicar<br>
-    5. Cole o ID da planilha acima e gere o link<br><br>
+    1. Crie a planilha do aluno no Google Sheets<br>
+    2. Importe o treino na aba "ATUAL" e a dieta na aba "DIETA ATUAL"<br>
+    3. Publique a planilha: Arquivo > Compartilhar > Publicar na web > Publicar<br>
+    4. Cole o ID da planilha acima e gere o link<br><br>
     <strong>ID da planilha:</strong> o trecho entre /d/ e /edit na URL<br>
     Ex: docs.google.com/spreadsheets/d/<span style="color:var(--gold)">1abc2def3ghi</span>/edit
   </div>
@@ -1509,10 +1503,9 @@ function toggleDietSection(id) {
 // ══════════════════════════════════════════════════════════════
 function generateLink() {
   const sheetId = document.getElementById('adminSheetId').value.trim();
-  const tabName = document.getElementById('adminTabName').value.trim();
 
-  if (!sheetId || !tabName) {
-    alert('Preencha o ID da planilha e o nome da aba (aluno).');
+  if (!sheetId) {
+    alert('Preencha o ID da planilha.');
     return;
   }
 
@@ -1520,7 +1513,7 @@ function generateLink() {
   localStorage.setItem('gh_admin_sheet_id', sheetId);
 
   const base = window.location.origin + window.location.pathname;
-  const link = `${base}?sheet=${encodeURIComponent(sheetId)}&tab=${encodeURIComponent(tabName)}`;
+  const link = `${base}?sheet=${encodeURIComponent(sheetId)}&tab=ATUAL`;
 
   document.getElementById('adminUrl').textContent = link;
   document.getElementById('adminResult').style.display = 'block';
