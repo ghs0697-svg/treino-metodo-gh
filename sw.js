@@ -1,7 +1,8 @@
-const CACHE_NAME = 'metodo-gh-v14';
+const CACHE_NAME = 'metodo-gh-v15';
 const ASSETS = [
   './',
   './index.html',
+  './editor-data.js',
   './manifest.json',
   './gh-logo.png',
   './icon-192.png',

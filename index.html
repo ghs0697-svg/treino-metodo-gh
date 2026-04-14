@@ -807,6 +807,90 @@
     display: block;
     margin-top: 4px;
   }
+
+  /* ── Editor Mode ── */
+  .admin-tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+  .admin-tab {
+    flex: 1; padding: 10px 8px; background: var(--card); border: 1px solid var(--gold-dim);
+    border-radius: 6px; color: var(--gold-dim); font-weight: 700; font-size: 12px;
+    cursor: pointer; text-align: center; letter-spacing: 1px; transition: all 0.2s;
+  }
+  .admin-tab.active { background: var(--gold); color: var(--dark); border-color: var(--gold); }
+  .editor-toolbar { display: flex; gap: 6px; margin: 12px 0; flex-wrap: wrap; justify-content: center; }
+  .ed-tpl-btn {
+    padding: 10px 18px; background: var(--card); border: 1px solid var(--gold-dim);
+    border-radius: 6px; color: var(--gold); font-weight: 700; cursor: pointer; font-size: 14px;
+    transition: all 0.2s;
+  }
+  .ed-tpl-btn.active { background: var(--gold); color: var(--dark); border-color: var(--gold); }
+  .ed-tpl-btn:hover { border-color: var(--gold); }
+  .ed-table { margin: 16px 0; display: flex; flex-direction: column; gap: 1px; }
+  .ed-row {
+    display: grid; grid-template-columns: 60px 1fr 120px 1fr 28px;
+    gap: 3px; align-items: center; padding: 3px 4px; border-radius: 3px; min-height: 30px;
+  }
+  .ed-row.t-info { background: #2A2515; }
+  .ed-row.t-meta { background: #252218; }
+  .ed-row.t-regra { background: #1E1E1E; }
+  .ed-row.t-supl { background: #1A2A1A; }
+  .ed-row.t-ref { background: #5D4037; }
+  .ed-row.t-op { background: #2A2315; }
+  .ed-row.t-food { background: #1A1A1A; }
+  .ed-row.t-obs { background: #181818; font-style: italic; }
+  .ed-row.t-dica { background: #1A1F2A; }
+  .ed-row.t-cardio { background: #1A2A1A; }
+  .ed-row.t-ciclo { background: #8B7425; }
+  .ed-row.t-proto { background: #2A1A25; }
+  .ed-row.t-sep { background: #1A1815; min-height: 4px; padding: 0; }
+  .ed-type {
+    font-size: 8px; color: #888; text-transform: uppercase; text-align: center;
+    cursor: pointer; user-select: none;
+  }
+  .ed-input {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(212,175,55,0.12);
+    border-radius: 3px; color: var(--white); padding: 4px 6px;
+    font-family: inherit; font-size: 12px; width: 100%; box-sizing: border-box;
+  }
+  .ed-input:focus { border-color: var(--gold); outline: none; background: rgba(0,0,0,0.4); }
+  .ed-input.col-b { font-weight: 600; }
+  .ed-input.col-c { color: var(--gold); text-align: center; font-size: 11px; }
+  .ed-input.col-d { color: #aaa; font-size: 11px; }
+  .ed-del {
+    background: none; border: none; color: #444; cursor: pointer;
+    font-size: 14px; padding: 0; line-height: 1;
+  }
+  .ed-del:hover { color: #e53; }
+  .ed-add-bar {
+    display: flex; gap: 4px; justify-content: center; padding: 4px 0; margin: 2px 0;
+  }
+  .ed-add-btn {
+    background: none; border: 1px dashed rgba(212,175,55,0.25); color: var(--gold-dim);
+    cursor: pointer; padding: 3px 10px; border-radius: 3px; font-size: 10px;
+  }
+  .ed-add-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .ed-section-label {
+    color: var(--gold); font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; padding: 8px 4px 2px; margin-top: 8px;
+  }
+  .ed-publish-bar {
+    display: flex; gap: 8px; margin-top: 20px; align-items: center;
+  }
+  .ed-publish-bar .admin-btn { flex: 1; }
+  .ed-status { font-size: 12px; color: var(--green); display: none; }
+  .ed-script-setup {
+    background: #111; border: 1px solid #333; border-radius: 6px;
+    padding: 12px; margin: 12px 0; font-size: 11px; color: #aaa;
+  }
+  .ed-script-setup code { color: var(--gold); word-break: break-all; }
+  .ed-script-url-input {
+    width: 100%; background: #1a1a1a; border: 1px solid var(--gold-dim);
+    border-radius: 4px; color: var(--white); padding: 8px; margin-top: 8px;
+    font-size: 12px; font-family: monospace;
+  }
+  @media (max-width: 600px) {
+    .ed-row { grid-template-columns: 45px 1fr 80px 1fr 24px; font-size: 11px; }
+    .ed-input { font-size: 11px; padding: 3px 4px; }
+  }
 </style>
 </head>
 <body>
@@ -839,27 +923,67 @@
 <div id="adminPanel" class="admin-panel" style="display:none;">
   <h2>PAINEL DO TREINADOR</h2>
 
+  <div class="admin-tabs">
+    <button class="admin-tab active" onclick="switchAdminTab('link')">LINK</button>
+    <button class="admin-tab" onclick="switchAdminTab('dieta')">EDITAR DIETA</button>
+    <button class="admin-tab" onclick="switchAdminTab('treino')">EDITAR TREINO</button>
+  </div>
+
   <div class="admin-field">
-    <label>ID DA PLANILHA (Google Sheets)</label>
+    <label>ID DA PLANILHA DO ALUNO</label>
     <input type="text" id="adminSheetId" placeholder="Cole o ID da planilha aqui">
   </div>
 
-  <button class="admin-btn" onclick="generateLink()">GERAR LINK DO ALUNO</button>
-
-  <div class="admin-result" id="adminResult">
-    <div class="url-text" id="adminUrl"></div>
-    <button class="admin-btn secondary" onclick="copyLink()">COPIAR LINK</button>
-    <div class="copy-msg" id="copyMsg">Link copiado!</div>
+  <!-- ── Tab: Gerar Link ── -->
+  <div id="adminTabLink">
+    <button class="admin-btn" onclick="generateLink()">GERAR LINK DO ALUNO</button>
+    <div class="admin-result" id="adminResult">
+      <div class="url-text" id="adminUrl"></div>
+      <button class="admin-btn secondary" onclick="copyLink()">COPIAR LINK</button>
+      <div class="copy-msg" id="copyMsg">Link copiado!</div>
+    </div>
+    <div class="admin-help">
+      <strong>Como usar:</strong><br>
+      1. Crie a planilha do aluno no Google Sheets<br>
+      2. Use a aba "Editar Dieta" ou "Editar Treino" para publicar os protocolos<br>
+      3. Publique a planilha: Arquivo > Compartilhar > Publicar na web > Publicar<br>
+      4. Cole o ID da planilha acima e gere o link<br><br>
+      <strong>ID da planilha:</strong> o trecho entre /d/ e /edit na URL<br>
+      Ex: docs.google.com/spreadsheets/d/<span style="color:var(--gold)">1abc2def3ghi</span>/edit
+    </div>
   </div>
 
-  <div class="admin-help">
-    <strong>Como usar:</strong><br>
-    1. Crie a planilha do aluno no Google Sheets<br>
-    2. Importe o treino na aba "ATUAL" e a dieta na aba "DIETA ATUAL"<br>
-    3. Publique a planilha: Arquivo > Compartilhar > Publicar na web > Publicar<br>
-    4. Cole o ID da planilha acima e gere o link<br><br>
-    <strong>ID da planilha:</strong> o trecho entre /d/ e /edit na URL<br>
-    Ex: docs.google.com/spreadsheets/d/<span style="color:var(--gold)">1abc2def3ghi</span>/edit
+  <!-- ── Tab: Editar Dieta ── -->
+  <div id="adminTabDieta" style="display:none;">
+    <div class="ed-section-label">MODELO BASE</div>
+    <div class="editor-toolbar">
+      <button class="ed-tpl-btn" data-key="1.8K" onclick="loadDietTemplate('1.8K')">1.8K</button>
+      <button class="ed-tpl-btn" data-key="2K" onclick="loadDietTemplate('2K')">2K</button>
+      <button class="ed-tpl-btn" data-key="2.5K" onclick="loadDietTemplate('2.5K')">2.5K</button>
+      <button class="ed-tpl-btn" data-key="2.7K" onclick="loadDietTemplate('2.7K')">2.7K</button>
+      <button class="ed-tpl-btn" data-key="3K" onclick="loadDietTemplate('3K')">3K</button>
+    </div>
+
+    <div id="editorTable"></div>
+
+    <div class="ed-publish-bar" id="edPublishBar" style="display:none;">
+      <button class="admin-btn" id="publishDietBtn" onclick="publishDiet()">PUBLICAR NA PLANILHA</button>
+      <span class="ed-status" id="edStatus"></span>
+    </div>
+
+    <div class="ed-script-setup" id="edScriptSetup">
+      <strong style="color:var(--gold);">Configurar Backend (1x)</strong><br><br>
+      1. Abra <a href="https://script.google.com" target="_blank" style="color:var(--gold)">script.google.com</a> e crie um novo projeto<br>
+      2. Cole o codigo do arquivo <code>editorBackend.gs</code><br>
+      3. Implemente > Nova Implantacao > App da Web > Qualquer pessoa > Implantar<br>
+      4. Cole a URL abaixo:<br>
+      <input type="text" class="ed-script-url-input" id="edScriptUrl" placeholder="https://script.google.com/macros/s/.../exec" oninput="saveScriptUrl(this.value)">
+    </div>
+  </div>
+
+  <!-- ── Tab: Editar Treino ── -->
+  <div id="adminTabTreino" style="display:none;">
+    <p style="color:var(--muted); text-align:center; padding: 40px 0;">Editor de Treino — em breve</p>
   </div>
 </div>
 
@@ -1045,6 +1169,7 @@
 
 <div class="app-footer"><span>MÉTODO GH — @gh.scheuermann</span></div>
 
+<script src="editor-data.js"></script>
 <script>
 // ══════════════════════════════════════════════════════════════
 // ══ CONFIGURAÇÃO — lê parâmetros da URL ══
@@ -1653,6 +1778,192 @@ function toggleDietSection(id) {
 }
 
 // ══════════════════════════════════════════════════════════════
+// ══ EDITOR — Modo Editor de Dieta/Treino ══
+// ══════════════════════════════════════════════════════════════
+let editorData = [];
+const APPS_SCRIPT_URL_KEY = 'gh_editor_script_url';
+
+function switchAdminTab(tab) {
+  ['Link','Dieta','Treino'].forEach(t => {
+    const el = document.getElementById('adminTab' + t);
+    if (el) el.style.display = t.toLowerCase() === tab ? 'block' : 'none';
+  });
+  const tabs = document.querySelectorAll('.admin-tab');
+  const keys = ['link','dieta','treino'];
+  tabs.forEach((btn, i) => btn.classList.toggle('active', keys[i] === tab));
+}
+
+function saveScriptUrl(url) {
+  localStorage.setItem(APPS_SCRIPT_URL_KEY, url.trim());
+}
+
+function getScriptUrl() {
+  return localStorage.getItem(APPS_SCRIPT_URL_KEY) || '';
+}
+
+function loadDietTemplate(key) {
+  if (typeof DIET_TEMPLATES === 'undefined' || !DIET_TEMPLATES[key]) {
+    alert('Template não encontrado: ' + key);
+    return;
+  }
+  editorData = JSON.parse(JSON.stringify(DIET_TEMPLATES[key]));
+  document.querySelectorAll('.ed-tpl-btn').forEach(b => b.classList.toggle('active', b.dataset.key === key));
+  document.getElementById('edPublishBar').style.display = 'flex';
+  renderEditor();
+}
+
+function edRowClass(secao, item) {
+  if (secao === 'info' || secao === 'aluno') return 't-info';
+  if (secao === 'meta') return 't-meta';
+  if (secao === 'regra') return 't-regra';
+  if (secao === 'supl') return 't-supl';
+  if (secao === 'ref') return 't-ref';
+  if (secao === 'op') return 't-op';
+  if (secao === 'obs' || secao === 'nota') return 't-obs';
+  if (secao === 'dica' || secao === 'orient') return 't-dica';
+  if (secao === 'cardio' || secao === 'aerob') return 't-cardio';
+  if (secao === 'ciclo') return 't-ciclo';
+  if (secao === 'proto') return 't-proto';
+  if (secao === '' && (item || '').trim() !== '') return 't-food';
+  if (secao === '' && (item || '').trim() === '') return 't-sep';
+  return 't-food';
+}
+
+function escH(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderEditor() {
+  const c = document.getElementById('editorTable');
+  let html = '';
+  for (let i = 0; i < editorData.length; i++) {
+    const r = editorData[i];
+    if (i === 0) continue; // skip header
+    const s = (r[0] || '').toLowerCase().trim();
+    const item = r[1] || '';
+    const cls = edRowClass(s, item);
+
+    if (cls === 't-sep') {
+      html += `<div class="ed-row t-sep" data-i="${i}"><div style="grid-column:1/-1"></div></div>`;
+      continue;
+    }
+
+    html += `<div class="ed-row ${cls}" data-i="${i}">`;
+    html += `<div class="ed-type" title="Clique para alterar tipo" onclick="cycleType(${i})">${escH(r[0])}</div>`;
+    html += `<input class="ed-input col-b" value="${escH(r[1])}" oninput="editorData[${i}][1]=this.value">`;
+    html += `<input class="ed-input col-c" value="${escH(r[2])}" oninput="editorData[${i}][2]=this.value">`;
+    html += `<input class="ed-input col-d" value="${escH(r[3])}" oninput="editorData[${i}][3]=this.value">`;
+    html += `<button class="ed-del" onclick="edDel(${i})" title="Remover">×</button>`;
+    html += `</div>`;
+
+    // Add row buttons after specific sections
+    if (s === 'ref' || s === 'op' || s === 'supl' || s === 'regra' || s === 'cardio' || s === 'dica') {
+      const nextS = i + 1 < editorData.length ? (editorData[i+1][0] || '').toLowerCase().trim() : '';
+      // Show add button if next row is same type or is a food/sep
+      if (s === 'ref' || s === 'op') {
+        // Don't show add after ref/op headers
+      } else {
+        const nextIsSection = ['ref','op','ciclo','meta','info'].includes(nextS);
+        if (!nextIsSection || i === editorData.length - 1) {
+          // will be handled below
+        }
+      }
+    }
+
+    // Check if this is the last row before a section break (ref, op, ciclo, separator)
+    const nextRow = editorData[i + 1];
+    const nextS = nextRow ? (nextRow[0] || '').toLowerCase().trim() : '';
+    const nextIsFood = nextS === '' && (nextRow && (nextRow[1] || '').trim() !== '');
+    const isFood = cls === 't-food';
+    const isSuplOrRegra = s === 'supl' || s === 'regra';
+
+    // Add buttons: after last food item before separator, after last supl before separator
+    if ((isFood || s === 'obs') && (nextS === '' && nextRow && (nextRow[1] || '').trim() === '' || !nextRow || ['ref','ciclo','dica','cardio','orient','aerob'].includes(nextS))) {
+      html += `<div class="ed-add-bar"><button class="ed-add-btn" onclick="edAdd(${i},'')">+ Alimento</button><button class="ed-add-btn" onclick="edAdd(${i},'obs')">+ Obs</button></div>`;
+    }
+    if (isSuplOrRegra && nextS !== s) {
+      html += `<div class="ed-add-bar"><button class="ed-add-btn" onclick="edAdd(${i},'${s}')">+ ${s === 'supl' ? 'Suplemento' : 'Regra'}</button></div>`;
+    }
+  }
+
+  // Bottom add buttons
+  html += `<div class="ed-add-bar" style="margin-top:12px;">`;
+  html += `<button class="ed-add-btn" onclick="edAddBottom('dica')">+ Dica</button>`;
+  html += `<button class="ed-add-btn" onclick="edAddBottom('cardio')">+ Cardio</button>`;
+  html += `<button class="ed-add-btn" onclick="edAddBottom('proto')">+ Protocolo</button>`;
+  html += `</div>`;
+
+  c.innerHTML = html;
+}
+
+function edDel(idx) {
+  editorData.splice(idx, 1);
+  renderEditor();
+}
+
+function edAdd(afterIdx, type) {
+  editorData.splice(afterIdx + 1, 0, [type, '', '', '']);
+  renderEditor();
+}
+
+function edAddBottom(type) {
+  editorData.push([type, '', '', '']);
+  renderEditor();
+}
+
+const TYPE_CYCLE = ['', 'obs', 'supl', 'regra', 'ref', 'op', 'dica', 'cardio', 'proto', 'ciclo', 'meta', 'info'];
+function cycleType(idx) {
+  const cur = (editorData[idx][0] || '').toLowerCase().trim();
+  const ci = TYPE_CYCLE.indexOf(cur);
+  editorData[idx][0] = TYPE_CYCLE[(ci + 1) % TYPE_CYCLE.length];
+  renderEditor();
+}
+
+async function publishDiet() {
+  const sheetId = document.getElementById('adminSheetId').value.trim();
+  const scriptUrl = getScriptUrl();
+
+  if (!sheetId) { alert('Preencha o ID da planilha do aluno.'); return; }
+  if (!scriptUrl) { alert('Configure a URL do Apps Script primeiro (abaixo).'); return; }
+  if (editorData.length < 2) { alert('Carregue um template primeiro.'); return; }
+
+  const btn = document.getElementById('publishDietBtn');
+  const status = document.getElementById('edStatus');
+  btn.textContent = 'Publicando...';
+  btn.disabled = true;
+  status.style.display = 'none';
+
+  try {
+    const resp = await fetch(scriptUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action: 'write',
+        sheetId: sheetId,
+        tab: 'DIETA ATUAL',
+        data: editorData
+      })
+    });
+    const text = await resp.text();
+    let result;
+    try { result = JSON.parse(text); } catch(e) { result = { ok: true }; }
+
+    if (result.error) {
+      alert('Erro: ' + result.error);
+    } else {
+      status.textContent = 'Publicado com sucesso!';
+      status.style.display = 'inline';
+      setTimeout(() => status.style.display = 'none', 4000);
+    }
+  } catch(e) {
+    alert('Erro de conexão: ' + e.message);
+  } finally {
+    btn.textContent = 'PUBLICAR NA PLANILHA';
+    btn.disabled = false;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
 // ══ ADMIN — Painel do Treinador (gerar links) ══
 // ══════════════════════════════════════════════════════════════
 function generateLink() {
@@ -1691,9 +2002,11 @@ if (SHEET_ID && TAB_NAME) {
 } else {
   // Modo treinador — mostrar painel admin
   document.getElementById('adminPanel').style.display = 'block';
-  // Recuperar sheet ID salvo
+  // Recuperar sheet ID e script URL salvos
   const saved = localStorage.getItem('gh_admin_sheet_id');
   if (saved) document.getElementById('adminSheetId').value = saved;
+  const savedUrl = getScriptUrl();
+  if (savedUrl) document.getElementById('edScriptUrl').value = savedUrl;
 }
 
 // PWA: manifest dinâmico com start_url incluindo parâmetros do aluno
