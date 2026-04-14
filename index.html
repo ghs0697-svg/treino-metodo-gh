@@ -1356,7 +1356,7 @@ async function loadFromSheets() {
   document.getElementById('loadingScreen').style.display = 'flex';
 
   try {
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}&headers=0`;
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=TREINO&headers=0`;
     const res = await fetch(url);
 
     if (!res.ok) throw new Error('Não foi possível acessar a planilha. Verifique se ela está compartilhada (qualquer pessoa com link = leitor).');
@@ -2445,8 +2445,25 @@ function copyLink() {
 // ══ INICIALIZAÇÃO ══
 // ══════════════════════════════════════════════════════════════
 if (SHEET_ID && TAB_NAME) {
-  // Modo aluno — carregar treino + dieta da planilha
-  loadDietFromSheets().then(() => loadFromSheets());
+  // Modo aluno — carregar dieta + treino (ambos independentes)
+  // TAB_NAME é só preferência de qual tab abrir primeiro
+  loadDietFromSheets().then(() => {
+    loadFromSheets()
+      .catch(() => {
+        // TREINO não existe mas DIETA sim → esconder TREINO, abrir DIETA
+        if (dietLoaded) {
+          document.getElementById('loadingScreen').style.display = 'none';
+          document.getElementById('navTreino').style.display = 'none';
+          switchView('dieta');
+        }
+      })
+      .finally(() => {
+        // Se URL pediu DIETA explicitamente e dieta existe, abre nela
+        if (dietLoaded && TAB_NAME.toUpperCase() === 'DIETA') {
+          switchView('dieta');
+        }
+      });
+  });
 } else {
   // Modo treinador — mostrar painel admin
   document.getElementById('adminPanel').style.display = 'block';
