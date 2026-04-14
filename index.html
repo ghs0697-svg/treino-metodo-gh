@@ -918,6 +918,25 @@
   }
   .ed-ver-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
   .ed-ver-btn.special { border-color: #c62828; color: #ef9a9a; }
+  /* Masc/Fem toggle */
+  .ed-gender-group { display: flex; gap: 6px; justify-content: center; margin-bottom: 10px; }
+  .ed-gender-btn {
+    padding: 10px 28px; background: var(--card); border: 2px solid #555;
+    border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 15px;
+    transition: all 0.2s; letter-spacing: 1px;
+  }
+  .ed-gender-btn.masc { color: #64B5F6; border-color: #1E88E5; }
+  .ed-gender-btn.masc.active { background: #1565C0; color: #fff; border-color: #1E88E5; }
+  .ed-gender-btn.fem { color: #F48FB1; border-color: #E91E63; }
+  .ed-gender-btn.fem.active { background: #C2185B; color: #fff; border-color: #E91E63; }
+  .ed-cat-group { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; margin-bottom: 6px; }
+  .ed-cat-btn {
+    padding: 6px 14px; background: var(--card); border: 1px solid #555;
+    border-radius: 5px; color: #aaa; font-weight: 600; cursor: pointer; font-size: 12px;
+    transition: all 0.2s;
+  }
+  .ed-cat-btn.active { border-color: var(--gold); color: var(--gold); background: #2A2515; }
+  .ed-cat-btn:hover { border-color: var(--gold-dim); }
 
   /* ── Autocomplete ── */
   .ed-ac-wrap { position: relative; }
@@ -1022,7 +1041,7 @@
     <div id="edCopyHelp" style="display:none;" class="admin-help">
       <strong>Como colar na planilha:</strong><br>
       1. Abra a planilha do aluno no Google Sheets<br>
-      2. Va na aba "DIETA ATUAL" (ou crie ela)<br>
+      2. Va na aba "DIETA" (ou crie ela)<br>
       3. Selecione a celula A1<br>
       4. Ctrl+V (colar)<br>
       5. Menu "Metodo GH" > Formatar Dieta
@@ -1031,14 +1050,19 @@
 
   <!-- ── Tab: Editar Treino ── -->
   <div id="adminTabTreino" style="display:none;">
-    <div class="ed-section-label">FREQUÊNCIA</div>
-    <div class="ed-freq-group">
-      <button class="ed-tpl-btn" onclick="showTreinoVersions('3X')">3X</button>
-      <button class="ed-tpl-btn" onclick="showTreinoVersions('4X')">4X</button>
-      <button class="ed-tpl-btn" onclick="showTreinoVersions('5X')">5X</button>
-      <button class="ed-tpl-btn" onclick="showTreinoVersions('6X')">6X</button>
-      <button class="ed-tpl-btn" onclick="showTreinoVersions('7X')">7X</button>
+    <div class="ed-gender-group">
+      <button class="ed-gender-btn masc active" onclick="setTreinoGender('M')">MASCULINO</button>
+      <button class="ed-gender-btn fem" onclick="setTreinoGender('F')">FEMININO</button>
     </div>
+    <div class="ed-section-label">FREQUÊNCIA</div>
+    <div class="ed-freq-group" id="treinoFreqGroup">
+      <button class="ed-tpl-btn" onclick="showTreinoCategories('3X')">3X</button>
+      <button class="ed-tpl-btn" onclick="showTreinoCategories('4X')">4X</button>
+      <button class="ed-tpl-btn" onclick="showTreinoCategories('5X')">5X</button>
+      <button class="ed-tpl-btn" onclick="showTreinoCategories('6X')">6X</button>
+      <button class="ed-tpl-btn" onclick="showTreinoCategories('7X')">7X</button>
+    </div>
+    <div id="treinoCatGroup" class="ed-cat-group" style="display:none;"></div>
     <div id="treinoVersions" class="ed-ver-group" style="display:none;"></div>
     <div class="editor-toolbar" style="margin-top:8px;">
       <button class="ed-tpl-btn" style="border-color:#4CAF50;color:#4CAF50;" onclick="loadTreinoFromSheet()">CARREGAR DA PLANILHA</button>
@@ -1433,8 +1457,14 @@ async function loadFromSheets() {
 
   } catch (err) {
     document.getElementById('loadingScreen').style.display = 'none';
-    document.getElementById('errorBox').style.display = 'block';
-    document.getElementById('errorMsg').textContent = err.message;
+    // Se treino falhou mas dieta existe, mostra só dieta
+    if (dietLoaded) {
+      document.getElementById('mainNav').style.display = 'flex';
+      document.querySelector('[onclick*="showSection(\'dieta\')"]')?.click();
+    } else {
+      document.getElementById('errorBox').style.display = 'block';
+      document.getElementById('errorMsg').textContent = err.message;
+    }
   }
 }
 
@@ -1558,7 +1588,7 @@ var dietLoaded = false;
 
 async function loadDietFromSheets() {
   try {
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('DIETA ATUAL')}&headers=1`;
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('DIETA')}&headers=1`;
     const res = await fetch(url);
     if (!res.ok) throw new Error('Tab não encontrada');
     const text = await res.text();
@@ -1995,7 +2025,7 @@ function copyDietCSV() {
 
   navigator.clipboard.writeText(tsv).then(() => {
     const status = document.getElementById('edStatus');
-    status.textContent = 'CSV copiado! Cole na planilha (Ctrl+V em A1)';
+    status.textContent = 'CSV copiado! Cole na aba DIETA (Ctrl+V em A1)';
     status.style.display = 'inline';
     document.getElementById('edCopyHelp').style.display = 'block';
     setTimeout(() => status.style.display = 'none', 5000);
@@ -2015,7 +2045,7 @@ async function loadFromSheet() {
   const sheetId = document.getElementById('adminSheetId').value.trim();
   if (!sheetId) { alert('Preencha o ID da planilha do aluno primeiro.'); return; }
 
-  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=DIETA%20ATUAL`;
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=DIETA`;
 
   try {
     const resp = await fetch(url);
@@ -2051,26 +2081,91 @@ async function loadFromSheet() {
 let editorTreinoData = [];
 let treinoTemplateCache = null;
 
-const TREINO_TEMPLATES = {
-  '3X': ['1.0','1.0_50min','2.0','2.0_50min','3.0','3.0_50min','4.0','4.0_50min','5.0','5.0_50min','6.0','6.0_50min','ARTROSE_JOELHO','HERNIA_LOMBAR'],
-  '4X': ['1.0','1.0_50min','2.0','2.0_50min','3.0','3.0_50min','4.0','4.0_50min','5.0','5.0_50min','6.0','6.0_50min','CASA'],
-  '5X': ['1.0','1.0_50min','2.0','2.0_50min','3.0','3.0_50min','4.0','4.0_50min','5.0','5.0_50min','6.0','6.0_50min','HERNIA_LOMBAR','LCA_ROMPIDO','TALVEZ_6X'],
-  '6X': ['1.0','1.0_50min','2.0','2.0_50min','3.0','3.0_50min','4.0','4.0_50min','5.0','5.0_50min','6.0','6.0_50min','LESAO_BICEPS'],
-  '7X': ['1.0','1.0_50min','2.0','2.0_50min','3.0','3.0_50min','4.0','4.0_50min','5.0','5.0_50min','6.0','6.0_50min'],
-  'CASA': ['5X','6X']
+const TREINO_MASC = {
+  '3X': {'':[1,2,3,4,5,6],'50min':[1,2,3,4,5,6],'ARTROSE_JOELHO':[],'HERNIA_LOMBAR':[]},
+  '4X': {'':[1,2,3,4,5,6],'50min':[1,2,3,4,5,6],'CASA':[]},
+  '5X': {'':[1,2,3,4,5,6],'50min':[1,2,3,4,5,6],'HERNIA_LOMBAR':[],'LCA_ROMPIDO':[],'TALVEZ_6X':[],'CASA':[]},
+  '6X': {'':[1,2,3,4,5,6],'50min':[1,2,3,4,5,6],'LESAO_BICEPS':[],'CASA':[]},
+  '7X': {'':[1,2,3,4,5,6],'50min':[1,2,3,4,5,6]}
 };
+const TREINO_FEM = {
+  '3X': {'NORMAL':[1,2,3,4,5,6],'ATLETA':[1,2,3,4,5,6],'PREDIO':[1,2,3,4,5,6],'RAPIDO':[1,2,3,4,5,6]},
+  '4X': {'NORMAL':[1,2,3,4,5,6],'ATLETA':[1,2,3,4,5,6],'PREDIO':[1,2,3,4,5,6],'RAPIDO':[1,2,3,4,5,6]},
+  '5X': {'NORMAL':[1,2,3,4,5,6],'ATLETA':[1,2,3,4,5,6],'PREDIO':[1,2,3,4,5,6],'RAPIDO':[1,2,3,4,5,6],'4INF1SUP':[1,2,3,4,5,6],'CASA_JOELHO':[1,2,3,4,5,6]},
+  '6X': {'NORMAL':[1,2,3,4,5,6],'ATLETA':[1,2,3,4,5,6],'PREDIO':[1,2,3,4,5,6],'RAPIDO':[1,2,3,4,5,6],'1SUP':[1,2,3,4,5,6]},
+  '7X': {'NORMAL':[1,2,3,4,5,6],'ATLETA':[1,2,3,4,5,6],'RAPIDO':[1,2,3,4,5,6]}
+};
+let treinoGender = 'M';
+let treinoSelectedFreq = null;
 
-function showTreinoVersions(freq) {
-  document.querySelectorAll('.ed-freq-group .ed-tpl-btn').forEach(b => b.classList.remove('active'));
+function setTreinoGender(g) {
+  treinoGender = g;
+  document.querySelectorAll('.ed-gender-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.ed-gender-btn.${g === 'M' ? 'masc' : 'fem'}`).classList.add('active');
+  document.getElementById('treinoCatGroup').style.display = 'none';
+  document.getElementById('treinoCatGroup').innerHTML = '';
+  document.getElementById('treinoVersions').style.display = 'none';
+  document.getElementById('treinoVersions').innerHTML = '';
+  document.querySelectorAll('#treinoFreqGroup .ed-tpl-btn').forEach(b => b.classList.remove('active'));
+  treinoSelectedFreq = null;
+}
+
+const CAT_LABELS = {'':'Normal','50min':'50min','NORMAL':'Normal','ATLETA':'Atleta','PREDIO':'Prédio','RAPIDO':'Rápido',
+  '4INF1SUP':'4Inf+1Sup','CASA_JOELHO':'Casa/Joelho','1SUP':'1 Sup','ARTROSE_JOELHO':'Artrose Joelho',
+  'HERNIA_LOMBAR':'Hérnia Lombar','CASA':'Casa','LCA_ROMPIDO':'LCA Rompido','TALVEZ_6X':'Talvez 6X','LESAO_BICEPS':'Lesão Bíceps'};
+
+function showTreinoCategories(freq) {
+  treinoSelectedFreq = freq;
+  document.querySelectorAll('#treinoFreqGroup .ed-tpl-btn').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
-  const versions = TREINO_TEMPLATES[freq] || [];
+  const tpls = treinoGender === 'M' ? TREINO_MASC : TREINO_FEM;
+  const cats = tpls[freq] || {};
+  const catKeys = Object.keys(cats);
+  const catContainer = document.getElementById('treinoCatGroup');
+  const verContainer = document.getElementById('treinoVersions');
+  verContainer.style.display = 'none';
+  verContainer.innerHTML = '';
+  if (catKeys.length <= 1) {
+    catContainer.style.display = 'none';
+    showTreinoVersionsForCat(freq, catKeys[0] || '');
+    return;
+  }
+  let html = '';
+  catKeys.forEach(c => {
+    html += `<button class="ed-cat-btn" onclick="selectTreinoCat('${freq}','${c}')">${CAT_LABELS[c] || c}</button>`;
+  });
+  catContainer.innerHTML = html;
+  catContainer.style.display = 'flex';
+}
+
+function selectTreinoCat(freq, cat) {
+  document.querySelectorAll('.ed-cat-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  showTreinoVersionsForCat(freq, cat);
+}
+
+function showTreinoVersionsForCat(freq, cat) {
+  const tpls = treinoGender === 'M' ? TREINO_MASC : TREINO_FEM;
+  const versions = (tpls[freq] || {})[cat] || [];
   const container = document.getElementById('treinoVersions');
+  if (versions.length === 0) {
+    // Special template with no versions (e.g. ARTROSE_JOELHO)
+    const prefix = treinoGender === 'M' ? '' : 'FEM_';
+    const name = cat ? `${prefix}${freq}_${cat}` : `${prefix}${freq}`;
+    loadTreinoTemplate(name);
+    container.style.display = 'none';
+    return;
+  }
   let html = '';
   versions.forEach(v => {
-    const isSpecial = isNaN(parseFloat(v));
-    const label = v.replace('_50min',' (50min)').replace(/_/g,' ');
-    const fullName = freq === 'CASA' ? `CASA_${v}` : `${freq}_${v}`;
-    html += `<button class="ed-ver-btn${isSpecial ? ' special' : ''}" onclick="loadTreinoTemplate('${fullName}')">${label}</button>`;
+    const prefix = treinoGender === 'M' ? '' : 'FEM_';
+    let fullName;
+    if (treinoGender === 'M') {
+      fullName = cat === '50min' ? `${freq}_${v}.0_50min` : cat ? `${freq}_${cat}_${v}.0` : `${freq}_${v}.0`;
+    } else {
+      fullName = cat === 'NORMAL' ? `FEM_${freq}_${v}.0` : `FEM_${freq}_${cat}_${v}.0`;
+    }
+    html += `<button class="ed-ver-btn" onclick="loadTreinoTemplate('${fullName}')">${v}.0</button>`;
   });
   container.innerHTML = html;
   container.style.display = 'flex';
@@ -2101,7 +2196,7 @@ async function loadTreinoTemplate(name) {
 async function loadTreinoFromSheet() {
   const sheetId = document.getElementById('adminSheetId').value.trim();
   if (!sheetId) { alert('Preencha o ID da planilha do aluno primeiro.'); return; }
-  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=ATUAL`;
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=TREINO`;
   try {
     const resp = await fetch(url);
     if (!resp.ok) throw new Error('Planilha nao encontrada');
@@ -2110,7 +2205,7 @@ async function loadTreinoFromSheet() {
       while (r.length < 8) r.push('');
       return r.slice(0, 8);
     });
-    if (editorTreinoData.length < 2) throw new Error('Aba ATUAL vazia');
+    if (editorTreinoData.length < 2) throw new Error('Aba TREINO vazia');
     document.getElementById('treinoPublishBar').style.display = 'flex';
     renderTreinoEditor();
     const status = document.getElementById('treinoStatus');
@@ -2251,7 +2346,7 @@ function copyTreinoCSV() {
   ).join('\n');
   navigator.clipboard.writeText(tsv).then(() => {
     const status = document.getElementById('treinoStatus');
-    status.textContent = 'CSV copiado! Cole na aba ATUAL (Ctrl+V em A1)';
+    status.textContent = 'CSV copiado! Cole na aba TREINO (Ctrl+V em A1)';
     status.style.display = 'inline';
     setTimeout(() => status.style.display = 'none', 5000);
   }).catch(() => {
@@ -2280,7 +2375,7 @@ function generateLink() {
   localStorage.setItem('gh_admin_sheet_id', sheetId);
 
   const base = window.location.origin + window.location.pathname;
-  const link = `${base}?sheet=${encodeURIComponent(sheetId)}&tab=ATUAL`;
+  const link = `${base}?sheet=${encodeURIComponent(sheetId)}&tab=TREINO`;
 
   document.getElementById('adminUrl').textContent = link;
   document.getElementById('adminResult').style.display = 'block';
@@ -2300,7 +2395,7 @@ function copyLink() {
 // ══════════════════════════════════════════════════════════════
 if (SHEET_ID && TAB_NAME) {
   // Modo aluno — carregar treino + dieta da planilha
-  loadFromSheets().then(() => loadDietFromSheets());
+  loadDietFromSheets().then(() => loadFromSheets());
 } else {
   // Modo treinador — mostrar painel admin
   document.getElementById('adminPanel').style.display = 'block';
