@@ -157,6 +157,40 @@
   .exercise-card.warmup { border-left-color: var(--muted); }
   .exercise-card.has-video:active { border-color: var(--gold); }
 
+  /* ── BI-SET ── */
+  .exercise-card.biset { border-left-color: #e74c3c; }
+  .biset-badge {
+    display: inline-block;
+    background: #e74c3c;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+  }
+  .biset-sub {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+  }
+  .biset-sub + .biset-sub { border-top: 1px dashed #2a2a2a; }
+  .biset-sub .exercise-name { font-size: 13px; color: var(--gold); }
+  .biset-connector {
+    text-align: center;
+    font-size: 10px;
+    color: #e74c3c;
+    font-weight: 700;
+    padding: 2px 0;
+    background: #1a1010;
+    border-top: 1px dashed #3a2020;
+    border-bottom: 1px dashed #3a2020;
+    letter-spacing: 1px;
+  }
+
   .exercise-main {
     display: flex;
     align-items: center;
@@ -1419,8 +1453,10 @@ async function loadFromSheets() {
         continue;
       }
 
-      const dayNum = parseInt(r[0]);
+      const dayRaw = (r[0] || '').toString().trim().toLowerCase();
+      const dayNum = parseInt(dayRaw);
       if (isNaN(dayNum)) continue;
+      const isBisetStart = /bi/.test(dayRaw); // ex: "1bi" marca primeiro do bi-set
 
       if (!days[dayNum]) days[dayNum] = [];
       const isWarmup = (r[7] || '').toLowerCase() === 'sim';
@@ -1431,9 +1467,26 @@ async function loadFromSheets() {
         rest: r[4] || '',
         obs: r[5] || '',
         video: r[6] || '',
-        warmup: isWarmup
+        warmup: isWarmup,
+        bisetStart: isBisetStart
       });
     }
+
+    // Junta bi-sets: cada "bisetStart" consome a próxima linha e vira um grupo
+    Object.keys(days).forEach(d => {
+      const orig = days[d];
+      const merged = [];
+      for (let i = 0; i < orig.length; i++) {
+        const ex = orig[i];
+        if (ex.bisetStart && i + 1 < orig.length && !orig[i + 1].warmup) {
+          merged.push({ biset: true, a: ex, b: orig[i + 1] });
+          i++; // pula o segundo, já foi consumido
+        } else {
+          merged.push(ex);
+        }
+      }
+      days[d] = merged;
+    });
 
     WORKOUT = Object.keys(days).sort((a, b) => a - b).map(d => ({
       day: `DIA ${d}`,
@@ -1502,6 +1555,78 @@ function renderExercises() {
     const div = document.createElement("div");
     div.className = `day-content ${di === currentDay ? 'active' : ''}`;
     div.innerHTML = day.exercises.map((ex, ei) => {
+      // ── BI-SET ──
+      if (ex.biset) {
+        const a = ex.a, b = ex.b;
+        const aVid = (a.video || '').replace(/'/g, "\\'");
+        const bVid = (b.video || '').replace(/'/g, "\\'");
+        const aName = a.name.replace(/'/g, "\\'");
+        const bName = b.name.replace(/'/g, "\\'");
+        const hasA = a.video && a.video.length > 0;
+        const hasB = b.video && b.video.length > 0;
+        // carga/placas são 2 — usamos ei como índice principal (a) e ei+0.5 pro b via subfix
+        const curA = loadCarga(di, `${ei}a`, currentWeek);
+        const prevA = getPrevCarga(di, `${ei}a`, currentWeek);
+        const curAP = loadPlacas(di, `${ei}a`, currentWeek);
+        const prevAP = getPrevPlacas(di, `${ei}a`, currentWeek);
+        const curB = loadCarga(di, `${ei}b`, currentWeek);
+        const prevB = getPrevCarga(di, `${ei}b`, currentWeek);
+        const curBP = loadPlacas(di, `${ei}b`, currentWeek);
+        const prevBP = getPrevPlacas(di, `${ei}b`, currentWeek);
+        // Série/reps/intervalo compartilhados (usa do A; se B tiver diferente, mostra como badge)
+        const tagsA = [];
+        if (a.series) tagsA.push(`<span class="exercise-tag"><span class="tl">S</span>${a.series}</span>`);
+        if (a.reps)   tagsA.push(`<span class="exercise-tag"><span class="tl">R</span>${a.reps}</span>`);
+        if (a.rest)   tagsA.push(`<span class="exercise-tag"><span class="tl">I</span>${a.rest}</span>`);
+        const sameParams = (a.series === b.series && a.reps === b.reps && a.rest === b.rest);
+        const tagsB = [];
+        if (!sameParams) {
+          if (b.series) tagsB.push(`<span class="exercise-tag"><span class="tl">S</span>${b.series}</span>`);
+          if (b.reps)   tagsB.push(`<span class="exercise-tag"><span class="tl">R</span>${b.reps}</span>`);
+          if (b.rest)   tagsB.push(`<span class="exercise-tag"><span class="tl">I</span>${b.rest}</span>`);
+        }
+        return `
+          <div class="exercise-card biset">
+            <div style="padding:10px 12px 4px;">
+              <span class="biset-badge">&#9889; BI-SET</span>
+            </div>
+            <div class="biset-sub ${hasA ? 'has-video' : ''}" ${hasA ? `onclick="openVideo('${aName}', '${aVid}')"` : ''}>
+              <div class="exercise-info">
+                <div class="exercise-name">${a.name}${hasA ? ' <span class="video-icon">&#9654;</span>' : ''}</div>
+                <div class="exercise-details">${tagsA.join('')}</div>
+                ${a.obs ? `<div class="exercise-obs">${a.obs}</div>` : ''}
+              </div>
+            </div>
+            <div class="biset-connector">&#8595; SEM DESCANSO &#8595;</div>
+            <div class="biset-sub ${hasB ? 'has-video' : ''}" ${hasB ? `onclick="openVideo('${bName}', '${bVid}')"` : ''}>
+              <div class="exercise-info">
+                <div class="exercise-name">${b.name}${hasB ? ' <span class="video-icon">&#9654;</span>' : ''}</div>
+                ${tagsB.length ? `<div class="exercise-details">${tagsB.join('')}</div>` : ''}
+                ${b.obs ? `<div class="exercise-obs">${b.obs}</div>` : ''}
+              </div>
+            </div>
+            <div class="carga-section">
+              <div class="carga-group">
+                <span class="carga-label" style="font-size:10px;">A</span>
+                <input class="carga-input" type="number" inputmode="decimal" placeholder="kg" style="width:60px"
+                  value="${curA}" oninput="onCarga(${di},'${ei}a',this)">
+                <input class="carga-input" type="number" inputmode="numeric" placeholder="pl" style="width:45px"
+                  value="${curAP}" oninput="onPlacas(${di},'${ei}a',this)">
+                ${(prevA || prevAP) ? `<span class="carga-prev">${prevA ? prevA+'kg' : ''}${prevA && prevAP ? '/' : ''}${prevAP ? prevAP+'pl' : ''}</span>` : ''}
+              </div>
+              <div class="carga-group">
+                <span class="carga-label" style="font-size:10px;">B</span>
+                <input class="carga-input" type="number" inputmode="decimal" placeholder="kg" style="width:60px"
+                  value="${curB}" oninput="onCarga(${di},'${ei}b',this)">
+                <input class="carga-input" type="number" inputmode="numeric" placeholder="pl" style="width:45px"
+                  value="${curBP}" oninput="onPlacas(${di},'${ei}b',this)">
+                ${(prevB || prevBP) ? `<span class="carga-prev">${prevB ? prevB+'kg' : ''}${prevB && prevBP ? '/' : ''}${prevBP ? prevBP+'pl' : ''}</span>` : ''}
+              </div>
+              <span class="carga-saved" id="sv-${di}-${ei}">&#10003; salvo</span>
+            </div>
+          </div>`;
+      }
+
       const prev = getPrevCarga(di, ei, currentWeek);
       const cur = loadCarga(di, ei, currentWeek);
       const prevP = getPrevPlacas(di, ei, currentWeek);
