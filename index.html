@@ -1783,7 +1783,7 @@ function parseDietData(rows) {
     supls: {},
     ciclos: [],
     orientacoes: [],
-    aerobicos: null,
+    aerobicos: [],
     protocolos: []
   };
 
@@ -1846,7 +1846,7 @@ function parseDietData(rows) {
         break;
       case 'aerob':
       case 'cardio':
-        data.aerobicos = { freq: r[1] || '', duracao: r[2] || '', obs: r[3] || '' };
+        data.aerobicos.push({ freq: r[1] || '', duracao: r[2] || '', obs: r[3] || '' });
         break;
       case 'nota':
       case 'obs':
@@ -1951,11 +1951,13 @@ function renderDiet() {
   });
 
   // Orientações
-  if (d.orientacoes.length > 0 || d.aerobicos) {
+  if (d.orientacoes.length > 0 || (d.aerobicos && d.aerobicos.length > 0)) {
     html += `<div class="diet-section-toggle" onclick="toggleDietSection('orient')">Orientações <span id="orientArrow">&#9660;</span></div>`;
     html += `<div class="diet-section-content" id="orientContent">`;
-    if (d.aerobicos) {
-      html += `<div class="diet-orient"><span class="diet-orient-cat">Aeróbicos</span><span class="diet-orient-text">${d.aerobicos.freq} — ${d.aerobicos.duracao}${d.aerobicos.obs ? ' — ' + d.aerobicos.obs : ''}</span></div>`;
+    if (d.aerobicos && d.aerobicos.length > 0) {
+      d.aerobicos.forEach(function(a) {
+        html += `<div class="diet-orient"><span class="diet-orient-cat">Aeróbicos</span><span class="diet-orient-text">${a.freq} — ${a.duracao}${a.obs ? ' — ' + a.obs : ''}</span></div>`;
+      });
     }
     d.orientacoes.forEach(o => {
       html += `<div class="diet-orient">${o.categoria ? `<span class="diet-orient-cat">${o.categoria}</span>` : ''}<span class="diet-orient-text">${o.texto}</span></div>`;
