@@ -2897,10 +2897,11 @@ function openTrainerSheetModal() {
 
 async function trainerLoadSheet() {
   let sid = document.getElementById('trainerSheetIdInput').value.trim();
-  // Aceita URL completa ou só ID
-  const m = sid.match(/spreadsheets\/d\/([\w-]+)/);
+  // Aceita: ID puro, URL do Drive (.../spreadsheets/d/ID/...), URL do site (?sheet=ID&tab=...)
+  let m = sid.match(/spreadsheets\/d\/([\w-]+)/);
+  if (!m) m = sid.match(/[?&]sheet=([\w-]+)/);
   if (m) sid = m[1];
-  if (!sid) { alert('Cola o ID ou URL da sheet'); return; }
+  if (!sid) { alert('Cola o ID, a URL do Drive OU a URL do site (?sheet=...)'); return; }
   trainerSheetId = sid;
   try {
     const url = `https://docs.google.com/spreadsheets/d/${sid}/gviz/tq?tqx=out:csv&sheet=TREINO&_=${Date.now()}`;
