@@ -1038,8 +1038,13 @@
   .te-day { margin-bottom: 18px; border-radius: 10px; overflow: hidden; background: #161616; border: 1px solid #2a2a2a; }
   .te-day-header { padding: 10px 14px; font-weight: 800; color: #fff; font-size: 13px; letter-spacing: 0.5px; text-shadow: 0 1px 2px rgba(0,0,0,0.6); }
   .te-day-body { padding: 8px; }
-  .te-ex { background: #1f1f1f; border-radius: 6px; padding: 8px; margin-bottom: 6px; border-left: 4px solid #888; }
-  .te-ex-row { display: grid; grid-template-columns: 1fr 48px 65px 56px 28px; gap: 6px; align-items: center; }
+  .te-ex { background: #1f1f1f; border-radius: 6px; padding: 8px; margin-bottom: 6px; border-left: 4px solid #888; transition: background 0.15s; }
+  .te-ex.drag-over { background: #2a2a18; outline: 2px dashed var(--gold); outline-offset: -2px; }
+  .te-ex.dragging { opacity: 0.4; }
+  .te-ex-row { display: grid; grid-template-columns: 20px 1fr 48px 65px 56px 28px; gap: 6px; align-items: center; }
+  .te-drag-handle { color: #555; font-weight: 700; font-size: 18px; line-height: 1; cursor: grab; user-select: none; text-align: center; letter-spacing: -2px; }
+  .te-drag-handle:hover { color: var(--gold); }
+  .te-drag-handle:active { cursor: grabbing; }
   .te-ex-name { background: #2a2a2a; color: var(--gold); border: 1px solid var(--gold-dim); padding: 6px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; text-align: left; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
   .te-ex-name:hover { background: var(--gold-dim); }
   .te-input { background: #222; color: #fff; border: 1px solid #333; padding: 6px; border-radius: 4px; font-size: 11px; width: 100%; box-sizing: border-box; }
@@ -1059,8 +1064,9 @@
   .te-swap-item.current { background: var(--gold); color: var(--dark); font-weight: 700; }
   .te-swap-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
   @media (max-width: 600px) {
-    .te-ex-row { grid-template-columns: 1fr 42px 58px 50px 26px; }
+    .te-ex-row { grid-template-columns: 18px 1fr 42px 58px 50px 26px; }
     .te-ex-name { font-size: 11px; }
+    .te-drag-handle { font-size: 16px; }
   }
 </style>
 </head>
@@ -2966,8 +2972,10 @@ function renderTrainerEditor() {
       const g = classifyMuscle(e.name);
       const color = MUSCLE_COLORS[g];
       const icon = e.warmup ? '🔵' : '🔄';
-      html += `<div class="te-ex" style="border-left-color:${color}">
+      html += `<div class="te-ex" data-idx="${e.idx}" style="border-left-color:${color}"
+          ondragover="teDragOver(event)" ondragleave="teDragLeave(event)" ondrop="teDrop(${e.idx}, event)">
         <div class="te-ex-row">
+          <span class="te-drag-handle" draggable="true" ondragstart="teDragStart(${e.idx}, event)" ondragend="teDragEnd()" title="Arraste pra reordenar">⋮⋮</span>
           <button class="te-ex-name" onclick="openSwapModal(${e.idx})" title="Trocar exercício (${MUSCLE_LABELS[g] || g})">${icon} ${escTrainer(e.name)}</button>
           <input class="te-input" value="${escTrainer(e.series)}" oninput="trainerData[${e.idx}][2]=this.value" placeholder="S">
           <input class="te-input" value="${escTrainer(e.reps)}" oninput="trainerData[${e.idx}][3]=this.value" placeholder="Reps">
@@ -3056,6 +3064,63 @@ function removeExercise(rowIdx) {
   if (!confirm('Remover "' + name + '"?')) return;
   trainerData.splice(rowIdx, 1);
   renderTrainerEditor();
+}
+
+// ── Drag & drop (reordenar / mover entre dias) ──
+let teDragSrc = null;
+
+function teDragStart(idx, e) {
+  teDragSrc = idx;
+  e.dataTransfer.effectAllowed = 'move';
+  // Necessário pro Firefox
+  e.dataTransfer.setData('text/plain', String(idx));
+  // Visual: card sumindo
+  const card = e.target.closest('.te-ex');
+  if (card) card.classList.add('dragging');
+}
+
+function teDragOver(e) {
+  if (teDragSrc === null) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const card = e.currentTarget;
+  // Limpa drag-over de outros cards e marca esse
+  document.querySelectorAll('.te-ex.drag-over').forEach(el => { if (el !== card) el.classList.remove('drag-over'); });
+  card.classList.add('drag-over');
+}
+
+function teDragLeave(e) {
+  // Só remove se sair do card de fato (não dos filhos)
+  if (e.currentTarget.contains(e.relatedTarget)) return;
+  e.currentTarget.classList.remove('drag-over');
+}
+
+function teDrop(targetIdx, e) {
+  e.preventDefault();
+  e.stopPropagation();
+  e.currentTarget.classList.remove('drag-over');
+  if (teDragSrc === null || teDragSrc === targetIdx) { teDragSrc = null; return; }
+
+  const src = teDragSrc;
+  const tgt = targetIdx;
+  const targetDay = trainerData[tgt][0]; // pega o dia do destino — se for outro dia, muda o dia do exercício movido
+
+  // Remove a linha de origem
+  const moving = trainerData.splice(src, 1)[0];
+  moving[0] = String(targetDay); // muda o dia se for cross-day
+
+  // Recalcula índice do alvo (caso source estivesse antes do target)
+  const newTgt = src < tgt ? tgt - 1 : tgt;
+  trainerData.splice(newTgt, 0, moving);
+
+  teDragSrc = null;
+  renderTrainerEditor();
+}
+
+function teDragEnd() {
+  teDragSrc = null;
+  document.querySelectorAll('.te-ex.dragging').forEach(el => el.classList.remove('dragging'));
+  document.querySelectorAll('.te-ex.drag-over').forEach(el => el.classList.remove('drag-over'));
 }
 
 function pickReplacement(dbIdx) {
