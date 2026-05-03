@@ -993,6 +993,68 @@
   @media (max-width: 600px) {
     .ed-treino-row { grid-template-columns: 28px 1fr 40px 55px 50px 1fr 24px; font-size: 10px; }
   }
+
+  /* ══════════ MODO TREINADOR ══════════ */
+  #trainerToggleBtn {
+    position: fixed; bottom: 18px; right: 18px; z-index: 9000;
+    background: var(--gold); color: var(--dark); border: none;
+    padding: 10px 14px; border-radius: 28px; font-weight: 700; font-size: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5); cursor: pointer;
+  }
+  .te-modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+    display: none; align-items: center; justify-content: center; z-index: 10000;
+    padding: 16px;
+  }
+  .te-modal-overlay.show { display: flex; }
+  .te-modal-box {
+    background: #1a1a1a; border: 1px solid var(--gold-dim); border-radius: 12px;
+    padding: 20px; max-width: 480px; width: 100%;
+    max-height: 90vh; overflow-y: auto;
+  }
+  .te-modal-box h3 { color: var(--gold); margin: 0 0 12px; font-size: 16px; }
+  .te-modal-box input[type="text"], .te-modal-box input[type="password"] {
+    width: 100%; padding: 10px; background: #222; border: 1px solid var(--gold-dim);
+    color: var(--white); border-radius: 6px; margin-bottom: 10px; font-size: 14px; box-sizing: border-box;
+  }
+  .te-btn {
+    background: var(--gold); color: var(--dark); border: none;
+    padding: 10px 18px; border-radius: 6px; font-weight: 700; cursor: pointer; margin-right: 6px;
+  }
+  .te-btn.ghost { background: transparent; color: var(--gray); border: 1px solid #444; }
+  .te-btn.danger { background: #c0392b; color: #fff; }
+
+  #trainerEditor {
+    position: fixed; inset: 0; background: var(--dark); z-index: 8500;
+    display: none; flex-direction: column; overflow: hidden;
+  }
+  #trainerEditor.show { display: flex; }
+  .te-top-bar {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+    background: #111; border-bottom: 1px solid var(--gold-dim); flex-shrink: 0;
+  }
+  .te-top-info { flex: 1; color: var(--white); font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .te-days-scroll { flex: 1; overflow-y: auto; padding: 12px; }
+  .te-day { margin-bottom: 18px; border-radius: 10px; overflow: hidden; background: #161616; border: 1px solid #2a2a2a; }
+  .te-day-header { padding: 10px 14px; font-weight: 800; color: #fff; font-size: 13px; letter-spacing: 0.5px; text-shadow: 0 1px 2px rgba(0,0,0,0.6); }
+  .te-day-body { padding: 8px; }
+  .te-ex { background: #1f1f1f; border-radius: 6px; padding: 8px; margin-bottom: 6px; border-left: 4px solid #888; }
+  .te-ex-row { display: grid; grid-template-columns: 1fr 50px 70px 60px; gap: 6px; align-items: center; }
+  .te-ex-name { background: #2a2a2a; color: var(--gold); border: 1px solid var(--gold-dim); padding: 6px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; text-align: left; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+  .te-ex-name:hover { background: var(--gold-dim); }
+  .te-input { background: #222; color: #fff; border: 1px solid #333; padding: 6px; border-radius: 4px; font-size: 11px; width: 100%; box-sizing: border-box; }
+  .te-input:focus { border-color: var(--gold); outline: none; }
+  .te-obs { margin-top: 6px; font-size: 11px; }
+  .te-day-actions { display: flex; gap: 6px; padding: 6px 8px; border-top: 1px dashed #333; }
+  .te-day-actions .te-btn { font-size: 11px; padding: 4px 10px; }
+  .swap-list { max-height: 50vh; overflow-y: auto; margin: 10px 0; display: flex; flex-direction: column; gap: 4px; }
+  .te-swap-item { background: #222; color: var(--white); border: 1px solid #333; padding: 8px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; text-align: left; }
+  .te-swap-item:hover { background: var(--gold-dim); border-color: var(--gold); }
+  .te-swap-item.current { background: var(--gold); color: var(--dark); font-weight: 700; }
+  @media (max-width: 600px) {
+    .te-ex-row { grid-template-columns: 1fr 45px 60px 55px; }
+    .te-ex-name { font-size: 11px; }
+  }
 </style>
 </head>
 <body>
@@ -1320,6 +1382,53 @@
 </div>
 
 <div class="app-footer"><span>MÉTODO GH — @gh.scheuermann</span></div>
+
+<!-- ══ MODO TREINADOR ══ -->
+<button id="trainerToggleBtn" onclick="openTrainerLogin()" style="display:none;">⚙ Modo Treinador</button>
+
+<div class="te-modal-overlay" id="trainerLoginModal">
+  <div class="te-modal-box">
+    <h3>🔒 Modo Treinador</h3>
+    <p style="color:#888;font-size:12px;margin:0 0 12px;">Acesso restrito — só funcionários autorizados.</p>
+    <input type="password" id="trainerPwdInput" placeholder="Senha">
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button class="te-btn" onclick="authTrainer()">Entrar</button>
+      <button class="te-btn ghost" onclick="teHide('trainerLoginModal')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="te-modal-overlay" id="trainerSheetModal">
+  <div class="te-modal-box">
+    <h3>📋 Carregar treino do aluno</h3>
+    <p style="color:#888;font-size:12px;margin:0 0 12px;">Cola o ID da sheet do aluno (ou a URL completa).</p>
+    <input type="text" id="trainerSheetIdInput" placeholder="ID ou URL da sheet">
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button class="te-btn" onclick="trainerLoadSheet()">Carregar</button>
+      <button class="te-btn ghost" onclick="teHide('trainerSheetModal')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div id="trainerEditor">
+  <div class="te-top-bar">
+    <div class="te-top-info" id="trainerStudentInfo"></div>
+    <button class="te-btn" id="trainerSaveBtn" onclick="trainerSave()">💾 Salvar Tudo</button>
+    <button class="te-btn ghost" onclick="trainerExit()">✕</button>
+  </div>
+  <div class="te-days-scroll" id="trainerDaysContainer"></div>
+</div>
+
+<div class="te-modal-overlay" id="exerciseSwapModal">
+  <div class="te-modal-box">
+    <h3>🔄 Trocar Exercício</h3>
+    <p style="color:#888;font-size:12px;margin:0 0 6px;">Atual: <span id="swapCurrentName" style="color:#fff;font-weight:600;"></span></p>
+    <p style="color:#888;font-size:12px;margin:0 0 12px;">Grupo: <span id="swapMuscleLabel" style="font-weight:700;"></span> (séries/reps/cadência são preservadas)</p>
+    <input type="text" id="swapSearchInput" placeholder="Buscar...">
+    <div class="swap-list" id="swapList"></div>
+    <button class="te-btn ghost" onclick="closeSwapModal()">Cancelar</button>
+  </div>
+</div>
 
 <script src="editor-data.js"></script>
 <script>
@@ -2710,6 +2819,244 @@ if (SHEET_ID && TAB_NAME) {
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
+
+// ══════════════════════════════════════════════════════════════
+// ══ MODO TREINADOR — editor de treino direto na sheet do aluno
+// ══════════════════════════════════════════════════════════════
+
+const TRAINER_PWD = 'timegh';
+const TRAINER_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycby0Kej7V7Gi2gIDKorBookSLofBMHOF50UFWq4Q1fTmstCD8ed8O9XLyCaZo8QIeUPfeQ/exec';
+
+const MUSCLE_PATTERNS = [
+  { g: 'aquecimento', re: /alongamento|mobilidade|aquecimento|prancha\b/i },
+  { g: 'abdomen',     re: /abdominal|prancha com retrovers/i },
+  { g: 'panturrilha', re: /panturrilha/i },
+  { g: 'gluteo',      re: /eleva[çc][aã]o p[eé]lvica|cadeira abdutora|cadeira adutora|coice|sapinho|ostra|abdu[çc][aã]o|extens[aã]o de gl[uú]teo|gl[uú]teo no/i },
+  { g: 'posterior',   re: /stiff|\bflexora\b|hipereextensor|flexor n[oó]rdico|hiperextens[aã]o|levantamento terra|meio terra|terra sum[oô]/i },
+  { g: 'quadriceps',  re: /agachamento|hack|leg press|leg horizontal|afundo|b[uú]lgaro|cadeira extensora/i },
+  { g: 'biceps',      re: /\brosca\b/i },
+  { g: 'triceps',     re: /tr[ií]ceps|mergulho|paralela/i },
+  { g: 'ombro',       re: /desenvolvimento|eleva[çc][aã]o lateral|eleva[çc][aã]o frontal|face pull|crucifixo inverso|remada alta|encolhimento/i },
+  { g: 'costas',      re: /puxada|remada|pulldown|pullover|barra fixa|serrote/i },
+  { g: 'peito',       re: /supino|crucifixo|crossover|voador/i },
+];
+
+const MUSCLE_COLORS = {
+  peito: '#ff8c42', costas: '#4a90e2', quadriceps: '#4caf50',
+  posterior: '#e74c3c', gluteo: '#e91e63', ombro: '#f1c40f',
+  biceps: '#9b59b6', triceps: '#1abc9c', panturrilha: '#607d8b',
+  abdomen: '#8d6e63', aquecimento: '#555', outros: '#888'
+};
+const MUSCLE_LABELS = {
+  peito: 'PEITO', costas: 'COSTAS', quadriceps: 'QUADRÍCEPS', posterior: 'POSTERIOR',
+  gluteo: 'GLÚTEO', ombro: 'OMBRO', biceps: 'BÍCEPS', triceps: 'TRÍCEPS',
+  panturrilha: 'PANTURRILHA', abdomen: 'ABDÔMEN', aquecimento: 'AQUEC.', outros: 'OUTROS'
+};
+
+function classifyMuscle(name) {
+  const n = String(name || '').toLowerCase();
+  for (const { g, re } of MUSCLE_PATTERNS) if (re.test(n)) return g;
+  return 'outros';
+}
+
+let trainerData = null;
+let trainerSheetId = null;
+let trainerAuth = false;
+let swapTargetIdx = null;
+
+// Botão visível só com ?edit=1
+if (new URLSearchParams(location.search).get('edit') === '1') {
+  document.getElementById('trainerToggleBtn').style.display = 'block';
+}
+
+function teShow(id) { document.getElementById(id).classList.add('show'); }
+function teHide(id) { document.getElementById(id).classList.remove('show'); }
+
+function openTrainerLogin() {
+  if (trainerAuth) { openTrainerSheetModal(); return; }
+  document.getElementById('trainerPwdInput').value = '';
+  teShow('trainerLoginModal');
+  setTimeout(() => document.getElementById('trainerPwdInput').focus(), 100);
+}
+
+function authTrainer() {
+  if (document.getElementById('trainerPwdInput').value === TRAINER_PWD) {
+    trainerAuth = true;
+    teHide('trainerLoginModal');
+    openTrainerSheetModal();
+  } else {
+    alert('Senha incorreta');
+  }
+}
+
+function openTrainerSheetModal() {
+  document.getElementById('trainerSheetIdInput').value = '';
+  teShow('trainerSheetModal');
+  setTimeout(() => document.getElementById('trainerSheetIdInput').focus(), 100);
+}
+
+async function trainerLoadSheet() {
+  let sid = document.getElementById('trainerSheetIdInput').value.trim();
+  // Aceita URL completa ou só ID
+  const m = sid.match(/spreadsheets\/d\/([\w-]+)/);
+  if (m) sid = m[1];
+  if (!sid) { alert('Cola o ID ou URL da sheet'); return; }
+  trainerSheetId = sid;
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${sid}/gviz/tq?tqx=out:csv&sheet=TREINO&_=${Date.now()}`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('sheet não acessível (verifique compartilhamento)');
+    const text = await resp.text();
+    trainerData = parseCSV(text).map(r => { while (r.length < 8) r.push(''); return r.slice(0, 8); });
+    if (trainerData.length < 2) throw new Error('sheet vazia ou aba TREINO não encontrada');
+    teHide('trainerSheetModal');
+    document.getElementById('trainerEditor').classList.add('show');
+    document.body.style.overflow = 'hidden';
+    renderTrainerEditor();
+  } catch (e) {
+    alert('Erro: ' + e.message);
+  }
+}
+
+function escTrainer(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+function renderTrainerEditor() {
+  const info = trainerData.find(r => (r[0] || '').toLowerCase().trim() === 'info');
+  const studentName = info ? info[1] : 'Aluno';
+  const freq = info ? info[2] : '';
+  document.getElementById('trainerStudentInfo').innerHTML = `<strong>${escTrainer(studentName)}</strong> · ${escTrainer(freq)} · <span style="color:#888">${trainerSheetId.slice(0, 12)}…</span>`;
+
+  const days = {};
+  trainerData.forEach((r, idx) => {
+    const day = parseInt(r[0]);
+    if (isNaN(day)) return;
+    if (!days[day]) days[day] = [];
+    days[day].push({ idx, name: r[1] || '', series: r[2] || '', reps: r[3] || '', rest: r[4] || '', obs: r[5] || '', video: r[6] || '', warmup: (r[7] || '').toLowerCase().trim() === 'sim' });
+  });
+
+  let html = '';
+  Object.keys(days).sort((a, b) => +a - +b).forEach(d => {
+    const exs = days[d];
+    const groupSet = new Set();
+    exs.forEach(e => {
+      if (e.warmup) return;
+      const g = classifyMuscle(e.name);
+      if (g !== 'aquecimento' && g !== 'outros') groupSet.add(g);
+    });
+    const groups = Array.from(groupSet);
+    const groupColors = groups.map(g => MUSCLE_COLORS[g]);
+    const grad = groupColors.length === 0 ? '#444'
+              : groupColors.length === 1 ? groupColors[0]
+              : `linear-gradient(90deg, ${groupColors.join(', ')})`;
+    const groupLabel = groups.map(g => MUSCLE_LABELS[g]).join(' + ') || '—';
+
+    html += `<div class="te-day">
+      <div class="te-day-header" style="background:${grad}">DIA ${d} — ${groupLabel}</div>
+      <div class="te-day-body">`;
+    exs.forEach(e => {
+      const g = classifyMuscle(e.name);
+      const color = MUSCLE_COLORS[g];
+      const icon = e.warmup ? '🔵' : '🔄';
+      html += `<div class="te-ex" style="border-left-color:${color}">
+        <div class="te-ex-row">
+          <button class="te-ex-name" onclick="openSwapModal(${e.idx})" title="Trocar exercício (${MUSCLE_LABELS[g] || g})">${icon} ${escTrainer(e.name)}</button>
+          <input class="te-input" value="${escTrainer(e.series)}" oninput="trainerData[${e.idx}][2]=this.value" placeholder="S">
+          <input class="te-input" value="${escTrainer(e.reps)}" oninput="trainerData[${e.idx}][3]=this.value" placeholder="Reps">
+          <input class="te-input" value="${escTrainer(e.rest)}" oninput="trainerData[${e.idx}][4]=this.value" placeholder="Int.">
+        </div>
+        <input class="te-input te-obs" value="${escTrainer(e.obs)}" oninput="trainerData[${e.idx}][5]=this.value" placeholder="OBS / cadência (excêntrica X seg, isometria X seg…)">
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+
+  document.getElementById('trainerDaysContainer').innerHTML = html || '<p style="color:#888;text-align:center;padding:30px;">Sem exercícios na aba TREINO.</p>';
+}
+
+function openSwapModal(rowIdx) {
+  swapTargetIdx = rowIdx;
+  const name = trainerData[rowIdx][1];
+  const muscle = classifyMuscle(name);
+  document.getElementById('swapMuscleLabel').textContent = MUSCLE_LABELS[muscle] || muscle;
+  document.getElementById('swapMuscleLabel').style.color = MUSCLE_COLORS[muscle] || '#fff';
+  document.getElementById('swapSearchInput').value = '';
+  document.getElementById('swapCurrentName').textContent = name;
+  renderSwapList(muscle, '');
+  teShow('exerciseSwapModal');
+}
+
+function renderSwapList(muscle, filter) {
+  const f = (filter || '').toLowerCase();
+  const list = (typeof EXERCISE_DB !== 'undefined' ? EXERCISE_DB : [])
+    .filter(e => classifyMuscle(e.n) === muscle)
+    .filter(e => !f || e.n.toLowerCase().includes(f));
+  const currentName = swapTargetIdx != null ? trainerData[swapTargetIdx][1] : '';
+  const html = list.map((e, i) => {
+    const dbIdx = EXERCISE_DB.indexOf(e);
+    const isCurrent = e.n === currentName;
+    return `<button class="te-swap-item${isCurrent ? ' current' : ''}" onclick="pickReplacement(${dbIdx})">${escTrainer(e.n)}${e.v ? ' 🎬' : ''}${isCurrent ? ' (atual)' : ''}</button>`;
+  }).join('');
+  document.getElementById('swapList').innerHTML = html || '<p style="color:#888;padding:8px;">Nenhum exercício desse grupo no banco.</p>';
+}
+
+function swapSearch() {
+  if (swapTargetIdx == null) return;
+  const muscle = classifyMuscle(trainerData[swapTargetIdx][1]);
+  renderSwapList(muscle, document.getElementById('swapSearchInput').value);
+}
+
+function pickReplacement(dbIdx) {
+  const e = EXERCISE_DB[dbIdx];
+  if (swapTargetIdx == null) return;
+  trainerData[swapTargetIdx][1] = e.n;
+  if (e.v) trainerData[swapTargetIdx][6] = e.v;
+  closeSwapModal();
+  renderTrainerEditor();
+}
+
+function closeSwapModal() {
+  teHide('exerciseSwapModal');
+  swapTargetIdx = null;
+}
+
+async function trainerSave() {
+  if (!trainerData || !trainerSheetId) return;
+  if (!confirm('Salvar todas as mudanças no TREINO do aluno? (a sheet vai ser sobrescrita)')) return;
+  const btn = document.getElementById('trainerSaveBtn');
+  const orig = btn.textContent;
+  btn.textContent = 'Salvando…';
+  btn.disabled = true;
+  try {
+    const resp = await fetch(TRAINER_APPS_SCRIPT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sheetId: trainerSheetId, tab: 'TREINO', values: trainerData, skipDispatch: true }),
+      redirect: 'follow'
+    });
+    const txt = await resp.text();
+    let ok = false;
+    try { ok = JSON.parse(txt).success; } catch (_) {}
+    btn.textContent = ok ? '✅ Salvo' : '❌ Falhou';
+    if (!ok) alert('Falhou: ' + txt);
+    setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2500);
+  } catch (e) {
+    alert('Erro: ' + e.message);
+    btn.textContent = orig; btn.disabled = false;
+  }
+}
+
+function trainerExit() {
+  if (!confirm('Sair do modo treinador? Mudanças não salvas serão perdidas.')) return;
+  document.getElementById('trainerEditor').classList.remove('show');
+  document.body.style.overflow = '';
+  trainerData = null;
+  trainerSheetId = null;
+}
+
+// Allow Enter on password modal
+document.getElementById('trainerPwdInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') authTrainer(); });
+document.getElementById('trainerSheetIdInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') trainerLoadSheet(); });
+document.getElementById('swapSearchInput')?.addEventListener('input', swapSearch);
 </script>
 </body>
 </html>
