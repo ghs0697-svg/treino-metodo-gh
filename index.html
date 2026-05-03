@@ -235,6 +235,8 @@
     white-space: nowrap;
   }
   .exercise-tag .tl { color: var(--gold-dim); margin-right: 3px; font-size: 10px; }
+  .exercise-tag.tag-custom { background: #2A1A0F; border: 1px solid var(--gold-dim); color: var(--gold); }
+  .exercise-tag.tag-custom .tl { color: var(--gold); }
   .exercise-obs {
     font-size: 11px;
     color: var(--muted);
@@ -1153,6 +1155,10 @@
   <h3>A Física do Movimento</h3>
   <p><span class="hl">Fase Positiva (Concêntrica):</span> Explosão em 1 segundo. SOPRE o ar.</p>
   <p><span class="hl">Fase Negativa (Excêntrica):</span> Controle em 2 a 3 segundos. PUXE o ar. Nunca despenque o peso.</p>
+  <h3>Cadência (Tag <span class="hl">C</span> no card)</h3>
+  <p>Cada exercício mostra a tag <span class="hl">C 1/0.5/2</span> — concêntrica (subida) / isometria (pausa) / excêntrica (descida) em segundos.</p>
+  <p><span class="hl">Padrão ouro do método (cinza):</span> 1s subida / 0.5s pausa no topo / 2s descida controlada.</p>
+  <p><span class="hl">Tag dourada:</span> cadência customizada — segue exatamente o que a tag diz (ex: 1/0.5/<span class="hl">5</span> = excêntrica de 5 segundos, técnica avançada de tensão).</p>
   <h3>Dicionário de Intensidade</h3>
   <p><span class="hl">Isometria:</span> Pausar e segurar no ponto de maior tensão por 2 segundos.</p>
   <p><span class="hl">Bi-Set:</span> Dois exercícios seguidos SEM descanso. Só descansa ao terminar os dois.</p>
@@ -1361,6 +1367,29 @@ function placasKey(d, e, w) { return `gh_placas_${STUDENT_ID}_d${d}_e${e}_w${w}`
 function loadPlacas(d, e, w) { return localStorage.getItem(placasKey(d, e, w)) || ""; }
 function savePlacas(d, e, w, v) { localStorage.setItem(placasKey(d, e, w), v); }
 function getPrevPlacas(d, e, w) { return w > 1 ? localStorage.getItem(placasKey(d, e, w - 1)) || null : null; }
+
+// ══ Cadência (concêntrica/isometria/excêntrica) ══
+// Padrão ouro: 1 / 0.5 / 2. Lê custom da OBS quando GH escreveu (excêntrica 5 seg etc).
+function parseCadencia(obs) {
+  const s = String(obs || '').toLowerCase();
+  let conc = 1, iso = 0.5, exc = 2, custom = false;
+  function readSec(re) {
+    const m = s.match(re);
+    return m ? parseFloat(m[1].replace(',', '.')) : null;
+  }
+  let v = readSec(/(?:exc[êe]ntrica|negativa)\s+(\d+(?:[.,]\d+)?)\s*(?:seg|s\b)/);
+  if (v !== null) { exc = v; custom = true; }
+  v = readSec(/isometria\s+(\d+(?:[.,]\d+)?)\s*(?:seg|s\b)/);
+  if (v !== null) { iso = v; custom = true; }
+  v = readSec(/(?:conc[êe]ntrica|positiva)\s+(\d+(?:[.,]\d+)?)\s*(?:seg|s\b)/);
+  if (v !== null) { conc = v; custom = true; }
+  return { conc, iso, exc, custom };
+}
+function fmtSec(n) { return Number.isInteger(n) ? String(n) : n.toFixed(1).replace(/\.0$/, ''); }
+function cadenciaTag(obs) {
+  const c = parseCadencia(obs);
+  return `<span class="exercise-tag${c.custom ? ' tag-custom' : ''}" title="Concêntrica / Isometria / Excêntrica (segundos)"><span class="tl">C</span>${fmtSec(c.conc)}/${fmtSec(c.iso)}/${fmtSec(c.exc)}</span>`;
+}
 
 // ══ YouTube URL → embed URL ══
 function youtubeEmbed(url) {
@@ -1595,12 +1624,18 @@ function renderExercises() {
         if (a.series) tagsA.push(`<span class="exercise-tag"><span class="tl">S</span>${a.series}</span>`);
         if (a.reps)   tagsA.push(`<span class="exercise-tag"><span class="tl">R</span>${a.reps}</span>`);
         if (a.rest)   tagsA.push(`<span class="exercise-tag"><span class="tl">I</span>${a.rest}</span>`);
+        tagsA.push(cadenciaTag(a.obs));
         const sameParams = (a.series === b.series && a.reps === b.reps && a.rest === b.rest);
         const tagsB = [];
         if (!sameParams) {
           if (b.series) tagsB.push(`<span class="exercise-tag"><span class="tl">S</span>${b.series}</span>`);
           if (b.reps)   tagsB.push(`<span class="exercise-tag"><span class="tl">R</span>${b.reps}</span>`);
           if (b.rest)   tagsB.push(`<span class="exercise-tag"><span class="tl">I</span>${b.rest}</span>`);
+        }
+        // Cadência B: mostra sempre se for diferente da A (ex: A normal, B com excêntrica 5s)
+        const cadA = parseCadencia(a.obs), cadB = parseCadencia(b.obs);
+        if (cadA.conc !== cadB.conc || cadA.iso !== cadB.iso || cadA.exc !== cadB.exc) {
+          tagsB.push(cadenciaTag(b.obs));
         }
         return `
           <div class="exercise-card biset">
@@ -1654,6 +1689,7 @@ function renderExercises() {
       if (ex.series) tags.push(`<span class="exercise-tag"><span class="tl">S</span>${ex.series}</span>`);
       if (ex.reps) tags.push(`<span class="exercise-tag"><span class="tl">R</span>${ex.reps}</span>`);
       if (ex.rest) tags.push(`<span class="exercise-tag"><span class="tl">I</span>${ex.rest}</span>`);
+      if (!isWarmup) tags.push(cadenciaTag(ex.obs));
 
       // Escape single quotes in name and video URL for onclick
       const safeName = ex.name.replace(/'/g, "\\'");
