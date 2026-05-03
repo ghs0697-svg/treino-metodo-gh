@@ -1039,20 +1039,27 @@
   .te-day-header { padding: 10px 14px; font-weight: 800; color: #fff; font-size: 13px; letter-spacing: 0.5px; text-shadow: 0 1px 2px rgba(0,0,0,0.6); }
   .te-day-body { padding: 8px; }
   .te-ex { background: #1f1f1f; border-radius: 6px; padding: 8px; margin-bottom: 6px; border-left: 4px solid #888; }
-  .te-ex-row { display: grid; grid-template-columns: 1fr 50px 70px 60px; gap: 6px; align-items: center; }
+  .te-ex-row { display: grid; grid-template-columns: 1fr 48px 65px 56px 28px; gap: 6px; align-items: center; }
   .te-ex-name { background: #2a2a2a; color: var(--gold); border: 1px solid var(--gold-dim); padding: 6px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; text-align: left; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
   .te-ex-name:hover { background: var(--gold-dim); }
   .te-input { background: #222; color: #fff; border: 1px solid #333; padding: 6px; border-radius: 4px; font-size: 11px; width: 100%; box-sizing: border-box; }
   .te-input:focus { border-color: var(--gold); outline: none; }
   .te-obs { margin-top: 6px; font-size: 11px; }
-  .te-day-actions { display: flex; gap: 6px; padding: 6px 8px; border-top: 1px dashed #333; }
-  .te-day-actions .te-btn { font-size: 11px; padding: 4px 10px; }
-  .swap-list { max-height: 50vh; overflow-y: auto; margin: 10px 0; display: flex; flex-direction: column; gap: 4px; }
-  .te-swap-item { background: #222; color: var(--white); border: 1px solid #333; padding: 8px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; text-align: left; }
+  .te-trash { background: transparent; border: 1px solid #4a2020; color: #c0392b; border-radius: 4px; cursor: pointer; padding: 4px 0; font-size: 13px; }
+  .te-trash:hover { background: #c0392b; color: #fff; }
+  .te-day-add { display: block; width: 100%; background: transparent; border: 1px dashed #444; color: #888; padding: 8px; border-radius: 6px; font-size: 12px; cursor: pointer; margin-top: 4px; }
+  .te-day-add:hover { border-color: var(--gold); color: var(--gold); }
+  .te-muscle-chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 12px; }
+  .te-muscle-chip { background: #222; border: 1px solid #333; color: #888; padding: 4px 9px; border-radius: 12px; font-size: 11px; font-weight: 700; cursor: pointer; letter-spacing: 0.3px; }
+  .te-muscle-chip:hover { border-color: var(--gold-dim); color: #ccc; }
+  .te-muscle-chip.active { background: var(--chip-color, var(--gold)); color: #fff; border-color: var(--chip-color, var(--gold)); text-shadow: 0 1px 1px rgba(0,0,0,0.4); }
+  .swap-list { max-height: 45vh; overflow-y: auto; margin: 10px 0; display: flex; flex-direction: column; gap: 4px; }
+  .te-swap-item { background: #222; color: var(--white); border: 1px solid #333; padding: 8px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 8px; }
   .te-swap-item:hover { background: var(--gold-dim); border-color: var(--gold); }
   .te-swap-item.current { background: var(--gold); color: var(--dark); font-weight: 700; }
+  .te-swap-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
   @media (max-width: 600px) {
-    .te-ex-row { grid-template-columns: 1fr 45px 60px 55px; }
+    .te-ex-row { grid-template-columns: 1fr 42px 58px 50px 26px; }
     .te-ex-name { font-size: 11px; }
   }
 </style>
@@ -1423,8 +1430,9 @@
   <div class="te-modal-box">
     <h3>🔄 Trocar Exercício</h3>
     <p style="color:#888;font-size:12px;margin:0 0 6px;">Atual: <span id="swapCurrentName" style="color:#fff;font-weight:600;"></span></p>
-    <p style="color:#888;font-size:12px;margin:0 0 12px;">Grupo: <span id="swapMuscleLabel" style="font-weight:700;"></span> (séries/reps/cadência são preservadas)</p>
-    <input type="text" id="swapSearchInput" placeholder="Buscar...">
+    <p style="color:#888;font-size:11px;margin:0;">Filtra por grupo (cor segue o grupo do exercício, mesmo que não combine com o dia):</p>
+    <div class="te-muscle-chips" id="swapMuscleChips"></div>
+    <input type="text" id="swapSearchInput" placeholder="Buscar pelo nome...">
     <div class="swap-list" id="swapList"></div>
     <button class="te-btn ghost" onclick="closeSwapModal()">Cancelar</button>
   </div>
@@ -2964,46 +2972,90 @@ function renderTrainerEditor() {
           <input class="te-input" value="${escTrainer(e.series)}" oninput="trainerData[${e.idx}][2]=this.value" placeholder="S">
           <input class="te-input" value="${escTrainer(e.reps)}" oninput="trainerData[${e.idx}][3]=this.value" placeholder="Reps">
           <input class="te-input" value="${escTrainer(e.rest)}" oninput="trainerData[${e.idx}][4]=this.value" placeholder="Int.">
+          <button class="te-trash" onclick="removeExercise(${e.idx})" title="Remover exercício">🗑</button>
         </div>
         <input class="te-input te-obs" value="${escTrainer(e.obs)}" oninput="trainerData[${e.idx}][5]=this.value" placeholder="OBS / cadência (excêntrica X seg, isometria X seg…)">
       </div>`;
     });
+    html += `<button class="te-day-add" onclick="addExerciseToDay(${d})">+ Exercício no DIA ${d}</button>`;
     html += `</div></div>`;
   });
 
   document.getElementById('trainerDaysContainer').innerHTML = html || '<p style="color:#888;text-align:center;padding:30px;">Sem exercícios na aba TREINO.</p>';
 }
 
+const ALL_MUSCLES_ORDER = ['peito', 'costas', 'ombro', 'biceps', 'triceps', 'quadriceps', 'posterior', 'gluteo', 'panturrilha', 'abdomen'];
+let swapMuscleFilter = 'todos';
+
 function openSwapModal(rowIdx) {
   swapTargetIdx = rowIdx;
   const name = trainerData[rowIdx][1];
   const muscle = classifyMuscle(name);
-  document.getElementById('swapMuscleLabel').textContent = MUSCLE_LABELS[muscle] || muscle;
-  document.getElementById('swapMuscleLabel').style.color = MUSCLE_COLORS[muscle] || '#fff';
+  swapMuscleFilter = (muscle === 'outros' || muscle === 'aquecimento') ? 'todos' : muscle;
   document.getElementById('swapSearchInput').value = '';
-  document.getElementById('swapCurrentName').textContent = name;
-  renderSwapList(muscle, '');
+  document.getElementById('swapCurrentName').textContent = name || '(novo)';
+  renderSwapModalContent();
   teShow('exerciseSwapModal');
 }
 
-function renderSwapList(muscle, filter) {
-  const f = (filter || '').toLowerCase();
-  const list = (typeof EXERCISE_DB !== 'undefined' ? EXERCISE_DB : [])
-    .filter(e => classifyMuscle(e.n) === muscle)
-    .filter(e => !f || e.n.toLowerCase().includes(f));
-  const currentName = swapTargetIdx != null ? trainerData[swapTargetIdx][1] : '';
-  const html = list.map((e, i) => {
-    const dbIdx = EXERCISE_DB.indexOf(e);
-    const isCurrent = e.n === currentName;
-    return `<button class="te-swap-item${isCurrent ? ' current' : ''}" onclick="pickReplacement(${dbIdx})">${escTrainer(e.n)}${e.v ? ' 🎬' : ''}${isCurrent ? ' (atual)' : ''}</button>`;
-  }).join('');
-  document.getElementById('swapList').innerHTML = html || '<p style="color:#888;padding:8px;">Nenhum exercício desse grupo no banco.</p>';
+function renderSwapModalContent() {
+  const chipsContainer = document.getElementById('swapMuscleChips');
+  const chipsHtml = `<button class="te-muscle-chip${swapMuscleFilter === 'todos' ? ' active' : ''}" onclick="setSwapFilter('todos')">TODOS</button>` +
+    ALL_MUSCLES_ORDER.map(g =>
+      `<button class="te-muscle-chip${swapMuscleFilter === g ? ' active' : ''}" style="--chip-color:${MUSCLE_COLORS[g]}" onclick="setSwapFilter('${g}')">${MUSCLE_LABELS[g]}</button>`
+    ).join('');
+  chipsContainer.innerHTML = chipsHtml;
+  renderSwapList();
 }
 
-function swapSearch() {
-  if (swapTargetIdx == null) return;
-  const muscle = classifyMuscle(trainerData[swapTargetIdx][1]);
-  renderSwapList(muscle, document.getElementById('swapSearchInput').value);
+function setSwapFilter(g) {
+  swapMuscleFilter = g;
+  renderSwapModalContent();
+}
+
+function renderSwapList() {
+  const f = (document.getElementById('swapSearchInput').value || '').toLowerCase();
+  let list = (typeof EXERCISE_DB !== 'undefined' ? EXERCISE_DB : []);
+  if (swapMuscleFilter !== 'todos') {
+    list = list.filter(e => classifyMuscle(e.n) === swapMuscleFilter);
+  }
+  if (f) {
+    list = list.filter(e => e.n.toLowerCase().includes(f));
+  }
+  const currentName = swapTargetIdx != null ? trainerData[swapTargetIdx][1] : '';
+  const html = list.map(e => {
+    const dbIdx = EXERCISE_DB.indexOf(e);
+    const isCurrent = e.n === currentName;
+    const g = classifyMuscle(e.n);
+    return `<button class="te-swap-item${isCurrent ? ' current' : ''}" onclick="pickReplacement(${dbIdx})">
+      <span class="te-swap-dot" style="background:${MUSCLE_COLORS[g]}"></span>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escTrainer(e.n)}${e.v ? ' 🎬' : ''}${isCurrent ? ' (atual)' : ''}</span>
+    </button>`;
+  }).join('');
+  document.getElementById('swapList').innerHTML = html || '<p style="color:#888;padding:8px;">Nenhum match — ajusta o filtro ou a busca.</p>';
+}
+
+function swapSearch() { renderSwapList(); }
+
+function addExerciseToDay(dayNum) {
+  // Encontra última linha do dia e insere a nova logo depois
+  let lastIdx = -1;
+  for (let i = 0; i < trainerData.length; i++) {
+    if (parseInt(trainerData[i][0]) === dayNum) lastIdx = i;
+  }
+  if (lastIdx < 0) return;
+  const newRow = [String(dayNum), '', '4X', '8 a 12', '60 seg', '', '', ''];
+  trainerData.splice(lastIdx + 1, 0, newRow);
+  renderTrainerEditor();
+  // Abre swap modal direto com filtro TODOS pra escolher o que vai entrar
+  openSwapModal(lastIdx + 1);
+}
+
+function removeExercise(rowIdx) {
+  const name = trainerData[rowIdx][1] || '(linha vazia)';
+  if (!confirm('Remover "' + name + '"?')) return;
+  trainerData.splice(rowIdx, 1);
+  renderTrainerEditor();
 }
 
 function pickReplacement(dbIdx) {
