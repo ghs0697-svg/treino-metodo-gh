@@ -380,6 +380,36 @@
   }
   .instructions-content .hl { color: var(--white); font-weight: 600; }
 
+  /* ── Painel Acompanhamento ── */
+  .accomp-card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+  .accomp-card h4 { color: var(--gold); font-size: 13px; margin: 0 0 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+  .water-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .water-counter { font-size: 28px; font-weight: 800; color: var(--gold); }
+  .water-meta { color: #aaa; font-size: 12px; flex: 1; min-width: 120px; }
+  .water-btn { background: var(--gold); color: var(--dark); border: none; padding: 10px 18px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 13px; }
+  .water-btn:hover { background: var(--gold-dim); color: var(--gold); }
+  .water-btn.minus { background: #333; color: #aaa; padding: 8px 12px; }
+  .water-toggle-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #2a2a2a; font-size: 12px; color: #aaa; }
+  .water-toggle { width: 38px; height: 22px; background: #333; border-radius: 11px; position: relative; cursor: pointer; flex-shrink: 0; transition: background 0.2s; }
+  .water-toggle.on { background: var(--gold); }
+  .water-toggle::after { content: ''; position: absolute; width: 16px; height: 16px; background: #fff; border-radius: 50%; top: 3px; left: 3px; transition: left 0.2s; }
+  .water-toggle.on::after { left: 19px; }
+  .markers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .markers-grid label { color: #aaa; font-size: 11px; display: flex; flex-direction: column; gap: 4px; }
+  .markers-grid input { background: #222; color: #fff; border: 1px solid #333; padding: 7px 9px; border-radius: 4px; font-size: 13px; width: 100%; box-sizing: border-box; }
+  .markers-grid input:focus { border-color: var(--gold); outline: none; }
+  .markers-history { margin-top: 12px; padding-top: 10px; border-top: 1px solid #2a2a2a; }
+  .markers-history-row { display: grid; grid-template-columns: 90px 1fr; gap: 10px; padding: 4px 0; font-size: 11px; color: #ccc; }
+  .markers-history-row .date { color: #888; }
+  .streak-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .streak-stat { background: #222; border-radius: 6px; padding: 10px; text-align: center; }
+  .streak-stat .num { font-size: 22px; font-weight: 800; color: var(--gold); }
+  .streak-stat .lbl { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
+
+  /* ── Botão flutuante WhatsApp ── */
+  .support-btn { position: fixed; bottom: 18px; right: 18px; z-index: 9000; width: 56px; height: 56px; border-radius: 50%; background: #25d366; color: #fff; border: none; font-size: 26px; box-shadow: 0 4px 14px rgba(0,0,0,0.5); cursor: pointer; display: flex; align-items: center; justify-content: center; text-decoration: none; }
+  .support-btn:hover { transform: scale(1.05); }
+
   /* ── Day progress ── */
   .day-progress { padding: 10px 14px; background: #1a1a1a; border-bottom: 1px solid #2a2a2a; }
   .pg-text { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #aaa; }
@@ -1458,6 +1488,93 @@
   <p>Meta: <span class="hl">3 séries x 15-20 segundos</span></p>
 </div>
 
+<!-- ══ ACOMPANHAMENTO ══ -->
+<div class="instructions-toggle" id="accompToggle" onclick="toggleAccomp()" style="display:none;">
+  📊 Acompanhamento <span id="accompArrow">&#9660;</span>
+</div>
+<div class="instructions-content" id="accompContent">
+  <div class="accomp-card">
+    <h4>💧 Hidratação</h4>
+    <div class="water-row">
+      <span class="water-counter" id="waterCounter">0</span>
+      <span class="water-meta" id="waterMeta">copos hoje · meta 8 (2L)</span>
+      <button class="water-btn" onclick="addWater(1)">+1 copo</button>
+      <button class="water-btn minus" onclick="addWater(-1)">−1</button>
+    </div>
+    <div class="water-toggle-row">
+      <div class="water-toggle" id="waterNotifToggle" onclick="toggleWaterNotif()"></div>
+      <span>Lembrar de beber a cada 1h (notificação)</span>
+    </div>
+  </div>
+
+  <div class="accomp-card">
+    <h4>📏 Medidas Corporais</h4>
+    <div class="markers-grid">
+      <label>Peso (kg)<input type="number" id="mkPeso" step="0.1" inputmode="decimal"></label>
+      <label>Cintura (cm)<input type="number" id="mkCintura" step="0.5" inputmode="decimal"></label>
+      <label>Braço (cm)<input type="number" id="mkBraco" step="0.5" inputmode="decimal"></label>
+      <label>Coxa (cm)<input type="number" id="mkCoxa" step="0.5" inputmode="decimal"></label>
+      <label style="grid-column:span 2;">Peitoral (cm)<input type="number" id="mkPeitoral" step="0.5" inputmode="decimal"></label>
+    </div>
+    <button class="water-btn" style="width:100%;margin-top:10px;" onclick="saveMarkers()">Salvar registro de hoje</button>
+    <div class="markers-history" id="markersHistory"></div>
+  </div>
+
+  <div class="accomp-card">
+    <h4>🔥 Sequência de Treinos</h4>
+    <div class="streak-grid">
+      <div class="streak-stat"><div class="num" id="streakCurrent">0</div><div class="lbl">Atual</div></div>
+      <div class="streak-stat"><div class="num" id="streakLongest">0</div><div class="lbl">Recorde</div></div>
+      <div class="streak-stat"><div class="num" id="streakTotal">0</div><div class="lbl">Total dias</div></div>
+    </div>
+    <p style="color:#888;font-size:11px;margin:10px 0 0;line-height:1.4;">Conta 1 quando tu marca todos os exercícios do dia como ✓. Em dias sem treino não conta — mas se passar 2 dias sem fechar, a sequência atual zera.</p>
+  </div>
+</div>
+
+<!-- ══ GLOSSÁRIO ══ -->
+<div class="instructions-toggle" id="glossarioToggle" onclick="toggleGlossario()" style="display:none;">
+  📖 Glossário do Método <span id="glossarioArrow">&#9660;</span>
+</div>
+<div class="instructions-content" id="glossarioContent">
+  <h3>Volume e Carga</h3>
+  <p><span class="hl">Série:</span> Conjunto de repetições sem descanso. "4X 8-12" = 4 séries de 8 a 12 reps.</p>
+  <p><span class="hl">Repetição:</span> Uma execução completa do movimento (subida + descida).</p>
+  <p><span class="hl">Intervalo:</span> Tempo de descanso entre séries. 60s pra hipertrofia, 90-120s pra força.</p>
+  <p><span class="hl">RM (Repetição Máxima):</span> Carga que tu consegue fazer X reps. 5RM = peso que faria só 5 reps.</p>
+  <p><span class="hl">Falha:</span> Ponto em que a próxima rep é fisicamente impossível com postura correta.</p>
+
+  <h3>Cadência (velocidade do movimento)</h3>
+  <p><span class="hl">Positiva (Concêntrica):</span> Subida do peso — 1s, com explosão.</p>
+  <p><span class="hl">Isometria:</span> Pausa no topo, mantendo a tensão — 0.5s padrão.</p>
+  <p><span class="hl">Negativa (Excêntrica):</span> Descida do peso — 2s controlado, nunca despenca.</p>
+
+  <h3>Técnicas Avançadas</h3>
+  <p><span class="hl">Bi-set:</span> Dois exercícios seguidos SEM descanso. Só descansa ao terminar os dois.</p>
+  <p><span class="hl">Drop-set:</span> Falha → reduz 20-30% do peso → falha de novo. Sem descanso.</p>
+  <p><span class="hl">Drop Mecânico:</span> Falha com postura estrita → muda biomecânica → reps extras com mesma carga.</p>
+  <p><span class="hl">Cluster-Set:</span> Série dividida em 3 mini-blocos de 2-4 reps com 15-20s de descanso entre blocos. Carga 4-6RM. Permite alta intensidade com qualidade.</p>
+  <p><span class="hl">Pirâmide:</span> Reps caem a cada série, peso sobe (15-20 → 10-15 → 8-12 → 6-10).</p>
+  <p><span class="hl">Aclimatização:</span> 1ª leve aquece, 2ª pesada (4-6 reps neuro), 3ª principal (6-10 falha).</p>
+
+  <h3>Composição Corporal</h3>
+  <p><span class="hl">BF% (Body Fat):</span> Percentual de gordura corporal. &lt;15% atlético, 15-20% normal, &gt;20% sobrepeso.</p>
+  <p><span class="hl">Massa Magra:</span> Tudo que não é gordura — músculo, osso, água, órgãos.</p>
+  <p><span class="hl">Recomposição:</span> Perder gordura E ganhar massa magra ao mesmo tempo. Possível pra iniciante ou em retorno.</p>
+
+  <h3>Calorias e Macros</h3>
+  <p><span class="hl">TMB (Taxa Metabólica Basal):</span> Calorias que tu queima em repouso, só pra respirar e existir.</p>
+  <p><span class="hl">GET (Gasto Energético Total):</span> TMB + atividade do dia. É quanto tu gasta de verdade.</p>
+  <p><span class="hl">Déficit:</span> Comer menos que gasta — pra emagrecer.</p>
+  <p><span class="hl">Superávit:</span> Comer mais que gasta — pra ganhar massa.</p>
+  <p><span class="hl">Manutenção:</span> Comer igual ao GET — peso fica estável.</p>
+  <p><span class="hl">Ciclo de Carbo:</span> Alterna dias de baixo e alto carbo (2/1 ou 3/1) pra manter metabolismo ativo em déficit.</p>
+  <p><span class="hl">Refeição Livre:</span> 1x/semana pra alimentar a mente — 1 refeição, não 1 dia.</p>
+
+  <h3>Cardio</h3>
+  <p><span class="hl">Aeróbico:</span> Exercício com FC moderada (120-140 bpm), longo, queima gordura.</p>
+  <p><span class="hl">HIIT:</span> Alta intensidade alternada com descanso curto. Mais eficiente em tempo, mas exige base.</p>
+</div>
+
 <!-- ══ PARCEIROS ══ -->
 <div class="instructions-toggle" id="parceirosToggle" onclick="toggleParceiros()" style="display:none;">
   🤝 Parceiros do Método <span id="parceirosArrow">&#9660;</span>
@@ -1602,6 +1719,9 @@
 </div>
 
 <div class="app-footer"><span>MÉTODO GH — @gh.scheuermann</span></div>
+
+<!-- ══ Botão Suporte WhatsApp (flutuante) ══ -->
+<a href="https://wa.me/PLACEHOLDER_NUMERO_GH" target="_blank" rel="noopener" class="support-btn" id="supportBtn" title="Falar com GH no WhatsApp">💬</a>
 
 <!-- ══ MODO TREINADOR ══ -->
 <button id="trainerToggleBtn" onclick="openTrainerLogin()" style="display:none;">⚙ Modo Treinador</button>
@@ -2143,7 +2263,10 @@ async function loadFromSheets() {
     document.getElementById('studentInfo').style.display = 'grid';
     document.getElementById('weekSelector').style.display = 'flex';
     document.getElementById('instrToggle').style.display = 'flex';
+    document.getElementById('accompToggle').style.display = 'flex';
+    document.getElementById('glossarioToggle').style.display = 'flex';
     document.getElementById('parceirosToggle').style.display = 'flex';
+    if (isWaterNotifOn()) startWaterNotif();
     document.getElementById('hipoToggle').style.display = 'flex';
     document.getElementById('installBtn').style.display = 'block';
 
@@ -2397,6 +2520,139 @@ function toggleHipo() {
   a.innerHTML = c.classList.contains('show') ? '&#9650;' : '&#9660;';
 }
 
+function toggleAccomp() {
+  const c = document.getElementById('accompContent');
+  const a = document.getElementById('accompArrow');
+  c.classList.toggle('show');
+  a.innerHTML = c.classList.contains('show') ? '&#9650;' : '&#9660;';
+  if (c.classList.contains('show')) {
+    renderWater();
+    renderMarkersHistory();
+    renderStreakPanel();
+    renderWaterToggleState();
+    loadTodayMarkers();
+  }
+}
+
+function toggleGlossario() {
+  const c = document.getElementById('glossarioContent');
+  const a = document.getElementById('glossarioArrow');
+  c.classList.toggle('show');
+  a.innerHTML = c.classList.contains('show') ? '&#9650;' : '&#9660;';
+}
+
+// ══ Hidratação ══
+function waterKey() { return `gh_water_${STUDENT_ID}_${todayKey()}`; }
+function waterCount() { return parseInt(localStorage.getItem(waterKey()) || '0', 10); }
+function addWater(delta) {
+  let n = waterCount() + delta;
+  if (n < 0) n = 0;
+  if (n > 30) n = 30;
+  localStorage.setItem(waterKey(), String(n));
+  renderWater();
+}
+function renderWater() {
+  const n = waterCount();
+  document.getElementById('waterCounter').textContent = n;
+  const ml = n * 250;
+  document.getElementById('waterMeta').textContent = `copos hoje · ${(ml/1000).toFixed(1)}L · meta 8 (2L)${n >= 8 ? ' ✅' : ''}`;
+}
+
+// Notificação de hidratação
+function waterNotifKey() { return `gh_water_notif_${STUDENT_ID}`; }
+function isWaterNotifOn() { return localStorage.getItem(waterNotifKey()) === '1'; }
+function renderWaterToggleState() {
+  document.getElementById('waterNotifToggle').classList.toggle('on', isWaterNotifOn());
+}
+async function toggleWaterNotif() {
+  if (isWaterNotifOn()) {
+    localStorage.setItem(waterNotifKey(), '0');
+    if (window._waterNotifInt) { clearInterval(window._waterNotifInt); window._waterNotifInt = null; }
+    renderWaterToggleState();
+    return;
+  }
+  if (!('Notification' in window)) {
+    alert('Teu navegador não suporta notificações.');
+    return;
+  }
+  let perm = Notification.permission;
+  if (perm === 'default') perm = await Notification.requestPermission();
+  if (perm !== 'granted') {
+    alert('Permissão negada. Ativa as notificações nas configurações do navegador pra esse site.');
+    return;
+  }
+  localStorage.setItem(waterNotifKey(), '1');
+  startWaterNotif();
+  renderWaterToggleState();
+  alert('Notificações ativadas — vou te lembrar a cada 1h enquanto o app estiver aberto.');
+}
+function startWaterNotif() {
+  if (window._waterNotifInt) clearInterval(window._waterNotifInt);
+  window._waterNotifInt = setInterval(() => {
+    if (!isWaterNotifOn()) return;
+    if (Notification.permission !== 'granted') return;
+    try { new Notification('💧 Hora da água!', { body: 'Já tomou água? Marca +1 copo no app.', icon: 'icon-192.png' }); } catch (_) {}
+  }, 60 * 60 * 1000); // 1 hora
+}
+
+// ══ Marcadores corporais ══
+function markersKey() { return `gh_markers_${STUDENT_ID}`; }
+function getMarkers() {
+  try { return JSON.parse(localStorage.getItem(markersKey()) || '[]'); } catch (_) { return []; }
+}
+function loadTodayMarkers() {
+  const arr = getMarkers();
+  const today = todayKey();
+  const t = arr.find(m => m.d === today);
+  ['Peso','Cintura','Braco','Coxa','Peitoral'].forEach(k => {
+    const el = document.getElementById('mk' + k);
+    if (el) el.value = t && t[k.toLowerCase()] ? t[k.toLowerCase()] : '';
+  });
+}
+function saveMarkers() {
+  const today = todayKey();
+  const peso = parseFloat(document.getElementById('mkPeso').value) || null;
+  const cintura = parseFloat(document.getElementById('mkCintura').value) || null;
+  const braco = parseFloat(document.getElementById('mkBraco').value) || null;
+  const coxa = parseFloat(document.getElementById('mkCoxa').value) || null;
+  const peitoral = parseFloat(document.getElementById('mkPeitoral').value) || null;
+  if (!peso && !cintura && !braco && !coxa && !peitoral) {
+    alert('Preenche pelo menos 1 medida.');
+    return;
+  }
+  const arr = getMarkers().filter(m => m.d !== today);
+  arr.push({ d: today, peso, cintura, braco, coxa, peitoral });
+  arr.sort((a, b) => a.d.localeCompare(b.d));
+  localStorage.setItem(markersKey(), JSON.stringify(arr));
+  renderMarkersHistory();
+  alert('Salvo!');
+}
+function renderMarkersHistory() {
+  const arr = getMarkers().slice(-6).reverse();
+  const c = document.getElementById('markersHistory');
+  if (!arr.length) { c.innerHTML = '<p style="color:#666;font-size:11px;margin:0;">Nenhum registro ainda.</p>'; return; }
+  let html = '<p style="color:#aaa;font-size:11px;margin:0 0 6px;font-weight:700;">Últimos registros:</p>';
+  arr.forEach(m => {
+    const parts = [];
+    if (m.peso) parts.push(`P ${m.peso}kg`);
+    if (m.cintura) parts.push(`C ${m.cintura}cm`);
+    if (m.braco) parts.push(`Br ${m.braco}cm`);
+    if (m.coxa) parts.push(`Cx ${m.coxa}cm`);
+    if (m.peitoral) parts.push(`Pt ${m.peitoral}cm`);
+    const dateStr = m.d.split('-').reverse().join('/');
+    html += `<div class="markers-history-row"><span class="date">${dateStr}</span><span>${parts.join(' · ')}</span></div>`;
+  });
+  c.innerHTML = html;
+}
+
+// ══ Painel Streak ══
+function renderStreakPanel() {
+  const s = getStreak();
+  document.getElementById('streakCurrent').textContent = s.current || 0;
+  document.getElementById('streakLongest').textContent = s.longest || 0;
+  document.getElementById('streakTotal').textContent = s.totalDaysDone || 0;
+}
+
 function toggleParceiros() {
   const c = document.getElementById('parceirosContent');
   const a = document.getElementById('parceirosArrow');
@@ -2428,7 +2684,10 @@ async function loadDietFromSheets() {
     DIET_DATA = parseDietData(rows);
     dietLoaded = true;
     document.getElementById('mainNav').style.display = 'flex';
+    document.getElementById('accompToggle').style.display = 'flex';
+    document.getElementById('glossarioToggle').style.display = 'flex';
     document.getElementById('parceirosToggle').style.display = 'flex';
+    if (isWaterNotifOn()) startWaterNotif();
     renderDiet();
   } catch(e) {
     dietLoaded = false;
