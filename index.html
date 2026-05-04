@@ -1183,11 +1183,7 @@
     100% { transform: scale(1) translateY(0); opacity: 1; }
   }
   .ach-title { color: var(--gold); text-align: center; margin: 0 0 12px; font-size: 16px; font-weight: 700; letter-spacing: 0.5px; }
-  #achCanvas { max-width: 100%; max-height: 75vh; width: auto; height: auto; border-radius: 14px; box-shadow: 0 8px 30px rgba(0,0,0,0.7), 0 0 0 rgba(212, 167, 106, 0.2); display: block; margin: 0 auto; animation: achGlow 1.8s ease-in-out infinite alternate; aspect-ratio: 9 / 16; }
-  @keyframes achGlow {
-    from { box-shadow: 0 8px 30px rgba(0,0,0,0.7), 0 0 20px rgba(212, 167, 106, 0.25); }
-    to { box-shadow: 0 8px 30px rgba(0,0,0,0.7), 0 0 60px rgba(212, 167, 106, 0.65); }
-  }
+  #achCanvas { max-width: 100%; max-height: 70vh; width: auto; height: auto; border-radius: 14px; box-shadow: 0 8px 30px rgba(0,0,0,0.7), 0 0 24px rgba(212, 167, 106, 0.3); display: block; margin: 0 auto; aspect-ratio: 9 / 16; }
   .ach-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; justify-content: center; }
   .ach-actions .ach-btn { flex: 1; min-width: 100px; padding: 11px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; border: 1px solid #444; }
   .ach-btn.primary { background: var(--gold); color: var(--dark); border-color: var(--gold); }
@@ -1859,20 +1855,24 @@
     <h3 class="ach-title" id="achTitle">🎉 Conquista</h3>
     <canvas id="achCanvas" width="1080" height="1920"></canvas>
     <div class="ach-actions">
+      <button class="ach-btn secondary" onclick="achPickPhoto()" id="achPhotoBtn">📷 Foto do pump</button>
+    </div>
+    <input type="file" id="achPhotoInput" accept="image/*" style="display:none;">
+    <div class="ach-actions" style="margin-top:6px;">
       <button class="ach-btn primary" onclick="achShare()" id="achShareBtn">📤 Compartilhar / Postar</button>
       <button class="ach-btn secondary" onclick="achSave()">💾 Salvar PNG</button>
       <button class="ach-btn ghost" onclick="achClose()">Fechar</button>
     </div>
-    <p style="color:#888;font-size:11px;text-align:center;margin:12px 0 0;line-height:1.5;">💡 <strong>Pra postar nos Stories:</strong><br>1. Toca <strong>Compartilhar</strong> · 2. Role o sheet do iOS <strong>pra direita</strong> ou toca <strong>"Ver Mais"</strong> · 3. Escolhe <strong>Instagram → Stories</strong>.<br><span style="color:#555;">(iOS não permite abrir Stories direto pelo navegador — limitação da Apple/Meta)</span></p>
+    <p style="color:#888;font-size:11px;text-align:center;margin:12px 0 0;line-height:1.5;">💡 <strong>Foto do pump</strong> vira o background do card. <strong>Pra Stories:</strong> Compartilhar → role o sheet → Instagram Stories.</p>
   </div>
 </div>
 
 <!-- Botão flutuante combinado: instala app + abre WhatsApp -->
 <div id="floatMenu">
   <div class="float-options" id="floatOptions">
-    <a class="float-opt install" onclick="showInstallInstructions()">
+    <button type="button" class="float-opt install" onclick="event.stopPropagation(); showInstallInstructions()">
       <span class="ic">📱</span><span>Instalar app na tela inicial</span>
-    </a>
+    </button>
     <a class="float-opt whatsapp" href="https://wa.me/555520131470" target="_blank" rel="noopener">
       <span class="ic">💬</span><span>Falar no WhatsApp</span>
     </a>
@@ -2136,6 +2136,9 @@ let _achData = null;
 
 function showAchievementCard(type, data) {
   _achData = Object.assign({ type: type }, data);
+  _achPhoto = null; // limpa foto anterior
+  const photoBtn = document.getElementById('achPhotoBtn');
+  if (photoBtn) photoBtn.textContent = '📷 Foto do pump';
   const titleMap = {
     completion: '🎉 Treino concluído!',
     pr: '🏆 Novo Recorde!'
@@ -2143,15 +2146,48 @@ function showAchievementCard(type, data) {
   document.getElementById('achTitle').textContent = titleMap[type] || '🏆 Conquista';
   document.getElementById('achOverlay').classList.add('show');
   document.body.style.overflow = 'hidden';
-  // Renderiza com count-up nos números
-  animateAchievementDraw();
+  drawAchievementCard(1, 1); // estático, sem animação que não vai pro Stories
 }
 
 function achClose() {
   document.getElementById('achOverlay').classList.remove('show');
   document.body.style.overflow = '';
   _achData = null;
+  _achPhoto = null;
 }
+
+// ── Upload de foto do pump ──
+function achPickPhoto() {
+  if (_achPhoto) {
+    // Remove foto se já tiver
+    _achPhoto = null;
+    document.getElementById('achPhotoBtn').textContent = '📷 Foto do pump';
+    drawAchievementCard(1, 1);
+    return;
+  }
+  document.getElementById('achPhotoInput').click();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const inp = document.getElementById('achPhotoInput');
+  if (!inp) return;
+  inp.addEventListener('change', e => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        _achPhoto = img;
+        document.getElementById('achPhotoBtn').textContent = '🗑 Tirar foto';
+        drawAchievementCard(1, 1);
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(f);
+    e.target.value = ''; // permite mesmo arquivo de novo
+  });
+});
 function achCloseOnBg(e) { if (e.target.id === 'achOverlay') achClose(); }
 
 function animateAchievementDraw() {
@@ -2336,26 +2372,34 @@ function drawAchievementCard(progress, rawP) {
   const ctx = c.getContext('2d');
   const W = c.width, H = c.height;
 
-  // ── Background: deep black com gradient sutil ──
-  const grad = ctx.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0, '#080808');
-  grad.addColorStop(0.5, '#161616');
-  grad.addColorStop(1, '#080808');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, H);
-
-  // ── Spotlight central (sutil) ──
-  const rg = ctx.createRadialGradient(W/2, H*0.35, 100, W/2, H*0.35, W*0.85);
-  rg.addColorStop(0, 'rgba(212,167,106,0.22)');
-  rg.addColorStop(1, 'rgba(212,167,106,0)');
-  ctx.fillStyle = rg;
-  ctx.fillRect(0, 0, W, H);
-
-  // ── Light beam diagonal (anima sweeping no início) ──
-  drawLightBeam(ctx, W, H, rawP);
-
-  // ── Noise texture (cinema feel) ──
-  drawNoiseTexture(ctx, W, H);
+  if (_achPhoto) {
+    // ── Background: foto do aluno (cover) + overlay escuro ──
+    const img = _achPhoto;
+    const scale = Math.max(W / img.width, H / img.height);
+    const w = img.width * scale, h = img.height * scale;
+    ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+    // Overlay vertical pra leitura
+    const ov = ctx.createLinearGradient(0, 0, 0, H);
+    ov.addColorStop(0, 'rgba(0,0,0,0.78)');
+    ov.addColorStop(0.35, 'rgba(0,0,0,0.35)');
+    ov.addColorStop(0.65, 'rgba(0,0,0,0.45)');
+    ov.addColorStop(1, 'rgba(0,0,0,0.92)');
+    ctx.fillStyle = ov;
+    ctx.fillRect(0, 0, W, H);
+  } else {
+    // ── Background sem foto: gradient + spotlight ──
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, '#080808');
+    grad.addColorStop(0.5, '#161616');
+    grad.addColorStop(1, '#080808');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+    const rg = ctx.createRadialGradient(W/2, H*0.35, 100, W/2, H*0.35, W*0.85);
+    rg.addColorStop(0, 'rgba(212,167,106,0.22)');
+    rg.addColorStop(1, 'rgba(212,167,106,0)');
+    ctx.fillStyle = rg;
+    ctx.fillRect(0, 0, W, H);
+  }
 
   // ── Cantos ornamentais ──
   drawCornerOrnaments(ctx, W, H);
@@ -2366,19 +2410,16 @@ function drawAchievementCard(progress, rawP) {
   ctx.fillStyle = '#d4a76a';
   ctx.fillText('━ MÉTODO GH ━', W/2, 200);
 
-  // ── Sparkles atrás do trophy (PR) ──
-  if (_achData.type === 'pr') drawSparkles(ctx, W, H, rawP);
-
   // ── Conteúdo central ──
   if (_achData.type === 'completion') drawCompletionContent(ctx, W, H, progress);
   else if (_achData.type === 'pr') drawPRContent(ctx, W, H, progress);
 
-  // ── Confetti caindo (completion) ──
-  if (_achData.type === 'completion') drawParticles(ctx, W, H, rawP);
-
   // ── Footer signature ──
   drawBottomSig(ctx, W, H);
 }
+
+// Foto do pump
+let _achPhoto = null;
 
 function drawCornerOrnaments(ctx, W, H) {
   ctx.strokeStyle = '#d4a76a';
@@ -5265,29 +5306,40 @@ function closeSwapModal() {
 async function trainerSave() {
   if (!trainerSheetId) return;
   const isTreino = currentEditMode === 'treino';
-  const data = isTreino ? trainerData : dietaData;
+  let data = isTreino ? trainerData : dietaData;
   const tab = isTreino ? 'TREINO' : 'DIETA';
-  if (!data) return;
+  if (!data || !data.length) return;
   if (!confirm(`Salvar todas as mudanças em ${tab}? (a aba ${tab} vai ser sobrescrita)`)) return;
   const btn = document.getElementById('trainerSaveBtn');
   const orig = btn.textContent;
   btn.textContent = 'Salvando…';
   btn.disabled = true;
   try {
+    // Normaliza: todas linhas com mesmo nº de cols (Apps Script setValues exige uniforme)
+    const cols = isTreino ? 8 : 4;
+    data = data.map(r => {
+      const out = (r || []).map(v => v == null ? '' : String(v));
+      while (out.length < cols) out.push('');
+      return out.slice(0, cols);
+    });
+    const payload = JSON.stringify({ sheetId: trainerSheetId, tab, values: data, skipDispatch: true });
+    console.log('[trainerSave]', tab, '— rows:', data.length, '— payload bytes:', payload.length);
     const resp = await fetch(TRAINER_APPS_SCRIPT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sheetId: trainerSheetId, tab, values: data, skipDispatch: true }),
+      body: payload,
       redirect: 'follow'
     });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status} — ${resp.statusText}`);
     const txt = await resp.text();
-    let ok = false;
-    try { ok = JSON.parse(txt).success; } catch (_) {}
+    let ok = false, errMsg = '';
+    try { const j = JSON.parse(txt); ok = j.success; errMsg = j.error || ''; } catch (_) { errMsg = txt.slice(0, 300); }
     btn.textContent = ok ? '✅ Salvo' : '❌ Falhou';
-    if (!ok) alert('Falhou: ' + txt);
+    if (!ok) alert('Apps Script retornou erro:\n\n' + errMsg);
     setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2500);
   } catch (e) {
-    alert('Erro: ' + e.message);
+    console.error('[trainerSave] erro', e);
+    alert('Erro de rede ou servidor:\n\n' + e.message + '\n\nVerifica F12 → Console pra detalhes.');
     btn.textContent = orig; btn.disabled = false;
   }
 }
@@ -5567,7 +5619,7 @@ function showFoodSuggest(input, idx) {
   const sug = document.getElementById('foodSuggest');
   if (!sug || typeof FOOD_BANK === 'undefined') return;
   const val = String(input.value || '').trim().toLowerCase();
-  if (val.length < 2) { sug.classList.remove('show'); return; }
+  if (val.length < 1) { sug.classList.remove('show'); return; }
   // Normaliza p/ ignorar acentos
   const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const v = norm(val);
