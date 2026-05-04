@@ -1164,6 +1164,36 @@
   .te-mode-tab:hover:not(:disabled) { color: #ccc; border-color: var(--gold-dim); }
   .te-mode-tab.active { background: var(--gold); color: var(--dark); border-color: var(--gold); }
   .te-mode-tab:disabled { opacity: 0.3; cursor: not-allowed; }
+  .te-tpl-btn { background: #2a2a2a; border: 1px solid var(--gold-dim); color: var(--gold); padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .te-tpl-btn:hover { background: var(--gold-dim); }
+  .tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 6px; margin: 8px 0; }
+  .tpl-pill { background: #222; border: 1px solid #333; color: #ccc; padding: 7px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; text-align: center; }
+  .tpl-pill:hover { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+  .tpl-pill.active { background: var(--gold); color: var(--dark); border-color: var(--gold); }
+  .tpl-pill.gender { padding: 9px; }
+  .tpl-section-label { color: #888; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; margin: 12px 0 4px; }
+
+  /* === Achievement / Share Card === */
+  .ach-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.94); display: none; z-index: 11500; align-items: center; justify-content: center; padding: 14px; overflow-y: auto; }
+  .ach-overlay.show { display: flex; animation: achFadeIn 0.25s ease-out; }
+  @keyframes achFadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .ach-box { max-width: 480px; width: 100%; animation: achPop 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes achPop {
+    0% { transform: scale(0.5) translateY(40px); opacity: 0; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+  }
+  .ach-title { color: var(--gold); text-align: center; margin: 0 0 12px; font-size: 16px; font-weight: 700; letter-spacing: 0.5px; }
+  #achCanvas { width: 100%; height: auto; border-radius: 14px; box-shadow: 0 8px 30px rgba(0,0,0,0.7), 0 0 0 rgba(212, 167, 106, 0.2); display: block; animation: achGlow 1.8s ease-in-out infinite alternate; }
+  @keyframes achGlow {
+    from { box-shadow: 0 8px 30px rgba(0,0,0,0.7), 0 0 20px rgba(212, 167, 106, 0.25); }
+    to { box-shadow: 0 8px 30px rgba(0,0,0,0.7), 0 0 60px rgba(212, 167, 106, 0.65); }
+  }
+  .ach-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; justify-content: center; }
+  .ach-actions .ach-btn { flex: 1; min-width: 100px; padding: 11px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; border: 1px solid #444; }
+  .ach-btn.primary { background: var(--gold); color: var(--dark); border-color: var(--gold); }
+  .ach-btn.secondary { background: #2a2a2a; color: #fff; }
+  .ach-btn.ghost { background: transparent; color: #888; }
+  .ach-btn:hover { opacity: 0.85; }
 
   /* === Lista de alunos (busca trainer) === */
   .trainer-student-list { max-height: 260px; overflow-y: auto; margin-top: 6px; display: flex; flex-direction: column; gap: 3px; }
@@ -1823,6 +1853,19 @@
 <div class="app-footer"><span>MÉTODO GH — @gh.scheuermann</span></div>
 
 <!-- ══ Botão Suporte WhatsApp (flutuante) ══ -->
+<!-- ══ ACHIEVEMENT / SHARE CARD ══ -->
+<div class="ach-overlay" id="achOverlay" onclick="achCloseOnBg(event)">
+  <div class="ach-box">
+    <h3 class="ach-title" id="achTitle">🎉 Conquista</h3>
+    <canvas id="achCanvas" width="1080" height="1080"></canvas>
+    <div class="ach-actions">
+      <button class="ach-btn primary" onclick="achShare()">📤 Compartilhar</button>
+      <button class="ach-btn secondary" onclick="achSave()">💾 Salvar</button>
+      <button class="ach-btn ghost" onclick="achClose()">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Botão flutuante combinado: instala app + abre WhatsApp -->
 <div id="floatMenu">
   <div class="float-options" id="floatOptions">
@@ -1889,10 +1932,42 @@
   <div class="te-top-bar">
     <div class="te-top-info" id="trainerStudentInfo"></div>
     <div class="te-mode-tabs" id="teModeTabs"></div>
+    <button class="te-tpl-btn" id="trainerTplBtn" onclick="openTrainerTemplateModal()" style="display:none;" title="Carregar template oficial (substitui exercícios mantendo info do aluno)">📋 Template</button>
     <button class="te-btn" id="trainerSaveBtn" onclick="trainerSave()">💾 Salvar</button>
     <button class="te-btn ghost" onclick="trainerExit()">✕</button>
   </div>
   <div class="te-days-scroll" id="trainerDaysContainer"></div>
+</div>
+
+<!-- Modal de seleção de template no trainer -->
+<div class="te-modal-overlay" id="trainerTemplateModal">
+  <div class="te-modal-box" style="max-width:520px;">
+    <h3>📋 Carregar template oficial</h3>
+    <p style="color:#888;font-size:11px;margin:0 0 6px;">Substitui os exercícios do treino atual pelo template selecionado. Preserva nome, restrição e link do aluno. <strong>Não salva automático</strong> — confere e clica Salvar.</p>
+
+    <div class="tpl-section-label">Gênero</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+      <button class="tpl-pill gender" id="tplGenderM" onclick="ttSetGender('M')">MASCULINO</button>
+      <button class="tpl-pill gender" id="tplGenderF" onclick="ttSetGender('F')">FEMININO</button>
+    </div>
+
+    <div class="tpl-section-label">Frequência</div>
+    <div class="tpl-grid" id="tplFreqGrid"></div>
+
+    <div id="tplCatWrap" style="display:none;">
+      <div class="tpl-section-label">Categoria</div>
+      <div class="tpl-grid" id="tplCatGrid"></div>
+    </div>
+
+    <div id="tplVerWrap" style="display:none;">
+      <div class="tpl-section-label">Versão</div>
+      <div class="tpl-grid" id="tplVerGrid"></div>
+    </div>
+
+    <div style="margin-top:14px;">
+      <button class="te-btn ghost" onclick="teHide('trainerTemplateModal')" style="width:100%;">Cancelar</button>
+    </div>
+  </div>
 </div>
 
 <div id="foodSuggest"></div>
@@ -2045,9 +2120,267 @@ function onCheckExercise(di, ei) {
   if (newVal && allDoneOfDay(di)) {
     updateStreakOnComplete();
     notifyDayCompletion(di); // log central pra ranking
+    // ✨ Card shareable
+    setTimeout(() => showCompletionCard(di), 250);
   }
   // Re-render só esse card e a barra
   renderExercises();
+}
+
+// ══════════════════════════════════════════════════════════════
+// ══ ACHIEVEMENT CARDS — shareable canvas pós-treino + PR
+// ══════════════════════════════════════════════════════════════
+
+let _achData = null;
+
+function showAchievementCard(type, data) {
+  _achData = Object.assign({ type: type }, data);
+  const titleMap = {
+    completion: '🎉 Treino concluído!',
+    pr: '🏆 Novo Recorde!'
+  };
+  document.getElementById('achTitle').textContent = titleMap[type] || '🏆 Conquista';
+  document.getElementById('achOverlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  // Renderiza com count-up nos números
+  animateAchievementDraw();
+}
+
+function achClose() {
+  document.getElementById('achOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+  _achData = null;
+}
+function achCloseOnBg(e) { if (e.target.id === 'achOverlay') achClose(); }
+
+function animateAchievementDraw() {
+  // Anima de 0 até valores finais em ~900ms
+  const start = performance.now();
+  const DUR = 900;
+  function frame(t) {
+    const p = Math.min(1, (t - start) / DUR);
+    // ease-out cubic
+    const e = 1 - Math.pow(1 - p, 3);
+    drawAchievementCard(e);
+    if (p < 1) requestAnimationFrame(frame);
+    else drawAchievementCard(1); // estado final exato
+  }
+  requestAnimationFrame(frame);
+}
+
+function drawAchievementCard(progress) {
+  if (!_achData) return;
+  progress = progress == null ? 1 : progress;
+  const c = document.getElementById('achCanvas');
+  const ctx = c.getContext('2d');
+  const W = c.width, H = c.height;
+
+  // BG: black gradient
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#0c0c0c');
+  grad.addColorStop(1, '#1d1d1d');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle gold glow corners
+  const rg = ctx.createRadialGradient(W/2, H/2, 100, W/2, H/2, W*0.7);
+  rg.addColorStop(0, 'rgba(212,167,106,0.08)');
+  rg.addColorStop(1, 'rgba(212,167,106,0)');
+  ctx.fillStyle = rg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Gold border
+  ctx.strokeStyle = '#d4a76a';
+  ctx.lineWidth = 6;
+  ctx.strokeRect(36, 36, W - 72, H - 72);
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+
+  if (_achData.type === 'completion') drawCompletionContent(ctx, W, H, progress);
+  else if (_achData.type === 'pr')    drawPRContent(ctx, W, H, progress);
+
+  // Footer (sempre)
+  ctx.font = 'bold 30px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.fillStyle = '#d4a76a';
+  ctx.fillText('@gh.scheuermann', W/2, H - 175);
+  ctx.font = 'bold 56px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.fillStyle = '#fff';
+  ctx.fillText('MÉTODO GH', W/2, H - 110);
+}
+
+function drawCompletionContent(ctx, W, H, p) {
+  const d = _achData;
+  // Icon
+  ctx.font = '110px sans-serif';
+  ctx.fillText('💪', W/2, 220);
+
+  ctx.font = 'bold 44px -apple-system, sans-serif';
+  ctx.fillStyle = '#d4a76a';
+  ctx.fillText('TREINO CONCLUÍDO', W/2, 310);
+
+  // Day name
+  ctx.font = 'bold 56px -apple-system, sans-serif';
+  ctx.fillStyle = '#fff';
+  const name = d.dayName || ('DIA ' + d.day);
+  // Wrap se longo
+  if (ctx.measureText(name).width > W - 120) {
+    const parts = name.split(' + ');
+    ctx.fillText(parts[0], W/2, 430);
+    ctx.font = 'bold 44px -apple-system, sans-serif';
+    ctx.fillText(parts.slice(1).join(' + '), W/2, 490);
+  } else {
+    ctx.fillText(name, W/2, 440);
+  }
+
+  // Stats
+  const cols = [{ num: d.exercises, lbl: 'EXERCÍCIOS' }];
+  if (d.totalKg) cols.push({ num: d.totalKg, lbl: 'KG TOTAIS', suffix: 'kg' });
+  cols.push({ num: d.streak, lbl: 'DIAS 🔥' });
+
+  const startY = 640;
+  const colW = W / cols.length;
+  cols.forEach((s, i) => {
+    const x = colW * (i + 0.5);
+    ctx.font = 'bold 100px -apple-system, sans-serif';
+    ctx.fillStyle = '#d4a76a';
+    const animated = Math.round(s.num * p);
+    const txt = animated + (s.suffix || '');
+    ctx.fillText(txt, x, startY);
+    ctx.font = 'bold 24px -apple-system, sans-serif';
+    ctx.fillStyle = '#888';
+    ctx.fillText(s.lbl, x, startY + 50);
+  });
+}
+
+function drawPRContent(ctx, W, H, p) {
+  const d = _achData;
+  // Trophy
+  ctx.font = '160px sans-serif';
+  ctx.fillText('🏆', W/2, 280);
+
+  ctx.font = 'bold 56px -apple-system, sans-serif';
+  ctx.fillStyle = '#d4a76a';
+  ctx.fillText('NOVO RECORDE', W/2, 380);
+
+  // Exercise name (wrap se longo)
+  ctx.font = 'bold 36px -apple-system, sans-serif';
+  ctx.fillStyle = '#fff';
+  const name = d.exerciseName || '';
+  const maxW = W - 120;
+  if (ctx.measureText(name).width > maxW) {
+    const words = name.split(' ');
+    let line1 = '', line2 = '';
+    for (const w of words) {
+      const test = line1 ? line1 + ' ' + w : w;
+      if (ctx.measureText(test).width <= maxW) line1 = test;
+      else line2 += (line2 ? ' ' : '') + w;
+    }
+    ctx.fillText(line1, W/2, 470);
+    ctx.fillText(line2, W/2, 520);
+  } else {
+    ctx.fillText(name, W/2, 480);
+  }
+
+  // OldKg → newKg
+  const oldKg = d.oldKg, newKg = d.newKg;
+  const animKg = Math.round((oldKg + (newKg - oldKg) * p) * 10) / 10;
+  ctx.font = 'bold 32px -apple-system, sans-serif';
+  ctx.fillStyle = '#666';
+  ctx.fillText(oldKg + 'kg', W/2 - 180, 670);
+  ctx.font = 'bold 40px sans-serif';
+  ctx.fillText('→', W/2, 670);
+  ctx.font = 'bold 110px -apple-system, sans-serif';
+  ctx.fillStyle = '#d4a76a';
+  ctx.fillText(animKg + 'kg', W/2 + 90, 700);
+
+  // Diff
+  const diff = Math.round((newKg - oldKg) * 10) / 10;
+  ctx.font = 'bold 56px -apple-system, sans-serif';
+  ctx.fillStyle = '#4caf50';
+  ctx.fillText('+' + diff + 'kg', W/2, 820);
+}
+
+async function achShare() {
+  const c = document.getElementById('achCanvas');
+  c.toBlob(async blob => {
+    if (!blob) return achSave();
+    try {
+      const file = new File([blob], 'metodo-gh.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Método GH' });
+      } else {
+        achSave();
+      }
+    } catch (e) {
+      // User cancelled, ignore
+    }
+  }, 'image/png');
+}
+
+function achSave() {
+  const c = document.getElementById('achCanvas');
+  const a = document.createElement('a');
+  a.href = c.toDataURL('image/png');
+  a.download = `metodo-gh-${Date.now()}.png`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+// ══ PR (Personal Record) detection ══
+function prKey(di, ei) { return `gh_pr_${STUDENT_ID}_d${di}_e${ei}`; }
+function checkPR(di, ei, newKg) {
+  if (!newKg || newKg <= 0) return;
+  const k = prKey(di, ei);
+  const stored = parseFloat(localStorage.getItem(k) || '0');
+  if (newKg > stored) {
+    if (stored > 0) {
+      // Real PR (já tinha registro anterior)
+      const ex = WORKOUT[di] && WORKOUT[di].exercises[ei];
+      if (ex && !ex.warmup) {
+        showAchievementCard('pr', {
+          exerciseName: ex.name,
+          oldKg: stored,
+          newKg: newKg
+        });
+      }
+    }
+    localStorage.setItem(k, String(newKg));
+  }
+}
+
+// ══ Completion card helper ══
+function showCompletionCard(di) {
+  const day = WORKOUT[di];
+  if (!day) return;
+  let totalKg = 0;
+  day.exercises.forEach((ex, ei) => {
+    if (ex.warmup) return;
+    const carga = parseFloat(loadCarga(di, ei, currentWeek)) || 0;
+    if (carga > 0) totalKg += carga;
+  });
+  const exercises = day.exercises.filter(ex => !ex.warmup).length;
+  const streak = getStreakDays();
+  // Detecta grupos do dia (se classifyMuscle estiver disponível)
+  let dayName = `DIA ${di + 1}`;
+  if (typeof classifyMuscle === 'function' && typeof MUSCLE_LABELS !== 'undefined') {
+    const groups = new Set();
+    day.exercises.forEach(ex => {
+      if (ex.warmup) return;
+      const g = classifyMuscle(ex.name);
+      if (g !== 'aquecimento' && g !== 'outros') groups.add(g);
+    });
+    const arr = Array.from(groups).map(g => MUSCLE_LABELS[g]);
+    if (arr.length) dayName = arr.join(' + ');
+  }
+  showAchievementCard('completion', {
+    day: di + 1,
+    dayName: dayName,
+    exercises: exercises,
+    totalKg: totalKg > 0 ? Math.round(totalKg) : null,
+    streak: streak
+  });
 }
 
 // ══ Logging central (premiação + tracking de afiliados) ══
@@ -2729,6 +3062,9 @@ function onCarga(di, ei, input) {
     saveCarga(di, ei, currentWeek, input.value);
     const el = document.getElementById(`sv-${di}-${ei}`);
     if (el) { el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 1500); }
+    // ✨ PR detection
+    const kg = parseFloat(input.value) || 0;
+    if (kg > 0) checkPR(di, ei, kg);
   }, 400);
 }
 function onPlacas(di, ei, input) {
@@ -4106,6 +4442,8 @@ async function trainerLoadSheet() {
     currentEditMode = trainerData ? 'treino' : 'dieta';
     renderEditorTopBar();
     renderCurrentEditor();
+    const tb = document.getElementById('trainerTplBtn');
+    if (tb) tb.style.display = currentEditMode === 'treino' ? 'inline-block' : 'none';
   } catch (e) {
     alert('Erro: ' + e.message);
   }
@@ -4129,6 +4467,140 @@ function switchEditMode(mode) {
   currentEditMode = mode;
   renderEditorTopBar();
   renderCurrentEditor();
+  // Mostra botão Template só em modo TREINO
+  const tb = document.getElementById('trainerTplBtn');
+  if (tb) tb.style.display = mode === 'treino' ? 'inline-block' : 'none';
+}
+
+// ── Template loader no Modo Treinador ──
+let _ttGender = null, _ttFreq = null, _ttCat = null;
+
+function openTrainerTemplateModal() {
+  if (currentEditMode !== 'treino') return;
+  _ttGender = null; _ttFreq = null; _ttCat = null;
+  document.getElementById('tplGenderM').classList.remove('active');
+  document.getElementById('tplGenderF').classList.remove('active');
+  document.getElementById('tplFreqGrid').innerHTML = '';
+  document.getElementById('tplCatWrap').style.display = 'none';
+  document.getElementById('tplVerWrap').style.display = 'none';
+  teShow('trainerTemplateModal');
+}
+
+function ttSetGender(g) {
+  _ttGender = g;
+  _ttFreq = null; _ttCat = null;
+  document.getElementById('tplGenderM').classList.toggle('active', g === 'M');
+  document.getElementById('tplGenderF').classList.toggle('active', g === 'F');
+  const tpls = g === 'M' ? TREINO_MASC : TREINO_FEM;
+  const freqs = Object.keys(tpls);
+  document.getElementById('tplFreqGrid').innerHTML = freqs.map(f =>
+    `<button class="tpl-pill" onclick="ttSetFreq('${f}')">${f}</button>`
+  ).join('');
+  document.getElementById('tplCatWrap').style.display = 'none';
+  document.getElementById('tplVerWrap').style.display = 'none';
+}
+
+function ttSetFreq(freq) {
+  _ttFreq = freq; _ttCat = null;
+  document.querySelectorAll('#tplFreqGrid .tpl-pill').forEach(b => b.classList.toggle('active', b.textContent === freq));
+  const tpls = _ttGender === 'M' ? TREINO_MASC : TREINO_FEM;
+  const cats = tpls[freq] || {};
+  const catKeys = Object.keys(cats);
+  // Se tem só 1 categoria sem opções (ARTROSE etc), aplica direto
+  if (catKeys.length === 1 && cats[catKeys[0]].length === 0) {
+    document.getElementById('tplCatWrap').style.display = 'none';
+    document.getElementById('tplVerWrap').style.display = 'none';
+    ttApplyTemplate(catKeys[0], null);
+    return;
+  }
+  document.getElementById('tplCatGrid').innerHTML = catKeys.map(k =>
+    `<button class="tpl-pill" onclick="ttSetCat('${k}')">${CAT_LABELS[k] || k || 'Normal'}</button>`
+  ).join('');
+  document.getElementById('tplCatWrap').style.display = 'block';
+  document.getElementById('tplVerWrap').style.display = 'none';
+}
+
+function ttSetCat(cat) {
+  _ttCat = cat;
+  document.querySelectorAll('#tplCatGrid .tpl-pill').forEach(b => {
+    const lbl = CAT_LABELS[cat] || cat || 'Normal';
+    b.classList.toggle('active', b.textContent === lbl);
+  });
+  const tpls = _ttGender === 'M' ? TREINO_MASC : TREINO_FEM;
+  const versions = (tpls[_ttFreq] || {})[cat] || [];
+  if (!versions.length) {
+    ttApplyTemplate(cat, null);
+    return;
+  }
+  document.getElementById('tplVerGrid').innerHTML = versions.map(v =>
+    `<button class="tpl-pill" onclick="ttApplyTemplate('${cat}', ${v})">${v}.0</button>`
+  ).join('');
+  document.getElementById('tplVerWrap').style.display = 'block';
+}
+
+async function ttApplyTemplate(cat, version) {
+  const prefix = _ttGender === 'M' ? '' : 'FEM_';
+  let fullName;
+  if (_ttGender === 'M') {
+    fullName = cat === '50min' ? `${_ttFreq}_${version}.0_50min`
+             : cat ? (version != null ? `${_ttFreq}_${cat}_${version}.0` : `${_ttFreq}_${cat}`)
+             : `${_ttFreq}_${version}.0`;
+  } else {
+    fullName = cat === 'NORMAL' ? `FEM_${_ttFreq}_${version}.0`
+             : `FEM_${_ttFreq}_${cat}_${version}.0`;
+  }
+  const label = `${_ttGender === 'M' ? 'MASC' : 'FEM'} ${_ttFreq}${cat ? ' ' + (CAT_LABELS[cat] || cat) : ''}${version != null ? ' v' + version + '.0' : ''}`;
+  if (!confirm(`Substituir exercícios do treino atual pelo template:\n\n${label}\n\nNome do aluno, restrict e link são preservados.\n\nSeguir?`)) return;
+  try {
+    if (!treinoTemplateCache) {
+      const resp = await fetch('csv_base64.json');
+      treinoTemplateCache = await resp.json();
+    }
+    const key = 'TREINO_' + fullName + '.csv';
+    if (!treinoTemplateCache[key]) { alert('Template não encontrado: ' + key); return; }
+    const bin = atob(treinoTemplateCache[key]);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const csv = new TextDecoder('utf-8').decode(bytes);
+    const parsed = parseCSV(csv).map(r => { while (r.length < 8) r.push(''); return r.slice(0, 8); });
+
+    // Preserva header rows do aluno (TREINO/info/restrict/link)
+    const headerRows = [];
+    let bodyStart = 0;
+    for (let i = 0; i < trainerData.length; i++) {
+      const sec = String(trainerData[i][0] || '').toLowerCase().trim();
+      if (i === 0 && sec === 'treino') { headerRows.push(trainerData[i]); continue; }
+      if (sec === 'info' || sec === 'restrict' || sec === 'link') {
+        headerRows.push(trainerData[i]);
+      } else if (sec && /^\d/.test(sec)) {
+        bodyStart = i;
+        break;
+      }
+    }
+
+    // Encontra body start no template (1ª linha com col A começando em dígito)
+    let tplBodyStart = -1;
+    for (let i = 0; i < parsed.length; i++) {
+      const v = String(parsed[i][0] || '').trim();
+      if (v && /^\d/.test(v)) { tplBodyStart = i; break; }
+    }
+    if (tplBodyStart < 0) {
+      alert('Template inválido: sem linhas de exercício.');
+      return;
+    }
+
+    const newData = headerRows.slice();
+    for (let i = tplBodyStart; i < parsed.length; i++) {
+      newData.push(parsed[i]);
+    }
+
+    trainerData = newData;
+    teHide('trainerTemplateModal');
+    renderTrainerEditor();
+    alert(`✓ Template ${label} aplicado.\n\nConfere o resultado e clica em 💾 Salvar pra sobrescrever a sheet do aluno.`);
+  } catch (e) {
+    alert('Erro: ' + e.message);
+  }
 }
 
 function renderCurrentEditor() {
