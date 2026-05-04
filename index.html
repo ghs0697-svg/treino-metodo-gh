@@ -1054,6 +1054,24 @@
   .te-trash:hover { background: #c0392b; color: #fff; }
   .te-day-add { display: block; width: 100%; background: transparent; border: 1px dashed #444; color: #888; padding: 8px; border-radius: 6px; font-size: 12px; cursor: pointer; margin-top: 4px; }
   .te-day-add:hover { border-color: var(--gold); color: var(--gold); }
+  .te-detail-btn { width: 100%; background: #1f2530; border: 1px solid #2a3540; color: #8cb3d9; padding: 5px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-top: 4px; font-weight: 600; }
+  .te-detail-btn:hover { background: var(--gold-dim); color: var(--gold); border-color: var(--gold); }
+  .det-section { background: #161616; border: 1px solid #2a2a2a; border-radius: 6px; padding: 10px 12px; margin-bottom: 10px; }
+  .det-section h4 { color: var(--gold); font-size: 11px; margin: 0 0 8px; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700; }
+  .det-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .det-row label { color: #aaa; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; }
+  .det-row input[type="number"] { width: 60px; background: #222; color: #fff; border: 1px solid #333; padding: 5px; border-radius: 4px; font-size: 12px; }
+  .det-row input[type="text"] { background: #222; color: #fff; border: 1px solid #333; padding: 5px 8px; border-radius: 4px; font-size: 12px; }
+  .det-section textarea { width: 100%; background: #222; color: #fff; border: 1px solid #333; padding: 7px; border-radius: 4px; font-size: 12px; font-family: inherit; resize: vertical; box-sizing: border-box; }
+  .det-tech-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  .det-tech-btn { background: #222; border: 1px solid #333; color: #ccc; padding: 8px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; text-align: left; line-height: 1.3; }
+  .det-tech-btn:hover { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+  .det-tech-btn .tname { font-weight: 700; display: block; }
+  .det-tech-btn .tdesc { color: #888; font-size: 10px; margin-top: 2px; }
+  .det-shortcut { background: #2a1f1f; border: 1px solid #4a3030; color: #ddd; padding: 4px 8px; border-radius: 12px; font-size: 11px; cursor: pointer; }
+  .det-shortcut:hover { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+  .det-grid-srl { display: grid; grid-template-columns: 60px 1fr 70px; gap: 6px; }
+  .det-grid-srl input { width: 100%; box-sizing: border-box; }
   .te-muscle-chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 12px; }
   .te-muscle-chip { background: #222; border: 1px solid #333; color: #888; padding: 4px 9px; border-radius: 12px; font-size: 11px; font-weight: 700; cursor: pointer; letter-spacing: 0.3px; }
   .te-muscle-chip:hover { border-color: var(--gold-dim); color: #ccc; }
@@ -1430,6 +1448,78 @@
     <button class="te-btn ghost" onclick="trainerExit()">✕</button>
   </div>
   <div class="te-days-scroll" id="trainerDaysContainer"></div>
+</div>
+
+<div class="te-modal-overlay" id="exerciseDetailModal">
+  <div class="te-modal-box" style="max-width:560px;">
+    <h3>✏️ Detalhes do Exercício</h3>
+    <div id="detailExName" style="color:var(--gold);font-weight:700;margin-bottom:12px;font-size:14px;"></div>
+
+    <div class="det-section">
+      <h4>Cadência (segundos)</h4>
+      <div class="det-row">
+        <label>Conc <input type="number" id="detConc" step="0.5" min="0"></label>
+        <label>Iso  <input type="number" id="detIso" step="0.5" min="0"></label>
+        <label>Exc  <input type="number" id="detExc" step="0.5" min="0"></label>
+        <button class="te-btn ghost" style="font-size:11px;padding:4px 10px;" onclick="detResetCad()">↺ Padrão 1/0.5/2</button>
+      </div>
+    </div>
+
+    <div class="det-section">
+      <h4>Séries · Repetições · Intervalo</h4>
+      <div class="det-grid-srl">
+        <input type="text" id="detSeries" placeholder="Séries (4X)">
+        <input type="text" id="detReps" placeholder="Reps (8 a 12)">
+        <input type="text" id="detRest" placeholder="Int. (60 seg)">
+      </div>
+    </div>
+
+    <div class="det-section">
+      <h4>Técnica avançada (clica → ajusta séries/reps/int. + escreve no OBS)</h4>
+      <div class="det-tech-grid">
+        <button class="det-tech-btn" onclick="detApplyTech('reset')"><span class="tname">↺ Padrão</span><span class="tdesc">4X · 8 a 12 · 60s</span></button>
+        <button class="det-tech-btn" onclick="detApplyTech('progressao')"><span class="tname">Progressão pura</span><span class="tdesc">4X · 10 · 60s · carga sobe</span></button>
+        <button class="det-tech-btn" onclick="detApplyTech('piramide')"><span class="tname">Pirâmide</span><span class="tdesc">1X/1X/1X/1X · 15-20→6-10</span></button>
+        <button class="det-tech-btn" onclick="detApplyTech('aclimatizacao')"><span class="tname">Aclimatização</span><span class="tdesc">1X/1X/1X · 10-15 · 4-6 · 6-10</span></button>
+        <button class="det-tech-btn" onclick="detApplyTech('excentrica5')"><span class="tname">Excêntrica 5s</span><span class="tdesc">1X/1X/1X · 6-10 · 1-5 · 11-15</span></button>
+        <button class="det-tech-btn" onclick="detApplyTech('cluster')"><span class="tname">Cluster-Set</span><span class="tdesc">3X · 3+3+3 · 90s · 5RM</span></button>
+        <button class="det-tech-btn" onclick="detApplyTech('biset')"><span class="tname">Bi-set</span><span class="tdesc">marca col A "Xbi" no anterior</span></button>
+        <button class="det-tech-btn" onclick="detApplyTech('dropset')"><span class="tname">Drop-set</span><span class="tdesc">falha → −20-30% → falha</span></button>
+        <button class="det-tech-btn" onclick="detApplyTech('dropmec')"><span class="tname">Drop Mecânico</span><span class="tdesc">falha → muda pegada → reps</span></button>
+        <button class="det-tech-btn" onclick="detApplyTech('isometria')"><span class="tname">Isometria pura</span><span class="tdesc">3X · 30 seg · 60s</span></button>
+      </div>
+    </div>
+
+    <div class="det-section">
+      <h4>Atalhos de OBS (clica pra adicionar à observação)</h4>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;">
+        <button class="det-shortcut" onclick="detAppend('Progressão de carga')">+ Progressão</button>
+        <button class="det-shortcut" onclick="detAppend('1 seg isometria no topo')">+ Iso topo 1s</button>
+        <button class="det-shortcut" onclick="detAppend('3 seg isometria no topo')">+ Iso topo 3s</button>
+        <button class="det-shortcut" onclick="detAppend('Pegada neutra')">+ Pegada neutra</button>
+        <button class="det-shortcut" onclick="detAppend('Pegada pronada')">+ Pegada pronada</button>
+        <button class="det-shortcut" onclick="detAppend('Pegada supinada')">+ Pegada supinada</button>
+        <button class="det-shortcut" onclick="detAppend('Roubar nas últimas 2-3')">+ Roubar últimas</button>
+        <button class="det-shortcut" onclick="detAppend('Foco na contração')">+ Foco contração</button>
+        <button class="det-shortcut" onclick="detAppend('Amplitude máxima')">+ Amplitude máx</button>
+        <button class="det-shortcut" onclick="detAppend('Amplitude parcial')">+ Amplitude parcial</button>
+        <button class="det-shortcut" onclick="detAppend('Coluna neutra')">+ Coluna neutra</button>
+        <button class="det-shortcut" onclick="detAppend('Joelho não passa do pé')">+ Joelho seguro</button>
+        <button class="det-shortcut" onclick="detAppend('Cotovelo fixo')">+ Cotovelo fixo</button>
+      </div>
+    </div>
+
+    <div class="det-section">
+      <h4>OBS final (texto livre — preview compõe automaticamente)</h4>
+      <textarea id="detObs" rows="3" placeholder="Texto livre + cadência (auto) + técnica (auto)"></textarea>
+      <p style="color:#666;font-size:10px;margin:4px 0 0;">A cadência custom é injetada automaticamente quando aplica.</p>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:14px;">
+      <button class="te-btn" onclick="detApply()">✓ Aplicar mudanças</button>
+      <button class="te-btn ghost" onclick="teHide('exerciseDetailModal')">Cancelar</button>
+    </div>
+  </div>
 </div>
 
 <div class="te-modal-overlay" id="exerciseSwapModal">
@@ -2982,7 +3072,8 @@ function renderTrainerEditor() {
           <input class="te-input" value="${escTrainer(e.rest)}" oninput="trainerData[${e.idx}][4]=this.value" placeholder="Int.">
           <button class="te-trash" onclick="removeExercise(${e.idx})" title="Remover exercício">🗑</button>
         </div>
-        <input class="te-input te-obs" value="${escTrainer(e.obs)}" oninput="trainerData[${e.idx}][5]=this.value" placeholder="OBS / cadência (excêntrica X seg, isometria X seg…)">
+        <input class="te-input te-obs" value="${escTrainer(e.obs)}" oninput="trainerData[${e.idx}][5]=this.value" placeholder="OBS / cadência (use o botão de detalhes pra montagem rápida)">
+        <button class="te-detail-btn" onclick="openDetailModal(${e.idx})">✏️ Cadência · Técnica · Detalhes →</button>
       </div>`;
     });
     html += `<button class="te-day-add" onclick="addExerciseToDay(${d})">+ Exercício no DIA ${d}</button>`;
@@ -3063,6 +3154,122 @@ function removeExercise(rowIdx) {
   const name = trainerData[rowIdx][1] || '(linha vazia)';
   if (!confirm('Remover "' + name + '"?')) return;
   trainerData.splice(rowIdx, 1);
+  renderTrainerEditor();
+}
+
+// ── Modal Detalhes do Exercício ──
+let detTargetIdx = null;
+const CAD_DEFAULT = { conc: 1, iso: 0.5, exc: 2 };
+
+function openDetailModal(rowIdx) {
+  detTargetIdx = rowIdx;
+  const r = trainerData[rowIdx];
+  document.getElementById('detailExName').textContent = r[1] || '(sem nome)';
+  const cad = parseCadencia(r[5]);
+  document.getElementById('detConc').value = cad.conc;
+  document.getElementById('detIso').value  = cad.iso;
+  document.getElementById('detExc').value  = cad.exc;
+  document.getElementById('detSeries').value = r[2] || '';
+  document.getElementById('detReps').value   = r[3] || '';
+  document.getElementById('detRest').value   = r[4] || '';
+  document.getElementById('detObs').value    = stripCadencia(r[5] || '');
+  teShow('exerciseDetailModal');
+}
+
+function stripCadencia(obs) {
+  return String(obs || '')
+    .replace(/(?:exc[êe]ntrica|negativa)\s+\d+(?:[.,]\d+)?\s*(?:seg|s\b)\s*[,•]?\s*/gi, '')
+    .replace(/isometria\s+\d+(?:[.,]\d+)?\s*(?:seg|s\b)\s*[,•]?\s*/gi, '')
+    .replace(/(?:conc[êe]ntrica|positiva)\s+\d+(?:[.,]\d+)?\s*(?:seg|s\b)\s*[,•]?\s*/gi, '')
+    .replace(/\s*•\s*•/g, ' • ')
+    .replace(/^\s*[•—-]\s*|\s*[•—-]\s*$/g, '')
+    .trim();
+}
+
+function detResetCad() {
+  document.getElementById('detConc').value = CAD_DEFAULT.conc;
+  document.getElementById('detIso').value  = CAD_DEFAULT.iso;
+  document.getElementById('detExc').value  = CAD_DEFAULT.exc;
+}
+
+function detAppend(text) {
+  const ta = document.getElementById('detObs');
+  if (!ta.value.trim()) { ta.value = text; return; }
+  if (ta.value.includes(text)) return; // não duplica
+  ta.value = ta.value.trim() + ' • ' + text;
+}
+
+function detApplyTech(t) {
+  const set = (s, r, i) => {
+    document.getElementById('detSeries').value = s;
+    document.getElementById('detReps').value   = r;
+    document.getElementById('detRest').value   = i;
+  };
+  switch (t) {
+    case 'reset':
+      set('4X', '8 a 12', '60 seg');
+      detResetCad();
+      document.getElementById('detObs').value = '';
+      break;
+    case 'progressao':
+      set('4X', '10', '60 seg');
+      detAppend('Progressão pura — carga sobe, reps fixas. Roubar nas últimas');
+      break;
+    case 'piramide':
+      set('1X / 1X / 1X / 1X', '15-20 | 10-15 | 8-12 | 6-10', '60 seg');
+      detAppend('Pirâmide — reps caem, peso sobe a cada série');
+      break;
+    case 'aclimatizacao':
+      set('1X / 1X / 1X', '10-15 | 4-6 | 6-10', '90 seg');
+      detAppend('Aclimatização — leve aquece (10-15), média neuro (4-6), pesada principal (6-10)');
+      break;
+    case 'excentrica5':
+      set('1X / 1X / 1X', '6-10 | 1-5 | 11-15', '90 seg');
+      document.getElementById('detExc').value = 5;
+      detAppend('Cadência excêntrica de 5 seg — média / pesada / leve por último');
+      break;
+    case 'cluster':
+      set('3X', '3+3+3 cluster', '90 seg');
+      detAppend('CLUSTER-SET — 3 blocos de 3 reps com 15-20s entre blocos. Carga 5RM (peso que faria só 5 reps em série tradicional)');
+      break;
+    case 'biset':
+      detAppend('Bi-set: sem descanso até o próximo exercício');
+      alert('⚠ Pra renderizar como bi-set no app, marca col A da PRIMEIRA linha do par como "Xbi" (ex: "1bi"). O segundo exercício fica com col A normal ("1"). Faz isso direto na sheet ou edita aqui depois.');
+      break;
+    case 'dropset':
+      detAppend('Drop-set: falha total → reduzir 20-30% → falha de novo. Sem descanso entre os drops');
+      break;
+    case 'dropmec':
+      detAppend('Drop Mecânico: falha postura estrita → muda biomecânica → reps extras com mesma carga');
+      break;
+    case 'isometria':
+      set('3X', '30 seg', '60 seg');
+      detAppend('Isometria pura — segura na contração');
+      break;
+  }
+}
+
+function detApply() {
+  if (detTargetIdx == null) return;
+  const r = trainerData[detTargetIdx];
+  r[2] = document.getElementById('detSeries').value.trim();
+  r[3] = document.getElementById('detReps').value.trim();
+  r[4] = document.getElementById('detRest').value.trim();
+
+  let obs = stripCadencia(document.getElementById('detObs').value.trim());
+  const conc = parseFloat(document.getElementById('detConc').value);
+  const iso  = parseFloat(document.getElementById('detIso').value);
+  const exc  = parseFloat(document.getElementById('detExc').value);
+  const cadParts = [];
+  if (!isNaN(conc) && conc !== CAD_DEFAULT.conc) cadParts.push(`concêntrica ${conc} seg`);
+  if (!isNaN(iso)  && iso  !== CAD_DEFAULT.iso)  cadParts.push(`isometria ${iso} seg`);
+  if (!isNaN(exc)  && exc  !== CAD_DEFAULT.exc)  cadParts.push(`excêntrica ${exc} seg`);
+  if (cadParts.length) {
+    obs = (obs ? obs + ' • ' : '') + cadParts.join(', ');
+  }
+  r[5] = obs;
+  teHide('exerciseDetailModal');
+  detTargetIdx = null;
   renderTrainerEditor();
 }
 
