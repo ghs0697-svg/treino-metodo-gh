@@ -1165,6 +1165,13 @@
   .te-mode-tab.active { background: var(--gold); color: var(--dark); border-color: var(--gold); }
   .te-mode-tab:disabled { opacity: 0.3; cursor: not-allowed; }
 
+  /* === Lista de alunos (busca trainer) === */
+  .trainer-student-list { max-height: 260px; overflow-y: auto; margin-top: 6px; display: flex; flex-direction: column; gap: 3px; }
+  .trainer-student-item { background: #222; border: 1px solid #333; padding: 8px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; color: #fff; text-align: left; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .trainer-student-item:hover { background: var(--gold); color: var(--dark); border-color: var(--gold); }
+  .trainer-student-meta { font-size: 10px; color: #888; flex-shrink: 0; }
+  .trainer-student-item:hover .trainer-student-meta { color: rgba(0,0,0,0.7); }
+
   /* === Dieta editor === */
   .di-block { background: #161616; border: 1px solid #2a2a2a; border-radius: 8px; margin-bottom: 12px; overflow: hidden; }
   .di-block-head { padding: 10px 12px; background: #1d1d1d; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
@@ -1863,9 +1870,13 @@
 </div>
 
 <div class="te-modal-overlay" id="trainerSheetModal">
-  <div class="te-modal-box">
+  <div class="te-modal-box" style="max-width:480px;">
     <h3>📋 Carregar treino do aluno</h3>
-    <p style="color:#888;font-size:12px;margin:0 0 12px;">Cola o ID da sheet do aluno (ou a URL completa).</p>
+    <p style="color:#888;font-size:12px;margin:0 0 8px;">Pesquisa pelo nome (digita 2+ letras) <span id="trainerStudentCount" style="color:#666;font-size:10px;"></span></p>
+    <input type="text" id="trainerStudentSearch" placeholder="Ex: Marcelo, Bruna, Eric..." oninput="trainerSearchStudents(this.value)" autocomplete="off">
+    <div class="trainer-student-list" id="trainerStudentList"></div>
+
+    <p style="color:#666;font-size:11px;margin:14px 0 4px;text-align:center;">— ou cola ID/URL manualmente —</p>
     <input type="text" id="trainerSheetIdInput" placeholder="ID ou URL da sheet">
     <div style="display:flex;gap:8px;margin-top:8px;">
       <button class="te-btn" onclick="trainerLoadSheet()">Carregar</button>
@@ -3989,10 +4000,73 @@ function authTrainer() {
   if (document.getElementById('trainerPwdInput').value === TRAINER_PWD) {
     trainerAuth = true;
     teHide('trainerLoginModal');
+    loadTrainerStudents(); // carrega lista em background
     openTrainerSheetModal();
   } else {
     alert('Senha incorreta');
   }
+}
+
+// ── Lista de alunos do mestre (pra busca rápida) ──
+let trainerStudentsList = [];
+let trainerStudentsLoaded = false;
+
+async function loadTrainerStudents() {
+  if (trainerStudentsLoaded) return;
+  renderTrainerStudentCount();
+  try {
+    const resp = await fetch(LOG_ENDPOINT + '?action=list_students&token=' + encodeURIComponent(TRAINER_PWD));
+    const j = await resp.json();
+    if (j && j.students) {
+      trainerStudentsList = j.students;
+      trainerStudentsList.sort((a, b) => a.n.localeCompare(b.n));
+      trainerStudentsLoaded = true;
+    } else if (j && j.error) {
+      console.warn('list_students error:', j.error);
+    }
+  } catch (e) {
+    console.warn('loadTrainerStudents:', e);
+  }
+  renderTrainerStudentCount();
+}
+
+function renderTrainerStudentCount() {
+  const el = document.getElementById('trainerStudentCount');
+  if (!el) return;
+  el.textContent = trainerStudentsLoaded
+    ? `· ${trainerStudentsList.length} alunos disponíveis`
+    : '· carregando lista...';
+}
+
+function trainerSearchStudents(query) {
+  const list = document.getElementById('trainerStudentList');
+  if (!list) return;
+  const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const q = norm(query).trim();
+  if (!q || q.length < 2) {
+    list.innerHTML = '';
+    return;
+  }
+  if (!trainerStudentsLoaded) {
+    list.innerHTML = '<p style="color:#666;font-size:11px;padding:4px;">Carregando lista de alunos do mestre…</p>';
+    return;
+  }
+  const filtered = trainerStudentsList.filter(s => norm(s.n).includes(q)).slice(0, 15);
+  if (!filtered.length) {
+    list.innerHTML = '<p style="color:#666;font-size:11px;padding:4px;">Nenhum aluno encontrado com esse nome.</p>';
+    return;
+  }
+  list.innerHTML = filtered.map(s =>
+    `<button class="trainer-student-item" onclick="pickTrainerStudent('${s.s}')">
+      <span>${escTrainer(s.n)}</span>
+      ${s.d ? `<span class="trainer-student-meta">v ${escTrainer(s.d)}</span>` : ''}
+    </button>`
+  ).join('');
+}
+
+function pickTrainerStudent(sheetId) {
+  document.getElementById('trainerSheetIdInput').value = sheetId;
+  trainerLoadSheet();
 }
 
 function openTrainerSheetModal() {
