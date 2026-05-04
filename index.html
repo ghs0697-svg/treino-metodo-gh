@@ -380,6 +380,34 @@
   }
   .instructions-content .hl { color: var(--white); font-weight: 600; }
 
+  /* ── Parceiros ── */
+  .partner-card {
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+  .partner-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .partner-name { color: var(--gold); font-weight: 700; font-size: 14px; flex: 1; }
+  .partner-discount { background: #1f3a1f; color: #4caf50; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 3px; letter-spacing: 0.4px; white-space: nowrap; }
+  .partner-desc { color: #aaa; font-size: 12px; line-height: 1.4; margin: 2px 0 8px; }
+  .partner-msg-tip { color: #888; font-size: 10px; font-style: italic; margin-bottom: 6px; }
+  .partner-link {
+    display: block;
+    background: var(--gold);
+    color: var(--dark);
+    padding: 9px;
+    border-radius: 5px;
+    text-decoration: none;
+    text-align: center;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.3px;
+  }
+  .partner-link:active { opacity: 0.75; }
+  .partner-link.whatsapp { background: #25d366; color: #fff; }
+
   /* ── Footer ── */
   .app-footer {
     text-align: center;
@@ -1343,6 +1371,51 @@
   <p>Meta: <span class="hl">3 séries x 15-20 segundos</span></p>
 </div>
 
+<!-- ══ PARCEIROS ══ -->
+<div class="instructions-toggle" id="parceirosToggle" onclick="toggleParceiros()" style="display:none;">
+  🤝 Parceiros do Método <span id="parceirosArrow">&#9660;</span>
+</div>
+<div class="instructions-content" id="parceirosContent">
+  <p style="color:var(--gray);font-size:12px;margin:0 0 14px;">Use os links abaixo pra ganhar desconto exclusivo de aluno do Método GH.</p>
+
+  <div class="partner-card">
+    <div class="partner-card-head">
+      <span class="partner-name">👕 AlphaCo</span>
+      <span class="partner-discount">5% OFF</span>
+    </div>
+    <div class="partner-desc">Linha de roupas esportivas. Desconto aplicado automaticamente no checkout.</div>
+    <a class="partner-link" href="https://usealphaco.com.br/discount/GH" target="_blank" rel="noopener">Acessar com desconto →</a>
+  </div>
+
+  <div class="partner-card">
+    <div class="partner-card-head">
+      <span class="partner-name">🏋️ YangFit</span>
+      <span class="partner-discount">10% OFF</span>
+    </div>
+    <div class="partner-desc">Equipamentos e acessórios de musculação. Desconto via link de afiliado.</div>
+    <a class="partner-link" href="https://yangfit.com.br/?utm_source=instagram&utm_medium=GH&utm_campaign=afiliado&utm_content=parceiro%3D7865" target="_blank" rel="noopener">Acessar com desconto →</a>
+  </div>
+
+  <div class="partner-card">
+    <div class="partner-card-head">
+      <span class="partner-name">💉 Biotech (Aquiles)</span>
+      <span class="partner-discount">DESCONTO</span>
+    </div>
+    <div class="partner-desc">Ergogênicos e peptídeos. Atendimento direto no WhatsApp pra desconto exclusivo.</div>
+    <a class="partner-link whatsapp" href="https://w.app/m4akut" target="_blank" rel="noopener">Falar no WhatsApp →</a>
+  </div>
+
+  <div class="partner-card">
+    <div class="partner-card-head">
+      <span class="partner-name">💊 Arte e Ciência (Renato)</span>
+      <span class="partner-discount">DESCONTO</span>
+    </div>
+    <div class="partner-desc">Farmácia de manipulação. GH usa há mais de 7 anos.</div>
+    <div class="partner-msg-tip">Ao clicar, abre o WhatsApp com a mensagem padrão "Olá, sou [seu nome]. Vim por indicação do GH." — só revisa e envia.</div>
+    <a class="partner-link whatsapp" id="parceiroArteCiencia" href="https://api.whatsapp.com/send?phone=5516997693445" target="_blank" rel="noopener">Falar no WhatsApp →</a>
+  </div>
+</div>
+
 <!-- ══ DIET VIEW ══ -->
 <div id="dietaView">
   <div id="dietLoading" class="loading-screen" style="display:none;">
@@ -1794,6 +1867,7 @@ async function loadFromSheets() {
     document.getElementById('studentInfo').style.display = 'grid';
     document.getElementById('weekSelector').style.display = 'flex';
     document.getElementById('instrToggle').style.display = 'flex';
+    document.getElementById('parceirosToggle').style.display = 'flex';
     document.getElementById('hipoToggle').style.display = 'flex';
     document.getElementById('installBtn').style.display = 'block';
 
@@ -2037,6 +2111,19 @@ function toggleHipo() {
   a.innerHTML = c.classList.contains('show') ? '&#9650;' : '&#9660;';
 }
 
+function toggleParceiros() {
+  const c = document.getElementById('parceirosContent');
+  const a = document.getElementById('parceirosArrow');
+  c.classList.toggle('show');
+  a.innerHTML = c.classList.contains('show') ? '&#9650;' : '&#9660;';
+  // Atualiza link Arte e Ciência com nome do aluno
+  const nome = (document.getElementById('infoNome')?.textContent || '').trim();
+  const firstName = nome.split(/\s+/)[0] || '';
+  const msg = `Olá, sou ${nome || '(seu nome)'}. Vim por indicação do GH.`;
+  const link = document.getElementById('parceiroArteCiencia');
+  if (link) link.href = `https://api.whatsapp.com/send?phone=5516997693445&text=${encodeURIComponent(msg)}`;
+}
+
 // ══════════════════════════════════════════════════════════════
 // ══ SISTEMA DE DIETA ══
 // ══════════════════════════════════════════════════════════════
@@ -2055,6 +2142,7 @@ async function loadDietFromSheets() {
     DIET_DATA = parseDietData(rows);
     dietLoaded = true;
     document.getElementById('mainNav').style.display = 'flex';
+    document.getElementById('parceirosToggle').style.display = 'flex';
     renderDiet();
   } catch(e) {
     dietLoaded = false;
