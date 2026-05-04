@@ -380,6 +380,55 @@
   }
   .instructions-content .hl { color: var(--white); font-weight: 600; }
 
+  /* ── Day progress ── */
+  .day-progress { padding: 10px 14px; background: #1a1a1a; border-bottom: 1px solid #2a2a2a; }
+  .pg-text { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #aaa; }
+  .pg-bar { background: #2a2a2a; height: 4px; border-radius: 2px; overflow: hidden; margin-top: 5px; }
+  .pg-fill { background: var(--gold); height: 100%; transition: width 0.4s; }
+  .pg-streak { color: #ff7043; font-weight: 700; }
+
+  /* ── Checkbox de exercício ── */
+  .ex-check { width: 22px; height: 22px; min-width: 22px; border: 2px solid var(--gold-dim); border-radius: 4px; background: transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+  .ex-check:hover { border-color: var(--gold); }
+  .ex-check.done { background: var(--gold); border-color: var(--gold); }
+  .ex-check.done::after { content: '✓'; color: var(--dark); font-weight: 800; font-size: 14px; }
+  .exercise-card.done { opacity: 0.55; }
+  .exercise-card.done .exercise-name { text-decoration: line-through; }
+
+  /* ── Botões de ação no card de exercício ── */
+  .ex-actions { display: inline-flex; gap: 4px; margin-left: auto; }
+  .ex-action-btn { background: #2a2a2a; border: 1px solid #333; color: var(--gold); padding: 5px 9px; border-radius: 4px; font-size: 13px; cursor: pointer; line-height: 1; }
+  .ex-action-btn:hover { background: var(--gold-dim); }
+
+  /* ── Timer overlay ── */
+  .timer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 11000; }
+  .timer-overlay.show { display: flex; }
+  .timer-name { color: var(--gold); font-size: 16px; font-weight: 700; margin-bottom: 20px; max-width: 320px; text-align: center; padding: 0 12px; }
+  .timer-display { color: var(--white); font-size: 110px; font-weight: 800; font-family: 'Courier New', monospace; line-height: 1; }
+  .timer-display.warn { color: #ff9800; }
+  .timer-display.done { color: #4caf50; }
+  .timer-actions { display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap; justify-content: center; }
+  .timer-btn { background: #2a2a2a; color: var(--white); border: 1px solid #444; padding: 12px 24px; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 600; }
+  .timer-btn.primary { background: var(--gold); color: var(--dark); border-color: var(--gold); }
+  .timer-btn:hover { background: #3a3a3a; }
+  .timer-btn.primary:hover { background: var(--gold-dim); }
+
+  /* ── History modal ── */
+  .history-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 10500; padding: 16px; }
+  .history-modal-overlay.show { display: flex; }
+  .history-modal-box { background: #1a1a1a; border: 1px solid var(--gold-dim); border-radius: 10px; padding: 20px; max-width: 420px; width: 100%; }
+  .history-modal-box h3 { color: var(--gold); margin: 0 0 14px; font-size: 14px; }
+  .history-bars { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 14px; }
+  .history-bar-row { display: grid; grid-template-columns: 64px 1fr 70px; align-items: center; gap: 8px; }
+  .history-bar-label { color: #aaa; font-size: 11px; }
+  .history-bar-track { background: #222; height: 18px; border-radius: 3px; overflow: hidden; }
+  .history-bar-fill { background: var(--gold); height: 100%; transition: width 0.3s; min-width: 2px; }
+  .history-bar-fill.empty { background: #333; }
+  .history-bar-val { color: var(--white); font-size: 11px; font-weight: 700; text-align: right; }
+  .history-trend { padding: 10px 12px; background: #222; border-radius: 6px; font-size: 12px; color: #ccc; line-height: 1.4; }
+  .history-trend.up { background: #1f3a1f; color: #6ed66e; }
+  .history-trend.down { background: #3a1f1f; color: #ff7043; }
+
   /* ── Parceiros ── */
   .partner-card {
     background: #1a1a1a;
@@ -1294,7 +1343,35 @@
   <button class="week-btn" onclick="changeWeek(1)">&#8250;</button>
 </div>
 
+<div class="day-progress" id="dayProgress" style="display:none;">
+  <div class="pg-text">
+    <span id="pgLabel">Hoje: 0/0 exercícios</span>
+    <span class="pg-streak" id="pgStreak"></span>
+  </div>
+  <div class="pg-bar"><div class="pg-fill" id="pgFill" style="width:0%"></div></div>
+</div>
+
 <div id="exerciseContainer"></div>
+
+<!-- ══ TIMER OVERLAY ══ -->
+<div class="timer-overlay" id="timerOverlay">
+  <div class="timer-name" id="timerName"></div>
+  <div class="timer-display" id="timerDisplay">60</div>
+  <div class="timer-actions">
+    <button class="timer-btn" onclick="timerCancel()">Cancelar</button>
+    <button class="timer-btn primary" onclick="timerAdd(15)">+15s</button>
+  </div>
+</div>
+
+<!-- ══ HISTORY MODAL ══ -->
+<div class="history-modal-overlay" id="historyModal" onclick="closeHistoryOnBg(event)">
+  <div class="history-modal-box">
+    <h3 id="historyTitle"></h3>
+    <div class="history-bars" id="historyBars"></div>
+    <div class="history-trend" id="historyTrend"></div>
+    <button class="te-btn ghost" onclick="closeHistoryModal()" style="margin-top:12px;width:100%;">Fechar</button>
+  </div>
+</div>
 
 <!-- ══ VIDEO OVERLAY ══ -->
 <div class="video-overlay" id="videoOverlay" onclick="closeVideoOverlay(event)">
@@ -1696,6 +1773,193 @@ function loadPlacas(d, e, w) { return localStorage.getItem(placasKey(d, e, w)) |
 function savePlacas(d, e, w, v) { localStorage.setItem(placasKey(d, e, w), v); }
 function getPrevPlacas(d, e, w) { return w > 1 ? localStorage.getItem(placasKey(d, e, w - 1)) || null : null; }
 
+// ══ Checklist do dia / Streak ══
+function todayKey() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function doneKey(di, ei) { return `gh_done_${STUDENT_ID}_${todayKey()}_d${di}_e${ei}`; }
+function isDone(di, ei) { return localStorage.getItem(doneKey(di, ei)) === '1'; }
+function setDone(di, ei, val) {
+  if (val) localStorage.setItem(doneKey(di, ei), '1');
+  else localStorage.removeItem(doneKey(di, ei));
+}
+function onCheckExercise(di, ei) {
+  const newVal = !isDone(di, ei);
+  setDone(di, ei, newVal);
+  if (newVal && allDoneOfDay(di)) {
+    updateStreakOnComplete();
+  }
+  // Re-render só esse card e a barra
+  renderExercises();
+}
+function allDoneOfDay(di) {
+  if (!WORKOUT[di]) return false;
+  const real = WORKOUT[di].exercises
+    .map((ex, ei) => ({ ex, ei }))
+    .filter(o => !o.ex.warmup);
+  if (!real.length) return false;
+  return real.every(o => isDone(di, o.ei));
+}
+function updateDayProgress() {
+  const day = WORKOUT[currentDay];
+  const bar = document.getElementById('dayProgress');
+  if (!day || !bar) return;
+  const real = day.exercises.filter(ex => !ex.warmup);
+  const total = real.length;
+  let done = 0;
+  day.exercises.forEach((ex, ei) => { if (!ex.warmup && isDone(currentDay, ei)) done++; });
+  const pct = total ? (done/total)*100 : 0;
+  document.getElementById('pgLabel').textContent = `Hoje: ${done}/${total} exercícios`;
+  document.getElementById('pgFill').style.width = pct + '%';
+  bar.style.display = total > 0 ? 'block' : 'none';
+  // Streak label
+  const streak = getStreakDays();
+  document.getElementById('pgStreak').textContent = streak > 0 ? `🔥 ${streak} dia${streak === 1 ? '' : 's'}` : '';
+}
+
+// ══ Streak (sequência de dias treinando) ══
+function streakKey() { return `gh_streak_${STUDENT_ID}`; }
+function getStreak() {
+  try { return JSON.parse(localStorage.getItem(streakKey()) || '{}'); }
+  catch (_) { return {}; }
+}
+function getStreakDays() {
+  const s = getStreak();
+  return s.current || 0;
+}
+function updateStreakOnComplete() {
+  const s = getStreak();
+  const today = todayKey();
+  if (s.lastDay === today) return; // já contado hoje
+  // calcula se ontem foi treinado pra continuar streak
+  const yesterday = (() => { const d = new Date(); d.setDate(d.getDate()-1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); })();
+  if (s.lastDay === yesterday) s.current = (s.current || 0) + 1;
+  else s.current = 1;
+  s.longest = Math.max(s.longest || 0, s.current);
+  s.lastDay = today;
+  s.totalDaysDone = (s.totalDaysDone || 0) + 1;
+  localStorage.setItem(streakKey(), JSON.stringify(s));
+}
+
+// ══ Timer (cronômetro de descanso) ══
+function parseIntervalSeconds(text) {
+  if (!text) return 60;
+  const t = String(text).toLowerCase();
+  const nums = t.match(/\d+/g);
+  if (!nums) return 60;
+  const last = parseInt(nums[nums.length-1]);
+  if (t.indexOf('min') !== -1) return last * 60;
+  return last;
+}
+let _timerInt = null;
+let _timerLeft = 0;
+function startTimer(name, seconds) {
+  _timerLeft = seconds;
+  document.getElementById('timerName').textContent = name;
+  document.getElementById('timerOverlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  updateTimerDisplay();
+  if (_timerInt) clearInterval(_timerInt);
+  _timerInt = setInterval(() => {
+    _timerLeft--;
+    updateTimerDisplay();
+    if (_timerLeft <= 0) timerDone();
+  }, 1000);
+}
+function updateTimerDisplay() {
+  const d = document.getElementById('timerDisplay');
+  d.textContent = _timerLeft;
+  d.classList.remove('warn', 'done');
+  if (_timerLeft <= 5) d.classList.add('warn');
+}
+function timerCancel() {
+  if (_timerInt) { clearInterval(_timerInt); _timerInt = null; }
+  document.getElementById('timerOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+}
+function timerAdd(secs) {
+  _timerLeft += secs;
+  updateTimerDisplay();
+}
+function timerDone() {
+  if (_timerInt) { clearInterval(_timerInt); _timerInt = null; }
+  const d = document.getElementById('timerDisplay');
+  d.classList.add('done');
+  d.textContent = '✓';
+  beep();
+  if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
+  setTimeout(timerCancel, 2500);
+}
+function beep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const make = (freq, t0, dur) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0.3, ctx.currentTime + t0);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t0 + dur);
+      o.start(ctx.currentTime + t0);
+      o.stop(ctx.currentTime + t0 + dur);
+    };
+    make(880, 0, 0.18);
+    make(1100, 0.22, 0.18);
+    make(1320, 0.44, 0.3);
+  } catch(e) {}
+}
+
+// ══ Histórico de cargas ══
+function showHistory(di, ei) {
+  const ex = WORKOUT[di] && WORKOUT[di].exercises[ei];
+  if (!ex) return;
+  document.getElementById('historyTitle').textContent = '📈 ' + ex.name;
+  const values = [];
+  for (let w = 1; w <= TOTAL_WEEKS; w++) {
+    const c = parseFloat(loadCarga(di, ei, w)) || 0;
+    const p = parseFloat(loadPlacas(di, ei, w)) || 0;
+    values.push({ w, kg: c, placas: p });
+  }
+  const max = Math.max(...values.map(v => v.kg), 1);
+  let bars = '';
+  values.forEach(v => {
+    const pct = max > 0 ? (v.kg/max)*100 : 0;
+    const empty = v.kg === 0;
+    const valTxt = v.kg > 0 ? (v.placas > 0 ? `${v.kg}kg · ${v.placas}pl` : `${v.kg}kg`) : '—';
+    bars += `<div class="history-bar-row">
+      <span class="history-bar-label">Semana ${v.w}</span>
+      <div class="history-bar-track"><div class="history-bar-fill ${empty ? 'empty' : ''}" style="width:${empty ? 100 : pct}%"></div></div>
+      <span class="history-bar-val">${valTxt}</span>
+    </div>`;
+  });
+  document.getElementById('historyBars').innerHTML = bars;
+  // Trend
+  const filled = values.filter(v => v.kg > 0);
+  const trend = document.getElementById('historyTrend');
+  trend.classList.remove('up', 'down');
+  if (filled.length === 0) {
+    trend.textContent = 'Sem dados ainda — anota a carga semana a semana pra acompanhar a evolução.';
+  } else if (filled.length === 1) {
+    trend.textContent = `Primeira carga registrada: ${filled[0].kg}kg na semana ${filled[0].w}. Continua progredindo!`;
+  } else {
+    const first = filled[0], last = filled[filled.length-1];
+    const diff = last.kg - first.kg;
+    const pct = ((diff/first.kg)*100).toFixed(0);
+    if (diff > 0) {
+      trend.textContent = `📈 Evoluiu +${diff}kg (+${pct}%) da semana ${first.w} pra ${last.w}`;
+      trend.classList.add('up');
+    } else if (diff < 0) {
+      trend.textContent = `⚠ Reduziu ${Math.abs(diff)}kg da semana ${first.w} pra ${last.w} — checa se foi descanso/lesão`;
+      trend.classList.add('down');
+    } else {
+      trend.textContent = `⏸ Mesma carga ${first.kg}kg em ${filled.length} semanas — hora de tentar progredir`;
+    }
+  }
+  document.getElementById('historyModal').classList.add('show');
+}
+function closeHistoryModal() { document.getElementById('historyModal').classList.remove('show'); }
+function closeHistoryOnBg(e) { if (e.target.id === 'historyModal') closeHistoryModal(); }
+
 // ══ Cadência (concêntrica/isometria/excêntrica) ══
 // Padrão ouro: 1 / 0.5 / 2. Lê custom da OBS quando GH escreveu (excêntrica 5 seg etc).
 function parseCadencia(obs) {
@@ -2024,9 +2288,13 @@ function renderExercises() {
       const safeName = ex.name.replace(/'/g, "\\'");
       const safeVideo = (ex.video || '').replace(/'/g, "\\'");
 
+      const exDone = !isWarmup && isDone(di, ei);
+      const safeRest = (ex.rest || '').replace(/'/g, "\\'");
+
       return `
-        <div class="exercise-card ${isWarmup ? 'warmup' : ''} ${hasVid ? 'has-video' : ''}">
+        <div class="exercise-card ${isWarmup ? 'warmup' : ''} ${hasVid ? 'has-video' : ''} ${exDone ? 'done' : ''}">
           <div class="exercise-main" ${hasVid ? `onclick="openVideo('${safeName}', '${safeVideo}')"` : ''}>
+            ${!isWarmup ? `<div class="ex-check ${exDone ? 'done' : ''}" onclick="event.stopPropagation(); onCheckExercise(${di}, ${ei})" title="Marcar como feito"></div>` : ''}
             <div class="exercise-info">
               <div class="exercise-name">
                 ${ex.name}
@@ -2050,17 +2318,23 @@ function renderExercises() {
             </div>
             ${(prev || prevP) ? `<span class="carga-prev">Ant: ${prev ? prev+'kg' : ''}${prev && prevP ? ' / ' : ''}${prevP ? prevP+' pl' : ''}</span>` : ''}
             <span class="carga-saved" id="sv-${di}-${ei}">&#10003; salvo</span>
+            <div class="ex-actions">
+              <button class="ex-action-btn" onclick="startTimer('${safeName}', parseIntervalSeconds('${safeRest}'))" title="Cronômetro de descanso (${ex.rest || 'auto'})">⏱</button>
+              <button class="ex-action-btn" onclick="showHistory(${di}, ${ei})" title="Histórico de cargas">📈</button>
+            </div>
           </div>` : ''}
         </div>`;
     }).join("");
     c.appendChild(div);
   });
+  updateDayProgress();
 }
 
 function selectDay(i) {
   currentDay = i;
   renderTabs();
   document.querySelectorAll('.day-content').forEach((el, j) => el.classList.toggle('active', j === i));
+  updateDayProgress();
 }
 
 function changeWeek(d) {
