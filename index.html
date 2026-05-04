@@ -1183,7 +1183,7 @@
     100% { transform: scale(1) translateY(0); opacity: 1; }
   }
   .ach-title { color: var(--gold); text-align: center; margin: 0 0 12px; font-size: 16px; font-weight: 700; letter-spacing: 0.5px; }
-  #achCanvas { width: 100%; height: auto; border-radius: 14px; box-shadow: 0 8px 30px rgba(0,0,0,0.7), 0 0 0 rgba(212, 167, 106, 0.2); display: block; animation: achGlow 1.8s ease-in-out infinite alternate; }
+  #achCanvas { max-width: 100%; max-height: 75vh; width: auto; height: auto; border-radius: 14px; box-shadow: 0 8px 30px rgba(0,0,0,0.7), 0 0 0 rgba(212, 167, 106, 0.2); display: block; margin: 0 auto; animation: achGlow 1.8s ease-in-out infinite alternate; aspect-ratio: 9 / 16; }
   @keyframes achGlow {
     from { box-shadow: 0 8px 30px rgba(0,0,0,0.7), 0 0 20px rgba(212, 167, 106, 0.25); }
     to { box-shadow: 0 8px 30px rgba(0,0,0,0.7), 0 0 60px rgba(212, 167, 106, 0.65); }
@@ -1857,12 +1857,13 @@
 <div class="ach-overlay" id="achOverlay" onclick="achCloseOnBg(event)">
   <div class="ach-box">
     <h3 class="ach-title" id="achTitle">🎉 Conquista</h3>
-    <canvas id="achCanvas" width="1080" height="1080"></canvas>
+    <canvas id="achCanvas" width="1080" height="1920"></canvas>
     <div class="ach-actions">
       <button class="ach-btn primary" onclick="achShare()">📤 Compartilhar</button>
       <button class="ach-btn secondary" onclick="achSave()">💾 Salvar</button>
       <button class="ach-btn ghost" onclick="achClose()">Fechar</button>
     </div>
+    <p style="color:#666;font-size:11px;text-align:center;margin:10px 0 0;line-height:1.4;">💡 Pra postar nos Stories: <strong>Compartilhar</strong> → role o sheet do iOS pra direita ou toca em <strong>"Ver Mais"</strong> → escolhe <strong>Instagram Stories</strong>.</p>
   </div>
 </div>
 
@@ -2168,6 +2169,22 @@ function animateAchievementDraw() {
   requestAnimationFrame(frame);
 }
 
+// Helpers de desenho
+function _roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+const ACH_FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+
 function drawAchievementCard(progress) {
   if (!_achData) return;
   progress = progress == null ? 1 : progress;
@@ -2175,99 +2192,169 @@ function drawAchievementCard(progress) {
   const ctx = c.getContext('2d');
   const W = c.width, H = c.height;
 
-  // BG: black gradient
+  // ── Background: deep black com gradient sutil ──
   const grad = ctx.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0, '#0c0c0c');
-  grad.addColorStop(1, '#1d1d1d');
+  grad.addColorStop(0, '#080808');
+  grad.addColorStop(0.5, '#161616');
+  grad.addColorStop(1, '#080808');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, H);
 
-  // Subtle gold glow corners
-  const rg = ctx.createRadialGradient(W/2, H/2, 100, W/2, H/2, W*0.7);
-  rg.addColorStop(0, 'rgba(212,167,106,0.08)');
+  // ── Spotlight central (sutil) ──
+  const rg = ctx.createRadialGradient(W/2, H*0.35, 100, W/2, H*0.35, W*0.85);
+  rg.addColorStop(0, 'rgba(212,167,106,0.18)');
   rg.addColorStop(1, 'rgba(212,167,106,0)');
   ctx.fillStyle = rg;
   ctx.fillRect(0, 0, W, H);
 
-  // Gold border
-  ctx.strokeStyle = '#d4a76a';
-  ctx.lineWidth = 6;
-  ctx.strokeRect(36, 36, W - 72, H - 72);
+  // ── Cantos ornamentais ──
+  drawCornerOrnaments(ctx, W, H);
 
+  // ── Top brand strip ──
   ctx.textAlign = 'center';
-  ctx.textBaseline = 'alphabetic';
+  ctx.font = `300 28px ${ACH_FONT}`;
+  ctx.fillStyle = '#d4a76a';
+  ctx.fillText('━ MÉTODO GH ━', W/2, 200);
 
+  // ── Conteúdo central ──
   if (_achData.type === 'completion') drawCompletionContent(ctx, W, H, progress);
-  else if (_achData.type === 'pr')    drawPRContent(ctx, W, H, progress);
+  else if (_achData.type === 'pr') drawPRContent(ctx, W, H, progress);
 
-  // Footer (sempre)
-  ctx.font = 'bold 30px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  // ── Footer signature ──
+  drawBottomSig(ctx, W, H);
+}
+
+function drawCornerOrnaments(ctx, W, H) {
+  ctx.strokeStyle = '#d4a76a';
+  ctx.lineWidth = 4;
+  const m = 60, len = 90;
+  ctx.beginPath();
+  ctx.moveTo(m, m + len); ctx.lineTo(m, m); ctx.lineTo(m + len, m);
+  ctx.moveTo(W - m - len, m); ctx.lineTo(W - m, m); ctx.lineTo(W - m, m + len);
+  ctx.moveTo(m, H - m - len); ctx.lineTo(m, H - m); ctx.lineTo(m + len, H - m);
+  ctx.moveTo(W - m - len, H - m); ctx.lineTo(W - m, H - m); ctx.lineTo(W - m, H - m - len);
+  ctx.stroke();
+}
+
+function drawBottomSig(ctx, W, H) {
+  ctx.textAlign = 'center';
+  // Decorative divider
+  ctx.strokeStyle = '#d4a76a';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(W/2 - 100, H - 290);
+  ctx.lineTo(W/2 + 100, H - 290);
+  ctx.stroke();
+
+  ctx.font = `300 30px ${ACH_FONT}`;
+  ctx.fillStyle = '#999';
+  ctx.fillText('Acompanhe', W/2, H - 240);
+
+  ctx.font = `bold 48px ${ACH_FONT}`;
   ctx.fillStyle = '#d4a76a';
   ctx.fillText('@gh.scheuermann', W/2, H - 175);
-  ctx.font = 'bold 56px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-  ctx.fillStyle = '#fff';
-  ctx.fillText('MÉTODO GH', W/2, H - 110);
 }
 
 function drawCompletionContent(ctx, W, H, p) {
   const d = _achData;
-  // Icon
-  ctx.font = '110px sans-serif';
-  ctx.fillText('💪', W/2, 220);
+  ctx.textAlign = 'center';
 
-  ctx.font = 'bold 44px -apple-system, sans-serif';
+  // Big emoji
+  ctx.font = '180px sans-serif';
+  ctx.fillText('💪', W/2, 420);
+
+  // Title — "TREINO" em light, "CONCLUÍDO" em bold dourado
+  ctx.font = `300 60px ${ACH_FONT}`;
+  ctx.fillStyle = '#fff';
+  ctx.fillText('TREINO', W/2, 540);
+
+  ctx.font = `bold 110px ${ACH_FONT}`;
   ctx.fillStyle = '#d4a76a';
-  ctx.fillText('TREINO CONCLUÍDO', W/2, 310);
+  ctx.fillText('CONCLUÍDO', W/2, 660);
+
+  // Divider
+  ctx.strokeStyle = '#d4a76a';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(W/2 - 70, 720); ctx.lineTo(W/2 + 70, 720);
+  ctx.stroke();
 
   // Day name
-  ctx.font = 'bold 56px -apple-system, sans-serif';
-  ctx.fillStyle = '#fff';
   const name = d.dayName || ('DIA ' + d.day);
-  // Wrap se longo
+  ctx.font = `bold 52px ${ACH_FONT}`;
+  ctx.fillStyle = '#fff';
   if (ctx.measureText(name).width > W - 120) {
     const parts = name.split(' + ');
-    ctx.fillText(parts[0], W/2, 430);
-    ctx.font = 'bold 44px -apple-system, sans-serif';
-    ctx.fillText(parts.slice(1).join(' + '), W/2, 490);
+    ctx.fillText(parts[0], W/2, 810);
+    ctx.fillText('+ ' + parts.slice(1).join(' + '), W/2, 875);
   } else {
-    ctx.fillText(name, W/2, 440);
+    ctx.fillText(name, W/2, 830);
   }
 
-  // Stats
+  // Stats boxes (3 cards horizontais)
   const cols = [{ num: d.exercises, lbl: 'EXERCÍCIOS' }];
-  if (d.totalKg) cols.push({ num: d.totalKg, lbl: 'KG TOTAIS', suffix: 'kg' });
+  if (d.totalKg) cols.push({ num: d.totalKg, lbl: 'KG TOTAIS' });
   cols.push({ num: d.streak, lbl: 'DIAS 🔥' });
 
-  const startY = 640;
-  const colW = W / cols.length;
+  const startY = 1080;
+  const boxW = cols.length === 3 ? 260 : 320;
+  const boxH = 250;
+  const gap = 30;
+  const totalW = cols.length * boxW + (cols.length - 1) * gap;
+  const startX = (W - totalW) / 2;
+
   cols.forEach((s, i) => {
-    const x = colW * (i + 0.5);
-    ctx.font = 'bold 100px -apple-system, sans-serif';
+    const x = startX + i * (boxW + gap);
+    // Box
+    ctx.fillStyle = 'rgba(212, 167, 106, 0.06)';
+    ctx.strokeStyle = 'rgba(212, 167, 106, 0.5)';
+    ctx.lineWidth = 2;
+    _roundRect(ctx, x, startY, boxW, boxH, 18);
+    ctx.fill();
+    ctx.stroke();
+
+    // Number
+    ctx.font = `bold 110px ${ACH_FONT}`;
     ctx.fillStyle = '#d4a76a';
     const animated = Math.round(s.num * p);
-    const txt = animated + (s.suffix || '');
-    ctx.fillText(txt, x, startY);
-    ctx.font = 'bold 24px -apple-system, sans-serif';
+    ctx.fillText(animated, x + boxW/2, startY + 145);
+
+    // Label
+    ctx.font = `bold 24px ${ACH_FONT}`;
     ctx.fillStyle = '#888';
-    ctx.fillText(s.lbl, x, startY + 50);
+    ctx.fillText(s.lbl, x + boxW/2, startY + 205);
   });
 }
 
 function drawPRContent(ctx, W, H, p) {
   const d = _achData;
-  // Trophy
-  ctx.font = '160px sans-serif';
-  ctx.fillText('🏆', W/2, 280);
+  ctx.textAlign = 'center';
 
-  ctx.font = 'bold 56px -apple-system, sans-serif';
+  // Trophy big
+  ctx.font = '220px sans-serif';
+  ctx.fillText('🏆', W/2, 480);
+
+  // Title
+  ctx.font = `300 58px ${ACH_FONT}`;
+  ctx.fillStyle = '#fff';
+  ctx.fillText('NOVO', W/2, 600);
+
+  ctx.font = `bold 130px ${ACH_FONT}`;
   ctx.fillStyle = '#d4a76a';
-  ctx.fillText('NOVO RECORDE', W/2, 380);
+  ctx.fillText('RECORDE', W/2, 750);
 
-  // Exercise name (wrap se longo)
-  ctx.font = 'bold 36px -apple-system, sans-serif';
+  // Divider
+  ctx.strokeStyle = '#d4a76a';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(W/2 - 70, 810); ctx.lineTo(W/2 + 70, 810);
+  ctx.stroke();
+
+  // Exercise name
+  ctx.font = `bold 44px ${ACH_FONT}`;
   ctx.fillStyle = '#fff';
   const name = d.exerciseName || '';
-  const maxW = W - 120;
+  const maxW = W - 160;
   if (ctx.measureText(name).width > maxW) {
     const words = name.split(' ');
     let line1 = '', line2 = '';
@@ -2276,29 +2363,45 @@ function drawPRContent(ctx, W, H, p) {
       if (ctx.measureText(test).width <= maxW) line1 = test;
       else line2 += (line2 ? ' ' : '') + w;
     }
-    ctx.fillText(line1, W/2, 470);
-    ctx.fillText(line2, W/2, 520);
+    ctx.fillText(line1, W/2, 900);
+    ctx.fillText(line2, W/2, 960);
   } else {
-    ctx.fillText(name, W/2, 480);
+    ctx.fillText(name, W/2, 920);
   }
 
-  // OldKg → newKg
+  // Old/New comparison
   const oldKg = d.oldKg, newKg = d.newKg;
   const animKg = Math.round((oldKg + (newKg - oldKg) * p) * 10) / 10;
-  ctx.font = 'bold 32px -apple-system, sans-serif';
+
+  // Old
+  ctx.font = `300 38px ${ACH_FONT}`;
   ctx.fillStyle = '#666';
-  ctx.fillText(oldKg + 'kg', W/2 - 180, 670);
-  ctx.font = 'bold 40px sans-serif';
-  ctx.fillText('→', W/2, 670);
-  ctx.font = 'bold 110px -apple-system, sans-serif';
+  ctx.fillText(oldKg + 'kg', W/2, 1130);
+
+  // Arrow down
+  ctx.font = `300 42px ${ACH_FONT}`;
   ctx.fillStyle = '#d4a76a';
-  ctx.fillText(animKg + 'kg', W/2 + 90, 700);
+  ctx.fillText('▼', W/2, 1190);
+
+  // Big new value with box
+  const boxW = 540, boxH = 200;
+  const boxX = (W - boxW) / 2;
+  const boxY = 1230;
+  ctx.fillStyle = 'rgba(212, 167, 106, 0.08)';
+  ctx.strokeStyle = '#d4a76a';
+  ctx.lineWidth = 3;
+  _roundRect(ctx, boxX, boxY, boxW, boxH, 20);
+  ctx.fill();
+  ctx.stroke();
+  ctx.font = `bold 150px ${ACH_FONT}`;
+  ctx.fillStyle = '#d4a76a';
+  ctx.fillText(animKg + 'kg', W/2, boxY + 145);
 
   // Diff
   const diff = Math.round((newKg - oldKg) * 10) / 10;
-  ctx.font = 'bold 56px -apple-system, sans-serif';
+  ctx.font = `bold 58px ${ACH_FONT}`;
   ctx.fillStyle = '#4caf50';
-  ctx.fillText('+' + diff + 'kg', W/2, 820);
+  ctx.fillText('+' + diff + 'kg', W/2, 1530);
 }
 
 async function achShare() {
