@@ -1034,6 +1034,35 @@
     background: #111; border-bottom: 1px solid var(--gold-dim); flex-shrink: 0;
   }
   .te-top-info { flex: 1; color: var(--white); font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .te-mode-tabs { display: flex; gap: 4px; }
+  .te-mode-tab { background: #222; border: 1px solid #333; color: #888; padding: 5px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .te-mode-tab:hover:not(:disabled) { color: #ccc; border-color: var(--gold-dim); }
+  .te-mode-tab.active { background: var(--gold); color: var(--dark); border-color: var(--gold); }
+  .te-mode-tab:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* === Dieta editor === */
+  .di-block { background: #161616; border: 1px solid #2a2a2a; border-radius: 8px; margin-bottom: 12px; overflow: hidden; }
+  .di-block-head { padding: 10px 12px; background: #1d1d1d; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .di-block-head:hover { background: #232323; }
+  .di-block-title { color: var(--gold); font-weight: 700; font-size: 13px; flex: 1; min-width: 0; }
+  .di-block-meta { color: #888; font-size: 11px; }
+  .di-block-arrow { color: #666; font-size: 11px; flex-shrink: 0; }
+  .di-block-body { padding: 8px 10px; border-top: 1px solid #2a2a2a; display: none; }
+  .di-block.open .di-block-body { display: block; }
+  .di-block.open .di-block-arrow { transform: rotate(90deg); }
+  .di-row { display: grid; grid-template-columns: 20px 1fr 80px 1fr 28px; gap: 6px; align-items: center; padding: 4px 0; }
+  .di-row .te-drag-handle { font-size: 14px; }
+  .di-row input { background: #222; color: #fff; border: 1px solid #333; padding: 6px; border-radius: 4px; font-size: 11px; width: 100%; box-sizing: border-box; }
+  .di-row input:focus { border-color: var(--gold); outline: none; }
+  .di-section-divider { color: #888; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin: 6px 0 4px; padding-left: 4px; }
+  .di-op-block { background: #1a1a1a; border: 1px dashed #3a3a3a; border-radius: 6px; padding: 6px 8px; margin: 6px 0; }
+  .di-op-head { color: #f1c40f; font-size: 12px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .di-op-name { background: transparent; color: #f1c40f; border: none; border-bottom: 1px dashed #3a3a3a; font-size: 12px; font-weight: 700; padding: 2px 4px; flex: 1; }
+  .di-action-bar { display: flex; gap: 4px; padding: 6px 0 0; flex-wrap: wrap; }
+  .di-add-btn { background: transparent; border: 1px dashed #444; color: #888; padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; }
+  .di-add-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .di-obs-row { color: #888; font-style: italic; padding: 4px 0; display: grid; grid-template-columns: 20px 1fr 28px; gap: 6px; align-items: center; }
+  .di-obs-row input { background: #1a1a1a; color: #aaa; border: 1px solid #2a2a2a; padding: 5px 7px; border-radius: 4px; font-size: 11px; font-style: italic; width: 100%; box-sizing: border-box; }
   .te-days-scroll { flex: 1; overflow-y: auto; padding: 12px; }
   .te-day { margin-bottom: 18px; border-radius: 10px; overflow: hidden; background: #161616; border: 1px solid #2a2a2a; }
   .te-day-header { padding: 10px 14px; font-weight: 800; color: #fff; font-size: 13px; letter-spacing: 0.5px; text-shadow: 0 1px 2px rgba(0,0,0,0.6); }
@@ -1444,7 +1473,8 @@
 <div id="trainerEditor">
   <div class="te-top-bar">
     <div class="te-top-info" id="trainerStudentInfo"></div>
-    <button class="te-btn" id="trainerSaveBtn" onclick="trainerSave()">💾 Salvar Tudo</button>
+    <div class="te-mode-tabs" id="teModeTabs"></div>
+    <button class="te-btn" id="trainerSaveBtn" onclick="trainerSave()">💾 Salvar</button>
     <button class="te-btn ghost" onclick="trainerExit()">✕</button>
   </div>
   <div class="te-days-scroll" id="trainerDaysContainer"></div>
@@ -2999,38 +3029,68 @@ function openTrainerSheetModal() {
   setTimeout(() => document.getElementById('trainerSheetIdInput').focus(), 100);
 }
 
+let dietaData = null;
+let currentEditMode = 'treino'; // 'treino' | 'dieta'
+
 async function trainerLoadSheet() {
   let sid = document.getElementById('trainerSheetIdInput').value.trim();
-  // Aceita: ID puro, URL do Drive (.../spreadsheets/d/ID/...), URL do site (?sheet=ID&tab=...)
   let m = sid.match(/spreadsheets\/d\/([\w-]+)/);
   if (!m) m = sid.match(/[?&]sheet=([\w-]+)/);
   if (m) sid = m[1];
   if (!sid) { alert('Cola o ID, a URL do Drive OU a URL do site (?sheet=...)'); return; }
   trainerSheetId = sid;
   try {
-    const url = `https://docs.google.com/spreadsheets/d/${sid}/gviz/tq?tqx=out:csv&sheet=TREINO&_=${Date.now()}`;
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error('sheet não acessível (verifique compartilhamento)');
-    const text = await resp.text();
-    trainerData = parseCSV(text).map(r => { while (r.length < 8) r.push(''); return r.slice(0, 8); });
-    if (trainerData.length < 2) throw new Error('sheet vazia ou aba TREINO não encontrada');
+    const stamp = Date.now();
+    const [tResp, dResp] = await Promise.all([
+      fetch(`https://docs.google.com/spreadsheets/d/${sid}/gviz/tq?tqx=out:csv&sheet=TREINO&_=${stamp}`),
+      fetch(`https://docs.google.com/spreadsheets/d/${sid}/gviz/tq?tqx=out:csv&sheet=DIETA&_=${stamp}`)
+    ]);
+    const tText = tResp.ok ? await tResp.text() : '';
+    const dText = dResp.ok ? await dResp.text() : '';
+    const tParsed = tText ? parseCSV(tText).map(r => { while (r.length < 8) r.push(''); return r.slice(0, 8); }) : [];
+    const dParsed = dText ? parseCSV(dText).map(r => { while (r.length < 4) r.push(''); return r.slice(0, 4); }) : [];
+    trainerData = (tParsed.length >= 2) ? tParsed : null;
+    dietaData   = (dParsed.length >= 2) ? dParsed : null;
+    if (!trainerData && !dietaData) throw new Error('aba TREINO ou DIETA não encontrada (verifique compartilhamento)');
     teHide('trainerSheetModal');
     document.getElementById('trainerEditor').classList.add('show');
     document.body.style.overflow = 'hidden';
-    renderTrainerEditor();
+    currentEditMode = trainerData ? 'treino' : 'dieta';
+    renderEditorTopBar();
+    renderCurrentEditor();
   } catch (e) {
     alert('Erro: ' + e.message);
   }
 }
 
+function renderEditorTopBar() {
+  const data = currentEditMode === 'treino' ? trainerData : dietaData;
+  const info = data ? data.find(r => (r[0] || '').toLowerCase().trim() === 'info') : null;
+  const studentName = info ? info[1] : 'Aluno';
+  const meta = info ? (info[2] || info[3] || '') : '';
+  document.getElementById('trainerStudentInfo').innerHTML = `<strong>${escTrainer(studentName)}</strong> · ${escTrainer(meta)} · <span style="color:#888">${trainerSheetId.slice(0, 12)}…</span>`;
+
+  const tabs = `
+    <button class="te-mode-tab${currentEditMode === 'treino' ? ' active' : ''}" ${trainerData ? `onclick="switchEditMode('treino')"` : 'disabled'}>📋 TREINO</button>
+    <button class="te-mode-tab${currentEditMode === 'dieta' ? ' active' : ''}" ${dietaData ? `onclick="switchEditMode('dieta')"` : 'disabled'}>🍽 DIETA</button>
+  `;
+  document.getElementById('teModeTabs').innerHTML = tabs;
+}
+
+function switchEditMode(mode) {
+  currentEditMode = mode;
+  renderEditorTopBar();
+  renderCurrentEditor();
+}
+
+function renderCurrentEditor() {
+  if (currentEditMode === 'treino') renderTrainerEditor();
+  else renderDietaEditor();
+}
+
 function escTrainer(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
 function renderTrainerEditor() {
-  const info = trainerData.find(r => (r[0] || '').toLowerCase().trim() === 'info');
-  const studentName = info ? info[1] : 'Aluno';
-  const freq = info ? info[2] : '';
-  document.getElementById('trainerStudentInfo').innerHTML = `<strong>${escTrainer(studentName)}</strong> · ${escTrainer(freq)} · <span style="color:#888">${trainerSheetId.slice(0, 12)}…</span>`;
-
   const days = {};
   trainerData.forEach((r, idx) => {
     const day = parseInt(r[0]);
@@ -3345,8 +3405,12 @@ function closeSwapModal() {
 }
 
 async function trainerSave() {
-  if (!trainerData || !trainerSheetId) return;
-  if (!confirm('Salvar todas as mudanças no TREINO do aluno? (a sheet vai ser sobrescrita)')) return;
+  if (!trainerSheetId) return;
+  const isTreino = currentEditMode === 'treino';
+  const data = isTreino ? trainerData : dietaData;
+  const tab = isTreino ? 'TREINO' : 'DIETA';
+  if (!data) return;
+  if (!confirm(`Salvar todas as mudanças em ${tab}? (a aba ${tab} vai ser sobrescrita)`)) return;
   const btn = document.getElementById('trainerSaveBtn');
   const orig = btn.textContent;
   btn.textContent = 'Salvando…';
@@ -3355,7 +3419,7 @@ async function trainerSave() {
     const resp = await fetch(TRAINER_APPS_SCRIPT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sheetId: trainerSheetId, tab: 'TREINO', values: trainerData, skipDispatch: true }),
+      body: JSON.stringify({ sheetId: trainerSheetId, tab, values: data, skipDispatch: true }),
       redirect: 'follow'
     });
     const txt = await resp.text();
@@ -3375,7 +3439,425 @@ function trainerExit() {
   document.getElementById('trainerEditor').classList.remove('show');
   document.body.style.overflow = '';
   trainerData = null;
+  dietaData = null;
   trainerSheetId = null;
+}
+
+// ══════════════════════════════════════════════════════════════
+// ══ DIETA EDITOR
+// ══════════════════════════════════════════════════════════════
+
+const DIETA_OPEN_BLOCKS = new Set(); // controle de quais blocos estão abertos (por keyId)
+
+function dietaBlockKey(prefix, idx) { return `${prefix}-${idx}`; }
+
+function renderDietaEditor() {
+  const c = document.getElementById('trainerDaysContainer');
+  if (!dietaData) { c.innerHTML = '<p style="color:#888;text-align:center;padding:30px;">Aba DIETA não encontrada.</p>'; return; }
+
+  // Parse seções na ordem da sheet
+  const sections = parseDietaSections(dietaData);
+
+  let html = '';
+
+  // INFO + METAS
+  if (sections.info.length) {
+    html += renderDietaBlock('info', 'INFO + METAS', '', renderDietaInfoMeta(sections.info));
+  }
+
+  // REGRAS
+  html += renderDietaBlock('regras', '📜 REGRAS', sections.regras.length + ' itens',
+    sections.regras.map(r => renderDietaSimpleRow(r, ['Item', 'Valor', 'Observação'])).join('') +
+    `<button class="di-add-btn" onclick="dietaAddSimple('regra')">+ Regra</button>`);
+
+  // SUPLEMENTAÇÃO
+  html += renderDietaBlock('supl', '💊 SUPLEMENTAÇÃO', sections.supl.length + ' itens',
+    sections.supl.map(r => renderDietaSimpleRow(r, ['Suplemento', 'Dose', 'Horário/Obs'])).join('') +
+    `<button class="di-add-btn" onclick="dietaAddSimple('supl')">+ Suplemento</button>`);
+
+  // REFEIÇÕES (cada uma é um bloco colapsável próprio)
+  sections.refs.forEach((ref, ri) => {
+    html += renderDietaRefeicao(ref, ri);
+  });
+  html += `<button class="di-add-btn" style="margin: 6px 0;" onclick="dietaAddRefeicao()">+ Refeição</button>`;
+
+  // CARDIO / DICAS
+  html += renderDietaBlock('orient', '⏱ CARDIO / DICAS / ORIENTAÇÕES', sections.orient.length + ' itens',
+    sections.orient.map(r => renderDietaSimpleRow(r, ['Tipo', 'Valor', 'Detalhe'])).join('') +
+    `<div class="di-action-bar">
+       <button class="di-add-btn" onclick="dietaAddSimple('cardio')">+ Cardio</button>
+       <button class="di-add-btn" onclick="dietaAddSimple('dica')">+ Dica</button>
+     </div>`);
+
+  // PROTOCOLOS (peptídeos / hormonais / ciclo carbo)
+  if (sections.proto.length || true) {
+    html += renderDietaBlock('proto', '💉 PROTOCOLOS / CICLOS', sections.proto.length + ' itens',
+      sections.proto.map(r => renderDietaSimpleRow(r, ['Item', 'Dose', 'Observação'])).join('') +
+      `<div class="di-action-bar">
+         <button class="di-add-btn" onclick="dietaAddSimple('proto')">+ Protocolo</button>
+         <button class="di-add-btn" onclick="dietaAddSimple('ciclo')">+ Ciclo</button>
+       </div>`);
+  }
+
+  c.innerHTML = html;
+}
+
+function parseDietaSections(rows) {
+  const sections = { info: [], regras: [], supl: [], refs: [], orient: [], proto: [] };
+  let currentRef = null;
+  let currentOp = null;
+
+  rows.forEach((r, idx) => {
+    const sec = String(r[0] || '').toLowerCase().trim();
+    const item = String(r[1] || '').trim();
+    if (!sec && !item) return; // linha vazia, pula
+
+    switch (sec) {
+      case 'info':
+      case 'meta':
+        sections.info.push({ idx, type: sec });
+        break;
+      case 'regra':
+        sections.regras.push({ idx, type: 'regra' });
+        break;
+      case 'supl':
+        sections.supl.push({ idx, type: 'supl' });
+        break;
+      case 'ref':
+        currentRef = { idx, type: 'ref', items: [], opcoes: [] };
+        currentOp = null;
+        sections.refs.push(currentRef);
+        break;
+      case 'op':
+        if (currentRef) {
+          currentOp = { idx, type: 'op', items: [] };
+          currentRef.opcoes.push(currentOp);
+        }
+        break;
+      case 'obs':
+      case 'nota':
+        const obsItem = { idx, type: 'obs' };
+        if (currentOp) currentOp.items.push(obsItem);
+        else if (currentRef) currentRef.items.push(obsItem);
+        break;
+      case 'cardio':
+      case 'aerob':
+      case 'dica':
+      case 'orient':
+        sections.orient.push({ idx, type: sec });
+        break;
+      case 'proto':
+      case 'ciclo':
+        sections.proto.push({ idx, type: sec });
+        break;
+      case '':
+        // alimento (col A vazio mas tem item)
+        if (item) {
+          const food = { idx, type: 'alimento' };
+          if (currentOp) currentOp.items.push(food);
+          else if (currentRef) currentRef.items.push(food);
+        }
+        break;
+      // outros tipos (macro, total, etc) — ignora pra render mas mantém no array
+      default:
+        break;
+    }
+  });
+  return sections;
+}
+
+function renderDietaBlock(key, title, meta, body) {
+  const isOpen = DIETA_OPEN_BLOCKS.has(key);
+  return `<div class="di-block${isOpen ? ' open' : ''}" data-key="${key}">
+    <div class="di-block-head" onclick="dietaToggleBlock('${key}')">
+      <span class="di-block-title">${title}</span>
+      <span class="di-block-meta">${escTrainer(meta)}</span>
+      <span class="di-block-arrow">▶</span>
+    </div>
+    <div class="di-block-body">${body}</div>
+  </div>`;
+}
+
+function dietaToggleBlock(key) {
+  if (DIETA_OPEN_BLOCKS.has(key)) DIETA_OPEN_BLOCKS.delete(key);
+  else DIETA_OPEN_BLOCKS.add(key);
+  const el = document.querySelector(`.di-block[data-key="${key}"]`);
+  if (el) el.classList.toggle('open');
+}
+
+function renderDietaInfoMeta(items) {
+  return items.map(it => {
+    const r = dietaData[it.idx];
+    return `<div class="di-row">
+      <span class="te-drag-handle" title="${it.type}">${it.type === 'info' ? 'i' : 'm'}</span>
+      <input type="text" value="${escTrainer(r[1])}" oninput="dietaData[${it.idx}][1]=this.value" placeholder="Item">
+      <input type="text" value="${escTrainer(r[2])}" oninput="dietaData[${it.idx}][2]=this.value" placeholder="Valor">
+      <input type="text" value="${escTrainer(r[3])}" oninput="dietaData[${it.idx}][3]=this.value" placeholder="Detalhe">
+      <button class="te-trash" onclick="dietaRemove(${it.idx})" title="Remover">🗑</button>
+    </div>`;
+  }).join('');
+}
+
+function renderDietaSimpleRow(it, placeholders) {
+  const r = dietaData[it.idx];
+  return `<div class="di-row" data-idx="${it.idx}">
+    <span class="te-drag-handle" draggable="true"
+          ondragstart="diDragStart(${it.idx}, event)"
+          ondragend="diDragEnd()"
+          ondragover="diDragOver(event)"
+          ondrop="diDrop(${it.idx}, event)">⋮⋮</span>
+    <input type="text" value="${escTrainer(r[1])}" oninput="dietaData[${it.idx}][1]=this.value" placeholder="${placeholders[0]}">
+    <input type="text" value="${escTrainer(r[2])}" oninput="dietaData[${it.idx}][2]=this.value" placeholder="${placeholders[1]}">
+    <input type="text" value="${escTrainer(r[3])}" oninput="dietaData[${it.idx}][3]=this.value" placeholder="${placeholders[2]}">
+    <button class="te-trash" onclick="dietaRemove(${it.idx})" title="Remover">🗑</button>
+  </div>`;
+}
+
+function renderDietaRefeicao(ref, ri) {
+  const key = `ref-${ref.idx}`;
+  const isOpen = DIETA_OPEN_BLOCKS.has(key);
+  const r = dietaData[ref.idx];
+  const refName = r[1] || 'Refeição';
+  const refKcal = r[3] || '';
+  const totalItems = ref.items.length + ref.opcoes.reduce((a, o) => a + o.items.length, 0);
+
+  let body = `<div class="di-row" style="margin-bottom:6px;">
+    <span class="te-drag-handle" title="refeição">≡</span>
+    <input type="text" value="${escTrainer(r[1])}" oninput="dietaData[${ref.idx}][1]=this.value;dietaUpdateBlockTitle('${key}',this.value)" placeholder="Nome (DESJEJUM, ALMOÇO…)" style="grid-column: span 3;">
+    <button class="te-trash" onclick="dietaRemoveRef(${ref.idx})" title="Remover refeição">🗑</button>
+  </div>
+  <div class="di-row" style="margin-bottom:8px;">
+    <span></span>
+    <input type="text" value="${escTrainer(r[3])}" oninput="dietaData[${ref.idx}][3]=this.value" placeholder="Aprox kcal / prot (ex: 500 kcal | 40g prot)" style="grid-column: span 3;">
+    <span></span>
+  </div>`;
+
+  // Itens diretos da refeição (alimentos / obs)
+  ref.items.forEach(it => {
+    body += renderDietaItem(it);
+  });
+
+  // Opções
+  ref.opcoes.forEach((op, oi) => {
+    body += renderDietaOpcao(op, oi);
+  });
+
+  // Botões
+  body += `<div class="di-action-bar">
+    <button class="di-add-btn" onclick="dietaAddFood(${ref.idx})">+ Alimento</button>
+    <button class="di-add-btn" onclick="dietaAddOpcao(${ref.idx})">+ Opção</button>
+    <button class="di-add-btn" onclick="dietaAddObs(${ref.idx})">+ OBS</button>
+  </div>`;
+
+  return `<div class="di-block${isOpen ? ' open' : ''}" data-key="${key}">
+    <div class="di-block-head" onclick="dietaToggleBlock('${key}')">
+      <span class="di-block-title">🍽 ${escTrainer(refName)}</span>
+      <span class="di-block-meta">${escTrainer(refKcal) || totalItems + ' itens'}</span>
+      <span class="di-block-arrow">▶</span>
+    </div>
+    <div class="di-block-body">${body}</div>
+  </div>`;
+}
+
+function renderDietaOpcao(op, oi) {
+  const r = dietaData[op.idx];
+  let html = `<div class="di-op-block">
+    <div class="di-op-head">
+      <input class="di-op-name" type="text" value="${escTrainer(r[1])}" oninput="dietaData[${op.idx}][1]=this.value" placeholder="Opção 1 — Nome">
+      <button class="te-trash" onclick="dietaRemove(${op.idx})" title="Remover opção">🗑</button>
+    </div>`;
+  op.items.forEach(it => { html += renderDietaItem(it); });
+  html += `<button class="di-add-btn" onclick="dietaAddFood(${op.idx},true)">+ Alimento na Opção</button>
+  </div>`;
+  return html;
+}
+
+function renderDietaItem(it) {
+  const r = dietaData[it.idx];
+  if (it.type === 'obs' || it.type === 'nota') {
+    return `<div class="di-obs-row" data-idx="${it.idx}">
+      <span class="te-drag-handle" draggable="true"
+            ondragstart="diDragStart(${it.idx}, event)"
+            ondragend="diDragEnd()"
+            ondragover="diDragOver(event)"
+            ondrop="diDrop(${it.idx}, event)">⋮⋮</span>
+      <input type="text" value="${escTrainer(r[3] || r[1] || '')}" oninput="dietaSetObs(${it.idx},this.value)" placeholder="Observação...">
+      <button class="te-trash" onclick="dietaRemove(${it.idx})" title="Remover">🗑</button>
+    </div>`;
+  }
+  // alimento
+  return `<div class="di-row" data-idx="${it.idx}">
+    <span class="te-drag-handle" draggable="true"
+          ondragstart="diDragStart(${it.idx}, event)"
+          ondragend="diDragEnd()"
+          ondragover="diDragOver(event)"
+          ondrop="diDrop(${it.idx}, event)">⋮⋮</span>
+    <input type="text" value="${escTrainer(r[1])}" oninput="dietaData[${it.idx}][1]=this.value" placeholder="Alimento">
+    <input type="text" value="${escTrainer(r[2])}" oninput="dietaData[${it.idx}][2]=this.value" placeholder="Qtd">
+    <input type="text" value="${escTrainer(r[3])}" oninput="dietaData[${it.idx}][3]=this.value" placeholder="Obs">
+    <button class="te-trash" onclick="dietaRemove(${it.idx})" title="Remover">🗑</button>
+  </div>`;
+}
+
+function dietaSetObs(idx, val) {
+  // OBS na sheet de dieta vai no col[3] (obs/detalhe)
+  dietaData[idx][3] = val;
+}
+
+function dietaUpdateBlockTitle(key, val) {
+  const el = document.querySelector(`.di-block[data-key="${key}"] .di-block-title`);
+  if (el) el.textContent = '🍽 ' + (val || 'Refeição');
+}
+
+// ── CRUD dieta ──
+
+function dietaRemove(idx) {
+  if (!confirm('Remover essa linha?')) return;
+  dietaData.splice(idx, 1);
+  renderDietaEditor();
+}
+
+function dietaRemoveRef(idx) {
+  if (!confirm('Remover essa refeição inteira (alimentos e opções)?')) return;
+  // remove a linha ref + tudo até a próxima ref ou seção raiz (regra/supl/proto/cardio/dica/etc)
+  const stopSections = new Set(['ref', 'regra', 'supl', 'proto', 'ciclo', 'cardio', 'aerob', 'dica', 'orient', 'info', 'meta']);
+  let endIdx = dietaData.length;
+  for (let j = idx + 1; j < dietaData.length; j++) {
+    const s = String(dietaData[j][0] || '').toLowerCase().trim();
+    if (stopSections.has(s)) { endIdx = j; break; }
+  }
+  dietaData.splice(idx, endIdx - idx);
+  renderDietaEditor();
+}
+
+function dietaInsertAfter(afterIdx, row) {
+  dietaData.splice(afterIdx + 1, 0, row);
+  return afterIdx + 1;
+}
+
+function dietaFindLastItemOfRef(refIdx) {
+  // varre linhas após refIdx até achar próxima 'ref' ou seção raiz
+  const stopSections = new Set(['ref', 'regra', 'supl', 'proto', 'ciclo', 'cardio', 'aerob', 'dica', 'orient', 'info', 'meta']);
+  let last = refIdx;
+  for (let j = refIdx + 1; j < dietaData.length; j++) {
+    const s = String(dietaData[j][0] || '').toLowerCase().trim();
+    if (stopSections.has(s)) break;
+    last = j;
+  }
+  return last;
+}
+
+function dietaFindLastItemOfOp(opIdx) {
+  const stopSections = new Set(['op', 'ref', 'regra', 'supl', 'proto', 'ciclo', 'cardio', 'aerob', 'dica', 'orient', 'info', 'meta']);
+  let last = opIdx;
+  for (let j = opIdx + 1; j < dietaData.length; j++) {
+    const s = String(dietaData[j][0] || '').toLowerCase().trim();
+    if (stopSections.has(s)) break;
+    last = j;
+  }
+  return last;
+}
+
+function dietaAddFood(parentIdx, isOpcao) {
+  const last = isOpcao ? dietaFindLastItemOfOp(parentIdx) : dietaFindLastItemOfRef(parentIdx);
+  dietaInsertAfter(last, ['', '', '', '']);
+  renderDietaEditor();
+}
+
+function dietaAddObs(refIdx) {
+  const last = dietaFindLastItemOfRef(refIdx);
+  dietaInsertAfter(last, ['obs', '', '', '']);
+  renderDietaEditor();
+}
+
+function dietaAddOpcao(refIdx) {
+  const last = dietaFindLastItemOfRef(refIdx);
+  // detecta quantas opções já existem nessa refeição
+  let opCount = 0;
+  for (let j = refIdx + 1; j <= last; j++) {
+    if (String(dietaData[j][0] || '').toLowerCase().trim() === 'op') opCount++;
+  }
+  dietaInsertAfter(last, ['op', `Opção ${opCount + 1}`, '', '']);
+  renderDietaEditor();
+}
+
+function dietaAddRefeicao() {
+  // Adiciona refeição no final (antes de orient/proto se existirem, senão no fim)
+  const stopSections = new Set(['cardio', 'aerob', 'dica', 'orient', 'proto', 'ciclo']);
+  let insertAt = dietaData.length;
+  for (let j = 0; j < dietaData.length; j++) {
+    const s = String(dietaData[j][0] || '').toLowerCase().trim();
+    if (stopSections.has(s)) { insertAt = j; break; }
+  }
+  dietaData.splice(insertAt, 0, ['ref', 'NOVA REFEIÇÃO', '', '']);
+  renderDietaEditor();
+  DIETA_OPEN_BLOCKS.add(`ref-${insertAt}`);
+  renderDietaEditor();
+}
+
+function dietaAddSimple(type) {
+  // Adiciona linha do tipo (regra, supl, cardio, dica, proto, ciclo) na seção apropriada
+  // Estratégia: insere logo após a última linha do mesmo tipo. Se não houver, no início (após info/meta).
+  let lastOfType = -1;
+  for (let i = dietaData.length - 1; i >= 0; i--) {
+    if (String(dietaData[i][0] || '').toLowerCase().trim() === type) { lastOfType = i; break; }
+  }
+  if (lastOfType >= 0) {
+    dietaInsertAfter(lastOfType, [type, '', '', '']);
+  } else {
+    // Insere depois do último info/meta
+    let lastInfo = 0;
+    for (let i = 0; i < dietaData.length; i++) {
+      const s = String(dietaData[i][0] || '').toLowerCase().trim();
+      if (s === 'info' || s === 'meta') lastInfo = i;
+      else if (s) break;
+    }
+    dietaInsertAfter(lastInfo, [type, '', '', '']);
+  }
+  // Mantém o bloco aberto
+  const blockMap = { regra: 'regras', supl: 'supl', cardio: 'orient', aerob: 'orient', dica: 'orient', orient: 'orient', proto: 'proto', ciclo: 'proto' };
+  if (blockMap[type]) DIETA_OPEN_BLOCKS.add(blockMap[type]);
+  renderDietaEditor();
+}
+
+// ── Drag & drop dieta ──
+let diDragSrc = null;
+
+function diDragStart(idx, e) {
+  diDragSrc = idx;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', String(idx));
+  const card = e.target.closest('.di-row, .di-obs-row');
+  if (card) card.classList.add('dragging');
+}
+
+function diDragOver(e) {
+  if (diDragSrc === null) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const card = e.currentTarget.closest('.di-row, .di-obs-row');
+  if (!card) return;
+  document.querySelectorAll('.di-row.drag-over, .di-obs-row.drag-over').forEach(el => { if (el !== card) el.classList.remove('drag-over'); });
+  card.classList.add('drag-over');
+}
+
+function diDrop(targetIdx, e) {
+  e.preventDefault();
+  e.stopPropagation();
+  document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+  if (diDragSrc === null || diDragSrc === targetIdx) { diDragSrc = null; return; }
+  const src = diDragSrc;
+  const tgt = targetIdx;
+  const moving = dietaData.splice(src, 1)[0];
+  const newTgt = src < tgt ? tgt - 1 : tgt;
+  dietaData.splice(newTgt, 0, moving);
+  diDragSrc = null;
+  renderDietaEditor();
+}
+
+function diDragEnd() {
+  diDragSrc = null;
+  document.querySelectorAll('.dragging, .drag-over').forEach(el => el.classList.remove('dragging', 'drag-over'));
 }
 
 // Allow Enter on password modal
