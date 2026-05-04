@@ -401,6 +401,14 @@
   .markers-history { margin-top: 12px; padding-top: 10px; border-top: 1px solid #2a2a2a; }
   .markers-history-row { display: grid; grid-template-columns: 90px 1fr; gap: 10px; padding: 4px 0; font-size: 11px; color: #ccc; }
   .markers-history-row .date { color: #888; }
+  .marker-row { display: grid; grid-template-columns: 60px 110px 1fr; gap: 8px; align-items: center; padding: 6px 0; font-size: 11px; border-bottom: 1px solid #232323; }
+  .marker-row:last-child { border-bottom: none; }
+  .marker-label { color: #aaa; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; font-size: 10px; }
+  .marker-spark { width: 110px; height: 28px; display: block; }
+  .marker-val { color: var(--white); font-size: 12px; font-weight: 700; text-align: right; }
+  .marker-val .delta-up { color: #ff7043; font-size: 10px; margin-left: 4px; }
+  .marker-val .delta-down { color: #6ed66e; font-size: 10px; margin-left: 4px; }
+  .marker-val .delta-zero { color: #888; font-size: 10px; margin-left: 4px; }
   .streak-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
   .streak-stat { background: #222; border-radius: 6px; padding: 10px; text-align: center; }
   .streak-stat .num { font-size: 22px; font-weight: 800; color: var(--gold); }
@@ -1497,7 +1505,7 @@
     <h4>💧 Hidratação</h4>
     <div class="water-row">
       <span class="water-counter" id="waterCounter">0</span>
-      <span class="water-meta" id="waterMeta">copos hoje · meta 8 (2L)</span>
+      <span class="water-meta" id="waterMeta">copos (200ml) hoje · meta 10 (2L)</span>
       <button class="water-btn" onclick="addWater(1)">+1 copo</button>
       <button class="water-btn minus" onclick="addWater(-1)">−1</button>
     </div>
@@ -1536,25 +1544,7 @@
   📖 Glossário do Método <span id="glossarioArrow">&#9660;</span>
 </div>
 <div class="instructions-content" id="glossarioContent">
-  <h3>Volume e Carga</h3>
-  <p><span class="hl">Série:</span> Conjunto de repetições sem descanso. "4X 8-12" = 4 séries de 8 a 12 reps.</p>
-  <p><span class="hl">Repetição:</span> Uma execução completa do movimento (subida + descida).</p>
-  <p><span class="hl">Intervalo:</span> Tempo de descanso entre séries. 60s pra hipertrofia, 90-120s pra força.</p>
-  <p><span class="hl">RM (Repetição Máxima):</span> Carga que tu consegue fazer X reps. 5RM = peso que faria só 5 reps.</p>
-  <p><span class="hl">Falha:</span> Ponto em que a próxima rep é fisicamente impossível com postura correta.</p>
-
-  <h3>Cadência (velocidade do movimento)</h3>
-  <p><span class="hl">Positiva (Concêntrica):</span> Subida do peso — 1s, com explosão.</p>
-  <p><span class="hl">Isometria:</span> Pausa no topo, mantendo a tensão — 0.5s padrão.</p>
-  <p><span class="hl">Negativa (Excêntrica):</span> Descida do peso — 2s controlado, nunca despenca.</p>
-
-  <h3>Técnicas Avançadas</h3>
-  <p><span class="hl">Bi-set:</span> Dois exercícios seguidos SEM descanso. Só descansa ao terminar os dois.</p>
-  <p><span class="hl">Drop-set:</span> Falha → reduz 20-30% do peso → falha de novo. Sem descanso.</p>
-  <p><span class="hl">Drop Mecânico:</span> Falha com postura estrita → muda biomecânica → reps extras com mesma carga.</p>
-  <p><span class="hl">Cluster-Set:</span> Série dividida em 3 mini-blocos de 2-4 reps com 15-20s de descanso entre blocos. Carga 4-6RM. Permite alta intensidade com qualidade.</p>
-  <p><span class="hl">Pirâmide:</span> Reps caem a cada série, peso sobe (15-20 → 10-15 → 8-12 → 6-10).</p>
-  <p><span class="hl">Aclimatização:</span> 1ª leve aquece, 2ª pesada (4-6 reps neuro), 3ª principal (6-10 falha).</p>
+  <p style="color:#888;font-size:11px;margin:0 0 12px;">Pra termos de execução do treino (séries, cadência, técnicas como bi-set, cluster, drop-set), abre o <strong>Manual de Execução</strong>.</p>
 
   <h3>Composição Corporal</h3>
   <p><span class="hl">BF% (Body Fat):</span> Percentual de gordura corporal. &lt;15% atlético, 15-20% normal, &gt;20% sobrepeso.</p>
@@ -1615,13 +1605,13 @@
   </div>
 
   <div class="partner-card">
-    <div class="partner-card-head"><span class="partner-name">Faixa de joelho (Shopee)</span><span class="partner-discount">SHOPEE</span></div>
+    <div class="partner-card-head"><span class="partner-name">Faixa de joelho (Shopee)</span><span class="partner-discount" style="background:#3a2e1f;color:#ffa726;">SHOPEE</span></div>
     <div class="partner-desc">Faixa elástica de pressão — alternativa econômica à joelheira.</div>
     <a class="partner-link" href="https://s.shopee.com.br/7KtXeHgEgZ?share_channel_code=1" target="_blank" rel="noopener">Acessar →</a>
   </div>
 
   <div class="partner-card">
-    <div class="partner-card-head"><span class="partner-name">Luva aderente (Shopee)</span><span class="partner-discount">SHOPEE</span></div>
+    <div class="partner-card-head"><span class="partner-name">Luva aderente (Shopee)</span><span class="partner-discount" style="background:#3a2e1f;color:#ffa726;">SHOPEE</span></div>
     <div class="partner-desc">Pegada extra com palma de borracha — útil pra exercícios de cabo.</div>
     <a class="partner-link" href="https://s.shopee.com.br/5flJfN50qn?share_channel_code=1" target="_blank" rel="noopener">Acessar →</a>
   </div>
@@ -1679,13 +1669,13 @@
   <h3 style="color:var(--gold);margin:18px 0 8px;font-size:13px;">🍳 Cozinha / Dieta (Shopee)</h3>
 
   <div class="partner-card">
-    <div class="partner-card-head"><span class="partner-name">Balança de precisão</span><span class="partner-discount">SHOPEE</span></div>
+    <div class="partner-card-head"><span class="partner-name">Balança de precisão</span><span class="partner-discount" style="background:#3a2e1f;color:#ffa726;">SHOPEE</span></div>
     <div class="partner-desc">Balança digital — pesar carne crua, arroz, suplementos. Fundamental pra ser preciso na dieta.</div>
     <a class="partner-link" href="https://s.shopee.com.br/W3DVo4Iae?share_channel_code=1" target="_blank" rel="noopener">Acessar →</a>
   </div>
 
   <div class="partner-card">
-    <div class="partner-card-head"><span class="partner-name">Colher de precisão</span><span class="partner-discount">SHOPEE</span></div>
+    <div class="partner-card-head"><span class="partner-name">Colher de precisão</span><span class="partner-discount" style="background:#3a2e1f;color:#ffa726;">SHOPEE</span></div>
     <div class="partner-desc">Doseadora — pesar suplementos, manteiga, azeite, pasta de amendoim.</div>
     <a class="partner-link" href="https://s.shopee.com.br/1LcKVMvIfI?share_channel_code=1" target="_blank" rel="noopener">Acessar →</a>
   </div>
@@ -2679,8 +2669,8 @@ function addWater(delta) {
 function renderWater() {
   const n = waterCount();
   document.getElementById('waterCounter').textContent = n;
-  const ml = n * 250;
-  document.getElementById('waterMeta').textContent = `copos hoje · ${(ml/1000).toFixed(1)}L · meta 8 (2L)${n >= 8 ? ' ✅' : ''}`;
+  const ml = n * 200; // copo padrão = 200ml
+  document.getElementById('waterMeta').textContent = `copos (200ml) hoje · ${(ml/1000).toFixed(1)}L · meta 10 (2L)${n >= 10 ? ' ✅' : ''}`;
 }
 
 // Notificação de hidratação
@@ -2753,20 +2743,83 @@ function saveMarkers() {
   alert('Salvo!');
 }
 function renderMarkersHistory() {
-  const arr = getMarkers().slice(-6).reverse();
+  const arr = getMarkers();
   const c = document.getElementById('markersHistory');
-  if (!arr.length) { c.innerHTML = '<p style="color:#666;font-size:11px;margin:0;">Nenhum registro ainda.</p>'; return; }
-  let html = '<p style="color:#aaa;font-size:11px;margin:0 0 6px;font-weight:700;">Últimos registros:</p>';
-  arr.forEach(m => {
+  if (!arr.length) {
+    c.innerHTML = '<p style="color:#666;font-size:11px;margin:0;">Nenhum registro ainda — salva tua medida hoje pra começar a acompanhar a evolução.</p>';
+    return;
+  }
+
+  const MEDIDAS = [
+    { key: 'peso', label: 'Peso', unit: 'kg', betterDown: true },   // pra perder peso, ↓ é bom
+    { key: 'cintura', label: 'Cintura', unit: 'cm', betterDown: true },
+    { key: 'braco', label: 'Braço', unit: 'cm', betterDown: false }, // pra ganhar massa, ↑ é bom
+    { key: 'coxa', label: 'Coxa', unit: 'cm', betterDown: false },
+    { key: 'peitoral', label: 'Peitoral', unit: 'cm', betterDown: false }
+  ];
+
+  let html = '<p style="color:#aaa;font-size:11px;margin:6px 0 8px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">📊 Evolução</p>';
+
+  MEDIDAS.forEach(m => {
+    const points = arr.filter(r => r[m.key] != null && r[m.key] !== '').map(r => ({ d: r.d, v: parseFloat(r[m.key]) })).filter(p => !isNaN(p.v));
+    if (points.length === 0) return;
+
+    if (points.length === 1) {
+      html += `<div class="marker-row">
+        <span class="marker-label">${m.label}</span>
+        <span class="marker-spark" style="color:#666;font-size:10px;line-height:28px;">primeiro registro</span>
+        <span class="marker-val">${points[0].v}${m.unit}</span>
+      </div>`;
+      return;
+    }
+
+    // Sparkline SVG
+    const W = 110, H = 28, PAD = 2;
+    const min = Math.min(...points.map(p => p.v));
+    const max = Math.max(...points.map(p => p.v));
+    const range = max - min || 1;
+    const xStep = (W - PAD * 2) / (points.length - 1);
+    const coords = points.map((p, i) => {
+      const x = PAD + i * xStep;
+      const y = PAD + (H - PAD * 2) - ((p.v - min) / range) * (H - PAD * 2);
+      return { x: x.toFixed(1), y: y.toFixed(1) };
+    });
+    const polyline = coords.map(c => `${c.x},${c.y}`).join(' ');
+    const dots = coords.map((c, i) => `<circle cx="${c.x}" cy="${c.y}" r="${i === coords.length - 1 ? 2.5 : 1.8}" fill="${i === coords.length - 1 ? '#fff' : 'var(--gold)'}"/>`).join('');
+
+    const first = points[0].v;
+    const last = points[points.length - 1].v;
+    const diff = +(last - first).toFixed(1);
+    let deltaCls = 'delta-zero', deltaTxt = '±0';
+    if (diff !== 0) {
+      const goodDirection = m.betterDown ? diff < 0 : diff > 0;
+      deltaCls = goodDirection ? 'delta-down' : 'delta-up';
+      deltaTxt = (diff > 0 ? '+' : '') + diff;
+    }
+
+    html += `<div class="marker-row">
+      <span class="marker-label">${m.label}</span>
+      <svg class="marker-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+        <polyline points="${polyline}" stroke="var(--gold)" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        ${dots}
+      </svg>
+      <span class="marker-val">${last}${m.unit}<span class="${deltaCls}">${deltaTxt}</span></span>
+    </div>`;
+  });
+
+  // Lista de registros (datas)
+  html += '<p style="color:#888;font-size:10px;margin:12px 0 4px;">Histórico de registros:</p>';
+  arr.slice(-6).reverse().forEach(m => {
     const parts = [];
-    if (m.peso) parts.push(`P ${m.peso}kg`);
-    if (m.cintura) parts.push(`C ${m.cintura}cm`);
-    if (m.braco) parts.push(`Br ${m.braco}cm`);
-    if (m.coxa) parts.push(`Cx ${m.coxa}cm`);
-    if (m.peitoral) parts.push(`Pt ${m.peitoral}cm`);
+    if (m.peso) parts.push(`P ${m.peso}`);
+    if (m.cintura) parts.push(`C ${m.cintura}`);
+    if (m.braco) parts.push(`Br ${m.braco}`);
+    if (m.coxa) parts.push(`Cx ${m.coxa}`);
+    if (m.peitoral) parts.push(`Pt ${m.peitoral}`);
     const dateStr = m.d.split('-').reverse().join('/');
     html += `<div class="markers-history-row"><span class="date">${dateStr}</span><span>${parts.join(' · ')}</span></div>`;
   });
+
   c.innerHTML = html;
 }
 
