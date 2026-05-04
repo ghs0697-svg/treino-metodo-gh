@@ -1859,11 +1859,14 @@
     <h3 class="ach-title" id="achTitle">🎉 Conquista</h3>
     <canvas id="achCanvas" width="1080" height="1920"></canvas>
     <div class="ach-actions">
-      <button class="ach-btn primary" onclick="achShare()">📤 Compartilhar</button>
-      <button class="ach-btn secondary" onclick="achSave()">💾 Salvar</button>
-      <button class="ach-btn ghost" onclick="achClose()">Fechar</button>
+      <button class="ach-btn primary" onclick="achShareToInstagramStories()" id="achStoriesBtn">📸 Postar no Stories</button>
+      <button class="ach-btn secondary" onclick="achShare()">📤 Compartilhar</button>
     </div>
-    <p style="color:#666;font-size:11px;text-align:center;margin:10px 0 0;line-height:1.4;">💡 Pra postar nos Stories: <strong>Compartilhar</strong> → role o sheet do iOS pra direita ou toca em <strong>"Ver Mais"</strong> → escolhe <strong>Instagram Stories</strong>.</p>
+    <div class="ach-actions" style="margin-top:6px;">
+      <button class="ach-btn secondary" onclick="achSave()" style="flex:1;">💾 Salvar PNG</button>
+      <button class="ach-btn ghost" onclick="achClose()" style="flex:1;">Fechar</button>
+    </div>
+    <p style="color:#666;font-size:10px;text-align:center;margin:10px 0 0;line-height:1.4;">💡 Se "Stories" não abrir direto: usa "Compartilhar" → role o sheet → escolhe Instagram Stories.</p>
   </div>
 </div>
 
@@ -2418,6 +2421,74 @@ async function achShare() {
     } catch (e) {
       // User cancelled, ignore
     }
+  }, 'image/png');
+}
+
+// Tenta abrir Stories Instagram direto via URL scheme + clipboard
+// Funciona em iOS/Android se o Instagram tiver instalado.
+async function achShareToInstagramStories() {
+  const c = document.getElementById('achCanvas');
+  const btn = document.getElementById('achStoriesBtn');
+  if (btn) { btn.textContent = '⏳ Abrindo Instagram...'; btn.disabled = true; }
+
+  c.toBlob(async blob => {
+    if (!blob) {
+      if (btn) { btn.textContent = '📸 Postar no Stories'; btn.disabled = false; }
+      return achSave();
+    }
+
+    let clipboardOk = false;
+    try {
+      if (navigator.clipboard && window.ClipboardItem) {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        clipboardOk = true;
+      }
+    } catch (e) {
+      console.warn('Clipboard write falhou:', e);
+    }
+
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    const isMobile = isIOS || isAndroid;
+
+    if (!isMobile) {
+      // Desktop — fallback pro share padrão
+      if (btn) { btn.textContent = '📸 Postar no Stories'; btn.disabled = false; }
+      alert(clipboardOk
+        ? 'Imagem copiada pro clipboard. Posta no Instagram pelo celular.'
+        : 'Stories só funciona no celular. Usa Salvar PNG e posta pelo Instagram.');
+      return;
+    }
+
+    // Estratégia: abre URL scheme do Instagram Stories.
+    // Se o Instagram tiver instalado, ele lê o clipboard e mostra a imagem como background.
+    // Se falhar (não instalado, scheme bloqueado), cai pro share normal após 1.5s.
+    const before = Date.now();
+    let opened = false;
+    const visibilityHandler = () => {
+      if (document.hidden) opened = true;
+    };
+    document.addEventListener('visibilitychange', visibilityHandler);
+
+    try {
+      // iOS prefere abrir via window.location; Android também aceita
+      window.location.href = 'instagram-stories://share?source_application=metodogh';
+    } catch (e) {
+      console.warn('URL scheme falhou:', e);
+    }
+
+    setTimeout(() => {
+      document.removeEventListener('visibilitychange', visibilityHandler);
+      if (btn) { btn.textContent = '📸 Postar no Stories'; btn.disabled = false; }
+      if (!opened && Date.now() - before < 2000) {
+        // Provavelmente não abriu — fallback
+        if (clipboardOk) {
+          alert('Não abriu o Instagram automaticamente.\n\nA imagem está no clipboard — abre o Stories manual e cola, ou usa "Compartilhar".');
+        } else {
+          alert('Não abriu o Instagram. Usa "Compartilhar" e escolhe Stories no sheet.');
+        }
+      }
+    }, 1800);
   }, 'image/png');
 }
 
