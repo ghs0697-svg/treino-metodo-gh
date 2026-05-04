@@ -4804,6 +4804,7 @@ async function trainerLoadSheet() {
     trainerData = (tParsed.length >= 2) ? tParsed : null;
     dietaData   = (dParsed.length >= 2) ? dParsed : null;
     if (!trainerData && !dietaData) throw new Error('aba TREINO ou DIETA não encontrada (verifique compartilhamento)');
+    DIETA_OPEN_BLOCKS.clear(); // reset de blocos abertos pra novo aluno
     teHide('trainerSheetModal');
     document.getElementById('trainerEditor').classList.add('show');
     document.body.style.overflow = 'hidden';
@@ -5367,6 +5368,15 @@ function renderDietaEditor() {
 
   // Parse seções na ordem da sheet
   const sections = parseDietaSections(dietaData);
+
+  // Default: abre todos os blocos na 1ª render (treinador pode colapsar manual)
+  if (DIETA_OPEN_BLOCKS.size === 0) {
+    DIETA_OPEN_BLOCKS.add('regras');
+    DIETA_OPEN_BLOCKS.add('supl');
+    DIETA_OPEN_BLOCKS.add('orient');
+    DIETA_OPEN_BLOCKS.add('proto');
+    sections.refs.forEach(r => DIETA_OPEN_BLOCKS.add('ref-' + r.idx));
+  }
 
   let html = '';
 
