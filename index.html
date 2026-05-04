@@ -414,9 +414,19 @@
   .streak-stat .num { font-size: 22px; font-weight: 800; color: var(--gold); }
   .streak-stat .lbl { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
 
-  /* ── Botão flutuante WhatsApp ── */
-  .support-btn { position: fixed; bottom: 18px; right: 18px; z-index: 9000; width: 56px; height: 56px; border-radius: 50%; background: #25d366; color: #fff; border: none; font-size: 26px; box-shadow: 0 4px 14px rgba(0,0,0,0.5); cursor: pointer; display: flex; align-items: center; justify-content: center; text-decoration: none; }
-  .support-btn:hover { transform: scale(1.05); }
+  /* ── Menu flutuante (Install + WhatsApp) ── */
+  #floatMenu { position: fixed; bottom: 18px; right: 18px; z-index: 9000; display: none; flex-direction: column; align-items: flex-end; gap: 10px; }
+  #floatMenu.show { display: flex; }
+  .float-btn { width: 56px; height: 56px; border-radius: 50%; background: var(--gold); color: var(--dark); border: none; font-size: 26px; box-shadow: 0 4px 14px rgba(0,0,0,0.6); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; }
+  .float-btn:hover { transform: scale(1.05); }
+  .float-btn.open { transform: rotate(45deg); }
+  .float-options { display: none; flex-direction: column; gap: 8px; align-items: flex-end; }
+  .float-options.show { display: flex; }
+  .float-opt { background: #1a1a1a; border: 1px solid var(--gold-dim); color: #fff; padding: 10px 14px; border-radius: 24px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 10px; text-decoration: none; white-space: nowrap; transition: all 0.15s; }
+  .float-opt:hover { background: var(--gold); color: var(--dark); border-color: var(--gold); }
+  .float-opt.whatsapp { border-color: #25d366; }
+  .float-opt.whatsapp:hover { background: #25d366; color: #fff; border-color: #25d366; }
+  .float-opt .ic { font-size: 18px; }
 
   /* ── Day progress ── */
   .day-progress { padding: 10px 14px; background: #1a1a1a; border-bottom: 1px solid #2a2a2a; }
@@ -1422,6 +1432,19 @@
   </div>
 </div>
 
+<!-- ══ DIET VIEW ══ -->
+<div id="dietaView">
+  <div id="dietLoading" class="loading-screen" style="display:none;">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Carregando dieta...</div>
+  </div>
+  <div id="dietError" class="error-box" style="display:none;">
+    <h3>Dieta não disponível</h3>
+    <p id="dietErrorMsg">Protocolo alimentar ainda não foi adicionado à sua planilha.</p>
+  </div>
+  <div id="dietContent" style="display:none;"></div>
+</div>
+
 <!-- ══ INSTRUCTIONS ══ -->
 <div class="instructions-toggle" id="instrToggle" onclick="toggleInstructions()" style="display:none;">
   Manual de Execução <span id="instrArrow">&#9660;</span>
@@ -1735,18 +1758,6 @@
   </div>
 </div>
 
-<!-- ══ DIET VIEW ══ -->
-<div id="dietaView">
-  <div id="dietLoading" class="loading-screen" style="display:none;">
-    <div class="loading-spinner"></div>
-    <div class="loading-text">Carregando dieta...</div>
-  </div>
-  <div id="dietError" class="error-box" style="display:none;">
-    <h3>Dieta não disponível</h3>
-    <p id="dietErrorMsg">Protocolo alimentar ainda não foi adicionado à sua planilha.</p>
-  </div>
-  <div id="dietContent" style="display:none;"></div>
-</div>
 
 
 <!-- ══ INSTALL GUIDE BUTTON ══ -->
@@ -1836,7 +1847,36 @@
 <div class="app-footer"><span>MÉTODO GH — @gh.scheuermann</span></div>
 
 <!-- ══ Botão Suporte WhatsApp (flutuante) ══ -->
-<a href="https://wa.me/555120131470" target="_blank" rel="noopener" class="support-btn" id="supportBtn" title="Falar com a equipe no WhatsApp">💬</a>
+<!-- Botão flutuante combinado: instala app + abre WhatsApp -->
+<div id="floatMenu">
+  <div class="float-options" id="floatOptions">
+    <a class="float-opt install" onclick="showInstallInstructions()">
+      <span class="ic">📱</span><span>Instalar app na tela inicial</span>
+    </a>
+    <a class="float-opt whatsapp" href="https://wa.me/555520131470" target="_blank" rel="noopener">
+      <span class="ic">💬</span><span>Falar no WhatsApp</span>
+    </a>
+  </div>
+  <button class="float-btn" id="floatBtn" onclick="toggleFloatMenu()" title="Menu rápido">⚡</button>
+</div>
+
+<!-- Modal de instruções de instalação -->
+<div class="te-modal-overlay" id="installModal" onclick="closeInstallOnBg(event)">
+  <div class="te-modal-box" style="max-width:420px;">
+    <h3>📱 Instalar o app na tela inicial</h3>
+    <p style="color:#aaa;font-size:12px;margin:0 0 14px;">Acesso rápido sem precisar abrir o navegador toda vez.</p>
+    <div style="background:#161616;border:1px solid #2a2a2a;border-radius:6px;padding:12px;margin-bottom:10px;">
+      <p style="color:var(--gold);font-weight:700;font-size:12px;margin:0 0 6px;">📱 iPhone (Safari)</p>
+      <p style="color:#ccc;font-size:12px;line-height:1.5;margin:0;">1. Toca no ícone <strong>Compartilhar</strong> (quadrado com seta pra cima) na barra inferior<br>2. Rola e toca em <strong>"Adicionar à Tela de Início"</strong><br>3. Confirma "Adicionar"</p>
+    </div>
+    <div style="background:#161616;border:1px solid #2a2a2a;border-radius:6px;padding:12px;margin-bottom:10px;">
+      <p style="color:var(--gold);font-weight:700;font-size:12px;margin:0 0 6px;">🤖 Android (Chrome)</p>
+      <p style="color:#ccc;font-size:12px;line-height:1.5;margin:0;">1. Toca nos <strong>3 pontinhos</strong> no canto superior direito<br>2. Toca em <strong>"Adicionar à tela inicial"</strong> ou <strong>"Instalar app"</strong><br>3. Confirma</p>
+    </div>
+    <p style="color:var(--gold);font-size:13px;font-weight:700;text-align:center;margin:12px 0 4px;">Toca no ícone dourado. Bom treino.</p>
+    <button class="te-btn ghost" onclick="teHide('installModal')" style="width:100%;margin-top:8px;">Fechar</button>
+  </div>
+</div>
 
 <!-- ══ MODO TREINADOR ══ -->
 <button id="trainerToggleBtn" onclick="openTrainerLogin()" style="display:none;">⚙ Modo Treinador</button>
@@ -2419,6 +2459,7 @@ async function loadFromSheets() {
     document.getElementById('glossarioToggle').style.display = 'flex';
     document.getElementById('acessoriosToggle').style.display = 'flex';
     document.getElementById('parceirosToggle').style.display = 'flex';
+    document.getElementById('floatMenu').classList.add('show');
     if (isWaterNotifOn()) startWaterNotif();
     document.getElementById('hipoToggle').style.display = 'flex';
     document.getElementById('installBtn').style.display = 'block';
@@ -2869,6 +2910,29 @@ function renderStreakPanel() {
   document.getElementById('streakTotal').textContent = s.totalDaysDone || 0;
 }
 
+// ══ Menu flutuante (Install + WhatsApp) ══
+function toggleFloatMenu() {
+  const o = document.getElementById('floatOptions');
+  const b = document.getElementById('floatBtn');
+  o.classList.toggle('show');
+  b.classList.toggle('open');
+}
+function showInstallInstructions() {
+  document.getElementById('floatOptions').classList.remove('show');
+  document.getElementById('floatBtn').classList.remove('open');
+  teShow('installModal');
+}
+function closeInstallOnBg(e) { if (e.target.id === 'installModal') teHide('installModal'); }
+document.addEventListener('click', e => {
+  // Fecha o menu flutuante ao clicar fora
+  const fm = document.getElementById('floatMenu');
+  if (!fm) return;
+  if (!fm.contains(e.target)) {
+    document.getElementById('floatOptions').classList.remove('show');
+    document.getElementById('floatBtn').classList.remove('open');
+  }
+});
+
 function toggleAcessorios() {
   const c = document.getElementById('acessoriosContent');
   const a = document.getElementById('acessoriosArrow');
@@ -2911,6 +2975,7 @@ async function loadDietFromSheets() {
     document.getElementById('glossarioToggle').style.display = 'flex';
     document.getElementById('acessoriosToggle').style.display = 'flex';
     document.getElementById('parceirosToggle').style.display = 'flex';
+    document.getElementById('floatMenu').classList.add('show');
     if (isWaterNotifOn()) startWaterNotif();
     renderDiet();
   } catch(e) {
