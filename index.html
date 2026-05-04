@@ -1274,13 +1274,13 @@
   Manual de Execução <span id="instrArrow">&#9660;</span>
 </div>
 <div class="instructions-content" id="instructionsContent">
-  <h3>A Física do Movimento</h3>
-  <p><span class="hl">Fase Positiva (Concêntrica):</span> Explosão em 1 segundo. SOPRE o ar.</p>
-  <p><span class="hl">Fase Negativa (Excêntrica):</span> Controle em 2 a 3 segundos. PUXE o ar. Nunca despenque o peso.</p>
-  <h3>Cadência (Tag <span class="hl">C</span> no card)</h3>
-  <p>Cada exercício mostra a tag <span class="hl">C 1/0.5/2</span> — concêntrica (subida) / isometria (pausa) / excêntrica (descida) em segundos.</p>
-  <p><span class="hl">Padrão ouro do método (cinza):</span> 1s subida / 0.5s pausa no topo / 2s descida controlada.</p>
-  <p><span class="hl">Tag dourada:</span> cadência customizada — segue exatamente o que a tag diz (ex: 1/0.5/<span class="hl">5</span> = excêntrica de 5 segundos, técnica avançada de tensão).</p>
+  <h3>A Física do Movimento — Cadência</h3>
+  <p>Cada exercício mostra a tag <span class="hl">Pos 1s · Iso 0.5s · Neg 2s</span> com a velocidade ideal de cada fase:</p>
+  <p><span class="hl">Pos (Positiva / Concêntrica):</span> a SUBIDA do peso — em 1 segundo, com explosão. SOPRE o ar.</p>
+  <p><span class="hl">Iso (Isometria):</span> a PAUSA no ponto de maior tensão (topo) — em 0.5 segundos. Mantém a tensão na contração.</p>
+  <p><span class="hl">Neg (Negativa / Excêntrica):</span> a DESCIDA do peso — em 2 segundos, controlado. PUXE o ar. NUNCA despenca o peso.</p>
+  <p style="margin-top:8px;"><span class="hl">Padrão ouro (tag cinza):</span> Pos 1s · Iso 0.5s · Neg 2s — o ritmo certo pra hipertrofia eficiente.</p>
+  <p><span class="hl">Tag dourada:</span> cadência customizada pelo método — segue exatamente o que a tag diz (ex: <span class="hl">Neg 5s</span> = descida de 5 segundos, técnica avançada de tensão pra forçar adaptação).</p>
   <h3>Dicionário de Intensidade</h3>
   <p><span class="hl">Isometria:</span> Pausar e segurar no ponto de maior tensão por 2 segundos.</p>
   <p><span class="hl">Bi-Set:</span> Dois exercícios seguidos SEM descanso. Só descansa ao terminar os dois.</p>
@@ -1631,7 +1631,7 @@ function parseCadencia(obs) {
 function fmtSec(n) { return Number.isInteger(n) ? String(n) : n.toFixed(1).replace(/\.0$/, ''); }
 function cadenciaTag(obs) {
   const c = parseCadencia(obs);
-  return `<span class="exercise-tag${c.custom ? ' tag-custom' : ''}" title="Concêntrica / Isometria / Excêntrica (segundos)"><span class="tl">C</span>${fmtSec(c.conc)}/${fmtSec(c.iso)}/${fmtSec(c.exc)}</span>`;
+  return `<span class="exercise-tag${c.custom ? ' tag-custom' : ''}" title="Positiva (subida) · Isometria (pausa no topo) · Negativa (descida) — em segundos">Pos ${fmtSec(c.conc)}s · Iso ${fmtSec(c.iso)}s · Neg ${fmtSec(c.exc)}s</span>`;
 }
 
 // ══ YouTube URL → embed URL ══
