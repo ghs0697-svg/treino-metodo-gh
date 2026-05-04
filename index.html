@@ -1200,7 +1200,7 @@
   .food-sug-empty { padding: 10px; color: #666; font-size: 11px; font-style: italic; text-align: center; }
   .te-days-scroll { flex: 1; overflow-y: auto; padding: 12px; }
   .te-day { margin-bottom: 18px; border-radius: 10px; overflow: hidden; background: #161616; border: 1px solid #2a2a2a; }
-  .te-day-header { padding: 10px 14px; font-weight: 800; color: #fff; font-size: 13px; letter-spacing: 0.5px; text-shadow: 0 1px 2px rgba(0,0,0,0.6); }
+  .te-day-header { padding: 10px 14px; font-weight: 800; color: var(--gold); font-size: 13px; letter-spacing: 1px; background: #1d1d1d; border-bottom: 1px solid #2a2a2a; }
   .te-day-body { padding: 8px; }
   .te-ex { background: #1f1f1f; border-radius: 6px; padding: 8px; margin-bottom: 6px; border-left: 4px solid #888; transition: background 0.15s; }
   .te-ex.drag-over { background: #2a2a18; outline: 2px dashed var(--gold); outline-offset: -2px; }
@@ -4026,21 +4026,9 @@ function renderTrainerEditor() {
   let html = '';
   Object.keys(days).sort((a, b) => +a - +b).forEach(d => {
     const exs = days[d];
-    const groupSet = new Set();
-    exs.forEach(e => {
-      if (e.warmup) return;
-      const g = classifyMuscle(e.name);
-      if (g !== 'aquecimento' && g !== 'outros') groupSet.add(g);
-    });
-    const groups = Array.from(groupSet);
-    const groupColors = groups.map(g => MUSCLE_COLORS[g]);
-    const grad = groupColors.length === 0 ? '#444'
-              : groupColors.length === 1 ? groupColors[0]
-              : `linear-gradient(90deg, ${groupColors.join(', ')})`;
-    const groupLabel = groups.map(g => MUSCLE_LABELS[g]).join(' + ') || '—';
 
     html += `<div class="te-day">
-      <div class="te-day-header" style="background:${grad}">DIA ${d} — ${groupLabel}</div>
+      <div class="te-day-header">DIA ${d}</div>
       <div class="te-day-body">`;
     exs.forEach(e => {
       const g = classifyMuscle(e.name);
@@ -4050,7 +4038,7 @@ function renderTrainerEditor() {
           ondragover="teDragOver(event)" ondragleave="teDragLeave(event)" ondrop="teDrop(${e.idx}, event)">
         <div class="te-ex-row">
           <span class="te-drag-handle" draggable="true" ondragstart="teDragStart(${e.idx}, event)" ondragend="teDragEnd()" title="Arraste pra reordenar">⋮⋮</span>
-          <button class="te-ex-name" onclick="openSwapModal(${e.idx})" title="Trocar exercício (${MUSCLE_LABELS[g] || g})">${icon} ${escTrainer(e.name)}</button>
+          <button class="te-ex-name" style="color:${color};border-color:${color};" onclick="openSwapModal(${e.idx})" title="${MUSCLE_LABELS[g] || g} — clica pra trocar">${icon} ${escTrainer(e.name)}</button>
           <input class="te-input" value="${escTrainer(e.series)}" oninput="trainerData[${e.idx}][2]=this.value" placeholder="S">
           <input class="te-input" value="${escTrainer(e.reps)}" oninput="trainerData[${e.idx}][3]=this.value" placeholder="Reps">
           <input class="te-input" value="${escTrainer(e.rest)}" oninput="trainerData[${e.idx}][4]=this.value" placeholder="Int.">
