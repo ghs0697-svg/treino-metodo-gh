@@ -1646,7 +1646,7 @@
     <a class="partner-link" href="https://www.yangfit.com.br/faixa-suporte-para-elevacao-pelvica-treino-gluteo-yangfit" target="_blank" rel="noopener">Acessar →</a>
   </div>
 
-  <h3 style="color:var(--gold);margin:18px 0 8px;font-size:13px;">🏠 Treino em casa</h3>
+  <h3 style="color:var(--gold);margin:18px 0 8px;font-size:13px;">🎯 Bands e elásticos (também usados na musculação)</h3>
 
   <div class="partner-card">
     <div class="partner-card-head"><span class="partner-name">Kit Mini-band (4 intensidades)</span><span class="partner-discount">YANGFIT</span></div>
@@ -1670,24 +1670,6 @@
     <div class="partner-card-head"><span class="partner-name">Kit Super-band</span><span class="partner-discount">YANGFIT</span></div>
     <div class="partner-desc">4 elásticos extensores — exercícios em casa, alongamento, mobilidade.</div>
     <a class="partner-link" href="https://www.yangfit.com.br/kit-super-band-4-intensidades-elastico-extensor-borracha-treino" target="_blank" rel="noopener">Acessar →</a>
-  </div>
-
-  <div class="partner-card">
-    <div class="partner-card-head"><span class="partner-name">Kettlebell</span><span class="partner-discount">YANGFIT</span></div>
-    <div class="partner-desc">Funcional em casa — swings, goblet squat, remada.</div>
-    <a class="partner-link" href="https://www.yangfit.com.br/cross-training/kettlebell" target="_blank" rel="noopener">Acessar →</a>
-  </div>
-
-  <div class="partner-card">
-    <div class="partner-card-head"><span class="partner-name">Step PVC funcional</span><span class="partner-discount">YANGFIT</span></div>
-    <div class="partner-desc">Ajustável em 3 níveis — afundo, step-up, exercícios pliométricos.</div>
-    <a class="partner-link" href="https://www.yangfit.com.br/step-pvc-funcional-ajustavel-3-niveis-de-altura" target="_blank" rel="noopener">Acessar →</a>
-  </div>
-
-  <div class="partner-card">
-    <div class="partner-card-head"><span class="partner-name">Bike spinning Pro</span><span class="partner-discount">YANGFIT</span></div>
-    <div class="partner-desc">Roda de inércia 13kg — cardio aeróbio em casa sem barulho.</div>
-    <a class="partner-link" href="https://www.yangfit.com.br/bicicleta-ergometrica-spinning-roda-inercia-13kg-pro-yangfit" target="_blank" rel="noopener">Acessar →</a>
   </div>
 
   <h3 style="color:var(--gold);margin:18px 0 8px;font-size:13px;">🍳 Cozinha / Dieta (Shopee)</h3>
@@ -2070,8 +2052,87 @@ function onCheckExercise(di, ei) {
   renderExercises();
 }
 
-// ══ Logging de conclusão (premiação / ranking) ══
+// ══ Logging central (premiação + tracking de afiliados) ══
 const LOG_ENDPOINT = 'https://script.google.com/macros/s/AKfycby0Kej7V7Gi2gIDKorBookSLofBMHOF50UFWq4Q1fTmstCD8ed8O9XLyCaZo8QIeUPfeQ/exec';
+
+// Tracking de cliques em links de afiliado / parceiros
+function trackPartnerClick(link) {
+  if (!link) return;
+  const card = link.closest('.partner-card');
+  const productName = (card && card.querySelector('.partner-name'))
+    ? card.querySelector('.partner-name').textContent.trim()
+    : link.textContent.trim();
+  const tag = (card && card.querySelector('.partner-discount'))
+    ? card.querySelector('.partner-discount').textContent.trim()
+    : '';
+  const url = link.href || '';
+  // Identifica o parceiro pelo domínio
+  let partner = 'outro';
+  if (/alphaco/i.test(url)) partner = 'alphaco';
+  else if (/yangfit/i.test(url)) partner = 'yangfit';
+  else if (/shopee/i.test(url)) partner = 'shopee';
+  else if (/wa\.me|whatsapp|w\.app/i.test(url)) partner = 'whatsapp';
+  const payload = {
+    type: 'click',
+    sheetId: typeof SHEET_ID !== 'undefined' ? SHEET_ID : '',
+    studentName: (document.getElementById('infoNome') ? document.getElementById('infoNome').textContent : '').trim(),
+    partner: partner,
+    productName: productName,
+    url: url,
+    tag: tag,
+    ts: new Date().toISOString()
+  };
+  try {
+    fetch(LOG_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      keepalive: true,
+      redirect: 'follow'
+    }).catch(() => {});
+  } catch (_) {}
+}
+
+// Captura global de cliques em qualquer .partner-link
+document.addEventListener('click', e => {
+  const link = e.target.closest('.partner-link');
+  if (link) trackPartnerClick(link);
+});
+
+// Injeta UTM/from em links de afiliado (yangfit + alphaco; ignora shopee/whatsapp)
+function slugifyProduct(s) {
+  return String(s || 'produto').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 50);
+}
+function injectAffiliateUTM() {
+  document.querySelectorAll('.partner-link').forEach(link => {
+    const url = link.href || '';
+    if (!url) return;
+    // Shopee shortlinks e WhatsApp não suportam querystring extra de forma confiável
+    if (/s\.shopee\.com\.br|wa\.me|w\.app|whatsapp/i.test(url)) return;
+    const card = link.closest('.partner-card');
+    const productName = card && card.querySelector('.partner-name')
+      ? card.querySelector('.partner-name').textContent : '';
+    const slug = slugifyProduct(productName);
+    let newUrl = url;
+    if (/yangfit\.com\.br/i.test(url)) {
+      // Mantém UTM existente do afiliado YangFit; só adiciona from=app-PRODUTO pra rastreio interno
+      if (newUrl.indexOf('from=app-') === -1) {
+        newUrl += (newUrl.indexOf('?') === -1 ? '?' : '&') + 'from=app-' + slug;
+      }
+    } else if (/usealphaco|alphaco/i.test(url)) {
+      // AlphaCo não tem UTM, adiciona completo
+      if (newUrl.indexOf('utm_source=') === -1) {
+        newUrl += (newUrl.indexOf('?') === -1 ? '?' : '&') +
+          'utm_source=app&utm_medium=protocolo&utm_campaign=' + encodeURIComponent(slug);
+      }
+    }
+    if (newUrl !== url) link.href = newUrl;
+  });
+}
 function notifyDayCompletion(di) {
   // Idempotente por dia/dia-de-treino: marca local pra não duplicar envio
   const dedupKey = `gh_logsent_${SHEET_ID}_${todayKey()}_d${di}`;
@@ -2938,6 +2999,7 @@ function toggleAcessorios() {
   const a = document.getElementById('acessoriosArrow');
   c.classList.toggle('show');
   a.innerHTML = c.classList.contains('show') ? '&#9650;' : '&#9660;';
+  if (c.classList.contains('show')) injectAffiliateUTM();
 }
 
 function toggleParceiros() {
@@ -2945,6 +3007,7 @@ function toggleParceiros() {
   const a = document.getElementById('parceirosArrow');
   c.classList.toggle('show');
   a.innerHTML = c.classList.contains('show') ? '&#9650;' : '&#9660;';
+  if (c.classList.contains('show')) injectAffiliateUTM();
   // Atualiza link Arte e Ciência com nome do aluno
   const nome = (document.getElementById('infoNome')?.textContent || '').trim();
   const firstName = nome.split(/\s+/)[0] || '';
