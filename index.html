@@ -1536,6 +1536,7 @@
       <div class="streak-stat"><div class="num" id="streakTotal">0</div><div class="lbl">Total dias</div></div>
     </div>
     <p style="color:#888;font-size:11px;margin:10px 0 0;line-height:1.4;">Conta 1 quando tu marca todos os exercícios do dia como ✓. Em dias sem treino não conta — mas se passar 2 dias sem fechar, a sequência atual zera.</p>
+    <p style="color:#666;font-size:10px;margin:6px 0 0;line-height:1.4;font-style:italic;">🏆 Sequências e dias treinados são compartilhados com a equipe pra ranking de premiação mensal.</p>
   </div>
 </div>
 
@@ -2023,9 +2024,46 @@ function onCheckExercise(di, ei) {
   setDone(di, ei, newVal);
   if (newVal && allDoneOfDay(di)) {
     updateStreakOnComplete();
+    notifyDayCompletion(di); // log central pra ranking
   }
   // Re-render só esse card e a barra
   renderExercises();
+}
+
+// ══ Logging de conclusão (premiação / ranking) ══
+const LOG_ENDPOINT = 'https://script.google.com/macros/s/AKfycby0Kej7V7Gi2gIDKorBookSLofBMHOF50UFWq4Q1fTmstCD8ed8O9XLyCaZo8QIeUPfeQ/exec';
+function notifyDayCompletion(di) {
+  // Idempotente por dia/dia-de-treino: marca local pra não duplicar envio
+  const dedupKey = `gh_logsent_${SHEET_ID}_${todayKey()}_d${di}`;
+  if (localStorage.getItem(dedupKey) === '1') return;
+  localStorage.setItem(dedupKey, '1');
+
+  const day = WORKOUT[di];
+  const total = day ? day.exercises.filter(ex => !ex.warmup).length : 0;
+  const studentName = (document.getElementById('infoNome')?.textContent || '').trim();
+  const streak = getStreak();
+  const payload = {
+    type: 'completion',
+    sheetId: SHEET_ID,
+    studentName: studentName,
+    date: todayKey(),
+    day: di + 1,
+    totalEx: total,
+    streakCurrent: streak.current || 0,
+    streakLongest: streak.longest || 0,
+    totalDaysDone: streak.totalDaysDone || 0,
+    ts: new Date().toISOString()
+  };
+  // Fire-and-forget — fail silenciosamente (Apps Script pode não estar atualizado ainda)
+  try {
+    fetch(LOG_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      keepalive: true,
+      redirect: 'follow'
+    }).catch(() => {});
+  } catch (_) {}
 }
 function allDoneOfDay(di) {
   if (!WORKOUT[di]) return false;
