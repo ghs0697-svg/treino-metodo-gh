@@ -3270,6 +3270,11 @@ function detApplyTech(t) {
       set('4X', '8 a 12', '60 seg');
       detResetCad();
       document.getElementById('detObs').value = '';
+      // Tira marcador 'bi' do col A se houver
+      if (detTargetIdx != null) {
+        const curDay = String(trainerData[detTargetIdx][0] || '').trim();
+        trainerData[detTargetIdx][0] = curDay.replace(/bi$/i, '');
+      }
       break;
     case 'progressao':
       set('4X', '10', '60 seg');
@@ -3293,8 +3298,26 @@ function detApplyTech(t) {
       detAppend('CLUSTER-SET — 3 blocos de 3 reps com 15-20s entre blocos. Carga 5RM (peso que faria só 5 reps em série tradicional)');
       break;
     case 'biset':
-      detAppend('Bi-set: sem descanso até o próximo exercício');
-      alert('⚠ Pra renderizar como bi-set no app, marca col A da PRIMEIRA linha do par como "Xbi" (ex: "1bi"). O segundo exercício fica com col A normal ("1"). Faz isso direto na sheet ou edita aqui depois.');
+      // Auto-marca col A com "bi" pra renderizar como bi-set no app
+      if (detTargetIdx != null) {
+        const curDay = String(trainerData[detTargetIdx][0] || '').trim();
+        if (!/bi$/i.test(curDay)) {
+          trainerData[detTargetIdx][0] = curDay + 'bi';
+        }
+        // Verifica se tem próximo exercício no mesmo dia pra fazer o par
+        const dayNum = parseInt(curDay);
+        let hasPair = false;
+        for (let j = detTargetIdx + 1; j < trainerData.length; j++) {
+          const nextDay = parseInt(trainerData[j][0]);
+          if (isNaN(nextDay)) continue;
+          if (nextDay === dayNum) { hasPair = true; break; }
+          break; // outro dia, sai
+        }
+        detAppend('Bi-set: sem descanso até o próximo exercício');
+        if (!hasPair) {
+          detAppend('⚠ Adicione o exercício PAR logo abaixo (no mesmo DIA) pra completar o bi-set');
+        }
+      }
       break;
     case 'dropset':
       detAppend('Drop-set: falha total → reduzir 20-30% → falha de novo. Sem descanso entre os drops');
