@@ -2604,7 +2604,7 @@ async function loadFromSheet() {
   const sheetId = document.getElementById('adminSheetId').value.trim();
   if (!sheetId) { alert('Preencha o ID da planilha do aluno primeiro.'); return; }
 
-  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=DIETA`;
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=DIETA&headers=0`;
 
   try {
     const resp = await fetch(url);
@@ -2758,7 +2758,7 @@ async function loadTreinoTemplate(name) {
 async function loadTreinoFromSheet() {
   const sheetId = document.getElementById('adminSheetId').value.trim();
   if (!sheetId) { alert('Preencha o ID da planilha do aluno primeiro.'); return; }
-  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=TREINO`;
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=TREINO&headers=0`;
   try {
     const resp = await fetch(url);
     if (!resp.ok) throw new Error('Planilha nao encontrada');
@@ -3141,9 +3141,11 @@ async function trainerLoadSheet() {
   trainerSheetId = sid;
   try {
     const stamp = Date.now();
+    // headers=0 evita o gviz mesclar linhas similares (info/meta/regra/supl) numa única —
+    // bug que sumia 1ª refeição (DESJEJUM) e suplementos do trainer mode
     const [tResp, dResp] = await Promise.all([
-      fetch(`https://docs.google.com/spreadsheets/d/${sid}/gviz/tq?tqx=out:csv&sheet=TREINO&_=${stamp}`),
-      fetch(`https://docs.google.com/spreadsheets/d/${sid}/gviz/tq?tqx=out:csv&sheet=DIETA&_=${stamp}`)
+      fetch(`https://docs.google.com/spreadsheets/d/${sid}/gviz/tq?tqx=out:csv&sheet=TREINO&headers=0&_=${stamp}`),
+      fetch(`https://docs.google.com/spreadsheets/d/${sid}/gviz/tq?tqx=out:csv&sheet=DIETA&headers=0&_=${stamp}`)
     ]);
     const tText = tResp.ok ? await tResp.text() : '';
     const dText = dResp.ok ? await dResp.text() : '';
