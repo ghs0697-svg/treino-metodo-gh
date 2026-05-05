@@ -2784,7 +2784,7 @@ function trackPartnerClick(link) {
   try {
     fetch(LOG_ENDPOINT, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload),
       keepalive: true,
       redirect: 'follow'
@@ -2858,7 +2858,7 @@ function notifyDayCompletion(di) {
   try {
     fetch(LOG_ENDPOINT, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload),
       keepalive: true,
       redirect: 'follow'
@@ -4525,7 +4525,7 @@ async function publishToSheet(tab) {
   try {
     const resp = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ sheetId, tab, values: data })
     });
     const text = await resp.text();
@@ -5327,7 +5327,7 @@ async function trainerSave() {
     console.log('[trainerSave]', tab, '— rows:', data.length, '— payload bytes:', payload.length);
     const resp = await fetch(TRAINER_APPS_SCRIPT, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: payload,
       redirect: 'follow'
     });
