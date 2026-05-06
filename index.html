@@ -1981,7 +1981,13 @@
 <div class="te-modal-overlay" id="trainerSheetModal">
   <div class="te-modal-box" style="max-width:480px;">
     <h3>📋 Carregar treino do aluno</h3>
-    <p style="color:#888;font-size:12px;margin:0 0 8px;">Pesquisa pelo nome (digita 2+ letras) <span id="trainerStudentCount" style="color:#666;font-size:10px;"></span></p>
+    <p style="color:#888;font-size:12px;margin:0 0 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span>Pesquisa pelo nome (digita 2+ letras)</span>
+      <span id="trainerStudentCount" style="color:#666;font-size:10px;flex:1;"></span>
+      <button type="button" id="trainerRefreshBtn" onclick="loadTrainerStudents(true)"
+              style="background:transparent;border:1px solid var(--gold-dim);color:var(--gold);font-size:11px;padding:3px 9px;border-radius:4px;cursor:pointer;font-weight:700;"
+              title="Forçar atualização — usa quando criou aluno novo">🔄 Atualizar</button>
+    </p>
     <input type="text" id="trainerStudentSearch" placeholder="Ex: Marcelo, Bruna, Eric..." oninput="trainerSearchStudents(this.value)" autocomplete="off">
     <div class="trainer-student-list" id="trainerStudentList"></div>
 
@@ -4906,7 +4912,7 @@ let trainerStudentsList = [];
 let trainerStudentsLoaded = false;
 let trainerStudentsRefreshing = false;
 const TRAINER_CACHE_KEY = 'gh_trainer_students_v1';
-const TRAINER_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h — endpoint é lento (~80s), cache agressivo
+const TRAINER_CACHE_TTL_MS = 5 * 60 * 1000; // 5 min — pra alunos novos aparecerem rápido
 
 function loadTrainerStudentsFromCache_() {
   try {
@@ -4932,7 +4938,11 @@ async function loadTrainerStudents(force) {
   trainerStudentsRefreshing = true;
   renderTrainerStudentCount();
   try {
-    const resp = await fetch(LOG_ENDPOINT + '?action=list_students&token=' + encodeURIComponent(TRAINER_PWD));
+    // Quando força refresh, manda &fresh=1 pro Apps Script (se suportado) e
+    // adiciona &_=<ts> pra invalidar qualquer cache HTTP intermediário
+    let url = LOG_ENDPOINT + '?action=list_students&token=' + encodeURIComponent(TRAINER_PWD);
+    if (force) url += '&fresh=1&_=' + Date.now();
+    const resp = await fetch(url, force ? { cache: 'no-store' } : undefined);
     const j = await resp.json();
     if (j && j.students) {
       trainerStudentsList = j.students.slice().sort((a, b) => a.n.localeCompare(b.n));
