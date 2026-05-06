@@ -1231,7 +1231,10 @@
   .food-sug-meta { font-size: 10px; color: #888; display: block; margin-top: 2px; }
   .food-sug-item:hover .food-sug-meta, .food-sug-item.active .food-sug-meta { color: rgba(0,0,0,0.7); }
   .food-sug-empty { padding: 10px; color: #666; font-size: 11px; font-style: italic; text-align: center; }
-  .te-days-scroll { flex: 1; overflow-y: auto; padding: 10px; }
+  /* Layout grid: dias lado a lado em telas largas (~380px min/coluna).
+     Em telas estreitas (mobile) cai pra 1 coluna automaticamente. */
+  .te-days-scroll { flex: 1; overflow-y: auto; padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 10px; align-items: start; align-content: start; }
+  .te-new-day-btn { grid-column: 1 / -1; } /* ocupa linha inteira */
 
   /* DIA — bloco principal: faixa dourada lateral + header dourado nítido (compacto) */
   .te-day { margin-bottom: 12px; border-radius: 8px; overflow: hidden; background: #1a1a1a; border: 1px solid #2a2a2a; border-left: 4px solid var(--gold); transition: outline 0.1s, border-color 0.15s, box-shadow 0.15s; box-shadow: 0 2px 6px rgba(0,0,0,0.35); }
