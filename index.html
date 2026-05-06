@@ -2099,8 +2099,52 @@ if (params.get('sheet') && params.get('tab')) {
   localStorage.setItem('gh_pwa_params', JSON.stringify({ sheet: params.get('sheet'), tab: params.get('tab') }));
 }
 
-const STUDENT_ID = TAB_NAME ? TAB_NAME.toLowerCase().replace(/\s+/g, '_') : 'demo';
+// STUDENT_ID baseado em SHEET_ID (único e estável por aluno).
+// Antes era baseado em TAB_NAME, o que causava colisão quando aluno acessava
+// via links com tab=TREINO vs tab=ATUAL (cargas iam pra keys distintas).
+const STUDENT_ID = SHEET_ID || (TAB_NAME ? TAB_NAME.toLowerCase().replace(/\s+/g, '_') : 'demo');
 const TOTAL_WEEKS = parseInt(params.get('weeks')) || 8;
+
+// ── Migração one-shot: copia keys antigas (gh_treino_*, gh_atual_*, gh_dieta_*)
+// pra forma nova (gh_<SHEET_ID>_*). Roda toda vez que o app carrega, mas só
+// copia se a key destino ainda não existir — idempotente, não destrói nada.
+(function migrateLegacyCargaKeys() {
+  if (!SHEET_ID) return; // sem sheet, sem migração
+  try {
+    const newPrefix = `gh_${STUDENT_ID}_`;
+    const newPlacasPrefix = `gh_placas_${STUDENT_ID}_`;
+    const legacy = ['treino', 'atual', 'dieta'];
+    const oldPrefixes = legacy
+      .filter(p => p !== STUDENT_ID.toLowerCase())
+      .map(p => ({ carga: `gh_${p}_`, placas: `gh_placas_${p}_` }));
+    if (!oldPrefixes.length) return;
+
+    // Coleta keys primeiro (não pode iterar e mutar localStorage simultaneamente)
+    const allKeys = [];
+    for (let i = 0; i < localStorage.length; i++) allKeys.push(localStorage.key(i));
+
+    let copied = 0;
+    for (const k of allKeys) {
+      if (!k) continue;
+      for (const { carga, placas } of oldPrefixes) {
+        let dest = null;
+        if (k.startsWith(carga) && !k.startsWith('gh_placas_')) {
+          dest = newPrefix + k.slice(carga.length);
+        } else if (k.startsWith(placas)) {
+          dest = newPlacasPrefix + k.slice(placas.length);
+        }
+        if (dest && localStorage.getItem(dest) === null) {
+          const v = localStorage.getItem(k);
+          if (v !== null && v !== '') {
+            localStorage.setItem(dest, v);
+            copied++;
+          }
+        }
+      }
+    }
+    if (copied > 0) console.log(`[GH] ${copied} cargas migradas pra novo formato (${STUDENT_ID})`);
+  } catch (e) { console.warn('[GH] migração falhou:', e); }
+})();
 
 let WORKOUT = [];
 let currentDay = 0;
@@ -3410,6 +3454,7 @@ function renderExercises() {
             ${(prev || prevP) ? `<span class="carga-prev">Ant: ${prev ? prev+'kg' : ''}${prev && prevP ? ' / ' : ''}${prevP ? prevP+' pl' : ''}</span>` : ''}
             <span class="carga-saved" id="sv-${di}-${ei}">&#10003; salvo</span>
             <div class="ex-actions">
+              <button class="ex-action-btn save-btn" onclick="saveCargaManual(${di}, ${ei}, this)" title="Salvar cargas agora">💾</button>
               <button class="ex-action-btn" onclick="startTimer('${safeName}', parseIntervalSeconds('${safeRest}'))" title="Cronômetro de descanso (${ex.rest || 'auto'})">⏱</button>
               <button class="ex-action-btn" onclick="showHistory(${di}, ${ei})" title="Histórico de cargas">📈</button>
             </div>
@@ -3448,6 +3493,36 @@ function onCarga(di, ei, input) {
     const kg = parseFloat(input.value) || 0;
     if (kg > 0) checkPR(di, ei, kg);
   }, 400);
+}
+
+// Salva imediato — chamado pelo botão 💾 (sem esperar o debounce de 400ms).
+// Lê o valor do DOM dos inputs irmãos e força o write no localStorage.
+function saveCargaManual(di, ei, btn) {
+  // Cancela debounce pendente pra não sobrescrever depois
+  clearTimeout(timers[`${di}-${ei}`]);
+  clearTimeout(timers[`p-${di}-${ei}`]);
+
+  const card = btn.closest('.exercise-card');
+  if (!card) return;
+  const inputs = card.querySelectorAll('.carga-input');
+  // ordem dos inputs no template: CARGA(kg), PLACAS(nº)
+  const kgInput = inputs[0];
+  const placasInput = inputs[1];
+
+  if (kgInput) saveCarga(di, ei, currentWeek, kgInput.value);
+  if (placasInput) savePlacas(di, ei, currentWeek, placasInput.value);
+
+  // PR detection no save manual também
+  const kg = parseFloat(kgInput?.value) || 0;
+  if (kg > 0) checkPR(di, ei, kg);
+
+  // Feedback visual: pulsa o ✓ + muda emoji do botão por 1.2s
+  const el = document.getElementById(`sv-${di}-${ei}`);
+  if (el) { el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 1500); }
+  const original = btn.textContent;
+  btn.textContent = '✅';
+  btn.disabled = true;
+  setTimeout(() => { btn.textContent = original; btn.disabled = false; }, 1200);
 }
 function onPlacas(di, ei, input) {
   const k = `p-${di}-${ei}`;
