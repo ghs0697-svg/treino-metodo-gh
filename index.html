@@ -1949,7 +1949,7 @@
     <button class="te-btn" id="trainerSaveBtn" onclick="trainerSave()">💾 Salvar</button>
     <button class="te-btn ghost" onclick="trainerExit()">✕</button>
   </div>
-  <div class="te-days-scroll" id="trainerDaysContainer"></div>
+  <div class="te-days-scroll" id="trainerDaysContainer" ondragover="teEdgeAutoScroll(event)"></div>
 </div>
 
 <!-- Modal de seleção de template no trainer -->
@@ -5380,6 +5380,7 @@ function teDrop(targetIdx, e) {
 
 function teDragEnd() {
   teDragSrc = null;
+  teStopAutoScroll();
   document.querySelectorAll('.te-ex.dragging').forEach(el => el.classList.remove('dragging'));
   document.querySelectorAll('.te-ex.drag-over').forEach(el => el.classList.remove('drag-over'));
 }
@@ -5438,8 +5439,49 @@ function teDayDrop(targetDay, e) {
 
 function teDayDragEnd() {
   teDayDragSrc = null;
+  teStopAutoScroll();
   document.querySelectorAll('.te-day.dragging-day').forEach(el => el.classList.remove('dragging-day'));
   document.querySelectorAll('.te-day.drag-over-day').forEach(el => el.classList.remove('drag-over-day'));
+}
+
+// ── Auto-scroll do container quando o cursor chega perto da borda durante drag ──
+let teAutoScrollRAF = null;
+let teAutoScrollVel = 0;
+
+function teEdgeAutoScroll(e) {
+  // Só ativa durante drag em curso (DIA inteiro OU exercício)
+  if (teDayDragSrc === null && teDragSrc === null) { teStopAutoScroll(); return; }
+  const container = document.getElementById('trainerDaysContainer');
+  if (!container) return;
+  const rect = container.getBoundingClientRect();
+  const EDGE = 90; // px da borda onde começa a rolar
+  const MAX_SPEED = 22;
+  const y = e.clientY;
+  let v = 0;
+  if (y < rect.top + EDGE) {
+    const dist = (rect.top + EDGE) - y;
+    v = -Math.min(MAX_SPEED, Math.max(2, dist / 4));
+  } else if (y > rect.bottom - EDGE) {
+    const dist = y - (rect.bottom - EDGE);
+    v = Math.min(MAX_SPEED, Math.max(2, dist / 4));
+  }
+  teAutoScrollVel = v;
+  if (v !== 0 && teAutoScrollRAF === null) {
+    const tick = () => {
+      if (teAutoScrollVel === 0) { teAutoScrollRAF = null; return; }
+      container.scrollTop += teAutoScrollVel;
+      teAutoScrollRAF = requestAnimationFrame(tick);
+    };
+    teAutoScrollRAF = requestAnimationFrame(tick);
+  }
+}
+
+function teStopAutoScroll() {
+  teAutoScrollVel = 0;
+  if (teAutoScrollRAF !== null) {
+    cancelAnimationFrame(teAutoScrollRAF);
+    teAutoScrollRAF = null;
+  }
 }
 
 function pickReplacement(dbIdx) {
