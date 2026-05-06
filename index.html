@@ -1232,8 +1232,13 @@
   .food-sug-item:hover .food-sug-meta, .food-sug-item.active .food-sug-meta { color: rgba(0,0,0,0.7); }
   .food-sug-empty { padding: 10px; color: #666; font-size: 11px; font-style: italic; text-align: center; }
   .te-days-scroll { flex: 1; overflow-y: auto; padding: 12px; }
-  .te-day { margin-bottom: 18px; border-radius: 10px; overflow: hidden; background: #161616; border: 1px solid #2a2a2a; }
-  .te-day-header { padding: 10px 14px; font-weight: 800; color: var(--gold); font-size: 13px; letter-spacing: 1px; background: #1d1d1d; border-bottom: 1px solid #2a2a2a; }
+  .te-day { margin-bottom: 18px; border-radius: 10px; overflow: hidden; background: #161616; border: 1px solid #2a2a2a; transition: outline 0.1s; }
+  .te-day.dragging-day { opacity: 0.4; }
+  .te-day.drag-over-day { outline: 3px dashed var(--gold); outline-offset: -3px; background: #1c1c12; }
+  .te-day-header { padding: 10px 14px; font-weight: 800; color: var(--gold); font-size: 13px; letter-spacing: 1px; background: #1d1d1d; border-bottom: 1px solid #2a2a2a; display: flex; align-items: center; gap: 8px; }
+  .te-day-drag-handle { color: #666; font-size: 16px; line-height: 1; cursor: grab; user-select: none; letter-spacing: -2px; padding: 0 4px; }
+  .te-day-drag-handle:hover { color: var(--gold); }
+  .te-day-drag-handle:active { cursor: grabbing; }
   .te-day-body { padding: 8px; }
   .te-ex { background: #1f1f1f; border-radius: 6px; padding: 8px; margin-bottom: 6px; border-left: 4px solid #888; transition: background 0.15s; }
   .te-ex.drag-over { background: #2a2a18; outline: 2px dashed var(--gold); outline-offset: -2px; }
@@ -1462,6 +1467,13 @@
   </div>
   <div class="video-frame-container">
     <iframe id="videoFrame" src="" allow="accelerometer; autoplay; encrypted-media; gyroscope" allowfullscreen></iframe>
+  </div>
+  <div style="text-align:center;padding:10px 12px 16px;">
+    <a id="videoOpenYT" href="#" target="_blank" rel="noopener"
+       style="display:inline-block;background:var(--gold,#d4af37);color:#000;font-weight:700;
+              font-size:13px;padding:10px 18px;border-radius:6px;text-decoration:none;">
+      ▶ Abrir vídeo no YouTube
+    </a>
   </div>
 </div>
 
@@ -1881,7 +1893,7 @@
 </div>
 
 <!-- Modal de instruções de instalação -->
-<div class="te-modal-overlay" id="installModal" onclick="closeInstallOnBg(event)">
+<div class="te-modal-overlay" id="installModalV2" onclick="closeInstallOnBg(event)">
   <div class="te-modal-box" style="max-width:420px;">
     <h3>📱 Instalar o app na tela inicial</h3>
     <p style="color:#aaa;font-size:12px;margin:0 0 14px;">Acesso rápido sem precisar abrir o navegador toda vez.</p>
@@ -1894,7 +1906,7 @@
       <p style="color:#ccc;font-size:12px;line-height:1.5;margin:0;">1. Toca nos <strong>3 pontinhos</strong> no canto superior direito<br>2. Toca em <strong>"Adicionar à tela inicial"</strong> ou <strong>"Instalar app"</strong><br>3. Confirma</p>
     </div>
     <p style="color:var(--gold);font-size:13px;font-weight:700;text-align:center;margin:12px 0 4px;">Toca no ícone dourado. Bom treino.</p>
-    <button class="te-btn ghost" onclick="teHide('installModal')" style="width:100%;margin-top:8px;">Fechar</button>
+    <button class="te-btn ghost" onclick="teHide('installModalV2')" style="width:100%;margin-top:8px;">Fechar</button>
   </div>
 </div>
 
@@ -3063,7 +3075,9 @@ function youtubeEmbed(url) {
   if (m) id = m[1];
   if (!id) { m = url.match(/shorts\/([^?&]+)/); if (m) id = m[1]; }
   if (!id) { m = url.match(/youtu\.be\/([^?&]+)/); if (m) id = m[1]; }
-  return id ? `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1` : url;
+  // youtube-nocookie.com é o domínio privacy-enhanced do próprio YouTube;
+  // contorna bloqueios de embed cross-domain que afetam Shorts unlisted.
+  return id ? `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&playsinline=1` : url;
 }
 
 // ══ CSV Parser (handles quoted fields with commas) ══
@@ -3449,6 +3463,15 @@ function onPlacas(di, ei, input) {
 function openVideo(name, url) {
   document.getElementById("videoTitle").textContent = name;
   document.getElementById("videoFrame").src = youtubeEmbed(url);
+  // Fallback: força URL canônica /watch?v=ID — abre página normal do YouTube
+  // (mais confiável que /shorts/ID, que ocasionalmente redireciona pra página vazia)
+  const ytLink = document.getElementById("videoOpenYT");
+  if (ytLink) {
+    let watchUrl = url || '#';
+    let m = (url || '').match(/(?:shorts\/|watch\?v=|youtu\.be\/|embed\/)([\w-]{6,})/);
+    if (m) watchUrl = `https://www.youtube.com/watch?v=${m[1]}`;
+    ytLink.href = watchUrl;
+  }
   document.getElementById("videoOverlay").classList.add("show");
   document.body.style.overflow = "hidden";
 }
@@ -3683,9 +3706,9 @@ function toggleFloatMenu() {
 function showInstallInstructions() {
   document.getElementById('floatOptions').classList.remove('show');
   document.getElementById('floatBtn').classList.remove('open');
-  teShow('installModal');
+  teShow('installModalV2');
 }
-function closeInstallOnBg(e) { if (e.target.id === 'installModal') teHide('installModal'); }
+function closeInstallOnBg(e) { if (e.target.id === 'installModalV2') teHide('installModalV2'); }
 document.addEventListener('click', e => {
   // Fecha o menu flutuante ao clicar fora
   const fm = document.getElementById('floatMenu');
@@ -4419,7 +4442,7 @@ function renderTreinoEditor() {
 
     // Exercise name with autocomplete
     html += `<div class="ed-ac-wrap">`;
-    html += `<input class="ed-input col-b" value="${escH(r[1])}" placeholder="Exercicio" oninput="editorTreinoData[${i}][1]=this.value;showAC(this,${i})" onfocus="showAC(this,${i})" onblur="setTimeout(()=>hideAC(this),200)">`;
+    html += `<input class="ed-input col-b" value="${escH(r[1])}" placeholder="Exercicio" oninput="editorTreinoData[${i}][1]=this.value;showAC(this,${i})" onfocus="showAC(this,${i})" onblur="setTimeout(()=>{hideAC(this);autoLinkVideoOnBlur(${i});},200)">`;
     html += `<div class="ed-ac-drop"></div>`;
     html += `</div>`;
 
@@ -4470,6 +4493,44 @@ function hideAC(input) {
 function selectAC(rowIdx, name, video) {
   editorTreinoData[rowIdx][1] = name;
   editorTreinoData[rowIdx][6] = video;
+  renderTreinoEditor();
+}
+
+// Normaliza nome pra lookup tolerante (sem acento, sem case, espaços colapsados)
+function normExName_(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+}
+
+// Quando o usuário sai do campo de nome (blur), tenta achar o exercício no banco
+// e auto-preencher o link do vídeo. Match: exato → único candidato por prefixo.
+// NÃO sobrescreve link existente que já bata com o nome.
+function autoLinkVideoOnBlur(rowIdx) {
+  if (typeof EXERCISE_DB === 'undefined' || !EXERCISE_DB.length) return;
+  const r = editorTreinoData[rowIdx];
+  if (!r) return;
+  const name = (r[1] || '').trim();
+  if (!name) return;
+  const target = normExName_(name);
+  if (target.length < 3) return;
+
+  // 1) match exato
+  let hit = EXERCISE_DB.find(e => normExName_(e.n) === target);
+
+  // 2) único candidato por prefixo (DB começa com input OU input começa com DB)
+  if (!hit) {
+    const cands = EXERCISE_DB.filter(e => {
+      const n = normExName_(e.n);
+      return n.startsWith(target) || target.startsWith(n);
+    });
+    if (cands.length === 1) hit = cands[0];
+  }
+
+  if (!hit || !hit.v) return;
+  if ((r[6] || '').trim() === hit.v) return; // já tá certo
+
+  editorTreinoData[rowIdx][6] = hit.v;
+  // Se bate EXATO, normaliza nome pra forma canônica do banco
+  if (target === normExName_(hit.n)) editorTreinoData[rowIdx][1] = hit.n;
   renderTreinoEditor();
 }
 
@@ -4714,32 +4775,61 @@ function authTrainer() {
 // ── Lista de alunos do mestre (pra busca rápida) ──
 let trainerStudentsList = [];
 let trainerStudentsLoaded = false;
+let trainerStudentsRefreshing = false;
+const TRAINER_CACHE_KEY = 'gh_trainer_students_v1';
+const TRAINER_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h — endpoint é lento (~80s), cache agressivo
 
-async function loadTrainerStudents() {
-  if (trainerStudentsLoaded) return;
+function loadTrainerStudentsFromCache_() {
+  try {
+    const raw = localStorage.getItem(TRAINER_CACHE_KEY);
+    if (!raw) return false;
+    const obj = JSON.parse(raw);
+    if (!obj || !Array.isArray(obj.students) || !obj.ts) return false;
+    trainerStudentsList = obj.students;
+    trainerStudentsLoaded = true;
+    return (Date.now() - obj.ts) < TRAINER_CACHE_TTL_MS; // true = fresh, false = stale (mas usável)
+  } catch (e) { return false; }
+}
+
+async function loadTrainerStudents(force) {
+  // 1) Se tem cache e não tá forçando, renderiza instantâneo
+  if (!force) {
+    const fresh = loadTrainerStudentsFromCache_();
+    renderTrainerStudentCount();
+    if (fresh) return; // cache fresh, não refetch
+  }
+  // 2) Fetch de fundo (atualiza cache pra próxima vez)
+  if (trainerStudentsRefreshing) return;
+  trainerStudentsRefreshing = true;
   renderTrainerStudentCount();
   try {
     const resp = await fetch(LOG_ENDPOINT + '?action=list_students&token=' + encodeURIComponent(TRAINER_PWD));
     const j = await resp.json();
     if (j && j.students) {
-      trainerStudentsList = j.students;
-      trainerStudentsList.sort((a, b) => a.n.localeCompare(b.n));
+      trainerStudentsList = j.students.slice().sort((a, b) => a.n.localeCompare(b.n));
       trainerStudentsLoaded = true;
+      try { localStorage.setItem(TRAINER_CACHE_KEY, JSON.stringify({ts: Date.now(), students: trainerStudentsList})); } catch (e) {}
     } else if (j && j.error) {
       console.warn('list_students error:', j.error);
     }
   } catch (e) {
     console.warn('loadTrainerStudents:', e);
+  } finally {
+    trainerStudentsRefreshing = false;
+    renderTrainerStudentCount();
   }
-  renderTrainerStudentCount();
 }
 
 function renderTrainerStudentCount() {
   const el = document.getElementById('trainerStudentCount');
   if (!el) return;
-  el.textContent = trainerStudentsLoaded
-    ? `· ${trainerStudentsList.length} alunos disponíveis`
-    : '· carregando lista...';
+  if (trainerStudentsLoaded) {
+    el.textContent = trainerStudentsRefreshing
+      ? `· ${trainerStudentsList.length} alunos · atualizando…`
+      : `· ${trainerStudentsList.length} alunos disponíveis`;
+  } else {
+    el.textContent = '· carregando lista (1ª vez pode levar ~1min)…';
+  }
 }
 
 function trainerSearchStudents(query) {
@@ -4992,8 +5082,12 @@ function renderTrainerEditor() {
   Object.keys(days).sort((a, b) => +a - +b).forEach(d => {
     const exs = days[d];
 
-    html += `<div class="te-day">
-      <div class="te-day-header">DIA ${d}</div>
+    html += `<div class="te-day" data-day="${d}"
+        ondragover="teDayDragOver(event)" ondragleave="teDayDragLeave(event)" ondrop="teDayDrop(${d}, event)">
+      <div class="te-day-header">
+        <span class="te-day-drag-handle" draggable="true" ondragstart="teDayDragStart(${d}, event)" ondragend="teDayDragEnd()" title="Arraste pra trocar este dia com outro">⋮⋮</span>
+        <span>DIA ${d}</span>
+      </div>
       <div class="te-day-body">`;
     exs.forEach(e => {
       const g = classifyMuscle(e.name);
@@ -5288,6 +5382,64 @@ function teDragEnd() {
   teDragSrc = null;
   document.querySelectorAll('.te-ex.dragging').forEach(el => el.classList.remove('dragging'));
   document.querySelectorAll('.te-ex.drag-over').forEach(el => el.classList.remove('drag-over'));
+}
+
+// ── Drag & drop em nível de DIA (trocar DIA inteiro com outro) ──
+let teDayDragSrc = null;
+
+function teDayDragStart(day, e) {
+  teDayDragSrc = String(day);
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', `day:${day}`);
+  const dayDiv = e.target.closest('.te-day');
+  if (dayDiv) dayDiv.classList.add('dragging-day');
+  e.stopPropagation();
+}
+
+function teDayDragOver(e) {
+  // Só ativa se um DIA está sendo arrastado (não exercício individual)
+  if (teDayDragSrc === null) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const dayDiv = e.currentTarget;
+  document.querySelectorAll('.te-day.drag-over-day').forEach(el => { if (el !== dayDiv) el.classList.remove('drag-over-day'); });
+  dayDiv.classList.add('drag-over-day');
+}
+
+function teDayDragLeave(e) {
+  if (e.currentTarget.contains(e.relatedTarget)) return;
+  e.currentTarget.classList.remove('drag-over-day');
+}
+
+function teDayDrop(targetDay, e) {
+  if (teDayDragSrc === null) return;
+  e.preventDefault();
+  e.stopPropagation();
+  e.currentTarget.classList.remove('drag-over-day');
+
+  const src = String(teDayDragSrc);
+  const tgt = String(targetDay);
+  teDayDragSrc = null;
+  if (src === tgt) return;
+
+  // Troca todos os exercícios entre src↔tgt. Preserva sufixo "bi" (bi-set).
+  trainerData.forEach((r, i) => {
+    if (i === 0) return; // header
+    const cur = String(r[0] || '').trim();
+    const m = cur.match(/^(\d+)(bi)?$/i);
+    if (!m) return;
+    const num = m[1];
+    const suffix = m[2] || '';
+    if (num === src) r[0] = tgt + suffix;
+    else if (num === tgt) r[0] = src + suffix;
+  });
+  renderTrainerEditor();
+}
+
+function teDayDragEnd() {
+  teDayDragSrc = null;
+  document.querySelectorAll('.te-day.dragging-day').forEach(el => el.classList.remove('dragging-day'));
+  document.querySelectorAll('.te-day.drag-over-day').forEach(el => el.classList.remove('drag-over-day'));
 }
 
 function pickReplacement(dbIdx) {
