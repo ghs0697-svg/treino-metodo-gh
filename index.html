@@ -1282,8 +1282,9 @@
   .te-drag-handle:hover { color: #000; background: var(--gold); border-color: var(--gold); transform: scale(1.08); box-shadow: 0 0 8px rgba(212,175,55,0.5); }
   .te-drag-handle:active { cursor: grabbing; transform: scale(0.95); }
 
-  .te-ex-name { background: #2c2c2c; color: var(--gold); border: 1.5px solid var(--gold-dim); padding: 5px 9px; border-radius: 4px; font-size: 12px; cursor: pointer; text-align: left; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; transition: all 0.12s; }
-  .te-ex-name:hover { background: var(--gold-dim); border-color: var(--gold); box-shadow: 0 0 0 2px rgba(212,175,55,0.22); }
+  /* bg/color/border vêm inline (cor do grupo muscular) */
+  .te-ex-name { padding: 5px 9px; border-radius: 4px; font-size: 12px; cursor: pointer; text-align: left; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; transition: filter 0.12s, box-shadow 0.12s, transform 0.12s; border-style: solid; border-width: 1.5px; }
+  .te-ex-name:hover { filter: brightness(1.1); box-shadow: 0 0 0 2px rgba(255,255,255,0.15); transform: translateY(-1px); }
 
   .te-input { background: #1f1f1f; color: #fff; border: 1.5px solid #444; padding: 5px; border-radius: 4px; font-size: 11px; width: 100%; box-sizing: border-box; font-weight: 600; transition: border-color 0.1s, box-shadow 0.1s; }
   .te-input:focus { border-color: var(--gold); outline: none; box-shadow: 0 0 0 2px rgba(212,175,55,0.25); }
@@ -4858,6 +4859,17 @@ const MUSCLE_PATTERNS = [
   { g: 'peito',       re: /supino|crucifixo|crossover|voador/i },
 ];
 
+// Decide cor do texto (preto ou branco) com base na luminância (YIQ) da cor de fundo
+function teTextColor_(hex) {
+  const c = String(hex || '#888').replace('#', '');
+  if (c.length < 6) return '#fff';
+  const r = parseInt(c.substr(0, 2), 16);
+  const g = parseInt(c.substr(2, 2), 16);
+  const b = parseInt(c.substr(4, 2), 16);
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 130 ? '#1a1a1a' : '#ffffff';
+}
+
 const MUSCLE_COLORS = {
   peito: '#ff8c42', costas: '#4a90e2', quadriceps: '#4caf50',
   posterior: '#e74c3c', gluteo: '#e91e63', ombro: '#f1c40f',
@@ -5237,12 +5249,13 @@ function renderTrainerEditor() {
     exs.forEach(e => {
       const g = classifyMuscle(e.name);
       const color = MUSCLE_COLORS[g];
+      const tc = teTextColor_(color);
       const icon = e.warmup ? '🔵' : '🔄';
       html += `<div class="te-ex" data-idx="${e.idx}" style="border-left-color:${color}"
           ondragover="teDragOver(event)" ondragleave="teDragLeave(event)" ondrop="teDrop(${e.idx}, event)">
         <div class="te-ex-row">
           <span class="te-drag-handle" draggable="true" ondragstart="teDragStart(${e.idx}, event)" ondragend="teDragEnd()" title="Arraste pra reordenar">⋮⋮</span>
-          <button class="te-ex-name" style="color:${color};border-color:${color};" onclick="openSwapModal(${e.idx})" title="${MUSCLE_LABELS[g] || g} — clica pra trocar">${icon} ${escTrainer(e.name)}</button>
+          <button class="te-ex-name" style="background:${color};color:${tc};border-color:${color};" onclick="openSwapModal(${e.idx})" title="${MUSCLE_LABELS[g] || g} — clica pra trocar">${icon} ${escTrainer(e.name)}</button>
           <input class="te-input" value="${escTrainer(e.series)}" oninput="trainerData[${e.idx}][2]=this.value" placeholder="S">
           <input class="te-input" value="${escTrainer(e.reps)}" oninput="trainerData[${e.idx}][3]=this.value" placeholder="Reps">
           <input class="te-input" value="${escTrainer(e.rest)}" oninput="trainerData[${e.idx}][4]=this.value" placeholder="Int.">
