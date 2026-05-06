@@ -1231,13 +1231,19 @@
   .food-sug-meta { font-size: 10px; color: #888; display: block; margin-top: 2px; }
   .food-sug-item:hover .food-sug-meta, .food-sug-item.active .food-sug-meta { color: rgba(0,0,0,0.7); }
   .food-sug-empty { padding: 10px; color: #666; font-size: 11px; font-style: italic; text-align: center; }
-  /* Layout grid: dias lado a lado em telas largas (~380px min/coluna).
-     Em telas estreitas (mobile) cai pra 1 coluna automaticamente. */
-  .te-days-scroll { flex: 1; overflow-y: auto; padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 10px; align-items: start; align-content: start; }
-  .te-new-day-btn { grid-column: 1 / -1; } /* ocupa linha inteira */
+  /* Layout: scroll container externo, grid interno com 1 coluna (mobile)
+     ou 2 colunas (≥800px). Botão "+ Novo DIA" fica FORA do grid pra
+     sempre aparecer depois de todos os DIAs, sem cortar. */
+  .te-days-scroll { flex: 1; overflow-y: auto; padding: 10px; }
+  .te-days-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; align-items: start; align-content: start; }
+  @media (min-width: 800px) {
+    .te-days-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
 
-  /* DIA — bloco principal: faixa dourada lateral + header dourado nítido (compacto) */
-  .te-day { margin-bottom: 12px; border-radius: 8px; overflow: hidden; background: #1a1a1a; border: 1px solid #2a2a2a; border-left: 4px solid var(--gold); transition: outline 0.1s, border-color 0.15s, box-shadow 0.15s; box-shadow: 0 2px 6px rgba(0,0,0,0.35); }
+  /* DIA — bloco principal: faixa dourada lateral + header dourado nítido (compacto)
+     max-height fixo + scroll interno no body pra que dois DIAs caibam lado a lado
+     na mesma altura sem fazer a página inteira rolar. */
+  .te-day { margin-bottom: 0; border-radius: 8px; overflow: hidden; background: #1a1a1a; border: 1px solid #2a2a2a; border-left: 4px solid var(--gold); transition: outline 0.1s, border-color 0.15s, box-shadow 0.15s; box-shadow: 0 2px 6px rgba(0,0,0,0.35); display: flex; flex-direction: column; max-height: calc(100vh - 130px); }
   .te-day:hover { box-shadow: 0 2px 8px rgba(212,175,55,0.18); }
   .te-day.dragging-day { opacity: 0.4; }
   .te-day.drag-over-day { outline: 3px dashed var(--gold); outline-offset: -3px; background: #1c1c12; }
@@ -1250,7 +1256,17 @@
   .te-day-drag-handle:hover { background: #1a1a1a; color: var(--gold); border-color: #1a1a1a; transform: scale(1.08); }
   .te-day-drag-handle:active { cursor: grabbing; transform: scale(0.95); }
 
-  .te-day-body { padding: 7px; background: #161616; }
+  /* Excluir DIA inteiro — botão no canto direito do header */
+  .te-day-title { flex: 1; }
+  .te-day-trash { background: rgba(0,0,0,0.2); border: 1.5px solid rgba(0,0,0,0.35); color: #1a1a1a; border-radius: 4px; cursor: pointer; padding: 3px 8px; font-size: 13px; font-weight: 900; transition: all 0.12s; line-height: 1; }
+  .te-day-trash:hover { background: #c0392b; color: #fff; border-color: #c0392b; }
+
+  .te-day-body { padding: 7px; background: #161616; flex: 1; overflow-y: auto; min-height: 0; }
+  /* Scrollbar mais sutil dentro do DIA */
+  .te-day-body::-webkit-scrollbar { width: 6px; }
+  .te-day-body::-webkit-scrollbar-track { background: transparent; }
+  .te-day-body::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 3px; }
+  .te-day-body::-webkit-scrollbar-thumb:hover { background: var(--gold-dim); }
 
   /* Card de exercício — compacto */
   .te-ex { background: #232323; border-radius: 6px; padding: 6px 7px; margin-bottom: 5px; border: 1px solid #353535; border-left: 4px solid #888; transition: background 0.15s, border-color 0.15s, box-shadow 0.15s; }
@@ -1980,6 +1996,7 @@
   <div class="te-top-bar">
     <div class="te-top-info" id="trainerStudentInfo"></div>
     <div class="te-mode-tabs" id="teModeTabs"></div>
+    <button class="te-btn ghost" id="teUndoBtn" onclick="undoTrainerAction()" disabled title="Desfazer última ação (Ctrl+Z)">↶ Desfazer</button>
     <button class="te-tpl-btn" id="trainerTplBtn" onclick="openTrainerTemplateModal()" style="display:none;" title="Carregar template oficial (substitui exercícios mantendo info do aluno)">📋 Template</button>
     <button class="te-btn" id="trainerSaveBtn" onclick="trainerSave()">💾 Salvar</button>
     <button class="te-btn ghost" onclick="trainerExit()">✕</button>
@@ -5003,6 +5020,9 @@ async function trainerLoadSheet() {
     const dParsed = dText ? parseCSV(dText).map(r => { while (r.length < 4) r.push(''); return r.slice(0, 4); }) : [];
     trainerData = (tParsed.length >= 2) ? tParsed : null;
     dietaData   = (dParsed.length >= 2) ? dParsed : null;
+    // Reseta undo stack ao carregar treino novo (evita misturar histórico de sheets)
+    teUndoStack = [];
+    teUpdateUndoBtn();
     if (!trainerData && !dietaData) throw new Error('aba TREINO ou DIETA não encontrada (verifique compartilhamento)');
     DIETA_OPEN_BLOCKS.clear(); // reset de blocos abertos pra novo aluno
     teHide('trainerSheetModal');
@@ -5188,7 +5208,7 @@ function renderTrainerEditor() {
     days[day].push({ idx, name: r[1] || '', series: r[2] || '', reps: r[3] || '', rest: r[4] || '', obs: r[5] || '', video: r[6] || '', warmup: (r[7] || '').toLowerCase().trim() === 'sim' });
   });
 
-  let html = '';
+  let html = '<div class="te-days-grid">';
   Object.keys(days).sort((a, b) => +a - +b).forEach(d => {
     const exs = days[d];
 
@@ -5196,7 +5216,8 @@ function renderTrainerEditor() {
         ondragover="teDayDragOver(event)" ondragleave="teDayDragLeave(event)" ondrop="teDayDrop(${d}, event)">
       <div class="te-day-header">
         <span class="te-day-drag-handle" draggable="true" ondragstart="teDayDragStart(${d}, event)" ondragend="teDayDragEnd()" title="Arraste pra trocar este dia com outro">⋮⋮</span>
-        <span>DIA ${d}</span>
+        <span class="te-day-title">DIA ${d}</span>
+        <button class="te-day-trash" onclick="removeDay(${d})" title="Excluir este DIA inteiro">🗑 DIA</button>
       </div>
       <div class="te-day-body">`;
     exs.forEach(e => {
@@ -5220,11 +5241,15 @@ function renderTrainerEditor() {
     html += `<button class="te-day-add" onclick="addExerciseToDay(${d})">+ Exercício no DIA ${d}</button>`;
     html += `</div></div>`;
   });
+  html += '</div>'; // fecha .te-days-grid
 
-  // Botão pra adicionar um DIA novo no fim
-  html += `<button class="te-new-day-btn" onclick="addNewDay()">+ Adicionar novo DIA de treino</button>`;
+  // Botão pra adicionar um DIA novo — FORA do grid, sempre depois de tudo
+  const hasDays = Object.keys(days).length > 0;
+  if (hasDays) {
+    html += `<button class="te-new-day-btn" onclick="addNewDay()">+ Adicionar novo DIA de treino</button>`;
+  }
 
-  document.getElementById('trainerDaysContainer').innerHTML = html || `
+  document.getElementById('trainerDaysContainer').innerHTML = hasDays ? html : `
     <p style="color:#888;text-align:center;padding:30px;">Sem exercícios na aba TREINO.</p>
     <button class="te-new-day-btn" onclick="addNewDay()" style="margin: 0 auto; max-width:340px;">+ Criar primeiro DIA de treino</button>`;
 }
@@ -5283,6 +5308,7 @@ function renderSwapList() {
 function swapSearch() { renderSwapList(); }
 
 function addExerciseToDay(dayNum) {
+  teSnapshot();
   // Encontra última linha do dia e insere a nova logo depois
   let lastIdx = -1;
   for (let i = 0; i < trainerData.length; i++) {
@@ -5296,9 +5322,69 @@ function addExerciseToDay(dayNum) {
   openSwapModal(lastIdx + 1);
 }
 
+// ── UNDO STACK ─────────────────────────────────────────────────
+// Snapshot de trainerData antes de cada ação "discreta" (drag, swap,
+// add, remove). Mantém últimos 30 estados. Atalho Ctrl/Cmd+Z.
+let teUndoStack = [];
+const TE_UNDO_MAX = 30;
+
+function teSnapshot() {
+  if (typeof trainerData === 'undefined' || !Array.isArray(trainerData)) return;
+  teUndoStack.push(JSON.parse(JSON.stringify(trainerData)));
+  if (teUndoStack.length > TE_UNDO_MAX) teUndoStack.shift();
+  teUpdateUndoBtn();
+}
+function undoTrainerAction() {
+  if (!teUndoStack.length) return;
+  trainerData = teUndoStack.pop();
+  renderTrainerEditor();
+  teUpdateUndoBtn();
+}
+function teUpdateUndoBtn() {
+  const btn = document.getElementById('teUndoBtn');
+  if (btn) btn.disabled = teUndoStack.length === 0;
+}
+// Atalho Ctrl/Cmd + Z (somente quando o editor estiver visível)
+document.addEventListener('keydown', (e) => {
+  const ed = document.getElementById('trainerEditor');
+  if (!ed || ed.style.display === 'none' || ed.offsetParent === null) return;
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
+    // Não atrapalha undo nativo de inputs/textareas
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+    e.preventDefault();
+    undoTrainerAction();
+  }
+});
+
+// Remove o DIA inteiro (todas as linhas com aquele número) e renumera
+// os DIAs subsequentes pra fechar a lacuna (ex: apaga DIA 2 → DIA 3 vira 2).
+function removeDay(dayNum) {
+  const count = trainerData.filter((r, i) => i > 0 && parseInt(String(r[0]).match(/^\d+/)?.[0]) === dayNum).length;
+  if (!confirm(`Remover DIA ${dayNum} inteiro?\n${count} exercício(s) serão apagados (incluindo aquecimentos).`)) return;
+  teSnapshot();
+  // Remove rows do dia
+  trainerData = trainerData.filter((r, i) => {
+    if (i === 0) return true;
+    const n = parseInt(String(r[0]).match(/^\d+/)?.[0]);
+    return n !== dayNum;
+  });
+  // Renumera DIAs > dayNum (preserva sufixo "bi")
+  trainerData.forEach((r, i) => {
+    if (i === 0) return;
+    const cur = String(r[0] || '').trim();
+    const m = cur.match(/^(\d+)(bi)?$/i);
+    if (!m) return;
+    const n = parseInt(m[1], 10);
+    if (n > dayNum) r[0] = String(n - 1) + (m[2] || '');
+  });
+  renderTrainerEditor();
+}
+
 // Cria um DIA novo no fim do treino (próximo número disponível) e abre
 // o swap modal pra escolher o primeiro exercício.
 function addNewDay() {
+  teSnapshot();
   // Acha o maior nº de DIA existente (ignora "1bi"/"2bi" pegando só o nº)
   let maxDay = 0;
   for (let i = 0; i < trainerData.length; i++) {
@@ -5322,6 +5408,7 @@ function addNewDay() {
 function removeExercise(rowIdx) {
   const name = trainerData[rowIdx][1] || '(linha vazia)';
   if (!confirm('Remover "' + name + '"?')) return;
+  teSnapshot();
   trainerData.splice(rowIdx, 1);
   renderTrainerEditor();
 }
@@ -5499,6 +5586,7 @@ function teDrop(targetIdx, e) {
   e.stopPropagation();
   e.currentTarget.classList.remove('drag-over');
   if (teDragSrc === null || teDragSrc === targetIdx) { teDragSrc = null; return; }
+  teSnapshot();
 
   const src = teDragSrc;
   const tgt = targetIdx;
@@ -5560,6 +5648,7 @@ function teDayDrop(targetDay, e) {
   const tgt = String(targetDay);
   teDayDragSrc = null;
   if (src === tgt) return;
+  teSnapshot();
 
   // Troca todos os exercícios entre src↔tgt. Preserva sufixo "bi" (bi-set).
   trainerData.forEach((r, i) => {
@@ -5625,6 +5714,7 @@ function teStopAutoScroll() {
 function pickReplacement(dbIdx) {
   const e = EXERCISE_DB[dbIdx];
   if (swapTargetIdx == null) return;
+  teSnapshot();
   trainerData[swapTargetIdx][1] = e.n;
   if (e.v) trainerData[swapTargetIdx][6] = e.v;
   closeSwapModal();
