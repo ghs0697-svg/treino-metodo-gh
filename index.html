@@ -4872,7 +4872,7 @@ function classifyMuscle(name) {
 
 let trainerData = null;
 let trainerSheetId = null;
-let trainerAuth = false;
+let trainerAuth = true; // senha removida — acesso direto ao modo treinador
 let swapTargetIdx = null;
 
 // Botão visível só com ?edit=1
@@ -4884,10 +4884,10 @@ function teShow(id) { document.getElementById(id).classList.add('show'); }
 function teHide(id) { document.getElementById(id).classList.remove('show'); }
 
 function openTrainerLogin() {
-  if (trainerAuth) { openTrainerSheetModal(); return; }
-  document.getElementById('trainerPwdInput').value = '';
-  teShow('trainerLoginModal');
-  setTimeout(() => document.getElementById('trainerPwdInput').focus(), 100);
+  // Senha removida — abre direto o modal de seleção de aluno.
+  // (TRAINER_PWD ainda usada como token interno na chamada da lista.)
+  loadTrainerStudents();
+  openTrainerSheetModal();
 }
 
 function authTrainer() {
