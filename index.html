@@ -1205,6 +1205,8 @@
   .di-block-title { color: var(--gold); font-weight: 700; font-size: 13px; flex: 1; min-width: 0; }
   .di-block-meta { color: #888; font-size: 11px; }
   .di-block-arrow { color: #666; font-size: 11px; flex-shrink: 0; }
+  .di-head-trash { background: transparent; border: 1.5px solid #6a2828; color: #ff5050; border-radius: 4px; cursor: pointer; padding: 3px 7px; font-size: 12px; transition: all 0.12s; flex-shrink: 0; }
+  .di-head-trash:hover { background: #c0392b; color: #fff; border-color: #c0392b; }
   .di-block-body { padding: 8px 10px; border-top: 1px solid #2a2a2a; display: none; }
   .di-block.open .di-block-body { display: block; }
   .di-block.open .di-block-arrow { transform: rotate(90deg); }
@@ -5059,6 +5061,8 @@ function switchEditMode(mode) {
   // Mostra botão Template só em modo TREINO
   const tb = document.getElementById('trainerTplBtn');
   if (tb) tb.style.display = mode === 'treino' ? 'inline-block' : 'none';
+  // Atualiza estado do botão "Desfazer" pro modo atual
+  if (typeof teUpdateUndoBtn === 'function') teUpdateUndoBtn();
 }
 
 // ── Template loader no Modo Treinador ──
@@ -5323,26 +5327,47 @@ function addExerciseToDay(dayNum) {
 }
 
 // ── UNDO STACK ─────────────────────────────────────────────────
-// Snapshot de trainerData antes de cada ação "discreta" (drag, swap,
-// add, remove). Mantém últimos 30 estados. Atalho Ctrl/Cmd+Z.
+// Stack único pro modo ativo (treino/dieta). Cada entrada guarda mode +
+// snapshot do data daquele modo. Snapshot tirado antes de cada ação
+// "discreta" (drag, swap, add, remove). Mantém últimos 30 estados.
+// Atalho Ctrl/Cmd+Z respeita o modo ativo.
 let teUndoStack = [];
 const TE_UNDO_MAX = 30;
 
 function teSnapshot() {
-  if (typeof trainerData === 'undefined' || !Array.isArray(trainerData)) return;
-  teUndoStack.push(JSON.parse(JSON.stringify(trainerData)));
+  if (currentEditMode === 'dieta') {
+    if (!Array.isArray(dietaData)) return;
+    teUndoStack.push({ mode: 'dieta', data: JSON.parse(JSON.stringify(dietaData)) });
+  } else {
+    if (typeof trainerData === 'undefined' || !Array.isArray(trainerData)) return;
+    teUndoStack.push({ mode: 'treino', data: JSON.parse(JSON.stringify(trainerData)) });
+  }
   if (teUndoStack.length > TE_UNDO_MAX) teUndoStack.shift();
   teUpdateUndoBtn();
 }
 function undoTrainerAction() {
-  if (!teUndoStack.length) return;
-  trainerData = teUndoStack.pop();
-  renderTrainerEditor();
+  // Procura o último snapshot do modo atual (em vez de só pop, pra não
+  // misturar treino com dieta se usuário trocou de aba)
+  let lastIdx = -1;
+  for (let i = teUndoStack.length - 1; i >= 0; i--) {
+    if (teUndoStack[i].mode === currentEditMode) { lastIdx = i; break; }
+  }
+  if (lastIdx === -1) return;
+  const snap = teUndoStack.splice(lastIdx, 1)[0];
+  if (snap.mode === 'dieta') {
+    dietaData = snap.data;
+    if (typeof renderDietaEditor === 'function') renderDietaEditor();
+  } else {
+    trainerData = snap.data;
+    renderTrainerEditor();
+  }
   teUpdateUndoBtn();
 }
 function teUpdateUndoBtn() {
   const btn = document.getElementById('teUndoBtn');
-  if (btn) btn.disabled = teUndoStack.length === 0;
+  if (!btn) return;
+  const hasMode = teUndoStack.some(s => s.mode === currentEditMode);
+  btn.disabled = !hasMode;
 }
 // Atalho Ctrl/Cmd + Z (somente quando o editor estiver visível)
 document.addEventListener('keydown', (e) => {
@@ -5995,6 +6020,7 @@ function renderDietaRefeicao(ref, ri) {
     <div class="di-block-head" onclick="dietaToggleBlock('${key}')">
       <span class="di-block-title">🍽 ${escTrainer(refName)}</span>
       <span class="di-block-meta">${escTrainer(refKcal) || totalItems + ' itens'}</span>
+      <button class="di-head-trash" onclick="event.stopPropagation(); dietaRemoveRef(${ref.idx})" title="Excluir esta refeição inteira (alimentos e opções)">🗑</button>
       <span class="di-block-arrow">▶</span>
     </div>
     <div class="di-block-body">${body}</div>
@@ -6111,12 +6137,16 @@ function dietaUpdateBlockTitle(key, val) {
 
 function dietaRemove(idx) {
   if (!confirm('Remover essa linha?')) return;
+  teSnapshot();
   dietaData.splice(idx, 1);
   renderDietaEditor();
 }
 
 function dietaRemoveRef(idx) {
-  if (!confirm('Remover essa refeição inteira (alimentos e opções)?')) return;
+  const r = dietaData[idx];
+  const refName = (r && r[1]) || 'refeição';
+  if (!confirm(`Remover "${refName}" inteira (alimentos e opções)?`)) return;
+  teSnapshot();
   // remove a linha ref + tudo até a próxima ref ou seção raiz (regra/supl/proto/cardio/dica/etc)
   const stopSections = new Set(['ref', 'regra', 'supl', 'proto', 'ciclo', 'cardio', 'aerob', 'dica', 'orient', 'info', 'meta']);
   let endIdx = dietaData.length;
@@ -6157,18 +6187,21 @@ function dietaFindLastItemOfOp(opIdx) {
 }
 
 function dietaAddFood(parentIdx, isOpcao) {
+  teSnapshot();
   const last = isOpcao ? dietaFindLastItemOfOp(parentIdx) : dietaFindLastItemOfRef(parentIdx);
   dietaInsertAfter(last, ['', '', '', '']);
   renderDietaEditor();
 }
 
 function dietaAddObs(refIdx) {
+  teSnapshot();
   const last = dietaFindLastItemOfRef(refIdx);
   dietaInsertAfter(last, ['obs', '', '', '']);
   renderDietaEditor();
 }
 
 function dietaAddOpcao(refIdx) {
+  teSnapshot();
   const last = dietaFindLastItemOfRef(refIdx);
   // detecta quantas opções já existem nessa refeição
   let opCount = 0;
@@ -6180,6 +6213,7 @@ function dietaAddOpcao(refIdx) {
 }
 
 function dietaAddRefeicao() {
+  teSnapshot();
   // Adiciona refeição no final (antes de orient/proto se existirem, senão no fim)
   const stopSections = new Set(['cardio', 'aerob', 'dica', 'orient', 'proto', 'ciclo']);
   let insertAt = dietaData.length;
