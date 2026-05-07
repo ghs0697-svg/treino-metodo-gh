@@ -1943,10 +1943,11 @@
       <button class="ach-btn secondary" onclick="achPickPhoto()" id="achPhotoBtn">📷 Foto do pump</button>
     </div>
     <input type="file" id="achPhotoInput" accept="image/*" style="display:none;">
+    <p id="achPointsHint" style="color:var(--gold);font-size:12px;margin:4px 0 6px;text-align:center;font-weight:700;">📲 Compartilhe pra ganhar os pontos do dia no ranking!</p>
     <div class="ach-actions" style="margin-top:6px;">
-      <button class="ach-btn primary" onclick="achShare()" id="achShareBtn">📤 Compartilhar / Postar</button>
+      <button class="ach-btn primary" onclick="achShare()" id="achShareBtn">📤 Compartilhar e ganhar pontos</button>
       <button class="ach-btn secondary" onclick="achSave()">💾 Salvar PNG</button>
-      <button class="ach-btn ghost" onclick="achClose()">Fechar</button>
+      <button class="ach-btn ghost" onclick="achClose()">Pular (sem pontos)</button>
     </div>
     <p style="color:#888;font-size:11px;text-align:center;margin:12px 0 0;line-height:1.5;">💡 <strong>Foto do pump</strong> vira o background do card. <strong>Pra Stories:</strong> Compartilhar → role o sheet → Instagram Stories.</p>
   </div>
@@ -2271,13 +2272,23 @@ function onCheckExercise(di, ei) {
   setDone(di, ei, newVal);
   if (newVal && allDoneOfDay(di)) {
     updateStreakOnComplete();
-    notifyDayCompletion(di); // log central pra ranking
+    // NÃO dispara notifyDayCompletion aqui — só conta no ranking quando
+    // o aluno compartilhar o card (via achShare). Isso vira viralização
+    // gratuita pra consultoria.
     // ✨ Card shareable
     setTimeout(() => showCompletionCard(di), 250);
   }
   // Re-render só esse card e a barra
   renderExercises();
 }
+
+// Flag local: já reivindicou pontos do dia (só dispara notifyDayCompletion 1x por dia)
+function pointsClaimedKey(di) {
+  const today = new Date().toISOString().slice(0, 10);
+  return `gh_pointsClaimed_${STUDENT_ID}_${today}_d${di}`;
+}
+function alreadyClaimedToday(di) { return localStorage.getItem(pointsClaimedKey(di)) === '1'; }
+function markPointsClaimed(di) { localStorage.setItem(pointsClaimedKey(di), '1'); }
 
 // ══════════════════════════════════════════════════════════════
 // ══ ACHIEVEMENT CARDS — shareable canvas pós-treino + PR
@@ -2295,6 +2306,24 @@ function showAchievementCard(type, data) {
     pr: '🏆 Novo Recorde!'
   };
   document.getElementById('achTitle').textContent = titleMap[type] || '🏆 Conquista';
+  // Hint dos pontos só faz sentido pro card de COMPLETION (PR não credita pontos)
+  const hint = document.getElementById('achPointsHint');
+  if (hint) {
+    if (type === 'completion') {
+      const di = data && typeof data.di === 'number' ? data.di : null;
+      const claimed = di != null && alreadyClaimedToday(di);
+      hint.style.display = '';
+      hint.textContent = claimed
+        ? '✅ Pontos do dia já creditados! Compartilha de novo se quiser.'
+        : '📲 Compartilhe pra ganhar os pontos do dia no ranking!';
+      hint.style.color = claimed ? '#4caf50' : 'var(--gold)';
+    } else {
+      hint.style.display = 'none';
+    }
+  }
+  // Mesmo do botão "Pular": só relevante em completion
+  const closeBtn = document.querySelector('button.ach-btn.ghost[onclick="achClose()"]');
+  if (closeBtn) closeBtn.textContent = type === 'completion' ? 'Pular (sem pontos)' : 'Fechar';
   document.getElementById('achOverlay').classList.add('show');
   document.body.style.overflow = 'hidden';
   drawAchievementCard(1, 1); // estático, sem animação que não vai pro Stories
@@ -2756,17 +2785,33 @@ async function achShare() {
   const c = document.getElementById('achCanvas');
   c.toBlob(async blob => {
     if (!blob) return achSave();
+    let shared = false;
     try {
       const file = new File([blob], 'metodo-gh.png', { type: 'image/png' });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({ files: [file], title: 'Método GH' });
+        shared = true; // se chegou aqui sem throw, o usuário aceitou (ou ao menos confirmou no diálogo)
       } else {
+        // Fallback: salva PNG. Sem share confirmado.
         achSave();
+        shared = true; // pelo menos download foi feito — credita os pontos
       }
     } catch (e) {
-      // User cancelled, ignore
+      // User cancelled o share — não credita pontos
     }
+    if (shared) onShareConfirmed();
   }, 'image/png');
+}
+
+// Chamado quando aluno COMPARTILHOU (não cancelou) — credita pontos do dia.
+// Idempotente: só dispara 1x por dia mesmo se share for chamado várias vezes.
+function onShareConfirmed() {
+  if (!_achData || _achData.type !== 'completion') return;
+  const di = _achData.di;
+  if (typeof di !== 'number') return;
+  if (alreadyClaimedToday(di)) return;
+  markPointsClaimed(di);
+  notifyDayCompletion(di); // log central pra ranking
 }
 
 // Tenta abrir Stories Instagram direto via URL scheme + clipboard
@@ -2832,6 +2877,9 @@ async function achShareToInstagramStories() {
         } else {
           alert('Não abriu o Instagram. Usa "Compartilhar" e escolhe Stories no sheet.');
         }
+      } else {
+        // Abriu o Instagram → credita pontos do dia
+        onShareConfirmed();
       }
     }, 1800);
   }, 'image/png');
@@ -2894,6 +2942,7 @@ function showCompletionCard(di) {
     if (arr.length) dayName = arr.join(' + ');
   }
   showAchievementCard('completion', {
+    di: di, // index do dia, usado pra disparar notifyDayCompletion após o share
     day: di + 1,
     dayName: dayName,
     exercises: exercises,
