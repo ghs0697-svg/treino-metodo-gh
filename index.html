@@ -3787,15 +3787,84 @@ function isWaterNotifOn() { return localStorage.getItem(waterNotifKey()) === '1'
 function renderWaterToggleState() {
   document.getElementById('waterNotifToggle').classList.toggle('on', isWaterNotifOn());
 }
+// ── Web Push: registra subscription no servidor pra mandar push real ──
+const PUSH_API_BASE = 'https://crm-roan-one.vercel.app/api/push';
+const VAPID_PUBLIC_KEY = 'BCOUwdmVaq4mHncapDAcsYsku6jMjsLBA5ighQKFRsZljXcAV3e4BZlmU3j3VlR4y0c6Ds6qYuJbLpQfrgUJloU';
+
+function urlBase64ToUint8Array(base64) {
+  const padding = '='.repeat((4 - base64.length % 4) % 4);
+  const base = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base);
+  const out = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+
+async function registerPushSubscription() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    return { ok: false, reason: 'unsupported' };
+  }
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+    }
+    // Manda pro servidor
+    const studentName = (() => {
+      try {
+        const info = WORKOUT && WORKOUT[0] && WORKOUT[0].info && WORKOUT[0].info.name;
+        return info || STUDENT_ID;
+      } catch (_) { return STUDENT_ID; }
+    })();
+    await fetch(PUSH_API_BASE + '/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        studentId: SHEET_ID || STUDENT_ID,
+        studentName: studentName,
+        subscription: sub.toJSON()
+      })
+    });
+    localStorage.setItem('gh_pushEndpoint', sub.endpoint);
+    return { ok: true };
+  } catch (e) {
+    console.warn('registerPushSubscription falhou:', e);
+    return { ok: false, reason: String(e?.message || e) };
+  }
+}
+
+async function unregisterPushSubscription() {
+  try {
+    const endpoint = localStorage.getItem('gh_pushEndpoint');
+    if (endpoint) {
+      await fetch(PUSH_API_BASE + '/subscribe', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ endpoint })
+      });
+      localStorage.removeItem('gh_pushEndpoint');
+    }
+    if ('serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) await sub.unsubscribe();
+    }
+  } catch (_) {}
+}
+
 async function toggleWaterNotif() {
   if (isWaterNotifOn()) {
     localStorage.setItem(waterNotifKey(), '0');
     if (window._waterNotifInt) { clearInterval(window._waterNotifInt); window._waterNotifInt = null; }
+    unregisterPushSubscription();
     renderWaterToggleState();
     return;
   }
-  // Tenta a Notification API (Chrome/Firefox/Edge/Safari macOS). Se falhar
-  // (Safari iOS, e outros), continua mesmo assim — usamos fallback in-app.
+  // Tenta a Notification API (Chrome/Firefox/Edge/Safari iOS PWA instalado).
   let nativeOk = false;
   try {
     if ('Notification' in window) {
@@ -3805,12 +3874,26 @@ async function toggleWaterNotif() {
     }
   } catch (_) {}
 
+  // Se permissão concedida, registra push subscription pro servidor mandar real
+  let pushOk = false;
+  if (nativeOk) {
+    const r = await registerPushSubscription();
+    pushOk = r.ok;
+  }
+
   localStorage.setItem(waterNotifKey(), '1');
   startWaterNotif();
   renderWaterToggleState();
-  alert(nativeOk
-    ? 'Lembrete ativado! Vou te avisar a cada 1h por notificação + banner aqui dentro do app.'
-    : 'Lembrete ativado! Enquanto o app estiver aberto, mostro um banner a cada 1h pra lembrar.\n\n(Pra notificação fora do app no iPhone, instala o site na tela inicial pelo botão Compartilhar do Safari.)');
+
+  let msg;
+  if (pushOk) {
+    msg = '🔔 Lembrete ativado!\n\nVai receber notificação a cada hora (8h-22h), mesmo com o app fechado. Se não chegar nada na 1ª hora, confere as configurações de notificação do seu navegador/celular.';
+  } else if (nativeOk) {
+    msg = 'Lembrete ativado por aqui — mas o registro pro push fora do app falhou. Vou mostrar banner enquanto o app estiver aberto.';
+  } else {
+    msg = 'Lembrete ativado!\n\nPra notificação fora do app no iPhone:\n1. Instala o site na tela inicial (Compartilhar → Adicionar à Tela Início)\n2. Abre pelo ícone instalado\n3. Ativa o lembrete de novo\n\nEnquanto isso, aviso por banner aqui dentro.';
+  }
+  alert(msg);
 }
 function startWaterNotif() {
   if (window._waterNotifInt) clearInterval(window._waterNotifInt);
