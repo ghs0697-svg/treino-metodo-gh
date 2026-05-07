@@ -279,6 +279,30 @@
   }
   .carga-saved.show { opacity: 1; }
 
+  /* ── Water reminder toast (fallback in-app pra navegadores sem Notification API) ── */
+  .water-toast {
+    position: fixed; top: 16px; left: 50%; transform: translateX(-50%) translateY(-120%);
+    background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+    color: #fff; padding: 14px 18px; border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(33,150,243,0.45);
+    display: flex; align-items: center; gap: 12px;
+    max-width: 92vw; min-width: 280px;
+    z-index: 99999; opacity: 0; pointer-events: none;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s;
+  }
+  .water-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
+  .water-toast .wt-icon { font-size: 28px; flex-shrink: 0; }
+  .water-toast .wt-text { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+  .water-toast .wt-text strong { font-size: 14px; font-weight: 800; }
+  .water-toast .wt-text span { font-size: 12px; opacity: 0.9; }
+  .water-toast .wt-close {
+    background: rgba(255,255,255,0.2); border: none; color: #fff;
+    width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+    font-size: 18px; line-height: 1; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: background 0.15s;
+  }
+  .water-toast .wt-close:hover { background: rgba(255,255,255,0.35); }
+
   /* ── VIDEO OVERLAY ── */
   .video-overlay {
     display: none;
@@ -3770,28 +3794,64 @@ async function toggleWaterNotif() {
     renderWaterToggleState();
     return;
   }
-  if (!('Notification' in window)) {
-    alert('Teu navegador não suporta notificações.');
-    return;
-  }
-  let perm = Notification.permission;
-  if (perm === 'default') perm = await Notification.requestPermission();
-  if (perm !== 'granted') {
-    alert('Permissão negada. Ativa as notificações nas configurações do navegador pra esse site.');
-    return;
-  }
+  // Tenta a Notification API (Chrome/Firefox/Edge/Safari macOS). Se falhar
+  // (Safari iOS, e outros), continua mesmo assim — usamos fallback in-app.
+  let nativeOk = false;
+  try {
+    if ('Notification' in window) {
+      let perm = Notification.permission;
+      if (perm === 'default') perm = await Notification.requestPermission();
+      nativeOk = (perm === 'granted');
+    }
+  } catch (_) {}
+
   localStorage.setItem(waterNotifKey(), '1');
   startWaterNotif();
   renderWaterToggleState();
-  alert('Notificações ativadas — vou te lembrar a cada 1h enquanto o app estiver aberto.');
+  alert(nativeOk
+    ? 'Lembrete ativado! Vou te avisar a cada 1h por notificação + banner aqui dentro do app.'
+    : 'Lembrete ativado! Enquanto o app estiver aberto, mostro um banner a cada 1h pra lembrar.\n\n(Pra notificação fora do app no iPhone, instala o site na tela inicial pelo botão Compartilhar do Safari.)');
 }
 function startWaterNotif() {
   if (window._waterNotifInt) clearInterval(window._waterNotifInt);
   window._waterNotifInt = setInterval(() => {
     if (!isWaterNotifOn()) return;
-    if (Notification.permission !== 'granted') return;
-    try { new Notification('💧 Hora da água!', { body: 'Já tomou água? Marca +1 copo no app.', icon: 'icon-192.png' }); } catch (_) {}
+    showWaterReminder();
+    // Tenta também a Notification nativa pra quem permitiu (notif do sistema)
+    try {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('💧 Hora da água!', { body: 'Já tomou água? Marca +1 copo no app.', icon: 'icon-192.png' });
+      }
+    } catch (_) {}
   }, 60 * 60 * 1000); // 1 hora
+}
+
+// Banner in-app — fallback que funciona em qualquer navegador,
+// inclusive Safari iOS, enquanto o app estiver aberto.
+function showWaterReminder() {
+  let toast = document.getElementById('waterToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'waterToast';
+    toast.className = 'water-toast';
+    toast.innerHTML = `
+      <span class="wt-icon">💧</span>
+      <div class="wt-text">
+        <strong>Hora da água!</strong>
+        <span>Já tomou? Marca +1 copo aqui no app.</span>
+      </div>
+      <button class="wt-close" onclick="hideWaterReminder()">×</button>`;
+    document.body.appendChild(toast);
+  }
+  toast.classList.add('show');
+  // Auto-fecha em 12s se aluno não dispensar
+  clearTimeout(window._waterToastTimeout);
+  window._waterToastTimeout = setTimeout(() => toast.classList.remove('show'), 12000);
+}
+function hideWaterReminder() {
+  const toast = document.getElementById('waterToast');
+  if (toast) toast.classList.remove('show');
+  clearTimeout(window._waterToastTimeout);
 }
 
 // ══ Marcadores corporais ══
