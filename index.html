@@ -426,7 +426,23 @@
   .float-opt:hover { background: var(--gold); color: var(--dark); border-color: var(--gold); }
   .float-opt.whatsapp { border-color: #25d366; }
   .float-opt.whatsapp:hover { background: #25d366; color: #fff; border-color: #25d366; }
+  .float-opt.ranking { border-color: #ffb84d; }
+  .float-opt.ranking:hover { background: #ffb84d; color: var(--dark); border-color: #ffb84d; }
   .float-opt .ic { font-size: 18px; }
+
+  /* Ranking */
+  .rk-row { display: grid; grid-template-columns: 44px 1fr auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 6px; margin-bottom: 5px; background: #1a1a1a; border: 1px solid #2a2a2a; transition: background 0.12s; }
+  .rk-row:hover { background: #1f1f1f; }
+  .rk-row.me { background: linear-gradient(90deg, rgba(212,175,55,0.18), rgba(212,175,55,0.05)); border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold-dim); }
+  .rk-pos { font-weight: 800; font-size: 16px; text-align: center; color: var(--gold); }
+  .rk-pos.gold { color: #ffd700; font-size: 22px; }
+  .rk-pos.silver { color: #c0c0c0; font-size: 22px; }
+  .rk-pos.bronze { color: #cd7f32; font-size: 22px; }
+  .rk-name { font-weight: 700; font-size: 13px; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rk-name .you { color: var(--gold); font-size: 10px; margin-left: 4px; }
+  .rk-stats { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+  .rk-score { font-weight: 800; font-size: 14px; color: var(--gold); line-height: 1; }
+  .rk-meta { font-size: 10px; color: #888; }
 
   /* ── Day progress ── */
   .day-progress { padding: 10px 14px; background: #1a1a1a; border-bottom: 1px solid #2a2a2a; }
@@ -1939,6 +1955,9 @@
 <!-- Botão flutuante combinado: instala app + abre WhatsApp -->
 <div id="floatMenu">
   <div class="float-options" id="floatOptions">
+    <button type="button" class="float-opt ranking" onclick="event.stopPropagation(); openRankingModal()">
+      <span class="ic">🏆</span><span>Ranking do mês</span>
+    </button>
     <button type="button" class="float-opt install" onclick="event.stopPropagation(); showInstallInstructions()">
       <span class="ic">📱</span><span>Instalar app na tela inicial</span>
     </button>
@@ -1964,6 +1983,18 @@
     </div>
     <p style="color:var(--gold);font-size:13px;font-weight:700;text-align:center;margin:12px 0 4px;">Toca no ícone dourado. Bom treino.</p>
     <button class="te-btn ghost" onclick="teHide('installModalV2')" style="width:100%;margin-top:8px;">Fechar</button>
+  </div>
+</div>
+
+<!-- ══ RANKING DO MÊS ══ -->
+<div class="te-modal-overlay" id="rankingModal" onclick="closeRankingOnBg(event)">
+  <div class="te-modal-box" style="max-width:560px;max-height:88vh;display:flex;flex-direction:column;">
+    <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;">🏆 Ranking <span id="rankingMonth" style="color:#888;font-weight:400;font-size:13px;"></span></h3>
+    <p style="color:#aaa;font-size:11px;margin:0 0 12px;line-height:1.4;">
+      Pontos = <strong>dias treinados × 10</strong> + <strong>streak × 5</strong> + bônus consistência (7d/14d/30d). Atualiza a cada treino fechado.
+    </p>
+    <div id="rankingList" style="flex:1;overflow-y:auto;min-height:0;"></div>
+    <button class="te-btn ghost" onclick="teHide('rankingModal')" style="width:100%;margin-top:10px;">Fechar</button>
   </div>
 </div>
 
@@ -3848,6 +3879,58 @@ function showInstallInstructions() {
   teShow('installModalV2');
 }
 function closeInstallOnBg(e) { if (e.target.id === 'installModalV2') teHide('installModalV2'); }
+function closeRankingOnBg(e) { if (e.target.id === 'rankingModal') teHide('rankingModal'); }
+
+// ══ RANKING DO MÊS ══
+async function openRankingModal() {
+  document.getElementById('floatOptions').classList.remove('show');
+  document.getElementById('floatBtn').classList.remove('open');
+  teShow('rankingModal');
+
+  const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const now = new Date();
+  document.getElementById('rankingMonth').textContent = '· ' + months[now.getMonth()] + '/' + now.getFullYear();
+
+  const list = document.getElementById('rankingList');
+  list.innerHTML = '<p style="color:#888;text-align:center;padding:30px;font-size:13px;">Carregando ranking…</p>';
+
+  try {
+    const resp = await fetch(LOG_ENDPOINT + '?action=ranking&_=' + Date.now(), { cache: 'no-store' });
+    const j = await resp.json();
+    const ranking = (j && j.ranking) || [];
+    if (!ranking.length) {
+      list.innerHTML = '<p style="color:#888;text-align:center;padding:30px;font-size:13px;">Ranking ainda vazio neste mês.<br>Treina hoje pra entrar! 💪</p>';
+      return;
+    }
+    // Acha o nome do aluno atual pra destacar
+    const myName = (function() {
+      try {
+        const info = (typeof WORKOUT !== 'undefined' && WORKOUT[0] && WORKOUT[0].info) || null;
+        const rawName = info && info.name ? info.name : (typeof STUDENT_ID !== 'undefined' ? STUDENT_ID : '');
+        return String(rawName || '').toLowerCase().trim();
+      } catch (e) { return ''; }
+    })();
+    const escHtml = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    list.innerHTML = ranking.slice(0, 50).map((r, i) => {
+      const isMe = myName && String(r.name || '').toLowerCase().trim() === myName;
+      const pos = i + 1;
+      let posCls = '', posTxt = pos + 'º';
+      if (pos === 1) { posCls = 'gold'; posTxt = '🥇'; }
+      else if (pos === 2) { posCls = 'silver'; posTxt = '🥈'; }
+      else if (pos === 3) { posCls = 'bronze'; posTxt = '🥉'; }
+      return `<div class="rk-row${isMe ? ' me' : ''}">
+        <div class="rk-pos ${posCls}">${posTxt}</div>
+        <div class="rk-name">${escHtml(r.name)}${isMe ? '<span class="you">(você)</span>' : ''}</div>
+        <div class="rk-stats">
+          <span class="rk-score">${r.score} pts</span>
+          <span class="rk-meta">${r.daysThisMonth || 0}d · 🔥${r.streakCurrent || 0}</span>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    list.innerHTML = '<p style="color:#c0392b;text-align:center;padding:30px;font-size:13px;">Falha ao carregar ranking. Tenta de novo em alguns segundos.</p>';
+  }
+}
 document.addEventListener('click', e => {
   // Fecha o menu flutuante ao clicar fora
   const fm = document.getElementById('floatMenu');
