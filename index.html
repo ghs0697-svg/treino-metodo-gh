@@ -4227,6 +4227,10 @@ function parseDietData(rows) {
   let currentRef = null;
   let currentOp = null;
   let hasCiclo = false;
+  // Section atual de suplementos (PRÉ-DESJEJUM, PÓS-DESJEJUM, etc) detectada
+  // via linhas separadoras "— XXX —" no meio do bloco supl. Quando preenchida,
+  // suplementos vão pra ela em vez de agrupar pela col D.
+  let currentSuplSection = null;
 
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];
@@ -4244,9 +4248,33 @@ function parseDietData(rows) {
         data.regras.push({ nome: r[1] || '', valor: r[2] || '', detalhe: r[3] || '' });
         break;
       case 'supl': {
-        const timing = r[3] || 'Outros';
+        const nome = (r[1] || '').trim();
+        const dose = (r[2] || '').trim();
+        const obs = (r[3] || '').trim();
+
+        // Detecta linha separadora (header de horário do bloco):
+        //   "— PRÉ-DESJEJUM —", "— PÓS-DESJEJUM —", "— ANTES DE DORMIR —", etc.
+        // Critério: nome contém "—" (em-dash ou hifen duplo) e dose+obs vazios.
+        const isSeparator = (
+          (nome.startsWith('—') || nome.startsWith('--') ||
+           /^—.*—$/.test(nome) || /^--.*--$/.test(nome)) &&
+          !dose && !obs
+        );
+        if (isSeparator) {
+          // Limpa os traços/espaços pra ficar só "PRÉ-DESJEJUM" como section header
+          const clean = nome.replace(/^[—-]+\s*|\s*[—-]+$/g, '').trim();
+          currentSuplSection = clean || nome;
+          if (!data.supls[currentSuplSection]) data.supls[currentSuplSection] = [];
+          break;
+        }
+
+        // Suplemento real. Agrupa por:
+        //   1. Section atual (de separator anterior) se existir
+        //   2. Senão, col D (timing/obs) — comportamento legado
+        //   3. Senão, "Outros"
+        const timing = currentSuplSection || obs || 'Outros';
         if (!data.supls[timing]) data.supls[timing] = [];
-        data.supls[timing].push({ nome: r[1] || '', dose: r[2] || '' });
+        data.supls[timing].push({ nome, dose, obs: currentSuplSection ? obs : '' });
         break;
       }
       case 'ciclo':
@@ -4340,9 +4368,12 @@ function renderDiet() {
     html += `<div class="diet-section-toggle" onclick="toggleDietSection('supls')">Suplementação <span id="suplsArrow">&#9660;</span></div>`;
     html += `<div class="diet-section-content" id="suplsContent">`;
     suplTimings.forEach(timing => {
+      const items = d.supls[timing] || [];
+      if (!items.length) return; // section vazia (separator sem suplementos depois)
       html += `<div class="diet-supl-group"><div class="diet-supl-timing">${timing}</div>`;
-      d.supls[timing].forEach(s => {
-        html += `<div class="diet-supl-item"><span class="diet-supl-name">${s.nome}</span><span class="diet-supl-dose">${s.dose}</span></div>`;
+      items.forEach(s => {
+        const obs = s.obs ? `<span class="diet-supl-obs" style="display:block;font-size:11px;opacity:0.7;margin-top:2px;">${s.obs}</span>` : '';
+        html += `<div class="diet-supl-item"><span class="diet-supl-name">${s.nome}${obs}</span><span class="diet-supl-dose">${s.dose}</span></div>`;
       });
       html += `</div>`;
     });
@@ -6491,8 +6522,10 @@ function dietaInsertAfter(afterIdx, row) {
 }
 
 function dietaFindLastItemOfRef(refIdx) {
-  // varre linhas após refIdx até achar próxima 'ref' ou seção raiz
-  const stopSections = new Set(['ref', 'regra', 'supl', 'proto', 'ciclo', 'cardio', 'aerob', 'dica', 'orient', 'info', 'meta']);
+  // varre linhas após refIdx até achar próxima 'ref' / 'op' / seção raiz.
+  // 'op' incluído pra que "+ Alimento" da refeição insira ANTES da primeira
+  // opção (e não dentro da última opção, que ficava confuso visualmente).
+  const stopSections = new Set(['ref', 'op', 'regra', 'supl', 'proto', 'ciclo', 'cardio', 'aerob', 'dica', 'orient', 'info', 'meta']);
   let last = refIdx;
   for (let j = refIdx + 1; j < dietaData.length; j++) {
     const s = String(dietaData[j][0] || '').toLowerCase().trim();
