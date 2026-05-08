@@ -1,4 +1,4 @@
-const CACHE_NAME = 'metodo-gh-v78';
+const CACHE_NAME = 'metodo-gh-v79';
 const ASSETS = [
   './',
   './index.html',
@@ -29,14 +29,21 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Always try network first for the main page and sheets data
-  if (e.request.url.includes('google.com') || e.request.url.includes('index.html') || e.request.mode === 'navigate') {
+  // URLs do Google Sheets / docs / Apps Script: SEMPRE network direto (sem cache)
+  // Se falhar, propaga erro pro app — melhor que servir resposta cacheada/parcial
+  // que estava bugando o reload do PWA standalone no iOS (DIETA sumindo).
+  if (e.request.url.includes('docs.google.com') || e.request.url.includes('script.google.com') || e.request.url.includes('googleapis.com')) {
+    e.respondWith(fetch(e.request, { cache: 'no-store' }));
+    return;
+  }
+  // index.html / navegação: network-first com fallback pro cache (offline)
+  if (e.request.url.includes('index.html') || e.request.mode === 'navigate') {
     e.respondWith(
       fetch(e.request).catch(() => caches.match(e.request))
     );
     return;
   }
-  // Cache-first for static assets
+  // Cache-first pros assets estáticos
   e.respondWith(
     caches.match(e.request).then(r => r || fetch(e.request))
   );

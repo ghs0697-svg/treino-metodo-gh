@@ -4171,14 +4171,30 @@ var DIET_DATA = null;
 var dietLoaded = false;
 
 async function loadDietFromSheets() {
-  try {
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('DIETA')}&headers=0`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Tab não encontrada');
+  // Tenta até 2x com cache buster — Safari iOS PWA standalone às vezes
+  // serve resposta cacheada/parcial na 1ª req pós-relaunch.
+  const tryFetch = async (bust) => {
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('DIETA')}&headers=0${bust ? '&_=' + Date.now() : ''}`;
+    const res = await fetch(url, bust ? { cache: 'no-store' } : undefined);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const text = await res.text();
     const rows = parseCSV(text);
-    if (rows.length < 3) throw new Error('Vazia');
-
+    if (rows.length < 3) throw new Error('rows<3');
+    return rows;
+  };
+  let rows = null;
+  try {
+    rows = await tryFetch(false);
+  } catch (e1) {
+    try {
+      rows = await tryFetch(true);
+    } catch (e2) {
+      console.warn('[GH] DIETA load falhou (retry 2x):', e1?.message, '|', e2?.message);
+      dietLoaded = false;
+      return;
+    }
+  }
+  try {
     DIET_DATA = parseDietData(rows);
     dietLoaded = true;
     document.getElementById('mainNav').style.display = 'flex';
@@ -4189,7 +4205,8 @@ async function loadDietFromSheets() {
     document.getElementById('floatMenu').classList.add('show');
     if (isWaterNotifOn()) startWaterNotif();
     renderDiet();
-  } catch(e) {
+  } catch (e) {
+    console.warn('[GH] DIETA parse falhou:', e?.message);
     dietLoaded = false;
   }
 }
