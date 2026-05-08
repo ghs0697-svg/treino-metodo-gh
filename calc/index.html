@@ -379,6 +379,10 @@
       <strong>Recompor</strong>
       <span class="desc">Trocar gordura por músculo no mesmo peso</span>
     </button>
+    <button class="option" onclick="selectGoal(this, 'Ganhar massa', 300)">
+      <strong>Ganhar massa</strong>
+      <span class="desc">Aumentar volume muscular, subir peso</span>
+    </button>
     <div class="btn-group">
       <button class="btn secondary" onclick="prev()">Voltar</button>
       <button class="btn" onclick="validateGoal()">Continuar</button>
@@ -607,10 +611,15 @@ function calculate() {
   const alertBody = document.getElementById('r-alert-body');
   const is25Plus = state.bf === '25% ou mais';
   const is10Less = state.bf === '10% ou menos';
+  const isGanhar = state.goal === 'Ganhar massa';
   const isEmagrecer = state.goal === 'Emagrecer';
   let alertText = '', showAlert = false;
 
-  if (is10Less && isEmagrecer) {
+  if (is25Plus && isGanhar) {
+    showAlert = true;
+    alertTitle.textContent = 'PRIORIZE RECOMPOSIÇÃO';
+    alertText = 'Tu marcou 25%+ de gordura e "ganhar massa". Em vez de bulk agressivo, prioriza recomposição: treino pesado + caloria de manutenção. Tu ganha músculo enquanto a gordura se estabiliza ou cai um pouco. Mais sustentável nesse nível de BF.';
+  } else if (is10Less && isEmagrecer) {
     showAlert = true;
     alertTitle.textContent = 'CUIDADO COM DÉFICIT AGRESSIVO';
     alertText = 'Tu já tá bem seco (10% ou menos). Déficit de −500 kcal nesse nível pode comprometer massa muscular. Se perder peso rápido demais, sobe 100−200 kcal. Prioriza proteína e sono.';
