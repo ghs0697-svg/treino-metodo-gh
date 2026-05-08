@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Calculadora de Proteína · Método GH</title>
-<meta name="description" content="Calcula tua taxa metabólica, BF estimado e quantos gramas de proteína por kg tu precisa por dia. Personalizado pelo Método GH.">
+<meta name="description" content="Calcula tua taxa metabólica, BF estimado e quantos gramas de proteína por kg de massa magra tu precisa por dia. Personalizado pelo Método GH.">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -379,10 +379,6 @@
       <strong>Recompor</strong>
       <span class="desc">Trocar gordura por músculo no mesmo peso</span>
     </button>
-    <button class="option" onclick="selectGoal(this, 'Ganhar massa', 300)">
-      <strong>Ganhar massa</strong>
-      <span class="desc">Aumentar volume muscular, subir peso</span>
-    </button>
     <div class="btn-group">
       <button class="btn secondary" onclick="prev()">Voltar</button>
       <button class="btn" onclick="validateGoal()">Continuar</button>
@@ -449,8 +445,9 @@
 
     <div class="protein-highlight">
       <h3>PROTEÍNA POR DIA</h3>
-      <div class="ratio"><span id="r-prot-ratio">—</span><span class="ratio-unit"> g/kg</span></div>
-      <div class="total">Total: <strong><span id="r-prot">—</span> g</strong> / dia (teu peso × g/kg)</div>
+      <div class="ratio"><span id="r-prot-ratio">—</span><span class="ratio-unit"> g/kg de massa magra</span></div>
+      <div class="total">Massa magra: <strong>~<span id="r-lbm">—</span> kg</strong> · Total: <strong><span id="r-prot">—</span> g</strong> / dia</div>
+      <div class="total" style="opacity:.75;font-size:12px;margin-top:6px;">Calculado sobre tua LBM (peso × [1 − BF%]). Ignora gordura — só conta tecido que de fato precisa de proteína pra existir.</div>
     </div>
 
     <div class="result-card">
@@ -568,15 +565,18 @@ function calculate() {
   const maintenance = Math.round(tmb * state.activityFactor);
   const target = maintenance - state.bfAdjust + state.goalAdjust;
 
-  // Proteína por kg — varia por objetivo + nível de BF
+  // Proteína por kg DE MASSA MAGRA (LBM) — tabela GH por BF tier
+  // Pico em 15% (zona crítica de preservação em cutting)
+  // 25%+ → 2.0 · 20% → 2.2 · 15% → 2.5 · 10%- → 2.0
   let proteinPerKg;
-  if (state.goal === 'Emagrecer') proteinPerKg = 2.0;
-  else if (state.goal === 'Recompor') proteinPerKg = 1.8;
-  else proteinPerKg = 1.6; // ganhar massa
-  // Bonus +0.2 g/kg pra quem tá com BF baixo (preserva mais músculo em déficit)
-  if (state.bfPercent <= 10) proteinPerKg += 0.2;
+  if (state.bfPercent >= 25) proteinPerKg = 2.0;
+  else if (state.bfPercent >= 20) proteinPerKg = 2.2;
+  else if (state.bfPercent >= 15) proteinPerKg = 2.5;
+  else proteinPerKg = 2.0; // BF 10% ou menos
 
-  const protein = Math.round(state.weight * proteinPerKg);
+  // LBM = peso × (1 - BF%/100)
+  const lbm = state.weight * (1 - state.bfPercent / 100);
+  const protein = Math.round(lbm * proteinPerKg);
   const fat = Math.round((target * 0.25) / 9); // 25% das kcal totais
   const carb = Math.round((target - protein * 4 - fat * 9) / 4);
   // Fibras: 14g por 1000kcal (regra clássica)
@@ -595,6 +595,7 @@ function calculate() {
   document.getElementById('r-adjusts').textContent = adjusts.length ? 'Ajustes: ' + adjusts.join(' · ') : 'Sem ajustes (manutenção pura)';
 
   document.getElementById('r-prot-ratio').textContent = proteinPerKg.toFixed(1);
+  document.getElementById('r-lbm').textContent = lbm.toFixed(1);
   document.getElementById('r-prot').textContent = protein;
   document.getElementById('r-carb').textContent = carb;
   document.getElementById('r-fat').textContent = fat;
@@ -606,15 +607,10 @@ function calculate() {
   const alertBody = document.getElementById('r-alert-body');
   const is25Plus = state.bf === '25% ou mais';
   const is10Less = state.bf === '10% ou menos';
-  const isGanhar = state.goal === 'Ganhar massa';
   const isEmagrecer = state.goal === 'Emagrecer';
   let alertText = '', showAlert = false;
 
-  if (is25Plus && isGanhar) {
-    showAlert = true;
-    alertTitle.textContent = 'PRIORIZE RECOMPOSIÇÃO';
-    alertText = 'Tu marcou 25%+ de gordura e "ganhar massa". Em vez de bulk agressivo, prioriza recomposição: treino pesado + caloria de manutenção. Tu ganha músculo enquanto a gordura se estabiliza ou cai um pouco. Mais sustentável nesse nível de BF.';
-  } else if (is10Less && isEmagrecer) {
+  if (is10Less && isEmagrecer) {
     showAlert = true;
     alertTitle.textContent = 'CUIDADO COM DÉFICIT AGRESSIVO';
     alertText = 'Tu já tá bem seco (10% ou menos). Déficit de −500 kcal nesse nível pode comprometer massa muscular. Se perder peso rápido demais, sobe 100−200 kcal. Prioriza proteína e sono.';
@@ -627,7 +623,7 @@ function calculate() {
     alertEl.classList.remove('visible');
   }
 
-  state.result = { tmb, maintenance, target, protein, proteinPerKg, carb, fat, fiber, bfPercent: state.bfPercent };
+  state.result = { tmb, maintenance, target, protein, proteinPerKg, lbm, carb, fat, fiber, bfPercent: state.bfPercent };
 
   try { localStorage.setItem('gh_calc_bf', JSON.stringify(state)); } catch(e) {}
 
@@ -654,12 +650,13 @@ Treinos/semana: ${state.days}x
 
 CÁLCULO
 BF estimado: ~${d.bfPercent}%
+Massa magra (LBM): ~${d.lbm.toFixed(1)} kg
 TMB (repouso): ${d.tmb} kcal
 Manutenção: ${d.maintenance} kcal
 
 META DIÁRIA: ${d.target} kcal
 
-PROTEÍNA: ${d.proteinPerKg.toFixed(1)} g/kg → ${d.protein}g/dia
+PROTEÍNA: ${d.proteinPerKg.toFixed(1)} g/kg de massa magra → ${d.protein}g/dia
 CARBO: ${d.carb}g/dia
 GORDURA: ${d.fat}g/dia
 FIBRAS: ${d.fiber}g/dia (referência)
