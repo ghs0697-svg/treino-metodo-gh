@@ -3801,9 +3801,12 @@ function urlBase64ToUint8Array(base64) {
 }
 
 async function registerPushSubscription() {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-    return { ok: false, reason: 'unsupported' };
-  }
+  if (!('serviceWorker' in navigator)) return { ok: false, reason: 'no-sw' };
+  if (!('PushManager' in window)) return { ok: false, reason: 'no-pushmanager' };
+  // iOS Safari só expõe push se o site estiver instalado como PWA (standalone mode)
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  if (isIOS && !isStandalone) return { ok: false, reason: 'ios-not-installed' };
   try {
     const reg = await navigator.serviceWorker.ready;
     let sub = await reg.pushManager.getSubscription();
@@ -3813,14 +3816,13 @@ async function registerPushSubscription() {
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
       });
     }
-    // Manda pro servidor
     const studentName = (() => {
       try {
         const info = WORKOUT && WORKOUT[0] && WORKOUT[0].info && WORKOUT[0].info.name;
         return info || STUDENT_ID;
       } catch (_) { return STUDENT_ID; }
     })();
-    await fetch(PUSH_API_BASE + '/subscribe', {
+    const resp = await fetch(PUSH_API_BASE + '/subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
@@ -3829,11 +3831,15 @@ async function registerPushSubscription() {
         subscription: sub.toJSON()
       })
     });
+    if (!resp.ok) {
+      const txt = await resp.text().catch(() => '');
+      return { ok: false, reason: 'subscribe-server-' + resp.status + ': ' + txt.substring(0, 80) };
+    }
     localStorage.setItem('gh_pushEndpoint', sub.endpoint);
     return { ok: true };
   } catch (e) {
     console.warn('registerPushSubscription falhou:', e);
-    return { ok: false, reason: String(e?.message || e) };
+    return { ok: false, reason: 'exception: ' + String(e?.name || '') + ' - ' + String(e?.message || e).substring(0, 100) };
   }
 }
 
@@ -3875,10 +3881,9 @@ async function toggleWaterNotif() {
   } catch (_) {}
 
   // Se permissão concedida, registra push subscription pro servidor mandar real
-  let pushOk = false;
+  let pushResult = { ok: false, reason: 'no-permission' };
   if (nativeOk) {
-    const r = await registerPushSubscription();
-    pushOk = r.ok;
+    pushResult = await registerPushSubscription();
   }
 
   localStorage.setItem(waterNotifKey(), '1');
@@ -3886,12 +3891,16 @@ async function toggleWaterNotif() {
   renderWaterToggleState();
 
   let msg;
-  if (pushOk) {
-    msg = '🔔 Lembrete ativado!\n\nVai receber notificação a cada hora (8h-22h), mesmo com o app fechado. Se não chegar nada na 1ª hora, confere as configurações de notificação do seu navegador/celular.';
+  if (pushResult.ok) {
+    msg = '🔔 Lembrete ativado!\n\nVai receber notificação a cada hora (8h-22h), mesmo com o app fechado.';
+  } else if (pushResult.reason === 'ios-not-installed') {
+    msg = '⚠️ Pra notificação fora do app no iPhone, primeiro instala como app:\n\n1. Toca em Compartilhar (quadrado com seta no Safari)\n2. Adicionar à Tela de Início\n3. Abre o app pelo ÍCONE da tela inicial (não pelo Safari)\n4. Ativa o lembrete de novo\n\nEnquanto isso, mostro banner quando o app estiver aberto.';
+  } else if (pushResult.reason === 'no-pushmanager') {
+    msg = 'Teu navegador não suporta Web Push. Vou mostrar banner enquanto o app estiver aberto.\n\n(Push fora do app só funciona em iOS 16.4+ Safari como PWA, ou Chrome/Firefox/Edge.)';
   } else if (nativeOk) {
-    msg = 'Lembrete ativado por aqui — mas o registro pro push fora do app falhou. Vou mostrar banner enquanto o app estiver aberto.';
+    msg = 'Lembrete ativado por aqui — mas o registro pro push fora do app falhou.\n\nMotivo: ' + (pushResult.reason || 'desconhecido') + '\n\nVou mostrar banner enquanto o app estiver aberto.';
   } else {
-    msg = 'Lembrete ativado!\n\nPra notificação fora do app no iPhone:\n1. Instala o site na tela inicial (Compartilhar → Adicionar à Tela Início)\n2. Abre pelo ícone instalado\n3. Ativa o lembrete de novo\n\nEnquanto isso, aviso por banner aqui dentro.';
+    msg = 'Lembrete ativado por banner. Permissão de notificação não foi concedida.';
   }
   alert(msg);
 }
