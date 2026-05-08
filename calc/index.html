@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Proteína · Método GH</title>
+<meta name="description" content="Calcula tua taxa metabólica, BF estimado e quantos gramas de proteína por kg tu precisa por dia. Personalizado pelo Método GH.">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0F0F11;
+    color: #EFEFEF;
+    min-height: 100vh;
+    padding: 20px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 600px; margin: 0 auto; }
+  header {
+    text-align: center;
+    padding: 16px 0 24px;
+    border-bottom: 1px solid #2A2A2D;
+    margin-bottom: 24px;
+  }
+  .logo {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 2px;
+  }
+  .logo span { color: #d4af37; }
+  .subtitle {
+    font-size: 11px;
+    color: #888;
+    margin-top: 4px;
+    letter-spacing: 1.5px;
+  }
+  .progress { display: flex; gap: 4px; margin-bottom: 24px; }
+  .progress-dot {
+    flex: 1;
+    height: 3px;
+    background: #2A2A2D;
+    border-radius: 2px;
+    transition: background 0.3s;
+  }
+  .progress-dot.active { background: #d4af37; }
+  .screen { display: none; }
+  .screen.active { display: block; animation: fadeIn 0.3s; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  h1 { font-size: 24px; margin-bottom: 6px; line-height: 1.2; }
+  h2 { font-size: 20px; margin-bottom: 20px; line-height: 1.2; }
+  p.hint { color: #888; font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 16px;
+    background: #d4af37;
+    color: #0F0F11;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 12px;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+    font-family: inherit;
+  }
+  .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn.secondary { background: transparent; border: 1px solid #2A2A2D; color: #AAA; }
+  .btn.secondary:hover { border-color: #555; color: #EEE; transform: none; }
+  .option {
+    display: block;
+    width: 100%;
+    padding: 14px 16px;
+    background: #1A1A1D;
+    border: 1px solid #2A2A2D;
+    border-radius: 8px;
+    color: #EFEFEF;
+    font-size: 15px;
+    text-align: left;
+    cursor: pointer;
+    margin-bottom: 8px;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .option:hover { border-color: #555; }
+  .option.selected { border-color: #d4af37; background: #1F1A12; }
+  .option strong { display: block; margin-bottom: 2px; font-weight: 600; }
+  .option .desc { color: #888; font-size: 13px; display: block; }
+  .input-group { margin-bottom: 14px; }
+  .input-group label {
+    display: block;
+    color: #AAA;
+    font-size: 11px;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+    font-weight: 600;
+  }
+  input[type="number"], input[type="text"] {
+    width: 100%;
+    padding: 14px 16px;
+    background: #1A1A1D;
+    border: 1px solid #2A2A2D;
+    border-radius: 8px;
+    color: #EFEFEF;
+    font-size: 16px;
+    font-family: inherit;
+  }
+  input:focus { outline: none; border-color: #d4af37; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .btn-group { display: flex; gap: 8px; margin-top: 16px; }
+  .btn-group .btn { margin-top: 0; }
+  .bf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .bf-card {
+    background: #1A1A1D;
+    border: 1px solid #2A2A2D;
+    border-radius: 8px;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .bf-card:hover { border-color: #555; }
+  .bf-card.selected { border-color: #d4af37; background: #1F1A12; }
+  .bf-img {
+    width: 100%; height: 140px;
+    background: #0F0F11;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .bf-img img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .bf-card strong { display: block; font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+  .bf-card .desc { color: #888; font-size: 11px; line-height: 1.3; }
+  .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .result-card {
+    background: #1A1A1D;
+    border: 1px solid #2A2A2D;
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 12px;
+  }
+  .result-card h3 {
+    color: #888;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .result-card .big {
+    font-size: 32px;
+    font-weight: 800;
+    color: #d4af37;
+    line-height: 1.1;
+  }
+  .result-card .big.white { color: #EFEFEF; }
+  .result-card .small {
+    color: #AAA;
+    font-size: 13px;
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+  .alert-card {
+    background: #2a1f12;
+    border: 1px solid #5a3d18;
+    border-left: 4px solid #d4af37;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    display: none;
+  }
+  .alert-card.visible { display: block; }
+  .alert-title {
+    color: #d4af37;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .alert-body { color: #EFEFEF; font-size: 13px; line-height: 1.5; }
+  .macros-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 14px; }
+  .macro-item {
+    background: #0F0F11;
+    border: 1px solid #2A2A2D;
+    border-radius: 8px;
+    padding: 10px 8px;
+    text-align: center;
+  }
+  .macro-label {
+    color: #888;
+    font-size: 10px;
+    letter-spacing: 1px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .macro-value {
+    font-size: 18px;
+    font-weight: 800;
+    color: #EFEFEF;
+  }
+  .macro-unit {
+    color: #888;
+    font-size: 11px;
+    font-weight: 400;
+    margin-left: 2px;
+  }
+  .protein-highlight {
+    background: linear-gradient(135deg, #1f1a12 0%, #2a1f12 100%);
+    border: 1.5px solid #d4af37;
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  .protein-highlight h3 { color: #d4af37; font-size: 11px; letter-spacing: 1.5px; margin-bottom: 8px; }
+  .protein-highlight .ratio {
+    font-size: 38px; font-weight: 900; color: #d4af37; line-height: 1; letter-spacing: -0.5px;
+  }
+  .protein-highlight .ratio-unit { font-size: 14px; color: #aaa; font-weight: 500; }
+  .protein-highlight .total {
+    margin-top: 8px; font-size: 14px; color: #ccc;
+  }
+  .protein-highlight .total strong { color: #fff; font-weight: 700; }
+  .cta-card {
+    background: linear-gradient(135deg, #d4af37 0%, #b8941f 100%);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+    text-align: center;
+    color: #0F0F11;
+  }
+  .cta-card h3 { font-size: 17px; font-weight: 800; margin-bottom: 6px; letter-spacing: 0.3px; }
+  .cta-card p { font-size: 13px; margin-bottom: 14px; line-height: 1.4; opacity: 0.85; }
+  .cta-card .cta-btn {
+    display: inline-block;
+    background: #0F0F11;
+    color: #d4af37;
+    padding: 12px 22px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+  }
+  .cta-card .cta-btn:hover { filter: brightness(1.2); }
+  .footer {
+    text-align: center;
+    color: #555;
+    font-size: 11px;
+    margin-top: 30px;
+    letter-spacing: 1px;
+  }
+  @media (max-width: 480px) {
+    body { padding: 16px 14px; }
+    h1 { font-size: 22px; }
+    h2 { font-size: 18px; }
+    .bf-img { height: 110px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">MÉTODO <span>GH</span></div>
+    <div class="subtitle">CALCULADORA DE PROTEÍNA</div>
+  </header>
+
+  <div class="progress">
+    <div class="progress-dot" data-step="1"></div>
+    <div class="progress-dot" data-step="2"></div>
+    <div class="progress-dot" data-step="3"></div>
+    <div class="progress-dot" data-step="4"></div>
+    <div class="progress-dot" data-step="5"></div>
+    <div class="progress-dot" data-step="6"></div>
+    <div class="progress-dot" data-step="7"></div>
+  </div>
+
+  <div class="screen active" id="s1">
+    <h1>Quanto de proteína tu precisa por dia?</h1>
+    <p class="hint">Responde 6 perguntas (1 min). Vou calcular tua taxa metabólica, BF estimado e quantos gramas de proteína por kg tu precisa pra atingir teu objetivo.</p>
+    <button class="btn" onclick="next()">Começar</button>
+  </div>
+
+  <div class="screen" id="s2">
+    <h2>Teus dados</h2>
+    <div class="input-group">
+      <label>SEXO</label>
+      <div class="grid-2">
+        <button class="option" data-key="sex" data-val="Homem" onclick="selectSex(this, 'Homem')">Homem</button>
+        <button class="option" data-key="sex" data-val="Mulher" onclick="selectSex(this, 'Mulher')">Mulher</button>
+      </div>
+    </div>
+    <div class="input-group">
+      <label>IDADE</label>
+      <input type="number" id="age" min="18" max="80" placeholder="Ex: 35" inputmode="numeric">
+    </div>
+    <div class="input-group">
+      <label>PESO (KG)</label>
+      <input type="number" id="weight" min="40" max="200" step="0.1" placeholder="Ex: 85" inputmode="decimal">
+    </div>
+    <div class="input-group">
+      <label>ALTURA (CM)</label>
+      <input type="number" id="height" min="140" max="220" placeholder="Ex: 178" inputmode="numeric">
+    </div>
+    <div class="btn-group">
+      <button class="btn secondary" onclick="prev()">Voltar</button>
+      <button class="btn" onclick="validateDados()">Continuar</button>
+    </div>
+  </div>
+
+  <div class="screen" id="s3">
+    <h2>Qual teu nível de atividade?</h2>
+    <p class="hint">Sem contar o treino da musculação. Considera caminhada, escada, trabalho.</p>
+    <button class="option" onclick="selectActivity(this, 'Sedentário', 1.2)">
+      <strong>Sedentário</strong>
+      <span class="desc">Trabalho sentado, quase nenhum movimento no dia</span>
+    </button>
+    <button class="option" onclick="selectActivity(this, 'Leve', 1.375)">
+      <strong>Leve</strong>
+      <span class="desc">Caminha pouco, trabalho sentado mas se mexe no dia</span>
+    </button>
+    <button class="option" onclick="selectActivity(this, 'Moderado', 1.55)">
+      <strong>Moderado</strong>
+      <span class="desc">Caminhadas diárias, trabalho com movimento</span>
+    </button>
+    <button class="option" onclick="selectActivity(this, 'Intenso', 1.725)">
+      <strong>Intenso</strong>
+      <span class="desc">Trabalho braçal, 10 mil passos por dia</span>
+    </button>
+    <button class="option" onclick="selectActivity(this, 'Extremo', 1.9)">
+      <strong>Extremo</strong>
+      <span class="desc">Atleta ou trabalho braçal pesado + outras atividades</span>
+    </button>
+    <div class="btn-group">
+      <button class="btn secondary" onclick="prev()">Voltar</button>
+      <button class="btn" onclick="validateActivity()">Continuar</button>
+    </div>
+  </div>
+
+  <div class="screen" id="s4">
+    <h2>Qual corpo tá mais parecido com o teu?</h2>
+    <p class="hint">Escolhe honesto. Quanto mais preciso, melhor o cálculo.</p>
+    <div class="bf-grid">
+      <div class="bf-card" onclick="selectBF(this, 0, '10% ou menos', 10)">
+        <div class="bf-img"><img src="bf-10.jpg" alt="10% ou menos"></div>
+        <div><strong>10% ou menos</strong><div class="desc">Ripado, veias aparentes, gomos evidentes</div></div>
+      </div>
+      <div class="bf-card" onclick="selectBF(this, 75, 'cerca de 15%', 15)">
+        <div class="bf-img"><img src="bf-15.jpg" alt="cerca de 15%"></div>
+        <div><strong>Cerca de 15%</strong><div class="desc">Atlético, abs sutis, braços definidos</div></div>
+      </div>
+      <div class="bf-card" onclick="selectBF(this, 150, 'cerca de 20%', 20)">
+        <div class="bf-img"><img src="bf-20.jpg" alt="cerca de 20%"></div>
+        <div><strong>Cerca de 20%</strong><div class="desc">Com pança moderada, sem abs</div></div>
+      </div>
+      <div class="bf-card" onclick="selectBF(this, 300, '25% ou mais', 25)">
+        <div class="bf-img"><img src="bf-25.jpg" alt="25% ou mais"></div>
+        <div><strong>25% ou mais</strong><div class="desc">Barriga grande, camiseta esticada</div></div>
+      </div>
+    </div>
+    <div class="btn-group">
+      <button class="btn secondary" onclick="prev()">Voltar</button>
+      <button class="btn" onclick="validateBF()">Continuar</button>
+    </div>
+  </div>
+
+  <div class="screen" id="s5">
+    <h2>Qual teu objetivo?</h2>
+    <button class="option" onclick="selectGoal(this, 'Emagrecer', -500)">
+      <strong>Emagrecer</strong>
+      <span class="desc">Tirar gordura, reduzir cintura, desinchar</span>
+    </button>
+    <button class="option" onclick="selectGoal(this, 'Recompor', 0)">
+      <strong>Recompor</strong>
+      <span class="desc">Trocar gordura por músculo no mesmo peso</span>
+    </button>
+    <button class="option" onclick="selectGoal(this, 'Ganhar massa', 300)">
+      <strong>Ganhar massa</strong>
+      <span class="desc">Aumentar volume muscular, subir peso</span>
+    </button>
+    <div class="btn-group">
+      <button class="btn secondary" onclick="prev()">Voltar</button>
+      <button class="btn" onclick="validateGoal()">Continuar</button>
+    </div>
+  </div>
+
+  <div class="screen" id="s6">
+    <h2>Quantos dias por semana você treina (ou pretende treinar)?</h2>
+    <p class="hint">Escolhe o que cabe na tua rotina, não o que você gostaria.</p>
+    <button class="option" onclick="selectDays(this, 3)">
+      <strong>3x por semana</strong>
+      <span class="desc">Rotina mais apertada, recuperação maior entre treinos</span>
+    </button>
+    <button class="option" onclick="selectDays(this, 4)">
+      <strong>4x por semana</strong>
+      <span class="desc">Equilíbrio entre frequência e descanso</span>
+    </button>
+    <button class="option" onclick="selectDays(this, 5)">
+      <strong>5x por semana</strong>
+      <span class="desc">Evolução mais rápida, exige disciplina</span>
+    </button>
+    <button class="option" onclick="selectDays(this, 6)">
+      <strong>6x por semana</strong>
+      <span class="desc">Volume máximo, pra quem já treina há tempos</span>
+    </button>
+    <div class="btn-group">
+      <button class="btn secondary" onclick="prev()">Voltar</button>
+      <button class="btn" onclick="calculate()">Calcular</button>
+    </div>
+  </div>
+
+  <div class="screen" id="s7">
+    <h2>Teu resultado</h2>
+
+    <div class="result-grid">
+      <div class="result-card">
+        <h3>BF ESTIMADO</h3>
+        <div class="big white" id="r-bf">—</div>
+        <div class="small">% gordura corporal</div>
+      </div>
+      <div class="result-card">
+        <h3>TMB</h3>
+        <div class="big white" id="r-tmb">—</div>
+        <div class="small">kcal em repouso</div>
+      </div>
+    </div>
+
+    <div class="result-card">
+      <h3>MANUTENÇÃO (GASTO DIÁRIO)</h3>
+      <div class="big white" id="r-maint">—</div>
+      <div class="small">kcal queimadas/dia com atividade</div>
+    </div>
+
+    <div class="alert-card" id="r-alert">
+      <div class="alert-title" id="r-alert-title">ATENÇÃO</div>
+      <div class="alert-body" id="r-alert-body"></div>
+    </div>
+
+    <div class="result-card">
+      <h3>TUA META DIÁRIA</h3>
+      <div class="big" id="r-target">—</div>
+      <div class="small" id="r-adjusts">—</div>
+    </div>
+
+    <div class="protein-highlight">
+      <h3>PROTEÍNA POR DIA</h3>
+      <div class="ratio"><span id="r-prot-ratio">—</span><span class="ratio-unit"> g/kg</span></div>
+      <div class="total">Total: <strong><span id="r-prot">—</span> g</strong> / dia (teu peso × g/kg)</div>
+    </div>
+
+    <div class="result-card">
+      <h3>RESTANTE DOS MACROS</h3>
+      <div class="macros-grid">
+        <div class="macro-item">
+          <div class="macro-label">CARBO</div>
+          <div class="macro-value"><span id="r-carb">—</span><span class="macro-unit">g</span></div>
+        </div>
+        <div class="macro-item">
+          <div class="macro-label">GORDURA</div>
+          <div class="macro-value"><span id="r-fat">—</span><span class="macro-unit">g</span></div>
+        </div>
+        <div class="macro-item">
+          <div class="macro-label">FIBRAS</div>
+          <div class="macro-value"><span id="r-fiber">—</span><span class="macro-unit">g</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cta-card">
+      <h3>Quer dieta + treino feitos pra ti?</h3>
+      <p>Esse cálculo é o ponto de partida. Pra protocolo personalizado com peptídeos, ajuste de macros mês a mês e suporte direto comigo, fala no WhatsApp:</p>
+      <a class="cta-btn" href="https://wa.me/555520131470?text=Oi%20GH%2C%20fiz%20a%20calculadora%20e%20quero%20saber%20mais%20sobre%20a%20consultoria" target="_blank" rel="noopener">📲 FALAR COM O GH</a>
+    </div>
+
+    <button class="btn" onclick="downloadProtocol()" style="margin-top:18px;">📥 Salvar meu cálculo (TXT)</button>
+    <button class="btn secondary" onclick="restart()">Recalcular</button>
+  </div>
+
+  <div class="footer">MÉTODO GH · @gh.scheuermann</div>
+</div>
+
+<script>
+let state = {
+  screen: 1,
+  sex: null, age: null, weight: null, height: null,
+  activity: null, activityFactor: null,
+  bf: null, bfAdjust: 0, bfPercent: null,
+  goal: null, goalAdjust: 0,
+  days: null,
+  result: null
+};
+
+function showScreen(n) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('s' + n).classList.add('active');
+  document.querySelectorAll('.progress-dot').forEach((d, i) => {
+    d.classList.toggle('active', i < n);
+  });
+  state.screen = n;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function next() { showScreen(state.screen + 1); }
+function prev() { if (state.screen > 1) showScreen(state.screen - 1); }
+
+function selectSex(el, value) {
+  document.querySelectorAll('[data-key="sex"]').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  state.sex = value;
+}
+function selectActivity(el, name, factor) {
+  document.querySelectorAll('#s3 .option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  state.activity = name;
+  state.activityFactor = factor;
+}
+function selectBF(el, adjust, label, percent) {
+  document.querySelectorAll('.bf-card').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  state.bf = label;
+  state.bfAdjust = adjust;
+  state.bfPercent = percent;
+}
+function selectGoal(el, name, adjust) {
+  document.querySelectorAll('#s5 .option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  state.goal = name;
+  state.goalAdjust = adjust;
+}
+function selectDays(el, days) {
+  document.querySelectorAll('#s6 .option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  state.days = days;
+}
+
+function validateDados() {
+  state.age = parseInt(document.getElementById('age').value);
+  state.weight = parseFloat(document.getElementById('weight').value);
+  state.height = parseFloat(document.getElementById('height').value);
+  if (!state.sex) { alert('Selecione o sexo.'); return; }
+  if (!state.age || state.age < 18 || state.age > 80) { alert('Idade inválida. Use entre 18 e 80.'); return; }
+  if (!state.weight || state.weight < 40 || state.weight > 200) { alert('Peso inválido.'); return; }
+  if (!state.height || state.height < 140 || state.height > 220) { alert('Altura inválida.'); return; }
+  next();
+}
+function validateActivity() { if (!state.activity) { alert('Selecione o nível de atividade.'); return; } next(); }
+function validateBF() { if (state.bf === null) { alert('Selecione qual corpo tá mais parecido com o teu.'); return; } next(); }
+function validateGoal() { if (!state.goal) { alert('Selecione o objetivo.'); return; } next(); }
+
+function calculate() {
+  if (!state.goal) { alert('Selecione o objetivo.'); return; }
+  if (!state.days) { alert('Selecione quantos dias por semana você vai treinar.'); return; }
+
+  // TMB Mifflin-St Jeor
+  let tmb;
+  if (state.sex === 'Homem') {
+    tmb = (10 * state.weight) + (6.25 * state.height) - (5 * state.age) + 5;
+  } else {
+    tmb = (10 * state.weight) + (6.25 * state.height) - (5 * state.age) - 161;
+  }
+  tmb = Math.round(tmb);
+
+  const maintenance = Math.round(tmb * state.activityFactor);
+  const target = maintenance - state.bfAdjust + state.goalAdjust;
+
+  // Proteína por kg — varia por objetivo + nível de BF
+  let proteinPerKg;
+  if (state.goal === 'Emagrecer') proteinPerKg = 2.0;
+  else if (state.goal === 'Recompor') proteinPerKg = 1.8;
+  else proteinPerKg = 1.6; // ganhar massa
+  // Bonus +0.2 g/kg pra quem tá com BF baixo (preserva mais músculo em déficit)
+  if (state.bfPercent <= 10) proteinPerKg += 0.2;
+
+  const protein = Math.round(state.weight * proteinPerKg);
+  const fat = Math.round((target * 0.25) / 9); // 25% das kcal totais
+  const carb = Math.round((target - protein * 4 - fat * 9) / 4);
+  // Fibras: 14g por 1000kcal (regra clássica)
+  const fiber = Math.round((target / 1000) * 14);
+
+  // Display
+  document.getElementById('r-bf').textContent = '~' + state.bfPercent + '%';
+  document.getElementById('r-tmb').textContent = tmb;
+  document.getElementById('r-maint').textContent = maintenance + ' kcal';
+  document.getElementById('r-target').textContent = target + ' kcal';
+
+  let adjusts = [];
+  if (state.bfAdjust > 0) adjusts.push('−' + state.bfAdjust + ' kcal (corpo ' + state.bf + ')');
+  if (state.goalAdjust < 0) adjusts.push('−' + Math.abs(state.goalAdjust) + ' kcal (' + state.goal.toLowerCase() + ')');
+  else if (state.goalAdjust > 0) adjusts.push('+' + state.goalAdjust + ' kcal (' + state.goal.toLowerCase() + ')');
+  document.getElementById('r-adjusts').textContent = adjusts.length ? 'Ajustes: ' + adjusts.join(' · ') : 'Sem ajustes (manutenção pura)';
+
+  document.getElementById('r-prot-ratio').textContent = proteinPerKg.toFixed(1);
+  document.getElementById('r-prot').textContent = protein;
+  document.getElementById('r-carb').textContent = carb;
+  document.getElementById('r-fat').textContent = fat;
+  document.getElementById('r-fiber').textContent = fiber;
+
+  // Alert pra combinações atípicas
+  const alertEl = document.getElementById('r-alert');
+  const alertTitle = document.getElementById('r-alert-title');
+  const alertBody = document.getElementById('r-alert-body');
+  const is25Plus = state.bf === '25% ou mais';
+  const is10Less = state.bf === '10% ou menos';
+  const isGanhar = state.goal === 'Ganhar massa';
+  const isEmagrecer = state.goal === 'Emagrecer';
+  let alertText = '', showAlert = false;
+
+  if (is25Plus && isGanhar) {
+    showAlert = true;
+    alertTitle.textContent = 'PRIORIZE RECOMPOSIÇÃO';
+    alertText = 'Tu marcou 25%+ de gordura e "ganhar massa". Em vez de bulk agressivo, prioriza recomposição: treino pesado + caloria de manutenção. Tu ganha músculo enquanto a gordura se estabiliza ou cai um pouco. Mais sustentável nesse nível de BF.';
+  } else if (is10Less && isEmagrecer) {
+    showAlert = true;
+    alertTitle.textContent = 'CUIDADO COM DÉFICIT AGRESSIVO';
+    alertText = 'Tu já tá bem seco (10% ou menos). Déficit de −500 kcal nesse nível pode comprometer massa muscular. Se perder peso rápido demais, sobe 100−200 kcal. Prioriza proteína e sono.';
+  }
+
+  if (showAlert) {
+    alertBody.textContent = alertText;
+    alertEl.classList.add('visible');
+  } else {
+    alertEl.classList.remove('visible');
+  }
+
+  state.result = { tmb, maintenance, target, protein, proteinPerKg, carb, fat, fiber, bfPercent: state.bfPercent };
+
+  try { localStorage.setItem('gh_calc_bf', JSON.stringify(state)); } catch(e) {}
+
+  next();
+}
+
+function downloadProtocol() {
+  const d = state.result;
+  const content = `MÉTODO GH — MEU CÁLCULO
+
+═══════════════════════════════════
+
+DADOS
+Sexo: ${state.sex}
+Idade: ${state.age} anos
+Peso: ${state.weight} kg
+Altura: ${state.height} cm
+Atividade: ${state.activity}
+Corpo parecido: ${state.bf}
+Objetivo: ${state.goal}
+Treinos/semana: ${state.days}x
+
+═══════════════════════════════════
+
+CÁLCULO
+BF estimado: ~${d.bfPercent}%
+TMB (repouso): ${d.tmb} kcal
+Manutenção: ${d.maintenance} kcal
+
+META DIÁRIA: ${d.target} kcal
+
+PROTEÍNA: ${d.proteinPerKg.toFixed(1)} g/kg → ${d.protein}g/dia
+CARBO: ${d.carb}g/dia
+GORDURA: ${d.fat}g/dia
+FIBRAS: ${d.fiber}g/dia (referência)
+
+═══════════════════════════════════
+
+PRÓXIMOS PASSOS
+1. Mede peso e cintura toda segunda de manhã, em jejum
+2. Acompanha por 4 semanas
+3. Ajusta ±100−200 kcal se peso não responder
+4. Quer protocolo personalizado? Fala comigo no WhatsApp:
+   wa.me/555520131470
+
+Gerado em ${new Date().toLocaleDateString('pt-BR')}
+Método GH · @gh.scheuermann`;
+
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'metodo-gh-calculo.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function restart() {
+  state = {
+    screen: 1, sex: null, age: null, weight: null, height: null,
+    activity: null, activityFactor: null,
+    bf: null, bfAdjust: 0, bfPercent: null,
+    goal: null, goalAdjust: 0, days: null, result: null
+  };
+  document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+  document.querySelectorAll('input').forEach(el => el.value = '');
+  showScreen(1);
+}
+</script>
+</body>
+</html>
