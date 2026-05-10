@@ -5091,7 +5091,9 @@ function generateLink() {
   // Save sheet ID for convenience
   localStorage.setItem('gh_admin_sheet_id', sheetId);
 
-  const base = window.location.origin + window.location.pathname;
+  // Força HTTPS no link (evita redirect quando admin acessa via http://)
+  const origin = window.location.origin.replace(/^http:/, 'https:');
+  const base = origin + window.location.pathname;
   const link = `${base}?sheet=${encodeURIComponent(sheetId)}&tab=TREINO`;
 
   document.getElementById('adminUrl').textContent = link;
