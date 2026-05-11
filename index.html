@@ -2274,12 +2274,75 @@ let currentWeek = 1;
 // ══ localStorage helpers ══
 function storageKey(d, e, w) { return `gh_${STUDENT_ID}_d${d}_e${e}_w${w}`; }
 function loadCarga(d, e, w) { return localStorage.getItem(storageKey(d, e, w)) || ""; }
-function saveCarga(d, e, w, v) { localStorage.setItem(storageKey(d, e, w), v); }
+function saveCarga(d, e, w, v) {
+  localStorage.setItem(storageKey(d, e, w), v);
+  syncCargaToServer_(d, e, w, v, null);
+}
 function getPrevCarga(d, e, w) { return w > 1 ? localStorage.getItem(storageKey(d, e, w - 1)) || null : null; }
 function placasKey(d, e, w) { return `gh_placas_${STUDENT_ID}_d${d}_e${e}_w${w}`; }
 function loadPlacas(d, e, w) { return localStorage.getItem(placasKey(d, e, w)) || ""; }
-function savePlacas(d, e, w, v) { localStorage.setItem(placasKey(d, e, w), v); }
+function savePlacas(d, e, w, v) {
+  localStorage.setItem(placasKey(d, e, w), v);
+  syncCargaToServer_(d, e, w, null, v);
+}
 function getPrevPlacas(d, e, w) { return w > 1 ? localStorage.getItem(placasKey(d, e, w - 1)) || null : null; }
+
+// ══ Backup servidor pra cargas/placas (anti "não tá salvando") ══
+// Toda escrita local também sobe pro Apps Script → aba CARGAS no mestre.
+// Permite auditoria + restore cross-device.
+function syncCargaToServer_(di, ei, w, carga, placas) {
+  if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
+  try {
+    const payload = {
+      type: 'carga',
+      sheetId: SHEET_ID,
+      studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+      di: di, ei: ei, w: w,
+      carga: carga !== null && carga !== undefined ? String(carga) : '',
+      placas: placas !== null && placas !== undefined ? String(placas) : '',
+      ts: new Date().toISOString()
+    };
+    fetch(LOG_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+      keepalive: true,
+      redirect: 'follow'
+    }).catch(() => {});
+  } catch (_) {}
+}
+
+// On load: se não tem nenhuma carga local pra essa sheet, busca do servidor
+// (cobre troca de celular / reinstalação do PWA / cache limpo).
+async function restoreCargasFromServerIfEmpty_() {
+  if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
+  // Já tem alguma carga local pra essa sheet? Se sim, pula (local é a verdade)
+  const prefix = `gh_${SHEET_ID}_d`;
+  const placasPrefix = `gh_placas_${SHEET_ID}_d`;
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && (k.startsWith(prefix) || k.startsWith(placasPrefix))) return;
+  }
+  try {
+    const url = `${LOG_ENDPOINT}?action=cargas&id=${encodeURIComponent(SHEET_ID)}`;
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data || !Array.isArray(data.cargas)) return;
+    let restored = 0;
+    data.cargas.forEach(c => {
+      if (c.carga) { localStorage.setItem(storageKey(c.di, c.ei, c.w), String(c.carga)); restored++; }
+      if (c.placas) { localStorage.setItem(placasKey(c.di, c.ei, c.w), String(c.placas)); restored++; }
+    });
+    if (restored > 0) {
+      console.log(`[gh] Cargas restauradas do servidor: ${restored} entradas`);
+      // Re-render pra refletir os valores carregados
+      if (typeof renderExercises === 'function' && document.getElementById('exerciseContainer')) {
+        renderExercises();
+      }
+    }
+  } catch (_) { /* silencioso */ }
+}
 
 // ══ Checklist do dia / Streak ══
 function todayKey() {
@@ -3531,6 +3594,7 @@ async function loadFromSheets() {
     renderTabs();
     migrateLegacyDoneKeys_();
     loadAndShowLastModified();
+    restoreCargasFromServerIfEmpty_();
     renderExercises();
 
   } catch (err) {
