@@ -2859,36 +2859,36 @@ function drawCompletionContent(ctx, W, H, p) {
   ctx.textAlign = 'center';
 
   // Emoji bem pequeno, só decorativo (não rouba atenção)
-  ctx.font = '60px sans-serif';
-  ctx.fillText('💪', W/2, 560);
+  ctx.font = '54px sans-serif';
+  ctx.fillText('💪', W/2, 800);
 
-  // MÉTODO GH — agora é o PROTAGONISTA, grande e dourado
+  // MÉTODO GH — protagonista, mais central
   ctx.font = `bold 120px ${ACH_FONT}`;
   ctx.fillStyle = '#d4a76a';
-  fillTextSpaced(ctx, 'MÉTODO  GH', W/2, 700, 16);
+  fillTextSpaced(ctx, 'MÉTODO  GH', W/2, 905, 16);
 
-  // Divider dourado abaixo do brand
+  // Divider dourado curto, colado no brand
   ctx.strokeStyle = '#d4a76a';
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.moveTo(W/2 - 100, 760); ctx.lineTo(W/2 + 100, 760);
+  ctx.moveTo(W/2 - 100, 950); ctx.lineTo(W/2 + 100, 950);
   ctx.stroke();
 
-  // TREINO CONCLUÍDO — agora é subtítulo, leve e discreto
-  ctx.font = `300 44px ${ACH_FONT}`;
+  // TREINO CONCLUÍDO — subtítulo discreto, colado no divider
+  ctx.font = `300 40px ${ACH_FONT}`;
   ctx.fillStyle = '#fff';
-  fillTextSpaced(ctx, 'TREINO  CONCLUÍDO', W/2, 830, 8);
+  fillTextSpaced(ctx, 'TREINO  CONCLUÍDO', W/2, 1000, 8);
 
-  // Day name (em branco grande, mas abaixo da hierarquia visual)
+  // Músculos treinados — enxuto, discreto, dourado claro
   const name = d.dayName || ('DIA ' + d.day);
-  ctx.font = `bold 48px ${ACH_FONT}`;
-  ctx.fillStyle = '#fff';
-  if (ctx.measureText(name).width > W - 120) {
+  ctx.font = `500 30px ${ACH_FONT}`;
+  ctx.fillStyle = 'rgba(212, 167, 106, 0.85)';
+  if (ctx.measureText(name).width > W - 160) {
     const parts = name.split(' + ');
-    ctx.fillText(parts[0], W/2, 930);
-    ctx.fillText('+ ' + parts.slice(1).join(' + '), W/2, 990);
+    ctx.fillText(parts[0], W/2, 1050);
+    ctx.fillText('+ ' + parts.slice(1).join(' + '), W/2, 1090);
   } else {
-    ctx.fillText(name, W/2, 950);
+    ctx.fillText(name, W/2, 1055);
   }
 
   // Stats boxes (3 cards horizontais)
@@ -2896,7 +2896,7 @@ function drawCompletionContent(ctx, W, H, p) {
   if (d.totalKg) cols.push({ num: d.totalKg, lbl: 'KG TOTAIS' });
   cols.push({ num: d.streak, lbl: 'DIAS 🔥' });
 
-  const startY = 1080;
+  const startY = 1170;
   const boxW = cols.length === 3 ? 260 : 320;
   const boxH = 250;
   const gap = 30;
