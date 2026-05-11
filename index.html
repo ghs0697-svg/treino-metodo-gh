@@ -1385,6 +1385,7 @@
   <img src="gh-logo.png" alt="Método GH" class="logo">
   <h1 id="headerTitle">PROTOCOLO DE TREINO</h1>
   <div class="subtitle">MÉTODO GH</div>
+  <div class="last-mod" id="lastModBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:0.3px;">Atualizado em <span id="lastModValue"></span></div>
 </div>
 
 <!-- ══ MAIN NAVIGATION (Treino | Dieta) ══ -->
@@ -3014,6 +3015,32 @@ function showCompletionCard(di) {
 // ══ Logging central (premiação + tracking de afiliados) ══
 const LOG_ENDPOINT = 'https://script.google.com/macros/s/AKfycby0Kej7V7Gi2gIDKorBookSLofBMHOF50UFWq4Q1fTmstCD8ed8O9XLyCaZo8QIeUPfeQ/exec';
 
+// ══ "Atualizado em" ── pega lastUpdated do Drive via Apps Script ══
+async function loadAndShowLastModified() {
+  if (!SHEET_ID) return;
+  try {
+    const cacheKey = `gh_lastmod_${SHEET_ID}`;
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const el = document.getElementById('lastModValue');
+      const badge = document.getElementById('lastModBadge');
+      if (el && badge) { el.textContent = cached; badge.style.display = 'block'; }
+    }
+    const url = `${LOG_ENDPOINT}?action=lastmod&id=${encodeURIComponent(SHEET_ID)}`;
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data || !data.lastModifiedBR) return;
+    const el = document.getElementById('lastModValue');
+    const badge = document.getElementById('lastModBadge');
+    if (el && badge) {
+      el.textContent = data.lastModifiedBR;
+      badge.style.display = 'block';
+      sessionStorage.setItem(cacheKey, data.lastModifiedBR);
+    }
+  } catch (_) { /* silencioso — sem erro pro aluno */ }
+}
+
 // Tracking de cliques em links de afiliado / parceiros
 function trackPartnerClick(link) {
   if (!link) return;
@@ -3503,6 +3530,7 @@ async function loadFromSheets() {
 
     renderTabs();
     migrateLegacyDoneKeys_();
+    loadAndShowLastModified();
     renderExercises();
 
   } catch (err) {
