@@ -274,10 +274,13 @@
     color: var(--green);
     font-size: 11px;
     opacity: 0;
-    transition: opacity 0.3s;
+    transition: opacity 0.3s, color 0.3s;
     white-space: nowrap;
   }
   .carga-saved.show { opacity: 1; }
+  .carga-saved.cloud-pending { opacity: 1; color: #888; }
+  .carga-saved.cloud-ok      { opacity: 1; color: #4caf50; }
+  .carga-saved.cloud-fail    { opacity: 1; color: #d4a76a; }
 
   /* ── Water reminder toast (fallback in-app pra navegadores sem Notification API) ── */
   .water-toast {
@@ -2292,6 +2295,15 @@ function getPrevPlacas(d, e, w) { return w > 1 ? localStorage.getItem(placasKey(
 // Permite auditoria + restore cross-device.
 function syncCargaToServer_(di, ei, w, carga, placas) {
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
+  // Atualiza badge visual: começa "salvo" (local), vira "na nuvem" se servidor confirmar
+  const setBadge = (text, cls) => {
+    const el = document.getElementById(`sv-${di}-${ei}`);
+    if (!el) return;
+    el.textContent = text;
+    el.classList.remove('cloud-pending', 'cloud-ok', 'cloud-fail');
+    if (cls) el.classList.add(cls);
+  };
+  setBadge('☁ enviando…', 'cloud-pending');
   try {
     const payload = {
       type: 'carga',
@@ -2308,8 +2320,12 @@ function syncCargaToServer_(di, ei, w, carga, placas) {
       body: JSON.stringify(payload),
       keepalive: true,
       redirect: 'follow'
-    }).catch(() => {});
-  } catch (_) {}
+    })
+      .then(() => setBadge('☁ salvo na nuvem', 'cloud-ok'))
+      .catch(() => setBadge('✓ salvo no aparelho', 'cloud-fail'));
+  } catch (_) {
+    setBadge('✓ salvo no aparelho', 'cloud-fail');
+  }
 }
 
 // On load: se não tem nenhuma carga local pra essa sheet, busca do servidor
@@ -2708,18 +2724,28 @@ function drawAchievementCard(progress, rawP) {
   // ── Cantos ornamentais ──
   drawCornerOrnaments(ctx, W, H);
 
-  // ── Top brand strip ──
-  ctx.textAlign = 'center';
-  ctx.font = `300 28px ${ACH_FONT}`;
-  ctx.fillStyle = '#d4a76a';
-  ctx.fillText('━ MÉTODO GH ━', W/2, 200);
-
-  // ── Conteúdo central ──
+  // ── Conteúdo central (MÉTODO GH agora vai no meio, dentro de cada tipo) ──
   if (_achData.type === 'completion') drawCompletionContent(ctx, W, H, progress);
   else if (_achData.type === 'pr') drawPRContent(ctx, W, H, progress);
 
   // ── Footer signature ──
   drawBottomSig(ctx, W, H);
+}
+
+// Desenha texto com letter-spacing manual (canvas não suporta nativo
+// em todos os browsers — sobretudo iOS PWA mais antigo). x = centro.
+function fillTextSpaced(ctx, text, x, y, spacing) {
+  const prevAlign = ctx.textAlign;
+  ctx.textAlign = 'left';
+  const chars = String(text).split('');
+  const widths = chars.map(c => ctx.measureText(c).width);
+  const totalW = widths.reduce((a, b) => a + b, 0) + spacing * Math.max(0, chars.length - 1);
+  let curX = x - totalW / 2;
+  for (let i = 0; i < chars.length; i++) {
+    ctx.fillText(chars[i], curX, y);
+    curX += widths[i] + spacing;
+  }
+  ctx.textAlign = prevAlign;
 }
 
 // Foto do pump
@@ -2760,24 +2786,37 @@ function drawCompletionContent(ctx, W, H, p) {
   const d = _achData;
   ctx.textAlign = 'center';
 
-  // Big emoji
-  ctx.font = '180px sans-serif';
-  ctx.fillText('💪', W/2, 420);
+  // Emoji menor, posicionado mais alto
+  ctx.font = '110px sans-serif';
+  ctx.fillText('💪', W/2, 320);
 
-  // Title — "TREINO" em light, "CONCLUÍDO" em bold dourado
-  ctx.font = `300 60px ${ACH_FONT}`;
+  // TREINO — letter-spacing decorativo, mais elegante
+  ctx.font = `300 72px ${ACH_FONT}`;
   ctx.fillStyle = '#fff';
-  ctx.fillText('TREINO', W/2, 540);
+  fillTextSpaced(ctx, 'TREINO', W/2, 470, 18);
 
+  // CONCLUÍDO — bold dourado, peso visual principal
   ctx.font = `bold 110px ${ACH_FONT}`;
   ctx.fillStyle = '#d4a76a';
-  ctx.fillText('CONCLUÍDO', W/2, 660);
+  ctx.fillText('CONCLUÍDO', W/2, 600);
 
-  // Divider
+  // Divider dourado
   ctx.strokeStyle = '#d4a76a';
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.moveTo(W/2 - 70, 720); ctx.lineTo(W/2 + 70, 720);
+  ctx.moveTo(W/2 - 70, 660); ctx.lineTo(W/2 + 70, 660);
+  ctx.stroke();
+
+  // MÉTODO GH no meio — assinatura central, ornamentado
+  ctx.font = `300 36px ${ACH_FONT}`;
+  ctx.fillStyle = '#d4a76a';
+  fillTextSpaced(ctx, 'MÉTODO  GH', W/2, 730, 12);
+
+  // Mini divider abaixo do MÉTODO GH
+  ctx.strokeStyle = 'rgba(212, 167, 106, 0.4)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(W/2 - 45, 758); ctx.lineTo(W/2 + 45, 758);
   ctx.stroke();
 
   // Day name
@@ -2786,10 +2825,10 @@ function drawCompletionContent(ctx, W, H, p) {
   ctx.fillStyle = '#fff';
   if (ctx.measureText(name).width > W - 120) {
     const parts = name.split(' + ');
-    ctx.fillText(parts[0], W/2, 810);
-    ctx.fillText('+ ' + parts.slice(1).join(' + '), W/2, 875);
+    ctx.fillText(parts[0], W/2, 850);
+    ctx.fillText('+ ' + parts.slice(1).join(' + '), W/2, 915);
   } else {
-    ctx.fillText(name, W/2, 830);
+    ctx.fillText(name, W/2, 870);
   }
 
   // Stats boxes (3 cards horizontais)
@@ -2831,24 +2870,35 @@ function drawPRContent(ctx, W, H, p) {
   const d = _achData;
   ctx.textAlign = 'center';
 
-  // Trophy big
-  ctx.font = '220px sans-serif';
-  ctx.fillText('🏆', W/2, 480);
+  // Trophy menor, mais alto
+  ctx.font = '140px sans-serif';
+  ctx.fillText('🏆', W/2, 340);
 
-  // Title
-  ctx.font = `300 58px ${ACH_FONT}`;
+  // NOVO com letter-spacing
+  ctx.font = `300 70px ${ACH_FONT}`;
   ctx.fillStyle = '#fff';
-  ctx.fillText('NOVO', W/2, 600);
+  fillTextSpaced(ctx, 'NOVO', W/2, 480, 18);
 
   ctx.font = `bold 130px ${ACH_FONT}`;
   ctx.fillStyle = '#d4a76a';
-  ctx.fillText('RECORDE', W/2, 750);
+  ctx.fillText('RECORDE', W/2, 620);
 
   // Divider
   ctx.strokeStyle = '#d4a76a';
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.moveTo(W/2 - 70, 810); ctx.lineTo(W/2 + 70, 810);
+  ctx.moveTo(W/2 - 70, 680); ctx.lineTo(W/2 + 70, 680);
+  ctx.stroke();
+
+  // MÉTODO GH no meio
+  ctx.font = `300 36px ${ACH_FONT}`;
+  ctx.fillStyle = '#d4a76a';
+  fillTextSpaced(ctx, 'MÉTODO  GH', W/2, 750, 12);
+
+  ctx.strokeStyle = 'rgba(212, 167, 106, 0.4)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(W/2 - 45, 778); ctx.lineTo(W/2 + 45, 778);
   ctx.stroke();
 
   // Exercise name
