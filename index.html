@@ -2858,49 +2858,37 @@ function drawCompletionContent(ctx, W, H, p) {
   const d = _achData;
   ctx.textAlign = 'center';
 
-  // Emoji menor, posicionado mais alto
-  ctx.font = '110px sans-serif';
-  ctx.fillText('💪', W/2, 320);
+  // Emoji bem pequeno, só decorativo (não rouba atenção)
+  ctx.font = '60px sans-serif';
+  ctx.fillText('💪', W/2, 560);
 
-  // TREINO — letter-spacing decorativo, mais elegante
-  ctx.font = `300 72px ${ACH_FONT}`;
-  ctx.fillStyle = '#fff';
-  fillTextSpaced(ctx, 'TREINO', W/2, 470, 18);
-
-  // CONCLUÍDO — bold dourado, peso visual principal
-  ctx.font = `bold 110px ${ACH_FONT}`;
+  // MÉTODO GH — agora é o PROTAGONISTA, grande e dourado
+  ctx.font = `bold 120px ${ACH_FONT}`;
   ctx.fillStyle = '#d4a76a';
-  ctx.fillText('CONCLUÍDO', W/2, 600);
+  fillTextSpaced(ctx, 'MÉTODO  GH', W/2, 700, 16);
 
-  // Divider dourado
+  // Divider dourado abaixo do brand
   ctx.strokeStyle = '#d4a76a';
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.moveTo(W/2 - 70, 660); ctx.lineTo(W/2 + 70, 660);
+  ctx.moveTo(W/2 - 100, 760); ctx.lineTo(W/2 + 100, 760);
   ctx.stroke();
 
-  // MÉTODO GH no meio — assinatura central, ornamentado
-  ctx.font = `300 36px ${ACH_FONT}`;
-  ctx.fillStyle = '#d4a76a';
-  fillTextSpaced(ctx, 'MÉTODO  GH', W/2, 730, 12);
+  // TREINO CONCLUÍDO — agora é subtítulo, leve e discreto
+  ctx.font = `300 44px ${ACH_FONT}`;
+  ctx.fillStyle = '#fff';
+  fillTextSpaced(ctx, 'TREINO  CONCLUÍDO', W/2, 830, 8);
 
-  // Mini divider abaixo do MÉTODO GH
-  ctx.strokeStyle = 'rgba(212, 167, 106, 0.4)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(W/2 - 45, 758); ctx.lineTo(W/2 + 45, 758);
-  ctx.stroke();
-
-  // Day name
+  // Day name (em branco grande, mas abaixo da hierarquia visual)
   const name = d.dayName || ('DIA ' + d.day);
-  ctx.font = `bold 52px ${ACH_FONT}`;
+  ctx.font = `bold 48px ${ACH_FONT}`;
   ctx.fillStyle = '#fff';
   if (ctx.measureText(name).width > W - 120) {
     const parts = name.split(' + ');
-    ctx.fillText(parts[0], W/2, 850);
-    ctx.fillText('+ ' + parts.slice(1).join(' + '), W/2, 915);
+    ctx.fillText(parts[0], W/2, 930);
+    ctx.fillText('+ ' + parts.slice(1).join(' + '), W/2, 990);
   } else {
-    ctx.fillText(name, W/2, 870);
+    ctx.fillText(name, W/2, 950);
   }
 
   // Stats boxes (3 cards horizontais)
@@ -2942,36 +2930,26 @@ function drawPRContent(ctx, W, H, p) {
   const d = _achData;
   ctx.textAlign = 'center';
 
-  // Trophy menor, mais alto
-  ctx.font = '140px sans-serif';
-  ctx.fillText('🏆', W/2, 340);
+  // Trophy pequeno e baixo
+  ctx.font = '70px sans-serif';
+  ctx.fillText('🏆', W/2, 560);
 
-  // NOVO com letter-spacing
-  ctx.font = `300 70px ${ACH_FONT}`;
-  ctx.fillStyle = '#fff';
-  fillTextSpaced(ctx, 'NOVO', W/2, 480, 18);
-
-  ctx.font = `bold 130px ${ACH_FONT}`;
+  // MÉTODO GH — protagonista
+  ctx.font = `bold 120px ${ACH_FONT}`;
   ctx.fillStyle = '#d4a76a';
-  ctx.fillText('RECORDE', W/2, 620);
+  fillTextSpaced(ctx, 'MÉTODO  GH', W/2, 700, 16);
 
   // Divider
   ctx.strokeStyle = '#d4a76a';
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.moveTo(W/2 - 70, 680); ctx.lineTo(W/2 + 70, 680);
+  ctx.moveTo(W/2 - 100, 760); ctx.lineTo(W/2 + 100, 760);
   ctx.stroke();
 
-  // MÉTODO GH no meio
-  ctx.font = `300 36px ${ACH_FONT}`;
-  ctx.fillStyle = '#d4a76a';
-  fillTextSpaced(ctx, 'MÉTODO  GH', W/2, 750, 12);
-
-  ctx.strokeStyle = 'rgba(212, 167, 106, 0.4)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(W/2 - 45, 778); ctx.lineTo(W/2 + 45, 778);
-  ctx.stroke();
+  // NOVO RECORDE — subtítulo discreto
+  ctx.font = `300 44px ${ACH_FONT}`;
+  ctx.fillStyle = '#fff';
+  fillTextSpaced(ctx, 'NOVO  RECORDE', W/2, 830, 8);
 
   // Exercise name
   ctx.font = `bold 44px ${ACH_FONT}`;
