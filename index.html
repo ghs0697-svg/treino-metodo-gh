@@ -2285,11 +2285,47 @@ function todayKey() {
   const d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
-function doneKey(di, ei) { return `gh_done_${STUDENT_ID}_${todayKey()}_d${di}_e${ei}`; }
+// FIX 2026-05-11: chave de "exercício feito" agora é por SEMANA do treino, não por
+// data do dia. Antes, virou meia-noite, o aluno via tudo desmarcado mesmo tendo
+// concluído o treino na véspera. Agora marcado = marcado durante a semana inteira;
+// reseta natural ao mudar de semana (que é treino novo).
+function doneKey(di, ei) { return `gh_done_${STUDENT_ID}_w${currentWeek}_d${di}_e${ei}`; }
 function isDone(di, ei) { return localStorage.getItem(doneKey(di, ei)) === '1'; }
 function setDone(di, ei, val) {
   if (val) localStorage.setItem(doneKey(di, ei), '1');
   else localStorage.removeItem(doneKey(di, ei));
+}
+
+// Migração one-time: traz keys legadas (`gh_done_<id>_YYYY-MM-DD_dN_eN`) das
+// últimas 7 datas pro novo formato (`gh_done_<id>_w<currentWeek>_dN_eN`),
+// preservando o que o aluno já marcou.
+function migrateLegacyDoneKeys_() {
+  if (!STUDENT_ID) return;
+  const flagKey = `gh_done_migrated_v2_${STUDENT_ID}`;
+  if (localStorage.getItem(flagKey) === '1') return;
+  const prefix = `gh_done_${STUDENT_ID}_`;
+  const today = new Date();
+  const recentDates = new Set();
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    recentDates.add(
+      d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0')
+    );
+  }
+  const toRemove = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k || !k.startsWith(prefix)) continue;
+    const m = k.match(/^gh_done_.+?_(\d{4}-\d{2}-\d{2})_d(\d+)_e(\d+)$/);
+    if (!m) continue;
+    if (recentDates.has(m[1]) && localStorage.getItem(k) === '1') {
+      const newK = `gh_done_${STUDENT_ID}_w${currentWeek}_d${m[2]}_e${m[3]}`;
+      if (!localStorage.getItem(newK)) localStorage.setItem(newK, '1');
+    }
+    toRemove.push(k);
+  }
+  toRemove.forEach(k => localStorage.removeItem(k));
+  localStorage.setItem(flagKey, '1');
 }
 function onCheckExercise(di, ei) {
   const newVal = !isDone(di, ei);
@@ -3466,6 +3502,7 @@ async function loadFromSheets() {
     }
 
     renderTabs();
+    migrateLegacyDoneKeys_();
     renderExercises();
 
   } catch (err) {
