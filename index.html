@@ -2059,6 +2059,9 @@
     <button type="button" class="float-opt ranking" onclick="event.stopPropagation(); openRankingModal()">
       <span class="ic">🏆</span><span>Ranking do mês</span>
     </button>
+    <button type="button" class="float-opt" onclick="event.stopPropagation(); toggleUnit()">
+      <span class="ic">⚖️</span><span id="unitToggleLabel">Unidade: kg (trocar pra lb)</span>
+    </button>
     <button type="button" class="float-opt install" onclick="event.stopPropagation(); showInstallInstructions()">
       <span class="ic">📱</span><span>Instalar app na tela inicial</span>
     </button>
@@ -2345,6 +2348,59 @@ const TOTAL_WEEKS = parseInt(params.get('weeks')) || 8;
 let WORKOUT = [];
 let currentDay = 0;
 let currentWeek = 1;
+
+// ══ Unidade de carga (kg padrão, lb opcional) ══
+// IMPORTANTE: localStorage e servidor sempre guardam kg. Só a UI converte.
+// Trocar unidade nunca altera o dado salvo — só a apresentação.
+const LB_PER_KG = 2.20462;
+function getUnit() {
+  return localStorage.getItem(`gh_unit_${STUDENT_ID}`) || 'kg';
+}
+function setUnit(u) {
+  if (u !== 'kg' && u !== 'lb') u = 'kg';
+  localStorage.setItem(`gh_unit_${STUDENT_ID}`, u);
+}
+// kg armazenado → string formatada na unidade atual de display
+function kgToDisplay(kgVal) {
+  if (kgVal === '' || kgVal == null) return '';
+  const n = parseFloat(kgVal);
+  if (isNaN(n)) return String(kgVal);
+  if (getUnit() === 'lb') {
+    const lb = n * LB_PER_KG;
+    // 1 decimal, mas remove .0 se inteiro
+    return (Math.round(lb * 10) / 10).toString().replace(/\.0$/, '');
+  }
+  return String(n).replace(/\.0+$/, '');
+}
+// input do usuário (na unidade atual) → string kg pra salvar
+function displayToKg(displayVal) {
+  if (displayVal === '' || displayVal == null) return '';
+  const n = parseFloat(displayVal);
+  if (isNaN(n)) return String(displayVal);
+  if (getUnit() === 'lb') {
+    const kg = n / LB_PER_KG;
+    // 2 decimais, mas remove zeros à direita
+    return (Math.round(kg * 100) / 100).toString().replace(/\.?0+$/, m => m.includes('.') ? '' : m);
+  }
+  return String(n);
+}
+// Toggle chamado pelo botão flutuante
+function toggleUnit() {
+  const next = getUnit() === 'kg' ? 'lb' : 'kg';
+  setUnit(next);
+  updateUnitToggleLabel();
+  // Re-render tudo que mostra cargas
+  if (typeof renderExercises === 'function') renderExercises();
+  // Fecha o menu
+  const fm = document.getElementById('floatMenu');
+  fm && fm.classList.remove('open');
+  const fo = document.getElementById('floatOptions');
+  fo && fo.classList.remove('show');
+}
+function updateUnitToggleLabel() {
+  const el = document.getElementById('unitToggleLabel');
+  if (el) el.textContent = `Unidade: ${getUnit() === 'kg' ? 'kg (trocar pra lb)' : 'lb (trocar pra kg)'}`;
+}
 
 // ══ localStorage helpers ══
 function storageKey(d, e, w) { return `gh_${STUDENT_ID}_d${d}_e${e}_w${w}`; }
@@ -2895,7 +2951,7 @@ function drawCompletionContent(ctx, W, H, p) {
 
   // 4. Stats compactos (boxes menores agora) — exercícios + dias
   const cols = [{ num: d.exercises, lbl: 'EXERCÍCIOS' }];
-  if (d.totalKg) cols.push({ num: d.totalKg, lbl: 'KG TOTAIS' });
+  if (d.totalKg) cols.push({ num: Math.round(parseFloat(kgToDisplay(d.totalKg)) || 0), lbl: getUnit().toUpperCase() + ' TOTAIS' });
   cols.push({ num: d.streak, lbl: 'DIAS 🔥' });
 
   const startY = 1280;
@@ -2986,14 +3042,17 @@ function drawPRContent(ctx, W, H, p) {
     ctx.fillText(name, W/2, 920);
   }
 
-  // Old/New comparison
-  const oldKg = d.oldKg, newKg = d.newKg;
-  const animKg = Math.round((oldKg + (newKg - oldKg) * p) * 10) / 10;
+  // Old/New comparison — converte pra unidade selecionada do aluno
+  const unit = (typeof getUnit === 'function' ? getUnit() : 'kg');
+  const factor = unit === 'lb' ? LB_PER_KG : 1;
+  const oldDisp = Math.round(d.oldKg * factor * 10) / 10;
+  const newDisp = Math.round(d.newKg * factor * 10) / 10;
+  const animDisp = Math.round((d.oldKg + (d.newKg - d.oldKg) * p) * factor * 10) / 10;
 
   // Old
   ctx.font = `300 38px ${ACH_FONT}`;
   ctx.fillStyle = '#666';
-  ctx.fillText(oldKg + 'kg', W/2, 1130);
+  ctx.fillText(oldDisp + unit, W/2, 1130);
 
   // Arrow down
   ctx.font = `300 42px ${ACH_FONT}`;
@@ -3012,13 +3071,13 @@ function drawPRContent(ctx, W, H, p) {
   ctx.stroke();
   ctx.font = `bold 150px ${ACH_FONT}`;
   ctx.fillStyle = '#d4a76a';
-  ctx.fillText(animKg + 'kg', W/2, boxY + 145);
+  ctx.fillText(animDisp + unit, W/2, boxY + 145);
 
   // Diff
-  const diff = Math.round((newKg - oldKg) * 10) / 10;
+  const diffDisp = Math.round((newDisp - oldDisp) * 10) / 10;
   ctx.font = `bold 58px ${ACH_FONT}`;
   ctx.fillStyle = '#4caf50';
-  ctx.fillText('+' + diff + 'kg', W/2, 1530);
+  ctx.fillText('+' + diffDisp + unit, W/2, 1530);
 }
 
 async function achShare() {
@@ -3459,11 +3518,13 @@ function showHistory(di, ei) {
     values.push({ w, kg: c, placas: p });
   }
   const max = Math.max(...values.map(v => v.kg), 1);
+  const unit = getUnit();
+  const fmt = (kg) => kgToDisplay(kg) + unit;
   let bars = '';
   values.forEach(v => {
     const pct = max > 0 ? (v.kg/max)*100 : 0;
     const empty = v.kg === 0;
-    const valTxt = v.kg > 0 ? (v.placas > 0 ? `${v.kg}kg · ${v.placas}pl` : `${v.kg}kg`) : '—';
+    const valTxt = v.kg > 0 ? (v.placas > 0 ? `${fmt(v.kg)} · ${v.placas}pl` : fmt(v.kg)) : '—';
     bars += `<div class="history-bar-row">
       <span class="history-bar-label">Semana ${v.w}</span>
       <div class="history-bar-track"><div class="history-bar-fill ${empty ? 'empty' : ''}" style="width:${empty ? 100 : pct}%"></div></div>
@@ -3478,19 +3539,20 @@ function showHistory(di, ei) {
   if (filled.length === 0) {
     trend.textContent = 'Sem dados ainda — anota a carga semana a semana pra acompanhar a evolução.';
   } else if (filled.length === 1) {
-    trend.textContent = `Primeira carga registrada: ${filled[0].kg}kg na semana ${filled[0].w}. Continua progredindo!`;
+    trend.textContent = `Primeira carga registrada: ${fmt(filled[0].kg)} na semana ${filled[0].w}. Continua progredindo!`;
   } else {
     const first = filled[0], last = filled[filled.length-1];
-    const diff = last.kg - first.kg;
-    const pct = ((diff/first.kg)*100).toFixed(0);
-    if (diff > 0) {
-      trend.textContent = `📈 Evoluiu +${diff}kg (+${pct}%) da semana ${first.w} pra ${last.w}`;
+    const diffKg = last.kg - first.kg;
+    const pct = ((diffKg/first.kg)*100).toFixed(0);
+    const diffDisp = unit === 'lb' ? (Math.round(diffKg * LB_PER_KG * 10) / 10) : (Math.round(diffKg * 10) / 10);
+    if (diffKg > 0) {
+      trend.textContent = `📈 Evoluiu +${diffDisp}${unit} (+${pct}%) da semana ${first.w} pra ${last.w}`;
       trend.classList.add('up');
-    } else if (diff < 0) {
-      trend.textContent = `⚠ Reduziu ${Math.abs(diff)}kg da semana ${first.w} pra ${last.w} — checa se foi descanso/lesão`;
+    } else if (diffKg < 0) {
+      trend.textContent = `⚠ Reduziu ${Math.abs(diffDisp)}${unit} da semana ${first.w} pra ${last.w} — checa se foi descanso/lesão`;
       trend.classList.add('down');
     } else {
-      trend.textContent = `⏸ Mesma carga ${first.kg}kg em ${filled.length} semanas — hora de tentar progredir`;
+      trend.textContent = `⏸ Mesma carga ${fmt(first.kg)} em ${filled.length} semanas — hora de tentar progredir`;
     }
   }
   document.getElementById('historyModal').classList.add('show');
@@ -3712,6 +3774,7 @@ async function loadFromSheets() {
     migrateLegacyDoneKeys_();
     loadAndShowLastModified();
     restoreCargasFromServerIfEmpty_();
+    updateUnitToggleLabel();
     renderExercises();
 
   } catch (err) {
@@ -3802,19 +3865,19 @@ function renderExercises() {
             <div class="carga-section">
               <div class="carga-group">
                 <span class="carga-label" style="font-size:10px;">A</span>
-                <input class="carga-input" type="number" inputmode="decimal" placeholder="kg" style="width:60px"
-                  value="${curA}" oninput="onCarga(${di},'${ei}a',this)">
+                <input class="carga-input" type="number" inputmode="decimal" placeholder="${getUnit()}" style="width:60px"
+                  value="${kgToDisplay(curA)}" oninput="onCarga(${di},'${ei}a',this)">
                 <input class="carga-input" type="number" inputmode="numeric" placeholder="pl" style="width:45px"
                   value="${curAP}" oninput="onPlacas(${di},'${ei}a',this)">
-                ${(prevA || prevAP) ? `<span class="carga-prev">${prevA ? prevA+'kg' : ''}${prevA && prevAP ? '/' : ''}${prevAP ? prevAP+'pl' : ''}</span>` : ''}
+                ${(prevA || prevAP) ? `<span class="carga-prev">${prevA ? kgToDisplay(prevA)+getUnit() : ''}${prevA && prevAP ? '/' : ''}${prevAP ? prevAP+'pl' : ''}</span>` : ''}
               </div>
               <div class="carga-group">
                 <span class="carga-label" style="font-size:10px;">B</span>
-                <input class="carga-input" type="number" inputmode="decimal" placeholder="kg" style="width:60px"
-                  value="${curB}" oninput="onCarga(${di},'${ei}b',this)">
+                <input class="carga-input" type="number" inputmode="decimal" placeholder="${getUnit()}" style="width:60px"
+                  value="${kgToDisplay(curB)}" oninput="onCarga(${di},'${ei}b',this)">
                 <input class="carga-input" type="number" inputmode="numeric" placeholder="pl" style="width:45px"
                   value="${curBP}" oninput="onPlacas(${di},'${ei}b',this)">
-                ${(prevB || prevBP) ? `<span class="carga-prev">${prevB ? prevB+'kg' : ''}${prevB && prevBP ? '/' : ''}${prevBP ? prevBP+'pl' : ''}</span>` : ''}
+                ${(prevB || prevBP) ? `<span class="carga-prev">${prevB ? kgToDisplay(prevB)+getUnit() : ''}${prevB && prevBP ? '/' : ''}${prevBP ? prevBP+'pl' : ''}</span>` : ''}
               </div>
               <span class="carga-saved" id="sv-${di}-${ei}">&#10003; salvo</span>
             </div>
@@ -3857,15 +3920,15 @@ function renderExercises() {
           <div class="carga-section">
             <div class="carga-group">
               <span class="carga-label">CARGA</span>
-              <input class="carga-input" type="number" inputmode="decimal" placeholder="kg"
-                value="${cur}" oninput="onCarga(${di},${ei},this)">
+              <input class="carga-input" type="number" inputmode="decimal" placeholder="${getUnit()}"
+                value="${kgToDisplay(cur)}" oninput="onCarga(${di},${ei},this)">
             </div>
             <div class="carga-group">
               <span class="carga-label">PLACAS</span>
               <input class="carga-input" type="number" inputmode="numeric" placeholder="nº" style="width:55px"
                 value="${curP}" oninput="onPlacas(${di},${ei},this)">
             </div>
-            ${(prev || prevP) ? `<span class="carga-prev">Ant: ${prev ? prev+'kg' : ''}${prev && prevP ? ' / ' : ''}${prevP ? prevP+' pl' : ''}</span>` : ''}
+            ${(prev || prevP) ? `<span class="carga-prev">Ant: ${prev ? kgToDisplay(prev)+getUnit() : ''}${prev && prevP ? ' / ' : ''}${prevP ? prevP+' pl' : ''}</span>` : ''}
             <span class="carga-saved" id="sv-${di}-${ei}">&#10003; salvo</span>
             <div class="ex-actions">
               <button class="ex-action-btn save-btn" onclick="saveCargaManual(${di}, ${ei}, this)" title="Salvar cargas agora">💾</button>
@@ -3900,11 +3963,13 @@ function onCarga(di, ei, input) {
   const k = `${di}-${ei}`;
   clearTimeout(timers[k]);
   timers[k] = setTimeout(() => {
-    saveCarga(di, ei, currentWeek, input.value);
+    // Converte do display (kg ou lb) pra kg interno SEMPRE antes de salvar
+    const kgValue = displayToKg(input.value);
+    saveCarga(di, ei, currentWeek, kgValue);
     const el = document.getElementById(`sv-${di}-${ei}`);
     if (el) { el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 1500); }
-    // ✨ PR detection
-    const kg = parseFloat(input.value) || 0;
+    // ✨ PR detection (compara em kg)
+    const kg = parseFloat(kgValue) || 0;
     if (kg > 0) checkPR(di, ei, kg);
   }, 400);
 }
@@ -3923,11 +3988,11 @@ function saveCargaManual(di, ei, btn) {
   const kgInput = inputs[0];
   const placasInput = inputs[1];
 
-  if (kgInput) saveCarga(di, ei, currentWeek, kgInput.value);
+  if (kgInput) saveCarga(di, ei, currentWeek, displayToKg(kgInput.value));
   if (placasInput) savePlacas(di, ei, currentWeek, placasInput.value);
 
-  // PR detection no save manual também
-  const kg = parseFloat(kgInput?.value) || 0;
+  // PR detection no save manual também (em kg)
+  const kg = parseFloat(displayToKg(kgInput?.value || '')) || 0;
   if (kg > 0) checkPR(di, ei, kg);
 
   // Feedback visual: pulsa o ✓ + muda emoji do botão por 1.2s
