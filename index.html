@@ -557,6 +557,39 @@
   }
   .app-footer span { color: var(--gold); font-size: 11px; letter-spacing: 1px; }
 
+  /* ── Impressão / PDF ── */
+  #printArea { display: none; }
+  @media print {
+    body { background: #fff !important; }
+    body > *:not(#printArea) { display: none !important; }
+    #printArea {
+      display: block !important;
+      color: #000;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      padding: 0;
+    }
+    #printArea .pa-header { text-align: center; margin-bottom: 18px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+    #printArea .pa-header h1 { font-size: 20px; margin: 0 0 2px; letter-spacing: 1px; }
+    #printArea .pa-header .pa-sub { font-size: 12px; color: #555; }
+    #printArea .pa-meta { font-size: 12px; margin-bottom: 14px; }
+    #printArea .pa-meta strong { display: inline-block; min-width: 70px; }
+    #printArea .pa-day { margin-bottom: 16px; page-break-inside: avoid; }
+    #printArea .pa-day-title {
+      font-size: 14px; font-weight: 700; background: #000; color: #fff;
+      padding: 5px 10px; margin: 0 0 6px;
+    }
+    #printArea table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    #printArea th, #printArea td {
+      border: 1px solid #999; padding: 4px 6px; text-align: left; vertical-align: top;
+    }
+    #printArea th { background: #eee; font-weight: 700; }
+    #printArea td.pa-ex { font-weight: 600; }
+    #printArea .pa-warm { color: #777; font-style: italic; }
+    #printArea .pa-obs { font-size: 10px; color: #444; }
+    #printArea .pa-foot { margin-top: 20px; text-align: center; font-size: 10px; color: #777; border-top: 1px solid #ccc; padding-top: 8px; }
+    @page { margin: 1.4cm; }
+  }
+
   /* ── Admin panel ── */
   .admin-panel {
     background: var(--card);
@@ -2033,6 +2066,9 @@
 
 <div class="app-footer"><span>MÉTODO GH — @gh.scheuermann</span></div>
 
+<!-- ══ Área de impressão / PDF (escondida na tela, só aparece no print) ══ -->
+<div id="printArea"></div>
+
 <!-- ══ Botão Suporte WhatsApp (flutuante) ══ -->
 <!-- ══ ACHIEVEMENT / SHARE CARD ══ -->
 <div class="ach-overlay" id="achOverlay" onclick="achCloseOnBg(event)">
@@ -2061,6 +2097,9 @@
     </button>
     <button type="button" class="float-opt" onclick="event.stopPropagation(); toggleUnit()">
       <span class="ic">⚖️</span><span id="unitToggleLabel">Unidade: kg (trocar pra lb)</span>
+    </button>
+    <button type="button" class="float-opt" onclick="event.stopPropagation(); downloadTreinoPDF()">
+      <span class="ic">📄</span><span>Baixar treino em PDF</span>
     </button>
     <button type="button" class="float-opt install" onclick="event.stopPropagation(); showInstallInstructions()">
       <span class="ic">📱</span><span>Instalar app na tela inicial</span>
@@ -3941,6 +3980,77 @@ function renderExercises() {
     c.appendChild(div);
   });
   updateDayProgress();
+}
+
+// ══ Baixar treino em PDF (via print-to-PDF do navegador) ══
+function downloadTreinoPDF() {
+  if (!WORKOUT || !WORKOUT.length) {
+    alert('Treino ainda não carregou. Tenta de novo em alguns segundos.');
+    return;
+  }
+  const esc = s => String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const studentName = (document.getElementById('infoNome')?.textContent || 'Aluno').trim();
+  const unit = (typeof getUnit === 'function') ? getUnit() : 'kg';
+  const today = new Date().toLocaleDateString('pt-BR');
+
+  // Linha de exercício (normal ou lado do biset)
+  const exRow = (ex, di, ei, label) => {
+    const warm = ex.warmup ? ' class="pa-warm"' : '';
+    const nome = esc(ex.name) + (ex.warmup ? ' (aquecimento)' : '');
+    const carga = (typeof loadCarga === 'function') ? loadCarga(di, ei, currentWeek) : '';
+    const placas = (typeof loadPlacas === 'function') ? loadPlacas(di, ei, currentWeek) : '';
+    let cargaTxt = '';
+    if (carga) cargaTxt = (typeof kgToDisplay === 'function' ? kgToDisplay(carga) : carga) + unit;
+    if (placas) cargaTxt += (cargaTxt ? ' / ' : '') + placas + 'pl';
+    const obs = ex.obs ? `<div class="pa-obs">${esc(ex.obs)}</div>` : '';
+    return `<tr${warm}>
+      <td class="pa-ex">${label ? '<b>' + label + '</b> ' : ''}${nome}${obs}</td>
+      <td>${esc(ex.series || '')}</td>
+      <td>${esc(ex.reps || '')}</td>
+      <td>${esc(ex.rest || '')}</td>
+      <td>${cargaTxt}</td>
+    </tr>`;
+  };
+
+  let daysHtml = '';
+  WORKOUT.forEach((day, di) => {
+    let rows = '';
+    day.exercises.forEach((ex, ei) => {
+      if (ex.biset) {
+        rows += exRow(ex.a, di, `${ei}a`, 'A');
+        rows += exRow(ex.b, di, `${ei}b`, 'B');
+      } else {
+        rows += exRow(ex, di, ei, '');
+      }
+    });
+    daysHtml += `
+      <div class="pa-day">
+        <h2 class="pa-day-title">${esc(day.day || ('Dia ' + (di + 1)))}</h2>
+        <table>
+          <thead><tr>
+            <th>Exercício</th><th>Séries</th><th>Reps</th><th>Intervalo</th><th>Carga (S${currentWeek})</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  });
+
+  document.getElementById('printArea').innerHTML = `
+    <div class="pa-header">
+      <h1>PROTOCOLO DE TREINO</h1>
+      <div class="pa-sub">MÉTODO GH — @gh.scheuermann</div>
+    </div>
+    <div class="pa-meta">
+      <div><strong>Aluno:</strong> ${esc(studentName)}</div>
+      <div><strong>Semana:</strong> ${currentWeek}</div>
+      <div><strong>Emitido:</strong> ${today}</div>
+    </div>
+    ${daysHtml}
+    <div class="pa-foot">Gerado pelo app MÉTODO GH · app.metodogh.com.br</div>`;
+
+  // Pequeno delay garante que o DOM atualizou antes do print
+  setTimeout(() => { window.print(); }, 100);
 }
 
 function selectDay(i) {
