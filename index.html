@@ -4847,21 +4847,35 @@ function renderDiet() {
 
   });
 
+  // Separa o que é cardio do que é orientação geral.
+  // Cardio pode vir como: (1) linha tipo `cardio`/`aerob` → d.aerobicos
+  // ou (2) linha `orient` com categoria "Aeróbico/Cardio" → d.orientacoes.
+  // Pega os dois casos pra não depender de como foi montado na sheet.
+  const isCardioCat = c => /a[eé]r[oó]bic|cardio/i.test(String(c || ''));
+  const cardioFromOrient = (d.orientacoes || []).filter(o => isCardioCat(o.categoria));
+  const orientacoesReais = (d.orientacoes || []).filter(o => !isCardioCat(o.categoria));
+  const temCardio = (d.aerobicos && d.aerobicos.length > 0) || cardioFromOrient.length > 0;
+
   // Cardio — seção própria (separada das Orientações)
-  if (d.aerobicos && d.aerobicos.length > 0) {
+  if (temCardio) {
     html += `<div class="diet-section-toggle" onclick="toggleDietSection('cardio')">Cardio <span id="cardioArrow">&#9660;</span></div>`;
     html += `<div class="diet-section-content" id="cardioContent">`;
-    d.aerobicos.forEach(function(a) {
-      html += `<div class="diet-orient"><span class="diet-orient-cat">Aeróbico</span><span class="diet-orient-text">${a.freq} — ${a.duracao}${a.obs ? ' — ' + a.obs : ''}</span></div>`;
+    if (d.aerobicos && d.aerobicos.length > 0) {
+      d.aerobicos.forEach(function(a) {
+        html += `<div class="diet-orient"><span class="diet-orient-cat">Aeróbico</span><span class="diet-orient-text">${a.freq} — ${a.duracao}${a.obs ? ' — ' + a.obs : ''}</span></div>`;
+      });
+    }
+    cardioFromOrient.forEach(o => {
+      html += `<div class="diet-orient"><span class="diet-orient-cat">${o.categoria}</span><span class="diet-orient-text">${o.texto}</span></div>`;
     });
     html += `</div>`;
   }
 
   // Orientações (sem aeróbicos — esses agora têm seção própria)
-  if (d.orientacoes.length > 0) {
+  if (orientacoesReais.length > 0) {
     html += `<div class="diet-section-toggle" onclick="toggleDietSection('orient')">Orientações <span id="orientArrow">&#9660;</span></div>`;
     html += `<div class="diet-section-content" id="orientContent">`;
-    d.orientacoes.forEach(o => {
+    orientacoesReais.forEach(o => {
       html += `<div class="diet-orient">${o.categoria ? `<span class="diet-orient-cat">${o.categoria}</span>` : ''}<span class="diet-orient-text">${o.texto}</span></div>`;
     });
     html += `</div>`;
