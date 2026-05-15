@@ -561,13 +561,19 @@
   #printArea { display: none; }
   @media print {
     body { background: #fff !important; }
-    body > *:not(#printArea) { display: none !important; }
+    /* Esconde TUDO que não for printArea (UI, partners, suplementos
+       recomendados, parceiros, modais, menus flutuantes, etc) */
+    body > *:not(#printArea) { display: none !important; visibility: hidden !important; }
     #printArea {
       display: block !important;
+      visibility: visible !important;
       color: #000;
       font-family: 'Segoe UI', system-ui, sans-serif;
       padding: 0;
     }
+    #printArea * { visibility: visible !important; }
+    /* Tira qualquer link clicável (não faz sentido em PDF) */
+    #printArea a { color: #000 !important; text-decoration: none !important; pointer-events: none !important; }
     #printArea .pa-header { text-align: center; margin-bottom: 18px; border-bottom: 2px solid #000; padding-bottom: 10px; }
     #printArea .pa-header h1 { font-size: 20px; margin: 0 0 2px; letter-spacing: 1px; }
     #printArea .pa-header .pa-sub { font-size: 12px; color: #555; }
@@ -3987,8 +3993,16 @@ function renderExercises() {
 
 // ══ Baixar PDF (via print-to-PDF do navegador) ══
 // Detecta a view atual (treino ou dieta) e gera o PDF apropriado.
+// PDF é só o PROTOCOLO — sem links, lojas, parceiros ou suplementos
+// recomendados. Esses só fazem sentido no app online.
 function _pdfEsc(s) {
-  return String(s == null ? '' : s)
+  // Remove qualquer URL do texto (link só vale no app, não no PDF)
+  const noUrls = String(s == null ? '' : s)
+    .replace(/https?:\/\/\S+/gi, '')
+    .replace(/www\.\S+/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  return noUrls
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
