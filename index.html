@@ -1770,7 +1770,7 @@
 
 <!-- ══ SUPLEMENTOS ══ -->
 <div class="instructions-toggle" id="suplementosToggle" onclick="toggleSuplementos()" style="display:none;">
-  💊 Suplementos Recomendados <span id="suplementosArrow">&#9660;</span>
+  🛒 Onde Comprar Suplementos <span id="suplementosArrow">&#9660;</span>
 </div>
 <div class="instructions-content" id="suplementosContent">
   <p style="color:var(--gray);font-size:12px;margin:0 0 14px;">Suplementos confiáveis com desconto. Marca FTW (linha que o GH usa) — links Shopee.</p>
@@ -2098,8 +2098,8 @@
     <button type="button" class="float-opt" onclick="event.stopPropagation(); toggleUnit()">
       <span class="ic">⚖️</span><span id="unitToggleLabel">Unidade: kg (trocar pra lb)</span>
     </button>
-    <button type="button" class="float-opt" onclick="event.stopPropagation(); downloadTreinoPDF()">
-      <span class="ic">📄</span><span>Baixar treino em PDF</span>
+    <button type="button" class="float-opt" onclick="event.stopPropagation(); downloadPDF()">
+      <span class="ic">📄</span><span id="pdfBtnLabel">Baixar treino em PDF</span>
     </button>
     <button type="button" class="float-opt install" onclick="event.stopPropagation(); showInstallInstructions()">
       <span class="ic">📱</span><span>Instalar app na tela inicial</span>
@@ -3985,19 +3985,33 @@ function renderExercises() {
   updateDayProgress();
 }
 
-// ══ Baixar treino em PDF (via print-to-PDF do navegador) ══
-function downloadTreinoPDF() {
-  if (!WORKOUT || !WORKOUT.length) {
-    alert('Treino ainda não carregou. Tenta de novo em alguns segundos.');
-    return;
-  }
-  const esc = s => String(s == null ? '' : s)
+// ══ Baixar PDF (via print-to-PDF do navegador) ══
+// Detecta a view atual (treino ou dieta) e gera o PDF apropriado.
+function _pdfEsc(s) {
+  return String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const studentName = (document.getElementById('infoNome')?.textContent || 'Aluno').trim();
-  const unit = (typeof getUnit === 'function') ? getUnit() : 'kg';
-  const today = new Date().toLocaleDateString('pt-BR');
+}
 
-  // Linha de exercício (normal ou lado do biset)
+function _pdfHeader(titulo) {
+  const esc = _pdfEsc;
+  const studentName = (document.getElementById('infoNome')?.textContent || 'Aluno').trim();
+  const today = new Date().toLocaleDateString('pt-BR');
+  return `
+    <div class="pa-header">
+      <h1>${esc(titulo)}</h1>
+      <div class="pa-sub">MÉTODO GH — @gh.scheuermann</div>
+    </div>
+    <div class="pa-meta">
+      <div><strong>Aluno:</strong> ${esc(studentName)}</div>
+      <div><strong>Emitido:</strong> ${today}</div>
+    </div>`;
+}
+
+function _buildTreinoPrintHTML() {
+  if (!WORKOUT || !WORKOUT.length) return null;
+  const esc = _pdfEsc;
+  const unit = (typeof getUnit === 'function') ? getUnit() : 'kg';
+
   const exRow = (ex, di, ei, label) => {
     const warm = ex.warmup ? ' class="pa-warm"' : '';
     const nome = esc(ex.name) + (ex.warmup ? ' (aquecimento)' : '');
@@ -4039,21 +4053,137 @@ function downloadTreinoPDF() {
       </div>`;
   });
 
-  document.getElementById('printArea').innerHTML = `
-    <div class="pa-header">
-      <h1>PROTOCOLO DE TREINO</h1>
-      <div class="pa-sub">MÉTODO GH — @gh.scheuermann</div>
-    </div>
-    <div class="pa-meta">
-      <div><strong>Aluno:</strong> ${esc(studentName)}</div>
-      <div><strong>Semana:</strong> ${currentWeek}</div>
-      <div><strong>Emitido:</strong> ${today}</div>
-    </div>
-    ${daysHtml}
-    <div class="pa-foot">Gerado pelo app MÉTODO GH · app.metodogh.com.br</div>`;
+  return _pdfHeader('PROTOCOLO DE TREINO').replace(
+    '<div><strong>Emitido:</strong>',
+    `<div><strong>Semana:</strong> ${currentWeek}</div><div><strong>Emitido:</strong>`
+  ) + daysHtml + `<div class="pa-foot">Gerado pelo app MÉTODO GH · app.metodogh.com.br</div>`;
+}
 
-  // Pequeno delay garante que o DOM atualizou antes do print
+function _buildDietaPrintHTML() {
+  if (typeof DIET_DATA === 'undefined' || !DIET_DATA) return null;
+  const esc = _pdfEsc;
+  const d = DIET_DATA;
+  let html = _pdfHeader('PROTOCOLO ALIMENTAR');
+
+  // Info card (kcal, objetivo, metas)
+  let info = '';
+  if (d.info && d.info.kcal) info += `<tr><td><strong>Calorias</strong></td><td>${esc(d.info.kcal)}</td></tr>`;
+  if (d.info && d.info.objetivo) info += `<tr><td><strong>Objetivo</strong></td><td>${esc(d.info.objetivo)}</td></tr>`;
+  (d.metas || []).forEach(m => {
+    info += `<tr><td><strong>${esc(m.campo)}</strong></td><td>${esc(m.valor)}${m.detalhe ? ' — ' + esc(m.detalhe) : ''}</td></tr>`;
+  });
+  if (info) html += `<div class="pa-day"><h2 class="pa-day-title">Resumo</h2><table>${info}</table></div>`;
+
+  // Regras gerais
+  if (d.regras && d.regras.length) {
+    let rows = '';
+    d.regras.forEach(r => {
+      rows += `<tr><td><strong>${esc(r.nome)}</strong></td><td>${esc(r.valor || '')}${r.detalhe ? ' — ' + esc(r.detalhe) : ''}</td></tr>`;
+    });
+    html += `<div class="pa-day"><h2 class="pa-day-title">Regras Gerais</h2><table>${rows}</table></div>`;
+  }
+
+  // Refeições (por ciclo)
+  (d.ciclos || []).forEach(cy => {
+    if (cy.nome) html += `<div class="pa-day"><h2 class="pa-day-title">${esc(cy.nome)}</h2></div>`;
+    (cy.refeicoes || []).forEach(ref => {
+      let rows = '';
+      const renderAlimentos = (arr, label) => {
+        if (label) rows += `<tr><td colspan="2" style="background:#f5f5f5;"><strong>${esc(label)}</strong></td></tr>`;
+        (arr || []).forEach(a => {
+          const obs = a.obs ? `<div class="pa-obs">${esc(a.obs)}</div>` : '';
+          rows += `<tr><td class="pa-ex">${esc(a.nome)}${obs}</td><td>${esc(a.qtd || '')}</td></tr>`;
+        });
+      };
+      if (ref.opcoes && ref.opcoes.length) {
+        ref.opcoes.forEach(op => renderAlimentos(op.alimentos, op.nome));
+      } else {
+        renderAlimentos(ref.alimentos, '');
+      }
+      (ref.notas || []).forEach(n => {
+        if (n) rows += `<tr><td colspan="2" class="pa-obs">${esc(n)}</td></tr>`;
+      });
+      const inst = ref.instrucao ? `<div class="pa-obs" style="margin:0 0 4px;">${esc(ref.instrucao)}</div>` : '';
+      html += `<div class="pa-day">
+        <h2 class="pa-day-title">${esc(ref.nome)}</h2>
+        ${inst}
+        <table>${rows}</table>
+      </div>`;
+    });
+  });
+
+  // Suplementação prescrita
+  if (d.supls && Object.keys(d.supls).length) {
+    let rows = '';
+    Object.keys(d.supls).forEach(timing => {
+      const items = d.supls[timing];
+      if (!items || !items.length) return;
+      rows += `<tr><td colspan="2" style="background:#f5f5f5;"><strong>${esc(timing)}</strong></td></tr>`;
+      items.forEach(s => {
+        const obs = s.obs ? ` — ${esc(s.obs)}` : '';
+        rows += `<tr><td class="pa-ex">${esc(s.nome)}</td><td>${esc(s.dose || '')}${obs}</td></tr>`;
+      });
+    });
+    if (rows) html += `<div class="pa-day"><h2 class="pa-day-title">Suplementação</h2><table>${rows}</table></div>`;
+  }
+
+  // Cardio
+  const isCardioCat = c => /a[eé]r[oó]bic|cardio/i.test(String(c || ''));
+  const cardioFromOrient = (d.orientacoes || []).filter(o => isCardioCat(o.categoria));
+  if ((d.aerobicos && d.aerobicos.length) || cardioFromOrient.length) {
+    let rows = '';
+    (d.aerobicos || []).forEach(a => {
+      rows += `<tr><td class="pa-ex">Aeróbico</td><td>${esc(a.freq || '')} — ${esc(a.duracao || '')}${a.obs ? ' — ' + esc(a.obs) : ''}</td></tr>`;
+    });
+    cardioFromOrient.forEach(o => {
+      rows += `<tr><td class="pa-ex">${esc(o.categoria)}</td><td>${esc(o.texto)}</td></tr>`;
+    });
+    html += `<div class="pa-day"><h2 class="pa-day-title">Cardio</h2><table>${rows}</table></div>`;
+  }
+
+  // Orientações reais (sem cardio)
+  const orientReais = (d.orientacoes || []).filter(o => !isCardioCat(o.categoria));
+  if (orientReais.length) {
+    let rows = '';
+    orientReais.forEach(o => {
+      rows += `<tr><td class="pa-ex">${esc(o.categoria || '')}</td><td>${esc(o.texto)}</td></tr>`;
+    });
+    html += `<div class="pa-day"><h2 class="pa-day-title">Orientações</h2><table>${rows}</table></div>`;
+  }
+
+  // Protocolos hormonais / peptídeos
+  if (d.protocolos && d.protocolos.length) {
+    let rows = '';
+    d.protocolos.forEach(p => {
+      const dose = p.dose ? esc(p.dose) : '';
+      const obs = p.obs ? ` — ${esc(p.obs)}` : '';
+      rows += `<tr><td class="pa-ex">${esc(p.nome || p.categoria || '')}</td><td>${dose}${obs}</td></tr>`;
+    });
+    html += `<div class="pa-day"><h2 class="pa-day-title">Protocolo Hormonal</h2><table>${rows}</table></div>`;
+  }
+
+  html += `<div class="pa-foot">Gerado pelo app MÉTODO GH · app.metodogh.com.br</div>`;
+  return html;
+}
+
+function downloadPDF() {
+  const isDieta = document.body.classList.contains('view-dieta');
+  const html = isDieta ? _buildDietaPrintHTML() : _buildTreinoPrintHTML();
+  if (!html) {
+    alert((isDieta ? 'Dieta' : 'Treino') + ' ainda não carregou. Tenta de novo em alguns segundos.');
+    return;
+  }
+  document.getElementById('printArea').innerHTML = html;
   setTimeout(() => { window.print(); }, 100);
+}
+
+// Atualiza label do botão pra refletir a view atual
+function updatePdfButtonLabel() {
+  const el = document.getElementById('pdfBtnLabel');
+  if (!el) return;
+  el.textContent = document.body.classList.contains('view-dieta')
+    ? 'Baixar dieta em PDF'
+    : 'Baixar treino em PDF';
 }
 
 function selectDay(i) {
@@ -4948,6 +5078,7 @@ function switchView(view) {
   document.getElementById('navTreino').classList.toggle('active', view === 'treino');
   document.getElementById('navDieta').classList.toggle('active', view === 'dieta');
   document.getElementById('headerTitle').textContent = view === 'dieta' ? 'PROTOCOLO ALIMENTAR' : 'PROTOCOLO DE TREINO';
+  if (typeof updatePdfButtonLabel === 'function') updatePdfButtonLabel();
   window.scrollTo(0, 0);
 }
 
