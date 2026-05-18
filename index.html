@@ -3642,17 +3642,18 @@ function youtubeEmbed(url) {
   // youtube-nocookie.com é o domínio privacy-enhanced do próprio YouTube;
   // contorna bloqueios de embed cross-domain que afetam Shorts unlisted.
   // Params:
-  //   rel=0 — limita relacionados ao mesmo canal (não recomenda aleatórios)
+  //   rel=0 — limita relacionados ao mesmo canal (só vídeos do GH)
   //   modestbranding=1 — sem logo YouTube grande
   //   playsinline=1 — não força fullscreen no iOS
-  //   loop=1 + playlist=ID — faz o vídeo dar loop infinito do MESMO conteúdo
-  //     em vez de auto-pular pro próximo "vídeo recomendado". Aluno foca
-  //     no exercício e fecha quando quiser.
   //   controls=1 — controles visíveis (pode pausar/seekar)
   //   fs=1 — botão fullscreen disponível
   //   iv_load_policy=3 — sem cards/anotações populando a tela
   //   disablekb=1 — desabilita atalhos de teclado (evita 'N' = próximo)
-  return id ? `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&playsinline=1&loop=1&playlist=${id}&controls=1&fs=1&iv_load_policy=3&disablekb=1` : url;
+  //   enablejsapi=1 — habilita IFrame API pra detectar fim do vídeo
+  //     (a função openVideo escuta 'ended' e fecha o overlay sozinha,
+  //     evitando que o YouTube emende com vídeo recomendado)
+  if (!id) return url;
+  return `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&playsinline=1&controls=1&fs=1&iv_load_policy=3&disablekb=1&enablejsapi=1`;
 }
 
 // ══ CSV Parser (handles quoted fields with commas) ══
@@ -4282,9 +4283,41 @@ function onPlacas(di, ei, input) {
 }
 
 // ══ Video overlay ══
+// Listener da IFrame API do YouTube (via postMessage) — detecta fim do
+// vídeo e fecha o overlay sozinho. Evita que o YouTube emende com
+// vídeo "recomendado" (mesmo de outro canal) e evita o bug de mudo
+// que aparecia quando usávamos loop=1.
+let _ytListenerAttached = false;
+function _attachYTListener() {
+  if (_ytListenerAttached) return;
+  _ytListenerAttached = true;
+  window.addEventListener('message', (e) => {
+    if (!e.data || typeof e.data !== 'string') return;
+    if (e.origin.indexOf('youtube') === -1) return;
+    try {
+      const msg = JSON.parse(e.data);
+      // YT.PlayerState.ENDED === 0
+      if (msg.event === 'onStateChange' && msg.info === 0) {
+        closeVideo();
+      }
+    } catch (_) {}
+  });
+}
+
 function openVideo(name, url) {
+  _attachYTListener();
   document.getElementById("videoTitle").textContent = name;
-  document.getElementById("videoFrame").src = youtubeEmbed(url);
+  const iframe = document.getElementById("videoFrame");
+  iframe.src = youtubeEmbed(url);
+  // Quando o iframe carrega, manda comando "listening" pra IFrame API
+  // habilitar os eventos onStateChange via postMessage
+  iframe.onload = () => {
+    try {
+      iframe.contentWindow.postMessage(
+        '{"event":"listening","id":"videoFrame"}', '*'
+      );
+    } catch (_) {}
+  };
   // Fallback: força URL canônica /watch?v=ID — abre página normal do YouTube
   // (mais confiável que /shorts/ID, que ocasionalmente redireciona pra página vazia)
   const ytLink = document.getElementById("videoOpenYT");
@@ -4299,7 +4332,8 @@ function openVideo(name, url) {
 }
 
 function closeVideo() {
-  document.getElementById("videoFrame").src = "";
+  const iframe = document.getElementById("videoFrame");
+  if (iframe) { iframe.onload = null; iframe.src = ""; }
   document.getElementById("videoOverlay").classList.remove("show");
   document.body.style.overflow = "";
 }
