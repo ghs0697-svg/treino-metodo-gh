@@ -3641,7 +3641,18 @@ function youtubeEmbed(url) {
   if (!id) { m = url.match(/youtu\.be\/([^?&]+)/); if (m) id = m[1]; }
   // youtube-nocookie.com é o domínio privacy-enhanced do próprio YouTube;
   // contorna bloqueios de embed cross-domain que afetam Shorts unlisted.
-  return id ? `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&playsinline=1` : url;
+  // Params:
+  //   rel=0 — limita relacionados ao mesmo canal (não recomenda aleatórios)
+  //   modestbranding=1 — sem logo YouTube grande
+  //   playsinline=1 — não força fullscreen no iOS
+  //   loop=1 + playlist=ID — faz o vídeo dar loop infinito do MESMO conteúdo
+  //     em vez de auto-pular pro próximo "vídeo recomendado". Aluno foca
+  //     no exercício e fecha quando quiser.
+  //   controls=1 — controles visíveis (pode pausar/seekar)
+  //   fs=1 — botão fullscreen disponível
+  //   iv_load_policy=3 — sem cards/anotações populando a tela
+  //   disablekb=1 — desabilita atalhos de teclado (evita 'N' = próximo)
+  return id ? `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&playsinline=1&loop=1&playlist=${id}&controls=1&fs=1&iv_load_policy=3&disablekb=1` : url;
 }
 
 // ══ CSV Parser (handles quoted fields with commas) ══
