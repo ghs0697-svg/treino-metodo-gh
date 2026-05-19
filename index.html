@@ -6046,7 +6046,13 @@ function renderEditorTopBar() {
   const info = data ? data.find(r => (r[0] || '').toLowerCase().trim() === 'info') : null;
   const studentName = info ? info[1] : 'Aluno';
   const meta = info ? (info[2] || info[3] || '') : '';
-  document.getElementById('trainerStudentInfo').innerHTML = `<strong>${escTrainer(studentName)}</strong> · ${escTrainer(meta)} · <span style="color:#888">${trainerSheetId.slice(0, 12)}…</span>`;
+  // Link clicável → abre o protocolo do aluno (visão do aluno) em nova aba
+  const protoUrl = `https://app.metodogh.com.br/?sheet=${trainerSheetId}&tab=${currentEditMode === 'dieta' ? 'DIETA' : 'TREINO'}`;
+  document.getElementById('trainerStudentInfo').innerHTML =
+    `<strong>${escTrainer(studentName)}</strong> · ${escTrainer(meta)} · ` +
+    `<a href="${protoUrl}" target="_blank" rel="noopener" ` +
+    `style="color:var(--gold);text-decoration:underline;font-weight:600;" ` +
+    `title="Abrir o protocolo do aluno numa nova aba">🔗 ver protocolo</a>`;
 
   const tabs = `
     <button class="te-mode-tab${currentEditMode === 'treino' ? ' active' : ''}" ${trainerData ? `onclick="switchEditMode('treino')"` : 'disabled'}>📋 TREINO</button>
