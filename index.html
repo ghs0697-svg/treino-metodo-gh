@@ -5981,15 +5981,20 @@ function trainerSearchStudents(query) {
     return;
   }
   list.innerHTML = filtered.map(s =>
-    `<button class="trainer-student-item" onclick="pickTrainerStudent('${s.s}')">
+    `<button class="trainer-student-item" onclick="pickTrainerStudent('${s.s}', '${escTrainer(s.n).replace(/'/g, "\\'")}')">
       <span>${escTrainer(s.n)}</span>
       ${s.d ? `<span class="trainer-student-meta">v ${escTrainer(s.d)}</span>` : ''}
     </button>`
   ).join('');
 }
 
-function pickTrainerStudent(sheetId) {
+// Nome do aluno capturado na seleção da lista — usado como fallback no
+// topo do editor quando a aba TREINO não tem linha 'info' (só DIETA tem).
+let trainerStudentNameHint = '';
+
+function pickTrainerStudent(sheetId, name) {
   document.getElementById('trainerSheetIdInput').value = sheetId;
+  trainerStudentNameHint = name || '';
   trainerLoadSheet();
 }
 
@@ -6044,8 +6049,17 @@ async function trainerLoadSheet() {
 function renderEditorTopBar() {
   const data = currentEditMode === 'treino' ? trainerData : dietaData;
   const info = data ? data.find(r => (r[0] || '').toLowerCase().trim() === 'info') : null;
-  const studentName = info ? info[1] : 'Aluno';
-  const meta = info ? (info[2] || info[3] || '') : '';
+  // Nome: 1) linha 'info' (DIETA tem) → 2) hint da seleção da lista →
+  // 3) extrai do header da aba TREINO (col B: "EXERCÍCIO <nome> <dados>")
+  let studentName = info ? info[1] : '';
+  let meta = info ? (info[2] || info[3] || '') : '';
+  if (!studentName && trainerStudentNameHint) studentName = trainerStudentNameHint;
+  if (!studentName && trainerData && trainerData[0]) {
+    const hdr = String(trainerData[0][1] || '');
+    const m = hdr.match(/^EXERC[IÍ]CIO\s+(.+?)(?:\s+[MF],|\s+\d|\s+https?:|$)/i);
+    if (m) studentName = m[1].trim();
+  }
+  if (!studentName) studentName = 'Aluno';
   // Link clicável → abre o protocolo do aluno (visão do aluno) em nova aba
   const protoUrl = `https://app.metodogh.com.br/?sheet=${trainerSheetId}&tab=${currentEditMode === 'dieta' ? 'DIETA' : 'TREINO'}`;
   document.getElementById('trainerStudentInfo').innerHTML =
