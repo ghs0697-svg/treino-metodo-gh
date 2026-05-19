@@ -6204,6 +6204,20 @@ function renderCurrentEditor() {
 
 function escTrainer(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
+// Update robusto pros inputs do editor de treino. Lê o data-idx do elemento
+// .te-ex pai NA HORA da digitação — imune a stale idx após drag/drop/remove
+// (problema do oninput hardcoded que causava 'reps n salva' do Jônatas).
+function _teUpdate(inputEl, col) {
+  var parent = inputEl.closest('.te-ex');
+  if (!parent) return;
+  var idx = parseInt(parent.getAttribute('data-idx'), 10);
+  if (isNaN(idx) || !trainerData || !trainerData[idx]) {
+    console.warn('[_teUpdate] idx inválido:', idx);
+    return;
+  }
+  trainerData[idx][col] = inputEl.value;
+}
+
 function renderTrainerEditor() {
   const days = {};
   trainerData.forEach((r, idx) => {
@@ -6235,12 +6249,12 @@ function renderTrainerEditor() {
         <div class="te-ex-row">
           <span class="te-drag-handle" draggable="true" ondragstart="teDragStart(${e.idx}, event)" ondragend="teDragEnd()" title="Arraste pra reordenar">⋮⋮</span>
           <button class="te-ex-name" style="background:${color};color:${tc};border-color:${color};" onclick="openSwapModal(${e.idx})" title="${MUSCLE_LABELS[g] || g} — clica pra trocar">${icon} ${escTrainer(e.name)}</button>
-          <input class="te-input" value="${escTrainer(e.series)}" oninput="trainerData[${e.idx}][2]=this.value" placeholder="S">
-          <input class="te-input" value="${escTrainer(e.reps)}" oninput="trainerData[${e.idx}][3]=this.value" placeholder="Reps">
-          <input class="te-input" value="${escTrainer(e.rest)}" oninput="trainerData[${e.idx}][4]=this.value" placeholder="Int.">
+          <input class="te-input" value="${escTrainer(e.series)}" oninput="_teUpdate(this,2)" placeholder="S">
+          <input class="te-input" value="${escTrainer(e.reps)}" oninput="_teUpdate(this,3)" placeholder="Reps">
+          <input class="te-input" value="${escTrainer(e.rest)}" oninput="_teUpdate(this,4)" placeholder="Int.">
           <button class="te-trash" onclick="removeExercise(${e.idx})" title="Remover exercício">🗑</button>
         </div>
-        <input class="te-input te-obs" value="${escTrainer(e.obs)}" oninput="trainerData[${e.idx}][5]=this.value" placeholder="OBS / cadência (use o botão de detalhes pra montagem rápida)">
+        <input class="te-input te-obs" value="${escTrainer(e.obs)}" oninput="_teUpdate(this,5)" placeholder="OBS / cadência (use o botão de detalhes pra montagem rápida)">
         <button class="te-detail-btn" onclick="openDetailModal(${e.idx})">✏️ Cadência · Técnica · Detalhes →</button>
       </div>`;
     });
