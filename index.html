@@ -878,6 +878,35 @@
   .diet-option-content { display: none; }
   .diet-option-content.active { display: block; }
 
+  /* ── Toggle de Ciclo de Carbo (Alto / Baixo) ── */
+  .diet-cycle-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 14px 12px 8px;
+  }
+  .diet-cycle-tab {
+    flex: 1;
+    padding: 11px 10px;
+    background: #222;
+    border: 1px solid var(--gold-dim);
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .diet-cycle-tab.active {
+    background: var(--gold);
+    color: var(--dark);
+    border-color: var(--gold);
+  }
+  .diet-cycle-content { display: none; }
+  .diet-cycle-content.active { display: block; }
+
   /* ── Diet Food Item ── */
   .diet-food-item {
     padding: 8px 14px;
@@ -5002,10 +5031,22 @@ function renderDiet() {
     html += `</div>`;
   }
 
-  // Ciclos (refeições + total por ciclo)
+  // Ciclos — com 2+ ciclos, vira TOGGLE no topo (Alto / Baixo carbo)
+  const multiCiclo = d.ciclos.length > 1;
+  if (multiCiclo) {
+    html += `<div class="diet-cycle-tabs" id="cycleTabs">`;
+    d.ciclos.forEach((cy, ci) => {
+      const nome = (cy.nome || `Ciclo ${ci + 1}`).replace(/^[—\-\s]+|[—\-\s]+$/g, '').trim() || `Ciclo ${ci + 1}`;
+      html += `<button class="diet-cycle-tab ${ci === 0 ? 'active' : ''}" onclick="selectDietCycle(${ci})">${nome}</button>`;
+    });
+    html += `</div>`;
+  }
+
   d.ciclos.forEach((cy, ci) => {
     const prefix = `c${ci}_`;
-    if (cy.nome) {
+    if (multiCiclo) {
+      html += `<div class="diet-cycle-content ${ci === 0 ? 'active' : ''}" id="cycleContent${ci}">`;
+    } else if (cy.nome) {
       html += `<div class="diet-cycle-header">${cy.nome}</div>`;
     }
 
@@ -5037,6 +5078,7 @@ function renderDiet() {
       html += `</div>`;
     });
 
+    if (multiCiclo) html += `</div>`;
   });
 
   // Separa o que é cardio do que é orientação geral.
@@ -5146,6 +5188,11 @@ function selectDietOption(uid, opIdx) {
   tabs.forEach((t, i) => t.classList.toggle('active', i === opIdx));
   const allOpts = document.querySelectorAll(`[id^="opt${uid}_"]`);
   allOpts.forEach((c, i) => c.classList.toggle('active', i === opIdx));
+}
+
+function selectDietCycle(idx) {
+  document.querySelectorAll('#cycleTabs .diet-cycle-tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+  document.querySelectorAll('[id^="cycleContent"]').forEach((c, i) => c.classList.toggle('active', i === idx));
 }
 
 function toggleDietSection(id) {
