@@ -1456,7 +1456,7 @@
   <img src="gh-logo.png" alt="Método GH" class="logo">
   <h1 id="headerTitle">PROTOCOLO DE TREINO</h1>
   <div class="subtitle">MÉTODO GH</div>
-  <div class="last-mod" id="lastModBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:0.3px;">Atualizado em <span id="lastModValue"></span></div>
+  <div class="last-mod" id="lastModBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:0.3px;"><span id="versionBadge" style="display:none;color:var(--gold);font-weight:600;">Protocolo v<span id="versionValue"></span></span><span id="lastModSep" style="display:none;"> · </span>Atualizado em <span id="lastModValue"></span></div>
 </div>
 
 <!-- ══ MAIN NAVIGATION (Treino | Dieta) ══ -->
@@ -3352,6 +3352,18 @@ async function loadAndShowLastModified() {
       el.textContent = data.lastModifiedBR;
       badge.style.display = 'block';
       sessionStorage.setItem(cacheKey, data.lastModifiedBR);
+    }
+    // Badge de versão do protocolo
+    if (data.version) {
+      const vEl = document.getElementById('versionValue');
+      const vBadge = document.getElementById('versionBadge');
+      const sep = document.getElementById('lastModSep');
+      if (vEl && vBadge) {
+        vEl.textContent = data.version;
+        vBadge.style.display = 'inline';
+        if (sep) sep.style.display = 'inline';
+        sessionStorage.setItem(`gh_version_${SHEET_ID}`, data.version);
+      }
     }
   } catch (_) { /* silencioso — sem erro pro aluno */ }
 }
