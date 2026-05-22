@@ -1,4 +1,4 @@
-const CACHE_NAME = 'metodo-gh-v103';
+const CACHE_NAME = 'metodo-gh-v104';
 const ASSETS = [
   './',
   './index.html',

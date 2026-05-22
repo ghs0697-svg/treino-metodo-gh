@@ -2118,7 +2118,7 @@
     <div class="ach-actions" style="margin-top:6px;">
       <button class="ach-btn primary" onclick="achShare()" id="achShareBtn">📤 Compartilhar e ganhar pontos</button>
       <button class="ach-btn secondary" onclick="achSave()">💾 Salvar PNG</button>
-      <button class="ach-btn ghost" onclick="achClose()">Pular (sem pontos)</button>
+      <button class="ach-btn ghost" onclick="achClose()">Pular (fica com 5 pts)</button>
     </div>
     <p style="color:#888;font-size:11px;text-align:center;margin:12px 0 0;line-height:1.5;">💡 <strong>Foto do pump</strong> vira o background do card. <strong>Pra Stories:</strong> Compartilhar → role o sheet → Instagram Stories.</p>
   </div>
@@ -2169,10 +2169,11 @@
   <div class="te-modal-box" style="max-width:560px;max-height:88vh;display:flex;flex-direction:column;">
     <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;">🏆 Ranking <span id="rankingMonth" style="color:#888;font-weight:400;font-size:13px;"></span></h3>
     <p style="color:#aaa;font-size:11px;margin:0 0 8px;line-height:1.4;">
-      Pontos = <strong>dias treinados × 10</strong> + <strong>streak × 5</strong> + bônus consistência (7d/14d/30d).
+      Pontos por dia: <strong>concluir o treino = 5</strong> · <strong>compartilhar o card = 10</strong>.
+      Mais <strong>streak × 5</strong> + bônus consistência (7d/14d/30d).
     </p>
     <div style="background:rgba(212,167,106,0.10);border-left:3px solid var(--gold);padding:8px 10px;margin:0 0 12px;border-radius:4px;font-size:11px;color:#d4a76a;line-height:1.45;">
-      <strong>⚠ Importante:</strong> o ponto só conta quando tu aperta <strong>"📤 Compartilhar e ganhar pontos"</strong> no card que aparece ao terminar o treino. Se fechar ou clicar "Pular", não pontua.
+      <strong>💡 Dobre seus pontos:</strong> terminar o treino já te dá <strong>5 pontos</strong>. Apertar <strong>"📤 Compartilhar"</strong> no card sobe pra <strong>10</strong>. Quem compartilha sobe no ranking muito mais rápido.
     </div>
     <div id="rankingList" style="flex:1;overflow-y:auto;min-height:0;"></div>
     <button class="te-btn ghost" onclick="teHide('rankingModal')" style="width:100%;margin-top:10px;">Fechar</button>
@@ -2617,9 +2618,10 @@ function onCheckExercise(di, ei) {
   setDone(di, ei, newVal);
   if (newVal && allDoneOfDay(di)) {
     updateStreakOnComplete();
-    // NÃO dispara notifyDayCompletion aqui — só conta no ranking quando
-    // o aluno compartilhar o card (via achShare). Isso vira viralização
-    // gratuita pra consultoria.
+    // Loga a CONCLUSÃO do treino (vale 5 pts). Compartilhar depois
+    // gera outro log que vale 10. Assim quem treina pontua mesmo
+    // sem compartilhar — e quem compartilha ganha o dobro.
+    notifyDayCompletion(di, false);
     // ✨ Card shareable
     setTimeout(() => showCompletionCard(di), 250);
   }
@@ -2668,7 +2670,7 @@ function showAchievementCard(type, data) {
   }
   // Mesmo do botão "Pular": só relevante em completion
   const closeBtn = document.querySelector('button.ach-btn.ghost[onclick="achClose()"]');
-  if (closeBtn) closeBtn.textContent = type === 'completion' ? 'Pular (sem pontos)' : 'Fechar';
+  if (closeBtn) closeBtn.textContent = type === 'completion' ? 'Pular (fica com 5 pts)' : 'Fechar';
   document.getElementById('achOverlay').classList.add('show');
   document.body.style.overflow = 'hidden';
   drawAchievementCard(1, 1); // estático, sem animação que não vai pro Stories
@@ -3187,7 +3189,7 @@ function onShareConfirmed() {
   if (typeof di !== 'number') return;
   if (alreadyClaimedToday(di)) return;
   markPointsClaimed(di);
-  notifyDayCompletion(di); // log central pra ranking
+  notifyDayCompletion(di, true); // log de COMPARTILHAMENTO — vale 10 pts
 }
 
 // Tenta abrir Stories Instagram direto via URL scheme + clipboard
@@ -3446,9 +3448,12 @@ function injectAffiliateUTM() {
     if (newUrl !== url) link.href = newUrl;
   });
 }
-function notifyDayCompletion(di) {
-  // Idempotente por dia/dia-de-treino: marca local pra não duplicar envio
-  const dedupKey = `gh_logsent_${SHEET_ID}_${todayKey()}_d${di}`;
+// shared=false → aluno só CONCLUIU o treino (vale 5 pts no ranking)
+// shared=true  → aluno COMPARTILHOU o card (vale 10 pts no ranking)
+// Cada um tem dedup próprio: um dia pode gerar 1 log de conclusão + 1 de share.
+function notifyDayCompletion(di, shared) {
+  const kind = shared ? 'share' : 'concl';
+  const dedupKey = `gh_logsent_${SHEET_ID}_${todayKey()}_d${di}_${kind}`;
   if (localStorage.getItem(dedupKey) === '1') return;
   localStorage.setItem(dedupKey, '1');
 
@@ -3466,6 +3471,7 @@ function notifyDayCompletion(di) {
     streakCurrent: streak.current || 0,
     streakLongest: streak.longest || 0,
     totalDaysDone: streak.totalDaysDone || 0,
+    shared: !!shared,
     ts: new Date().toISOString()
   };
   // Fire-and-forget — fail silenciosamente (Apps Script pode não estar atualizado ainda)
