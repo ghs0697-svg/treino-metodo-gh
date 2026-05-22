@@ -3524,13 +3524,12 @@ function updateStreakOnComplete() {
   const s = getStreak();
   const today = todayKey();
   if (s.lastDay === today) return; // já contado hoje
-  // calcula se ontem foi treinado pra continuar streak
-  const yesterday = (() => { const d = new Date(); d.setDate(d.getDate()-1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); })();
-  if (s.lastDay === yesterday) s.current = (s.current || 0) + 1;
-  else s.current = 1;
-  s.longest = Math.max(s.longest || 0, s.current);
+  // Streak NUNCA zera — cada treino concluído conta pra sempre.
+  // Dia de descanso não quebra nada. Ganhou, ganhou.
+  s.current = (s.current || 0) + 1;
+  s.longest = s.current;
   s.lastDay = today;
-  s.totalDaysDone = (s.totalDaysDone || 0) + 1;
+  s.totalDaysDone = s.current;
   localStorage.setItem(streakKey(), JSON.stringify(s));
 }
 
@@ -4772,6 +4771,21 @@ async function openRankingModal() {
       } catch (e) { return ''; }
     })();
     const escHtml = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    // Sincroniza a streak do aluno com o servidor (fonte da verdade,
+    // calculada da planilha). Se o celular ficou com streak baixa por
+    // causa da regra antiga, isso corrige na hora — nunca pra baixo.
+    try {
+      const mine = ranking.find(r => myName && String(r.name || '').toLowerCase().trim() === myName);
+      if (mine && (mine.streakCurrent || 0) > 0) {
+        const st = getStreak();
+        const srv = mine.streakCurrent || 0;
+        if (srv > (st.current || 0)) {
+          st.current = srv; st.longest = srv; st.totalDaysDone = srv;
+          localStorage.setItem(streakKey(), JSON.stringify(st));
+          if (typeof renderStreakPanel === 'function') renderStreakPanel();
+        }
+      }
+    } catch (e) {}
     list.innerHTML = ranking.slice(0, 50).map((r, i) => {
       const isMe = myName && String(r.name || '').toLowerCase().trim() === myName;
       const pos = i + 1;
