@@ -2128,7 +2128,7 @@
 <div id="floatMenu">
   <div class="float-options" id="floatOptions">
     <button type="button" class="float-opt ranking" onclick="event.stopPropagation(); openRankingModal()">
-      <span class="ic">🏆</span><span>Ranking do mês</span>
+      <span class="ic">🏆</span><span>Ranking</span>
     </button>
     <button type="button" class="float-opt" onclick="event.stopPropagation(); toggleUnit()">
       <span class="ic">⚖️</span><span id="unitToggleLabel">Unidade: kg (trocar pra lb)</span>
@@ -4747,9 +4747,7 @@ async function openRankingModal() {
   document.getElementById('floatBtn').classList.remove('open');
   teShow('rankingModal');
 
-  const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  const now = new Date();
-  document.getElementById('rankingMonth').textContent = '· ' + months[now.getMonth()] + '/' + now.getFullYear();
+  document.getElementById('rankingMonth').textContent = '· geral';
 
   const list = document.getElementById('rankingList');
   list.innerHTML = '<p style="color:#888;text-align:center;padding:30px;font-size:13px;">Carregando ranking…</p>';
@@ -4759,7 +4757,7 @@ async function openRankingModal() {
     const j = await resp.json();
     const ranking = (j && j.ranking) || [];
     if (!ranking.length) {
-      list.innerHTML = '<p style="color:#888;text-align:center;padding:30px;font-size:13px;">Ranking ainda vazio neste mês.<br>Treina hoje pra entrar! 💪</p>';
+      list.innerHTML = '<p style="color:#888;text-align:center;padding:30px;font-size:13px;">Ranking ainda vazio.<br>Treina hoje pra entrar! 💪</p>';
       return;
     }
     // Acha o nome do aluno atual pra destacar
