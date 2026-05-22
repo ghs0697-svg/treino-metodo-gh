@@ -2580,6 +2580,62 @@ function isDone(di, ei) { return localStorage.getItem(doneKey(di, ei)) === '1'; 
 function setDone(di, ei, val) {
   if (val) localStorage.setItem(doneKey(di, ei), '1');
   else localStorage.removeItem(doneKey(di, ei));
+  syncDoneToServer_(di, ei, val);
+}
+
+// ══ Backup servidor pro checkbox de treino marcado ══
+// Espelha o syncCargaToServer_. Fire-and-forget: não trava a marcação,
+// o localStorage continua sendo a camada instantânea/offline.
+function syncDoneToServer_(di, ei, val) {
+  if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
+  try {
+    const payload = {
+      type: 'done',
+      sheetId: SHEET_ID,
+      studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+      w: currentWeek, di: di, ei: ei,
+      feito: val ? 'sim' : 'nao',
+      ts: new Date().toISOString()
+    };
+    fetch(LOG_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+      keepalive: true,
+      redirect: 'follow'
+    }).catch(() => {});
+  } catch (_) {}
+}
+
+// On load: se não tem nenhum checkbox local pra essa sheet, busca do servidor
+// (cobre troca de celular / cache limpo / PWA reinstalado).
+async function restoreDoneFromServerIfEmpty_() {
+  if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
+  const prefix = `gh_done_${STUDENT_ID}_`;
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith(prefix)) return; // já tem marcação local — local manda
+  }
+  try {
+    const url = `${LOG_ENDPOINT}?action=progresso&id=${encodeURIComponent(SHEET_ID)}`;
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data || !Array.isArray(data.done)) return;
+    let restored = 0;
+    data.done.forEach(d => {
+      if (d.feito) {
+        localStorage.setItem(`gh_done_${STUDENT_ID}_w${d.w}_d${d.di}_e${d.ei}`, '1');
+        restored++;
+      }
+    });
+    if (restored > 0) {
+      console.log(`[gh] Treino marcado restaurado do servidor: ${restored} exercícios`);
+      if (typeof renderExercises === 'function' && document.getElementById('exerciseContainer')) {
+        renderExercises();
+      }
+    }
+  } catch (_) { /* silencioso */ }
 }
 
 // Migração one-time: traz keys legadas (`gh_done_<id>_YYYY-MM-DD_dN_eN`) das
@@ -3880,6 +3936,7 @@ async function loadFromSheets() {
     migrateLegacyDoneKeys_();
     loadAndShowLastModified();
     restoreCargasFromServerIfEmpty_();
+    restoreDoneFromServerIfEmpty_();
     updateUnitToggleLabel();
     renderExercises();
 
