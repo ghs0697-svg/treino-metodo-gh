@@ -907,6 +907,34 @@
   .diet-cycle-content { display: none; }
   .diet-cycle-content.active { display: block; }
 
+  /* Toggle de blocos de treino (multi-treino: Normal / Viagem) — mesma cara do diet-cycle */
+  .treino-bloco-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 14px 12px 8px;
+  }
+  .treino-bloco-tab {
+    flex: 1;
+    padding: 11px 10px;
+    background: #222;
+    border: 1px solid var(--gold-dim);
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    font-family: inherit;
+  }
+  .treino-bloco-tab.active {
+    background: var(--gold);
+    color: var(--dark);
+    border-color: var(--gold);
+  }
+
   /* ── Diet Food Item ── */
   .diet-food-item {
     padding: 8px 14px;
@@ -1581,6 +1609,8 @@
   <div class="field"><span class="label">Objetivo: </span><span class="value" id="infoObj">-</span></div>
   <div class="field"><span class="label">Duração: </span><span class="value" id="infoDur">-</span></div>
 </div>
+
+<div class="treino-bloco-tabs" id="treinoBlocoTabs" style="display:none;"></div>
 
 <div class="day-tabs" id="dayTabs"></div>
 
@@ -2425,6 +2455,8 @@ const TOTAL_WEEKS = parseInt(params.get('weeks')) || 8;
 
 let WORKOUT = [];
 let currentDay = 0;
+let BLOCOS = [];           // nomes dos blocos de treino (ex: ["Normal 6x","Viagem 3x"]). Vazio = sem toggle.
+let currentBlocoIdx = 0;   // índice do bloco selecionado
 let currentWeek = 1;
 
 // ══ Unidade de carga (kg padrão, lb opcional) ══
@@ -3812,7 +3844,16 @@ async function loadFromSheets() {
     // Row with empty col A or "info" = student info
     // gviz strips non-numeric col A values (info/restrict/link become "")
     // so we detect by position: first empty-A row = info, rest = skip until exercises
-    const days = {};
+    // Suporte a múltiplos blocos de treino dentro da mesma aba TREINO:
+    // linha-marcador (col A vazia, col B começando com "@TREINO ") delimita cada bloco.
+    // Sem marker → bloco único anônimo (comportamento clássico).
+    const blocos = []; // [{nome, days: {dayNum: [exercises]}}]
+    let currentBloco = null; // nome do bloco em curso (string ou null = anônimo)
+    function _ensureBloco(nome) {
+      let b = blocos.find(x => x.nome === nome);
+      if (!b) { b = { nome, days: {} }; blocos.push(b); }
+      return b;
+    }
     let studentName = params.get('nome') || TAB_NAME;
     let studentFreq = params.get('freq') || '';
     let studentObj = params.get('obj') || '';
@@ -3844,6 +3885,16 @@ async function loadFromSheets() {
         continue;
       }
 
+      // Marker de bloco de treino: col A vazia + col B começando com "@TREINO "
+      // Ex: "@TREINO Normal 6x" → cria bloco "Normal 6x" e segue empilhando dias nele.
+      // VEM ANTES do skip de restrict abaixo (que catch-all empty-A).
+      if ((r[0] === '' || !r[0]) && r[1] && r[1].toString().trim().toUpperCase().startsWith('@TREINO')) {
+        const nome = r[1].toString().trim().replace(/^@TREINO\s*/i, '').trim();
+        currentBloco = nome || '';
+        _ensureBloco(currentBloco);
+        continue;
+      }
+
       // Skip restrict row (col A stripped by gviz, not a link, not an exercise)
       if (infoFound && r[0] === '' && isNaN(parseInt(r[0])) && !(r[1] && r[1].toString().startsWith('http'))) {
         continue;
@@ -3860,9 +3911,12 @@ async function loadFromSheets() {
       if (isNaN(dayNum)) continue;
       const isBisetStart = /bi/.test(dayRaw); // ex: "1bi" marca primeiro do bi-set
 
-      if (!days[dayNum]) days[dayNum] = [];
+      // Se ainda não houve marker, usa bloco anônimo (comportamento clássico)
+      if (currentBloco === null) currentBloco = '';
+      const bloco = _ensureBloco(currentBloco);
+      if (!bloco.days[dayNum]) bloco.days[dayNum] = [];
       const isWarmup = (r[7] || '').toLowerCase() === 'sim';
-      days[dayNum].push({
+      bloco.days[dayNum].push({
         name: r[1] || '',
         series: r[2] || '',
         reps: r[3] || '',
@@ -3874,26 +3928,44 @@ async function loadFromSheets() {
       });
     }
 
-    // Junta bi-sets: cada "bisetStart" consome a próxima linha e vira um grupo
-    Object.keys(days).forEach(d => {
-      const orig = days[d];
-      const merged = [];
-      for (let i = 0; i < orig.length; i++) {
-        const ex = orig[i];
-        if (ex.bisetStart && i + 1 < orig.length && !orig[i + 1].warmup) {
-          merged.push({ biset: true, a: ex, b: orig[i + 1] });
-          i++; // pula o segundo, já foi consumido
-        } else {
-          merged.push(ex);
+    // Junta bi-sets DENTRO de cada bloco
+    blocos.forEach(bloco => {
+      Object.keys(bloco.days).forEach(d => {
+        const orig = bloco.days[d];
+        const merged = [];
+        for (let i = 0; i < orig.length; i++) {
+          const ex = orig[i];
+          if (ex.bisetStart && i + 1 < orig.length && !orig[i + 1].warmup) {
+            merged.push({ biset: true, a: ex, b: orig[i + 1] });
+            i++;
+          } else {
+            merged.push(ex);
+          }
         }
-      }
-      days[d] = merged;
+        bloco.days[d] = merged;
+      });
     });
 
-    WORKOUT = Object.keys(days).sort((a, b) => a - b).map(d => ({
-      day: `DIA ${d}`,
-      exercises: days[d]
-    }));
+    // WORKOUT = array plano, ordem de bloco → dia. Cada entry leva a tag .bloco.
+    WORKOUT = [];
+    blocos.forEach(bloco => {
+      const dns = Object.keys(bloco.days).sort((a, b) => +a - +b);
+      dns.forEach(d => {
+        WORKOUT.push({
+          day: `DIA ${d}`,
+          exercises: bloco.days[d],
+          bloco: bloco.nome || ''
+        });
+      });
+    });
+
+    // BLOCOS = só os blocos NOMEADOS (anônimos viram lista vazia → toggle escondido)
+    BLOCOS = blocos.map(b => b.nome).filter(n => n !== '');
+    currentBlocoIdx = 0;
+    if (BLOCOS.length >= 2) {
+      const firstIdx = WORKOUT.findIndex(w => w.bloco === BLOCOS[0]);
+      if (firstIdx >= 0) currentDay = firstIdx;
+    }
 
     if (WORKOUT.length === 0) throw new Error('Nenhum exercício encontrado na aba. Verifique o formato da planilha.');
 
@@ -3932,6 +4004,7 @@ async function loadFromSheets() {
         </div>`;
     }
 
+    renderTreinoBlocoTabs();
     renderTabs();
     migrateLegacyDoneKeys_();
     loadAndShowLastModified();
@@ -3956,18 +4029,55 @@ async function loadFromSheets() {
 // ══════════════════════════════════════════════════════════════
 // ══ RENDER ══
 // ══════════════════════════════════════════════════════════════
-function renderTabs() {
-  document.getElementById("dayTabs").innerHTML = WORKOUT.map((w, i) =>
-    `<div class="day-tab ${i === currentDay ? 'active' : ''}" onclick="selectDay(${i})">${w.day}</div>`
+function _activeBlocoName() {
+  // Retorna o nome do bloco ativo (string), ou null se não tem toggle (1 bloco ou anônimo)
+  if (BLOCOS.length < 2) return null;
+  return BLOCOS[currentBlocoIdx] || null;
+}
+function _isVisibleDay(workoutEntry) {
+  const active = _activeBlocoName();
+  if (active === null) return true;          // sem toggle, mostra todos
+  return workoutEntry.bloco === active;
+}
+
+function renderTreinoBlocoTabs() {
+  const el = document.getElementById("treinoBlocoTabs");
+  if (!el) return;
+  if (BLOCOS.length < 2) { el.style.display = "none"; el.innerHTML = ""; return; }
+  el.style.display = "flex";
+  el.innerHTML = BLOCOS.map((nome, i) =>
+    `<button class="treino-bloco-tab ${i === currentBlocoIdx ? 'active' : ''}" onclick="selectTreinoBloco(${i})">${nome}</button>`
   ).join("");
+}
+
+function selectTreinoBloco(idx) {
+  if (idx === currentBlocoIdx) return;
+  currentBlocoIdx = idx;
+  const target = BLOCOS[idx];
+  const firstIdx = WORKOUT.findIndex(w => w.bloco === target);
+  if (firstIdx >= 0) currentDay = firstIdx;
+  renderTreinoBlocoTabs();
+  renderTabs();
+  renderExercises();
+  if (typeof updateDayProgress === 'function') updateDayProgress();
+  if (typeof updateProgressBar === 'function') updateProgressBar();
+}
+
+function renderTabs() {
+  document.getElementById("dayTabs").innerHTML = WORKOUT.map((w, i) => {
+    if (!_isVisibleDay(w)) return '';
+    return `<div class="day-tab ${i === currentDay ? 'active' : ''}" onclick="selectDay(${i})">${w.day}</div>`;
+  }).join("");
 }
 
 function renderExercises() {
   const c = document.getElementById("exerciseContainer");
   c.innerHTML = "";
   WORKOUT.forEach((day, di) => {
+    if (!_isVisibleDay(day)) return; // só renderiza dias do bloco ativo
     const div = document.createElement("div");
     div.className = `day-content ${di === currentDay ? 'active' : ''}`;
+    div.setAttribute('data-di', String(di));
     div.innerHTML = day.exercises.map((ex, ei) => {
       // ── BI-SET ──
       if (ex.biset) {
@@ -4318,7 +4428,11 @@ function updatePdfButtonLabel() {
 function selectDay(i) {
   currentDay = i;
   renderTabs();
-  document.querySelectorAll('.day-content').forEach((el, j) => el.classList.toggle('active', j === i));
+  // .day-content traz data-di com o índice GLOBAL no WORKOUT (compatível com multi-bloco)
+  document.querySelectorAll('.day-content').forEach(el => {
+    const di = parseInt(el.getAttribute('data-di') || '-1');
+    el.classList.toggle('active', di === i);
+  });
   updateDayProgress();
 }
 
