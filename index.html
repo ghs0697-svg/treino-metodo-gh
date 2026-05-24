@@ -768,6 +768,21 @@
   .diet-info-label { color: var(--gold); font-weight: 600; }
   .diet-info-value { color: var(--gray); text-align: right; max-width: 60%; }
 
+  /* ── Diet Action Buttons (PDF + Lista de compras) ── */
+  .diet-actions {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    margin: 0 14px 14px;
+  }
+  .diet-action-btn {
+    background: var(--card); color: var(--white);
+    border: 1px solid #3a3a3a; border-radius: 8px;
+    padding: 12px 8px; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+    font-family: inherit;
+  }
+  .diet-action-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .diet-action-btn:active { transform: scale(0.98); }
+
   /* ── Diet Collapsible Sections ── */
   .diet-section-toggle {
     display: flex;
@@ -2210,6 +2225,22 @@
     </div>
     <div id="rankingList" style="flex:1;overflow-y:auto;min-height:0;"></div>
     <button class="te-btn ghost" onclick="teHide('rankingModal')" style="width:100%;margin-top:10px;">Fechar</button>
+  </div>
+</div>
+
+<!-- ══ LISTA DE COMPRAS ══ -->
+<div class="te-modal-overlay" id="shoppingListModal" onclick="closeShoppingOnBg(event)">
+  <div class="te-modal-box" style="max-width:560px;max-height:88vh;display:flex;flex-direction:column;">
+    <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;">🛒 Lista de compras</h3>
+    <p style="color:#aaa;font-size:11px;margin:0 0 12px;line-height:1.45;">
+      Tudo que aparece na sua dieta, organizado por categoria. Compre a quantidade conforme a sua semana — as quantidades da dieta são cozidas/preparadas, não cruas.
+    </p>
+    <div id="shoppingListContent" style="flex:1;overflow-y:auto;min-height:0;font-size:13px;line-height:1.7;"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
+      <button class="te-btn" type="button" onclick="copyShoppingList()" id="copyShoppingBtn">📋 Copiar</button>
+      <button class="te-btn primary" type="button" onclick="shareShoppingList()">📲 Compartilhar</button>
+    </div>
+    <button class="te-btn ghost" onclick="teHide('shoppingListModal')" style="width:100%;margin-top:8px;">Fechar</button>
   </div>
 </div>
 
@@ -4913,6 +4944,235 @@ function renderMarkersHistory() {
   c.innerHTML = html;
 }
 
+// ══ LISTA DE COMPRAS ══
+// Gera a lista a partir do DIET_DATA já parseado. Pega 1ª opção de cada
+// refeição pra não duplicar (alternativas o aluno escolhe no momento).
+// Categoriza pelo dicionário _SHOPPING_CATS. Sem quantidade (a dieta dá
+// quantidade COZIDA — não dá pra inferir o bruto). Foco na lista de itens.
+
+const _SHOPPING_CATS = {
+  // Proteína animal
+  'ovo':'proteina','ovos':'proteina','clara':'proteina','claras':'proteina',
+  'frango':'proteina','peito de frango':'proteina','sobrecoxa':'proteina','coxa de frango':'proteina',
+  'patinho':'proteina','alcatra':'proteina','coxao mole':'proteina','coxao duro':'proteina','musculo':'proteina',
+  'maminha':'proteina','picanha':'proteina','file mignon':'proteina','contrafile':'proteina',
+  'carne moida':'proteina','carne bovina':'proteina','file de boi':'proteina',
+  'tilapia':'proteina','salmao':'proteina','atum':'proteina','sardinha':'proteina','merluza':'proteina',
+  'camarao':'proteina','bacalhau':'proteina','pescada':'proteina','peixe':'proteina',
+  'whey':'proteina','whey protein':'proteina','whey isolado':'proteina','albumina':'proteina','caseina':'proteina',
+  'iogurte':'proteina','iogurte natural':'proteina','iogurte grego':'proteina','cottage':'proteina','ricota':'proteina',
+  'queijo':'proteina','queijo branco':'proteina','queijo minas':'proteina','mussarela':'proteina',
+  'leite':'proteina','leite desnatado':'proteina','leite zero lactose':'proteina',
+  // Proteína vegetal
+  'tofu':'proteina','seitan':'proteina','soja':'proteina','proteina de soja':'proteina',
+  'proteina ervilha':'proteina','proteina de ervilha':'proteina','whey vegano':'proteina',
+  'carne de soja':'proteina','pts':'proteina','grao de bico':'proteina','lentilha':'proteina','feijao':'proteina',
+  // Carbo
+  'arroz':'carbo','arroz branco':'carbo','arroz integral':'carbo','arroz parboilizado':'carbo',
+  'batata':'carbo','batata doce':'carbo','batata-doce':'carbo','batata inglesa':'carbo','batata baroa':'carbo',
+  'mandioca':'carbo','macaxeira':'carbo','aipim':'carbo','inhame':'carbo','cara':'carbo','abobora':'carbo',
+  'macarrao':'carbo','massa':'carbo','espaguete':'carbo','penne':'carbo','talharim':'carbo',
+  'cuscuz':'carbo','polenta':'carbo','fuba':'carbo',
+  'pao':'carbo','pao integral':'carbo','pao frances':'carbo','tapioca':'carbo','rap10':'carbo','rap 10':'carbo','wrap':'carbo',
+  'aveia':'carbo','granola':'carbo','farinha':'carbo','farinha de aveia':'carbo','crepioca':'carbo',
+  'panqueca':'carbo','panquequinha':'carbo',
+  // Frutas
+  'banana':'fruta','maca':'fruta','laranja':'fruta','mamao':'fruta','melancia':'fruta','melao':'fruta',
+  'morango':'fruta','uva':'fruta','manga':'fruta','abacaxi':'fruta','kiwi':'fruta','pera':'fruta','pessego':'fruta',
+  'abacate':'fruta','tangerina':'fruta','mexerica':'fruta','goiaba':'fruta','maracuja':'fruta','acerola':'fruta','limao':'fruta',
+  // Legumes / verduras
+  'tomate':'legume','alface':'legume','rucula':'legume','espinafre':'legume','couve':'legume',
+  'brocolis':'legume','couve-flor':'legume','couve flor':'legume','repolho':'legume','cenoura':'legume',
+  'pepino':'legume','pimentao':'legume','cebola':'legume','alho':'legume','chuchu':'legume',
+  'abobrinha':'legume','beringela':'legume','vagem':'legume','quiabo':'legume','agriao':'legume',
+  // Gorduras
+  'azeite':'gordura','azeite de oliva':'gordura','oleo de coco':'gordura','manteiga':'gordura',
+  'castanha':'gordura','castanhas':'gordura','amendoim':'gordura','pasta de amendoim':'gordura',
+  'amendoa':'gordura','amendoas':'gordura','noz':'gordura','nozes':'gordura',
+  'chia':'gordura','linhaca':'gordura','semente de girassol':'gordura',
+};
+
+function _normalizeFoodKey(nome) {
+  return String(nome || '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().trim()
+    .replace(/\s+/g, ' ')
+    .replace(/^\d+\s*[.)]?\s*/, '') // remove "1. " ou "1) " no início
+    .replace(/\s+(ou|com|de|para|e)\s+.*/, '') // corta tudo após "ou", "com", "de", "para", "e" — só fica o item principal
+    .replace(/[(\[].*?[)\]]/g, '') // remove conteúdo em parênteses/colchetes
+    .trim();
+}
+
+function _shoppingCategory(nomeNorm) {
+  if (_SHOPPING_CATS[nomeNorm]) return _SHOPPING_CATS[nomeNorm];
+  // tenta achar por substring (ex: "peito de frango grelhado" → "peito de frango" → proteina)
+  for (const key of Object.keys(_SHOPPING_CATS)) {
+    if (nomeNorm.includes(key)) return _SHOPPING_CATS[key];
+  }
+  return 'outros';
+}
+
+function _buildShoppingList() {
+  if (!DIET_DATA) return null;
+  const d = DIET_DATA;
+  const seen = {}; // displayName → { cat, originalName }
+
+  function addFood(nome) {
+    if (!nome) return;
+    const original = String(nome).trim();
+    const key = _normalizeFoodKey(original);
+    if (!key || key.length < 2) return;
+    // capitaliza pra exibição
+    const display = key.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    if (seen[display]) return;
+    seen[display] = { cat: _shoppingCategory(key), original: original };
+  }
+
+  // Itera refeições — 1ª opção de cada refeição (alternativas o aluno escolhe)
+  d.ciclos.forEach(cy => {
+    cy.refeicoes.forEach(ref => {
+      if (ref.opcoes && ref.opcoes.length > 0) {
+        ref.opcoes[0].alimentos.forEach(a => addFood(a.nome));
+      } else if (ref.alimentos) {
+        ref.alimentos.forEach(a => addFood(a.nome));
+      }
+    });
+  });
+
+  // Agrupa por categoria
+  const grouped = {
+    proteina: [], carbo: [], legume: [], fruta: [], gordura: [], outros: []
+  };
+  Object.keys(seen).sort().forEach(name => {
+    const cat = seen[name].cat;
+    (grouped[cat] || grouped.outros).push(name);
+  });
+
+  // Suplementos vêm direto do DIET_DATA.supls (com dose, já estruturado)
+  const supls = [];
+  Object.keys(d.supls || {}).forEach(timing => {
+    (d.supls[timing] || []).forEach(s => {
+      if (s.nome) supls.push({ nome: s.nome, dose: s.dose || '' });
+    });
+  });
+  // dedup suplementos
+  const suplSeen = {};
+  const suplsDedup = supls.filter(s => {
+    const k = _normalizeFoodKey(s.nome);
+    if (suplSeen[k]) return false;
+    suplSeen[k] = true;
+    return true;
+  });
+
+  return { grouped, supls: suplsDedup };
+}
+
+const _SHOPPING_CAT_LABELS = {
+  proteina: '🥩 PROTEÍNAS',
+  carbo: '🍚 CARBOS',
+  legume: '🥬 LEGUMES E VERDURAS',
+  fruta: '🍌 FRUTAS',
+  gordura: '🥑 GORDURAS',
+  outros: '📦 OUTROS'
+};
+
+function openShoppingListModal() {
+  const data = _buildShoppingList();
+  const c = document.getElementById('shoppingListContent');
+  if (!data) {
+    c.innerHTML = '<p style="color:#888;text-align:center;padding:20px;">Dieta ainda não carregou.</p>';
+    teShow('shoppingListModal');
+    return;
+  }
+
+  let html = '';
+  let anyItem = false;
+  const order = ['proteina', 'carbo', 'legume', 'fruta', 'gordura', 'outros'];
+  order.forEach(cat => {
+    const items = data.grouped[cat];
+    if (!items || !items.length) return;
+    anyItem = true;
+    html += `<div style="margin-top:14px;"><div style="color:var(--gold);font-weight:700;font-size:12px;letter-spacing:0.5px;margin-bottom:4px;">${_SHOPPING_CAT_LABELS[cat]}</div>`;
+    items.forEach(name => {
+      html += `<div style="color:#ddd;padding-left:6px;">• ${escapeFotosTxt(name)}</div>`;
+    });
+    html += `</div>`;
+  });
+
+  if (data.supls.length > 0) {
+    anyItem = true;
+    html += `<div style="margin-top:14px;"><div style="color:var(--gold);font-weight:700;font-size:12px;letter-spacing:0.5px;margin-bottom:4px;">💊 SUPLEMENTOS</div>`;
+    data.supls.forEach(s => {
+      html += `<div style="color:#ddd;padding-left:6px;">• ${escapeFotosTxt(s.nome)}${s.dose ? ` <span style="color:#888;font-size:11px;">(${escapeFotosTxt(s.dose)})</span>` : ''}</div>`;
+    });
+    html += `</div>`;
+  }
+
+  if (!anyItem) html = '<p style="color:#888;text-align:center;padding:20px;">Nenhum alimento encontrado na dieta.</p>';
+
+  html += `<div style="margin-top:18px;padding:8px 10px;background:rgba(212,167,106,0.08);border-left:3px solid var(--gold);border-radius:4px;font-size:11px;color:#aaa;line-height:1.5;">💡 As quantidades da dieta são <strong>cozidas/preparadas</strong>. Compre o que precisar pra cobrir a semana de treino.</div>`;
+
+  c.innerHTML = html;
+  teShow('shoppingListModal');
+}
+
+function _shoppingListAsText() {
+  const data = _buildShoppingList();
+  if (!data) return '';
+  const studentName = (document.getElementById('infoNome')?.textContent || '').trim();
+  let txt = `🛒 *Lista de compras${studentName ? ' — ' + studentName : ''}*\n\n`;
+  const order = ['proteina', 'carbo', 'legume', 'fruta', 'gordura', 'outros'];
+  order.forEach(cat => {
+    const items = data.grouped[cat];
+    if (!items || !items.length) return;
+    txt += `*${_SHOPPING_CAT_LABELS[cat]}*\n`;
+    items.forEach(n => { txt += `• ${n}\n`; });
+    txt += '\n';
+  });
+  if (data.supls.length) {
+    txt += `*💊 SUPLEMENTOS*\n`;
+    data.supls.forEach(s => { txt += `• ${s.nome}${s.dose ? ' — ' + s.dose : ''}\n`; });
+    txt += '\n';
+  }
+  txt += `_Quantidades da dieta são cozidas. Compre conforme sua semana._`;
+  return txt;
+}
+
+async function copyShoppingList() {
+  const btn = document.getElementById('copyShoppingBtn');
+  const txt = _shoppingListAsText();
+  if (!txt) return;
+  try {
+    await navigator.clipboard.writeText(txt);
+    const orig = btn.textContent;
+    btn.textContent = '✅ Copiado!';
+    setTimeout(() => { btn.textContent = orig; }, 1800);
+  } catch (e) {
+    // fallback: textarea
+    const ta = document.createElement('textarea');
+    ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); btn.textContent = '✅ Copiado!'; setTimeout(() => btn.textContent = '📋 Copiar', 1800); }
+    catch (_) { alert('Não consegui copiar — selecione o texto manualmente.'); }
+    document.body.removeChild(ta);
+  }
+}
+
+async function shareShoppingList() {
+  const txt = _shoppingListAsText();
+  if (!txt) return;
+  if (navigator.share) {
+    try { await navigator.share({ title: 'Lista de compras', text: txt }); }
+    catch (e) { /* user cancelou — silencioso */ }
+  } else {
+    // Fallback: copia + abre WhatsApp Web
+    await copyShoppingList();
+    window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
+  }
+}
+
+function closeShoppingOnBg(e) { if (e.target.id === 'shoppingListModal') teHide('shoppingListModal'); }
+
 // ══ MINHAS FOTOS DO REAJUSTE ══
 // Aluno manda fotos pelo app → app comprime no celular → POST pro Apps Script
 // → salva direto na pasta do Drive dele em "Fotos NN" (próximo número).
@@ -5372,6 +5632,12 @@ function renderDiet() {
     html += `<div class="diet-info-row"><span class="diet-info-label">${m.campo}:</span><span class="diet-info-value">${m.valor}${m.detalhe ? ' — ' + m.detalhe : ''}</span></div>`;
   });
   html += `</div>`;
+
+  // Ações rápidas da dieta — PDF + Lista de compras (padrão Shape de Elite)
+  html += `<div class="diet-actions">
+    <button class="diet-action-btn" onclick="downloadPDF()" type="button">📄 Baixar PDF</button>
+    <button class="diet-action-btn" onclick="openShoppingListModal()" type="button">🛒 Lista de compras</button>
+  </div>`;
 
   // Regras gerais
   if (d.regras.length > 0) {
