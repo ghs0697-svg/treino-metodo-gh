@@ -2601,6 +2601,75 @@ function getPrevPlacas(d, e, w) { return w > 1 ? localStorage.getItem(placasKey(
 // ══ Backup servidor pra cargas/placas (anti "não tá salvando") ══
 // Toda escrita local também sobe pro Apps Script → aba CARGAS no mestre.
 // Permite auditoria + restore cross-device.
+// ══ FILA DE RETRY PRO SYNC ══
+// Quando o sync com o servidor falha (offline, internet ruim, etc),
+// o payload entra numa fila local. Quando o app volta online (ou abre
+// de novo), processa a fila. Isso fecha o último vetor de perda de
+// dado: aluno digitar offline + iOS limpar storage antes de voltar
+// online. Funciona pra cargas E pra checkbox (done).
+function _syncQueueKey(kind) {
+  return `gh_sync_queue_${kind}_${SHEET_ID || 'noid'}`;
+}
+function _syncQueueGet(kind) {
+  try { return JSON.parse(localStorage.getItem(_syncQueueKey(kind)) || '[]'); }
+  catch (_) { return []; }
+}
+function _syncQueuePush(kind, payload, dedupKeyFn) {
+  try {
+    const q = _syncQueueGet(kind);
+    let next;
+    if (typeof dedupKeyFn === 'function') {
+      const k = dedupKeyFn(payload);
+      next = q.filter(p => dedupKeyFn(p) !== k);
+    } else {
+      next = q.slice();
+    }
+    next.push(payload);
+    while (next.length > 300) next.shift(); // cap segurança
+    localStorage.setItem(_syncQueueKey(kind), JSON.stringify(next));
+  } catch (_) { /* silencioso */ }
+}
+function _syncQueueClear(kind) {
+  try { localStorage.removeItem(_syncQueueKey(kind)); } catch (_) {}
+}
+
+let _syncFlushRunning = false;
+async function flushSyncQueues() {
+  if (_syncFlushRunning) return;
+  if (typeof LOG_ENDPOINT === 'undefined') return;
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+  _syncFlushRunning = true;
+  try {
+    for (const kind of ['carga', 'done']) {
+      const q = _syncQueueGet(kind);
+      if (!q.length) continue;
+      const remaining = [];
+      for (const payload of q) {
+        try {
+          const resp = await fetch(LOG_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload),
+            redirect: 'follow'
+          });
+          if (!resp.ok) remaining.push(payload);
+        } catch (_) {
+          remaining.push(payload);
+        }
+      }
+      if (remaining.length) {
+        try { localStorage.setItem(_syncQueueKey(kind), JSON.stringify(remaining)); } catch (_) {}
+      } else {
+        _syncQueueClear(kind);
+      }
+      const sent = q.length - remaining.length;
+      if (sent > 0) console.log(`[gh] Fila ${kind}: ${sent} reenviada${sent > 1 ? 's' : ''}, ${remaining.length} pendente${remaining.length === 1 ? '' : 's'}`);
+    }
+  } finally {
+    _syncFlushRunning = false;
+  }
+}
+
 function syncCargaToServer_(di, ei, w, carga, placas) {
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
   // Atualiza badge visual: começa "salvo" (local), vira "na nuvem" se servidor confirmar
@@ -2612,16 +2681,20 @@ function syncCargaToServer_(di, ei, w, carga, placas) {
     if (cls) el.classList.add(cls);
   };
   setBadge('☁ enviando…', 'cloud-pending');
+  const payload = {
+    type: 'carga',
+    sheetId: SHEET_ID,
+    studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+    di: di, ei: ei, w: w,
+    carga: carga !== null && carga !== undefined ? String(carga) : '',
+    placas: placas !== null && placas !== undefined ? String(placas) : '',
+    ts: new Date().toISOString()
+  };
+  const enfileira = () => {
+    _syncQueuePush('carga', payload, p => `${p.di}|${p.ei}|${p.w}`);
+    setBadge('☁ pendente — vai reenviar', 'cloud-fail');
+  };
   try {
-    const payload = {
-      type: 'carga',
-      sheetId: SHEET_ID,
-      studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
-      di: di, ei: ei, w: w,
-      carga: carga !== null && carga !== undefined ? String(carga) : '',
-      placas: placas !== null && placas !== undefined ? String(placas) : '',
-      ts: new Date().toISOString()
-    };
     fetch(LOG_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -2629,10 +2702,13 @@ function syncCargaToServer_(di, ei, w, carga, placas) {
       keepalive: true,
       redirect: 'follow'
     })
-      .then(() => setBadge('☁ salvo na nuvem', 'cloud-ok'))
-      .catch(() => setBadge('✓ salvo no aparelho', 'cloud-fail'));
+      .then(resp => {
+        if (resp && resp.ok) setBadge('☁ salvo na nuvem', 'cloud-ok');
+        else enfileira();
+      })
+      .catch(() => enfileira());
   } catch (_) {
-    setBadge('✓ salvo no aparelho', 'cloud-fail');
+    enfileira();
   }
 }
 
@@ -2696,23 +2772,28 @@ function setDone(di, ei, val) {
 // o localStorage continua sendo a camada instantânea/offline.
 function syncDoneToServer_(di, ei, val) {
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
+  const payload = {
+    type: 'done',
+    sheetId: SHEET_ID,
+    studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+    w: currentWeek, di: di, ei: ei,
+    feito: val ? 'sim' : 'nao',
+    ts: new Date().toISOString()
+  };
+  const enfileira = () => _syncQueuePush('done', payload, p => `${p.w}|${p.di}|${p.ei}`);
   try {
-    const payload = {
-      type: 'done',
-      sheetId: SHEET_ID,
-      studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
-      w: currentWeek, di: di, ei: ei,
-      feito: val ? 'sim' : 'nao',
-      ts: new Date().toISOString()
-    };
     fetch(LOG_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload),
       keepalive: true,
       redirect: 'follow'
-    }).catch(() => {});
-  } catch (_) {}
+    })
+      .then(resp => { if (!resp || !resp.ok) enfileira(); })
+      .catch(() => enfileira());
+  } catch (_) {
+    enfileira();
+  }
 }
 
 // On load: SEMPRE sincroniza do servidor com merge — preenche apenas
@@ -4088,6 +4169,7 @@ async function loadFromSheets() {
     restoreCargasFromServerIfEmpty_();
     restoreDoneFromServerIfEmpty_();
     checkFotosBannerOnLoad();
+    flushSyncQueues(); // processa cargas/done que ficaram pendentes (offline anterior)
     updateUnitToggleLabel();
     renderExercises();
 
@@ -7898,6 +7980,12 @@ function hideFoodSuggest() {
 
 document.addEventListener('scroll', hideFoodSuggest, true);
 window.addEventListener('resize', hideFoodSuggest);
+
+// Retry de sync pendente: dispara quando o navegador volta online
+// e também a cada 30s enquanto o app está aberto. Cobre o caso raro
+// de aluno digitar offline e o sync inicial falhar.
+window.addEventListener('online', () => { try { flushSyncQueues(); } catch (_) {} });
+setInterval(() => { try { flushSyncQueues(); } catch (_) {} }, 30000);
 
 function dietaSetObs(idx, val) {
   // OBS na sheet de dieta vai no col[3] (obs/detalhe)
