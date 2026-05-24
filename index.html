@@ -2166,6 +2166,9 @@
     <button type="button" class="float-opt" onclick="event.stopPropagation(); downloadPDF()">
       <span class="ic">📄</span><span id="pdfBtnLabel">Baixar treino em PDF</span>
     </button>
+    <button type="button" class="float-opt" onclick="event.stopPropagation(); openFotosModal()">
+      <span class="ic">📸</span><span>Minhas fotos do reajuste</span>
+    </button>
     <button type="button" class="float-opt install" onclick="event.stopPropagation(); showInstallInstructions()">
       <span class="ic">📱</span><span>Instalar app na tela inicial</span>
     </button>
@@ -2207,6 +2210,27 @@
     </div>
     <div id="rankingList" style="flex:1;overflow-y:auto;min-height:0;"></div>
     <button class="te-btn ghost" onclick="teHide('rankingModal')" style="width:100%;margin-top:10px;">Fechar</button>
+  </div>
+</div>
+
+<!-- ══ MINHAS FOTOS DO REAJUSTE ══ -->
+<div class="te-modal-overlay" id="fotosModal" onclick="closeFotosOnBg(event)">
+  <div class="te-modal-box" style="max-width:520px;max-height:88vh;display:flex;flex-direction:column;">
+    <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;">📸 Minhas Fotos do Reajuste</h3>
+    <p style="color:#aaa;font-size:11px;margin:0 0 12px;line-height:1.45;">
+      Manda fotos de frente, costas e perfil. O GH usa elas pra analisar tua evolução e montar o próximo protocolo. Tudo vai direto pra tua pasta do Drive.
+    </p>
+    <div id="fotosWindowStatus" style="background:#222;border-radius:6px;padding:12px;margin:0 0 14px;font-size:13px;line-height:1.5;">
+      <span style="color:#888;">Verificando janela de envio…</span>
+    </div>
+    <div id="fotosUploadArea" style="display:none;">
+      <input type="file" id="fotoInput" accept="image/*" multiple capture="environment" onchange="onFotoSelected()" style="display:none;">
+      <button class="te-btn" type="button" onclick="document.getElementById('fotoInput').click()" style="width:100%;">📸 Selecionar fotos</button>
+      <div id="fotosPreview" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;"></div>
+      <button class="te-btn primary" type="button" id="fotosSendBtn" onclick="enviarFotos()" style="width:100%;margin-top:10px;display:none;">📤 Enviar</button>
+    </div>
+    <div id="fotosFeedback" style="margin-top:8px;font-size:13px;"></div>
+    <button class="te-btn ghost" onclick="teHide('fotosModal')" style="width:100%;margin-top:12px;">Fechar</button>
   </div>
 </div>
 
@@ -4887,6 +4911,151 @@ function renderMarkersHistory() {
   });
 
   c.innerHTML = html;
+}
+
+// ══ MINHAS FOTOS DO REAJUSTE ══
+// Aluno manda fotos pelo app → app comprime no celular → POST pro Apps Script
+// → salva direto na pasta do Drive dele em "Fotos NN" (próximo número).
+// Servidor só aceita upload dentro da janela (col M até col M + 7 dias).
+function closeFotosOnBg(e) { if (e.target.id === 'fotosModal') teHide('fotosModal'); }
+
+async function openFotosModal() {
+  document.getElementById('floatOptions').classList.remove('show');
+  document.getElementById('floatBtn').classList.remove('open');
+  teShow('fotosModal');
+
+  // Reset visual
+  document.getElementById('fotoInput').value = '';
+  document.getElementById('fotosPreview').innerHTML = '';
+  document.getElementById('fotosFeedback').innerHTML = '';
+  document.getElementById('fotosSendBtn').style.display = 'none';
+  document.getElementById('fotosUploadArea').style.display = 'none';
+  const status = document.getElementById('fotosWindowStatus');
+  status.innerHTML = '<span style="color:#888;">Verificando janela de envio…</span>';
+
+  try {
+    const resp = await fetch(`${LOG_ENDPOINT}?action=foto_window&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`, { cache: 'no-store' });
+    const j = await resp.json();
+    if (j.open) {
+      status.innerHTML = `<div style="color:#4caf50;font-weight:700;margin-bottom:4px;">✅ Envio liberado</div><div style="color:#aaa;font-size:12px;">${escapeFotosTxt(j.message || '')}</div>`;
+      document.getElementById('fotosUploadArea').style.display = '';
+    } else {
+      let icon = '⏳';
+      if (j.status === 'after') icon = '🔒';
+      else if (j.error || j.status === 'sem_data') icon = '⚠️';
+      const msg = j.message || j.error || 'Janela indisponível no momento.';
+      status.innerHTML = `<div style="color:#d4a76a;font-weight:700;margin-bottom:4px;">${icon} Envio não disponível agora</div><div style="color:#aaa;font-size:12px;">${escapeFotosTxt(msg)}</div>`;
+    }
+  } catch (err) {
+    status.innerHTML = `<div style="color:#c0392b;">Erro ao verificar janela: ${escapeFotosTxt(err.message)}</div>`;
+  }
+}
+
+function escapeFotosTxt(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function onFotoSelected() {
+  const input = document.getElementById('fotoInput');
+  const preview = document.getElementById('fotosPreview');
+  const sendBtn = document.getElementById('fotosSendBtn');
+  preview.innerHTML = '';
+  if (!input.files || !input.files.length) {
+    sendBtn.style.display = 'none';
+    return;
+  }
+  Array.from(input.files).forEach(f => {
+    const url = URL.createObjectURL(f);
+    const img = document.createElement('img');
+    img.src = url;
+    img.style.cssText = 'width:74px;height:74px;border-radius:6px;object-fit:cover;border:1px solid #333;';
+    img.onload = () => URL.revokeObjectURL(url);
+    preview.appendChild(img);
+  });
+  sendBtn.style.display = '';
+  sendBtn.textContent = `📤 Enviar ${input.files.length} foto${input.files.length > 1 ? 's' : ''}`;
+  sendBtn.disabled = false;
+}
+
+// Comprime imagem no celular (1280px max, JPEG q=0.85) antes de mandar.
+// Foto de iPhone moderno tem 4-8MB; depois disso fica 200-500KB. Sem isso
+// o payload estoura limite do Apps Script.
+function _compressFoto(file, maxDim, quality) {
+  maxDim = maxDim || 1280;
+  quality = quality || 0.85;
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Falha ao ler ' + file.name));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Foto inválida: ' + file.name));
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > h && w > maxDim) { h = Math.round(h * maxDim / w); w = maxDim; }
+        else if (h >= w && h > maxDim) { w = Math.round(w * maxDim / h); h = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        canvas.toBlob(blob => {
+          if (!blob) return reject(new Error('Falha na compressão'));
+          const r2 = new FileReader();
+          r2.onload = () => resolve(r2.result); // data URL base64
+          r2.onerror = () => reject(new Error('Falha ao codificar'));
+          r2.readAsDataURL(blob);
+        }, 'image/jpeg', quality);
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function enviarFotos() {
+  const input = document.getElementById('fotoInput');
+  const sendBtn = document.getElementById('fotosSendBtn');
+  const fb = document.getElementById('fotosFeedback');
+  if (!input.files || !input.files.length) return;
+  if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') {
+    fb.innerHTML = '<span style="color:#c0392b;">Erro: aluno não identificado.</span>';
+    return;
+  }
+  sendBtn.disabled = true;
+  fb.innerHTML = '';
+
+  try {
+    const compressed = [];
+    for (let i = 0; i < input.files.length; i++) {
+      sendBtn.textContent = `Comprimindo ${i + 1}/${input.files.length}…`;
+      const dataUrl = await _compressFoto(input.files[i]);
+      const safeName = input.files[i].name.replace(/[^a-zA-Z0-9._-]/g, '_').substring(0, 60);
+      compressed.push({ name: safeName, mime: 'image/jpeg', base64: dataUrl });
+    }
+
+    sendBtn.textContent = `Enviando ${compressed.length} foto${compressed.length > 1 ? 's' : ''}…`;
+    const studentName = (document.getElementById('infoNome')?.textContent || '').trim();
+    const resp = await fetch(LOG_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ type: 'foto', sheetId: SHEET_ID, studentName: studentName, files: compressed }),
+      redirect: 'follow'
+    });
+    const j = await resp.json();
+    if (!j.ok) {
+      let msg = j.error || 'Falha desconhecida';
+      if (j.error === 'janela_fechada' && j.window && j.window.message) msg = j.window.message;
+      throw new Error(msg);
+    }
+
+    fb.innerHTML = `<div style="background:rgba(76,175,80,0.12);border-left:3px solid #4caf50;padding:10px;border-radius:4px;color:#a5d6a7;">✅ <strong>${j.saved} foto${j.saved > 1 ? 's' : ''} enviada${j.saved > 1 ? 's' : ''}</strong> com sucesso!<br><span style="font-size:11px;color:#888;">Salva na pasta <strong>${escapeFotosTxt(j.folder)}</strong>. O GH vai analisar no próximo reajuste.</span></div>`;
+    input.value = '';
+    document.getElementById('fotosPreview').innerHTML = '';
+    sendBtn.style.display = 'none';
+    sendBtn.textContent = '📤 Enviar';
+  } catch (err) {
+    fb.innerHTML = `<div style="background:rgba(192,57,43,0.12);border-left:3px solid #c0392b;padding:10px;border-radius:4px;color:#f5b7b1;">❌ ${escapeFotosTxt(err.message)}</div>`;
+    sendBtn.disabled = false;
+    sendBtn.textContent = `📤 Enviar ${input.files.length} foto${input.files.length > 1 ? 's' : ''}`;
+  }
 }
 
 // ══ Painel Streak ══
