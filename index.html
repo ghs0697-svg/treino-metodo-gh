@@ -1502,6 +1502,21 @@
   <div class="last-mod" id="lastModBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:0.3px;"><span id="versionBadge" style="display:none;color:var(--gold);font-weight:600;">Protocolo v<span id="versionValue"></span></span><span id="lastModSep" style="display:none;"> · </span>Atualizado em <span id="lastModValue"></span></div>
 </div>
 
+<!-- ══ BANNER JANELA DE FOTOS DO REAJUSTE ══ -->
+<div id="fotosBanner" style="display:none;margin:0 14px 12px;padding:12px 14px;background:linear-gradient(135deg, rgba(212,167,106,0.15), rgba(212,167,106,0.05));border:1px solid var(--gold);border-radius:8px;">
+  <div style="display:flex;align-items:flex-start;gap:10px;">
+    <div style="font-size:20px;">📸</div>
+    <div style="flex:1;min-width:0;">
+      <div style="color:var(--gold);font-weight:700;font-size:13px;margin-bottom:3px;">Janela de fotos do reajuste aberta</div>
+      <div style="color:#ccc;font-size:12px;line-height:1.4;" id="fotosBannerMsg">Se você não conseguiu anexar suas fotos na anamnese de reajuste, mande aqui pelo app.</div>
+      <div style="display:flex;gap:6px;margin-top:9px;flex-wrap:wrap;">
+        <button class="te-btn primary" type="button" onclick="openFotosModal()" style="padding:7px 12px;font-size:12px;">📤 Enviar agora</button>
+        <button class="te-btn ghost" type="button" onclick="dismissFotosBanner()" style="padding:7px 12px;font-size:12px;">✅ Já enviei na anamnese</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ══ MAIN NAVIGATION (Treino | Dieta) ══ -->
 <div class="main-nav" id="mainNav" style="display:none;">
   <button class="nav-btn active" id="navTreino" onclick="switchView('treino')">TREINO</button>
@@ -4065,6 +4080,7 @@ async function loadFromSheets() {
     loadAndShowLastModified();
     restoreCargasFromServerIfEmpty_();
     restoreDoneFromServerIfEmpty_();
+    checkFotosBannerOnLoad();
     updateUnitToggleLabel();
     renderExercises();
 
@@ -5178,6 +5194,40 @@ function closeShoppingOnBg(e) { if (e.target.id === 'shoppingListModal') teHide(
 // → salva direto na pasta do Drive dele em "Fotos NN" (próximo número).
 // Servidor só aceita upload dentro da janela (col M até col M + 7 dias).
 function closeFotosOnBg(e) { if (e.target.id === 'fotosModal') teHide('fotosModal'); }
+
+// Banner topo da tela: aparece automaticamente quando a janela está aberta
+// E o aluno ainda não dispensou pra essa janela. Botão "Já enviei na anamnese"
+// guarda flag por janela (chave inclui startDate) — próximo reajuste o
+// banner reaparece naturalmente.
+function _fotosBannerKey(startDate) {
+  return `gh_fotosAvisoSeen_${STUDENT_ID}_${startDate}`;
+}
+async function checkFotosBannerOnLoad() {
+  if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
+  try {
+    const resp = await fetch(`${LOG_ENDPOINT}?action=foto_window&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`, { cache: 'no-store' });
+    const j = await resp.json();
+    if (!j.open || !j.startDate) return;
+    // Aluno já dispensou pra essa janela específica?
+    if (localStorage.getItem(_fotosBannerKey(j.startDate)) === '1') return;
+    const banner = document.getElementById('fotosBanner');
+    if (banner) {
+      const msg = document.getElementById('fotosBannerMsg');
+      if (msg && j.daysLeft) {
+        msg.textContent = `Se você não conseguiu anexar suas fotos na anamnese de reajuste, mande aqui pelo app. Faltam ${j.daysLeft} dia${j.daysLeft === 1 ? '' : 's'} pra janela fechar.`;
+      }
+      banner._startDate = j.startDate; // guarda pra usar no dismiss
+      banner.style.display = 'block';
+    }
+  } catch (_) { /* silencioso */ }
+}
+function dismissFotosBanner() {
+  const banner = document.getElementById('fotosBanner');
+  if (!banner) return;
+  const startDate = banner._startDate;
+  if (startDate) localStorage.setItem(_fotosBannerKey(startDate), '1');
+  banner.style.display = 'none';
+}
 
 async function openFotosModal() {
   document.getElementById('floatOptions').classList.remove('show');
