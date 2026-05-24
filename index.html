@@ -2636,17 +2636,14 @@ function syncCargaToServer_(di, ei, w, carga, placas) {
   }
 }
 
-// On load: se não tem nenhuma carga local pra essa sheet, busca do servidor
-// (cobre troca de celular / reinstalação do PWA / cache limpo).
-async function restoreCargasFromServerIfEmpty_() {
+// On load: SEMPRE busca do servidor e faz merge — preenche local apenas
+// onde local está vazio (não sobrescreve edit recente). Antes o restore
+// só rodava se local estivesse 100% vazio, o que deixava aluno órfão
+// quando navegador limpava parcialmente o storage (iOS PWA faz isso) —
+// algumas semanas voltavam, outras não. Caso real: Matheus Nunes
+// semanas 3 e 4 sumiram localmente mas estavam intactas no servidor.
+async function syncCargasFromServer_() {
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
-  // Já tem alguma carga local pra essa sheet? Se sim, pula (local é a verdade)
-  const prefix = `gh_${SHEET_ID}_d`;
-  const placasPrefix = `gh_placas_${SHEET_ID}_d`;
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i);
-    if (k && (k.startsWith(prefix) || k.startsWith(placasPrefix))) return;
-  }
   try {
     const url = `${LOG_ENDPOINT}?action=cargas&id=${encodeURIComponent(SHEET_ID)}`;
     const res = await fetch(url, { cache: 'no-store' });
@@ -2655,18 +2652,27 @@ async function restoreCargasFromServerIfEmpty_() {
     if (!data || !Array.isArray(data.cargas)) return;
     let restored = 0;
     data.cargas.forEach(c => {
-      if (c.carga) { localStorage.setItem(storageKey(c.di, c.ei, c.w), String(c.carga)); restored++; }
-      if (c.placas) { localStorage.setItem(placasKey(c.di, c.ei, c.w), String(c.placas)); restored++; }
+      const kC = storageKey(c.di, c.ei, c.w);
+      const kP = placasKey(c.di, c.ei, c.w);
+      if (c.carga != null && c.carga !== '' && !localStorage.getItem(kC)) {
+        localStorage.setItem(kC, String(c.carga));
+        restored++;
+      }
+      if (c.placas != null && c.placas !== '' && !localStorage.getItem(kP)) {
+        localStorage.setItem(kP, String(c.placas));
+        restored++;
+      }
     });
     if (restored > 0) {
-      console.log(`[gh] Cargas restauradas do servidor: ${restored} entradas`);
-      // Re-render pra refletir os valores carregados
+      console.log(`[gh] Cargas sincronizadas do servidor: ${restored} preenchidas`);
       if (typeof renderExercises === 'function' && document.getElementById('exerciseContainer')) {
         renderExercises();
       }
     }
   } catch (_) { /* silencioso */ }
 }
+// Alias retrocompatível (era o nome antigo)
+const restoreCargasFromServerIfEmpty_ = syncCargasFromServer_;
 
 // ══ Checklist do dia / Streak ══
 function todayKey() {
@@ -2709,15 +2715,12 @@ function syncDoneToServer_(di, ei, val) {
   } catch (_) {}
 }
 
-// On load: se não tem nenhum checkbox local pra essa sheet, busca do servidor
-// (cobre troca de celular / cache limpo / PWA reinstalado).
-async function restoreDoneFromServerIfEmpty_() {
+// On load: SEMPRE sincroniza do servidor com merge — preenche apenas
+// onde local está vazio. Mesma correção do syncCargasFromServer_ pelo
+// mesmo motivo (iOS limpa storage parcial e o restore "if empty"
+// antigo deixava aluno órfão).
+async function syncDoneFromServer_() {
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
-  const prefix = `gh_done_${STUDENT_ID}_`;
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i);
-    if (k && k.startsWith(prefix)) return; // já tem marcação local — local manda
-  }
   try {
     const url = `${LOG_ENDPOINT}?action=progresso&id=${encodeURIComponent(SHEET_ID)}`;
     const res = await fetch(url, { cache: 'no-store' });
@@ -2726,19 +2729,23 @@ async function restoreDoneFromServerIfEmpty_() {
     if (!data || !Array.isArray(data.done)) return;
     let restored = 0;
     data.done.forEach(d => {
-      if (d.feito) {
-        localStorage.setItem(`gh_done_${STUDENT_ID}_w${d.w}_d${d.di}_e${d.ei}`, '1');
+      if (!d.feito) return;
+      const key = `gh_done_${STUDENT_ID}_w${d.w}_d${d.di}_e${d.ei}`;
+      if (!localStorage.getItem(key)) {
+        localStorage.setItem(key, '1');
         restored++;
       }
     });
     if (restored > 0) {
-      console.log(`[gh] Treino marcado restaurado do servidor: ${restored} exercícios`);
+      console.log(`[gh] Treino marcado sincronizado do servidor: ${restored} exercícios`);
       if (typeof renderExercises === 'function' && document.getElementById('exerciseContainer')) {
         renderExercises();
       }
     }
   } catch (_) { /* silencioso */ }
 }
+// Alias retrocompatível
+const restoreDoneFromServerIfEmpty_ = syncDoneFromServer_;
 
 // Migração one-time: traz keys legadas (`gh_done_<id>_YYYY-MM-DD_dN_eN`) das
 // últimas 7 datas pro novo formato (`gh_done_<id>_w<currentWeek>_dN_eN`),
