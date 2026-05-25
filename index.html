@@ -1292,6 +1292,52 @@
     max-height: 90vh; overflow-y: auto;
   }
   .te-modal-box h3 { color: var(--gold); margin: 0 0 12px; font-size: 16px; }
+
+  /* ── Fotos do reajuste: grid 2x2 de slots ── */
+  .fotos-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .foto-slot {
+    position: relative;
+    aspect-ratio: 3/4;
+    background: #222;
+    border: 1.5px dashed #444;
+    border-radius: 8px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    cursor: pointer;
+    overflow: hidden;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .foto-slot:hover { border-color: var(--gold); }
+  .foto-slot.filled {
+    border-style: solid; border-color: var(--gold);
+  }
+  .foto-slot-icon {
+    font-size: 32px; color: #555; font-weight: 300; line-height: 1;
+  }
+  .foto-slot.filled .foto-slot-icon { display: none; }
+  .foto-slot-label {
+    color: #888; font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+    margin-top: 6px; text-align: center; padding: 0 6px;
+  }
+  .foto-slot.filled .foto-slot-label {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.85));
+    color: var(--gold); padding: 14px 6px 6px; margin: 0;
+  }
+  .foto-slot img.foto-slot-preview {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  .foto-slot-remove {
+    position: absolute; top: 4px; right: 4px;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: rgba(0,0,0,0.75); color: #fff; border: none;
+    font-size: 16px; line-height: 1; cursor: pointer; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 2;
+  }
+  .foto-slot-remove:hover { background: #c0392b; }
   .te-modal-box input[type="text"], .te-modal-box input[type="password"] {
     width: 100%; padding: 10px; background: #222; border: 1px solid var(--gold-dim);
     color: var(--white); border-radius: 6px; margin-bottom: 10px; font-size: 14px; box-sizing: border-box;
@@ -2261,19 +2307,42 @@
 
 <!-- ══ MINHAS FOTOS DO REAJUSTE ══ -->
 <div class="te-modal-overlay" id="fotosModal" onclick="closeFotosOnBg(event)">
-  <div class="te-modal-box" style="max-width:520px;max-height:88vh;display:flex;flex-direction:column;">
+  <div class="te-modal-box" style="max-width:520px;max-height:90vh;display:flex;flex-direction:column;">
     <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;">📸 Minhas Fotos do Reajuste</h3>
     <p style="color:#aaa;font-size:11px;margin:0 0 12px;line-height:1.45;">
-      Manda fotos de frente, costas e perfil. O GH usa elas pra analisar tua evolução e montar o próximo protocolo. Tudo vai direto pra tua pasta do Drive.
+      Toca em cada espaço pra adicionar a foto. O GH usa elas pra analisar tua evolução e montar o próximo protocolo. Tudo vai direto pra tua pasta do Drive.
     </p>
     <div id="fotosWindowStatus" style="background:#222;border-radius:6px;padding:12px;margin:0 0 14px;font-size:13px;line-height:1.5;">
       <span style="color:#888;">Verificando janela de envio…</span>
     </div>
-    <div id="fotosUploadArea" style="display:none;">
-      <input type="file" id="fotoInput" accept="image/*" multiple capture="environment" onchange="onFotoSelected()" style="display:none;">
-      <button class="te-btn" type="button" onclick="document.getElementById('fotoInput').click()" style="width:100%;">📸 Selecionar fotos</button>
-      <div id="fotosPreview" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;"></div>
-      <button class="te-btn primary" type="button" id="fotosSendBtn" onclick="enviarFotos()" style="width:100%;margin-top:10px;display:none;">📤 Enviar</button>
+    <div id="fotosUploadArea" style="display:none;flex:1;overflow-y:auto;min-height:0;">
+      <div class="fotos-grid" id="fotosGrid">
+        <div class="foto-slot" data-role="frente" onclick="_fotoSlotClick('frente')">
+          <input type="file" accept="image/*" capture="environment" data-role="frente" onchange="_onFotoSlotChange('frente', this)" style="display:none;">
+          <div class="foto-slot-icon">+</div>
+          <div class="foto-slot-label">FRENTE</div>
+          <button type="button" class="foto-slot-remove" onclick="_removeFotoSlot(event, 'frente')" style="display:none;">×</button>
+        </div>
+        <div class="foto-slot" data-role="costas" onclick="_fotoSlotClick('costas')">
+          <input type="file" accept="image/*" capture="environment" data-role="costas" onchange="_onFotoSlotChange('costas', this)" style="display:none;">
+          <div class="foto-slot-icon">+</div>
+          <div class="foto-slot-label">COSTAS</div>
+          <button type="button" class="foto-slot-remove" onclick="_removeFotoSlot(event, 'costas')" style="display:none;">×</button>
+        </div>
+        <div class="foto-slot" data-role="direito" onclick="_fotoSlotClick('direito')">
+          <input type="file" accept="image/*" capture="environment" data-role="direito" onchange="_onFotoSlotChange('direito', this)" style="display:none;">
+          <div class="foto-slot-icon">+</div>
+          <div class="foto-slot-label">PERFIL DIREITO</div>
+          <button type="button" class="foto-slot-remove" onclick="_removeFotoSlot(event, 'direito')" style="display:none;">×</button>
+        </div>
+        <div class="foto-slot" data-role="esquerdo" onclick="_fotoSlotClick('esquerdo')">
+          <input type="file" accept="image/*" capture="environment" data-role="esquerdo" onchange="_onFotoSlotChange('esquerdo', this)" style="display:none;">
+          <div class="foto-slot-icon">+</div>
+          <div class="foto-slot-label">PERFIL ESQUERDO</div>
+          <button type="button" class="foto-slot-remove" onclick="_removeFotoSlot(event, 'esquerdo')" style="display:none;">×</button>
+        </div>
+      </div>
+      <button class="te-btn primary" type="button" id="fotosSendBtn" onclick="enviarFotos()" style="width:100%;margin-top:12px;display:none;">📤 Enviar</button>
     </div>
     <div id="fotosFeedback" style="margin-top:8px;font-size:13px;"></div>
     <button class="te-btn ghost" onclick="teHide('fotosModal')" style="width:100%;margin-top:12px;">Fechar</button>
@@ -5318,14 +5387,28 @@ function dismissFotosBanner() {
   banner.style.display = 'none';
 }
 
+// Estado dos 4 slots durante a sessão do modal
+const _FOTOS_ROLES = ['frente', 'costas', 'direito', 'esquerdo'];
+let _fotosPick = {}; // role → File
+
 async function openFotosModal() {
   document.getElementById('floatOptions').classList.remove('show');
   document.getElementById('floatBtn').classList.remove('open');
   teShow('fotosModal');
 
-  // Reset visual
-  document.getElementById('fotoInput').value = '';
-  document.getElementById('fotosPreview').innerHTML = '';
+  // Reset visual de todos os slots
+  _fotosPick = {};
+  _FOTOS_ROLES.forEach(role => {
+    const slot = document.querySelector(`.foto-slot[data-role="${role}"]`);
+    if (!slot) return;
+    slot.classList.remove('filled');
+    const old = slot.querySelector('img.foto-slot-preview');
+    if (old) old.remove();
+    const input = slot.querySelector('input[type=file]');
+    if (input) input.value = '';
+    const rm = slot.querySelector('.foto-slot-remove');
+    if (rm) rm.style.display = 'none';
+  });
   document.getElementById('fotosFeedback').innerHTML = '';
   document.getElementById('fotosSendBtn').style.display = 'none';
   document.getElementById('fotosUploadArea').style.display = 'none';
@@ -5354,26 +5437,58 @@ function escapeFotosTxt(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function onFotoSelected() {
-  const input = document.getElementById('fotoInput');
-  const preview = document.getElementById('fotosPreview');
+function _fotoSlotClick(role) {
+  const slot = document.querySelector(`.foto-slot[data-role="${role}"]`);
+  if (!slot) return;
+  const input = slot.querySelector('input[type=file]');
+  if (input) input.click();
+}
+
+function _onFotoSlotChange(role, input) {
+  if (!input.files || !input.files.length) return;
+  const file = input.files[0];
+  _fotosPick[role] = file;
+  const slot = document.querySelector(`.foto-slot[data-role="${role}"]`);
+  if (!slot) return;
+  const old = slot.querySelector('img.foto-slot-preview');
+  if (old) old.remove();
+  const url = URL.createObjectURL(file);
+  const img = document.createElement('img');
+  img.className = 'foto-slot-preview';
+  img.src = url;
+  img.onload = () => URL.revokeObjectURL(url);
+  slot.insertBefore(img, slot.firstChild);
+  slot.classList.add('filled');
+  const rm = slot.querySelector('.foto-slot-remove');
+  if (rm) rm.style.display = '';
+  _updateFotosSendBtn();
+}
+
+function _removeFotoSlot(ev, role) {
+  ev.stopPropagation();
+  delete _fotosPick[role];
+  const slot = document.querySelector(`.foto-slot[data-role="${role}"]`);
+  if (!slot) return;
+  const old = slot.querySelector('img.foto-slot-preview');
+  if (old) old.remove();
+  const input = slot.querySelector('input[type=file]');
+  if (input) input.value = '';
+  slot.classList.remove('filled');
+  const rm = slot.querySelector('.foto-slot-remove');
+  if (rm) rm.style.display = 'none';
+  _updateFotosSendBtn();
+}
+
+function _updateFotosSendBtn() {
   const sendBtn = document.getElementById('fotosSendBtn');
-  preview.innerHTML = '';
-  if (!input.files || !input.files.length) {
+  const n = Object.keys(_fotosPick).length;
+  if (n === 0) {
     sendBtn.style.display = 'none';
     return;
   }
-  Array.from(input.files).forEach(f => {
-    const url = URL.createObjectURL(f);
-    const img = document.createElement('img');
-    img.src = url;
-    img.style.cssText = 'width:74px;height:74px;border-radius:6px;object-fit:cover;border:1px solid #333;';
-    img.onload = () => URL.revokeObjectURL(url);
-    preview.appendChild(img);
-  });
   sendBtn.style.display = '';
-  sendBtn.textContent = `📤 Enviar ${input.files.length} foto${input.files.length > 1 ? 's' : ''}`;
   sendBtn.disabled = false;
+  sendBtn.textContent = `📤 Enviar ${n} foto${n > 1 ? 's' : ''}`;
 }
 
 // Comprime imagem no celular (1280px max, JPEG q=0.85) antes de mandar.
@@ -5410,10 +5525,10 @@ function _compressFoto(file, maxDim, quality) {
 }
 
 async function enviarFotos() {
-  const input = document.getElementById('fotoInput');
   const sendBtn = document.getElementById('fotosSendBtn');
   const fb = document.getElementById('fotosFeedback');
-  if (!input.files || !input.files.length) return;
+  const roles = Object.keys(_fotosPick);
+  if (!roles.length) return;
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') {
     fb.innerHTML = '<span style="color:#c0392b;">Erro: aluno não identificado.</span>';
     return;
@@ -5423,11 +5538,11 @@ async function enviarFotos() {
 
   try {
     const compressed = [];
-    for (let i = 0; i < input.files.length; i++) {
-      sendBtn.textContent = `Comprimindo ${i + 1}/${input.files.length}…`;
-      const dataUrl = await _compressFoto(input.files[i]);
-      const safeName = input.files[i].name.replace(/[^a-zA-Z0-9._-]/g, '_').substring(0, 60);
-      compressed.push({ name: safeName, mime: 'image/jpeg', base64: dataUrl });
+    for (let i = 0; i < roles.length; i++) {
+      const role = roles[i];
+      sendBtn.textContent = `Comprimindo ${i + 1}/${roles.length}…`;
+      const dataUrl = await _compressFoto(_fotosPick[role]);
+      compressed.push({ name: role + '.jpg', mime: 'image/jpeg', base64: dataUrl, role: role });
     }
 
     sendBtn.textContent = `Enviando ${compressed.length} foto${compressed.length > 1 ? 's' : ''}…`;
@@ -5446,14 +5561,24 @@ async function enviarFotos() {
     }
 
     fb.innerHTML = `<div style="background:rgba(76,175,80,0.12);border-left:3px solid #4caf50;padding:10px;border-radius:4px;color:#a5d6a7;">✅ <strong>${j.saved} foto${j.saved > 1 ? 's' : ''} enviada${j.saved > 1 ? 's' : ''}</strong> com sucesso!<br><span style="font-size:11px;color:#888;">Salva na pasta <strong>${escapeFotosTxt(j.folder)}</strong>. O GH vai analisar no próximo reajuste.</span></div>`;
-    input.value = '';
-    document.getElementById('fotosPreview').innerHTML = '';
+    // limpa slots
+    _fotosPick = {};
+    _FOTOS_ROLES.forEach(role => {
+      const slot = document.querySelector(`.foto-slot[data-role="${role}"]`);
+      if (!slot) return;
+      slot.classList.remove('filled');
+      const old = slot.querySelector('img.foto-slot-preview');
+      if (old) old.remove();
+      const input = slot.querySelector('input[type=file]');
+      if (input) input.value = '';
+      const rm = slot.querySelector('.foto-slot-remove');
+      if (rm) rm.style.display = 'none';
+    });
     sendBtn.style.display = 'none';
-    sendBtn.textContent = '📤 Enviar';
   } catch (err) {
     fb.innerHTML = `<div style="background:rgba(192,57,43,0.12);border-left:3px solid #c0392b;padding:10px;border-radius:4px;color:#f5b7b1;">❌ ${escapeFotosTxt(err.message)}</div>`;
     sendBtn.disabled = false;
-    sendBtn.textContent = `📤 Enviar ${input.files.length} foto${input.files.length > 1 ? 's' : ''}`;
+    _updateFotosSendBtn();
   }
 }
 
