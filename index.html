@@ -5798,16 +5798,18 @@ function parseDietData(rows) {
         const obs = (r[3] || '').trim();
 
         // Detecta linha separadora (header de horário do bloco):
-        //   "— PRÉ-DESJEJUM —", "— PÓS-DESJEJUM —", "— ANTES DE DORMIR —", etc.
-        // Critério: nome contém "—" (em-dash ou hifen duplo) e dose+obs vazios.
+        //   "— PRÉ-DESJEJUM —", "- PÓS-DESJEJUM -", "-- ANTES DE DORMIR --", etc.
+        // Critério: nome tem dashes (em-dash —, en-dash – ou hífen simples -)
+        // no INÍCIO e FIM, e dose+obs vazios. Caso do Emerson Natal: a dieta
+        // dele veio com hífen simples no início ("- PÓS-DESJEJUM -") e o
+        // parser antigo só detectava em-dash/duplo. Agora aceita os 3.
         const isSeparator = (
-          (nome.startsWith('—') || nome.startsWith('--') ||
-           /^—.*—$/.test(nome) || /^--.*--$/.test(nome)) &&
+          /^[—–\-]+\s*.+\s*[—–\-]+$/.test(nome) &&
           !dose && !obs
         );
         if (isSeparator) {
           // Limpa os traços/espaços pra ficar só "PRÉ-DESJEJUM" como section header
-          const clean = nome.replace(/^[—-]+\s*|\s*[—-]+$/g, '').trim();
+          const clean = nome.replace(/^[—–\-]+\s*|\s*[—–\-]+$/g, '').trim();
           currentSuplSection = clean || nome;
           if (!data.supls[currentSuplSection]) data.supls[currentSuplSection] = [];
           break;
