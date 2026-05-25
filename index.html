@@ -5884,6 +5884,22 @@ function parseDietData(rows) {
   return data;
 }
 
+// Emoji visual por horário do bloco de suplementos. Faz match por
+// keyword pra cobrir variações de escrita (pós/pos, desjejum/jejum, etc).
+function _suplTimingIcon(timing) {
+  const t = String(timing || '').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '');
+  if (t.includes('ao acordar') || t.includes('jejum') && t.includes('pre')) return '🌅 ';
+  if (t.includes('desjejum')) return '☕ '; // pré e pós-desjejum
+  if (t.includes('almoco')) return '🥗 ';   // pré e pós-almoço
+  if (t.includes('pre') && t.includes('treino')) return '⚡ ';
+  if (t.includes('pos') && t.includes('treino')) return '💪 ';
+  if (t.includes('jant')) return '🍽 ';     // janta/jantar
+  if (t.includes('dormir') || t.includes('noite')) return '🌙 ';
+  if (t.includes('lanche')) return '🥪 ';
+  return '💊 ';
+}
+
 function renderDiet() {
   if (!DIET_DATA) return;
   const d = DIET_DATA;
@@ -5923,7 +5939,7 @@ function renderDiet() {
     suplTimings.forEach(timing => {
       const items = d.supls[timing] || [];
       if (!items.length) return; // section vazia (separator sem suplementos depois)
-      html += `<div class="diet-supl-group"><div class="diet-supl-timing">${timing}</div>`;
+      html += `<div class="diet-supl-group"><div class="diet-supl-timing">${_suplTimingIcon(timing)}${timing}</div>`;
       items.forEach(s => {
         const obs = s.obs ? `<span class="diet-supl-obs" style="display:block;font-size:11px;opacity:0.7;margin-top:2px;">${s.obs}</span>` : '';
         html += `<div class="diet-supl-item"><span class="diet-supl-name">${s.nome}${obs}</span><span class="diet-supl-dose">${s.dose}</span></div>`;
