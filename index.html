@@ -2277,6 +2277,9 @@
     <button type="button" class="float-opt" onclick="event.stopPropagation(); openFotosModal()">
       <span class="ic">📸</span><span>Minhas fotos do reajuste</span>
     </button>
+    <button type="button" class="float-opt" onclick="event.stopPropagation(); forceSyncFromServer()">
+      <span class="ic">🔄</span><span>Recarregar do servidor</span>
+    </button>
     <button type="button" class="float-opt install" onclick="event.stopPropagation(); showInstallInstructions()">
       <span class="ic">📱</span><span>Instalar app na tela inicial</span>
     </button>
@@ -5378,6 +5381,84 @@ async function shareShoppingList() {
 }
 
 function closeShoppingOnBg(e) { if (e.target.id === 'shoppingListModal') teHide('shoppingListModal'); }
+
+// ══ FORÇA RESINCRONIZAÇÃO COM O SERVIDOR ══
+// Sobrescreve o localStorage com o que está no servidor. Use quando o
+// merge auto não resolveu (caso Matheus: semana 4 não voltou porque
+// tinha algum dado fantasma local que bloqueou o restore).
+// É drástico, então confirma antes. Cobre cargas + placas + done.
+async function forceSyncFromServer() {
+  document.getElementById('floatOptions').classList.remove('show');
+  document.getElementById('floatBtn').classList.remove('open');
+  if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
+  const ok = confirm(
+    'Recarregar tudo do servidor?\n\n' +
+    'Isso vai SOBRESCREVER as cargas, placas e treino marcado salvos aqui no app pelo que está no servidor.\n\n' +
+    'Use se algum valor sumiu ou está aparecendo errado.\n\n' +
+    'Continuar?'
+  );
+  if (!ok) return;
+
+  let totalCargas = 0, totalDone = 0, falhas = 0;
+  try {
+    // 1. Limpa local pra essa sheet (cargas, placas, done) — vai ser substituído pelo server
+    const prefixesParaApagar = [
+      `gh_${STUDENT_ID}_d`,         // cargas
+      `gh_placas_${STUDENT_ID}_d`,  // placas
+      `gh_done_${STUDENT_ID}_`      // checkbox
+    ];
+    const toDelete = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k) continue;
+      if (prefixesParaApagar.some(p => k.startsWith(p))) toDelete.push(k);
+    }
+    toDelete.forEach(k => localStorage.removeItem(k));
+
+    // 2. Busca cargas + placas do servidor
+    try {
+      const url = `${LOG_ENDPOINT}?action=cargas&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`;
+      const res = await fetch(url, { cache: 'no-store' });
+      const data = await res.json();
+      (data.cargas || []).forEach(c => {
+        if (c.carga != null && c.carga !== '') {
+          localStorage.setItem(storageKey(c.di, c.ei, c.w), String(c.carga));
+          totalCargas++;
+        }
+        if (c.placas != null && c.placas !== '') {
+          localStorage.setItem(placasKey(c.di, c.ei, c.w), String(c.placas));
+          totalCargas++;
+        }
+      });
+    } catch (e) { falhas++; console.warn('forceSync cargas fail:', e); }
+
+    // 3. Busca done (checkbox) do servidor
+    try {
+      const url2 = `${LOG_ENDPOINT}?action=progresso&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`;
+      const res2 = await fetch(url2, { cache: 'no-store' });
+      const data2 = await res2.json();
+      (data2.done || []).forEach(d => {
+        if (d.feito) {
+          localStorage.setItem(`gh_done_${STUDENT_ID}_w${d.w}_d${d.di}_e${d.ei}`, '1');
+          totalDone++;
+        }
+      });
+    } catch (e) { falhas++; console.warn('forceSync done fail:', e); }
+
+    // 4. Re-render
+    if (typeof renderExercises === 'function' && document.getElementById('exerciseContainer')) {
+      renderExercises();
+    }
+
+    if (falhas > 0) {
+      alert(`Recarregado parcialmente.\n${totalCargas} valores de carga/placa + ${totalDone} treinos marcados restaurados.\n\n${falhas} erro(s) — tenta de novo daqui a pouco se algo continuar sumido.`);
+    } else {
+      alert(`Pronto! ✅\n\n${totalCargas} valores de carga/placa + ${totalDone} treinos marcados restaurados do servidor.`);
+    }
+  } catch (err) {
+    alert('Erro ao recarregar: ' + err.message);
+  }
+}
 
 // ══ MINHAS FOTOS DO REAJUSTE ══
 // Aluno manda fotos pelo app → app comprime no celular → POST pro Apps Script
