@@ -3837,9 +3837,7 @@ function notifyDayCompletion(di, shared) {
 }
 function allDoneOfDay(di) {
   if (!WORKOUT[di]) return false;
-  const real = WORKOUT[di].exercises
-    .map((ex, ei) => ({ ex, ei }))
-    .filter(o => !o.ex.warmup);
+  const real = WORKOUT[di].exercises.map((ex, ei) => ({ ex, ei }));
   if (!real.length) return false;
   return real.every(o => isDone(di, o.ei));
 }
@@ -3847,10 +3845,9 @@ function updateDayProgress() {
   const day = WORKOUT[currentDay];
   const bar = document.getElementById('dayProgress');
   if (!day || !bar) return;
-  const real = day.exercises.filter(ex => !ex.warmup);
-  const total = real.length;
+  const total = day.exercises.length;
   let done = 0;
-  day.exercises.forEach((ex, ei) => { if (!ex.warmup && isDone(currentDay, ei)) done++; });
+  day.exercises.forEach((ex, ei) => { if (isDone(currentDay, ei)) done++; });
   const pct = total ? (done/total)*100 : 0;
   document.getElementById('pgLabel').textContent = `Hoje: ${done}/${total} exercícios`;
   document.getElementById('pgFill').style.width = pct + '%';
@@ -4437,13 +4434,13 @@ function renderExercises() {
       const safeName = ex.name.replace(/'/g, "\\'");
       const safeVideo = (ex.video || '').replace(/'/g, "\\'");
 
-      const exDone = !isWarmup && isDone(di, ei);
+      const exDone = isDone(di, ei);
       const safeRest = (ex.rest || '').replace(/'/g, "\\'");
 
       return `
         <div class="exercise-card ${isWarmup ? 'warmup' : ''} ${hasVid ? 'has-video' : ''} ${exDone ? 'done' : ''}">
           <div class="exercise-main" ${hasVid ? `onclick="openVideo('${safeName}', '${safeVideo}')"` : ''}>
-            ${!isWarmup ? `<div class="ex-check ${exDone ? 'done' : ''}" onclick="event.stopPropagation(); onCheckExercise(${di}, ${ei})" title="Marcar como feito"></div>` : ''}
+            <div class="ex-check ${exDone ? 'done' : ''}" onclick="event.stopPropagation(); onCheckExercise(${di}, ${ei})" title="Marcar como feito"></div>
             <div class="exercise-info">
               <div class="exercise-name">
                 ${ex.name}
