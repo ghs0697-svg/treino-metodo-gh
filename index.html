@@ -4376,9 +4376,12 @@ function renderExercises() {
         if (cadA.conc !== cadB.conc || cadA.iso !== cadB.iso || cadA.exc !== cadB.exc) {
           tagsB.push(cadenciaTag(b.obs));
         }
+        // Bi-set compartilha 1 índice no array — marca/desmarca o par inteiro
+        const bisetDone = isDone(di, ei);
         return `
-          <div class="exercise-card biset">
-            <div style="padding:10px 12px 4px;">
+          <div class="exercise-card biset ${bisetDone ? 'done' : ''}">
+            <div style="padding:10px 12px 4px;display:flex;align-items:center;gap:10px;">
+              <div class="ex-check ${bisetDone ? 'done' : ''}" onclick="event.stopPropagation(); onCheckExercise(${di}, ${ei})" title="Marcar bi-set como feito"></div>
               <span class="biset-badge">&#9889; BI-SET</span>
             </div>
             <div class="biset-sub ${hasA ? 'has-video' : ''}" ${hasA ? `onclick="openVideo('${aName}', '${aVid}')"` : ''}>
