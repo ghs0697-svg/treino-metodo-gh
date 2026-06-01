@@ -1338,6 +1338,50 @@
     z-index: 2;
   }
   .foto-slot-remove:hover { background: #c0392b; }
+
+  /* ── Agenda — Personal / Psicóloga ── */
+  .prof-card {
+    background: var(--card); border: 1px solid #2a2a2a; border-radius: 10px;
+    padding: 14px; margin-bottom: 14px;
+  }
+  .prof-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .prof-avatar {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: #1a1a1a; border: 1.5px solid var(--gold);
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 24px; overflow: hidden;
+  }
+  .prof-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .prof-name { color: var(--gold); font-weight: 700; font-size: 14px; }
+  .prof-spec { color: #888; font-size: 11px; margin-top: 2px; letter-spacing: 0.4px; }
+  .prof-bio { color: #ccc; font-size: 12px; line-height: 1.5; margin: 6px 0 10px; }
+  .prof-meta {
+    color: #888; font-size: 11px; margin-bottom: 10px;
+    padding-bottom: 10px; border-bottom: 1px dashed #2a2a2a;
+  }
+  .plan-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px; background: #181818; border: 1px solid #2a2a2a;
+    border-radius: 8px; margin-bottom: 6px;
+    transition: border-color 0.15s;
+  }
+  .plan-row:hover { border-color: var(--gold); }
+  .plan-info { flex: 1; min-width: 0; }
+  .plan-label { color: #fff; font-weight: 600; font-size: 13px; }
+  .plan-per { color: #888; font-size: 11px; margin-top: 2px; }
+  .plan-discount {
+    background: rgba(76,175,80,0.15); color: #4caf50;
+    font-size: 10px; font-weight: 700; padding: 2px 6px;
+    border-radius: 4px; margin-left: 6px;
+  }
+  .plan-value { color: var(--gold); font-weight: 700; font-size: 14px; margin: 0 6px; }
+  .plan-btn {
+    background: var(--gold); color: #000; border: none; border-radius: 6px;
+    padding: 8px 14px; font-size: 12px; font-weight: 700; cursor: pointer;
+    text-decoration: none; display: inline-block; font-family: inherit;
+    white-space: nowrap;
+  }
+  .plan-btn:hover { background: #c19a5d; }
   .te-modal-box input[type="text"], .te-modal-box input[type="password"] {
     width: 100%; padding: 10px; background: #222; border: 1px solid var(--gold-dim);
     color: var(--white); border-radius: 6px; margin-bottom: 10px; font-size: 14px; box-sizing: border-box;
@@ -2277,6 +2321,9 @@
     <button type="button" class="float-opt" onclick="event.stopPropagation(); openFotosModal()">
       <span class="ic">📸</span><span>Minhas fotos do reajuste</span>
     </button>
+    <button type="button" class="float-opt" onclick="event.stopPropagation(); openAgendaModal()">
+      <span class="ic">🗓</span><span>Personal &amp; Psicóloga</span>
+    </button>
     <button type="button" class="float-opt" onclick="event.stopPropagation(); forceSyncFromServer()">
       <span class="ic">🔄</span><span>Recarregar do servidor</span>
     </button>
@@ -2381,6 +2428,18 @@
     </div>
     <div id="fotosFeedback" style="margin-top:8px;font-size:13px;"></div>
     <button class="te-btn ghost" onclick="teHide('fotosModal')" style="width:100%;margin-top:12px;">Fechar</button>
+  </div>
+</div>
+
+<!-- ══ AGENDA — Personal Vitor & Psicóloga Bruna ══ -->
+<div class="te-modal-overlay" id="agendaModal" onclick="closeAgendaOnBg(event)">
+  <div class="te-modal-box" style="max-width:560px;max-height:90vh;display:flex;flex-direction:column;">
+    <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;">🗓 Personal &amp; Psicóloga</h3>
+    <p style="color:#aaa;font-size:11px;margin:0 0 14px;line-height:1.45;">
+      Atendimento online ao vivo com a equipe oficial. Após o pagamento você recebe o WhatsApp do profissional pra combinar o horário.
+    </p>
+    <div id="agendaContent" style="flex:1;overflow-y:auto;min-height:0;"></div>
+    <button class="te-btn ghost" onclick="teHide('agendaModal')" style="width:100%;margin-top:12px;">Fechar</button>
   </div>
 </div>
 
@@ -5458,6 +5517,90 @@ async function forceSyncFromServer() {
   } catch (err) {
     alert('Erro ao recarregar: ' + err.message);
   }
+}
+
+// ══ AGENDA — Personal Vitor + Psicóloga Bruna ══
+// Greenn cuida do checkout. Pós-pagamento, aluno recebe o WhatsApp do
+// profissional pra marcar horário (configurado direto na Greenn).
+// Sem CRM no meio — MVP simples enquanto valida demanda.
+const _AGENDA_PROFS = [
+  {
+    id: 'vitor', name: 'Vitor Luis Rosado', spec: 'PERSONAL TRAINER · CREF',
+    bio: 'Especialista em biomecânica e hipertrofia. Treina alunos do Método GH desde a fundação. Aulas 1-on-1 pra travar técnica, destravar plateau e adaptar pra dor/lesão.',
+    meta: '45 min · Google Meet',
+    photo: 'https://crm-roan-one.vercel.app/img/vitor.jpg',
+    plans: [
+      { label: '1 aula',  value: 50,  per: 50, link: 'https://payfast.greenn.com.br/hvbk685/offer/VU5uQA' },
+      { label: '2 aulas', value: 90,  per: 45, link: 'https://payfast.greenn.com.br/hvbk685/offer/DNjnsr', disc: '-10%' },
+      { label: '4 aulas', value: 160, per: 40, link: 'https://payfast.greenn.com.br/hvbk685/offer/dFIy7C', disc: '-20%' },
+      { label: '8 aulas', value: 280, per: 35, link: 'https://payfast.greenn.com.br/hvbk685/offer/lrOeSw', disc: '-30%' }
+    ]
+  },
+  {
+    id: 'bruna', name: 'Bruna Garzella Michael', spec: 'PSICÓLOGA · CRP · PERFORMANCE',
+    bio: 'Atende alunos do Método GH em sessões breves focadas em ansiedade alimentar, controle emocional no corte/bulk, motivação e relação saudável com o treino. Abordagem direta, sem enrolação.',
+    meta: '30 min · Google Meet',
+    photo: 'https://crm-roan-one.vercel.app/img/bruna.jpg',
+    plans: [
+      { label: '1 sessão',  value: 100, per: 100, link: 'https://payfast.greenn.com.br/t6d49r2/offer/ZVMjI9' },
+      { label: '2 sessões', value: 180, per: 90,  link: 'https://payfast.greenn.com.br/t6d49r2/offer/19NchO', disc: '-10%' },
+      { label: '4 sessões', value: 320, per: 80,  link: 'https://payfast.greenn.com.br/t6d49r2/offer/FhNZ6f', disc: '-20%' }
+    ]
+  }
+];
+
+function closeAgendaOnBg(e) { if (e.target.id === 'agendaModal') teHide('agendaModal'); }
+
+function openAgendaModal() {
+  document.getElementById('floatOptions').classList.remove('show');
+  document.getElementById('floatBtn').classList.remove('open');
+  const c = document.getElementById('agendaContent');
+  c.innerHTML = _AGENDA_PROFS.map(p => `
+    <div class="prof-card">
+      <div class="prof-head">
+        <div class="prof-avatar"><img src="${p.photo}" alt="${escapeFotosTxt(p.name)}" onerror="this.parentNode.textContent='${p.id === 'vitor' ? '💪' : '🧠'}'"></div>
+        <div style="flex:1;min-width:0;">
+          <div class="prof-name">${escapeFotosTxt(p.name)}</div>
+          <div class="prof-spec">${escapeFotosTxt(p.spec)}</div>
+        </div>
+      </div>
+      <div class="prof-bio">${escapeFotosTxt(p.bio)}</div>
+      <div class="prof-meta">⏱ ${escapeFotosTxt(p.meta)}</div>
+      ${p.plans.map(pl => `
+        <div class="plan-row">
+          <div class="plan-info">
+            <div class="plan-label">${escapeFotosTxt(pl.label)}${pl.disc ? `<span class="plan-discount">${pl.disc}</span>` : ''}</div>
+            <div class="plan-per">R$ ${pl.per} por ${p.id === 'vitor' ? 'aula' : 'sessão'}</div>
+          </div>
+          <div class="plan-value">R$ ${pl.value}</div>
+          <a class="plan-btn" href="${pl.link}" target="_blank" rel="noopener" onclick="_logAgendaClick('${p.id}', '${pl.label}')">Comprar</a>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+  teShow('agendaModal');
+}
+
+function _logAgendaClick(profId, planLabel) {
+  // Log de afiliado pra ter tracking de cliques pro futuro
+  try {
+    if (typeof LOG_ENDPOINT !== 'undefined' && SHEET_ID) {
+      fetch(LOG_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          type: 'click',
+          sheetId: SHEET_ID,
+          studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+          partner: profId === 'vitor' ? 'Vitor (Personal)' : 'Bruna (Psicóloga)',
+          productName: planLabel,
+          tag: 'agenda',
+          url: ''
+        }),
+        keepalive: true
+      }).catch(() => {});
+    }
+  } catch (_) {}
 }
 
 // ══ MINHAS FOTOS DO REAJUSTE ══
