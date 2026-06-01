@@ -1361,11 +1361,16 @@
   }
   .plan-row {
     display: flex; align-items: center; gap: 10px;
-    padding: 10px; background: #181818; border: 1px solid #2a2a2a;
+    padding: 12px; background: #181818; border: 1px solid #2a2a2a;
     border-radius: 8px; margin-bottom: 6px;
-    transition: border-color 0.15s;
+    transition: border-color 0.15s, background 0.15s;
   }
-  .plan-row:hover { border-color: var(--gold); }
+  .plan-row-link {
+    text-decoration: none; cursor: pointer;
+  }
+  .plan-row:hover, .plan-row-link:hover {
+    border-color: var(--gold); background: #1f1f1f;
+  }
   .plan-info { flex: 1; min-width: 0; }
   .plan-label { color: #fff; font-weight: 600; font-size: 13px; }
   .plan-per { color: #888; font-size: 11px; margin-top: 2px; }
@@ -1375,18 +1380,28 @@
     border-radius: 4px; margin-left: 6px;
   }
   .plan-value { color: var(--gold); font-weight: 700; font-size: 14px; }
-  .wa-btn {
+  .plan-cta {
+    color: var(--gold); font-weight: 700; font-size: 11px;
+    padding: 6px 10px; border: 1px solid var(--gold-dim);
+    border-radius: 6px; white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+  }
+  .plan-row-link:hover .plan-cta {
+    background: var(--gold); color: #000;
+  }
+  .wa-btn-secondary {
     display: flex; align-items: center; justify-content: center; gap: 8px;
-    width: 100%; box-sizing: border-box; margin-top: 12px;
-    background: #25D366; color: #fff; border: none; border-radius: 8px;
-    padding: 13px 14px; font-size: 14px; font-weight: 700; cursor: pointer;
+    width: 100%; box-sizing: border-box; margin-top: 10px;
+    background: transparent; color: #25D366;
+    border: 1px solid rgba(37,211,102,0.4); border-radius: 8px;
+    padding: 10px 14px; font-size: 12px; font-weight: 600; cursor: pointer;
     text-decoration: none; font-family: inherit;
     transition: background 0.15s;
   }
-  .wa-btn:hover { background: #1ebe57; }
+  .wa-btn-secondary:hover { background: rgba(37,211,102,0.1); }
   .wa-note {
     color: #888; font-size: 11px; line-height: 1.4;
-    margin-top: 8px; text-align: center; padding: 0 4px;
+    margin-top: 12px; text-align: center; padding: 0 4px;
   }
   .te-modal-box input[type="text"], .te-modal-box input[type="password"] {
     width: 100%; padding: 10px; background: #222; border: 1px solid var(--gold-dim);
@@ -5526,10 +5541,10 @@ async function forceSyncFromServer() {
 }
 
 // ══ AGENDA — Personal Vitor + Psicóloga Bruna ══
-// MVP: aluno vê os preços (informativo) e chama o profissional direto
-// no WhatsApp. Profissional vende, envia link Greenn, fecha horário.
-// Quando montar o webhook Greenn → entregar número pós-pagamento,
-// adicionar botão "Comprar direto" pros decididos.
+// Cada plano = botão Comprar (Greenn). Pós-pagamento, webhook Greenn no
+// Apps Script identifica produto e dispara mensagem WhatsApp via Z-API
+// pro comprador com o contato do profissional pra marcar horário.
+// Botão secundário "Falar antes" pros indecisos abrir conversa direta.
 const _AGENDA_PROFS = [
   {
     id: 'vitor', name: 'Vitor Luis Rosado', spec: 'PERSONAL TRAINER',
@@ -5537,13 +5552,13 @@ const _AGENDA_PROFS = [
     meta: '45 min · Google Meet',
     photo: 'https://crm-roan-one.vercel.app/img/vitor.jpg',
     phone: '5555991777167',
-    waText: 'Oi Vitor! Vi teu perfil no app do GH e quero fechar uma aula contigo.',
+    waText: 'Oi Vitor! Vi teu perfil no app do GH e quero tirar uma dúvida antes de fechar aula.',
     unit: 'aula',
     plans: [
-      { label: '1 aula',  value: 50,  per: 50 },
-      { label: '2 aulas', value: 90,  per: 45, disc: '-10%' },
-      { label: '4 aulas', value: 160, per: 40, disc: '-20%' },
-      { label: '8 aulas', value: 280, per: 35, disc: '-30%' }
+      { label: '1 aula',  value: 50,  per: 50,  link: 'https://payfast.greenn.com.br/hvbk685/offer/VU5uQA' },
+      { label: '2 aulas', value: 90,  per: 45,  disc: '-10%', link: 'https://payfast.greenn.com.br/hvbk685/offer/DNjnsr' },
+      { label: '4 aulas', value: 160, per: 40,  disc: '-20%', link: 'https://payfast.greenn.com.br/hvbk685/offer/dFIy7C' },
+      { label: '8 aulas', value: 280, per: 35,  disc: '-30%', link: 'https://payfast.greenn.com.br/hvbk685/offer/lrOeSw' }
     ]
   },
   {
@@ -5552,12 +5567,12 @@ const _AGENDA_PROFS = [
     meta: '30 min · Google Meet',
     photo: 'https://crm-roan-one.vercel.app/img/bruna.jpg',
     phone: '5555996832430',
-    waText: 'Oi Bruna! Vi teu perfil no app do GH e quero fechar uma sessão contigo.',
+    waText: 'Oi Bruna! Vi teu perfil no app do GH e quero tirar uma dúvida antes de fechar sessão.',
     unit: 'sessão',
     plans: [
-      { label: '1 sessão',  value: 100, per: 100 },
-      { label: '2 sessões', value: 180, per: 90,  disc: '-10%' },
-      { label: '4 sessões', value: 320, per: 80,  disc: '-20%' }
+      { label: '1 sessão',  value: 100, per: 100, link: 'https://payfast.greenn.com.br/t6d49r2/offer/ZVMjI9' },
+      { label: '2 sessões', value: 180, per: 90,  disc: '-10%', link: 'https://payfast.greenn.com.br/t6d49r2/offer/19NchO' },
+      { label: '4 sessões', value: 320, per: 80,  disc: '-20%', link: 'https://payfast.greenn.com.br/t6d49r2/offer/FhNZ6f' }
     ]
   }
 ];
@@ -5582,18 +5597,19 @@ function openAgendaModal() {
       <div class="prof-bio">${escapeFotosTxt(p.bio)}</div>
       <div class="prof-meta">⏱ ${escapeFotosTxt(p.meta)}</div>
       ${p.plans.map(pl => `
-        <div class="plan-row">
+        <a class="plan-row plan-row-link" href="${pl.link}" target="_blank" rel="noopener" onclick="_logAgendaClick('${p.id}', '${escapeFotosTxt(pl.label)}')">
           <div class="plan-info">
             <div class="plan-label">${escapeFotosTxt(pl.label)}${pl.disc ? `<span class="plan-discount">${pl.disc}</span>` : ''}</div>
             <div class="plan-per">R$ ${pl.per} por ${p.unit}</div>
           </div>
           <div class="plan-value">R$ ${pl.value}</div>
-        </div>
+          <div class="plan-cta">Comprar →</div>
+        </a>
       `).join('')}
-      <a class="wa-btn" href="${waUrl}" target="_blank" rel="noopener" onclick="_logAgendaClick('${p.id}', 'wa-chamar')">
-        <span style="font-size:18px;">💬</span> Chamar ${escapeFotosTxt(p.name.split(' ')[0])} no WhatsApp
+      <div class="wa-note">Após o pagamento, você recebe o WhatsApp de ${escapeFotosTxt(p.name.split(' ')[0])} aqui no seu Zap pra marcar o horário.</div>
+      <a class="wa-btn-secondary" href="${waUrl}" target="_blank" rel="noopener" onclick="_logAgendaClick('${p.id}', 'wa-chamar')">
+        <span>💬</span> Tirar dúvida antes com ${escapeFotosTxt(p.name.split(' ')[0])}
       </a>
-      <div class="wa-note">Combina horário direto com ${escapeFotosTxt(p.name.split(' ')[0])}. Pagamento via link que ele te envia depois da conversa.</div>
     </div>
   `;}).join('');
   teShow('agendaModal');
