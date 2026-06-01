@@ -1374,14 +1374,20 @@
     font-size: 10px; font-weight: 700; padding: 2px 6px;
     border-radius: 4px; margin-left: 6px;
   }
-  .plan-value { color: var(--gold); font-weight: 700; font-size: 14px; margin: 0 6px; }
-  .plan-btn {
-    background: var(--gold); color: #000; border: none; border-radius: 6px;
-    padding: 8px 14px; font-size: 12px; font-weight: 700; cursor: pointer;
-    text-decoration: none; display: inline-block; font-family: inherit;
-    white-space: nowrap;
+  .plan-value { color: var(--gold); font-weight: 700; font-size: 14px; }
+  .wa-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; box-sizing: border-box; margin-top: 12px;
+    background: #25D366; color: #fff; border: none; border-radius: 8px;
+    padding: 13px 14px; font-size: 14px; font-weight: 700; cursor: pointer;
+    text-decoration: none; font-family: inherit;
+    transition: background 0.15s;
   }
-  .plan-btn:hover { background: #c19a5d; }
+  .wa-btn:hover { background: #1ebe57; }
+  .wa-note {
+    color: #888; font-size: 11px; line-height: 1.4;
+    margin-top: 8px; text-align: center; padding: 0 4px;
+  }
   .te-modal-box input[type="text"], .te-modal-box input[type="password"] {
     width: 100%; padding: 10px; background: #222; border: 1px solid var(--gold-dim);
     color: var(--white); border-radius: 6px; margin-bottom: 10px; font-size: 14px; box-sizing: border-box;
@@ -5520,20 +5526,24 @@ async function forceSyncFromServer() {
 }
 
 // ══ AGENDA — Personal Vitor + Psicóloga Bruna ══
-// Greenn cuida do checkout. Pós-pagamento, aluno recebe o WhatsApp do
-// profissional pra marcar horário (configurado direto na Greenn).
-// Sem CRM no meio — MVP simples enquanto valida demanda.
+// MVP: aluno vê os preços (informativo) e chama o profissional direto
+// no WhatsApp. Profissional vende, envia link Greenn, fecha horário.
+// Quando montar o webhook Greenn → entregar número pós-pagamento,
+// adicionar botão "Comprar direto" pros decididos.
 const _AGENDA_PROFS = [
   {
     id: 'vitor', name: 'Vitor Luis Rosado', spec: 'PERSONAL TRAINER',
     bio: 'Especialista em biomecânica e hipertrofia. Treina alunos do Método GH desde a fundação. Aulas 1-on-1 pra travar técnica, destravar plateau e adaptar pra dor/lesão.',
     meta: '45 min · Google Meet',
     photo: 'https://crm-roan-one.vercel.app/img/vitor.jpg',
+    phone: '5555991777167',
+    waText: 'Oi Vitor! Vi teu perfil no app do GH e quero fechar uma aula contigo.',
+    unit: 'aula',
     plans: [
-      { label: '1 aula',  value: 50,  per: 50, link: 'https://payfast.greenn.com.br/hvbk685/offer/VU5uQA' },
-      { label: '2 aulas', value: 90,  per: 45, link: 'https://payfast.greenn.com.br/hvbk685/offer/DNjnsr', disc: '-10%' },
-      { label: '4 aulas', value: 160, per: 40, link: 'https://payfast.greenn.com.br/hvbk685/offer/dFIy7C', disc: '-20%' },
-      { label: '8 aulas', value: 280, per: 35, link: 'https://payfast.greenn.com.br/hvbk685/offer/lrOeSw', disc: '-30%' }
+      { label: '1 aula',  value: 50,  per: 50 },
+      { label: '2 aulas', value: 90,  per: 45, disc: '-10%' },
+      { label: '4 aulas', value: 160, per: 40, disc: '-20%' },
+      { label: '8 aulas', value: 280, per: 35, disc: '-30%' }
     ]
   },
   {
@@ -5541,10 +5551,13 @@ const _AGENDA_PROFS = [
     bio: 'Atende alunos do Método GH em sessões breves focadas em ansiedade alimentar, controle emocional no corte/bulk, motivação e relação saudável com o treino. Abordagem direta, sem enrolação.',
     meta: '30 min · Google Meet',
     photo: 'https://crm-roan-one.vercel.app/img/bruna.jpg',
+    phone: '5555996832430',
+    waText: 'Oi Bruna! Vi teu perfil no app do GH e quero fechar uma sessão contigo.',
+    unit: 'sessão',
     plans: [
-      { label: '1 sessão',  value: 100, per: 100, link: 'https://payfast.greenn.com.br/t6d49r2/offer/ZVMjI9' },
-      { label: '2 sessões', value: 180, per: 90,  link: 'https://payfast.greenn.com.br/t6d49r2/offer/19NchO', disc: '-10%' },
-      { label: '4 sessões', value: 320, per: 80,  link: 'https://payfast.greenn.com.br/t6d49r2/offer/FhNZ6f', disc: '-20%' }
+      { label: '1 sessão',  value: 100, per: 100 },
+      { label: '2 sessões', value: 180, per: 90,  disc: '-10%' },
+      { label: '4 sessões', value: 320, per: 80,  disc: '-20%' }
     ]
   }
 ];
@@ -5555,7 +5568,9 @@ function openAgendaModal() {
   document.getElementById('floatOptions').classList.remove('show');
   document.getElementById('floatBtn').classList.remove('open');
   const c = document.getElementById('agendaContent');
-  c.innerHTML = _AGENDA_PROFS.map(p => `
+  c.innerHTML = _AGENDA_PROFS.map(p => {
+    const waUrl = `https://wa.me/${p.phone}?text=${encodeURIComponent(p.waText)}`;
+    return `
     <div class="prof-card">
       <div class="prof-head">
         <div class="prof-avatar"><img src="${p.photo}" alt="${escapeFotosTxt(p.name)}" onerror="this.parentNode.textContent='${p.id === 'vitor' ? '💪' : '🧠'}'"></div>
@@ -5570,14 +5585,17 @@ function openAgendaModal() {
         <div class="plan-row">
           <div class="plan-info">
             <div class="plan-label">${escapeFotosTxt(pl.label)}${pl.disc ? `<span class="plan-discount">${pl.disc}</span>` : ''}</div>
-            <div class="plan-per">R$ ${pl.per} por ${p.id === 'vitor' ? 'aula' : 'sessão'}</div>
+            <div class="plan-per">R$ ${pl.per} por ${p.unit}</div>
           </div>
           <div class="plan-value">R$ ${pl.value}</div>
-          <a class="plan-btn" href="${pl.link}" target="_blank" rel="noopener" onclick="_logAgendaClick('${p.id}', '${pl.label}')">Comprar</a>
         </div>
       `).join('')}
+      <a class="wa-btn" href="${waUrl}" target="_blank" rel="noopener" onclick="_logAgendaClick('${p.id}', 'wa-chamar')">
+        <span style="font-size:18px;">💬</span> Chamar ${escapeFotosTxt(p.name.split(' ')[0])} no WhatsApp
+      </a>
+      <div class="wa-note">Combina horário direto com ${escapeFotosTxt(p.name.split(' ')[0])}. Pagamento via link que ele te envia depois da conversa.</div>
     </div>
-  `).join('');
+  `;}).join('');
   teShow('agendaModal');
 }
 
