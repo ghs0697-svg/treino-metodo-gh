@@ -2345,6 +2345,9 @@
     <button type="button" class="float-opt" onclick="event.stopPropagation(); openAgendaModal()">
       <span class="ic">🗓</span><span>Personal &amp; Psicóloga</span>
     </button>
+    <button type="button" class="float-opt" onclick="event.stopPropagation(); openAjusteModal()">
+      <span class="ic">🔧</span><span>Solicitar ajuste</span>
+    </button>
     <button type="button" class="float-opt" onclick="event.stopPropagation(); forceSyncFromServer()">
       <span class="ic">🔄</span><span>Recarregar do servidor</span>
     </button>
@@ -2461,6 +2464,42 @@
     </p>
     <div id="agendaContent" style="flex:1;overflow-y:auto;min-height:0;"></div>
     <button class="te-btn ghost" onclick="teHide('agendaModal')" style="width:100%;margin-top:12px;">Fechar</button>
+  </div>
+</div>
+
+<!-- ══ SOLICITAR AJUSTE ══ -->
+<div class="te-modal-overlay" id="ajusteModal" onclick="closeAjusteOnBg(event)">
+  <div class="te-modal-box" style="max-width:520px;max-height:90vh;display:flex;flex-direction:column;">
+    <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;">🔧 Solicitar ajuste</h3>
+    <p style="color:#aaa;font-size:11px;margin:0 0 14px;line-height:1.45;">
+      Conta o que precisa mudar no teu protocolo. O GH revisa e ajusta direto na tua planilha — sem precisar mandar no WhatsApp.
+    </p>
+    <div id="ajusteForm">
+      <label style="color:#bbb;font-size:11px;display:block;margin-bottom:4px;">Sobre o quê?</label>
+      <select id="ajusteContexto" style="width:100%;padding:10px;background:#222;border:1px solid var(--gold-dim);color:var(--white);border-radius:6px;font-size:13px;margin-bottom:12px;">
+        <option value="TREINO">Treino (exercício, série, repetição)</option>
+        <option value="DIETA">Dieta (refeição, alimento, kcal)</option>
+        <option value="SUPLEMENTACAO">Suplementação</option>
+        <option value="PEPTIDEOS">Peptídeos</option>
+        <option value="HORMONAL">Protocolo hormonal</option>
+        <option value="OUTRO">Outro</option>
+      </select>
+      <label style="color:#bbb;font-size:11px;display:block;margin-bottom:4px;">Qual o ajuste?</label>
+      <textarea id="ajusteTexto" rows="6" maxlength="2000" placeholder="Ex: Minha academia não tem Cadeira Flexora, posso fazer Mesa Flexora no lugar?&#10;&#10;Ex: O Tríceps Testa tá doendo no cotovelo, tem alternativa?" style="width:100%;padding:10px;background:#222;border:1px solid var(--gold-dim);color:var(--white);border-radius:6px;font-size:13px;font-family:inherit;line-height:1.4;box-sizing:border-box;resize:vertical;min-height:120px;"></textarea>
+      <div id="ajusteCharCount" style="color:#666;font-size:10px;text-align:right;margin-top:4px;">0 / 2000</div>
+      <div style="display:flex;gap:8px;margin-top:14px;">
+        <button class="te-btn" onclick="submitAjuste()" id="ajusteSubmitBtn" style="flex:1;">Enviar pedido</button>
+        <button class="te-btn ghost" onclick="teHide('ajusteModal')" style="flex:0 0 auto;">Cancelar</button>
+      </div>
+    </div>
+    <div id="ajusteSuccess" style="display:none;text-align:center;padding:30px 10px;">
+      <div style="font-size:48px;margin-bottom:14px;">✅</div>
+      <h4 style="color:var(--gold);margin:0 0 10px;">Pedido recebido!</h4>
+      <p style="color:#aaa;font-size:13px;line-height:1.5;margin:0 0 18px;">
+        O GH analisa as solicitações 2x por dia e ajusta direto na tua planilha. Quando o ajuste estiver pronto, ele aparece aqui no teu app — pode dar refresh pra atualizar.
+      </p>
+      <button class="te-btn" onclick="teHide('ajusteModal')" style="width:100%;">Fechar</button>
+    </div>
   </div>
 </div>
 
@@ -5635,6 +5674,73 @@ function _logAgendaClick(profId, planLabel) {
       }).catch(() => {});
     }
   } catch (_) {}
+}
+
+// ══ SOLICITAR AJUSTE ══
+// Aluno descreve o que quer mudar no protocolo → POST pro Apps Script →
+// grava em aba AJUSTES_PEDIDOS no mestre. Conversa Code agendada 2x/dia
+// (separada) lê pendentes e aplica nos sheets dos alunos.
+function closeAjusteOnBg(e) { if (e.target.id === 'ajusteModal') teHide('ajusteModal'); }
+
+function openAjusteModal() {
+  document.getElementById('floatOptions').classList.remove('show');
+  document.getElementById('floatBtn').classList.remove('open');
+  // Reset modal pro estado inicial (form visível, success escondido)
+  document.getElementById('ajusteForm').style.display = '';
+  document.getElementById('ajusteSuccess').style.display = 'none';
+  document.getElementById('ajusteTexto').value = '';
+  document.getElementById('ajusteContexto').value = 'TREINO';
+  document.getElementById('ajusteCharCount').textContent = '0 / 2000';
+  document.getElementById('ajusteSubmitBtn').disabled = false;
+  document.getElementById('ajusteSubmitBtn').textContent = 'Enviar pedido';
+  teShow('ajusteModal');
+  setTimeout(() => document.getElementById('ajusteTexto').focus(), 100);
+}
+
+// Contador de chars no textarea
+document.addEventListener('input', function(e) {
+  if (e.target && e.target.id === 'ajusteTexto') {
+    document.getElementById('ajusteCharCount').textContent = e.target.value.length + ' / 2000';
+  }
+});
+
+async function submitAjuste() {
+  const texto = (document.getElementById('ajusteTexto').value || '').trim();
+  const contexto = document.getElementById('ajusteContexto').value || 'OUTRO';
+  if (texto.length < 5) {
+    alert('Conta um pouco mais sobre o que precisa mudar — mínimo 5 caracteres.');
+    return;
+  }
+  const btn = document.getElementById('ajusteSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+  const studentName = (document.getElementById('infoNome')?.textContent || '').trim();
+  try {
+    const resp = await fetch(LOG_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        type: 'ajuste_request',
+        sheetId: SHEET_ID,
+        studentName: studentName,
+        contexto: contexto,
+        pedido: texto
+      })
+    });
+    const result = await resp.json().catch(() => ({}));
+    if (result.success) {
+      document.getElementById('ajusteForm').style.display = 'none';
+      document.getElementById('ajusteSuccess').style.display = '';
+    } else {
+      alert('Não consegui enviar agora: ' + (result.error || 'erro desconhecido') + '. Tenta de novo em 1 minuto.');
+      btn.disabled = false;
+      btn.textContent = 'Enviar pedido';
+    }
+  } catch (err) {
+    alert('Erro de conexão. Confere internet e tenta de novo. (' + err.message + ')');
+    btn.disabled = false;
+    btn.textContent = 'Enviar pedido';
+  }
 }
 
 // ══ MINHAS FOTOS DO REAJUSTE ══
