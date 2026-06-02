@@ -451,8 +451,17 @@
   .float-options.show { display: flex; }
   .float-opt { background: #1a1a1a; border: 1px solid var(--gold-dim); color: #fff; padding: 10px 14px; border-radius: 24px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 10px; text-decoration: none; white-space: nowrap; transition: all 0.15s; }
   .float-opt:hover { background: var(--gold); color: var(--dark); border-color: var(--gold); }
-  .float-opt.whatsapp { border-color: #25d366; }
-  .float-opt.whatsapp:hover { background: #25d366; color: #fff; border-color: #25d366; }
+  /* Botões com fundo colorido — agrupados visualmente por função */
+  .float-opt.install { background: #25d366; border-color: #25d366; color: #fff; }
+  .float-opt.install:hover { background: #1ebe57; border-color: #1ebe57; color: #fff; }
+  .float-opt.reload { background: #1a3550; border-color: #3b82f6; color: #93c5fd; }
+  .float-opt.reload:hover { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+  .float-opt.ajuste { background: var(--gold); border-color: var(--gold); color: #000; }
+  .float-opt.ajuste:hover { background: #c19a5d; border-color: #c19a5d; color: #000; }
+  .float-opt.fotos { background: #3a1a3a; border-color: #c026d3; color: #f0abfc; }
+  .float-opt.fotos:hover { background: #c026d3; border-color: #c026d3; color: #fff; }
+  .float-opt.whatsapp { background: #1a3a26; border-color: #25d366; color: #6ee7a3; }
+  .float-opt.whatsapp:hover { background: #25d366; border-color: #25d366; color: #fff; }
   .float-opt.ranking { border-color: #ffb84d; }
   .float-opt.ranking:hover { background: #ffb84d; color: var(--dark); border-color: #ffb84d; }
   .float-opt .ic { font-size: 18px; }
@@ -2330,33 +2339,37 @@
 <!-- Botão flutuante combinado: instala app + abre WhatsApp -->
 <div id="floatMenu">
   <div class="float-options" id="floatOptions">
+    <!-- 1. Instalar app — destaque máximo pro aluno novo -->
+    <button type="button" class="float-opt install" onclick="event.stopPropagation(); showInstallInstructions()">
+      <span class="ic">📱</span><span>Instalar app na tela inicial</span>
+    </button>
+    <!-- 2. Recarregar — perto do instalar, ambos "técnicos" -->
+    <button type="button" class="float-opt reload" onclick="event.stopPropagation(); forceSyncFromServer()">
+      <span class="ic">🔄</span><span>Recarregar do servidor</span>
+    </button>
+    <!-- 3-5. Grupo "ações do aluno" — agrupados visualmente -->
+    <button type="button" class="float-opt ajuste" onclick="event.stopPropagation(); openAjusteModal()">
+      <span class="ic">🔧</span><span>Solicitar ajuste</span>
+    </button>
+    <button type="button" class="float-opt fotos" onclick="event.stopPropagation(); openFotosModal()">
+      <span class="ic">📸</span><span>Minhas fotos do reajuste</span>
+    </button>
+    <a class="float-opt whatsapp" href="https://wa.me/555520131470" target="_blank" rel="noopener">
+      <span class="ic">💬</span><span>Suporte no WhatsApp</span>
+    </a>
+    <!-- 6-9. Extras -->
+    <button type="button" class="float-opt" onclick="event.stopPropagation(); openAgendaModal()">
+      <span class="ic">🗓</span><span>Personal &amp; Psicóloga</span>
+    </button>
+    <button type="button" class="float-opt" onclick="event.stopPropagation(); downloadPDF()">
+      <span class="ic">📄</span><span id="pdfBtnLabel">Baixar treino em PDF</span>
+    </button>
     <button type="button" class="float-opt ranking" onclick="event.stopPropagation(); openRankingModal()">
       <span class="ic">🏆</span><span>Ranking</span>
     </button>
     <button type="button" class="float-opt" onclick="event.stopPropagation(); toggleUnit()">
       <span class="ic">⚖️</span><span id="unitToggleLabel">Unidade: kg (trocar pra lb)</span>
     </button>
-    <button type="button" class="float-opt" onclick="event.stopPropagation(); downloadPDF()">
-      <span class="ic">📄</span><span id="pdfBtnLabel">Baixar treino em PDF</span>
-    </button>
-    <button type="button" class="float-opt" onclick="event.stopPropagation(); openFotosModal()">
-      <span class="ic">📸</span><span>Minhas fotos do reajuste</span>
-    </button>
-    <button type="button" class="float-opt" onclick="event.stopPropagation(); openAgendaModal()">
-      <span class="ic">🗓</span><span>Personal &amp; Psicóloga</span>
-    </button>
-    <button type="button" class="float-opt" onclick="event.stopPropagation(); openAjusteModal()">
-      <span class="ic">🔧</span><span>Solicitar ajuste</span>
-    </button>
-    <button type="button" class="float-opt" onclick="event.stopPropagation(); forceSyncFromServer()">
-      <span class="ic">🔄</span><span>Recarregar do servidor</span>
-    </button>
-    <button type="button" class="float-opt install" onclick="event.stopPropagation(); showInstallInstructions()">
-      <span class="ic">📱</span><span>Instalar app na tela inicial</span>
-    </button>
-    <a class="float-opt whatsapp" href="https://wa.me/555520131470" target="_blank" rel="noopener">
-      <span class="ic">💬</span><span>Falar no WhatsApp</span>
-    </a>
   </div>
   <button class="float-btn" id="floatBtn" onclick="toggleFloatMenu()" title="Menu rápido">⚡</button>
 </div>
