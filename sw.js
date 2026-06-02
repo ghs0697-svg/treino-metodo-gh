@@ -1,4 +1,4 @@
-const CACHE_NAME = 'metodo-gh-v135';
+const CACHE_NAME = 'metodo-gh-v136';
 const ASSETS = [
   './',
   './index.html',
@@ -36,10 +36,20 @@ self.addEventListener('fetch', e => {
     e.respondWith(fetch(e.request, { cache: 'no-store' }));
     return;
   }
-  // index.html / navegação: network-first com fallback pro cache (offline)
-  if (e.request.url.includes('index.html') || e.request.mode === 'navigate') {
+  // index.html + editor-data.js: network-first com fallback pro cache (offline).
+  // editor-data.js carrega o EXERCISE_DB/DIET_TEMPLATES do painel treinador —
+  // tem que vir SEMPRE fresco quando online, senão exercício novo no banco
+  // não aparece no "Trocar Exercício" (ficava preso no cache antigo do SW).
+  // Atualiza o cache em background pra fallback offline continuar válido.
+  if (e.request.url.includes('index.html') || e.request.url.includes('editor-data.js') || e.request.mode === 'navigate') {
     e.respondWith(
-      fetch(e.request).catch(() => caches.match(e.request))
+      fetch(e.request).then(resp => {
+        if (resp && resp.ok && e.request.method === 'GET') {
+          const clone = resp.clone();
+          caches.open(CACHE_NAME).then(c => c.put(e.request, clone)).catch(() => {});
+        }
+        return resp;
+      }).catch(() => caches.match(e.request))
     );
     return;
   }
