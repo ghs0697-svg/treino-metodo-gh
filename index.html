@@ -6265,12 +6265,14 @@ function cmpRenderCard(side) {
     return;
   }
   const r = _cmpState.rounds[it.roundIdx];
-  const tag = it.role ? CMP_ROLE_LABEL[it.role] : (it.name || 'foto');
+  // Tag só pra foto COM ângulo (Frente/Costas/...). Sem ângulo = sem tag
+  // (não mostra nome de arquivo do celular em cima da foto).
+  const tagHtml = it.role ? `<span class="cmp-photo-tag">${escapeFotosTxt(CMP_ROLE_LABEL[it.role])}</span>` : '';
   const imgId = 'cmpImg' + side;
   const cached = _cmpState.imgCache[it.fid];
   wrap.innerHTML = cached
-    ? `<img id="${imgId}" class="cmp-photo" src="${cached}" alt="${escapeFotosTxt(tag)}"><span class="cmp-photo-tag">${escapeFotosTxt(tag)}</span>`
-    : `<div class="cmp-photo-loading">carregando…</div><img id="${imgId}" class="cmp-photo" style="display:none" onload="this.style.display='block';this.previousElementSibling.style.display='none'" alt="${escapeFotosTxt(tag)}"><span class="cmp-photo-tag">${escapeFotosTxt(tag)}</span>`;
+    ? `<img id="${imgId}" class="cmp-photo" src="${cached}" alt="foto">${tagHtml}`
+    : `<div class="cmp-photo-loading">carregando…</div><img id="${imgId}" class="cmp-photo" style="display:none" onload="this.style.display='block';this.previousElementSibling.style.display='none'" alt="foto">${tagHtml}`;
   meta.innerHTML = `${escapeFotosTxt(r.folder)}<br>${escapeFotosTxt(r.date || '')}`;
   if (!cached) _cmpLoadImg(it.fid, imgId);
 }
