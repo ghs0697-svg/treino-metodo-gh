@@ -6244,6 +6244,16 @@ function cmpRenderCard(side) {
   }
   // prévia local (ainda não enviada)
   if (it.local) {
+    if (it.loading) {
+      wrap.innerHTML = `<div class="cmp-photo-loading">processando foto…</div>`;
+      meta.innerHTML = '';
+      return;
+    }
+    if (it.error) {
+      wrap.innerHTML = `<div class="cmp-photo-empty">Não consegui abrir essa foto. Se for HEIC (iPhone), exporta/salva como JPG e tenta de novo.</div>`;
+      meta.innerHTML = '';
+      return;
+    }
     wrap.innerHTML = `<img class="cmp-photo" src="${it.url}" alt="prévia"><span class="cmp-photo-tag preview">📱 Prévia</span>`;
     meta.innerHTML = `Foto do teu celular<br><span style="color:#9ee79e;">ainda não enviada</span>`;
     return;
@@ -6329,12 +6339,27 @@ function cmpPick(roundIdx, i) {
 }
 
 function cmpPickLocal() { document.getElementById('cmpLocalInput').click(); }
-function cmpOnLocalFile(input) {
+async function cmpOnLocalFile(input) {
   if (!input.files || !input.files.length) return;
-  const url = URL.createObjectURL(input.files[0]);
-  _cmpState.sel[_cmpState.chooserSide] = { local:true, url:url, fid:'local-'+_cmpState.chooserSide };
+  const file = input.files[0];
+  const side = _cmpState.chooserSide;
   teHide('cmpChooserModal');
+  // estado de loading enquanto processa
+  _cmpState.sel[side] = { local:true, loading:true, fid:'local-'+side };
   cmpRenderCards();
+  try {
+    // Passa pelo mesmo compressor do upload (canvas → JPEG). Normaliza
+    // formato/orientação e garante que renderiza. HEIC que o navegador
+    // não decodifica cai no catch e mostra mensagem clara.
+    const dataUrl = await _compressFoto(file, 1280, 0.85);
+    _cmpState.sel[side] = { local:true, url:dataUrl, fid:'local-'+side };
+  } catch (e) {
+    _cmpState.sel[side] = { local:true, error:true, fid:'local-'+side };
+  }
+  // input pode mudar de chooserSide nesse meio tempo? não — só 1 chooser por vez
+  cmpRenderCards();
+  // limpa o input pra permitir re-selecionar a mesma foto depois
+  input.value = '';
 }
 
 // ══ Painel Streak ══
