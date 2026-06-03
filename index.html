@@ -6523,16 +6523,23 @@ function _cmpDrawShare() {
   pill('ANTES', half / 2, 80);
   pill('DEPOIS', half + half / 2, 80);
 
-  // Método GH + @ no MEIO das fotos (com sombra pra ler sobre qualquer fundo)
+  // Selo central: fundo preto + texto todo dourado (MÉTODO GH + @)
+  const panelW = 660, panelH = 168;
+  const px = (W - panelW) / 2, py = H / 2 - panelH / 2;
+  ctx.fillStyle = 'rgba(0,0,0,0.72)';
+  _roundRect(ctx, px, py, panelW, panelH, 22); ctx.fill();
+  // borda dourada fininha
+  ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(212,175,106,0.55)';
+  _roundRect(ctx, px, py, panelW, panelH, 22); ctx.stroke();
+  // textos dourados
   ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.85)';
-  ctx.shadowBlur = 18; ctx.shadowOffsetY = 2;
-  ctx.fillStyle = '#fff';
-  ctx.font = `500 44px ${F}`;
-  ctx.fillText('MÉTODO GH', W / 2, H / 2 - 16);
-  ctx.fillStyle = '#d4af6a';
+  ctx.shadowColor = 'rgba(212,175,106,0.35)'; ctx.shadowBlur = 12;
+  ctx.fillStyle = '#D4AF6A';
+  ctx.font = `600 44px ${F}`;
+  ctx.fillText('MÉTODO GH', W / 2, H / 2 - 8);
+  ctx.fillStyle = '#F1D69E';
   ctx.font = `bold 60px ${F}`;
-  ctx.fillText('@gh.scheuermann', W / 2, H / 2 + 52);
+  ctx.fillText('@gh.scheuermann', W / 2, H / 2 + 56);
   ctx.restore();
 }
 
