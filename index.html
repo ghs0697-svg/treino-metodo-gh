@@ -1390,6 +1390,11 @@
   .cmp-evo-note { margin-top:14px; background:linear-gradient(135deg,#1a2e1a,#162616);
     border:1px solid #2e5e2e; border-radius:10px; padding:12px 14px;
     font-size:12px; color:#9ee79e; line-height:1.5; text-align:center; }
+  .cmp-share-btn { width:100%; margin-top:4px; background:var(--gold); color:#000;
+    border:none; border-radius:10px; padding:14px; font-size:14px; font-weight:700;
+    cursor:pointer; font-family:inherit; transition:background .15s; }
+  .cmp-share-btn:hover { background:#c19a5d; }
+  .cmp-share-btn:disabled { opacity:.6; cursor:default; }
   .cmp-local-btn { width:100%; background:#1a2e1a; border:1px solid #2e5e2e; color:#9ee79e;
     padding:11px; border-radius:8px; font-weight:600; cursor:pointer; font-family:inherit;
     font-size:12px; margin-bottom:10px; }
@@ -2564,6 +2569,7 @@
           </div>
         </div>
         <div class="cmp-swap-sides"><button onclick="cmpSwapSides()">⇆ Inverter lados</button></div>
+        <button class="cmp-share-btn" id="cmpShareBtn" onclick="cmpShare()">📤 Compartilhar antes/depois</button>
         <div id="cmpEvoArea"></div>
       </div>
     </div><!-- /fotosPaneComparar -->
@@ -6350,6 +6356,118 @@ async function cmpOnLocalFile(input) {
   cmpRenderCards();
   // limpa o input pra permitir re-selecionar a mesma foto depois
   input.value = '';
+}
+
+// ── Compartilhar antes/depois (story) ──
+function _cmpLoadImgEl(src) {
+  return new Promise((res, rej) => {
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = () => rej(new Error('falha ao carregar imagem'));
+    i.src = src;
+  });
+}
+function _cmpDrawCover(ctx, img, dx, dy, dw, dh) {
+  const ir = img.width / img.height, dr = dw / dh;
+  let sw, sh, sx, sy;
+  if (ir > dr) { sh = img.height; sw = sh * dr; sx = (img.width - sw) / 2; sy = 0; }
+  else { sw = img.width; sh = sw / dr; sx = 0; sy = (img.height - sh) / 2; }
+  ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+}
+
+async function cmpShare() {
+  const L = _cmpState.sel.L, R = _cmpState.sel.R;
+  if (!L || !R || L.error || R.error || L.loading || R.loading) {
+    alert('Escolhe duas fotos válidas pros dois lados antes de compartilhar.');
+    return;
+  }
+  const srcL = L.local ? L.url : _cmpState.imgCache[L.fid];
+  const srcR = R.local ? R.url : _cmpState.imgCache[R.fid];
+  if (!srcL || !srcR) { alert('Espera as fotos carregarem e tenta de novo.'); return; }
+
+  const btn = document.getElementById('cmpShareBtn');
+  const oldTxt = btn.textContent;
+  btn.disabled = true; btn.textContent = '⏳ Gerando imagem...';
+  try {
+    const [imgL, imgR] = await Promise.all([_cmpLoadImgEl(srcL), _cmpLoadImgEl(srcR)]);
+    let logo = null; try { logo = await _cmpLoadImgEl('gh-logo.png'); } catch (_) {}
+
+    const W = 1080, H = 1920;
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+    const F = ACH_FONT;
+
+    // fundo
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#0d0d0d'); g.addColorStop(1, '#161616');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+    // título
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#d4a76a';
+    ctx.font = `bold 60px ${F}`;
+    ctx.fillText('MINHA EVOLUÇÃO', W / 2, 130);
+
+    // fotos lado a lado
+    const pY = 210, pH = 1420, half = W / 2;
+    _cmpDrawCover(ctx, imgL, 0, pY, half, pH);
+    _cmpDrawCover(ctx, imgR, half, pY, half, pH);
+    // costura central
+    ctx.fillStyle = '#0d0d0d'; ctx.fillRect(half - 3, pY, 6, pH);
+
+    // pílulas ANTES / DEPOIS
+    function pill(text, cx, cy) {
+      ctx.font = `bold 34px ${F}`;
+      const w = ctx.measureText(text).width + 44;
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      _roundRect(ctx, cx - w / 2, cy - 42, w, 56, 28); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.fillText(text, cx, cy);
+    }
+    pill('ANTES', half / 2, pY + 70);
+    pill('DEPOIS', half + half / 2, pY + 70);
+
+    // logo central (badge sobre a costura, no meio)
+    const lx = W / 2, ly = pY + pH / 2, r = 130;
+    ctx.beginPath(); ctx.arc(lx, ly, r, 0, Math.PI * 2);
+    ctx.fillStyle = '#0d0d0d'; ctx.fill();
+    ctx.lineWidth = 6; ctx.strokeStyle = '#d4a76a'; ctx.stroke();
+    if (logo) {
+      const ls = r * 1.35;
+      ctx.drawImage(logo, lx - ls / 2, ly - ls / 2, ls, ls);
+    } else {
+      ctx.fillStyle = '#d4a76a'; ctx.font = `bold 56px ${F}`; ctx.fillText('GH', lx, ly + 20);
+    }
+
+    // fade inferior + @ do GH
+    const bg = ctx.createLinearGradient(0, H - 280, 0, H);
+    bg.addColorStop(0, 'rgba(13,13,13,0)'); bg.addColorStop(0.55, '#0d0d0d');
+    ctx.fillStyle = bg; ctx.fillRect(0, H - 280, W, 280);
+    ctx.fillStyle = '#aaa'; ctx.font = `500 34px ${F}`;
+    ctx.fillText('MÉTODO GH', W / 2, H - 120);
+    ctx.fillStyle = '#d4a76a'; ctx.font = `bold 50px ${F}`;
+    ctx.fillText('@gh.scheuermann', W / 2, H - 62);
+
+    c.toBlob(async blob => {
+      btn.disabled = false; btn.textContent = oldTxt;
+      if (!blob) { alert('Não consegui gerar a imagem.'); return; }
+      const file = new File([blob], 'evolucao-metodo-gh.png', { type: 'image/png' });
+      try {
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'Minha evolução — Método GH' });
+        } else {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'evolucao-metodo-gh.png';
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+        }
+      } catch (e) { /* usuário cancelou */ }
+    }, 'image/png');
+  } catch (e) {
+    btn.disabled = false; btn.textContent = oldTxt;
+    alert('Não consegui gerar a imagem: ' + e.message);
+  }
 }
 
 // ══ Painel Streak ══
