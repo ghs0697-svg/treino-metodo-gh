@@ -1733,6 +1733,19 @@
   </div>
 </div>
 
+<!-- ══ BANNER SOLICITAR AJUSTE (descoberta da função) ══ -->
+<div id="ajusteBanner" style="display:none;margin:0 14px 12px;padding:11px 14px;background:linear-gradient(135deg, rgba(212,175,106,0.16), rgba(212,175,106,0.04));border:1px solid var(--gold);border-radius:10px;box-shadow:0 4px 16px var(--gold-glow);">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div style="font-size:20px;">🔧</div>
+    <div style="flex:1;min-width:0;">
+      <div style="color:var(--gold);font-weight:700;font-size:13px;margin-bottom:2px;">Precisa ajustar algo no protocolo?</div>
+      <div style="color:#ccc;font-size:12px;line-height:1.4;">Peça um ajuste rápido por aqui, sem esperar no WhatsApp.</div>
+    </div>
+    <button class="te-btn primary" type="button" onclick="openAjusteModal()" style="padding:9px 14px;font-size:12px;white-space:nowrap;">Solicitar</button>
+    <button type="button" onclick="dismissAjusteBanner()" title="Fechar" style="background:none;border:none;color:#888;font-size:20px;cursor:pointer;padding:0 2px;line-height:1;align-self:flex-start;">×</button>
+  </div>
+</div>
+
 <!-- ══ MAIN NAVIGATION (Treino | Dieta) ══ -->
 <div class="main-nav" id="mainNav" style="display:none;">
   <button class="nav-btn active" id="navTreino" onclick="switchView('treino')">TREINO</button>
@@ -4601,6 +4614,7 @@ async function loadFromSheets() {
     restoreCargasFromServerIfEmpty_();
     restoreDoneFromServerIfEmpty_();
     checkFotosBannerOnLoad();
+    checkAjusteBannerOnLoad();
     flushSyncQueues(); // processa cargas/done que ficaram pendentes (offline anterior)
     updateUnitToggleLabel();
     renderExercises();
@@ -5943,6 +5957,7 @@ async function submitAjuste() {
     if (result.success) {
       document.getElementById('ajusteForm').style.display = 'none';
       document.getElementById('ajusteSuccess').style.display = '';
+      dismissAjusteBanner(); // já usou a função — esconde o banner por 30 dias
     } else {
       alert('Não consegui enviar agora: ' + (result.error || 'erro desconhecido') + '. Tenta de novo em 1 minuto.');
       btn.disabled = false;
@@ -5993,6 +6008,24 @@ function dismissFotosBanner() {
   const startDate = banner._startDate;
   if (startDate) localStorage.setItem(_fotosBannerKey(startDate), '1');
   banner.style.display = 'none';
+}
+
+// Banner de descoberta do "Solicitar ajuste". Mostra no topo até o aluno
+// fechar (×) ou usar a função uma vez. Reaparece a cada ~30 dias pra
+// reforçar (caso o aluno tenha esquecido que existe).
+const _AJUSTE_BANNER_KEY = 'gh_ajuste_banner_dismissed';
+function checkAjusteBannerOnLoad() {
+  try {
+    const until = parseInt(localStorage.getItem(_AJUSTE_BANNER_KEY) || '0', 10);
+    if (until && Date.now() < until) return; // ainda dentro do período dispensado
+  } catch (_) {}
+  const b = document.getElementById('ajusteBanner');
+  if (b) b.style.display = 'block';
+}
+function dismissAjusteBanner() {
+  const b = document.getElementById('ajusteBanner');
+  if (b) b.style.display = 'none';
+  try { localStorage.setItem(_AJUSTE_BANNER_KEY, String(Date.now() + 30 * 24 * 60 * 60 * 1000)); } catch (_) {}
 }
 
 // Estado dos 4 slots durante a sessão do modal
