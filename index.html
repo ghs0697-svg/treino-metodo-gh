@@ -5927,6 +5927,7 @@ function dismissFotosBanner() {
 // Estado dos 4 slots durante a sessão do modal
 const _FOTOS_ROLES = ['frente', 'costas', 'direito', 'esquerdo'];
 let _fotosPick = {}; // role → File
+let _fotosWindowOpen = false; // janela de envio aberta?
 
 async function openFotosModal() {
   document.getElementById('floatOptions').classList.remove('show');
@@ -5953,26 +5954,46 @@ async function openFotosModal() {
   });
   document.getElementById('fotosFeedback').innerHTML = '';
   document.getElementById('fotosSendBtn').style.display = 'none';
-  document.getElementById('fotosUploadArea').style.display = 'none';
+  // Slots SEMPRE visíveis (mostram a estrutura frente/costas/perfil pro
+  // aluno saber o que mandar). Quando fora da janela ficam esmaecidos e
+  // sem envio — mas a estrutura aparece sempre.
+  const uploadArea = document.getElementById('fotosUploadArea');
+  uploadArea.style.display = '';
   const status = document.getElementById('fotosWindowStatus');
   status.innerHTML = '<span style="color:#888;">Verificando janela de envio…</span>';
 
   try {
     const resp = await fetch(`${LOG_ENDPOINT}?action=foto_window&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`, { cache: 'no-store' });
     const j = await resp.json();
+    _fotosWindowOpen = !!j.open;
     if (j.open) {
       status.innerHTML = `<div style="color:#4caf50;font-weight:700;margin-bottom:4px;">✅ Envio liberado</div><div style="color:#aaa;font-size:12px;">${escapeFotosTxt(j.message || '')}</div>`;
-      document.getElementById('fotosUploadArea').style.display = '';
+      _setFotosSlotsEnabled(true);
     } else {
       let icon = '⏳';
       if (j.status === 'after') icon = '🔒';
       else if (j.error || j.status === 'sem_data') icon = '⚠️';
       const msg = j.message || j.error || 'Janela indisponível no momento.';
       status.innerHTML = `<div style="color:#d4a76a;font-weight:700;margin-bottom:4px;">${icon} Envio não disponível agora</div><div style="color:#aaa;font-size:12px;">${escapeFotosTxt(msg)}</div>`;
+      _setFotosSlotsEnabled(false);
     }
   } catch (err) {
+    _fotosWindowOpen = false;
     status.innerHTML = `<div style="color:#c0392b;">Erro ao verificar janela: ${escapeFotosTxt(err.message)}</div>`;
+    _setFotosSlotsEnabled(false);
   }
+}
+
+// Liga/desliga os slots de envio conforme a janela. Desligado = esmaecido,
+// sem clique, sem botão de enviar (mas a estrutura frente/costas/perfil
+// continua visível pro aluno saber o que vai mandar quando abrir).
+function _setFotosSlotsEnabled(enabled) {
+  const grid = document.getElementById('fotosGrid');
+  if (grid) {
+    grid.style.opacity = enabled ? '1' : '0.45';
+    grid.style.pointerEvents = enabled ? 'auto' : 'none';
+  }
+  if (!enabled) document.getElementById('fotosSendBtn').style.display = 'none';
 }
 
 function escapeFotosTxt(s) {
@@ -6024,7 +6045,7 @@ function _removeFotoSlot(ev, role) {
 function _updateFotosSendBtn() {
   const sendBtn = document.getElementById('fotosSendBtn');
   const n = Object.keys(_fotosPick).length;
-  if (n === 0) {
+  if (n === 0 || !_fotosWindowOpen) {
     sendBtn.style.display = 'none';
     return;
   }
