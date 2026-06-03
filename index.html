@@ -9,38 +9,71 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>Treino | Método GH</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
   :root {
-    --gold: #d4a76a;
-    --gold-dim: #8b6f3a;
-    --dark: #0D0D0D;
-    --card: #1A1A1A;
-    --header-bg: #25201a;
-    --white: #F5F5F5;
-    --gray: #E0E0E0;
-    --muted: #777;
+    /* Dourado Método GH com tratamento premium (degradê + glow) */
+    --gold: #D4AF6A;
+    --gold-bright: #F1D69E;
+    --gold-dark: #A67C3D;
+    --gold-dim: #6f5a32;
+    --gold-glow: rgba(212, 175, 106, 0.42);
+    --gold-soft: rgba(212, 175, 106, 0.10);
+    --dark: #000000;
+    --bg-dark: #0a0a0a;
+    --card: #141312;
+    --bg-elevated: #1c1a17;
+    --header-bg: #0d0b08;
+    --white: #F4F2ED;
+    --gray: #E0DCD3;
+    --muted: #8a8377;
     --green: #4CAF50;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
+    --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.45);
+    --hairline: inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    background: var(--dark);
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background:
+      radial-gradient(ellipse 92% 52% at 50% 0%, rgba(212, 175, 106, 0.11) 0%, rgba(90, 68, 26, 0.06) 34%, transparent 70%),
+      linear-gradient(180deg, #120F0A 0%, var(--dark) 58%);
+    background-color: var(--dark);
+    background-attachment: fixed;
     color: var(--white);
     min-height: 100vh;
     padding-bottom: 80px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   /* ── Header ── */
   .app-header {
     text-align: center;
-    padding: 20px 16px 14px;
-    border-bottom: 2px solid var(--gold);
-    background: linear-gradient(180deg, #161208 0%, var(--dark) 100%);
+    padding: 22px 16px 16px;
+    border-bottom: 1px solid transparent;
+    border-image: linear-gradient(90deg, transparent, var(--gold) 50%, transparent) 1;
+    background: linear-gradient(180deg, rgba(212,175,106,0.07) 0%, var(--header-bg) 40%, var(--dark) 100%);
+    position: relative;
   }
-  .app-header img.logo { width: 60px; height: auto; margin-bottom: 6px; }
-  .app-header h1 { color: var(--gold); font-size: 18px; letter-spacing: 3px; font-weight: 700; margin-top: 0; }
-  .app-header .subtitle { color: var(--muted); font-size: 12px; margin-top: 3px; letter-spacing: 1px; }
+  .app-header::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-glow) 50%, transparent);
+    box-shadow: 0 0 16px var(--gold-glow);
+  }
+  .app-header .brand-name {
+    font-size: 30px; letter-spacing: 4px; font-weight: 800; line-height: 1.05;
+    background: linear-gradient(135deg, var(--gold-bright) 0%, var(--gold) 50%, var(--gold-dark) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: var(--gold);
+    filter: drop-shadow(0 2px 14px var(--gold-glow));
+  }
+  .app-header h1 {
+    font-size: 12px; letter-spacing: 3px; font-weight: 600; margin-top: 6px;
+    color: var(--muted); text-transform: uppercase;
+  }
 
   /* ── Student info ── */
   .student-info {
@@ -110,10 +143,10 @@
     transition: all 0.2s;
   }
   .day-tab.active {
-    background: var(--gold);
-    color: var(--dark);
+    background: linear-gradient(135deg, var(--gold-bright) 0%, var(--gold) 55%, var(--gold-dark) 100%);
+    color: #1a1308;
     border-color: var(--gold);
-    box-shadow: 0 0 12px rgba(212, 175, 55, 0.3);
+    box-shadow: 0 6px 20px var(--gold-glow), inset 0 1px 0 rgba(255, 255, 255, 0.3);
   }
 
   /* ── Week selector ── */
@@ -1680,9 +1713,8 @@
 <body>
 
 <div class="app-header">
-  <img src="gh-logo.png" alt="Método GH" class="logo">
+  <div class="brand-name">MÉTODO GH</div>
   <h1 id="headerTitle">PROTOCOLO DE TREINO</h1>
-  <div class="subtitle">MÉTODO GH</div>
   <div class="last-mod" id="lastModBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:0.3px;"><span id="versionBadge" style="display:none;color:var(--gold);font-weight:600;">Protocolo v<span id="versionValue"></span></span><span id="lastModSep" style="display:none;"> · </span>Atualizado em <span id="lastModValue"></span></div>
 </div>
 
