@@ -2540,7 +2540,7 @@
       <p style="color:#aaa;font-size:11px;margin:0 0 12px;line-height:1.45;">
         Escolhe qualquer foto pra cada lado e compara tua evolução. Toca em "Trocar foto" pra mudar o round ou usar uma foto nova do celular como prévia.
       </p>
-      <div class="cmp-angle-hint">
+      <div class="cmp-angle-hint" id="cmpAngleHint" style="display:none;">
         <span class="lbl">Atalho:</span>
         <span class="cmp-chip" onclick="cmpQuickAngle('frente')">Frente</span>
         <span class="cmp-chip" onclick="cmpQuickAngle('costas')">Costas</span>
@@ -2573,7 +2573,7 @@
 </div>
 
 <!-- Chooser de foto pra comparação -->
-<div class="te-modal-overlay" id="cmpChooserModal" onclick="if(event.target.id==='cmpChooserModal')teHide('cmpChooserModal')" style="z-index:60;">
+<div class="te-modal-overlay" id="cmpChooserModal" onclick="if(event.target.id==='cmpChooserModal')teHide('cmpChooserModal')" style="z-index:10001;">
   <div class="te-modal-box" style="max-width:560px;max-height:85vh;display:flex;flex-direction:column;">
     <h3 id="cmpChooserTitle" style="margin:0 0 12px;font-size:15px;">Escolher foto</h3>
     <button class="cmp-local-btn" onclick="cmpPickLocal()">📱 Usar foto do meu celular (prévia, sem enviar)</button>
@@ -6161,6 +6161,10 @@ async function loadFotosCompare() {
     // padrão: ANTES = primeiro round, DEPOIS = último
     _cmpState.sel.L = _cmpDefaultPick(0);
     _cmpState.sel.R = _cmpDefaultPick(_cmpState.rounds.length - 1);
+    // Mostra os atalhos de ângulo só se ALGUM round tiver foto nomeada.
+    // Fotos antigas (nome de celular) não têm ângulo → atalho não faz nada.
+    const temAngulo = _cmpState.rounds.some(r => r.roles && Object.keys(r.roles).length > 0);
+    document.getElementById('cmpAngleHint').style.display = temAngulo ? 'flex' : 'none';
     status.style.display = 'none';
     body.style.display = 'block';
     cmpRenderCards();
