@@ -6269,20 +6269,10 @@ function cmpRenderCard(side) {
   if (!cached) _cmpLoadImg(it.fid, imgId);
 }
 
-function _cmpParseBR(d) { const p=(d||'').split('/').map(Number); return p.length===3?new Date(p[2],p[1]-1,p[0]):null; }
 function cmpRenderEvo() {
+  // Faixa de "X semanas de evolução" removida a pedido do GH.
   const area = document.getElementById('cmpEvoArea');
-  const L = _cmpState.sel.L, R = _cmpState.sel.R;
-  if (!L || !R) { area.innerHTML=''; return; }
-  if (L.local || R.local) {
-    area.innerHTML = `<div class="cmp-evo-note">📱 Prévia da foto nova vs uma já enviada. Gostou? Vai na aba <b>Enviar</b> pra subir de verdade.</div>`;
-    return;
-  }
-  const dL = _cmpParseBR(_cmpState.rounds[L.roundIdx].date), dR = _cmpParseBR(_cmpState.rounds[R.roundIdx].date);
-  if (!dL || !dR) { area.innerHTML=''; return; }
-  const weeks = Math.round(Math.abs(dR - dL) / (7*24*3600*1000));
-  area.innerHTML = weeks > 0
-    ? `<div class="cmp-evo-note">💪 ${weeks} semana${weeks>1?'s':''} entre essas fotos. A evolução tá aí — continua firme!</div>` : '';
+  if (area) area.innerHTML = '';
 }
 
 function cmpQuickAngle(role) {
