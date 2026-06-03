@@ -1348,6 +1348,62 @@
   }
   .foto-slot-remove:hover { background: #c0392b; }
 
+  /* ── Fotos: abas Enviar / Comparar ── */
+  .fotos-tabs { display:flex; gap:6px; margin-bottom:14px; }
+  .fotos-tab { flex:1; padding:10px; background:#1a1a1a; border:1px solid #2a2a2a;
+    border-radius:8px; color:#aaa; font-size:12px; font-weight:600; cursor:pointer;
+    font-family:inherit; transition:all .15s; }
+  .fotos-tab.active { background:var(--gold); color:#000; border-color:var(--gold); }
+
+  /* ── Comparar evolução ── */
+  .cmp-angle-hint { display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; align-items:center; }
+  .cmp-angle-hint .lbl { color:#777; font-size:11px; }
+  .cmp-chip { padding:6px 11px; background:#1a1a1a; border:1px solid #2a2a2a;
+    border-radius:18px; color:#aaa; font-size:11px; font-weight:600; cursor:pointer; transition:all .15s; }
+  .cmp-chip:hover { border-color:var(--gold); color:var(--gold); }
+  .cmp-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .cmp-col { display:flex; flex-direction:column; }
+  .cmp-label { text-align:center; font-size:11px; font-weight:700; padding:6px;
+    border-radius:6px 6px 0 0; letter-spacing:.5px; }
+  .cmp-label.before { background:#2a2a2a; color:#bbb; }
+  .cmp-label.after { background:var(--gold-dim); color:var(--gold); }
+  .cmp-photo-wrap { position:relative; }
+  .cmp-photo { width:100%; aspect-ratio:3/4; object-fit:cover; display:block;
+    background:#181818; border:1px solid #2a2a2a; border-top:none; }
+  .cmp-photo-empty { width:100%; aspect-ratio:3/4; display:flex; align-items:center; justify-content:center;
+    background:#161616; border:1px dashed #333; border-top:none; color:#666; font-size:12px; text-align:center; padding:10px; }
+  .cmp-photo-loading { width:100%; aspect-ratio:3/4; display:flex; align-items:center; justify-content:center;
+    background:#161616; border:1px solid #2a2a2a; border-top:none; color:#888; font-size:12px; }
+  .cmp-photo-tag { position:absolute; top:6px; left:6px; background:rgba(0,0,0,.7);
+    color:var(--gold); font-size:10px; font-weight:700; padding:3px 7px; border-radius:5px; }
+  .cmp-photo-tag.preview { background:rgba(46,94,46,.85); color:#9ee79e; }
+  .cmp-swap { display:flex; align-items:center; justify-content:center; gap:5px;
+    background:#1f1f1f; border:1px solid var(--gold-dim); border-top:none;
+    color:var(--gold); font-size:11px; font-weight:600; padding:9px; cursor:pointer;
+    border-radius:0 0 8px 8px; }
+  .cmp-swap:hover { background:#2a2a2a; }
+  .cmp-meta { text-align:center; font-size:10px; color:#777; margin-top:5px; line-height:1.4; }
+  .cmp-swap-sides { display:flex; justify-content:center; margin:12px 0; }
+  .cmp-swap-sides button { background:#161616; border:1px solid #2a2a2a; color:#aaa;
+    font-size:11px; padding:7px 14px; border-radius:18px; cursor:pointer; font-family:inherit; }
+  .cmp-swap-sides button:hover { border-color:var(--gold); color:var(--gold); }
+  .cmp-evo-note { margin-top:14px; background:linear-gradient(135deg,#1a2e1a,#162616);
+    border:1px solid #2e5e2e; border-radius:10px; padding:12px 14px;
+    font-size:12px; color:#9ee79e; line-height:1.5; text-align:center; }
+  .cmp-local-btn { width:100%; background:#1a2e1a; border:1px solid #2e5e2e; color:#9ee79e;
+    padding:11px; border-radius:8px; font-weight:600; cursor:pointer; font-family:inherit;
+    font-size:12px; margin-bottom:10px; }
+  .cmp-local-btn:hover { background:#234023; }
+  .cmp-or { text-align:center; color:#666; font-size:10px; margin:0 0 10px; }
+  .cmp-pick-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .cmp-pick-item { cursor:pointer; border:2px solid transparent; border-radius:8px; overflow:hidden; position:relative; }
+  .cmp-pick-item.sel { border-color:var(--gold); }
+  .cmp-pick-item img { width:100%; aspect-ratio:3/4; object-fit:cover; display:block; background:#181818; }
+  .cmp-pick-item .pk-load { width:100%; aspect-ratio:3/4; display:flex; align-items:center; justify-content:center; background:#181818; color:#555; font-size:18px; }
+  .cmp-pick-item .pk-tag { position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,.72);
+    color:#ddd; font-size:9px; font-weight:600; padding:3px; text-align:center; }
+  .cmp-pick-item .pk-tag.role { color:var(--gold); }
+
   /* ── Agenda — Personal / Psicóloga ── */
   .prof-card {
     background: var(--card); border: 1px solid #2a2a2a; border-radius: 10px;
@@ -2431,8 +2487,16 @@
 
 <!-- ══ MINHAS FOTOS DO REAJUSTE ══ -->
 <div class="te-modal-overlay" id="fotosModal" onclick="closeFotosOnBg(event)">
-  <div class="te-modal-box" style="max-width:520px;max-height:90vh;display:flex;flex-direction:column;">
-    <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;">📸 Minhas Fotos do Reajuste</h3>
+  <div class="te-modal-box" style="max-width:560px;max-height:90vh;display:flex;flex-direction:column;">
+    <h3 style="margin:0 0 10px;display:flex;align-items:center;gap:8px;">📸 Minhas Fotos do Reajuste</h3>
+
+    <div class="fotos-tabs">
+      <button type="button" id="fotosTabEnviar" class="fotos-tab active" onclick="switchFotosTab('enviar')">📤 Enviar</button>
+      <button type="button" id="fotosTabComparar" class="fotos-tab" onclick="switchFotosTab('comparar')">📊 Comparar evolução</button>
+    </div>
+
+    <!-- ══ ABA ENVIAR ══ -->
+    <div id="fotosPaneEnviar" style="flex:1;overflow-y:auto;min-height:0;display:flex;flex-direction:column;">
     <p style="color:#aaa;font-size:11px;margin:0 0 12px;line-height:1.45;">
       Toca em cada espaço pra adicionar a foto. O GH usa elas pra analisar tua evolução e montar o próximo protocolo. Tudo vai direto pra tua pasta do Drive.
     </p>
@@ -2469,7 +2533,55 @@
       <button class="te-btn primary" type="button" id="fotosSendBtn" onclick="enviarFotos()" style="width:100%;margin-top:12px;display:none;">📤 Enviar</button>
     </div>
     <div id="fotosFeedback" style="margin-top:8px;font-size:13px;"></div>
+    </div><!-- /fotosPaneEnviar -->
+
+    <!-- ══ ABA COMPARAR EVOLUÇÃO ══ -->
+    <div id="fotosPaneComparar" style="display:none;flex:1;overflow-y:auto;min-height:0;">
+      <p style="color:#aaa;font-size:11px;margin:0 0 12px;line-height:1.45;">
+        Escolhe qualquer foto pra cada lado e compara tua evolução. Toca em "Trocar foto" pra mudar o round ou usar uma foto nova do celular como prévia.
+      </p>
+      <div class="cmp-angle-hint">
+        <span class="lbl">Atalho:</span>
+        <span class="cmp-chip" onclick="cmpQuickAngle('frente')">Frente</span>
+        <span class="cmp-chip" onclick="cmpQuickAngle('costas')">Costas</span>
+        <span class="cmp-chip" onclick="cmpQuickAngle('direito')">Perfil D</span>
+        <span class="cmp-chip" onclick="cmpQuickAngle('esquerdo')">Perfil E</span>
+      </div>
+      <div id="cmpStatus" style="text-align:center;color:#888;font-size:13px;padding:20px;">Carregando tuas fotos…</div>
+      <div id="cmpBody" style="display:none;">
+        <div class="cmp-grid">
+          <div class="cmp-col">
+            <div class="cmp-label before">ANTES</div>
+            <div class="cmp-photo-wrap" id="cmpWrapL"></div>
+            <div class="cmp-swap" onclick="cmpOpenChooser('L')">🔄 Trocar foto</div>
+            <div class="cmp-meta" id="cmpMetaL"></div>
+          </div>
+          <div class="cmp-col">
+            <div class="cmp-label after">DEPOIS</div>
+            <div class="cmp-photo-wrap" id="cmpWrapR"></div>
+            <div class="cmp-swap" onclick="cmpOpenChooser('R')">🔄 Trocar foto</div>
+            <div class="cmp-meta" id="cmpMetaR"></div>
+          </div>
+        </div>
+        <div class="cmp-swap-sides"><button onclick="cmpSwapSides()">⇆ Inverter lados</button></div>
+        <div id="cmpEvoArea"></div>
+      </div>
+    </div><!-- /fotosPaneComparar -->
+
     <button class="te-btn ghost" onclick="teHide('fotosModal')" style="width:100%;margin-top:12px;">Fechar</button>
+  </div>
+</div>
+
+<!-- Chooser de foto pra comparação -->
+<div class="te-modal-overlay" id="cmpChooserModal" onclick="if(event.target.id==='cmpChooserModal')teHide('cmpChooserModal')" style="z-index:60;">
+  <div class="te-modal-box" style="max-width:560px;max-height:85vh;display:flex;flex-direction:column;">
+    <h3 id="cmpChooserTitle" style="margin:0 0 12px;font-size:15px;">Escolher foto</h3>
+    <button class="cmp-local-btn" onclick="cmpPickLocal()">📱 Usar foto do meu celular (prévia, sem enviar)</button>
+    <input type="file" id="cmpLocalInput" accept="image/*" style="display:none;" onchange="cmpOnLocalFile(this)">
+    <div class="cmp-or">— ou escolhe um round já enviado —</div>
+    <select id="cmpChooserRound" onchange="cmpRenderPicks()" style="width:100%;padding:10px;background:#222;border:1px solid var(--gold-dim);color:var(--white);border-radius:8px;font-size:13px;font-weight:600;margin-bottom:12px;font-family:inherit;"></select>
+    <div class="cmp-pick-grid" id="cmpPickGrid" style="flex:1;overflow-y:auto;"></div>
+    <button class="te-btn ghost" onclick="teHide('cmpChooserModal')" style="width:100%;margin-top:12px;">Fechar</button>
   </div>
 </div>
 
@@ -5821,6 +5933,11 @@ async function openFotosModal() {
   document.getElementById('floatBtn').classList.remove('open');
   teShow('fotosModal');
 
+  // Sempre abre na aba Enviar; zera cache de comparação pra recarregar fresco
+  _cmpState.loaded = false;
+  _cmpState.sel = { L:null, R:null };
+  switchFotosTab('enviar');
+
   // Reset visual de todos os slots
   _fotosPick = {};
   _FOTOS_ROLES.forEach(role => {
@@ -6005,6 +6122,194 @@ async function enviarFotos() {
     sendBtn.disabled = false;
     _updateFotosSendBtn();
   }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ══ COMPARAR EVOLUÇÃO — fotos antes/depois ══
+// ══════════════════════════════════════════════════════════════
+const CMP_ROLE_LABEL = { frente:'Frente', costas:'Costas', direito:'Perfil D', esquerdo:'Perfil E' };
+const _cmpState = { loaded:false, rounds:[], sel:{L:null,R:null}, chooserSide:null, imgCache:{} };
+
+function switchFotosTab(tab) {
+  const isEnviar = tab === 'enviar';
+  document.getElementById('fotosTabEnviar').classList.toggle('active', isEnviar);
+  document.getElementById('fotosTabComparar').classList.toggle('active', !isEnviar);
+  document.getElementById('fotosPaneEnviar').style.display = isEnviar ? 'flex' : 'none';
+  document.getElementById('fotosPaneComparar').style.display = isEnviar ? 'none' : 'block';
+  if (!isEnviar && !_cmpState.loaded) loadFotosCompare();
+}
+
+async function loadFotosCompare() {
+  const status = document.getElementById('cmpStatus');
+  const body = document.getElementById('cmpBody');
+  status.style.display = 'block'; body.style.display = 'none';
+  status.textContent = 'Carregando tuas fotos…';
+  if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') {
+    status.textContent = 'Não consegui identificar o aluno.';
+    return;
+  }
+  try {
+    const resp = await fetch(`${LOG_ENDPOINT}?action=fotos_list&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`, { cache:'no-store' });
+    const j = await resp.json();
+    if (!j.ok) throw new Error(j.error || 'falha');
+    _cmpState.rounds = j.rounds || [];
+    _cmpState.loaded = true;
+    if (!_cmpState.rounds.length) {
+      status.innerHTML = 'Você ainda não tem fotos enviadas.<br><span style="font-size:11px;color:#777;">Manda tuas fotos na aba <b>Enviar</b> que elas aparecem aqui pra comparar.</span>';
+      return;
+    }
+    // padrão: ANTES = primeiro round, DEPOIS = último
+    _cmpState.sel.L = _cmpDefaultPick(0);
+    _cmpState.sel.R = _cmpDefaultPick(_cmpState.rounds.length - 1);
+    status.style.display = 'none';
+    body.style.display = 'block';
+    cmpRenderCards();
+  } catch (err) {
+    status.innerHTML = `<span style="color:#c0392b;">Erro ao carregar fotos: ${escapeFotosTxt(err.message)}</span>`;
+  }
+}
+
+// itens de um round (nomeados + outras) em array uniforme
+function _cmpRoundItems(idx) {
+  const r = _cmpState.rounds[idx];
+  if (!r) return [];
+  const items = [];
+  ['frente','costas','direito','esquerdo'].forEach(role => {
+    if (r.roles && r.roles[role]) items.push({ role, fid:r.roles[role].fid, roundIdx:idx });
+  });
+  (r.outras || []).forEach(o => items.push({ role:null, fid:o.fid, name:o.name, roundIdx:idx }));
+  return items;
+}
+function _cmpDefaultPick(idx) {
+  const items = _cmpRoundItems(idx);
+  return items.find(i => i.role === 'frente') || items[0] || null;
+}
+
+// Carrega 1 foto (base64) sob demanda, com cache por fid. Seta no <img id=imgId>.
+async function _cmpLoadImg(fid, imgId) {
+  if (_cmpState.imgCache[fid]) {
+    const el = document.getElementById(imgId);
+    if (el) el.src = _cmpState.imgCache[fid];
+    return;
+  }
+  try {
+    const resp = await fetch(`${LOG_ENDPOINT}?action=foto_img&fid=${encodeURIComponent(fid)}&_=${Date.now()}`, { cache:'no-store' });
+    const j = await resp.json();
+    if (!j.ok) return;
+    const uri = 'data:' + (j.mime || 'image/jpeg') + ';base64,' + j.b64;
+    _cmpState.imgCache[fid] = uri;
+    const el = document.getElementById(imgId);
+    if (el) el.src = uri;
+  } catch (_) {}
+}
+
+function cmpRenderCards() {
+  cmpRenderCard('L'); cmpRenderCard('R');
+  cmpRenderEvo();
+}
+
+function cmpRenderCard(side) {
+  const it = _cmpState.sel[side];
+  const wrap = document.getElementById('cmpWrap' + side);
+  const meta = document.getElementById('cmpMeta' + side);
+  if (!it) {
+    wrap.innerHTML = `<div class="cmp-photo-empty">Toca em "Trocar foto" pra escolher</div>`;
+    meta.textContent = '';
+    return;
+  }
+  // prévia local (ainda não enviada)
+  if (it.local) {
+    wrap.innerHTML = `<img class="cmp-photo" src="${it.url}" alt="prévia"><span class="cmp-photo-tag preview">📱 Prévia</span>`;
+    meta.innerHTML = `Foto do teu celular<br><span style="color:#9ee79e;">ainda não enviada</span>`;
+    return;
+  }
+  const r = _cmpState.rounds[it.roundIdx];
+  const tag = it.role ? CMP_ROLE_LABEL[it.role] : (it.name || 'foto');
+  const imgId = 'cmpImg' + side;
+  const cached = _cmpState.imgCache[it.fid];
+  wrap.innerHTML = cached
+    ? `<img id="${imgId}" class="cmp-photo" src="${cached}" alt="${escapeFotosTxt(tag)}"><span class="cmp-photo-tag">${escapeFotosTxt(tag)}</span>`
+    : `<div class="cmp-photo-loading">carregando…</div><img id="${imgId}" class="cmp-photo" style="display:none" onload="this.style.display='block';this.previousElementSibling.style.display='none'" alt="${escapeFotosTxt(tag)}"><span class="cmp-photo-tag">${escapeFotosTxt(tag)}</span>`;
+  meta.innerHTML = `${escapeFotosTxt(r.folder)}<br>${escapeFotosTxt(r.date || '')}`;
+  if (!cached) _cmpLoadImg(it.fid, imgId);
+}
+
+function _cmpParseBR(d) { const p=(d||'').split('/').map(Number); return p.length===3?new Date(p[2],p[1]-1,p[0]):null; }
+function cmpRenderEvo() {
+  const area = document.getElementById('cmpEvoArea');
+  const L = _cmpState.sel.L, R = _cmpState.sel.R;
+  if (!L || !R) { area.innerHTML=''; return; }
+  if (L.local || R.local) {
+    area.innerHTML = `<div class="cmp-evo-note">📱 Prévia da foto nova vs uma já enviada. Gostou? Vai na aba <b>Enviar</b> pra subir de verdade.</div>`;
+    return;
+  }
+  const dL = _cmpParseBR(_cmpState.rounds[L.roundIdx].date), dR = _cmpParseBR(_cmpState.rounds[R.roundIdx].date);
+  if (!dL || !dR) { area.innerHTML=''; return; }
+  const weeks = Math.round(Math.abs(dR - dL) / (7*24*3600*1000));
+  area.innerHTML = weeks > 0
+    ? `<div class="cmp-evo-note">💪 ${weeks} semana${weeks>1?'s':''} entre essas fotos. A evolução tá aí — continua firme!</div>` : '';
+}
+
+function cmpQuickAngle(role) {
+  ['L','R'].forEach(side => {
+    const cur = _cmpState.sel[side];
+    if (!cur || cur.local) return;
+    const found = _cmpRoundItems(cur.roundIdx).find(i => i.role === role);
+    if (found) _cmpState.sel[side] = found;
+  });
+  cmpRenderCards();
+}
+
+function cmpSwapSides() { const t=_cmpState.sel.L; _cmpState.sel.L=_cmpState.sel.R; _cmpState.sel.R=t; cmpRenderCards(); }
+
+function cmpOpenChooser(side) {
+  _cmpState.chooserSide = side;
+  document.getElementById('cmpChooserTitle').textContent = side === 'L' ? '◀ Foto ANTES' : 'Foto DEPOIS ▶';
+  const rsel = document.getElementById('cmpChooserRound');
+  rsel.innerHTML = _cmpState.rounds.map((r,i)=>`<option value="${i}">${escapeFotosTxt(r.folder)} (${escapeFotosTxt(r.date||'')})</option>`).join('');
+  const cur = _cmpState.sel[side];
+  rsel.value = String(cur && !cur.local ? cur.roundIdx : 0);
+  cmpRenderPicks();
+  teShow('cmpChooserModal');
+}
+
+function cmpRenderPicks() {
+  const idx = +document.getElementById('cmpChooserRound').value;
+  const items = _cmpRoundItems(idx);
+  const cur = _cmpState.sel[_cmpState.chooserSide];
+  const grid = document.getElementById('cmpPickGrid');
+  if (!items.length) { grid.innerHTML = `<div style="grid-column:1/-1;color:#777;text-align:center;padding:24px;font-size:12px;">Esse round não tem fotos.</div>`; return; }
+  grid.innerHTML = items.map((it,i) => {
+    const selCls = (cur && !cur.local && cur.fid === it.fid) ? 'sel' : '';
+    const tagCls = it.role ? 'role' : '';
+    const tag = it.role ? CMP_ROLE_LABEL[it.role] : 'sem ângulo';
+    const pid = 'cmpPick_' + idx + '_' + i;
+    const cached = _cmpState.imgCache[it.fid];
+    const inner = cached
+      ? `<img src="${cached}" alt="${escapeFotosTxt(tag)}">`
+      : `<div class="pk-load" id="${pid}_l">⏳</div><img id="${pid}" style="display:none" onload="this.style.display='block';var l=document.getElementById('${pid}_l');if(l)l.style.display='none'" alt="${escapeFotosTxt(tag)}">`;
+    return `<div class="cmp-pick-item ${selCls}" onclick="cmpPick(${idx},${i})">${inner}<div class="pk-tag ${tagCls}">${escapeFotosTxt(tag)}</div></div>`;
+  }).join('');
+  // carrega thumbs não cacheados
+  items.forEach((it,i) => {
+    if (!_cmpState.imgCache[it.fid]) _cmpLoadImg(it.fid, 'cmpPick_' + idx + '_' + i);
+  });
+}
+
+function cmpPick(roundIdx, i) {
+  const items = _cmpRoundItems(roundIdx);
+  _cmpState.sel[_cmpState.chooserSide] = items[i];
+  teHide('cmpChooserModal');
+  cmpRenderCards();
+}
+
+function cmpPickLocal() { document.getElementById('cmpLocalInput').click(); }
+function cmpOnLocalFile(input) {
+  if (!input.files || !input.files.length) return;
+  const url = URL.createObjectURL(input.files[0]);
+  _cmpState.sel[_cmpState.chooserSide] = { local:true, url:url, fid:'local-'+_cmpState.chooserSide };
+  teHide('cmpChooserModal');
+  cmpRenderCards();
 }
 
 // ══ Painel Streak ══
