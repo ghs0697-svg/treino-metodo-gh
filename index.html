@@ -2709,6 +2709,12 @@
       <label style="color:#bbb;font-size:11px;display:block;margin-bottom:4px;">Qual o ajuste?</label>
       <textarea id="ajusteTexto" rows="6" maxlength="2000" placeholder="Ex: Minha academia não tem Cadeira Flexora, posso fazer Mesa Flexora no lugar?&#10;&#10;Ex: O Tríceps Testa tá doendo no cotovelo, tem alternativa?" style="width:100%;padding:10px;background:#222;border:1px solid var(--gold-dim);color:var(--white);border-radius:6px;font-size:13px;font-family:inherit;line-height:1.4;box-sizing:border-box;resize:vertical;min-height:120px;"></textarea>
       <div id="ajusteCharCount" style="color:#666;font-size:10px;text-align:right;margin-top:4px;">0 / 2000</div>
+      <div style="margin-top:14px;">
+        <label style="color:#bbb;font-size:11px;display:block;margin-bottom:6px;">📎 Anexar fotos <span style="color:#666;">(opcional — ex: as máquinas que você tem em casa)</span></label>
+        <div id="ajusteFotosRow" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+        <input type="file" id="ajusteFotoInput" accept="image/*" multiple style="display:none" onchange="_ajusteOnFotoPick(this)">
+        <div style="color:#666;font-size:10px;margin-top:5px;">Até 4 fotos. Servem só pra esse pedido e são apagadas depois.</div>
+      </div>
       <div style="display:flex;gap:8px;margin-top:14px;">
         <button class="te-btn" onclick="submitAjuste()" id="ajusteSubmitBtn" style="flex:1;">Enviar pedido</button>
         <button class="te-btn ghost" onclick="teHide('ajusteModal')" style="flex:0 0 auto;">Cancelar</button>
@@ -5919,6 +5925,8 @@ function openAjusteModal() {
   document.getElementById('ajusteCharCount').textContent = '0 / 2000';
   document.getElementById('ajusteSubmitBtn').disabled = false;
   document.getElementById('ajusteSubmitBtn').textContent = 'Enviar pedido';
+  _ajustePics = [];
+  _ajusteRenderFotos();
   teShow('ajusteModal');
   setTimeout(() => document.getElementById('ajusteTexto').focus(), 100);
 }
@@ -5929,6 +5937,52 @@ document.addEventListener('input', function(e) {
     document.getElementById('ajusteCharCount').textContent = e.target.value.length + ' / 2000';
   }
 });
+
+// Fotos opcionais anexadas ao pedido de ajuste (efêmeras — limpas no servidor).
+const _AJUSTE_MAX_FOTOS = 4;
+let _ajustePics = []; // File[]
+
+function _ajusteRenderFotos() {
+  const row = document.getElementById('ajusteFotosRow');
+  if (!row) return;
+  row.innerHTML = '';
+  _ajustePics.forEach((file, i) => {
+    const tile = document.createElement('div');
+    tile.style.cssText = 'position:relative;width:64px;height:64px;border-radius:8px;overflow:hidden;border:1px solid var(--gold-dim);background:#222;';
+    const img = document.createElement('img');
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+    const url = URL.createObjectURL(file);
+    img.src = url;
+    img.onload = () => URL.revokeObjectURL(url);
+    tile.appendChild(img);
+    const rm = document.createElement('button');
+    rm.type = 'button';
+    rm.textContent = '×';
+    rm.style.cssText = 'position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;border:none;background:rgba(0,0,0,0.7);color:#fff;font-size:14px;line-height:1;cursor:pointer;padding:0;';
+    rm.onclick = () => { _ajustePics.splice(i, 1); _ajusteRenderFotos(); };
+    tile.appendChild(rm);
+    row.appendChild(tile);
+  });
+  if (_ajustePics.length < _AJUSTE_MAX_FOTOS) {
+    const add = document.createElement('button');
+    add.type = 'button';
+    add.textContent = '+';
+    add.title = 'Adicionar foto';
+    add.style.cssText = 'width:64px;height:64px;border-radius:8px;border:1px dashed var(--gold-dim);background:#1a1a1a;color:var(--gold);font-size:26px;line-height:1;cursor:pointer;';
+    add.onclick = () => document.getElementById('ajusteFotoInput').click();
+    row.appendChild(add);
+  }
+}
+
+function _ajusteOnFotoPick(input) {
+  const files = Array.from(input.files || []);
+  for (const f of files) {
+    if (_ajustePics.length >= _AJUSTE_MAX_FOTOS) break;
+    _ajustePics.push(f);
+  }
+  input.value = '';
+  _ajusteRenderFotos();
+}
 
 async function submitAjuste() {
   const texto = (document.getElementById('ajusteTexto').value || '').trim();
@@ -5941,6 +5995,18 @@ async function submitAjuste() {
   btn.disabled = true;
   btn.textContent = 'Enviando...';
   const studentName = (document.getElementById('infoNome')?.textContent || '').trim();
+  // Comprime fotos anexadas (se houver) antes de mandar — mesmo compressor do reajuste
+  let fotos = [];
+  if (_ajustePics.length) {
+    for (let i = 0; i < _ajustePics.length; i++) {
+      btn.textContent = `Comprimindo foto ${i + 1}/${_ajustePics.length}…`;
+      try {
+        const dataUrl = await _compressFoto(_ajustePics[i], 1280, 0.8);
+        fotos.push({ name: 'ajuste_' + (i + 1) + '.jpg', mime: 'image/jpeg', base64: dataUrl });
+      } catch (_) { /* pula foto que falhar, não trava o pedido */ }
+    }
+    btn.textContent = 'Enviando...';
+  }
   try {
     const resp = await fetch(LOG_ENDPOINT, {
       method: 'POST',
@@ -5950,7 +6016,8 @@ async function submitAjuste() {
         sheetId: SHEET_ID,
         studentName: studentName,
         contexto: contexto,
-        pedido: texto
+        pedido: texto,
+        fotos: fotos
       })
     });
     const result = await resp.json().catch(() => ({}));
