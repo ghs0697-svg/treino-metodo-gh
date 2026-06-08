@@ -497,6 +497,8 @@
   .float-opt.whatsapp:hover { background: #25d366; border-color: #25d366; color: #fff; }
   .float-opt.ranking { border-color: #ffb84d; }
   .float-opt.ranking:hover { background: #ffb84d; color: var(--dark); border-color: #ffb84d; }
+  .float-opt.chat { background: #15314d; border-color: #3b82f6; color: #bfdbfe; }
+  .float-opt.chat:hover { background: #3b82f6; border-color: #3b82f6; color: #fff; }
   .float-opt .ic { font-size: 18px; }
 
   /* Ranking */
@@ -512,6 +514,18 @@
   .rk-stats { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
   .rk-score { font-weight: 800; font-size: 14px; color: var(--gold); line-height: 1; }
   .rk-meta { font-size: 10px; color: #888; }
+
+  /* ── Chat assistente ── */
+  .chat-msgs { flex: 1; overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 4px 2px; }
+  .chat-msg { max-width: 85%; padding: 9px 12px; border-radius: 13px; font-size: 13px; line-height: 1.45; white-space: pre-wrap; word-wrap: break-word; }
+  .chat-msg.user { align-self: flex-end; background: var(--gold); color: #000; border-bottom-right-radius: 4px; }
+  .chat-msg.bot { align-self: flex-start; background: #222; color: #eee; border: 1px solid #2f2f2f; border-bottom-left-radius: 4px; }
+  .chat-cta { align-self: flex-start; margin-top: -2px; }
+  .chat-typing { align-self: flex-start; color: #888; font-size: 12px; padding: 6px 10px; }
+  .chat-typing span { display: inline-block; animation: chatBlink 1.2s infinite both; }
+  .chat-typing span:nth-child(2) { animation-delay: 0.2s; }
+  .chat-typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes chatBlink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
 
   /* ── Day progress ── */
   .day-progress { padding: 10px 14px; background: #1a1a1a; border-bottom: 1px solid #2a2a2a; }
@@ -2467,8 +2481,11 @@
     </button>
 
     <!-- MEIO — grupo "ações do aluno" -->
+    <button type="button" class="float-opt chat" onclick="event.stopPropagation(); openChatModal()">
+      <span class="ic">💬</span><span>Tirar dúvida (assistente)</span>
+    </button>
     <a class="float-opt whatsapp" href="https://wa.me/555520131470" target="_blank" rel="noopener">
-      <span class="ic">💬</span><span>Suporte no WhatsApp</span>
+      <span class="ic">🟢</span><span>Suporte no WhatsApp</span>
     </a>
     <button type="button" class="float-opt fotos" onclick="event.stopPropagation(); openFotosModal()">
       <span class="ic">📸</span><span>Minhas fotos do reajuste</span>
@@ -2678,6 +2695,22 @@
     </p>
     <div id="agendaContent" style="flex:1;overflow-y:auto;min-height:0;"></div>
     <button class="te-btn ghost" onclick="teHide('agendaModal')" style="width:100%;margin-top:12px;">Fechar</button>
+  </div>
+</div>
+
+<!-- ══ CHAT ASSISTENTE ══ -->
+<div class="te-modal-overlay" id="chatModal" onclick="closeChatOnBg(event)">
+  <div class="te-modal-box" style="max-width:520px;height:88vh;max-height:88vh;display:flex;flex-direction:column;">
+    <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;">💬 Assistente Método GH</h3>
+    <p style="color:#aaa;font-size:11px;margin:0 0 10px;line-height:1.45;border-bottom:1px solid #222;padding-bottom:8px;">
+      Assistente <b>automático</b> pra dúvidas rápidas de treino, dieta e suplementação. Ele conhece o <b>teu protocolo</b>. Ajuste no protocolo e casos individuais o Gabriel resolve.
+    </p>
+    <div class="chat-msgs" id="chatMsgs"></div>
+    <div style="display:flex;gap:8px;align-items:flex-end;margin-top:10px;">
+      <textarea id="chatInput" rows="1" maxlength="600" placeholder="Pergunta o que quiser…" oninput="_chatAutogrow(this)" onkeydown="_chatKeydown(event)" style="flex:1;padding:10px;background:#222;border:1px solid var(--gold-dim);color:var(--white);border-radius:10px;font-size:13px;font-family:inherit;line-height:1.4;box-sizing:border-box;resize:none;max-height:100px;overflow-y:auto;"></textarea>
+      <button class="te-btn" id="chatSendBtn" onclick="sendChat()" style="flex:0 0 auto;padding:10px 16px;">Enviar</button>
+    </div>
+    <button class="te-btn ghost" onclick="teHide('chatModal')" style="width:100%;margin-top:8px;font-size:12px;padding:7px;">Fechar</button>
   </div>
 </div>
 
@@ -5908,6 +5941,135 @@ function _logAgendaClick(profId, planLabel) {
       }).catch(() => {});
     }
   } catch (_) {}
+}
+
+// ══ CHAT ASSISTENTE ══
+// Assistente automático (backend pronto, conversa Agentes). Lê o protocolo
+// do aluno pelo sheetId e responde dúvidas. tipo "pro_gh" = pedido de ajuste
+// estrutural → mostra um atalho pro Solicitar ajuste.
+const CHAT_ENDPOINT = 'https://chat.metodogh.com.br/app/chat';
+let _chatHistory = [];   // [{role:'user'|'assistant', content}]
+let _chatBusy = false;
+let _chatLoaded = false;
+
+function _chatKey() { return 'gh_chat_' + (typeof SHEET_ID !== 'undefined' ? SHEET_ID : 'x'); }
+function _chatLoadHistory() {
+  try { const raw = localStorage.getItem(_chatKey()); _chatHistory = raw ? JSON.parse(raw) : []; }
+  catch (_) { _chatHistory = []; }
+}
+function _chatSaveHistory() {
+  try { localStorage.setItem(_chatKey(), JSON.stringify(_chatHistory.slice(-30))); } catch (_) {}
+}
+function _chatEsc(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function _chatScrollBottom() {
+  const box = document.getElementById('chatMsgs');
+  if (box) box.scrollTop = box.scrollHeight;
+}
+function _chatBubble(role, text) {
+  const div = document.createElement('div');
+  div.className = 'chat-msg ' + (role === 'user' ? 'user' : 'bot');
+  div.innerHTML = _chatEsc(text);
+  return div;
+}
+function _chatRenderAll() {
+  const box = document.getElementById('chatMsgs');
+  if (!box) return;
+  box.innerHTML = '';
+  if (!_chatHistory.length) {
+    box.appendChild(_chatBubble('assistant', 'Oi! 💪 Sou o assistente do Método GH. Pergunta o que quiser sobre teu treino, dieta, suplementação, ciclo… Eu conheço o teu protocolo.'));
+    return;
+  }
+  _chatHistory.forEach(m => box.appendChild(_chatBubble(m.role, m.content)));
+}
+function _chatAddCta() {
+  const box = document.getElementById('chatMsgs');
+  if (!box) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'chat-cta';
+  const btn = document.createElement('button');
+  btn.className = 'te-btn';
+  btn.style.cssText = 'padding:8px 14px;font-size:12px;';
+  btn.textContent = '🔧 Abrir Solicitar ajuste';
+  btn.onclick = () => { teHide('chatModal'); openAjusteModal(); };
+  wrap.appendChild(btn);
+  box.appendChild(wrap);
+  _chatScrollBottom();
+}
+function _chatAutogrow(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(100, el.scrollHeight) + 'px';
+}
+function _chatKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+function closeChatOnBg(e) { if (e.target.id === 'chatModal') teHide('chatModal'); }
+
+function openChatModal() {
+  document.getElementById('floatOptions').classList.remove('show');
+  document.getElementById('floatBtn').classList.remove('open');
+  if (!_chatLoaded) { _chatLoadHistory(); _chatLoaded = true; }
+  _chatRenderAll();
+  teShow('chatModal');
+  setTimeout(() => { const inp = document.getElementById('chatInput'); if (inp) inp.focus(); _chatScrollBottom(); }, 120);
+}
+
+async function sendChat() {
+  if (_chatBusy) return;
+  const inp = document.getElementById('chatInput');
+  const text = (inp.value || '').trim();
+  if (!text) return;
+  if (typeof SHEET_ID === 'undefined' || !SHEET_ID) {
+    alert('Abre o app pelo teu link pessoal pra usar o assistente.');
+    return;
+  }
+  _chatBusy = true;
+  const sendBtn = document.getElementById('chatSendBtn');
+  sendBtn.disabled = true;
+  inp.value = ''; _chatAutogrow(inp);
+
+  const box = document.getElementById('chatMsgs');
+  if (!_chatHistory.length) box.innerHTML = ''; // tira a saudação ao iniciar conversa real
+
+  _chatHistory.push({ role: 'user', content: text });
+  box.appendChild(_chatBubble('user', text));
+  _chatScrollBottom();
+
+  const typing = document.createElement('div');
+  typing.className = 'chat-typing';
+  typing.id = 'chatTyping';
+  typing.innerHTML = 'assistente digitando<span>.</span><span>.</span><span>.</span>';
+  box.appendChild(typing);
+  _chatScrollBottom();
+
+  try {
+    const r = await fetch(CHAT_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sheetId: SHEET_ID,
+        mensagem: text,
+        historico: _chatHistory.slice(-11, -1) // até 10 trocas anteriores (sem a atual)
+      })
+    });
+    const j = await r.json().catch(() => ({}));
+    const resposta = j.resposta || 'Não consegui responder agora, tenta de novo daqui a pouco 🙏';
+    const t1 = document.getElementById('chatTyping'); if (t1) t1.remove();
+    box.appendChild(_chatBubble('assistant', resposta));
+    _chatHistory.push({ role: 'assistant', content: resposta });
+    if (j.tipo === 'pro_gh') _chatAddCta();
+    _chatSaveHistory();
+    _chatScrollBottom();
+  } catch (err) {
+    const t2 = document.getElementById('chatTyping'); if (t2) t2.remove();
+    box.appendChild(_chatBubble('assistant', 'Falha de conexão. Confere a internet e manda de novo. 🙏'));
+    _chatScrollBottom();
+  } finally {
+    _chatBusy = false;
+    sendBtn.disabled = false;
+    inp.focus();
+  }
 }
 
 // ══ SOLICITAR AJUSTE ══
