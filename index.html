@@ -6079,22 +6079,18 @@ function dismissFotosBanner() {
   banner.style.display = 'none';
 }
 
-// Banner de descoberta do "Solicitar ajuste". Mostra no topo até o aluno
-// fechar (×) ou usar a função uma vez. Reaparece a cada ~30 dias pra
-// reforçar (caso o aluno tenha esquecido que existe).
-const _AJUSTE_BANNER_KEY = 'gh_ajuste_banner_dismissed';
+// Banner do "Solicitar ajuste". Aparece SEMPRE que o aluno abre o app
+// (sem memória de dispensa) — discovery permanente da função. O × só
+// fecha pra aquela sessão, pra não atrapalhar a tela; na próxima abertura
+// volta a aparecer.
 function checkAjusteBannerOnLoad() {
-  try {
-    const until = parseInt(localStorage.getItem(_AJUSTE_BANNER_KEY) || '0', 10);
-    if (until && Date.now() < until) return; // ainda dentro do período dispensado
-  } catch (_) {}
   const b = document.getElementById('ajusteBanner');
   if (b) b.style.display = 'block';
 }
 function dismissAjusteBanner() {
+  // Fecha só nesta sessão (sem gravar nada) — reaparece no próximo open.
   const b = document.getElementById('ajusteBanner');
   if (b) b.style.display = 'none';
-  try { localStorage.setItem(_AJUSTE_BANNER_KEY, String(Date.now() + 30 * 24 * 60 * 60 * 1000)); } catch (_) {}
 }
 
 // Estado dos 4 slots durante a sessão do modal
