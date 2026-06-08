@@ -1753,7 +1753,7 @@
     <div style="font-size:20px;">🤖</div>
     <div style="flex:1;min-width:0;">
       <div style="color:#bfdbfe;font-weight:700;font-size:13px;margin-bottom:2px;">Dúvida rápida? Pergunta pra IA do GH</div>
-      <div style="color:#ccc;font-size:12px;line-height:1.4;">Assistente de IA treinado pelo Gabriel. Responde na hora sobre o teu treino, dieta e suplementação.</div>
+      <div style="color:#ccc;font-size:12px;line-height:1.4;">Assistente de IA treinado pelo Gabriel. Tira tuas dúvidas rápidas na hora e conhece o teu protocolo.</div>
     </div>
     <button class="te-btn" type="button" onclick="openChatModal()" style="padding:9px 14px;font-size:12px;white-space:nowrap;background:#3b82f6;border-color:#3b82f6;color:#fff;">Perguntar</button>
     <button type="button" onclick="dismissChatBanner()" title="Fechar" style="background:none;border:none;color:#888;font-size:20px;cursor:pointer;padding:0 2px;line-height:1;align-self:flex-start;">×</button>
@@ -2716,8 +2716,8 @@
   <div class="te-modal-box" style="max-width:520px;height:88vh;max-height:88vh;display:flex;flex-direction:column;">
     <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;">🤖 Assistente de IA do GH</h3>
     <p style="color:#aaa;font-size:11px;margin:0 0 10px;line-height:1.5;border-bottom:1px solid #222;padding-bottom:8px;">
-      Sou um <b>assistente de IA</b>, treinado pelo Gabriel pra tirar tuas dúvidas rápidas de treino, dieta e suplementação. Conheço o <b>teu protocolo</b>.<br>
-      📎 <b>Exame ou foto</b> pra avaliar é com o Gabriel em pessoa: manda no <a href="https://wa.me/555520131470" target="_blank" rel="noopener" style="color:#25D366;text-decoration:underline;font-weight:600;">WhatsApp do suporte</a>.
+      Sou um <b>assistente de IA</b>, treinado pelo Gabriel pra tirar tuas dúvidas rápidas. Conheço o <b>teu protocolo</b>.<br>
+      <b>Exame ou foto</b> pra avaliar ou dúvida mais robusta, manda no <a href="https://wa.me/555520131470" target="_blank" rel="noopener" style="color:#25D366;text-decoration:underline;font-weight:600;">WhatsApp de suporte</a>.
     </p>
     <div class="chat-msgs" id="chatMsgs"></div>
     <div style="display:flex;gap:8px;align-items:flex-end;margin-top:10px;">
@@ -5993,7 +5993,7 @@ function _chatRenderAll() {
   if (!box) return;
   box.innerHTML = '';
   if (!_chatHistory.length) {
-    box.appendChild(_chatBubble('assistant', 'Oi! 🤖 Sou o assistente de IA do Gabriel, treinado por ele pra te ajudar. Pergunta o que quiser sobre teu treino, dieta, suplementação, ciclo… Eu conheço o teu protocolo.'));
+    box.appendChild(_chatBubble('assistant', 'Oi! 🤖 Sou o assistente de IA do Gabriel, treinado por ele pra tirar tuas dúvidas rápidas. Manda a pergunta — eu conheço o teu protocolo.'));
     return;
   }
   _chatHistory.forEach(m => box.appendChild(_chatBubble(m.role, m.content)));
@@ -8012,6 +8012,11 @@ if (SHEET_ID && TAB_NAME) {
 } else {
   // Modo treinador — mostrar painel admin
   document.getElementById('adminPanel').style.display = 'block';
+  // Banners do topo são só pra visão do aluno — esconde no painel do treinador
+  ['chatBanner', 'ajusteBanner', 'fotosBanner'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
   // Recuperar sheet ID e script URL salvos
   const saved = localStorage.getItem('gh_admin_sheet_id');
   if (saved) document.getElementById('adminSheetId').value = saved;
