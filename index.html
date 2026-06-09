@@ -8061,8 +8061,17 @@ if ('serviceWorker' in navigator) {
 // ══ MODO TREINADOR — editor de treino direto na sheet do aluno
 // ══════════════════════════════════════════════════════════════
 
-const TRAINER_PWD = 'timegh';
 const TRAINER_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycby0Kej7V7Gi2gIDKorBookSLofBMHOF50UFWq4Q1fTmstCD8ed8O9XLyCaZo8QIeUPfeQ/exec';
+// Senha do treinador: NÃO fica no código (era 'timegh' público, vazava a lista
+// de alunos). O GH digita uma vez por dispositivo; fica salva no localStorage.
+function _trainerToken_(forcarPergunta) {
+  let t = localStorage.getItem('gh_trainer_token') || '';
+  if (!t || forcarPergunta) {
+    t = (prompt('Senha do treinador (digita uma vez neste dispositivo):') || '').trim();
+    if (t) localStorage.setItem('gh_trainer_token', t);
+  }
+  return t;
+}
 
 const MUSCLE_PATTERNS = [
   { g: 'aquecimento', re: /alongamento|mobilidade|aquecimento|prancha\b/i },
@@ -8121,21 +8130,21 @@ function teShow(id) { document.getElementById(id).classList.add('show'); }
 function teHide(id) { document.getElementById(id).classList.remove('show'); }
 
 function openTrainerLogin() {
-  // Senha removida — abre direto o modal de seleção de aluno.
-  // (TRAINER_PWD ainda usada como token interno na chamada da lista.)
+  // loadTrainerStudents pede a senha (1x por dispositivo) se ainda não houver.
+  // A senha é o token do list_students, validado no servidor.
   loadTrainerStudents();
   openTrainerSheetModal();
 }
 
 function authTrainer() {
-  if (document.getElementById('trainerPwdInput').value === TRAINER_PWD) {
-    trainerAuth = true;
-    teHide('trainerLoginModal');
-    loadTrainerStudents(); // carrega lista em background
-    openTrainerSheetModal();
-  } else {
-    alert('Senha incorreta');
-  }
+  const v = (document.getElementById('trainerPwdInput').value || '').trim();
+  if (!v) { alert('Digite a senha do treinador'); return; }
+  // A senha é validada no servidor (list_students). Guarda no dispositivo.
+  localStorage.setItem('gh_trainer_token', v);
+  trainerAuth = true;
+  teHide('trainerLoginModal');
+  loadTrainerStudents();
+  openTrainerSheetModal();
 }
 
 // ── Lista de alunos do mestre (pra busca rápida) ──
@@ -8169,9 +8178,11 @@ async function loadTrainerStudents(force) {
   trainerStudentsRefreshing = true;
   renderTrainerStudentCount();
   try {
+    const tok = _trainerToken_();
+    if (!tok) return; // sem senha não busca (finally limpa o estado)
     // Quando força refresh, manda &fresh=1 pro Apps Script (se suportado) e
     // adiciona &_=<ts> pra invalidar qualquer cache HTTP intermediário
-    let url = LOG_ENDPOINT + '?action=list_students&token=' + encodeURIComponent(TRAINER_PWD);
+    let url = LOG_ENDPOINT + '?action=list_students&token=' + encodeURIComponent(tok);
     if (force) url += '&fresh=1&_=' + Date.now();
     const resp = await fetch(url, force ? { cache: 'no-store' } : undefined);
     const j = await resp.json();
@@ -8179,6 +8190,10 @@ async function loadTrainerStudents(force) {
       trainerStudentsList = j.students.slice().sort((a, b) => a.n.localeCompare(b.n));
       trainerStudentsLoaded = true;
       try { localStorage.setItem(TRAINER_CACHE_KEY, JSON.stringify({ts: Date.now(), students: trainerStudentsList})); } catch (e) {}
+    } else if (j && j.error === 'unauthorized') {
+      localStorage.removeItem('gh_trainer_token'); // senha errada — pede de novo na próxima
+      console.warn('list_students unauthorized');
+      alert('Senha do treinador incorreta. Abre a lista de alunos de novo pra digitar a senha certa.');
     } else if (j && j.error) {
       console.warn('list_students error:', j.error);
     }
