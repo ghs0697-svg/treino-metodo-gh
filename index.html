@@ -7171,10 +7171,11 @@ function parseDietData(rows) {
       case 'observacao':
       case 'ajustes':
       case 'ajuste': {
+        // Cada linha = 1 entrada (col B, ou col D se B vazia). A 1ª linha que
+        // termina em ":" é tratada como TÍTULO no render (entrega inicial usa
+        // "O que observei no teu caso:", reajuste usa "O que ajustei agora:").
         const b = (r[1] || r[3] || '').trim();
-        // ignora se alguém escreveu o próprio título como bullet
-        const norm = b.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[:.]/g, '').trim();
-        if (b && norm !== 'o que ajustei agora') data.observacoes.push(b);
+        if (b) data.observacoes.push(b);
         break;
       }
       // Card no topo — recado de voz do GH (entrega inicial). col B = URL do
@@ -7243,10 +7244,16 @@ function _renderTopCards(d) {
     </div>`;
   }
   if (d.observacoes && d.observacoes.length) {
+    let linhas = d.observacoes.slice();
+    let titulo = 'O que ajustei agora'; // default (reajuste) se não vier título
+    // 1ª linha terminada em ":" é o título. Inicial: "O que observei no teu caso:".
+    if (linhas.length && /:\s*$/.test(linhas[0])) {
+      titulo = linhas.shift().replace(/:\s*$/, '').trim();
+    }
     h += `<div class="gh-top-card gh-obs-card">
-      <div class="gh-top-card-title">✨ O que ajustei agora</div>
+      <div class="gh-top-card-title">✨ ${titulo}</div>
       <ul class="gh-obs-list">`;
-    d.observacoes.forEach(b => { h += `<li>${b}</li>`; });
+    linhas.forEach(b => { h += `<li>${b}</li>`; });
     h += `</ul></div>`;
   }
   return h;
