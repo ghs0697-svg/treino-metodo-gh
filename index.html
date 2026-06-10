@@ -2884,7 +2884,7 @@
   <div class="te-modal-box" style="max-width:460px;">
     <h3>🎙 Recado em áudio</h3>
     <p style="color:#888;font-size:11px;margin:0 0 6px;">Grava um recado de voz pro aluno (entrega inicial). Aparece no topo do protocolo dele. Lê o card "O que observei no teu caso" enquanto grava.</p>
-    <p style="color:var(--gold);font-size:11px;margin:0 0 4px;">Dica: grave pelo iPhone pra tocar em qualquer celular do aluno.</p>
+    <p style="color:var(--gold);font-size:11px;margin:0 0 4px;">Grave pelo <strong>Safari</strong> (Mac ou iPhone) pra tocar em qualquer celular. No Chrome o formato não toca em iPhone.</p>
     <div class="recado-existing" id="recadoExisting" style="display:none;">
       <span id="recadoExistingTxt"></span>
       <button type="button" class="recado-prazo-btn" id="recadoDelBtn" onclick="recadoDelete()" style="border-color:#e25555;color:#e25555;">🗑 Excluir</button>
@@ -8346,7 +8346,8 @@ function _recadoResetUI() {
   const btn = document.getElementById('recadoRecBtn');
   btn.textContent = '● Gravar'; btn.classList.remove('recording');
   document.getElementById('recadoTimer').textContent = '0:00';
-  document.getElementById('recadoStatus').textContent = '';
+  const st0 = document.getElementById('recadoStatus');
+  st0.textContent = ''; st0.style.color = '';
   const prev = document.getElementById('recadoPreview');
   prev.style.display = 'none'; prev.removeAttribute('src');
   document.getElementById('recadoSendBtn').style.display = 'none';
@@ -8386,7 +8387,12 @@ async function _recadoStartRec() {
     prev.style.display = 'block';
     document.getElementById('recadoSendBtn').style.display = 'block';
     const kb = Math.round(_recadoBlob.size / 1024);
-    document.getElementById('recadoStatus').textContent = 'Gravado (' + kb + ' KB). Ouve aí, e se ficou bom, envia.';
+    const st = document.getElementById('recadoStatus');
+    const webm = /webm|ogg/i.test(_recadoMime);
+    let msg = 'Gravado (' + kb + ' KB). Ouve aí, e se ficou bom, envia.';
+    if (webm) msg = '⚠️ Gravou em ' + _recadoMime.split(';')[0] + ', que NÃO toca em iPhone. Pra tocar em todo celular, grava pelo Safari (Mac) ou pelo iPhone. (' + kb + ' KB)';
+    st.textContent = msg;
+    st.style.color = webm ? '#e2a955' : '';
   };
   _recadoRec.start();
   _recadoT0 = Date.now();
