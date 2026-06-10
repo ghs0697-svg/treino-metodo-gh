@@ -854,6 +854,17 @@
   .recado-rec-btn.recording { border-color: #e25555; color: #e25555; }
   .recado-timer { font-size: 14px; color: var(--gold); font-weight: 600; font-variant-numeric: tabular-nums; }
   .recado-status { font-size: 12px; color: var(--muted); margin: 8px 0; min-height: 16px; }
+  .recado-prazo-btn {
+    background: var(--card); color: var(--gray); border: 1px solid #3a3a3a;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
+  .recado-prazo-btn.active { border-color: var(--gold); color: var(--gold); }
+  .recado-existing {
+    font-size: 12px; margin: 0 0 8px; padding: 8px 10px; border-radius: 7px;
+    background: var(--gold-soft); border: 1px solid var(--gold-dim); color: var(--white);
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  }
   .gh-obs-list { margin: 0; padding-left: 18px; }
   .gh-obs-list li {
     color: var(--white); font-size: 13px; line-height: 1.5;
@@ -2872,11 +2883,20 @@
 <div class="te-modal-overlay" id="recadoModal">
   <div class="te-modal-box" style="max-width:460px;">
     <h3>🎙 Recado em áudio</h3>
-    <p style="color:#888;font-size:11px;margin:0 0 6px;">Grava um recado de voz pro aluno (entrega inicial). Aparece no topo do protocolo dele e <strong>some sozinho em 7 dias</strong>. Lê o card "O que observei no teu caso" enquanto grava.</p>
+    <p style="color:#888;font-size:11px;margin:0 0 6px;">Grava um recado de voz pro aluno (entrega inicial). Aparece no topo do protocolo dele. Lê o card "O que observei no teu caso" enquanto grava.</p>
     <p style="color:var(--gold);font-size:11px;margin:0 0 4px;">Dica: grave pelo iPhone pra tocar em qualquer celular do aluno.</p>
+    <div class="recado-existing" id="recadoExisting" style="display:none;">
+      <span id="recadoExistingTxt"></span>
+      <button type="button" class="recado-prazo-btn" id="recadoDelBtn" onclick="recadoDelete()" style="border-color:#e25555;color:#e25555;">🗑 Excluir</button>
+    </div>
     <div class="recado-rec-row">
       <button type="button" class="recado-rec-btn" id="recadoRecBtn" onclick="recadoToggle()">● Gravar</button>
       <span class="recado-timer" id="recadoTimer">0:00</span>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;margin:8px 0;">
+      <span style="font-size:12px;color:var(--muted);">Prazo:</span>
+      <button type="button" class="recado-prazo-btn active" id="recadoPrazo7" onclick="recadoSetPrazo(false)">7 dias</button>
+      <button type="button" class="recado-prazo-btn" id="recadoPrazoPerm" onclick="recadoSetPrazo(true)">Permanente</button>
     </div>
     <div class="recado-status" id="recadoStatus"></div>
     <audio id="recadoPreview" controls style="width:100%;display:none;margin:6px 0;"></audio>
@@ -8252,13 +8272,62 @@ function teHide(id) { document.getElementById(id).classList.remove('show'); }
 // salva no Drive do aluno (trainerSheetId). Player aparece no protocolo do
 // aluno e some em 7 dias. Prefere audio/mp4 (toca em iPhone). Máx 3 min.
 let _recadoRec = null, _recadoChunks = [], _recadoBlob = null, _recadoMime = '';
-let _recadoStream = null, _recadoTimerInt = null, _recadoT0 = 0;
+let _recadoStream = null, _recadoTimerInt = null, _recadoT0 = 0, _recadoPerm = false;
 const _RECADO_MAX_S = 180;
 
 function openRecadoModal() {
   if (!trainerSheetId) { alert('Abre o protocolo de um aluno primeiro.'); return; }
   _recadoResetUI();
   teShow('recadoModal');
+  _recadoLoadStatus();
+}
+
+// Toggle de prazo: 7 dias (default) ou permanente
+function recadoSetPrazo(perm) {
+  _recadoPerm = !!perm;
+  document.getElementById('recadoPrazo7').classList.toggle('active', !perm);
+  document.getElementById('recadoPrazoPerm').classList.toggle('active', perm);
+}
+
+// Mostra o status do recado atual do aluno (existe? permanente? dias?)
+async function _recadoLoadStatus() {
+  const box = document.getElementById('recadoExisting');
+  const txt = document.getElementById('recadoExistingTxt');
+  box.style.display = 'none';
+  if (!trainerSheetId) return;
+  try {
+    const r = await fetch(`${TRAINER_APPS_SCRIPT}?action=recado_status&id=${encodeURIComponent(trainerSheetId)}`);
+    const j = await r.json();
+    if (j && j.ok && j.exists) {
+      const desc = j.permanente ? 'permanente' : (j.expired ? 'vencido (não toca mais)' : `some em ${j.daysLeft} dia${j.daysLeft === 1 ? '' : 's'}`);
+      txt.textContent = 'Já tem um recado (' + desc + '). Gravar de novo substitui.';
+      box.style.display = 'flex';
+    }
+  } catch (e) {}
+}
+
+// Exclui o recado do aluno
+async function recadoDelete() {
+  if (!trainerSheetId) return;
+  if (!confirm('Excluir o recado em áudio desse aluno?')) return;
+  const del = document.getElementById('recadoDelBtn');
+  del.disabled = true; del.textContent = '...';
+  try {
+    const resp = await fetch(TRAINER_APPS_SCRIPT, {
+      method: 'POST', redirect: 'follow',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ type: 'recado_delete', sheetId: trainerSheetId })
+    });
+    const j = await resp.json().catch(() => ({}));
+    if (j && j.ok) {
+      document.getElementById('recadoExisting').style.display = 'none';
+      document.getElementById('recadoStatus').textContent = '🗑 Recado excluído.';
+    } else { throw new Error((j && j.error) || 'falhou'); }
+  } catch (e) {
+    document.getElementById('recadoStatus').textContent = '❌ Não consegui excluir: ' + e.message;
+  } finally {
+    del.disabled = false; del.textContent = '🗑 Excluir';
+  }
 }
 function closeRecadoModal() {
   try { if (_recadoRec && _recadoRec.state === 'recording') _recadoRec.stop(); } catch (_) {}
@@ -8275,6 +8344,8 @@ function _recadoResetUI() {
   const prev = document.getElementById('recadoPreview');
   prev.style.display = 'none'; prev.removeAttribute('src');
   document.getElementById('recadoSendBtn').style.display = 'none';
+  recadoSetPrazo(false); // default 7 dias
+  document.getElementById('recadoExisting').style.display = 'none';
 }
 function _recadoStopStream() {
   if (_recadoStream) { try { _recadoStream.getTracks().forEach(t => t.stop()); } catch (_) {} _recadoStream = null; }
@@ -8346,12 +8417,14 @@ async function recadoSend() {
     const resp = await fetch(TRAINER_APPS_SCRIPT, {
       method: 'POST', redirect: 'follow',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ type: 'recado', sheetId: trainerSheetId, base64: b64, mime: _recadoMime })
+      body: JSON.stringify({ type: 'recado', sheetId: trainerSheetId, base64: b64, mime: _recadoMime, permanente: _recadoPerm })
     });
     const j = await resp.json().catch(() => ({}));
     if (j && j.ok) {
-      document.getElementById('recadoStatus').textContent = '✅ Recado enviado! O aluno já vê no topo do protocolo (some em 7 dias).';
+      const prazoTxt = _recadoPerm ? 'fica permanente' : 'some em 7 dias';
+      document.getElementById('recadoStatus').textContent = '✅ Recado enviado! O aluno já vê no topo do protocolo (' + prazoTxt + ').';
       sendBtn.style.display = 'none';
+      _recadoLoadStatus();
     } else {
       throw new Error((j && j.error) || 'falhou');
     }
