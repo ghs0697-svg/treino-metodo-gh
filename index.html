@@ -2884,7 +2884,7 @@
   <div class="te-modal-box" style="max-width:460px;">
     <h3>🎙 Recado em áudio</h3>
     <p style="color:#888;font-size:11px;margin:0 0 6px;">Grava um recado de voz pro aluno (entrega inicial). Aparece no topo do protocolo dele. Lê o card "O que observei no teu caso" enquanto grava.</p>
-    <p style="color:var(--gold);font-size:11px;margin:0 0 4px;">Grave pelo <strong>Safari</strong> (Mac ou iPhone) pra tocar em qualquer celular. No Chrome o formato não toca em iPhone.</p>
+    <p style="color:var(--gold);font-size:11px;margin:0 0 4px;">Pode gravar em qualquer navegador (Chrome, Safari). O áudio toca em qualquer celular do aluno.</p>
     <div class="recado-existing" id="recadoExisting" style="display:none;">
       <span id="recadoExistingTxt"></span>
       <button type="button" class="recado-prazo-btn" id="recadoDelBtn" onclick="recadoDelete()" style="border-color:#e25555;color:#e25555;">🗑 Excluir</button>
@@ -7292,7 +7292,11 @@ async function loadRecado() {
     const r = await fetch(`${LOG_ENDPOINT}?action=recado&id=${encodeURIComponent(SHEET_ID)}`);
     const j = await r.json();
     if (!j || !j.ok || !j.b64) { slot.innerHTML = ''; return; }
-    const src = `data:${j.mime || 'audio/mp4'};base64,${j.b64}`;
+    // Recado é sempre WAV (toca em todo lugar). Se o servidor devolver mime
+    // genérico/ausente, força audio/wav pra não quebrar o player.
+    let mime = j.mime || '';
+    if (!mime || /octet-stream|application\//i.test(mime)) mime = 'audio/wav';
+    const src = `data:${mime};base64,${j.b64}`;
     const exp = j.daysLeft ? `<span class="gh-recado-exp">· some em ${j.daysLeft} dia${j.daysLeft === 1 ? '' : 's'}</span>` : '';
     slot.innerHTML = `<div class="gh-top-card gh-audio-card">
       <div class="gh-top-card-title">🎧 Recado do Gabriel ${exp}</div>
@@ -8277,9 +8281,11 @@ function teHide(id) { document.getElementById(id).classList.remove('show'); }
 // Grava voz no navegador → base64 → POST type:'recado' pro Apps Script, que
 // salva no Drive do aluno (trainerSheetId). Player aparece no protocolo do
 // aluno e some em 7 dias. Prefere audio/mp4 (toca em iPhone). Máx 3 min.
-let _recadoRec = null, _recadoChunks = [], _recadoBlob = null, _recadoMime = '';
+let _recadoBlob = null, _recadoMime = 'audio/wav', _recadoRecording = false;
 let _recadoStream = null, _recadoTimerInt = null, _recadoT0 = 0, _recadoPerm = false;
+let _recadoCtx = null, _recadoProc = null, _recadoSrc = null, _recadoPCM = [], _recadoSampleRate = 44100;
 const _RECADO_MAX_S = 180;
+const _RECADO_OUT_HZ = 16000;
 
 function openRecadoModal() {
   if (!trainerSheetId) { alert('Abre o protocolo de um aluno primeiro.'); return; }
@@ -8336,13 +8342,11 @@ async function recadoDelete() {
   }
 }
 function closeRecadoModal() {
-  try { if (_recadoRec && _recadoRec.state === 'recording') _recadoRec.stop(); } catch (_) {}
-  _recadoStopStream();
-  if (_recadoTimerInt) { clearInterval(_recadoTimerInt); _recadoTimerInt = null; }
+  _recadoTeardown_();
   teHide('recadoModal');
 }
 function _recadoResetUI() {
-  _recadoBlob = null; _recadoChunks = [];
+  _recadoBlob = null;
   const btn = document.getElementById('recadoRecBtn');
   btn.textContent = '● Gravar'; btn.classList.remove('recording');
   document.getElementById('recadoTimer').textContent = '0:00';
@@ -8357,50 +8361,47 @@ function _recadoResetUI() {
 function _recadoStopStream() {
   if (_recadoStream) { try { _recadoStream.getTracks().forEach(t => t.stop()); } catch (_) {} _recadoStream = null; }
 }
-function _recadoFmt(s) { const m = Math.floor(s / 60); const ss = s % 60; return m + ':' + (ss < 10 ? '0' : '') + ss; }
-function _recadoPickMime() {
-  const opts = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg'];
-  for (const o of opts) { try { if (window.MediaRecorder && MediaRecorder.isTypeSupported(o)) return o; } catch (_) {} }
-  return '';
+// Para a captura, solta o microfone e fecha o AudioContext (sem montar WAV).
+function _recadoTeardown_() {
+  if (_recadoTimerInt) { clearInterval(_recadoTimerInt); _recadoTimerInt = null; }
+  try { if (_recadoProc) { _recadoProc.disconnect(); _recadoProc.onaudioprocess = null; } } catch (_) {}
+  try { if (_recadoSrc) _recadoSrc.disconnect(); } catch (_) {}
+  _recadoProc = null; _recadoSrc = null;
+  _recadoStopStream();
+  try { if (_recadoCtx && _recadoCtx.state !== 'closed') _recadoCtx.close(); } catch (_) {}
+  _recadoCtx = null;
 }
+function _recadoFmt(s) { const m = Math.floor(s / 60); const ss = s % 60; return m + ':' + (ss < 10 ? '0' : '') + ss; }
 function recadoToggle() {
-  if (_recadoRec && _recadoRec.state === 'recording') { _recadoStopRec(); return; }
+  if (_recadoRecording) { _recadoStopRec(); return; }
   _recadoStartRec();
 }
+// Captura PCM cru via Web Audio e monta WAV 16kHz mono. WAV toca em TODO
+// navegador e celular (Chrome, Safari, iPhone, Android), sem depender do
+// formato do MediaRecorder (que no Chrome sai webm e não toca em iPhone).
 async function _recadoStartRec() {
-  if (!navigator.mediaDevices || !window.MediaRecorder) { alert('Teu navegador não suporta gravação. Tenta pelo Chrome ou Safari atualizado.'); return; }
-  try {
-    _recadoStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  } catch (e) { alert('Não consegui acessar o microfone. Libera a permissão e tenta de novo.'); return; }
-  _recadoChunks = []; _recadoBlob = null;
-  _recadoMime = _recadoPickMime();
-  try {
-    _recadoRec = _recadoMime ? new MediaRecorder(_recadoStream, { mimeType: _recadoMime }) : new MediaRecorder(_recadoStream);
-  } catch (e) { _recadoRec = new MediaRecorder(_recadoStream); }
-  if (!_recadoMime) _recadoMime = _recadoRec.mimeType || 'audio/webm';
-  _recadoRec.ondataavailable = e => { if (e.data && e.data.size) _recadoChunks.push(e.data); };
-  _recadoRec.onstop = () => {
-    _recadoStopStream();
-    _recadoBlob = new Blob(_recadoChunks, { type: _recadoMime });
-    const prev = document.getElementById('recadoPreview');
-    prev.src = URL.createObjectURL(_recadoBlob);
-    prev.style.display = 'block';
-    document.getElementById('recadoSendBtn').style.display = 'block';
-    const kb = Math.round(_recadoBlob.size / 1024);
-    const st = document.getElementById('recadoStatus');
-    const webm = /webm|ogg/i.test(_recadoMime);
-    let msg = 'Gravado (' + kb + ' KB). Ouve aí, e se ficou bom, envia.';
-    if (webm) msg = '⚠️ Gravou em ' + _recadoMime.split(';')[0] + ', que NÃO toca em iPhone. Pra tocar em todo celular, grava pelo Safari (Mac) ou pelo iPhone. (' + kb + ' KB)';
-    st.textContent = msg;
-    st.style.color = webm ? '#e2a955' : '';
-  };
-  _recadoRec.start();
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !AC) {
+    alert('Teu navegador não suporta gravação. Tenta um Chrome ou Safari atualizado.'); return;
+  }
+  try { _recadoStream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+  catch (e) { alert('Não consegui acessar o microfone. Libera a permissão e tenta de novo.'); return; }
+  _recadoPCM = []; _recadoBlob = null; _recadoMime = 'audio/wav';
+  _recadoCtx = new AC();
+  try { if (_recadoCtx.state === 'suspended') await _recadoCtx.resume(); } catch (_) {}
+  _recadoSampleRate = _recadoCtx.sampleRate || 44100;
+  _recadoSrc = _recadoCtx.createMediaStreamSource(_recadoStream);
+  _recadoProc = _recadoCtx.createScriptProcessor(4096, 1, 1);
+  _recadoProc.onaudioprocess = e => { _recadoPCM.push(new Float32Array(e.inputBuffer.getChannelData(0))); };
+  _recadoSrc.connect(_recadoProc);
+  _recadoProc.connect(_recadoCtx.destination);
+  _recadoRecording = true;
   _recadoT0 = Date.now();
   const btn = document.getElementById('recadoRecBtn');
   btn.textContent = '■ Parar'; btn.classList.add('recording');
   document.getElementById('recadoSendBtn').style.display = 'none';
   document.getElementById('recadoPreview').style.display = 'none';
-  document.getElementById('recadoStatus').textContent = 'Gravando...';
+  const st = document.getElementById('recadoStatus'); st.textContent = 'Gravando...'; st.style.color = '';
   _recadoTimerInt = setInterval(() => {
     const s = Math.floor((Date.now() - _recadoT0) / 1000);
     document.getElementById('recadoTimer').textContent = _recadoFmt(s);
@@ -8408,10 +8409,52 @@ async function _recadoStartRec() {
   }, 250);
 }
 function _recadoStopRec() {
-  if (_recadoTimerInt) { clearInterval(_recadoTimerInt); _recadoTimerInt = null; }
-  try { if (_recadoRec && _recadoRec.state === 'recording') _recadoRec.stop(); } catch (_) {}
+  if (!_recadoRecording) return;
+  _recadoRecording = false;
+  const pcm = _recadoPCM, inRate = _recadoSampleRate;
+  _recadoTeardown_(); // para e solta o mic
   const btn = document.getElementById('recadoRecBtn');
   btn.textContent = '● Regravar'; btn.classList.remove('recording');
+  _recadoBlob = _pcmToWav(pcm, inRate, _RECADO_OUT_HZ);
+  const prev = document.getElementById('recadoPreview');
+  prev.src = URL.createObjectURL(_recadoBlob);
+  prev.style.display = 'block';
+  document.getElementById('recadoSendBtn').style.display = 'block';
+  const kb = Math.round(_recadoBlob.size / 1024);
+  const st = document.getElementById('recadoStatus');
+  st.textContent = 'Gravado (' + kb + ' KB). Ouve aí, e se ficou bom, envia.';
+  st.style.color = '';
+}
+// PCM (chunks Float32) → WAV 16-bit mono no outRate (downsample por média).
+function _pcmToWav(chunks, inRate, outRate) {
+  let len = 0; chunks.forEach(c => len += c.length);
+  const data = new Float32Array(len);
+  let off = 0; chunks.forEach(c => { data.set(c, off); off += c.length; });
+  const useDs = outRate < inRate;
+  const ds = useDs ? _recadoDownsample(data, inRate, outRate) : data;
+  const rate = useDs ? outRate : inRate;
+  const buf = new ArrayBuffer(44 + ds.length * 2);
+  const view = new DataView(buf);
+  const wr = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
+  wr(0, 'RIFF'); view.setUint32(4, 36 + ds.length * 2, true); wr(8, 'WAVE');
+  wr(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);
+  view.setUint32(24, rate, true); view.setUint32(28, rate * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true);
+  wr(36, 'data'); view.setUint32(40, ds.length * 2, true);
+  let p = 44;
+  for (let i = 0; i < ds.length; i++) { const s = Math.max(-1, Math.min(1, ds[i])); view.setInt16(p, s < 0 ? s * 0x8000 : s * 0x7FFF, true); p += 2; }
+  return new Blob([view], { type: 'audio/wav' });
+}
+function _recadoDownsample(data, inRate, outRate) {
+  const ratio = inRate / outRate;
+  const newLen = Math.round(data.length / ratio);
+  const res = new Float32Array(newLen);
+  for (let i = 0; i < newLen; i++) {
+    const start = Math.round(i * ratio), end = Math.round((i + 1) * ratio);
+    let sum = 0, cnt = 0;
+    for (let j = start; j < end && j < data.length; j++) { sum += data[j]; cnt++; }
+    res[i] = cnt ? sum / cnt : 0;
+  }
+  return res;
 }
 async function recadoSend() {
   if (!_recadoBlob) { alert('Grava o recado primeiro.'); return; }
