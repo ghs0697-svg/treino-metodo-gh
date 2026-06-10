@@ -824,6 +824,32 @@
   .diet-info-label { color: var(--gold); font-weight: 600; }
   .diet-info-value { color: var(--gray); text-align: right; max-width: 60%; }
 
+  /* ── Card no topo: recado de voz do GH (audio) + "O que ajustei agora" (reajuste) ── */
+  .gh-top-card {
+    background: linear-gradient(135deg, var(--gold-soft), rgba(212,175,106,0.02));
+    border: 1px solid var(--gold);
+    border-radius: 12px;
+    margin: 14px 14px 0;
+    padding: 14px 16px;
+    box-shadow: 0 0 18px var(--gold-glow);
+  }
+  .gh-top-card + .gh-top-card { margin-top: 10px; }
+  .gh-top-card-title {
+    color: var(--gold); font-weight: 700; font-size: 14px;
+    margin-bottom: 10px; letter-spacing: 0.3px;
+  }
+  .gh-audio-player { width: 100%; height: 40px; display: block; }
+  .gh-audio-fallback {
+    display: inline-block; margin-top: 8px; font-size: 12px;
+    color: var(--gold); text-decoration: underline; opacity: 0.85;
+  }
+  .gh-obs-list { margin: 0; padding-left: 18px; }
+  .gh-obs-list li {
+    color: var(--white); font-size: 13px; line-height: 1.5;
+    margin: 5px 0; padding-left: 2px;
+  }
+  .gh-obs-list li::marker { color: var(--gold); }
+
   /* ── Diet Action Buttons (PDF + Lista de compras) ── */
   .diet-actions {
     display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
@@ -7035,7 +7061,9 @@ function parseDietData(rows) {
     ciclos: [],
     orientacoes: [],
     aerobicos: [],
-    protocolos: []
+    protocolos: [],
+    observacoes: [],   // "O que ajustei agora" (reajuste) — bullets no topo
+    audio: null        // recado de voz do GH (entrega inicial) — { url, label }
   };
 
   let currentCycle = { nome: null, refeicoes: [], notas: [] };
@@ -7137,6 +7165,26 @@ function parseDietData(rows) {
       case 'proto':
         data.protocolos.push({ nome: r[1] || '', dose: r[2] || '', obs: r[3] || '' });
         break;
+      // Card no topo — "O que ajustei agora" (reajuste). Cada linha = 1 bullet
+      // (col B; aceita col D se B vazia). Título é FIXO no app, não vem da sheet.
+      case 'observacoes':
+      case 'observacao':
+      case 'ajustes':
+      case 'ajuste': {
+        const b = (r[1] || r[3] || '').trim();
+        // ignora se alguém escreveu o próprio título como bullet
+        const norm = b.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[:.]/g, '').trim();
+        if (b && norm !== 'o que ajustei agora') data.observacoes.push(b);
+        break;
+      }
+      // Card no topo — recado de voz do GH (entrega inicial). col B = URL do
+      // áudio (link do Drive ou direto). col C = rótulo opcional.
+      case 'audio': {
+        const url = (r[1] || '').trim();
+        const label = (r[2] || '').trim();
+        if (url) data.audio = { url, label };
+        break;
+      }
       default:
         // Empty col A with content in B = food item (new simplified format)
         if (secao === '' && (r[1] || '').trim() !== '') {
@@ -7170,11 +7218,48 @@ function _suplTimingIcon(timing) {
   return '💊 ';
 }
 
+// Converte link do Drive em URL tocável num <audio>. Link compartilhado do
+// Drive (/file/d/ID/view ou open?id=ID) vira uc?export=download&id=ID, que
+// streama em <audio> pra arquivos pequenos (recado de voz). URL direto (não
+// Drive) passa intacto.
+function _audioSrc(url) {
+  const u = String(url || '').trim();
+  const m = u.match(/(?:\/d\/|[?&]id=)([\w-]{20,})/);
+  if (m) return 'https://drive.google.com/uc?export=download&id=' + m[1];
+  return u;
+}
+
+// HTML dos cards do topo (áudio do GH + "O que ajustei agora"). Renderizado
+// antes do info card, dentro da aba DIETA. Vazio se não houver os marcadores.
+function _renderTopCards(d) {
+  let h = '';
+  if (d.audio && d.audio.url) {
+    const label = d.audio.label || 'Recado do Gabriel';
+    const src = _audioSrc(d.audio.url);
+    h += `<div class="gh-top-card gh-audio-card">
+      <div class="gh-top-card-title">🎧 ${label}</div>
+      <audio class="gh-audio-player" controls preload="none" src="${src}"></audio>
+      <a class="gh-audio-fallback" href="${d.audio.url}" target="_blank" rel="noopener">Não tocou? Abrir áudio</a>
+    </div>`;
+  }
+  if (d.observacoes && d.observacoes.length) {
+    h += `<div class="gh-top-card gh-obs-card">
+      <div class="gh-top-card-title">✨ O que ajustei agora</div>
+      <ul class="gh-obs-list">`;
+    d.observacoes.forEach(b => { h += `<li>${b}</li>`; });
+    h += `</ul></div>`;
+  }
+  return h;
+}
+
 function renderDiet() {
   if (!DIET_DATA) return;
   const d = DIET_DATA;
   const container = document.getElementById('dietContent');
   let html = '';
+
+  // Cards do topo: recado de voz (entrega) + "O que ajustei agora" (reajuste)
+  html += _renderTopCards(d);
 
   // Info card
   html += `<div class="diet-info-card">`;
@@ -7437,6 +7522,8 @@ function edRowClass(secao, item) {
   if (secao === 'cardio' || secao === 'aerob') return 't-cardio';
   if (secao === 'ciclo') return 't-ciclo';
   if (secao === 'proto') return 't-proto';
+  if (secao === 'observacoes' || secao === 'observacao' || secao === 'ajuste' || secao === 'ajustes') return 't-obs';
+  if (secao === 'audio') return 't-info';
   if (secao === '' && (item || '').trim() !== '') return 't-food';
   if (secao === '' && (item || '').trim() === '') return 't-sep';
   return 't-food';
