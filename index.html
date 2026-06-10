@@ -8259,9 +8259,15 @@ let trainerSheetId = null;
 let trainerAuth = true; // senha removida — acesso direto ao modo treinador
 let swapTargetIdx = null;
 
-// Botão visível só com ?edit=1
+// Botão visível só com ?edit=1.
+// Se a URL já traz ?sheet=ID, abre o editor DIRETO naquele aluno (pula o modal
+// de colar ID) — assim os links "Gravar recado" caem na hora no editor de cada
+// aluno. O botão "⚙ Modo Treinador" segue visível pra reabrir se ele fechar.
 if (new URLSearchParams(location.search).get('edit') === '1') {
   document.getElementById('trainerToggleBtn').style.display = 'block';
+  if (SHEET_ID) {
+    setTimeout(function () { try { trainerLoadSheet(SHEET_ID); } catch (e) { console.warn('auto-edit:', e); } }, 350);
+  }
 }
 
 function teShow(id) { document.getElementById(id).classList.add('show'); }
@@ -8568,8 +8574,10 @@ function openTrainerSheetModal() {
 let dietaData = null;
 let currentEditMode = 'treino'; // 'treino' | 'dieta'
 
-async function trainerLoadSheet() {
-  let sid = document.getElementById('trainerSheetIdInput').value.trim();
+async function trainerLoadSheet(presetSid) {
+  // presetSid = abre direto naquele aluno (ex: link ?sheet=ID&edit=1).
+  // Sem presetSid, lê o que foi colado/buscado no modal.
+  let sid = String(presetSid || document.getElementById('trainerSheetIdInput').value || '').trim();
   let m = sid.match(/spreadsheets\/d\/([\w-]+)/);
   if (!m) m = sid.match(/[?&]sheet=([\w-]+)/);
   if (m) sid = m[1];
