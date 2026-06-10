@@ -839,10 +839,21 @@
     margin-bottom: 10px; letter-spacing: 0.3px;
   }
   .gh-audio-player { width: 100%; height: 40px; display: block; }
+  .gh-recado-exp { font-size: 11px; font-weight: 400; color: var(--muted); opacity: 0.8; }
   .gh-audio-fallback {
     display: inline-block; margin-top: 8px; font-size: 12px;
     color: var(--gold); text-decoration: underline; opacity: 0.85;
   }
+  /* Modal de gravar recado (editor do treinador) */
+  .recado-rec-row { display: flex; gap: 8px; align-items: center; margin: 12px 0; }
+  .recado-rec-btn {
+    background: var(--card); color: var(--white); border: 1px solid var(--gold);
+    border-radius: 8px; padding: 12px 16px; font-size: 14px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
+  .recado-rec-btn.recording { border-color: #e25555; color: #e25555; }
+  .recado-timer { font-size: 14px; color: var(--gold); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .recado-status { font-size: 12px; color: var(--muted); margin: 8px 0; min-height: 16px; }
   .gh-obs-list { margin: 0; padding-left: 18px; }
   .gh-obs-list li {
     color: var(--white); font-size: 13px; line-height: 1.5;
@@ -2850,10 +2861,30 @@
     <div class="te-mode-tabs" id="teModeTabs"></div>
     <button class="te-btn ghost" id="teUndoBtn" onclick="undoTrainerAction()" disabled title="Desfazer última ação (Ctrl+Z)">↶ Desfazer</button>
     <button class="te-tpl-btn" id="trainerTplBtn" onclick="openTrainerTemplateModal()" style="display:none;" title="Carregar template oficial (substitui exercícios mantendo info do aluno)">📋 Template</button>
+    <button class="te-btn ghost" id="teRecadoBtn" onclick="openRecadoModal()" title="Gravar recado em áudio pro aluno (entrega inicial). Some em 7 dias.">🎙 Recado</button>
     <button class="te-btn" id="trainerSaveBtn" onclick="trainerSave()">💾 Salvar</button>
     <button class="te-btn ghost" onclick="trainerExit()">✕</button>
   </div>
   <div class="te-days-scroll" id="trainerDaysContainer" ondragover="teEdgeAutoScroll(event)"></div>
+</div>
+
+<!-- Modal: gravar recado em áudio (só treinador) -->
+<div class="te-modal-overlay" id="recadoModal">
+  <div class="te-modal-box" style="max-width:460px;">
+    <h3>🎙 Recado em áudio</h3>
+    <p style="color:#888;font-size:11px;margin:0 0 6px;">Grava um recado de voz pro aluno (entrega inicial). Aparece no topo do protocolo dele e <strong>some sozinho em 7 dias</strong>. Lê o card "O que observei no teu caso" enquanto grava.</p>
+    <p style="color:var(--gold);font-size:11px;margin:0 0 4px;">Dica: grave pelo iPhone pra tocar em qualquer celular do aluno.</p>
+    <div class="recado-rec-row">
+      <button type="button" class="recado-rec-btn" id="recadoRecBtn" onclick="recadoToggle()">● Gravar</button>
+      <span class="recado-timer" id="recadoTimer">0:00</span>
+    </div>
+    <div class="recado-status" id="recadoStatus"></div>
+    <audio id="recadoPreview" controls style="width:100%;display:none;margin:6px 0;"></audio>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button type="button" class="te-btn" id="recadoSendBtn" onclick="recadoSend()" style="display:none;flex:1;">📤 Enviar recado</button>
+      <button type="button" class="te-btn ghost" onclick="closeRecadoModal()" style="flex:1;">Fechar</button>
+    </div>
+  </div>
 </div>
 
 <!-- Modal de seleção de template no trainer -->
@@ -7062,8 +7093,7 @@ function parseDietData(rows) {
     orientacoes: [],
     aerobicos: [],
     protocolos: [],
-    observacoes: [],   // "O que ajustei agora" (reajuste) — bullets no topo
-    audio: null        // recado de voz do GH (entrega inicial) — { url, label }
+    observacoes: []    // card "O que observei/ajustei" — 1ª linha c/ ":" = título
   };
 
   let currentCycle = { nome: null, refeicoes: [], notas: [] };
@@ -7178,14 +7208,6 @@ function parseDietData(rows) {
         if (b) data.observacoes.push(b);
         break;
       }
-      // Card no topo — recado de voz do GH (entrega inicial). col B = URL do
-      // áudio (link do Drive ou direto). col C = rótulo opcional.
-      case 'audio': {
-        const url = (r[1] || '').trim();
-        const label = (r[2] || '').trim();
-        if (url) data.audio = { url, label };
-        break;
-      }
       default:
         // Empty col A with content in B = food item (new simplified format)
         if (secao === '' && (r[1] || '').trim() !== '') {
@@ -7219,30 +7241,10 @@ function _suplTimingIcon(timing) {
   return '💊 ';
 }
 
-// Converte link do Drive em URL tocável num <audio>. Link compartilhado do
-// Drive (/file/d/ID/view ou open?id=ID) vira uc?export=download&id=ID, que
-// streama em <audio> pra arquivos pequenos (recado de voz). URL direto (não
-// Drive) passa intacto.
-function _audioSrc(url) {
-  const u = String(url || '').trim();
-  const m = u.match(/(?:\/d\/|[?&]id=)([\w-]{20,})/);
-  if (m) return 'https://drive.google.com/uc?export=download&id=' + m[1];
-  return u;
-}
-
-// HTML dos cards do topo (áudio do GH + "O que ajustei agora"). Renderizado
-// antes do info card, dentro da aba DIETA. Vazio se não houver os marcadores.
+// HTML do card de texto "O que observei/ajustei" no topo da DIETA. A 1ª linha
+// do bloco observacoes terminada em ":" é o título. Vazio se não houver bloco.
 function _renderTopCards(d) {
   let h = '';
-  if (d.audio && d.audio.url) {
-    const label = d.audio.label || 'Recado do Gabriel';
-    const src = _audioSrc(d.audio.url);
-    h += `<div class="gh-top-card gh-audio-card">
-      <div class="gh-top-card-title">🎧 ${label}</div>
-      <audio class="gh-audio-player" controls preload="none" src="${src}"></audio>
-      <a class="gh-audio-fallback" href="${d.audio.url}" target="_blank" rel="noopener">Não tocou? Abrir áudio</a>
-    </div>`;
-  }
   if (d.observacoes && d.observacoes.length) {
     let linhas = d.observacoes.slice();
     let titulo = 'O que ajustei agora'; // default (reajuste) se não vier título
@@ -7259,13 +7261,34 @@ function _renderTopCards(d) {
   return h;
 }
 
+// Recado em áudio do GH (entrega inicial). O treinador grava no editor → salva
+// no Drive do aluno → Apps Script serve em base64 (action=recado) → expira em
+// 7 dias. Preenche o #recadoSlot no topo do protocolo. Silencioso se não houver.
+async function loadRecado() {
+  const slot = document.getElementById('recadoSlot');
+  if (!slot) return;
+  if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') { slot.innerHTML = ''; return; }
+  try {
+    const r = await fetch(`${LOG_ENDPOINT}?action=recado&id=${encodeURIComponent(SHEET_ID)}`);
+    const j = await r.json();
+    if (!j || !j.ok || !j.b64) { slot.innerHTML = ''; return; }
+    const src = `data:${j.mime || 'audio/mp4'};base64,${j.b64}`;
+    const exp = j.daysLeft ? `<span class="gh-recado-exp">· some em ${j.daysLeft} dia${j.daysLeft === 1 ? '' : 's'}</span>` : '';
+    slot.innerHTML = `<div class="gh-top-card gh-audio-card">
+      <div class="gh-top-card-title">🎧 Recado do Gabriel ${exp}</div>
+      <audio class="gh-audio-player" controls preload="metadata" src="${src}"></audio>
+    </div>`;
+  } catch (e) { slot.innerHTML = ''; }
+}
+
 function renderDiet() {
   if (!DIET_DATA) return;
   const d = DIET_DATA;
   const container = document.getElementById('dietContent');
   let html = '';
 
-  // Cards do topo: recado de voz (entrega) + "O que ajustei agora" (reajuste)
+  // Slot do recado em áudio (preenchido async por loadRecado) + card de texto
+  html += `<div id="recadoSlot"></div>`;
   html += _renderTopCards(d);
 
   // Info card
@@ -7434,6 +7457,7 @@ function renderDiet() {
 
   container.innerHTML = html;
   container.style.display = 'block';
+  loadRecado(); // preenche o #recadoSlot com o player do recado (se houver)
 }
 
 function renderFoodItem(a) {
@@ -8222,6 +8246,121 @@ if (new URLSearchParams(location.search).get('edit') === '1') {
 
 function teShow(id) { document.getElementById(id).classList.add('show'); }
 function teHide(id) { document.getElementById(id).classList.remove('show'); }
+
+// ── Recado em áudio (só treinador, no editor) ──
+// Grava voz no navegador → base64 → POST type:'recado' pro Apps Script, que
+// salva no Drive do aluno (trainerSheetId). Player aparece no protocolo do
+// aluno e some em 7 dias. Prefere audio/mp4 (toca em iPhone). Máx 3 min.
+let _recadoRec = null, _recadoChunks = [], _recadoBlob = null, _recadoMime = '';
+let _recadoStream = null, _recadoTimerInt = null, _recadoT0 = 0;
+const _RECADO_MAX_S = 180;
+
+function openRecadoModal() {
+  if (!trainerSheetId) { alert('Abre o protocolo de um aluno primeiro.'); return; }
+  _recadoResetUI();
+  teShow('recadoModal');
+}
+function closeRecadoModal() {
+  try { if (_recadoRec && _recadoRec.state === 'recording') _recadoRec.stop(); } catch (_) {}
+  _recadoStopStream();
+  if (_recadoTimerInt) { clearInterval(_recadoTimerInt); _recadoTimerInt = null; }
+  teHide('recadoModal');
+}
+function _recadoResetUI() {
+  _recadoBlob = null; _recadoChunks = [];
+  const btn = document.getElementById('recadoRecBtn');
+  btn.textContent = '● Gravar'; btn.classList.remove('recording');
+  document.getElementById('recadoTimer').textContent = '0:00';
+  document.getElementById('recadoStatus').textContent = '';
+  const prev = document.getElementById('recadoPreview');
+  prev.style.display = 'none'; prev.removeAttribute('src');
+  document.getElementById('recadoSendBtn').style.display = 'none';
+}
+function _recadoStopStream() {
+  if (_recadoStream) { try { _recadoStream.getTracks().forEach(t => t.stop()); } catch (_) {} _recadoStream = null; }
+}
+function _recadoFmt(s) { const m = Math.floor(s / 60); const ss = s % 60; return m + ':' + (ss < 10 ? '0' : '') + ss; }
+function _recadoPickMime() {
+  const opts = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg'];
+  for (const o of opts) { try { if (window.MediaRecorder && MediaRecorder.isTypeSupported(o)) return o; } catch (_) {} }
+  return '';
+}
+function recadoToggle() {
+  if (_recadoRec && _recadoRec.state === 'recording') { _recadoStopRec(); return; }
+  _recadoStartRec();
+}
+async function _recadoStartRec() {
+  if (!navigator.mediaDevices || !window.MediaRecorder) { alert('Teu navegador não suporta gravação. Tenta pelo Chrome ou Safari atualizado.'); return; }
+  try {
+    _recadoStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (e) { alert('Não consegui acessar o microfone. Libera a permissão e tenta de novo.'); return; }
+  _recadoChunks = []; _recadoBlob = null;
+  _recadoMime = _recadoPickMime();
+  try {
+    _recadoRec = _recadoMime ? new MediaRecorder(_recadoStream, { mimeType: _recadoMime }) : new MediaRecorder(_recadoStream);
+  } catch (e) { _recadoRec = new MediaRecorder(_recadoStream); }
+  if (!_recadoMime) _recadoMime = _recadoRec.mimeType || 'audio/webm';
+  _recadoRec.ondataavailable = e => { if (e.data && e.data.size) _recadoChunks.push(e.data); };
+  _recadoRec.onstop = () => {
+    _recadoStopStream();
+    _recadoBlob = new Blob(_recadoChunks, { type: _recadoMime });
+    const prev = document.getElementById('recadoPreview');
+    prev.src = URL.createObjectURL(_recadoBlob);
+    prev.style.display = 'block';
+    document.getElementById('recadoSendBtn').style.display = 'block';
+    const kb = Math.round(_recadoBlob.size / 1024);
+    document.getElementById('recadoStatus').textContent = 'Gravado (' + kb + ' KB). Ouve aí, e se ficou bom, envia.';
+  };
+  _recadoRec.start();
+  _recadoT0 = Date.now();
+  const btn = document.getElementById('recadoRecBtn');
+  btn.textContent = '■ Parar'; btn.classList.add('recording');
+  document.getElementById('recadoSendBtn').style.display = 'none';
+  document.getElementById('recadoPreview').style.display = 'none';
+  document.getElementById('recadoStatus').textContent = 'Gravando...';
+  _recadoTimerInt = setInterval(() => {
+    const s = Math.floor((Date.now() - _recadoT0) / 1000);
+    document.getElementById('recadoTimer').textContent = _recadoFmt(s);
+    if (s >= _RECADO_MAX_S) _recadoStopRec();
+  }, 250);
+}
+function _recadoStopRec() {
+  if (_recadoTimerInt) { clearInterval(_recadoTimerInt); _recadoTimerInt = null; }
+  try { if (_recadoRec && _recadoRec.state === 'recording') _recadoRec.stop(); } catch (_) {}
+  const btn = document.getElementById('recadoRecBtn');
+  btn.textContent = '● Regravar'; btn.classList.remove('recording');
+}
+async function recadoSend() {
+  if (!_recadoBlob) { alert('Grava o recado primeiro.'); return; }
+  if (!trainerSheetId) { alert('Sem aluno selecionado.'); return; }
+  const sendBtn = document.getElementById('recadoSendBtn');
+  sendBtn.disabled = true; sendBtn.textContent = 'Enviando...';
+  document.getElementById('recadoStatus').textContent = 'Enviando o recado...';
+  try {
+    const b64 = await new Promise((res, rej) => {
+      const fr = new FileReader();
+      fr.onload = () => res(String(fr.result || ''));
+      fr.onerror = rej;
+      fr.readAsDataURL(_recadoBlob);
+    });
+    const resp = await fetch(TRAINER_APPS_SCRIPT, {
+      method: 'POST', redirect: 'follow',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ type: 'recado', sheetId: trainerSheetId, base64: b64, mime: _recadoMime })
+    });
+    const j = await resp.json().catch(() => ({}));
+    if (j && j.ok) {
+      document.getElementById('recadoStatus').textContent = '✅ Recado enviado! O aluno já vê no topo do protocolo (some em 7 dias).';
+      sendBtn.style.display = 'none';
+    } else {
+      throw new Error((j && j.error) || 'falhou');
+    }
+  } catch (e) {
+    document.getElementById('recadoStatus').textContent = '❌ Não consegui enviar: ' + e.message + '. Tenta de novo.';
+  } finally {
+    sendBtn.disabled = false; sendBtn.textContent = '📤 Enviar recado';
+  }
+}
 
 function openTrainerLogin() {
   // loadTrainerStudents pede a senha (1x por dispositivo) se ainda não houver.
