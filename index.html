@@ -3020,7 +3020,14 @@
     <div class="te-muscle-chips" id="swapMuscleChips"></div>
     <input type="text" id="swapSearchInput" placeholder="Buscar pelo nome...">
     <div class="swap-list" id="swapList"></div>
-    <button class="te-btn ghost" onclick="closeSwapModal()">Cancelar</button>
+    <div style="border-top:1px solid #2c2c2c;margin-top:8px;padding-top:10px;">
+      <p style="color:var(--gold);font-size:11px;margin:0 0 5px;">Não tem na lista? Cria um exercício livre. O aluno já vê e treina; você adiciona o vídeo depois.</p>
+      <div style="display:flex;gap:6px;">
+        <input type="text" id="swapCustomInput" placeholder="Ex: Rosca de Punho com Halteres" style="flex:1;margin:0;" onkeydown="if(event.key==='Enter')addCustomExercise()">
+        <button class="te-btn" onclick="addCustomExercise()" style="white-space:nowrap;">+ Livre</button>
+      </div>
+    </div>
+    <button class="te-btn ghost" onclick="closeSwapModal()" style="margin-top:8px;">Cancelar</button>
   </div>
 </div>
 
@@ -8921,6 +8928,8 @@ function openSwapModal(rowIdx) {
   const muscle = classifyMuscle(name);
   swapMuscleFilter = (muscle === 'outros' || muscle === 'aquecimento') ? 'todos' : muscle;
   document.getElementById('swapSearchInput').value = '';
+  const ci = document.getElementById('swapCustomInput');
+  if (ci) ci.value = '';
   document.getElementById('swapCurrentName').textContent = name || '(novo)';
   renderSwapModalContent();
   teShow('exerciseSwapModal');
@@ -9396,6 +9405,21 @@ function pickReplacement(dbIdx) {
   teSnapshot();
   trainerData[swapTargetIdx][1] = e.n;
   if (e.v) trainerData[swapTargetIdx][6] = e.v;
+  closeSwapModal();
+  renderTrainerEditor();
+}
+
+// Exercício livre: nome digitado pelo treinador, SEM vídeo (adiciona depois).
+// O app do aluno mostra normal (sem o play). Útil pra exercício que ainda não
+// tem vídeo no catálogo (ex: antebraço).
+function addCustomExercise() {
+  if (swapTargetIdx == null) return;
+  const inp = document.getElementById('swapCustomInput');
+  const name = (inp.value || '').trim();
+  if (!name) { alert('Digite o nome do exercício livre.'); inp.focus(); return; }
+  teSnapshot();
+  trainerData[swapTargetIdx][1] = name;
+  trainerData[swapTargetIdx][6] = ''; // sem vídeo por enquanto
   closeSwapModal();
   renderTrainerEditor();
 }
