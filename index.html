@@ -612,6 +612,14 @@
     margin-top: 24px;
   }
   .app-footer span { color: var(--gold); font-size: 11px; letter-spacing: 1px; }
+  .footer-feedback-btn {
+    display: block; margin: 0 auto 14px; background: transparent; color: var(--gold);
+    border: 1px solid var(--gold-dim); border-radius: 8px; padding: 10px 18px;
+    font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: border-color 0.15s;
+  }
+  .footer-feedback-btn:hover { border-color: var(--gold); }
+  .footer-feedback-btn:active { transform: scale(0.98); }
 
   /* ── Impressão / PDF ── */
   #printArea { display: none; }
@@ -2495,7 +2503,38 @@
   </div>
 </div>
 
-<div class="app-footer"><span>MÉTODO GH — @gh.scheuermann</span></div>
+<div class="app-footer">
+  <button class="footer-feedback-btn" onclick="openFeedbackModal()">💬 Feedback e sugestões</button>
+  <span>MÉTODO GH — @gh.scheuermann</span>
+</div>
+
+<!-- Modal: feedback e sugestões (aluno) -->
+<div class="te-modal-overlay" id="feedbackModal" onclick="closeFeedbackOnBg(event)">
+  <div class="te-modal-box" style="max-width:480px;">
+    <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;">💬 Feedback e sugestões</h3>
+    <p style="color:#aaa;font-size:12px;margin:0 0 12px;line-height:1.5;">Conta o que tu achou do app, o que dá pra melhorar, ou uma ideia nova. O GH lê todos. 🤙</p>
+    <div id="feedbackForm">
+      <label style="color:#bbb;font-size:11px;display:block;margin-bottom:4px;">Tipo</label>
+      <select id="feedbackTipo" style="width:100%;padding:10px;background:#222;border:1px solid var(--gold-dim);color:var(--white);border-radius:6px;font-size:13px;margin-bottom:12px;">
+        <option value="Sugestão">Sugestão / ideia</option>
+        <option value="Elogio">Elogio</option>
+        <option value="Problema">Problema / bug</option>
+        <option value="Outro">Outro</option>
+      </select>
+      <label style="color:#bbb;font-size:11px;display:block;margin-bottom:4px;">Tua mensagem</label>
+      <textarea id="feedbackTexto" rows="5" maxlength="1500" placeholder="Ex: Seria massa ter um cronômetro de descanso entre as séries.&#10;&#10;Ex: Adorei poder marcar os treinos, ficou top!" oninput="document.getElementById('feedbackCharCount').textContent=this.value.length+' / 1500'" style="width:100%;padding:10px;background:#222;border:1px solid var(--gold-dim);color:var(--white);border-radius:6px;font-size:13px;font-family:inherit;line-height:1.4;box-sizing:border-box;resize:vertical;min-height:110px;"></textarea>
+      <div id="feedbackCharCount" style="color:#666;font-size:10px;text-align:right;margin-top:4px;">0 / 1500</div>
+      <div style="display:flex;gap:8px;margin-top:14px;">
+        <button class="te-btn" onclick="submitFeedback()" id="feedbackSubmitBtn" style="flex:1;">Enviar</button>
+        <button class="te-btn ghost" onclick="teHide('feedbackModal')" style="flex:1;">Fechar</button>
+      </div>
+    </div>
+    <div id="feedbackSuccess" style="display:none;text-align:center;padding:14px 0;">
+      <p style="color:var(--gold);font-size:15px;font-weight:600;margin:0;">✅ Recebido! Valeu pelo feedback. 🤙</p>
+      <button class="te-btn ghost" onclick="teHide('feedbackModal')" style="margin-top:12px;">Fechar</button>
+    </div>
+  </div>
+</div>
 
 <!-- ══ Área de impressão / PDF (escondida na tela, só aparece no print) ══ -->
 <div id="printArea"></div>
@@ -6308,6 +6347,46 @@ async function submitAjuste() {
     alert('Erro de conexão. Confere internet e tenta de novo. (' + err.message + ')');
     btn.disabled = false;
     btn.textContent = 'Enviar pedido';
+  }
+}
+
+// ══ FEEDBACK E SUGESTÕES ══
+// Aluno escreve no rodapé → POST type:'feedback' → aba FEEDBACKS do mestre.
+function openFeedbackModal() {
+  document.getElementById('feedbackForm').style.display = '';
+  document.getElementById('feedbackSuccess').style.display = 'none';
+  document.getElementById('feedbackTexto').value = '';
+  document.getElementById('feedbackCharCount').textContent = '0 / 1500';
+  const b = document.getElementById('feedbackSubmitBtn');
+  b.disabled = false; b.textContent = 'Enviar';
+  teShow('feedbackModal');
+  setTimeout(() => document.getElementById('feedbackTexto').focus(), 100);
+}
+function closeFeedbackOnBg(e) { if (e.target && e.target.id === 'feedbackModal') teHide('feedbackModal'); }
+async function submitFeedback() {
+  const texto = (document.getElementById('feedbackTexto').value || '').trim();
+  const tipo = document.getElementById('feedbackTipo').value || 'Outro';
+  if (texto.length < 3) { alert('Escreve um pouquinho mais (mínimo 3 caracteres).'); return; }
+  const btn = document.getElementById('feedbackSubmitBtn');
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  const studentName = (document.getElementById('infoNome')?.textContent || '').trim();
+  try {
+    const resp = await fetch(LOG_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ type: 'feedback', sheetId: SHEET_ID, studentName: studentName, tipo: tipo, mensagem: texto })
+    });
+    const r = await resp.json().catch(() => ({}));
+    if (r.success) {
+      document.getElementById('feedbackForm').style.display = 'none';
+      document.getElementById('feedbackSuccess').style.display = '';
+    } else {
+      alert('Não consegui enviar agora: ' + (r.error || 'erro') + '. Tenta de novo em 1 minuto.');
+      btn.disabled = false; btn.textContent = 'Enviar';
+    }
+  } catch (e) {
+    alert('Erro de conexão. Confere a internet e tenta de novo. (' + e.message + ')');
+    btn.disabled = false; btn.textContent = 'Enviar';
   }
 }
 
