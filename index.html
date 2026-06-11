@@ -7007,7 +7007,7 @@ async function openRankingModal() {
         <div class="rk-name">${escHtml(r.name)}${isMe ? '<span class="you">(você)</span>' : ''}</div>
         <div class="rk-stats">
           <span class="rk-score">${r.adherence != null ? r.adherence : (r.score || 0)}%</span>
-          <span class="rk-meta">${r.daysThisMonth || 0}/${r.prescritos || 0} dias · 📤${r.daysShared || 0}</span>
+          <span class="rk-meta">${Math.min(r.daysThisMonth || 0, r.prescritos || 0)}/${r.prescritos || 0} dias · 📤${r.daysShared || 0}</span>
         </div>
       </div>`;
     }).join('');
