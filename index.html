@@ -554,6 +554,44 @@
   .timer-display { color: var(--white); font-size: 110px; font-weight: 800; font-family: 'Courier New', monospace; line-height: 1; }
   .timer-display.warn { color: #ff9800; }
   .timer-display.done { color: #4caf50; }
+  .timer-ring { position: relative; display: flex; align-items: center; justify-content: center; }
+  .timer-ring svg { display: block; }
+  .timer-ring .timer-display { position: absolute; font-size: 60px; }
+  #timerRingFill { transition: stroke-dashoffset 0.95s linear; }
+  #timerRingFill.warn { stroke: #ff9800; }
+  #timerRingFill.done { stroke: #4caf50; }
+  .timer-pill { position: fixed; bottom: 92px; left: 50%; transform: translateX(-50%); z-index: 10500; display: none; align-items: center; gap: 7px; background: #131316; color: var(--gold); border: 1.5px solid var(--gold); border-radius: 999px; padding: 11px 20px; font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; box-shadow: 0 4px 16px rgba(0,0,0,0.55); cursor: pointer; }
+  .timer-pill.show { display: flex; }
+  .timer-pill.done { background: #4caf50; color: #111; border-color: #4caf50; }
+
+  /* ── Modo treino focado ── */
+  .focus-overlay { position: fixed; inset: 0; background: #0c0c0f; z-index: 9500; display: none; flex-direction: column; }
+  .focus-overlay.show { display: flex; }
+  .focus-head { display: flex; align-items: center; gap: 10px; padding: 14px 12px 8px; }
+  .focus-close { background: none; border: none; color: #888; font-size: 22px; cursor: pointer; padding: 4px 10px; }
+  .focus-count { flex: 1; text-align: center; color: #aaa; font-size: 13px; font-weight: 600; }
+  .focus-bar { height: 4px; background: #222; border-radius: 2px; margin: 0 16px 10px; overflow: hidden; }
+  .focus-bar-fill { height: 100%; background: var(--gold); border-radius: 2px; transition: width 0.25s; }
+  .focus-body { flex: 1; overflow-y: auto; padding: 8px 20px 20px; -webkit-overflow-scrolling: touch; }
+  .focus-badge { display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: 0.08em; padding: 3px 10px; border-radius: 10px; background: #26262c; color: var(--gold); margin: 0 0 10px; }
+  .focus-name { color: #fff; font-size: 24px; font-weight: 800; line-height: 1.25; margin: 0 0 12px; }
+  .focus-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .focus-tag { background: #1c1c21; border: 1px solid #2c2c33; color: #ddd; font-size: 13px; padding: 6px 12px; border-radius: 8px; }
+  .focus-tag b { color: var(--gold); font-weight: 800; margin-right: 5px; }
+  .focus-obs { color: #b9b9c0; font-size: 13px; line-height: 1.5; background: #17171b; border-left: 3px solid var(--gold); padding: 8px 12px; border-radius: 0; margin-bottom: 12px; }
+  .focus-video-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: #1c1c21; border: 1px solid #2c2c33; color: #fff; font-size: 14px; font-weight: 600; padding: 13px; border-radius: 10px; cursor: pointer; margin-bottom: 14px; }
+  .focus-carga { background: #17171b; border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+  .focus-carga-label { color: #9a9aa0; font-size: 11px; margin-bottom: 7px; }
+  .focus-carga input { background: #101013; border: 1px solid #2c2c33; color: #fff; font-size: 18px; font-weight: 700; padding: 10px 6px; border-radius: 8px; width: 92px; text-align: center; }
+  .focus-foot { display: flex; gap: 10px; padding: 12px 14px calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid #1d1d22; }
+  .focus-nav { background: #1c1c21; border: 1px solid #2c2c33; color: #fff; font-size: 20px; width: 52px; border-radius: 10px; cursor: pointer; }
+  .focus-nav:disabled { opacity: 0.3; }
+  .focus-main-btn { flex: 1; border: none; border-radius: 10px; font-size: 15px; font-weight: 800; padding: 14px 6px; cursor: pointer; }
+  .focus-main-btn.rest { background: #1c1c21; color: #fff; border: 1px solid #2c2c33; }
+  .focus-main-btn.donebtn { background: var(--gold); color: #111; }
+  .focus-main-btn.donebtn.isdone { background: #4caf50; color: #fff; }
+  .focus-entry { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: var(--gold); color: #111; font-weight: 800; font-size: 14px; padding: 13px; border: none; border-radius: 10px; cursor: pointer; margin: 0 0 12px; }
+  body.view-dieta .focus-entry { display: none; }
   .timer-actions { display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap; justify-content: center; }
   .timer-btn { background: #2a2a2a; color: var(--white); border: 1px solid #444; padding: 12px 24px; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 600; }
   .timer-btn.primary { background: var(--gold); color: var(--dark); border-color: var(--gold); }
@@ -1975,10 +2013,35 @@
 <!-- ══ TIMER OVERLAY ══ -->
 <div class="timer-overlay" id="timerOverlay">
   <div class="timer-name" id="timerName"></div>
-  <div class="timer-display" id="timerDisplay">60</div>
+  <div class="timer-ring">
+    <svg viewBox="0 0 160 160" width="230" height="230" aria-hidden="true">
+      <circle cx="80" cy="80" r="70" fill="none" stroke="#2a2a2a" stroke-width="7"/>
+      <circle id="timerRingFill" cx="80" cy="80" r="70" fill="none" stroke="#D4AF37" stroke-width="7" stroke-linecap="round" stroke-dasharray="439.8" stroke-dashoffset="0" transform="rotate(-90 80 80)"/>
+    </svg>
+    <div class="timer-display" id="timerDisplay">60</div>
+  </div>
   <div class="timer-actions">
     <button class="timer-btn" onclick="timerCancel()">Cancelar</button>
+    <button class="timer-btn" onclick="timerMinimize()">Minimizar</button>
     <button class="timer-btn primary" onclick="timerAdd(15)">+15s</button>
+  </div>
+</div>
+<button class="timer-pill" id="timerPill" onclick="timerReopen()">⏱ <span id="timerPillTime">60s</span></button>
+
+<!-- ══ MODO TREINO FOCADO ══ -->
+<div class="focus-overlay" id="focusOverlay">
+  <div class="focus-head">
+    <button class="focus-close" onclick="closeFocusMode()" title="Sair do modo treino">✕</button>
+    <div class="focus-count" id="focusCount"></div>
+    <div style="width:42px;"></div>
+  </div>
+  <div class="focus-bar"><div class="focus-bar-fill" id="focusBarFill" style="width:0%"></div></div>
+  <div class="focus-body" id="focusBody"></div>
+  <div class="focus-foot">
+    <button class="focus-nav" id="focusPrev" onclick="focusNav(-1)" title="Anterior">‹</button>
+    <button class="focus-main-btn rest" onclick="focusRest()">⏱ Descanso</button>
+    <button class="focus-main-btn donebtn" id="focusDoneBtn" onclick="focusToggleDone()">✓ Feito</button>
+    <button class="focus-nav" id="focusNext" onclick="focusNav(1)" title="Próximo">›</button>
   </div>
 </div>
 
@@ -2573,6 +2636,9 @@
     <button type="button" class="float-opt ranking" onclick="event.stopPropagation(); openRankingModal()">
       <span class="ic">🏆</span><span>Ranking</span>
     </button>
+    <button type="button" class="float-opt" onclick="event.stopPropagation(); openProgressoModal()">
+      <span class="ic">📈</span><span>Meu progresso</span>
+    </button>
     <button type="button" class="float-opt" onclick="event.stopPropagation(); downloadPDF()">
       <span class="ic">📄</span><span id="pdfBtnLabel">Baixar treino em PDF</span>
     </button>
@@ -2636,6 +2702,18 @@
     </div>
     <div id="rankingList" style="flex:1;overflow-y:auto;min-height:0;"></div>
     <button class="te-btn ghost" onclick="teHide('rankingModal')" style="width:100%;margin-top:10px;">Fechar</button>
+  </div>
+</div>
+
+<!-- ══ MEU PROGRESSO ══ -->
+<div class="te-modal-overlay" id="progressoModal" onclick="closeProgressoOnBg(event)">
+  <div class="te-modal-box" style="max-width:560px;max-height:88vh;display:flex;flex-direction:column;">
+    <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;">📈 Meu progresso</h3>
+    <p style="color:#aaa;font-size:11px;margin:0 0 10px;line-height:1.4;">
+      Tua evolução de carga semana a semana. Anota as cargas nos exercícios e acompanha aqui.
+    </p>
+    <div id="progressoBody" style="flex:1;overflow-y:auto;min-height:0;"></div>
+    <button class="te-btn ghost" onclick="teHide('progressoModal')" style="width:100%;margin-top:10px;">Fechar</button>
   </div>
 </div>
 
@@ -4414,10 +4492,23 @@ function parseIntervalSeconds(text) {
 }
 let _timerInt = null;
 let _timerLeft = 0;
+let _timerTotal = 0;
+let _timerWakeLock = null;
+const _TIMER_CIRC = 439.8; // 2πr do anel (r=70)
+async function _timerLockOn() {
+  // Mantém a tela acesa enquanto o descanso roda (se o navegador suportar)
+  try { if ('wakeLock' in navigator) _timerWakeLock = await navigator.wakeLock.request('screen'); } catch (_) {}
+}
+function _timerLockOff() {
+  try { _timerWakeLock && _timerWakeLock.release(); } catch (_) {}
+  _timerWakeLock = null;
+}
 function startTimer(name, seconds) {
   _timerLeft = seconds;
+  _timerTotal = seconds;
   document.getElementById('timerName').textContent = name;
   document.getElementById('timerOverlay').classList.add('show');
+  document.getElementById('timerPill').classList.remove('show', 'done');
   document.body.style.overflow = 'hidden';
   updateTimerDisplay();
   if (_timerInt) clearInterval(_timerInt);
@@ -4426,30 +4517,69 @@ function startTimer(name, seconds) {
     updateTimerDisplay();
     if (_timerLeft <= 0) timerDone();
   }, 1000);
+  _timerLockOn();
 }
 function updateTimerDisplay() {
   const d = document.getElementById('timerDisplay');
   d.textContent = _timerLeft;
   d.classList.remove('warn', 'done');
+  const ring = document.getElementById('timerRingFill');
+  if (ring) {
+    ring.classList.remove('warn', 'done');
+    const frac = _timerTotal > 0 ? Math.max(0, Math.min(1, _timerLeft / _timerTotal)) : 0;
+    ring.style.strokeDashoffset = (_TIMER_CIRC * (1 - frac)).toFixed(1);
+    if (_timerLeft <= 5) ring.classList.add('warn');
+  }
   if (_timerLeft <= 5) d.classList.add('warn');
+  const pt = document.getElementById('timerPillTime');
+  if (pt) pt.textContent = _timerLeft + 's';
+}
+function timerMinimize() {
+  // Timer continua rodando — só esconde o overlay e mostra a pill flutuante
+  document.getElementById('timerOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+  if (_timerInt) document.getElementById('timerPill').classList.add('show');
+}
+function timerReopen() {
+  const pill = document.getElementById('timerPill');
+  if (pill.classList.contains('done')) { pill.classList.remove('show', 'done'); return; }
+  pill.classList.remove('show');
+  document.getElementById('timerOverlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
 }
 function timerCancel() {
   if (_timerInt) { clearInterval(_timerInt); _timerInt = null; }
   document.getElementById('timerOverlay').classList.remove('show');
+  document.getElementById('timerPill').classList.remove('show', 'done');
   document.body.style.overflow = '';
+  _timerLockOff();
 }
 function timerAdd(secs) {
   _timerLeft += secs;
+  if (_timerLeft > _timerTotal) _timerTotal = _timerLeft;
   updateTimerDisplay();
 }
 function timerDone() {
   if (_timerInt) { clearInterval(_timerInt); _timerInt = null; }
-  const d = document.getElementById('timerDisplay');
-  d.classList.add('done');
-  d.textContent = '✓';
+  _timerLockOff();
   beep();
   if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
-  setTimeout(timerCancel, 2500);
+  const pill = document.getElementById('timerPill');
+  const minimized = pill.classList.contains('show');
+  if (minimized) {
+    // Tava minimizado: pill vira verde "✓ Descanso!" e some sozinha
+    pill.classList.add('done');
+    const pt = document.getElementById('timerPillTime');
+    if (pt) pt.textContent = '✓ Bora!';
+    setTimeout(() => pill.classList.remove('show', 'done'), 4000);
+  } else {
+    const d = document.getElementById('timerDisplay');
+    d.classList.add('done');
+    d.textContent = '✓';
+    const ring = document.getElementById('timerRingFill');
+    if (ring) { ring.classList.add('done'); ring.style.strokeDashoffset = '0'; }
+    setTimeout(timerCancel, 2500);
+  }
 }
 function beep() {
   try {
@@ -4468,6 +4598,129 @@ function beep() {
     make(1320, 0.44, 0.3);
   } catch(e) {}
 }
+
+// ══ MODO TREINO FOCADO ══
+// Player de treino: um exercício por vez, tela cheia. Reusa o storage de carga
+// (onCarga/onPlacas), o check de conclusão (onCheckExercise → card + ranking) e
+// o timer de descanso. Navega por botões ‹ › ou swipe horizontal.
+let _focusDi = 0, _focusIdx = 0;
+function _focusEntryBtn(di) {
+  return `<button type="button" class="focus-entry" onclick="openFocusMode(${di})">▶&nbsp; Modo treino — um exercício por vez</button>`;
+}
+function openFocusMode(di) {
+  _focusDi = di;
+  const exs = (WORKOUT[di] && WORKOUT[di].exercises) || [];
+  if (!exs.length) return;
+  const start = exs.findIndex((ex, ei) => !isDone(di, ei));
+  _focusIdx = start === -1 ? 0 : start;
+  document.getElementById('focusOverlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  _focusRender();
+}
+function closeFocusMode() {
+  document.getElementById('focusOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+  renderExercises();
+}
+function focusNav(dir) {
+  const exs = WORKOUT[_focusDi].exercises;
+  const n = _focusIdx + dir;
+  if (n < 0 || n >= exs.length) return;
+  _focusIdx = n;
+  _focusRender();
+}
+function focusToggleDone() {
+  onCheckExercise(_focusDi, _focusIdx);
+  if (allDoneOfDay(_focusDi)) { setTimeout(closeFocusMode, 350); return; }
+  const exs = WORKOUT[_focusDi].exercises;
+  if (isDone(_focusDi, _focusIdx) && _focusIdx < exs.length - 1) {
+    // Concluiu → avança sozinho pro próximo não feito
+    let n = _focusIdx + 1;
+    while (n < exs.length && isDone(_focusDi, n)) n++;
+    if (n < exs.length) _focusIdx = n;
+  }
+  _focusRender();
+}
+function focusRest() {
+  const ex = WORKOUT[_focusDi].exercises[_focusIdx];
+  const base = ex.biset ? ex.a : ex;
+  startTimer(base.name || 'Descanso', parseIntervalSeconds(base.rest));
+}
+function _focusEsc(s) { return String(s || '').replace(/'/g, "\\'"); }
+function _focusCargaBlock(di, key, label) {
+  const cur = loadCarga(di, key, currentWeek);
+  const curP = loadPlacas(di, key, currentWeek);
+  const prev = getPrevCarga(di, key, currentWeek);
+  return `<div class="focus-carga">
+    <div class="focus-carga-label">${label} ${prev ? `· semana passada: <b style="color:var(--gold);">${kgToDisplay(prev)}${getUnit()}</b>` : ''}</div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <input type="number" inputmode="decimal" placeholder="${getUnit()}" value="${kgToDisplay(cur)}" oninput="onCarga(${di},'${key}',this)">
+      <input type="number" inputmode="numeric" placeholder="placas" value="${curP}" oninput="onPlacas(${di},'${key}',this)">
+      <span style="color:#5f5f66;font-size:11px;">salva sozinho</span>
+    </div>
+  </div>`;
+}
+function _focusRender() {
+  const exs = WORKOUT[_focusDi].exercises;
+  const ex = exs[_focusIdx];
+  if (!ex) return;
+  const total = exs.length;
+  const doneCount = exs.reduce((a, _, ei) => a + (isDone(_focusDi, ei) ? 1 : 0), 0);
+  document.getElementById('focusCount').textContent = `Dia ${_focusDi + 1} · Exercício ${_focusIdx + 1} de ${total} · ${doneCount} feitos`;
+  document.getElementById('focusBarFill').style.width = Math.round((doneCount / total) * 100) + '%';
+  document.getElementById('focusPrev').disabled = _focusIdx === 0;
+  document.getElementById('focusNext').disabled = _focusIdx === total - 1;
+
+  const tags = (o) => {
+    const t = [];
+    if (o.series) t.push(`<span class="focus-tag"><b>S</b>${o.series}</span>`);
+    if (o.reps) t.push(`<span class="focus-tag"><b>R</b>${o.reps}</span>`);
+    if (o.rest) t.push(`<span class="focus-tag"><b>I</b>${o.rest}</span>`);
+    return t.join('');
+  };
+  const vidBtn = (o) => (o.video && o.video.length)
+    ? `<button class="focus-video-btn" onclick="openVideo('${_focusEsc(o.name)}', '${_focusEsc(o.video)}')">▶ Ver vídeo de execução</button>` : '';
+
+  let html = '';
+  if (ex.biset) {
+    html += `<span class="focus-badge">⚡ BI-SET — sem descanso entre A e B</span>`;
+    html += `<div class="focus-name">${ex.a.name}</div>${vidBtn(ex.a)}<div class="focus-tags">${tags(ex.a)}</div>`;
+    if (ex.a.obs) html += `<div class="focus-obs">${ex.a.obs}</div>`;
+    html += _focusCargaBlock(_focusDi, `${_focusIdx}a`, 'Carga A');
+    html += `<div style="text-align:center;color:var(--gold);font-size:11px;font-weight:700;margin:10px 0;">↓ SEM DESCANSO ↓</div>`;
+    html += `<div class="focus-name" style="font-size:20px;">${ex.b.name}</div>${vidBtn(ex.b)}`;
+    if (ex.b.obs) html += `<div class="focus-obs">${ex.b.obs}</div>`;
+    html += _focusCargaBlock(_focusDi, `${_focusIdx}b`, 'Carga B');
+  } else {
+    if (ex.warmup) html += `<span class="focus-badge">🔥 AQUECIMENTO</span>`;
+    html += `<div class="focus-name">${ex.name}</div>${vidBtn(ex)}<div class="focus-tags">${tags(ex)}</div>`;
+    if (ex.obs) html += `<div class="focus-obs">${ex.obs}</div>`;
+    if (!ex.warmup) html += _focusCargaBlock(_focusDi, String(_focusIdx), 'Carga de hoje');
+  }
+  document.getElementById('focusBody').innerHTML = html;
+  document.getElementById('focusBody').scrollTop = 0;
+
+  const btn = document.getElementById('focusDoneBtn');
+  if (isDone(_focusDi, _focusIdx)) { btn.classList.add('isdone'); btn.textContent = '✓ Feito!'; }
+  else { btn.classList.remove('isdone'); btn.textContent = '✓ Feito'; }
+}
+// Swipe horizontal pra navegar entre exercícios
+(function () {
+  let sx = null, sy = null;
+  document.addEventListener('touchstart', e => {
+    const ov = document.getElementById('focusOverlay');
+    if (!ov || !ov.classList.contains('show')) return;
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchend', e => {
+    const ov = document.getElementById('focusOverlay');
+    if (!ov || !ov.classList.contains('show') || sx === null) return;
+    const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+    sx = sy = null;
+    if (e.target && e.target.tagName === 'INPUT') return;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) focusNav(dx < 0 ? 1 : -1);
+  }, { passive: true });
+})();
 
 // ══ Histórico de cargas ══
 function showHistory(di, ei) {
@@ -4863,7 +5116,7 @@ function renderExercises() {
     const div = document.createElement("div");
     div.className = `day-content ${di === currentDay ? 'active' : ''}`;
     div.setAttribute('data-di', String(di));
-    div.innerHTML = day.exercises.map((ex, ei) => {
+    div.innerHTML = _focusEntryBtn(di) + day.exercises.map((ex, ei) => {
       // ── BI-SET ──
       if (ex.biset) {
         const a = ex.a, b = ex.b;
@@ -7054,6 +7307,142 @@ function showInstallInstructions() {
 }
 function closeInstallOnBg(e) { if (e.target.id === 'installModalV2') teHide('installModalV2'); }
 function closeRankingOnBg(e) { if (e.target.id === 'rankingModal') teHide('rankingModal'); }
+function closeProgressoOnBg(e) { if (e.target.id === 'progressoModal') teHide('progressoModal'); }
+
+// ══ MEU PROGRESSO ══
+// Consolida as cargas que o aluno anota (localStorage, por semana) em uma visão
+// única: recordes pessoais, evolução por exercício e adesão do mês. Tudo local,
+// sem chamada de servidor. Bi-set vira 2 entradas (A e B).
+function _progCollect() {
+  const items = [];
+  (typeof WORKOUT !== 'undefined' ? WORKOUT : []).forEach((day, di) => {
+    (day.exercises || []).forEach((ex, ei) => {
+      if (ex.biset) {
+        items.push({ di, key: `${ei}a`, plainEi: null, name: ex.a.name, dia: di + 1 });
+        items.push({ di, key: `${ei}b`, plainEi: null, name: ex.b.name, dia: di + 1 });
+      } else if (!ex.warmup) {
+        items.push({ di, key: String(ei), plainEi: ei, name: ex.name, dia: di + 1 });
+      }
+    });
+  });
+  const out = [];
+  items.forEach(it => {
+    const vals = [];
+    for (let w = 1; w <= TOTAL_WEEKS; w++) vals.push(parseFloat(loadCarga(it.di, it.key, w)) || 0);
+    const filled = vals.map((v, i) => ({ v, w: i + 1 })).filter(x => x.v > 0);
+    if (!filled.length) return;
+    it.vals = vals;
+    it.max = Math.max(...filled.map(x => x.v));
+    if (filled.length >= 2) {
+      const first = filled[0], last = filled[filled.length - 1];
+      const prevMax = Math.max(...filled.slice(0, -1).map(x => x.v));
+      it.isNewPR = last.v > prevMax;
+      it.delta = last.v - first.v;
+      it.pct = first.v > 0 ? Math.round((it.delta / first.v) * 100) : 0;
+      it.multi = true;
+    } else {
+      it.isNewPR = false; it.delta = 0; it.pct = 0; it.multi = false;
+    }
+    out.push(it);
+  });
+  return out;
+}
+function _progSpark(vals, color) {
+  const pts = vals.map((v, i) => ({ v, i })).filter(p => p.v > 0);
+  if (pts.length < 2) return '';
+  const max = Math.max(...pts.map(p => p.v)), min = Math.min(...pts.map(p => p.v));
+  const range = (max - min) || 1;
+  const W = 96, H = 28, P = 4;
+  const x = i => P + (i / Math.max(vals.length - 1, 1)) * (W - 2 * P);
+  const y = v => H - P - ((v - min) / range) * (H - 2 * P);
+  const poly = pts.map(p => x(p.i).toFixed(1) + ',' + y(p.v).toFixed(1)).join(' ');
+  const lp = pts[pts.length - 1];
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="flex:0 0 auto;"><polyline points="${poly}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${x(lp.i).toFixed(1)}" cy="${y(lp.v).toFixed(1)}" r="2.6" fill="${color}"/></svg>`;
+}
+function _progDiasNoMes() {
+  // Datas únicas de treino concluído no mês corrente (keys gh_logsent_<SID>_<data>_dN_concl)
+  try {
+    const pref = `gh_logsent_${SHEET_ID}_`;
+    const now = new Date();
+    const ym = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    const dates = new Set();
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k || k.indexOf(pref) !== 0) continue;
+      const m = k.slice(pref.length).match(/^(\d{4}-\d{2})-(\d{2})_d\d+_concl$/);
+      if (m && m[1] === ym) dates.add(m[2]);
+    }
+    return dates.size;
+  } catch (_) { return 0; }
+}
+function _progOpenHistory(di, ei) {
+  teHide('progressoModal');
+  showHistory(di, ei);
+}
+function openProgressoModal() {
+  const fo = document.getElementById('floatOptions'); fo && fo.classList.remove('show');
+  const fb = document.getElementById('floatBtn'); fb && fb.classList.remove('open');
+  teShow('progressoModal');
+  const unit = getUnit();
+  const fmt = kg => kgToDisplay(kg) + unit;
+  const items = _progCollect();
+  const body = document.getElementById('progressoBody');
+  if (!items.length) {
+    body.innerHTML = '<p style="color:#888;text-align:center;padding:34px 16px;font-size:13px;line-height:1.6;">Ainda sem cargas anotadas.<br>Registra o peso que tu usa em cada exercício<br>e tua evolução aparece aqui. 💪</p>';
+    return;
+  }
+  const streak = getStreak();
+  const dias = _progDiasNoMes();
+  const newPRs = items.filter(i => i.isNewPR);
+  const movers = items.filter(i => i.multi).sort((a, b) => b.pct - a.pct);
+  const prs = items.slice().sort((a, b) => b.max - a.max).slice(0, 5);
+  const bestPct = movers.length ? movers[0].pct : 0;
+
+  const stat = (val, label) => `<div style="background:#1c1c21;border-radius:10px;padding:10px 8px;text-align:center;">
+    <div style="color:var(--gold);font-size:19px;font-weight:800;line-height:1.1;">${val}</div>
+    <div style="color:#9a9aa0;font-size:10px;margin-top:3px;">${label}</div>
+  </div>`;
+  let html = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:14px;">
+    ${stat(dias, 'treinos no mês')}
+    ${stat(streak.current || 0, 'sequência')}
+    ${stat(newPRs.length, newPRs.length === 1 ? 'recorde novo' : 'recordes novos')}
+    ${stat((bestPct > 0 ? '+' : '') + bestPct + '%', 'melhor evolução')}
+  </div>`;
+
+  html += `<div style="color:var(--gold);font-size:11px;font-weight:700;letter-spacing:0.06em;margin:4px 0 8px;">🏆 MAIORES CARGAS</div>`;
+  prs.forEach(it => {
+    html += `<div style="display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid #26262c;">
+      <div style="flex:1;min-width:0;">
+        <div style="color:#fff;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${it.name}</div>
+        <div style="color:#7a7a82;font-size:10px;">Dia ${it.dia}</div>
+      </div>
+      ${it.isNewPR ? '<span style="background:var(--gold);color:#111;font-size:9px;font-weight:800;padding:2px 7px;border-radius:8px;">NOVO!</span>' : ''}
+      <div style="color:var(--gold);font-size:14px;font-weight:800;min-width:54px;text-align:right;">${fmt(it.max)}</div>
+    </div>`;
+  });
+
+  if (movers.length) {
+    html += `<div style="color:var(--gold);font-size:11px;font-weight:700;letter-spacing:0.06em;margin:16px 0 8px;">📈 EVOLUÇÃO POR EXERCÍCIO</div>`;
+    movers.forEach(it => {
+      const up = it.delta > 0, flat = it.delta === 0;
+      const cor = up ? '#4caf50' : flat ? '#9a9aa0' : '#ff9800';
+      const pctTxt = (up ? '+' : '') + it.pct + '%';
+      const click = it.plainEi !== null ? ` onclick="_progOpenHistory(${it.di}, ${it.plainEi})" style="cursor:pointer;"` : '';
+      html += `<div${click} class="prog-row">
+        <div style="display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid #26262c;">
+          <div style="flex:1;min-width:0;">
+            <div style="color:#fff;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${it.name}</div>
+            <div style="color:#7a7a82;font-size:10px;">Dia ${it.dia} · ${fmt(it.vals.filter(v => v > 0)[0])} → ${fmt(it.vals.filter(v => v > 0).pop())}</div>
+          </div>
+          ${_progSpark(it.vals, cor)}
+          <div style="color:${cor};font-size:12px;font-weight:800;min-width:44px;text-align:right;">${pctTxt}</div>
+        </div>
+      </div>`;
+    });
+    html += `<p style="color:#7a7a82;font-size:10px;margin:10px 2px 0;">Toca num exercício pra ver o histórico semana a semana.</p>`;
+  }
+  body.innerHTML = html;
+}
 
 // ══ RANKING DO MÊS ══
 async function openRankingModal() {
