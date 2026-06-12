@@ -409,14 +409,15 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    margin: 20px 14px 0;
-    padding: 14px;
+    margin: 14px 14px 0;
+    padding: 13px;
     background: var(--card);
-    border: 1px solid var(--gold);
-    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 12px;
     color: var(--gold);
     font-weight: 600;
-    font-size: 14px;
+    font-size: 13px;
+    letter-spacing: 0.02em;
     cursor: pointer;
   }
   .instructions-content {
@@ -424,9 +425,9 @@
     margin: 0 14px 20px;
     padding: 16px;
     background: var(--card);
-    border: 1px solid var(--gold);
+    border: 1px solid rgba(255, 255, 255, 0.09);
     border-top: none;
-    border-radius: 0 0 10px 10px;
+    border-radius: 0 0 12px 12px;
   }
   .instructions-content.show { display: block; }
   .instructions-content h3 {
@@ -487,33 +488,24 @@
   .float-btn.open { transform: rotate(45deg); }
   .float-options { display: none; flex-direction: column; gap: 8px; align-items: flex-end; }
   .float-options.show { display: flex; }
-  .float-opt { background: #1a1a1a; border: 1px solid var(--gold-dim); color: #fff; padding: 10px 14px; border-radius: 24px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 10px; text-decoration: none; white-space: nowrap; transition: all 0.15s; }
-  .float-opt:hover { background: var(--gold); color: var(--dark); border-color: var(--gold); }
-  /* Botões com fundo colorido — agrupados visualmente por função */
-  .float-opt.install { background: #25d366; border-color: #25d366; color: #fff; }
-  .float-opt.install:hover { background: #1ebe57; border-color: #1ebe57; color: #fff; }
-  .float-opt.reload { background: #1a3550; border-color: #3b82f6; color: #93c5fd; }
-  .float-opt.reload:hover { background: #3b82f6; border-color: #3b82f6; color: #fff; }
-  .float-opt.ajuste { background: var(--gold); border-color: var(--gold); color: #000; }
-  .float-opt.ajuste:hover { background: #c19a5d; border-color: #c19a5d; color: #000; }
-  .float-opt.fotos { background: #3a1a3a; border-color: #c026d3; color: #f0abfc; }
-  .float-opt.fotos:hover { background: #c026d3; border-color: #c026d3; color: #fff; }
-  .float-opt.whatsapp { background: #1a3a26; border-color: #25d366; color: #6ee7a3; }
-  .float-opt.whatsapp:hover { background: #25d366; border-color: #25d366; color: #fff; }
-  .float-opt.ranking { border-color: #ffb84d; }
-  .float-opt.ranking:hover { background: #ffb84d; color: var(--dark); border-color: #ffb84d; }
-  .float-opt.chat { background: #15314d; border-color: #3b82f6; color: #bfdbfe; }
-  .float-opt.chat:hover { background: #3b82f6; border-color: #3b82f6; color: #fff; }
-  .float-opt .ic { font-size: 18px; }
+  .float-opt { background: #161513; border: 1px solid rgba(255,255,255,0.10); color: var(--white); padding: 10px 16px 10px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; letter-spacing: 0.01em; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,0.55); display: flex; align-items: center; gap: 10px; text-decoration: none; white-space: nowrap; transition: all 0.15s; }
+  .float-opt:hover, .float-opt:active { background: #211f1b; border-color: rgba(212,175,106,0.45); }
+  .float-opt .ic { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--gold-soft); color: var(--gold); flex-shrink: 0; }
+  .float-opt .ic svg { width: 14px; height: 14px; }
+  /* Únicas exceções de cor: WhatsApp (verde no ícone) e Instalar (CTA dourado) */
+  .float-opt.whatsapp .ic { background: rgba(37,211,102,0.14); color: #4ade80; }
+  .float-opt.install { background: var(--gold); border-color: var(--gold); color: #15100a; font-weight: 800; }
+  .float-opt.install .ic { background: rgba(0,0,0,0.14); color: #15100a; }
+  .float-opt.install:hover { background: var(--gold-bright); border-color: var(--gold-bright); }
 
   /* Ranking */
-  .rk-row { display: grid; grid-template-columns: 44px 1fr auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 6px; margin-bottom: 5px; background: #1a1a1a; border: 1px solid #2a2a2a; transition: background 0.12s; }
-  .rk-row:hover { background: #1f1f1f; }
-  .rk-row.me { background: linear-gradient(90deg, rgba(212,175,55,0.18), rgba(212,175,55,0.05)); border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold-dim); }
+  .rk-row { display: grid; grid-template-columns: 44px 1fr auto; gap: 10px; align-items: center; padding: 9px 10px; border-radius: 10px; margin-bottom: 6px; background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.06); transition: background 0.12s; }
+  .rk-row:hover { background: rgba(255,255,255,0.06); }
+  .rk-row.me { background: var(--gold-soft); border-color: rgba(212,175,106,0.5); }
   .rk-pos { font-weight: 800; font-size: 16px; text-align: center; color: var(--gold); }
-  .rk-pos.gold { color: #d4a76a; font-size: 22px; }
-  .rk-pos.silver { color: #c0c0c0; font-size: 22px; }
-  .rk-pos.bronze { color: #cd7f32; font-size: 22px; }
+  .rk-pos.gold { color: #F1D69E; font-size: 17px; }
+  .rk-pos.silver { color: #c0c0c0; font-size: 17px; }
+  .rk-pos.bronze { color: #cd7f32; font-size: 17px; }
   .rk-name { font-weight: 700; font-size: 13px; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .rk-name .you { color: var(--gold); font-size: 10px; margin-left: 4px; }
   .rk-stats { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
@@ -933,10 +925,11 @@
   }
   .diet-action-btn {
     background: var(--card); color: var(--white);
-    border: 1px solid #3a3a3a; border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.10); border-radius: 12px;
     padding: 12px 8px; font-size: 13px; font-weight: 600;
     cursor: pointer; transition: all 0.15s;
     font-family: inherit;
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
   }
   .diet-action-btn:hover { border-color: var(--gold); color: var(--gold); }
   .diet-action-btn:active { transform: scale(0.98); }
@@ -1447,11 +1440,12 @@
   }
   .te-modal-overlay.show { display: flex; }
   .te-modal-box {
-    background: #1a1a1a; border: 1px solid var(--gold-dim); border-radius: 12px;
+    background: #161513; border: 1px solid rgba(255, 255, 255, 0.10); border-radius: 18px;
     padding: 20px; max-width: 480px; width: 100%;
     max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), var(--hairline);
   }
-  .te-modal-box h3 { color: var(--gold); margin: 0 0 12px; font-size: 16px; }
+  .te-modal-box h3 { color: var(--gold); margin: 0 0 12px; font-size: 16px; letter-spacing: 0.01em; }
 
   /* ── Fotos do reajuste: grid 2x2 de slots ── */
   .fotos-grid {
@@ -1632,10 +1626,11 @@
     color: var(--white); border-radius: 6px; margin-bottom: 10px; font-size: 14px; box-sizing: border-box;
   }
   .te-btn {
-    background: var(--gold); color: var(--dark); border: none;
-    padding: 10px 18px; border-radius: 6px; font-weight: 700; cursor: pointer; margin-right: 6px;
+    background: var(--gold); color: #15100a; border: none;
+    padding: 10px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; margin-right: 6px;
+    transition: background 0.15s;
   }
-  .te-btn.ghost { background: transparent; color: var(--gray); border: 1px solid #444; }
+  .te-btn.ghost { background: transparent; color: var(--gray); border: 1px solid rgba(255, 255, 255, 0.14); }
   .te-btn.danger { background: #c0392b; color: #fff; }
 
   #trainerEditor {
@@ -1837,15 +1832,15 @@
 </div>
 
 <!-- ══ BANNER JANELA DE FOTOS DO REAJUSTE ══ -->
-<div id="fotosBanner" style="display:none;margin:0 14px 12px;padding:12px 14px;background:linear-gradient(135deg, rgba(212,167,106,0.15), rgba(212,167,106,0.05));border:1px solid var(--gold);border-radius:8px;">
+<div id="fotosBanner" style="display:none;margin:0 14px 12px;padding:12px 14px;background:var(--card);border:1px solid rgba(212,175,106,0.35);border-radius:14px;">
   <div style="display:flex;align-items:flex-start;gap:10px;">
-    <div style="font-size:20px;">📸</div>
+    <div style="width:30px;height:30px;border-radius:9px;background:var(--gold-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--gold);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;vertical-align:-2px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
     <div style="flex:1;min-width:0;">
       <div style="color:var(--gold);font-weight:700;font-size:13px;margin-bottom:3px;">Janela de fotos do reajuste aberta</div>
       <div style="color:#ccc;font-size:12px;line-height:1.4;" id="fotosBannerMsg">Se você não conseguiu anexar suas fotos na anamnese de reajuste, mande aqui pelo app.</div>
       <div style="display:flex;gap:6px;margin-top:9px;flex-wrap:wrap;">
-        <button class="te-btn primary" type="button" onclick="openFotosModal()" style="padding:7px 12px;font-size:12px;">📤 Enviar agora</button>
-        <button class="te-btn ghost" type="button" onclick="dismissFotosBanner()" style="padding:7px 12px;font-size:12px;">✅ Já enviei na anamnese</button>
+        <button class="te-btn primary" type="button" onclick="openFotosModal()" style="padding:7px 12px;font-size:12px;">Enviar agora</button>
+        <button class="te-btn ghost" type="button" onclick="dismissFotosBanner()" style="padding:7px 12px;font-size:12px;">Já enviei na anamnese</button>
       </div>
     </div>
   </div>
@@ -2030,7 +2025,7 @@
     <button class="timer-btn primary" onclick="timerAdd(15)">+15s</button>
   </div>
 </div>
-<button class="timer-pill" id="timerPill" onclick="timerReopen()">⏱ <span id="timerPillTime">60s</span></button>
+<button class="timer-pill" id="timerPill" onclick="timerReopen()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> <span id="timerPillTime">60s</span></button>
 
 <!-- ══ MODO TREINO FOCADO ══ -->
 <div class="focus-overlay" id="focusOverlay">
@@ -2043,7 +2038,7 @@
   <div class="focus-body" id="focusBody"></div>
   <div class="focus-foot">
     <button class="focus-nav" id="focusPrev" onclick="focusNav(-1)" title="Anterior">‹</button>
-    <button class="focus-main-btn rest" onclick="focusRest()">⏱ Descanso</button>
+    <button class="focus-main-btn rest" onclick="focusRest()" style="display:inline-flex;align-items:center;justify-content:center;gap:7px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Descanso</button>
     <button class="focus-main-btn donebtn" id="focusDoneBtn" onclick="focusToggleDone()">✓ Feito</button>
     <button class="focus-nav" id="focusNext" onclick="focusNav(1)" title="Próximo">›</button>
   </div>
@@ -2174,7 +2169,7 @@
 
 <!-- ══ ACOMPANHAMENTO ══ -->
 <div class="instructions-toggle" id="accompToggle" onclick="toggleAccomp()" style="display:none;">
-  📊 Acompanhamento <span id="accompArrow">&#9660;</span>
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Acompanhamento <span id="accompArrow">&#9660;</span>
 </div>
 <div class="instructions-content" id="accompContent">
   <div class="accomp-card">
@@ -2212,13 +2207,13 @@
       <div class="streak-stat"><div class="num" id="streakTotal">0</div><div class="lbl">Total dias</div></div>
     </div>
     <p style="color:#888;font-size:11px;margin:10px 0 0;line-height:1.4;">Conta 1 quando tu marca todos os exercícios do dia como ✓. Em dias sem treino não conta — mas se passar 2 dias sem fechar, a sequência atual zera.</p>
-    <p style="color:#666;font-size:10px;margin:6px 0 0;line-height:1.4;font-style:italic;">🏆 Sequências e dias treinados são compartilhados com a equipe pra ranking de premiação mensal.</p>
+    <p style="color:#666;font-size:10px;margin:6px 0 0;line-height:1.4;font-style:italic;">Sequências e dias treinados são compartilhados com a equipe pra ranking de premiação mensal.</p>
   </div>
 </div>
 
 <!-- ══ GLOSSÁRIO ══ -->
 <div class="instructions-toggle" id="glossarioToggle" onclick="toggleGlossario()" style="display:none;">
-  📖 Glossário do Método <span id="glossarioArrow">&#9660;</span>
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Glossário do Método <span id="glossarioArrow">&#9660;</span>
 </div>
 <div class="instructions-content" id="glossarioContent">
   <p style="color:#888;font-size:11px;margin:0 0 12px;">Pra termos de execução do treino (séries, cadência, técnicas como bi-set, cluster, drop-set), abre o <strong>Manual de Execução</strong>.</p>
@@ -2244,7 +2239,7 @@
 
 <!-- ══ SUPLEMENTOS ══ -->
 <div class="instructions-toggle" id="suplementosToggle" onclick="toggleSuplementos()" style="display:none;">
-  🛒 Onde Comprar Suplementos <span id="suplementosArrow">&#9660;</span>
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;vertical-align:-2px;"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg> Onde Comprar Suplementos <span id="suplementosArrow">&#9660;</span>
 </div>
 <div class="instructions-content" id="suplementosContent">
   <p style="color:var(--gray);font-size:12px;margin:0 0 14px;">Suplementos confiáveis com desconto. Marca FTW (linha que o GH usa) — links Shopee.</p>
@@ -2571,14 +2566,14 @@
 </div>
 
 <div class="app-footer">
-  <button class="footer-feedback-btn" onclick="openFeedbackModal()">💬 Feedback e sugestões</button>
+  <button class="footer-feedback-btn" onclick="openFeedbackModal()" style="display:inline-flex;align-items:center;gap:7px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Feedback e sugestões</button>
   <span>MÉTODO GH — @gh.scheuermann</span>
 </div>
 
 <!-- Modal: feedback e sugestões (aluno) -->
 <div class="te-modal-overlay" id="feedbackModal" onclick="closeFeedbackOnBg(event)">
   <div class="te-modal-box" style="max-width:480px;">
-    <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;">💬 Feedback e sugestões</h3>
+    <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Feedback e sugestões</h3>
     <p style="color:#aaa;font-size:12px;margin:0 0 12px;line-height:1.5;">Conta o que tu achou do app, o que dá pra melhorar, ou uma ideia nova. O GH lê todos. 🤙</p>
     <div id="feedbackForm">
       <label style="color:#bbb;font-size:11px;display:block;margin-bottom:4px;">Tipo</label>
@@ -2618,11 +2613,11 @@
     <input type="file" id="achPhotoInput" accept="image/*" style="display:none;">
     <p id="achPointsHint" style="color:var(--gold);font-size:12px;margin:4px 0 6px;text-align:center;font-weight:700;">📲 Compartilhe teu treino — é o teu desempate no ranking!</p>
     <div class="ach-actions" style="margin-top:6px;">
-      <button class="ach-btn primary" onclick="achShare()" id="achShareBtn">📤 Compartilhar treino</button>
-      <button class="ach-btn secondary" onclick="achSave()">💾 Salvar PNG</button>
+      <button class="ach-btn primary" onclick="achShare()" id="achShareBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Compartilhar treino</button>
+      <button class="ach-btn secondary" onclick="achSave()">Salvar PNG</button>
       <button class="ach-btn ghost" onclick="achClose()">Pular (treino já contou)</button>
     </div>
-    <p style="color:#888;font-size:11px;text-align:center;margin:12px 0 0;line-height:1.5;">💡 <strong>Foto do pump</strong> vira o background do card. <strong>Pra Stories:</strong> Compartilhar → role o sheet → Instagram Stories.</p>
+    <p style="color:#888;font-size:11px;text-align:center;margin:12px 0 0;line-height:1.5;"><strong>Foto do pump</strong> vira o background do card. <strong>Pra Stories:</strong> Compartilhar → role o sheet → Instagram Stories.</p>
   </div>
 </div>
 
@@ -2635,44 +2630,44 @@
 
     <!-- TOPO (mais longe do dedo) — extras opcionais -->
     <button type="button" class="float-opt" onclick="event.stopPropagation(); toggleUnit()">
-      <span class="ic">⚖️</span><span id="unitToggleLabel">Unidade: kg (trocar pra lb)</span>
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></span><span id="unitToggleLabel">Unidade: kg (trocar pra lb)</span>
     </button>
-    <button type="button" class="float-opt ranking" onclick="event.stopPropagation(); openRankingModal()">
-      <span class="ic">🏆</span><span>Ranking</span>
+    <button type="button" class="float-opt" onclick="event.stopPropagation(); openRankingModal()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg></span><span>Ranking</span>
     </button>
     <button type="button" class="float-opt" onclick="event.stopPropagation(); openProgressoModal()">
-      <span class="ic">📈</span><span>Meu progresso</span>
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span><span>Meu progresso</span>
     </button>
     <button type="button" class="float-opt" onclick="event.stopPropagation(); downloadPDF()">
-      <span class="ic">📄</span><span id="pdfBtnLabel">Baixar treino em PDF</span>
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span><span id="pdfBtnLabel">Baixar treino em PDF</span>
     </button>
     <button type="button" class="float-opt" onclick="event.stopPropagation(); openAgendaModal()">
-      <span class="ic">🗓</span><span>Personal &amp; Psicóloga</span>
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span>Personal &amp; Psicóloga</span>
     </button>
 
     <!-- MEIO — grupo "ações do aluno" -->
-    <button type="button" class="float-opt chat" onclick="event.stopPropagation(); openChatModal()">
-      <span class="ic">🤖</span><span>Assistente de IA do GH</span>
+    <button type="button" class="float-opt" onclick="event.stopPropagation(); openChatModal()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span><span>Assistente de IA do GH</span>
     </button>
     <a class="float-opt whatsapp" href="https://wa.me/555520131470" target="_blank" rel="noopener">
-      <span class="ic">🟢</span><span>Suporte no WhatsApp</span>
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span><span>Suporte no WhatsApp</span>
     </a>
-    <button type="button" class="float-opt fotos" onclick="event.stopPropagation(); openFotosModal()">
-      <span class="ic">📸</span><span>Minhas fotos do reajuste</span>
+    <button type="button" class="float-opt" onclick="event.stopPropagation(); openFotosModal()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span><span>Minhas fotos do reajuste</span>
     </button>
-    <button type="button" class="float-opt ajuste" onclick="event.stopPropagation(); openAjusteModal()">
-      <span class="ic">🔧</span><span>Solicitar ajuste</span>
+    <button type="button" class="float-opt" onclick="event.stopPropagation(); openAjusteModal()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></span><span>Solicitar ajuste</span>
     </button>
 
     <!-- BASE (perto do dedo) — Recarregar + Instalar app destacados -->
-    <button type="button" class="float-opt reload" onclick="event.stopPropagation(); forceSyncFromServer()">
-      <span class="ic">🔄</span><span>Recarregar do servidor</span>
+    <button type="button" class="float-opt" onclick="event.stopPropagation(); forceSyncFromServer()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span><span>Recarregar do servidor</span>
     </button>
     <button type="button" class="float-opt install" onclick="event.stopPropagation(); showInstallInstructions()">
-      <span class="ic">📱</span><span>Instalar app na tela inicial</span>
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span><span>Instalar app na tela inicial</span>
     </button>
   </div>
-  <button class="float-btn" id="floatBtn" onclick="toggleFloatMenu()" title="Menu rápido">⚡</button>
+  <button class="float-btn" id="floatBtn" onclick="toggleFloatMenu()" title="Menu rápido"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></button>
 </div>
 
 <!-- Modal de instruções de instalação -->
@@ -2685,7 +2680,7 @@
       <p style="color:#ccc;font-size:12px;line-height:1.5;margin:0;">1. Toca no ícone <strong>Compartilhar</strong> (quadrado com seta pra cima) na barra inferior<br>2. Rola e toca em <strong>"Adicionar à Tela de Início"</strong><br>3. Confirma "Adicionar"</p>
     </div>
     <div style="background:#161616;border:1px solid #2a2a2a;border-radius:6px;padding:12px;margin-bottom:10px;">
-      <p style="color:var(--gold);font-weight:700;font-size:12px;margin:0 0 6px;">🤖 Android (Chrome)</p>
+      <p style="color:var(--gold);font-weight:700;font-size:12px;margin:0 0 6px;">Android (Chrome)</p>
       <p style="color:#ccc;font-size:12px;line-height:1.5;margin:0;">1. Toca nos <strong>3 pontinhos</strong> no canto superior direito<br>2. Toca em <strong>"Adicionar à tela inicial"</strong> ou <strong>"Instalar app"</strong><br>3. Confirma</p>
     </div>
     <p style="color:var(--gold);font-size:13px;font-weight:700;text-align:center;margin:12px 0 4px;">Toca no ícone dourado. Bom treino.</p>
@@ -2696,13 +2691,13 @@
 <!-- ══ RANKING DO MÊS ══ -->
 <div class="te-modal-overlay" id="rankingModal" onclick="closeRankingOnBg(event)">
   <div class="te-modal-box" style="max-width:560px;max-height:88vh;display:flex;flex-direction:column;">
-    <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;">🏆 Ranking <span id="rankingMonth" style="color:#888;font-weight:400;font-size:13px;"></span></h3>
+    <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg> Ranking <span id="rankingMonth" style="color:#888;font-weight:400;font-size:13px;"></span></h3>
     <p style="color:#aaa;font-size:11px;margin:0 0 8px;line-height:1.4;">
       Ranking por <strong>adesão</strong>: o <strong>%</strong> do teu plano que você cumpriu no mês.
       Quem treina <strong>3x</strong> e quem treina <strong>6x</strong> competem de igual: vale o quanto você seguiu o <em>teu</em> protocolo. Zera todo dia 1º.
     </p>
     <div style="background:rgba(212,167,106,0.10);border-left:3px solid var(--gold);padding:8px 10px;margin:0 0 12px;border-radius:4px;font-size:11px;color:#d4a76a;line-height:1.45;">
-      <strong>💡 Empate?</strong> Quem <strong>📤 compartilhou</strong> mais cards de treino no mês fica na frente. Então compartilha sempre que terminar — além de inspirar a galera, é o teu desempate.
+      <strong>Empate?</strong> Quem <strong>compartilhou</strong> mais cards de treino no mês fica na frente. Então compartilha sempre que terminar — além de inspirar a galera, é o teu desempate.
     </div>
     <div id="rankingList" style="flex:1;overflow-y:auto;min-height:0;"></div>
     <button class="te-btn ghost" onclick="teHide('rankingModal')" style="width:100%;margin-top:10px;">Fechar</button>
@@ -2712,7 +2707,7 @@
 <!-- ══ MEU PROGRESSO ══ -->
 <div class="te-modal-overlay" id="progressoModal" onclick="closeProgressoOnBg(event)">
   <div class="te-modal-box" style="max-width:560px;max-height:88vh;display:flex;flex-direction:column;">
-    <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;">📈 Meu progresso</h3>
+    <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> Meu progresso</h3>
     <p style="color:#aaa;font-size:11px;margin:0 0 10px;line-height:1.4;">
       Tua evolução de carga semana a semana. Anota as cargas nos exercícios e acompanha aqui.
     </p>
@@ -2724,7 +2719,7 @@
 <!-- ══ LISTA DE COMPRAS ══ -->
 <div class="te-modal-overlay" id="shoppingListModal" onclick="closeShoppingOnBg(event)">
   <div class="te-modal-box" style="max-width:560px;max-height:88vh;display:flex;flex-direction:column;">
-    <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;">🛒 Lista de compras</h3>
+    <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;vertical-align:-2px;"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg> Lista de compras</h3>
     <p style="color:#aaa;font-size:11px;margin:0 0 12px;line-height:1.45;">
       Tudo que aparece na sua dieta, organizado por categoria. Compre a quantidade conforme a sua semana — as quantidades da dieta são cozidas/preparadas, não cruas.
     </p>
@@ -2740,11 +2735,11 @@
 <!-- ══ MINHAS FOTOS DO REAJUSTE ══ -->
 <div class="te-modal-overlay" id="fotosModal" onclick="closeFotosOnBg(event)">
   <div class="te-modal-box" style="max-width:560px;max-height:90vh;display:flex;flex-direction:column;">
-    <h3 style="margin:0 0 10px;display:flex;align-items:center;gap:8px;">📸 Minhas Fotos do Reajuste</h3>
+    <h3 style="margin:0 0 10px;display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Minhas fotos do reajuste</h3>
 
     <div class="fotos-tabs">
-      <button type="button" id="fotosTabEnviar" class="fotos-tab active" onclick="switchFotosTab('enviar')">📤 Enviar</button>
-      <button type="button" id="fotosTabComparar" class="fotos-tab" onclick="switchFotosTab('comparar')">📊 Comparar evolução</button>
+      <button type="button" id="fotosTabEnviar" class="fotos-tab active" onclick="switchFotosTab('enviar')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Enviar</button>
+      <button type="button" id="fotosTabComparar" class="fotos-tab" onclick="switchFotosTab('comparar')">Comparar evolução</button>
     </div>
 
     <!-- ══ ABA ENVIAR ══ -->
@@ -2782,7 +2777,7 @@
           <button type="button" class="foto-slot-remove" onclick="_removeFotoSlot(event, 'esquerdo')" style="display:none;">×</button>
         </div>
       </div>
-      <button class="te-btn primary" type="button" id="fotosSendBtn" onclick="enviarFotos()" style="width:100%;margin-top:12px;display:none;">📤 Enviar</button>
+      <button class="te-btn primary" type="button" id="fotosSendBtn" onclick="enviarFotos()" style="width:100%;margin-top:12px;display:none;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Enviar</button>
     </div>
     <div id="fotosFeedback" style="margin-top:8px;font-size:13px;"></div>
     </div><!-- /fotosPaneEnviar -->
@@ -2816,7 +2811,7 @@
           </div>
         </div>
         <div class="cmp-swap-sides"><button onclick="cmpSwapSides()">⇆ Inverter lados</button></div>
-        <button class="cmp-share-btn" id="cmpShareBtn" onclick="cmpShare()">📤 Compartilhar antes/depois</button>
+        <button class="cmp-share-btn" id="cmpShareBtn" onclick="cmpShare()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Compartilhar antes/depois</button>
         <div id="cmpEvoArea"></div>
       </div>
     </div><!-- /fotosPaneComparar -->
@@ -2828,7 +2823,7 @@
 <!-- Editor de compartilhamento (ajustar zoom + posição antes de postar) -->
 <div class="te-modal-overlay" id="cmpShareModal" onclick="if(event.target.id==='cmpShareModal')teHide('cmpShareModal')" style="z-index:10001;">
   <div class="te-modal-box" style="max-width:480px;max-height:92vh;display:flex;flex-direction:column;">
-    <h3 style="margin:0 0 10px;font-size:15px;display:flex;align-items:center;gap:8px;">📤 Ajustar e compartilhar</h3>
+    <h3 style="margin:0 0 10px;font-size:15px;display:flex;align-items:center;gap:8px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Ajustar e compartilhar</h3>
     <div style="text-align:center;margin-bottom:12px;">
       <canvas id="cmpShareCanvas" width="1080" height="1920" style="max-width:100%;max-height:52vh;width:auto;height:auto;border-radius:10px;border:1px solid #2a2a2a;"></canvas>
     </div>
@@ -2850,7 +2845,7 @@
         <input type="range" min="0" max="100" value="50" id="cmpPosR" oninput="_cmpDrawShare()">
       </div>
     </div>
-    <button class="cmp-share-btn" id="cmpShareGoBtn" onclick="cmpShareExport()" style="margin-top:12px;">📤 Compartilhar</button>
+    <button class="cmp-share-btn" id="cmpShareGoBtn" onclick="cmpShareExport()" style="margin-top:12px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Compartilhar</button>
     <button class="te-btn ghost" onclick="teHide('cmpShareModal')" style="width:100%;margin-top:8px;">Fechar</button>
   </div>
 </div>
@@ -2871,7 +2866,7 @@
 <!-- ══ AGENDA — Personal Vitor & Psicóloga Bruna ══ -->
 <div class="te-modal-overlay" id="agendaModal" onclick="closeAgendaOnBg(event)">
   <div class="te-modal-box" style="max-width:560px;max-height:90vh;display:flex;flex-direction:column;">
-    <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;">🗓 Personal &amp; Psicóloga</h3>
+    <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Personal &amp; Psicóloga</h3>
     <p style="color:#aaa;font-size:11px;margin:0 0 14px;line-height:1.45;">
       Atendimento online ao vivo com a equipe oficial. Após o pagamento você recebe o WhatsApp do profissional pra combinar o horário.
     </p>
@@ -2883,7 +2878,7 @@
 <!-- ══ CHAT ASSISTENTE ══ -->
 <div class="te-modal-overlay" id="chatModal" onclick="closeChatOnBg(event)">
   <div class="te-modal-box" style="max-width:520px;height:88vh;max-height:88vh;display:flex;flex-direction:column;">
-    <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;">🤖 Assistente de IA do GH</h3>
+    <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> Assistente de IA do GH</h3>
     <p style="color:#aaa;font-size:11px;margin:0 0 10px;line-height:1.5;border-bottom:1px solid #222;padding-bottom:8px;">
       Sou um <b>assistente de IA</b>, treinado pelo Gabriel pra tirar tuas dúvidas rápidas. Conheço o <b>teu protocolo</b>.<br>
       <b>Exame ou foto</b> pra avaliar ou dúvida mais robusta, manda no <a href="https://wa.me/555520131470" target="_blank" rel="noopener" style="color:#25D366;text-decoration:underline;font-weight:600;">WhatsApp de suporte</a>.
@@ -2900,7 +2895,7 @@
 <!-- ══ SOLICITAR AJUSTE ══ -->
 <div class="te-modal-overlay" id="ajusteModal" onclick="closeAjusteOnBg(event)">
   <div class="te-modal-box" style="max-width:520px;max-height:90vh;display:flex;flex-direction:column;">
-    <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;">🔧 Solicitar ajuste</h3>
+    <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg> Solicitar ajuste</h3>
     <p style="color:#ddd;font-size:12px;margin:0 0 8px;line-height:1.5;">
       <b style="color:var(--gold);">Pedir aqui é mais rápido que pelo WhatsApp.</b> Sem fila de mensagens, sem precisar esperar o GH ler entre os atendimentos.
     </p>
@@ -3022,7 +3017,7 @@
     <div class="recado-status" id="recadoStatus"></div>
     <audio id="recadoPreview" controls style="width:100%;display:none;margin:6px 0;"></audio>
     <div style="display:flex;gap:8px;margin-top:10px;">
-      <button type="button" class="te-btn" id="recadoSendBtn" onclick="recadoSend()" style="display:none;flex:1;">📤 Enviar recado</button>
+      <button type="button" class="te-btn" id="recadoSendBtn" onclick="recadoSend()" style="display:none;flex:1;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Enviar recado</button>
       <button type="button" class="te-btn ghost" onclick="closeRecadoModal()" style="flex:1;">Fechar</button>
     </div>
   </div>
@@ -4153,7 +4148,7 @@ async function achShareToInstagramStories() {
 
   c.toBlob(async blob => {
     if (!blob) {
-      if (btn) { btn.textContent = '📸 Postar no Stories'; btn.disabled = false; }
+      if (btn) { btn.textContent = 'Postar no Stories'; btn.disabled = false; }
       return achSave();
     }
 
@@ -4173,7 +4168,7 @@ async function achShareToInstagramStories() {
 
     if (!isMobile) {
       // Desktop — fallback pro share padrão
-      if (btn) { btn.textContent = '📸 Postar no Stories'; btn.disabled = false; }
+      if (btn) { btn.textContent = 'Postar no Stories'; btn.disabled = false; }
       alert(clipboardOk
         ? 'Imagem copiada pro clipboard. Posta no Instagram pelo celular.'
         : 'Stories só funciona no celular. Usa Salvar PNG e posta pelo Instagram.');
@@ -4199,7 +4194,7 @@ async function achShareToInstagramStories() {
 
     setTimeout(() => {
       document.removeEventListener('visibilitychange', visibilityHandler);
-      if (btn) { btn.textContent = '📸 Postar no Stories'; btn.disabled = false; }
+      if (btn) { btn.textContent = 'Postar no Stories'; btn.disabled = false; }
       if (!opened && Date.now() - before < 2000) {
         // Provavelmente não abriu — fallback
         if (clipboardOk) {
@@ -4687,7 +4682,7 @@ function _focusRender() {
 
   let html = '';
   if (ex.biset) {
-    html += `<span class="focus-badge">⚡ BI-SET — sem descanso entre A e B</span>`;
+    html += `<span class="focus-badge">BI-SET — sem descanso entre A e B</span>`;
     html += `<div class="focus-name">${ex.a.name}</div>${vidBtn(ex.a)}<div class="focus-tags">${tags(ex.a)}</div>`;
     if (ex.a.obs) html += `<div class="focus-obs">${ex.a.obs}</div>`;
     html += _focusCargaBlock(_focusDi, `${_focusIdx}a`, 'Carga A');
@@ -4696,7 +4691,7 @@ function _focusRender() {
     if (ex.b.obs) html += `<div class="focus-obs">${ex.b.obs}</div>`;
     html += _focusCargaBlock(_focusDi, `${_focusIdx}b`, 'Carga B');
   } else {
-    if (ex.warmup) html += `<span class="focus-badge">🔥 AQUECIMENTO</span>`;
+    if (ex.warmup) html += `<span class="focus-badge">AQUECIMENTO</span>`;
     html += `<div class="focus-name">${ex.name}</div>${vidBtn(ex)}<div class="focus-tags">${tags(ex)}</div>`;
     if (ex.obs) html += `<div class="focus-obs">${ex.obs}</div>`;
     if (!ex.warmup) html += _focusCargaBlock(_focusDi, String(_focusIdx), 'Carga de hoje');
@@ -5249,9 +5244,9 @@ function renderExercises() {
             ${(prev || prevP) ? `<span class="carga-prev">Ant: ${prev ? kgToDisplay(prev)+getUnit() : ''}${prev && prevP ? ' / ' : ''}${prevP ? prevP+' pl' : ''}</span>` : ''}
             <span class="carga-saved" id="sv-${di}-${ei}">&#10003; salvo</span>
             <div class="ex-actions">
-              <button class="ex-action-btn save-btn" onclick="saveCargaManual(${di}, ${ei}, this)" title="Salvar cargas agora">💾</button>
-              <button class="ex-action-btn" onclick="startTimer('${safeName}', parseIntervalSeconds('${safeRest}'))" title="Cronômetro de descanso (${ex.rest || 'auto'})">⏱</button>
-              <button class="ex-action-btn" onclick="showHistory(${di}, ${ei})" title="Histórico de cargas">📈</button>
+              <button class="ex-action-btn save-btn" onclick="saveCargaManual(${di}, ${ei}, this)" title="Salvar cargas agora"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></button>
+              <button class="ex-action-btn" onclick="startTimer('${safeName}', parseIntervalSeconds('${safeRest}'))" title="Cronômetro de descanso (${ex.rest || 'auto'})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></button>
+              <button class="ex-action-btn" onclick="showHistory(${di}, ${ei})" title="Histórico de cargas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></button>
             </div>
           </div>` : ''}
         </div>`;
@@ -5869,7 +5864,7 @@ function renderMarkersHistory() {
     { key: 'peitoral', label: 'Peitoral', unit: 'cm', betterDown: false }
   ];
 
-  let html = '<p style="color:#aaa;font-size:11px;margin:6px 0 8px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">📊 Evolução</p>';
+  let html = '<p style="color:#aaa;font-size:11px;margin:6px 0 8px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">Evolução</p>';
 
   MEDIDAS.forEach(m => {
     const points = arr.filter(r => r[m.key] != null && r[m.key] !== '').map(r => ({ d: r.d, v: parseFloat(r[m.key]) })).filter(p => !isNaN(p.v));
@@ -6100,7 +6095,7 @@ function openShoppingListModal() {
 
   if (!anyItem) html = '<p style="color:#888;text-align:center;padding:20px;">Nenhum alimento encontrado na dieta.</p>';
 
-  html += `<div style="margin-top:18px;padding:8px 10px;background:rgba(212,167,106,0.08);border-left:3px solid var(--gold);border-radius:4px;font-size:11px;color:#aaa;line-height:1.5;">💡 As quantidades da dieta são <strong>cozidas/preparadas</strong>. Compre o que precisar pra cobrir a semana de treino.</div>`;
+  html += `<div style="margin-top:18px;padding:8px 10px;background:rgba(212,167,106,0.08);border-left:3px solid var(--gold);border-radius:4px;font-size:11px;color:#aaa;line-height:1.5;">As quantidades da dieta são <strong>cozidas/preparadas</strong>. Compre o que precisar pra cobrir a semana de treino.</div>`;
 
   c.innerHTML = html;
   teShow('shoppingListModal');
@@ -6845,7 +6840,7 @@ function _updateFotosSendBtn() {
   }
   sendBtn.style.display = '';
   sendBtn.disabled = false;
-  sendBtn.textContent = `📤 Enviar ${n} foto${n > 1 ? 's' : ''}`;
+  sendBtn.textContent = `Enviar ${n} foto${n > 1 ? 's' : ''}`;
 }
 
 // Comprime imagem no celular (1280px max, JPEG q=0.85) antes de mandar.
@@ -7413,7 +7408,7 @@ function openProgressoModal() {
     ${stat((bestPct > 0 ? '+' : '') + bestPct + '%', 'melhor evolução')}
   </div>`;
 
-  html += `<div style="color:var(--gold);font-size:11px;font-weight:700;letter-spacing:0.06em;margin:4px 0 8px;">🏆 MAIORES CARGAS</div>`;
+  html += `<div style="color:var(--gold);font-size:11px;font-weight:700;letter-spacing:0.06em;margin:4px 0 8px;">MAIORES CARGAS</div>`;
   prs.forEach(it => {
     html += `<div style="display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid #26262c;">
       <div style="flex:1;min-width:0;">
@@ -7426,7 +7421,7 @@ function openProgressoModal() {
   });
 
   if (movers.length) {
-    html += `<div style="color:var(--gold);font-size:11px;font-weight:700;letter-spacing:0.06em;margin:16px 0 8px;">📈 EVOLUÇÃO POR EXERCÍCIO</div>`;
+    html += `<div style="color:var(--gold);font-size:11px;font-weight:700;letter-spacing:0.06em;margin:16px 0 8px;">EVOLUÇÃO POR EXERCÍCIO</div>`;
     movers.forEach(it => {
       const up = it.delta > 0, flat = it.delta === 0;
       const cor = up ? '#4caf50' : flat ? '#9a9aa0' : '#ff9800';
@@ -7495,15 +7490,15 @@ async function openRankingModal() {
       const isMe = myName && String(r.name || '').toLowerCase().trim() === myName;
       const pos = i + 1;
       let posCls = '', posTxt = pos + 'º';
-      if (pos === 1) { posCls = 'gold'; posTxt = '🥇'; }
-      else if (pos === 2) { posCls = 'silver'; posTxt = '🥈'; }
-      else if (pos === 3) { posCls = 'bronze'; posTxt = '🥉'; }
+      if (pos === 1) { posCls = 'gold'; posTxt = '1º'; }
+      else if (pos === 2) { posCls = 'silver'; posTxt = '2º'; }
+      else if (pos === 3) { posCls = 'bronze'; posTxt = '3º'; }
       return `<div class="rk-row${isMe ? ' me' : ''}">
         <div class="rk-pos ${posCls}">${posTxt}</div>
         <div class="rk-name">${escHtml(r.name)}${isMe ? '<span class="you">(você)</span>' : ''}</div>
         <div class="rk-stats">
           <span class="rk-score">${r.adherence != null ? r.adherence : (r.score || 0)}%</span>
-          <span class="rk-meta">${Math.min(r.daysThisMonth || 0, r.prescritos || 0)}/${r.prescritos || 0} dias · 📤${r.daysShared || 0}</span>
+          <span class="rk-meta">${Math.min(r.daysThisMonth || 0, r.prescritos || 0)}/${r.prescritos || 0} dias · <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-1px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> ${r.daysShared || 0}</span>
         </div>
       </div>`;
     }).join('');
@@ -7822,8 +7817,8 @@ function renderDiet() {
 
   // Ações rápidas da dieta — PDF + Lista de compras (padrão Shape de Elite)
   html += `<div class="diet-actions">
-    <button class="diet-action-btn" onclick="downloadPDF()" type="button">📄 Baixar PDF</button>
-    <button class="diet-action-btn" onclick="openShoppingListModal()" type="button">🛒 Lista de compras</button>
+    <button class="diet-action-btn" onclick="downloadPDF()" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;vertical-align:-2px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Baixar PDF</button>
+    <button class="diet-action-btn" onclick="openShoppingListModal()" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;vertical-align:-2px;"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg> Lista de compras</button>
   </div>`;
 
   // Regras gerais
@@ -8982,7 +8977,7 @@ async function recadoSend() {
   } catch (e) {
     document.getElementById('recadoStatus').textContent = '❌ Não consegui enviar: ' + e.message + '. Tenta de novo.';
   } finally {
-    sendBtn.disabled = false; sendBtn.textContent = '📤 Enviar recado';
+    sendBtn.disabled = false; sendBtn.textContent = 'Enviar recado';
   }
 }
 
@@ -10016,7 +10011,7 @@ function renderDietaEditor() {
   html += `<button class="di-add-btn" style="margin: 6px 0;" onclick="dietaAddRefeicao()">+ Refeição</button>`;
 
   // CARDIO / DICAS
-  html += renderDietaBlock('orient', '⏱ CARDIO / DICAS / ORIENTAÇÕES', sections.orient.length + ' itens',
+  html += renderDietaBlock('orient', 'CARDIO / DICAS / ORIENTAÇÕES', sections.orient.length + ' itens',
     sections.orient.map(r => renderDietaSimpleRow(r, ['Tipo', 'Valor', 'Detalhe'])).join('') +
     `<div class="di-action-bar">
        <button class="di-add-btn" onclick="dietaAddSimple('cardio')">+ Cardio</button>
