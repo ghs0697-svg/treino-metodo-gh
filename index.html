@@ -6210,6 +6210,23 @@ async function sendChat() {
     if (j.tipo === 'pro_gh') _chatAddCta();
     _chatSaveHistory();
     _chatScrollBottom();
+    // Log da conversa pro GH (aba CHAT_LOGS do mestre) — fire-and-forget, não trava o chat
+    try {
+      fetch(LOG_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          type: 'chat_log',
+          studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+          sheetId: SHEET_ID,
+          pergunta: text,
+          resposta: resposta,
+          tipo: j.tipo || 'resposta'
+        }),
+        keepalive: true,
+        redirect: 'follow'
+      }).catch(() => {});
+    } catch (_) {}
   } catch (err) {
     const t2 = document.getElementById('chatTyping'); if (t2) t2.remove();
     box.appendChild(_chatBubble('assistant', 'Falha de conexão. Confere a internet e manda de novo. 🙏'));
