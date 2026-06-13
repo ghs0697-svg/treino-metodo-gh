@@ -407,19 +407,40 @@
   .instructions-toggle {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin: 14px 14px 0;
-    padding: 13px;
+    gap: 12px;
+    margin: 12px 14px 0;
+    padding: 13px 15px;
     background: var(--card);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    border-radius: 12px;
-    color: var(--gold);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    color: var(--white);
     font-weight: 600;
-    font-size: 13px;
-    letter-spacing: 0.02em;
+    font-size: 13.5px;
+    letter-spacing: 0.01em;
     cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    box-shadow: var(--hairline);
   }
+  /* ── Padrão premium compartilhado dos toggles colapsáveis ── */
+  .instructions-toggle:hover, .instructions-toggle:active,
+  .diet-section-toggle:hover, .diet-section-toggle:active {
+    border-color: rgba(212, 175, 106, 0.38);
+    background: #1a1714;
+  }
+  .tog-ic {
+    display: flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 9px;
+    background: var(--gold-soft); color: var(--gold); flex-shrink: 0;
+  }
+  .tog-ic svg { width: 16px; height: 16px; }
+  .tog-label { flex: 1; min-width: 0; color: var(--white); }
+  .tog-sub { display: block; color: var(--muted); font-size: 10.5px; font-weight: 500; letter-spacing: 0; margin-top: 1px; }
+  .tog-chev {
+    flex-shrink: 0; color: var(--muted); display: flex; align-items: center;
+    transition: transform 0.28s var(--ease-out), color 0.15s;
+  }
+  .tog-chev svg { width: 18px; height: 18px; }
+  .tog-chev.open { transform: rotate(180deg); color: var(--gold); }
   .instructions-content {
     display: none;
     margin: 0 14px 20px;
@@ -942,18 +963,19 @@
   .diet-section-toggle {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
+    gap: 12px;
     margin: 12px 14px 0;
-    padding: 12px;
+    padding: 13px 15px;
     background: var(--card);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    border-radius: 12px;
-    color: var(--gold);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    color: var(--white);
     font-weight: 600;
-    font-size: 13px;
-    letter-spacing: 0.02em;
+    font-size: 13.5px;
+    letter-spacing: 0.01em;
     cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    box-shadow: var(--hairline);
   }
   .diet-section-content {
     display: none;
@@ -2091,7 +2113,7 @@
 
 <!-- ══ INSTRUCTIONS ══ -->
 <div class="instructions-toggle" id="instrToggle" onclick="toggleInstructions()" style="display:none;">
-  Manual de Execução <span id="instrArrow">&#9660;</span>
+  <span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span><span class="tog-label">Manual de Execução</span><span class="tog-chev" id="instrArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span>
 </div>
 <div class="instructions-content" id="instructionsContent">
   <h3>A Física do Movimento — Cadência</h3>
@@ -2144,7 +2166,7 @@
 
 <!-- ══ HIPOPRESSIVO ══ -->
 <div class="instructions-toggle" id="hipoToggle" onclick="toggleHipo()" style="display:none;">
-  Manual de Hipopressivo <span id="hipoArrow">&#9660;</span>
+  <span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg></span><span class="tog-label">Manual de Hipopressivo</span><span class="tog-chev" id="hipoArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span>
 </div>
 <div class="instructions-content" id="hipoContent">
   <div id="hipoLevel" style="display:none; background:#222; border:1px solid var(--gold); border-radius:8px; padding:12px; margin-bottom:14px;">
@@ -2173,7 +2195,7 @@
 
 <!-- ══ ACOMPANHAMENTO ══ -->
 <div class="instructions-toggle" id="accompToggle" onclick="toggleAccomp()" style="display:none;">
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Acompanhamento <span id="accompArrow">&#9660;</span>
+  <span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span><span class="tog-label">Acompanhamento</span><span class="tog-chev" id="accompArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span>
 </div>
 <div class="instructions-content" id="accompContent">
   <div class="accomp-card">
@@ -2217,7 +2239,7 @@
 
 <!-- ══ GLOSSÁRIO ══ -->
 <div class="instructions-toggle" id="glossarioToggle" onclick="toggleGlossario()" style="display:none;">
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Glossário do Método <span id="glossarioArrow">&#9660;</span>
+  <span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span><span class="tog-label">Glossário do Método</span><span class="tog-chev" id="glossarioArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span>
 </div>
 <div class="instructions-content" id="glossarioContent">
   <p style="color:#888;font-size:11px;margin:0 0 12px;">Pra termos de execução do treino (séries, cadência, técnicas como bi-set, cluster, drop-set), abre o <strong>Manual de Execução</strong>.</p>
@@ -2243,7 +2265,7 @@
 
 <!-- ══ SUPLEMENTOS ══ -->
 <div class="instructions-toggle" id="suplementosToggle" onclick="toggleSuplementos()" style="display:none;">
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;vertical-align:-2px;"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg> Onde Comprar Suplementos <span id="suplementosArrow">&#9660;</span>
+  <span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span><span class="tog-label">Onde Comprar Suplementos</span><span class="tog-chev" id="suplementosArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span>
 </div>
 <div class="instructions-content" id="suplementosContent">
   <p style="color:var(--gray);font-size:12px;margin:0 0 14px;">Suplementos confiáveis com desconto. Marca FTW (linha que o GH usa) — links Shopee.</p>
@@ -2315,7 +2337,7 @@
 
 <!-- ══ ACESSÓRIOS ══ -->
 <div class="instructions-toggle" id="acessoriosToggle" onclick="toggleAcessorios()" style="display:none;">
-  🏋️ Acessórios Recomendados <span id="acessoriosArrow">&#9660;</span>
+  <span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span><span class="tog-label">Acessórios Recomendados</span><span class="tog-chev" id="acessoriosArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span>
 </div>
 <div class="instructions-content" id="acessoriosContent">
   <p style="color:var(--gray);font-size:12px;margin:0 0 14px;">Itens que o GH recomenda — links com cupom YangFit (10% off) e Shopee.</p>
@@ -2440,7 +2462,7 @@
 
 <!-- ══ PARCEIROS ══ -->
 <div class="instructions-toggle" id="parceirosToggle" onclick="toggleParceiros()" style="display:none;">
-  🤝 Parceiros do Método <span id="parceirosArrow">&#9660;</span>
+  <span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></span><span class="tog-label">Parceiros do Método</span><span class="tog-chev" id="parceirosArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span>
 </div>
 <div class="instructions-content" id="parceirosContent">
   <p style="color:var(--gray);font-size:12px;margin:0 0 14px;">Use os links abaixo pra ganhar desconto exclusivo de aluno do Método GH.</p>
@@ -5644,21 +5666,21 @@ function toggleInstructions() {
   const c = document.getElementById('instructionsContent');
   const a = document.getElementById('instrArrow');
   c.classList.toggle('show');
-  a.innerHTML = c.classList.contains('show') ? '&#9650;' : '&#9660;';
+  a.classList.toggle('open', c.classList.contains('show'));
 }
 
 function toggleHipo() {
   const c = document.getElementById('hipoContent');
   const a = document.getElementById('hipoArrow');
   c.classList.toggle('show');
-  a.innerHTML = c.classList.contains('show') ? '&#9650;' : '&#9660;';
+  a.classList.toggle('open', c.classList.contains('show'));
 }
 
 function toggleAccomp() {
   const c = document.getElementById('accompContent');
   const a = document.getElementById('accompArrow');
   c.classList.toggle('show');
-  a.innerHTML = c.classList.contains('show') ? '&#9650;' : '&#9660;';
+  a.classList.toggle('open', c.classList.contains('show'));
   if (c.classList.contains('show')) {
     renderWater();
     renderMarkersHistory();
@@ -5672,7 +5694,7 @@ function toggleGlossario() {
   const c = document.getElementById('glossarioContent');
   const a = document.getElementById('glossarioArrow');
   c.classList.toggle('show');
-  a.innerHTML = c.classList.contains('show') ? '&#9650;' : '&#9660;';
+  a.classList.toggle('open', c.classList.contains('show'));
 }
 
 // ══ Hidratação ══
@@ -7561,7 +7583,7 @@ function toggleSuplementos() {
   const c = document.getElementById('suplementosContent');
   const a = document.getElementById('suplementosArrow');
   c.classList.toggle('show');
-  a.innerHTML = c.classList.contains('show') ? '&#9650;' : '&#9660;';
+  a.classList.toggle('open', c.classList.contains('show'));
   if (c.classList.contains('show')) injectAffiliateUTM();
 }
 
@@ -7569,7 +7591,7 @@ function toggleAcessorios() {
   const c = document.getElementById('acessoriosContent');
   const a = document.getElementById('acessoriosArrow');
   c.classList.toggle('show');
-  a.innerHTML = c.classList.contains('show') ? '&#9650;' : '&#9660;';
+  a.classList.toggle('open', c.classList.contains('show'));
   if (c.classList.contains('show')) injectAffiliateUTM();
 }
 
@@ -7577,7 +7599,7 @@ function toggleParceiros() {
   const c = document.getElementById('parceirosContent');
   const a = document.getElementById('parceirosArrow');
   c.classList.toggle('show');
-  a.innerHTML = c.classList.contains('show') ? '&#9650;' : '&#9660;';
+  a.classList.toggle('open', c.classList.contains('show'));
   if (c.classList.contains('show')) injectAffiliateUTM();
   // Atualiza link Arte e Ciência com nome do aluno
   const nome = (document.getElementById('infoNome')?.textContent || '').trim();
@@ -7864,7 +7886,7 @@ function renderDiet() {
 
   // Regras gerais
   if (d.regras.length > 0) {
-    html += `<div class="diet-section-toggle" onclick="toggleDietSection('regras')">Regras Gerais <span id="regrasArrow">&#9660;</span></div>`;
+    html += `<div class="diet-section-toggle" onclick="toggleDietSection('regras')"><span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><polyline points="3 5.5 4 6.5 6 4.5"/><polyline points="3 11.5 4 12.5 6 10.5"/><polyline points="3 17.5 4 18.5 6 16.5"/></svg></span><span class="tog-label">Regras Gerais</span><span class="tog-chev" id="regrasArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></div>`;
     html += `<div class="diet-section-content" id="regrasContent">`;
     d.regras.forEach(r => {
       html += `<div class="diet-rule"><span class="diet-rule-name">${r.nome}:</span><span class="diet-rule-value">${r.valor || ''}${r.detalhe ? ' — ' + r.detalhe : ''}</span></div>`;
@@ -7875,7 +7897,7 @@ function renderDiet() {
   // Suplementação
   const suplTimings = Object.keys(d.supls);
   if (suplTimings.length > 0) {
-    html += `<div class="diet-section-toggle" onclick="toggleDietSection('supls')">Suplementação <span id="suplsArrow">&#9660;</span></div>`;
+    html += `<div class="diet-section-toggle" onclick="toggleDietSection('supls')"><span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 20.5 3.5 13.5a5 5 0 0 1 7-7l7 7a5 5 0 0 1-7 7z"/><line x1="8.5" y1="8.5" x2="15.5" y2="15.5"/></svg></span><span class="tog-label">Suplementação</span><span class="tog-chev" id="suplsArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></div>`;
     html += `<div class="diet-section-content" id="suplsContent">`;
     suplTimings.forEach(timing => {
       const items = d.supls[timing] || [];
@@ -7951,7 +7973,7 @@ function renderDiet() {
 
   // Cardio — seção própria (separada das Orientações)
   if (temCardio) {
-    html += `<div class="diet-section-toggle" onclick="toggleDietSection('cardio')">Cardio <span id="cardioArrow">&#9660;</span></div>`;
+    html += `<div class="diet-section-toggle" onclick="toggleDietSection('cardio')"><span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span><span class="tog-label">Cardio</span><span class="tog-chev" id="cardioArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></div>`;
     html += `<div class="diet-section-content" id="cardioContent">`;
     if (d.aerobicos && d.aerobicos.length > 0) {
       d.aerobicos.forEach(function(a) {
@@ -7966,7 +7988,7 @@ function renderDiet() {
 
   // Orientações (sem aeróbicos — esses agora têm seção própria)
   if (orientacoesReais.length > 0) {
-    html += `<div class="diet-section-toggle" onclick="toggleDietSection('orient')">Orientações <span id="orientArrow">&#9660;</span></div>`;
+    html += `<div class="diet-section-toggle" onclick="toggleDietSection('orient')"><span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg></span><span class="tog-label">Orientações</span><span class="tog-chev" id="orientArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></div>`;
     html += `<div class="diet-section-content" id="orientContent">`;
     orientacoesReais.forEach(o => {
       html += `<div class="diet-orient">${o.categoria ? `<span class="diet-orient-cat">${o.categoria}</span>` : ''}<span class="diet-orient-text">${o.texto}</span></div>`;
@@ -7976,7 +7998,7 @@ function renderDiet() {
 
   // Protocolos (hormonais/peptídeos) — cards detalhados
   if (d.protocolos.length > 0) {
-    html += `<div class="diet-section-toggle" onclick="toggleDietSection('proto')">Protocolo Hormonal <span id="protoArrow">&#9660;</span></div>`;
+    html += `<div class="diet-section-toggle" onclick="toggleDietSection('proto')"><span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></span><span class="tog-label">Protocolo Hormonal</span><span class="tog-chev" id="protoArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></div>`;
     html += `<div class="diet-section-content" id="protoContent">`;
 
     const icons = {
@@ -8059,7 +8081,7 @@ function toggleDietSection(id) {
   const content = document.getElementById(id + 'Content');
   const arrow = document.getElementById(id + 'Arrow');
   content.classList.toggle('show');
-  arrow.innerHTML = content.classList.contains('show') ? '&#9650;' : '&#9660;';
+  arrow.classList.toggle('open', content.classList.contains('show'));
 }
 
 // ══════════════════════════════════════════════════════════════
