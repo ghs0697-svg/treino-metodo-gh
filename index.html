@@ -833,6 +833,28 @@
   body.view-dieta .nav-btn#navDieta { color: var(--gold); border-bottom-color: var(--gold); }
   body.view-dieta .nav-btn#navTreino { color: var(--gray); border-bottom-color: transparent; }
 
+  /* ── GHFLIX view ── */
+  body.view-ghflix #studentInfo,
+  body.view-ghflix #dayProgress,
+  body.view-ghflix #dayTabs,
+  body.view-ghflix #weekSelector,
+  body.view-ghflix #exerciseContainer,
+  body.view-ghflix #instrToggle,
+  body.view-ghflix #instructionsContent,
+  body.view-ghflix #hipoToggle,
+  body.view-ghflix #hipoContent,
+  body.view-ghflix #errorBox,
+  body.view-ghflix #loadingScreen,
+  body.view-ghflix #videoOverlay,
+  body.view-ghflix #adminPanel,
+  body.view-ghflix #dietaView { display: none !important; }
+  #ghflixView { display: none; }
+  body.view-ghflix #ghflixView { display: block !important; height: calc(100dvh - 96px); background: #0e0e0e; }
+  #ghflixView iframe { width: 100%; height: 100%; border: 0; display: block; }
+  body.view-ghflix .nav-btn#navGhflix { color: var(--gold); border-bottom-color: var(--gold); }
+  .nav-btn#navGhflix.locked { opacity: 0.38; }
+  .nav-btn#navGhflix.locked::after { content: ' 🔒'; font-size: 11px; letter-spacing: 0; }
+
   /* ── Protocolo styles (dentro da dieta) ── */
   .proto-card {
     background: var(--card);
@@ -1910,7 +1932,9 @@
 <div class="main-nav" id="mainNav" style="display:none;">
   <button class="nav-btn active" id="navTreino" onclick="switchView('treino')">TREINO</button>
   <button class="nav-btn" id="navDieta" onclick="switchView('dieta')">DIETA</button>
+  <button class="nav-btn" id="navGhflix" onclick="switchView('ghflix')">GHFLIX</button>
 </div>
+<div id="ghflixView"></div>
 
 <!-- ══ LOADING STATE ══ -->
 <div id="loadingScreen" class="loading-screen" style="display:none;">
@@ -8066,18 +8090,41 @@ function toggleInstallGuide(show) {
 }
 
 function switchView(view) {
-  if (view === 'dieta') {
-    document.body.classList.add('view-dieta');
-    if (!dietLoaded) loadDietFromSheets();
-  } else {
-    document.body.classList.remove('view-dieta');
-  }
+  document.body.classList.toggle('view-dieta', view === 'dieta');
+  document.body.classList.toggle('view-ghflix', view === 'ghflix');
+  if (view === 'dieta' && !dietLoaded) loadDietFromSheets();
+  if (view === 'ghflix') ensureGhflixFrame();
   document.getElementById('navTreino').classList.toggle('active', view === 'treino');
   document.getElementById('navDieta').classList.toggle('active', view === 'dieta');
-  document.getElementById('headerTitle').textContent = view === 'dieta' ? 'PROTOCOLO ALIMENTAR' : 'PROTOCOLO DE TREINO';
+  var ng = document.getElementById('navGhflix'); if (ng) ng.classList.toggle('active', view === 'ghflix');
+  var titles = { dieta: 'PROTOCOLO ALIMENTAR', ghflix: 'GHFLIX', treino: 'PROTOCOLO DE TREINO' };
+  document.getElementById('headerTitle').textContent = titles[view] || titles.treino;
   if (typeof updatePdfButtonLabel === 'function') updatePdfButtonLabel();
   window.scrollTo(0, 0);
 }
+
+function ensureGhflixFrame() {
+  var host = document.getElementById('ghflixView');
+  if (!host || host.dataset.loaded) return;
+  var id = (typeof SHEET_ID !== 'undefined' && SHEET_ID) ? SHEET_ID : '';
+  host.innerHTML = '<iframe src="ghflix/?id=' + encodeURIComponent(id) +
+    '" allow="autoplay; fullscreen" allowfullscreen></iframe>';
+  host.dataset.loaded = '1';
+}
+
+// Vitrine: ofusca a aba GHFLIX pra quem não assina (cosmético; clicar abre a oferta dentro do iframe).
+(function ghflixTabState() {
+  try {
+    if (typeof SHEET_ID === 'undefined' || !SHEET_ID) return;
+    var ep = 'https://script.google.com/macros/s/AKfycby0Kej7V7Gi2gIDKorBookSLofBMHOF50UFWq4Q1fTmstCD8ed8O9XLyCaZo8QIeUPfeQ/exec';
+    fetch(ep + '?action=ghflixAccess&id=' + encodeURIComponent(SHEET_ID))
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        var btn = document.getElementById('navGhflix');
+        if (btn && !(j && j.liberado)) btn.classList.add('locked');
+      }).catch(function () {});
+  } catch (e) {}
+})();
 
 function selectDietOption(uid, opIdx) {
   const tabs = document.querySelectorAll(`#optTabs${uid} .diet-option-tab`);
