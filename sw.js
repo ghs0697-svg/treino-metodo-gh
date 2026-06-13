@@ -1,4 +1,4 @@
-const CACHE_NAME = 'metodo-gh-v180';
+const CACHE_NAME = 'metodo-gh-v181';
 const ASSETS = [
   './',
   './index.html',
@@ -37,6 +37,20 @@ self.addEventListener('fetch', e => {
   // que estava bugando o reload do PWA standalone no iOS (DIETA sumindo).
   if (e.request.url.includes('docs.google.com') || e.request.url.includes('script.google.com') || e.request.url.includes('googleapis.com')) {
     e.respondWith(fetch(e.request, { cache: 'no-store' }));
+    return;
+  }
+  // GHFlix (aba): catálogo + index mudam toda semana (curadoria/renovação).
+  // network-first pra sempre vir fresco online; cache só como fallback offline.
+  if (e.request.url.includes('/ghflix/')) {
+    e.respondWith(
+      fetch(e.request).then(resp => {
+        if (resp && resp.ok && e.request.method === 'GET') {
+          const clone = resp.clone();
+          caches.open(CACHE_NAME).then(c => c.put(e.request, clone)).catch(() => {});
+        }
+        return resp;
+      }).catch(() => caches.match(e.request))
+    );
     return;
   }
   // index.html + editor-data.js: network-first com fallback pro cache (offline).
