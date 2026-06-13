@@ -1,4 +1,4 @@
-const CACHE_NAME = 'metodo-gh-v175';
+const CACHE_NAME = 'metodo-gh-v176';
 const ASSETS = [
   './',
   './index.html',
@@ -9,7 +9,10 @@ const ASSETS = [
   './icon-512.png',
   './icon-192-maskable.png',
   './icon-512-maskable.png',
-  './apple-touch-icon.png'
+  './apple-touch-icon.png',
+  './assets/bg-gym.jpg',
+  './assets/bg-particles.jpg',
+  './assets/bg-texture.jpg'
 ];
 
 self.addEventListener('install', e => {

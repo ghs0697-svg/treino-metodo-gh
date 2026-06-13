@@ -642,19 +642,23 @@
 
   /* ── Footer ── */
   .app-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
     text-align: center;
-    padding: 20px;
-    border-top: 1px solid var(--gold-dim);
+    padding: 22px 20px calc(22px + env(safe-area-inset-bottom));
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
     margin-top: 24px;
   }
-  .app-footer span { color: var(--gold); font-size: 11px; letter-spacing: 1px; }
+  .app-footer span { color: var(--muted); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; }
   .footer-feedback-btn {
-    display: block; margin: 0 auto 14px; background: transparent; color: var(--gold);
-    border: 1px solid var(--gold-dim); border-radius: 8px; padding: 10px 18px;
-    font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
-    transition: border-color 0.15s;
+    display: inline-flex; align-items: center; gap: 7px; background: transparent; color: var(--gold);
+    border: 1px solid rgba(212, 175, 106, 0.4); border-radius: 999px; padding: 10px 20px;
+    font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: all 0.15s;
   }
-  .footer-feedback-btn:hover { border-color: var(--gold); }
+  .footer-feedback-btn:hover, .footer-feedback-btn:active { border-color: var(--gold); background: var(--gold-soft); }
   .footer-feedback-btn:active { transform: scale(0.98); }
 
   /* ── Impressão / PDF ── */
@@ -3590,9 +3594,30 @@ function markPointsClaimed(di) { localStorage.setItem(pointsClaimedKey(di), '1')
 
 let _achData = null;
 
+// ── Fundos premium do card (gerados, embutidos em /assets) ──
+// Sorteia um por card pra variar os stories. Cache por nome; repinta ao carregar.
+const _ACH_BGS = ['assets/bg-gym.jpg', 'assets/bg-particles.jpg', 'assets/bg-texture.jpg'];
+const _achBgCache = {};
+let _achBg = null;
+function _pickAchBg() {
+  const src = _ACH_BGS[Math.floor(Math.random() * _ACH_BGS.length)];
+  if (_achBgCache[src]) return _achBgCache[src];
+  const img = new Image();
+  img.onload = () => { if (_achBg === img && !_achPhoto) drawAchievementCard(1, 1); };
+  img.onerror = () => { _achBgCache[src] = null; };
+  img.src = src;
+  _achBgCache[src] = img;
+  return img;
+}
+// Pré-carrega os 3 em segundo plano (1ª abertura do card já tem fundo pronto)
+function _preloadAchBgs() {
+  _ACH_BGS.forEach(src => { if (!_achBgCache[src]) { const i = new Image(); i.src = src; _achBgCache[src] = i; } });
+}
+
 function showAchievementCard(type, data) {
   _achData = Object.assign({ type: type }, data);
   _achPhoto = null; // limpa foto anterior
+  _achBg = _pickAchBg(); // fundo premium dessa abertura
   const photoBtn = document.getElementById('achPhotoBtn');
   if (photoBtn) photoBtn.textContent = '📷 Foto do pump';
   const titleMap = {
@@ -3643,6 +3668,7 @@ function achPickPhoto() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  _preloadAchBgs();
   const inp = document.getElementById('achPhotoInput');
   if (!inp) return;
   inp.addEventListener('change', e => {
@@ -3860,8 +3886,23 @@ function drawAchievementCard(progress, rawP) {
     ov.addColorStop(1, 'rgba(0,0,0,0.92)');
     ctx.fillStyle = ov;
     ctx.fillRect(0, 0, W, H);
+  } else if (_achBg && _achBg.complete && _achBg.naturalWidth > 0) {
+    // ── Background premium gerado (cover) + overlay pra contraste do conteúdo ──
+    const img = _achBg;
+    const scale = Math.max(W / img.naturalWidth, H / img.naturalHeight);
+    const w = img.naturalWidth * scale, h = img.naturalHeight * scale;
+    ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+    // Escurece topo e metade de baixo (onde fica o conteúdo), preserva o miolo
+    const ov = ctx.createLinearGradient(0, 0, 0, H);
+    ov.addColorStop(0, 'rgba(0,0,0,0.55)');
+    ov.addColorStop(0.32, 'rgba(0,0,0,0.18)');
+    ov.addColorStop(0.5, 'rgba(0,0,0,0.42)');
+    ov.addColorStop(0.72, 'rgba(0,0,0,0.74)');
+    ov.addColorStop(1, 'rgba(0,0,0,0.92)');
+    ctx.fillStyle = ov;
+    ctx.fillRect(0, 0, W, H);
   } else {
-    // ── Background sem foto: gradient + spotlight ──
+    // ── Fallback (fundo ainda carregando ou falhou): gradient + spotlight ──
     const grad = ctx.createLinearGradient(0, 0, 0, H);
     grad.addColorStop(0, '#080808');
     grad.addColorStop(0.5, '#161616');
