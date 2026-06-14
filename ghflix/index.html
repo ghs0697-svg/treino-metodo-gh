@@ -545,7 +545,8 @@ function skeleton(){
   document.getElementById('main').innerHTML=`<section class="shelf" style="margin-top:140px"><div class="shelf-head"><h2>&nbsp;</h2></div><div class="row">${sk}</div></section>`;
 }
 function loadCatalog(){
-  return fetch('indice.json').then(r=>r.json()).then(d=>{
+  // cache-buster: catalogo muda toda semana (curadoria/pendentes/funil) — sempre fresco
+  return fetch('indice.json?v='+Date.now(),{cache:'no-store'}).then(r=>r.json()).then(d=>{
     IDX=d;
     const exec=Object.values(d.videos).filter(v=>v.formato==='Execução'||(v.tipo&&v.tipo.startsWith('treino'))).length;
     document.getElementById('stat').textContent=`${d.total} vídeos · ${exec} de execução`;
