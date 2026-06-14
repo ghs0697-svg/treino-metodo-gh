@@ -228,6 +228,14 @@
            style="width:100%;box-sizing:border-box;padding:14px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(0,0,0,.35);color:#fff;font-size:15px;text-align:center;margin-bottom:12px;">
     <button class="cta" id="loginbtn" onclick="loginEmail()" style="border:none;cursor:pointer;width:100%;">Entrar</button>
     <div class="small" id="loginmsg"></div>
+    <div class="small" style="margin-top:14px;"><a href="#" id="reclink" onclick="toggleRec(event)" style="color:var(--dim);text-decoration:underline;">Não lembra qual email usou na compra?</a></div>
+    <div id="recbox" style="display:none;margin-top:12px;">
+      <p class="small" style="margin:0 0 8px;">Digite o <b>CPF</b> ou o <b>WhatsApp</b> que você usou na compra. A gente libera e te mostra qual email ficou cadastrado.</p>
+      <input id="recInput" type="text" inputmode="numeric" placeholder="CPF ou WhatsApp da compra"
+             style="width:100%;box-sizing:border-box;padding:13px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(0,0,0,.35);color:#fff;font-size:15px;text-align:center;margin-bottom:10px;">
+      <button class="cta" id="recbtn" onclick="recuperarAcesso()" style="border:none;cursor:pointer;width:100%;background:#2a2a2a;color:#fff;">Recuperar acesso</button>
+      <div class="small" id="recmsg"></div>
+    </div>
     <div class="small" style="margin-top:20px;">Ainda não assina? <a id="loginassinar" href="#" target="_blank" rel="noopener" style="color:var(--gold);font-weight:700;">Assinar por R$ 9,90/mês</a></div>
   </div>
 </div>
@@ -491,6 +499,37 @@ async function loginEmail(){
     const j=await r.json();
     if(j&&j.liberado){ localStorage.setItem(EMAIL_KEY,em); document.getElementById('login').classList.remove('on'); if(!IDX)loadCatalog(); }
     else { msg.style.color='#e0a'; msg.textContent='Não achamos uma assinatura ativa com esse email. Confere o email da compra ou assina abaixo.'; }
+  }catch(e){ msg.style.color='#e0a'; msg.textContent='Erro de conexão, tenta de novo.'; }
+  btn.disabled=false; btn.textContent=t;
+}
+function toggleRec(ev){
+  if(ev)ev.preventDefault();
+  const b=document.getElementById('recbox');
+  b.style.display = b.style.display==='none' ? 'block' : 'none';
+  if(b.style.display==='block'){ const i=document.getElementById('recInput'); if(i){ i.addEventListener('keydown',e=>{ if(e.key==='Enter')recuperarAcesso(); }); setTimeout(()=>i.focus(),100); } }
+}
+async function recuperarAcesso(){
+  const inp=document.getElementById('recInput');
+  const msg=document.getElementById('recmsg');
+  const btn=document.getElementById('recbtn');
+  const dig=(inp.value||'').replace(/\D/g,'');
+  if(dig.length<8){ msg.style.color='#e0a'; msg.textContent='Digite o CPF ou WhatsApp completo (com DDD).'; return; }
+  msg.style.color='var(--dim)'; msg.textContent='Procurando…'; btn.disabled=true; const t=btn.textContent; btn.textContent='…';
+  try{
+    // manda o mesmo número como cpf E phone; o servidor casa na coluna certa
+    const r=await fetch(`${ACCESS_ENDPOINT}?action=ghflixAccess&cpf=${encodeURIComponent(dig)}&phone=${encodeURIComponent(dig)}`);
+    const j=await r.json();
+    if(j&&j.liberado){
+      if(j.email)localStorage.setItem(EMAIL_KEY,j.email);
+      document.getElementById('login').classList.remove('on');
+      if(!IDX)loadCatalog();
+      // deixa registrado pro caso de recarregar antes do catálogo
+      if(j.email){ const el=document.getElementById('emailInput'); if(el)el.value=j.email; }
+    } else if(j&&j.motivo==='assinatura vencida'){
+      msg.style.color='#e0a'; msg.textContent='Achamos seu cadastro, mas a assinatura está vencida. Renova pra liberar.';
+    } else {
+      msg.style.color='#e0a'; msg.textContent='Não achamos assinatura ativa com esse CPF/WhatsApp. Confere os dados da compra.';
+    }
   }catch(e){ msg.style.color='#e0a'; msg.textContent='Erro de conexão, tenta de novo.'; }
   btn.disabled=false; btn.textContent=t;
 }
