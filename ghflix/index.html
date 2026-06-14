@@ -219,6 +219,19 @@
   </div>
 </div>
 
+<div class="lock" id="login">
+  <div class="lockbox">
+    <div class="ico">🎬</div>
+    <h2>GH<b>Flix</b></h2>
+    <p>Todos os meus vídeos do Instagram organizados por músculo. Já é assinante? Entra com o email que você usou na compra.</p>
+    <input id="emailInput" type="email" inputmode="email" autocomplete="email" placeholder="seu@email.com"
+           style="width:100%;box-sizing:border-box;padding:14px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(0,0,0,.35);color:#fff;font-size:15px;text-align:center;margin-bottom:12px;">
+    <button class="cta" id="loginbtn" onclick="loginEmail()" style="border:none;cursor:pointer;width:100%;">Entrar</button>
+    <div class="small" id="loginmsg"></div>
+    <div class="small" style="margin-top:20px;">Ainda não assina? <a id="loginassinar" href="#" target="_blank" rel="noopener" style="color:var(--gold);font-weight:700;">Assinar por R$ 9,90/mês</a></div>
+  </div>
+</div>
+
 <script>
 /* ================= CONFIG ================= */
 const ACCESS_ENDPOINT='https://script.google.com/macros/s/AKfycby0Kej7V7Gi2gIDKorBookSLofBMHOF50UFWq4Q1fTmstCD8ed8O9XLyCaZo8QIeUPfeQ/exec'; // Apps Script: ?action=ghflixAccess&id=<sheetID> -> {liberado:bool}
@@ -434,18 +447,52 @@ document.getElementById('q').addEventListener('input',e=>{ clearTimeout(tmr); tm
 addEventListener('scroll',()=>{ document.getElementById('hdr').classList.toggle('solid',scrollY>30); },{passive:true});
 
 /* ================= acesso ================= */
+const EMAIL_KEY='ghflix_email';
+const emailSalvo=()=>{ try{return (localStorage.getItem(EMAIL_KEY)||'').trim().toLowerCase();}catch(e){return '';} };
+
 async function checkAccess(){
   if(IS_LOCAL||IS_PREVIEW)return{liberado:true};
-  if(!ALUNO_ID)return{liberado:false};
   if(!ACCESS_ENDPOINT)return{liberado:false};
-  try{ const r=await fetch(`${ACCESS_ENDPOINT}?action=ghflixAccess&id=${encodeURIComponent(ALUNO_ID)}`); return await r.json(); }
-  catch(e){ return{liberado:false}; }
+  // Aluno (dentro do app): libera pelo ?id da planilha
+  if(ALUNO_ID){
+    try{ const r=await fetch(`${ACCESS_ENDPOINT}?action=ghflixAccess&id=${encodeURIComponent(ALUNO_ID)}`); return await r.json(); }
+    catch(e){ return{liberado:false}; }
+  }
+  // Público (subdomínio, sem id): tenta pelo email já salvo no aparelho
+  const em=emailSalvo();
+  if(em){
+    try{ const r=await fetch(`${ACCESS_ENDPOINT}?action=ghflixAccess&email=${encodeURIComponent(em)}`); return await r.json(); }
+    catch(e){ return{liberado:false,precisaLogin:true}; }
+  }
+  return{liberado:false,precisaLogin:true};
 }
 function showLock(){
   document.getElementById('lockcta').href=CHECKOUT_URL;
   document.getElementById('locksmall').textContent=ALUNO_ID?'Já comprou? O acesso libera em poucos minutos após a confirmação.':'Abra pelo seu link pessoal (com o seu ID) depois de liberar.';
   document.getElementById('lock').classList.add('on');
   loadCatalog(); /* catálogo fica de tease atrás do blur */
+}
+function showLogin(){
+  const a=document.getElementById('loginassinar'); if(a)a.href=CHECKOUT_URL;
+  const inp=document.getElementById('emailInput'); if(inp){ inp.value=emailSalvo(); inp.addEventListener('keydown',e=>{ if(e.key==='Enter')loginEmail(); }); }
+  document.getElementById('login').classList.add('on');
+  loadCatalog(); /* catálogo de tease atrás do blur */
+  setTimeout(()=>{ if(inp)inp.focus(); },150);
+}
+async function loginEmail(){
+  const inp=document.getElementById('emailInput');
+  const msg=document.getElementById('loginmsg');
+  const btn=document.getElementById('loginbtn');
+  const em=(inp.value||'').trim().toLowerCase();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ msg.style.color='#e0a';msg.textContent='Digite um email válido.';return; }
+  msg.style.color='var(--dim)';msg.textContent='Verificando…'; btn.disabled=true; const t=btn.textContent; btn.textContent='…';
+  try{
+    const r=await fetch(`${ACCESS_ENDPOINT}?action=ghflixAccess&email=${encodeURIComponent(em)}`);
+    const j=await r.json();
+    if(j&&j.liberado){ localStorage.setItem(EMAIL_KEY,em); document.getElementById('login').classList.remove('on'); if(!IDX)loadCatalog(); }
+    else { msg.style.color='#e0a'; msg.textContent='Não achamos uma assinatura ativa com esse email. Confere o email da compra ou assina abaixo.'; }
+  }catch(e){ msg.style.color='#e0a'; msg.textContent='Erro de conexão, tenta de novo.'; }
+  btn.disabled=false; btn.textContent=t;
 }
 
 /* ================= boot ================= */
@@ -462,7 +509,11 @@ function loadCatalog(){
   }).catch(e=>{ document.getElementById('main').innerHTML=`<div class="empty" style="margin-top:160px">Erro ao carregar o catálogo. Recarrega a página.</div>`; });
 }
 skeleton();
-checkAccess().then(acc=>{ if(acc&&acc.liberado){ loadCatalog(); } else { showLock(); } });
+checkAccess().then(acc=>{
+  if(acc&&acc.liberado){ loadCatalog(); return; }
+  if(!ALUNO_ID){ showLogin(); }   // público: tela de email
+  else { showLock(); }            // aluno sem acesso: checkout
+});
 </script>
 </body>
 </html>
