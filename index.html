@@ -1948,6 +1948,18 @@
   <p id="errorMsg"></p>
 </div>
 
+<!-- ══ PORTÃO DE LOGIN DO PAINEL (raiz sem ?sheet) ══ -->
+<div id="painelGate" style="display:none;position:fixed;inset:0;z-index:99999;background:#0D0D0D;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:14px;text-align:center;">
+  <div style="font-family:'Cinzel',serif;font-size:34px;letter-spacing:6px;color:var(--gold);font-weight:700;">MÉTODO GH</div>
+  <div style="color:#888;font-size:13px;letter-spacing:2px;margin-bottom:8px;">PAINEL DO TREINADOR</div>
+  <input type="password" id="painelGatePwd" placeholder="Senha" autocomplete="current-password"
+         style="width:100%;max-width:320px;padding:14px;border-radius:8px;border:1px solid var(--gold-dim);background:#1a1a1a;color:#fff;font-size:15px;text-align:center;" />
+  <button id="painelGateBtn" onclick="painelGateSubmit()"
+          style="width:100%;max-width:320px;padding:14px;border-radius:8px;border:none;background:var(--gold);color:var(--dark);font-size:15px;font-weight:700;cursor:pointer;">Entrar</button>
+  <div id="painelGateErr" style="color:#e74c3c;font-size:12px;min-height:16px;"></div>
+  <div style="color:#555;font-size:11px;margin-top:8px;">Acesso restrito a funcionários autorizados.</div>
+</div>
+
 <!-- ══ ADMIN PANEL (shown when no sheet params) ══ -->
 <div id="adminPanel" class="admin-panel" style="display:none;">
   <h2>PAINEL DO TREINADOR</h2>
@@ -8919,18 +8931,73 @@ if (SHEET_ID && TAB_NAME) {
       });
   });
 } else {
-  // Modo treinador — mostrar painel admin
-  document.getElementById('adminPanel').style.display = 'block';
+  // Modo treinador — painel admin FICA ATRÁS DE LOGIN.
+  // O público que apagar a URL até a raiz cai aqui: vê só o portão de senha,
+  // nunca o painel. Senha validada no servidor (list_students), igual ao resto.
   // Banners do topo são só pra visão do aluno — esconde no painel do treinador
   ['chatBanner', 'ajusteBanner', 'fotosBanner'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
-  // Recuperar sheet ID e script URL salvos
+  // Recuperar sheet ID e script URL salvos (pra quando o painel for revelado)
   const saved = localStorage.getItem('gh_admin_sheet_id');
   if (saved) document.getElementById('adminSheetId').value = saved;
   const savedUrl = getScriptUrl();
   if (savedUrl) document.getElementById('edScriptUrl').value = savedUrl;
+  // Mostra o portão (e tenta revalidar token salvo em silêncio)
+  initPainelGate();
+}
+
+// ── Portão de login do Painel do Treinador ──
+function _revelaPainel_() {
+  var g = document.getElementById('painelGate'); if (g) g.style.display = 'none';
+  var p = document.getElementById('adminPanel'); if (p) p.style.display = 'block';
+}
+function initPainelGate() {
+  var gate = document.getElementById('painelGate');
+  var panel = document.getElementById('adminPanel');
+  if (panel) panel.style.display = 'none';
+  if (gate) gate.style.display = 'flex';
+  var inp = document.getElementById('painelGatePwd');
+  if (inp) inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') painelGateSubmit(); });
+  var tok = localStorage.getItem('gh_trainer_token') || '';
+  if (tok) painelGateValidate_(tok, true); // revalida em silêncio (Mac do GH entra direto)
+  else if (inp) setTimeout(function () { inp.focus(); }, 150);
+}
+async function painelGateValidate_(tok, silent) {
+  try {
+    var url = LOG_ENDPOINT + '?action=list_students&token=' + encodeURIComponent(tok) + '&_=' + Date.now();
+    var resp = await fetch(url, { cache: 'no-store' });
+    var j = await resp.json();
+    if (j && j.students) {
+      localStorage.setItem('gh_trainer_token', tok);
+      try {
+        var ord = j.students.slice().sort(function (a, b) { return a.n.localeCompare(b.n); });
+        localStorage.setItem(TRAINER_CACHE_KEY, JSON.stringify({ ts: Date.now(), students: ord }));
+      } catch (e) {}
+      _revelaPainel_();
+      return true;
+    }
+    // resposta válida porém sem students = senha errada
+    localStorage.removeItem('gh_trainer_token');
+    return false;
+  } catch (e) {
+    // erro de rede: se é revalidação silenciosa de token já salvo, não tranca o GH
+    // (salvar/publicar é protegido no servidor de qualquer forma)
+    if (silent) { _revelaPainel_(); return true; }
+    return false;
+  }
+}
+async function painelGateSubmit() {
+  var v = (document.getElementById('painelGatePwd').value || '').trim();
+  var err = document.getElementById('painelGateErr');
+  var btn = document.getElementById('painelGateBtn');
+  if (!v) { err.textContent = 'Digite a senha'; return; }
+  err.textContent = 'Verificando…'; err.style.color = '#888';
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  var ok = await painelGateValidate_(v, false);
+  if (btn) { btn.disabled = false; btn.textContent = 'Entrar'; }
+  if (!ok) { err.textContent = 'Senha incorreta.'; err.style.color = '#e74c3c'; }
 }
 
 // PWA: manifest dinâmico com start_url incluindo parâmetros do aluno
