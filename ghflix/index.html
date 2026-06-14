@@ -223,27 +223,32 @@
   <div class="lockbox">
     <div class="ico">🎬</div>
     <h2>GH<b>Flix</b></h2>
-    <p>Todos os meus vídeos do Instagram organizados por músculo. Já é assinante? Entra com o email que você usou na compra.</p>
-    <input id="emailInput" type="email" inputmode="email" autocomplete="email" placeholder="seu@email.com"
-           style="width:100%;box-sizing:border-box;padding:14px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(0,0,0,.35);color:#fff;font-size:15px;text-align:center;margin-bottom:12px;">
-    <button class="cta" id="loginbtn" onclick="loginEmail()" style="border:none;cursor:pointer;width:100%;">Entrar</button>
+    <p>Todos os meus vídeos do Instagram organizados por músculo. Execução, correção e técnica num lugar só. Achou o exercício, assistiu na hora. E todo post novo entra aqui toda semana.</p>
+    <a class="cta" id="loginassinar" href="#" target="_blank" rel="noopener" style="display:block;width:100%;box-sizing:border-box;font-size:17px;">QUERO MEU GHFLIX · R$ 9,90/mês</a>
+    <div class="small" style="margin-top:10px;">Acesso na hora. Cancela quando quiser.</div>
+
+    <div style="display:flex;align-items:center;gap:12px;margin:26px 0 16px;color:var(--dim);font-size:12px;">
+      <span style="flex:1;height:1px;background:rgba(255,255,255,.14);"></span>JÁ É ASSINANTE?<span style="flex:1;height:1px;background:rgba(255,255,255,.14);"></span>
+    </div>
+    <input id="emailInput" type="email" inputmode="email" autocomplete="email" placeholder="email que você usou na compra"
+           style="width:100%;box-sizing:border-box;padding:13px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(0,0,0,.35);color:#fff;font-size:15px;text-align:center;margin-bottom:10px;">
+    <button id="loginbtn" onclick="loginEmail()" style="cursor:pointer;width:100%;padding:13px;border-radius:12px;border:1px solid var(--gold);background:transparent;color:var(--gold);font-size:15px;font-weight:700;">Entrar com meu email</button>
     <div class="small" id="loginmsg"></div>
-    <div class="small" style="margin-top:14px;"><a href="#" id="reclink" onclick="toggleRec(event)" style="color:var(--dim);text-decoration:underline;">Não lembra qual email usou na compra?</a></div>
+    <div class="small" style="margin-top:12px;"><a href="#" id="reclink" onclick="toggleRec(event)" style="color:var(--dim);text-decoration:underline;">Não lembra qual email usou na compra?</a></div>
     <div id="recbox" style="display:none;margin-top:12px;">
       <p class="small" style="margin:0 0 8px;">Digite o <b>CPF</b> ou o <b>WhatsApp</b> que você usou na compra. A gente libera e te mostra qual email ficou cadastrado.</p>
       <input id="recInput" type="text" inputmode="numeric" placeholder="CPF ou WhatsApp da compra"
              style="width:100%;box-sizing:border-box;padding:13px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(0,0,0,.35);color:#fff;font-size:15px;text-align:center;margin-bottom:10px;">
-      <button class="cta" id="recbtn" onclick="recuperarAcesso()" style="border:none;cursor:pointer;width:100%;background:#2a2a2a;color:#fff;">Recuperar acesso</button>
+      <button id="recbtn" onclick="recuperarAcesso()" style="cursor:pointer;width:100%;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:#2a2a2a;color:#fff;font-weight:700;">Recuperar acesso</button>
       <div class="small" id="recmsg"></div>
     </div>
-    <div class="small" style="margin-top:20px;">Ainda não assina? <a id="loginassinar" href="#" target="_blank" rel="noopener" style="color:var(--gold);font-weight:700;">Assinar por R$ 9,90/mês</a></div>
   </div>
 </div>
 
 <script>
 /* ================= CONFIG ================= */
 const ACCESS_ENDPOINT='https://script.google.com/macros/s/AKfycby0Kej7V7Gi2gIDKorBookSLofBMHOF50UFWq4Q1fTmstCD8ed8O9XLyCaZo8QIeUPfeQ/exec'; // Apps Script: ?action=ghflixAccess&id=<sheetID> -> {liberado:bool}
-const CHECKOUT_URL='https://payfast.greenn.com.br/qnemud2/offer/uXDuWs';
+const CHECKOUT_URL='https://payfast.greenn.com.br/redirect/293094';
 const PARAMS=new URLSearchParams(location.search);
 const ALUNO_ID=PARAMS.get('id')||PARAMS.get('sheet')||'';
 const IS_LOCAL=['localhost','127.0.0.1',''].includes(location.hostname);
