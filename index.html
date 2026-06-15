@@ -8333,8 +8333,12 @@ function ensureGhflixFrame() {
       .then(function (r) { return r.json(); })
       .then(function (j) {
         if (!j || !j.found || !j.vencimento) return; // fail open
+        // Col K (Ativo/Vencido) é o interruptor manual do GH: só bloqueia se
+        // estiver "Vencido". Marcar "Ativo" na mão (cortesia) nunca bloqueia.
+        if (String(j.status || '').trim().toLowerCase() !== 'vencido') return;
         var venc = new Date(j.vencimento + 'T23:59:59');
         if (isNaN(venc.getTime())) return;           // fail open
+        // E ainda respeita os 3 dias de tolerância sobre a data de vencimento.
         if (Date.now() > venc.getTime() + GRACE_MS) {
           var ov = document.getElementById('planBlockOverlay');
           if (ov) { ov.classList.add('show'); document.body.style.overflow = 'hidden'; }
