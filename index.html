@@ -595,6 +595,19 @@
   .timer-pill.show { display: flex; }
   .timer-pill.done { background: #4caf50; color: #111; border-color: #4caf50; }
 
+  /* ── Bloqueio de plano vencido ── */
+  .plan-block-overlay { position: fixed; inset: 0; z-index: 99999; background: rgba(6,6,6,0.985); display: none; align-items: center; justify-content: center; padding: 28px; }
+  .plan-block-overlay.show { display: flex; }
+  .plan-block-card { max-width: 360px; text-align: center; }
+  .plan-block-icon { width: 64px; height: 64px; border-radius: 50%; background: var(--gold-soft); color: var(--gold); display: flex; align-items: center; justify-content: center; margin: 0 auto 22px; }
+  .plan-block-icon svg { width: 30px; height: 30px; }
+  .plan-block-card h2 { color: var(--white); font-size: 23px; font-weight: 800; margin: 0 0 12px; letter-spacing: 0.01em; }
+  .plan-block-card p { color: var(--gray); font-size: 14px; line-height: 1.65; margin: 0 0 24px; }
+  .plan-block-cta { display: inline-flex; align-items: center; gap: 9px; background: #25D366; color: #07310f; font-weight: 800; font-size: 15px; padding: 14px 26px; border-radius: 999px; text-decoration: none; transition: filter 0.15s; }
+  .plan-block-cta:hover, .plan-block-cta:active { filter: brightness(1.08); }
+  .plan-block-cta svg { width: 18px; height: 18px; }
+  .plan-block-hours { color: var(--muted); font-size: 11px; margin-top: 18px; letter-spacing: 0.03em; }
+
   /* ── Modo treino focado ── */
   .focus-overlay { position: fixed; inset: 0; background: #0c0c0f; z-index: 9500; display: none; flex-direction: column; }
   .focus-overlay.show { display: flex; }
@@ -2709,6 +2722,22 @@
       <button class="ach-btn ghost" onclick="achClose()">Pular (treino já contou)</button>
     </div>
     <p style="color:#888;font-size:11px;text-align:center;margin:12px 0 0;line-height:1.5;"><strong>Foto do pump</strong> vira o background do card. <strong>Pra Stories:</strong> Compartilhar → role o sheet → Instagram Stories.</p>
+  </div>
+</div>
+
+<!-- ══ BLOQUEIO DE PLANO VENCIDO (revogação de acesso) ══ -->
+<div id="planBlockOverlay" class="plan-block-overlay">
+  <div class="plan-block-card">
+    <div class="plan-block-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <h2>Plano vencido</h2>
+    <p>Teu acesso ao protocolo está pausado porque o plano venceu. Pra renovar e voltar a treinar, fala com a gente no WhatsApp de suporte.</p>
+    <a class="plan-block-cta" href="https://wa.me/555520131470?text=Oi!%20Meu%20plano%20venceu%2C%20quero%20renovar." target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      Renovar no WhatsApp
+    </a>
+    <div class="plan-block-hours">Atendimento de segunda à sexta, em horário comercial</div>
   </div>
 </div>
 
@@ -8290,6 +8319,30 @@ function ensureGhflixFrame() {
     '" allow="autoplay; fullscreen" allowfullscreen></iframe>';
   host.dataset.loaded = '1';
 }
+
+// Bloqueio de plano vencido (revogação): consulta o status no mestre via Apps Script.
+// 3 dias de tolerância depois do vencimento. Não bloqueia treinador (?edit=1).
+// Fail open: qualquer dúvida (sem dado, offline, erro) NÃO bloqueia — nunca trava quem paga.
+(function planBlockGate() {
+  try {
+    if (typeof SHEET_ID === 'undefined' || !SHEET_ID) return;
+    if (new URLSearchParams(location.search).get('edit') === '1') return;
+    if (typeof LOG_ENDPOINT === 'undefined') return;
+    const GRACE_MS = 3 * 86400000;
+    fetch(LOG_ENDPOINT + '?action=planstatus&sheet=' + encodeURIComponent(SHEET_ID) + '&_=' + Date.now())
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j || !j.found || !j.vencimento) return; // fail open
+        var venc = new Date(j.vencimento + 'T23:59:59');
+        if (isNaN(venc.getTime())) return;           // fail open
+        if (Date.now() > venc.getTime() + GRACE_MS) {
+          var ov = document.getElementById('planBlockOverlay');
+          if (ov) { ov.classList.add('show'); document.body.style.overflow = 'hidden'; }
+        }
+      })
+      .catch(function () { /* fail open */ });
+  } catch (e) { /* fail open */ }
+})();
 
 // Vitrine: ofusca a aba GHFLIX pra quem não assina (cosmético; clicar abre a oferta dentro do iframe).
 (function ghflixTabState() {
