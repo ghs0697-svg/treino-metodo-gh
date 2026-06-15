@@ -8323,10 +8323,16 @@ function ensureGhflixFrame() {
 // Bloqueio de plano vencido (revogação): consulta o status no mestre via Apps Script.
 // 3 dias de tolerância depois do vencimento. Não bloqueia treinador (?edit=1).
 // Fail open: qualquer dúvida (sem dado, offline, erro) NÃO bloqueia — nunca trava quem paga.
+// Alunos BÔNUS / PARCEIROS do time: ativos pra sempre, NUNCA bloqueia, mesmo
+// com o mestre marcando Vencido. Pra adicionar outro, é só colar o sheetId aqui.
+const CORTESIA_SHEETS = [
+  '1fDDaIYzMkhOMMIDrZEETmH14O6TjVqZ1sAHnaMSBlzU' // Jefferson Pereira dos Santos Castelo Branco (parceiro)
+];
 (function planBlockGate() {
   try {
     if (typeof SHEET_ID === 'undefined' || !SHEET_ID) return;
     if (new URLSearchParams(location.search).get('edit') === '1') return;
+    if (CORTESIA_SHEETS.indexOf(SHEET_ID) !== -1) return; // cortesia: nunca bloqueia
     if (typeof LOG_ENDPOINT === 'undefined') return;
     const GRACE_MS = 3 * 86400000;
     fetch(LOG_ENDPOINT + '?action=planstatus&sheet=' + encodeURIComponent(SHEET_ID) + '&_=' + Date.now())
