@@ -261,9 +261,13 @@ let IDX=null, filtro='Tudo', termo='';
 
 const fmtViews=v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1000?(v/1000).toFixed(v>=10000?0:1)+'k':String(v||0);
 const fmtDur=s=>s?Math.round(s)+'s':'';
-const poster=(ref,big)=> ref.drive_id
-  ? `https://drive.google.com/thumbnail?id=${ref.drive_id}&sz=w${big?1200:420}`
-  : `_sheets/${ref.id}.jpg`;
+const poster=(ref,big)=>{
+  const v=(typeof IDX!=='undefined'&&IDX&&IDX.videos&&IDX.videos[ref.id])||ref;
+  if(v.lt) return `thumbs/${v.drive_id}.jpg`;            // miniatura local (Drive nao gerou)
+  return v.drive_id
+    ? `https://drive.google.com/thumbnail?id=${v.drive_id}&sz=w${big?1200:420}`
+    : `_sheets/${v.id}.jpg`;
+};
 const isSheet=ref=>!ref.drive_id;
 
 function watchList(){ try{return JSON.parse(localStorage.getItem('ghflix_watch')||'[]')}catch(e){return[]} }
