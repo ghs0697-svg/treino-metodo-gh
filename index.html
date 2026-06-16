@@ -608,6 +608,15 @@
   .plan-block-cta svg { width: 18px; height: 18px; }
   .plan-block-hours { color: var(--muted); font-size: 11px; margin-top: 18px; letter-spacing: 0.03em; }
 
+  /* ── Aviso de reajuste/ajuste no protocolo ── */
+  .proto-aviso { display: flex; align-items: center; gap: 12px; margin: 12px 14px 0; padding: 12px 14px; background: var(--card); border: 1px solid rgba(212,175,106,0.42); border-radius: 14px; box-shadow: var(--hairline); }
+  .proto-aviso-ic { width: 34px; height: 34px; border-radius: 10px; background: var(--gold-soft); color: var(--gold); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .proto-aviso-ic svg { width: 18px; height: 18px; }
+  .proto-aviso-txt { flex: 1; min-width: 0; }
+  .proto-aviso-title { color: var(--white); font-weight: 700; font-size: 13px; letter-spacing: 0.01em; }
+  .proto-aviso-sub { color: var(--muted); font-size: 11.5px; line-height: 1.45; margin-top: 1px; }
+  .proto-aviso-x { background: none; border: none; color: #54504a; font-size: 19px; cursor: pointer; padding: 0 4px; line-height: 1; flex-shrink: 0; align-self: flex-start; }
+
   /* ── Modo treino focado ── */
   .focus-overlay { position: fixed; inset: 0; background: #0c0c0f; z-index: 9500; display: none; flex-direction: column; }
   .focus-overlay.show { display: flex; }
@@ -1914,6 +1923,16 @@
   <div class="brand-name">MÉTODO GH</div>
   <h1 id="headerTitle">PROTOCOLO DE TREINO</h1>
   <div class="last-mod" id="lastModBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:0.3px;"><span id="versionBadge" style="display:none;color:var(--gold);font-weight:600;">Protocolo v<span id="versionValue"></span></span><span id="lastModSep" style="display:none;"> · </span>Atualizado em <span id="lastModValue"></span></div>
+</div>
+
+<!-- ══ AVISO DE REAJUSTE / AJUSTE NO PROTOCOLO (substitui o hook do WhatsApp) ══ -->
+<div id="protoAviso" class="proto-aviso" style="display:none;">
+  <span class="proto-aviso-ic" id="protoAvisoIc"></span>
+  <div class="proto-aviso-txt">
+    <div class="proto-aviso-title" id="protoAvisoTitle"></div>
+    <div class="proto-aviso-sub" id="protoAvisoSub"></div>
+  </div>
+  <button class="proto-aviso-x" onclick="dismissProtoAviso()" title="Fechar" aria-label="Fechar aviso">&times;</button>
 </div>
 
 <!-- ══ BANNER JANELA DE FOTOS DO REAJUSTE ══ -->
@@ -4623,7 +4642,77 @@ async function loadAndShowLastModified() {
         sessionStorage.setItem(`gh_version_${SHEET_ID}`, data.version);
       }
     }
+    // Detecta reajuste/ajuste comparando versão + data de modificação com o estado salvo
+    _detectProtoAviso(data.version, data.lastModified);
   } catch (_) { /* silencioso — sem erro pro aluno */ }
+}
+
+// ══ AVISO DE REAJUSTE / AJUSTE (substitui o hook do WhatsApp) ══
+// Reajuste = a versão do protocolo subiu (2.0 → 3.0). Banner por 2 dias.
+// Ajuste  = o arquivo foi editado mas a versão ficou igual. Banner por 24h.
+// Detecta comparando com o último estado salvo (localStorage). 1ª vez = só
+// grava o baseline, sem banner (não inventa aviso retroativo).
+function _avisoKeys() {
+  var id = (typeof STUDENT_ID !== 'undefined' && STUDENT_ID) ? STUDENT_ID : 'x';
+  return { ver: 'gh_avisoVer_' + id, mod: 'gh_avisoMod_' + id, ev: 'gh_avisoEvent_' + id, dis: 'gh_avisoDismiss_' + id };
+}
+function _detectProtoAviso(version, lastModISO) {
+  try {
+    var K = _avisoKeys();
+    var curV = parseFloat(version) || 0;
+    var M = String(lastModISO || '');
+    var prevVraw = localStorage.getItem(K.ver);
+    var prevM = localStorage.getItem(K.mod);
+    var event = null;
+    if (prevVraw !== null) {
+      var prevV = parseFloat(prevVraw) || 0;
+      if (curV > prevV) event = { type: 'reajuste', at: M };
+      else if (prevM && M && M !== prevM) event = { type: 'ajuste', at: M };
+    }
+    localStorage.setItem(K.ver, String(version || ''));
+    localStorage.setItem(K.mod, M);
+    if (event) {
+      localStorage.setItem(K.ev, JSON.stringify(event));
+      localStorage.removeItem(K.dis); // evento novo: reabilita o banner
+    }
+  } catch (_) {}
+  _renderProtoAviso();
+}
+function _renderProtoAviso() {
+  var el = document.getElementById('protoAviso');
+  if (!el) return;
+  try {
+    if (new URLSearchParams(location.search).get('edit') === '1') { el.style.display = 'none'; return; }
+    var K = _avisoKeys();
+    var ev = JSON.parse(localStorage.getItem(K.ev) || 'null');
+    if (!ev || !ev.at) { el.style.display = 'none'; return; }
+    var atMs = Date.parse(ev.at);
+    if (isNaN(atMs)) { el.style.display = 'none'; return; }
+    var win = ev.type === 'reajuste' ? 2 * 86400000 : 86400000;
+    if (Date.now() >= atMs + win) { el.style.display = 'none'; return; } // expirou
+    if (localStorage.getItem(K.dis) === ev.at) { el.style.display = 'none'; return; } // já fechou
+    var icRefresh = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>';
+    var icSliders = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>';
+    if (ev.type === 'reajuste') {
+      document.getElementById('protoAvisoIc').innerHTML = icRefresh;
+      document.getElementById('protoAvisoTitle').textContent = 'Protocolo reajustado';
+      document.getElementById('protoAvisoSub').textContent = 'Teu treino e dieta foram atualizados pelo Gabriel. Confere as novidades.';
+    } else {
+      document.getElementById('protoAvisoIc').innerHTML = icSliders;
+      document.getElementById('protoAvisoTitle').textContent = 'Ajuste feito no protocolo';
+      document.getElementById('protoAvisoSub').textContent = 'Demos um ajuste no teu protocolo. Dá uma olhada no que mudou.';
+    }
+    el.style.display = 'flex';
+  } catch (_) { el.style.display = 'none'; }
+}
+function dismissProtoAviso() {
+  try {
+    var K = _avisoKeys();
+    var ev = JSON.parse(localStorage.getItem(K.ev) || 'null');
+    if (ev && ev.at) localStorage.setItem(K.dis, ev.at);
+  } catch (_) {}
+  var el = document.getElementById('protoAviso');
+  if (el) el.style.display = 'none';
 }
 
 // Tracking de cliques em links de afiliado / parceiros
@@ -5349,6 +5438,7 @@ async function loadFromSheets() {
     renderTreinoBlocoTabs();
     renderTabs();
     migrateLegacyDoneKeys_();
+    if (typeof _renderProtoAviso === 'function') _renderProtoAviso(); // mostra aviso salvo na hora (antes do fetch)
     loadAndShowLastModified();
     restoreCargasFromServerIfEmpty_();
     restoreDoneFromServerIfEmpty_();
