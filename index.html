@@ -7089,6 +7089,35 @@ function _chatAddSupportCta() {
   box.appendChild(wrap);
   _chatScrollBottom();
 }
+// Ajuste estrutural (pro_gh): registra AUTOMÁTICO na aba AJUSTES_PEDIDOS assim que
+// o bot classifica — não depende de clique do aluno (garante o registro igual ao
+// form antigo). Mesmo shape do submitAjuste, só sem foto. A conversa Ajustes diários
+// lê essa aba 2x/dia. Foto em ajuste é caso raro; clínico/foto vai pro suporte.
+function _chatGuessContexto(t) {
+  const s = (t || '').toLowerCase();
+  if (/refei|aliment|diet|comida|lanche|almo[çc]|janta|caf[eé]|prote[ií]na|carbo|whey|suplement|kcal|caloria|fruta|\bovo|frango|arroz|feij|batata/.test(s)) return 'DIETA';
+  if (/exerc|treino|s[eé]rie|repeti|carga|agacha|supino|rosca|flexora|\bleg\b|puxada|remada|panturr|ombro|peito|costas|b[ií]ceps|tr[ií]ceps|gl[uú]teo|cardio|aquecimento|abdominal|cadeira|crucifixo/.test(s)) return 'TREINO';
+  return 'OUTRO';
+}
+function _chatRegisterAjusteAuto(pedido) {
+  try {
+    fetch(LOG_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        type: 'ajuste_request',
+        sheetId: SHEET_ID,
+        studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+        contexto: _chatGuessContexto(pedido),
+        pedido: pedido,
+        fotos: [],
+        origem: 'chat'
+      }),
+      keepalive: true,
+      redirect: 'follow'
+    }).catch(() => {});
+  } catch (_) {}
+}
 function _chatAutogrow(el) {
   el.style.height = 'auto';
   el.style.height = Math.min(100, el.scrollHeight) + 'px';
@@ -7158,12 +7187,16 @@ async function sendChat() {
       })
     });
     const j = await r.json().catch(() => ({}));
-    const resposta = j.resposta || 'Não consegui responder agora, tenta de novo daqui a pouco 🙏';
     const t1 = document.getElementById('chatTyping'); if (t1) t1.remove();
+    let resposta = j.resposta || 'Não consegui responder agora, tenta de novo daqui a pouco 🙏';
+    if (j.tipo === 'pro_gh') {
+      // Ajuste real: registra automático na caixa (garantido, sem depender de clique)
+      _chatRegisterAjusteAuto(text);
+      resposta = '✅ Anotado! Já registrei teu pedido de ajuste pro GH. Fica de olho no banner de Ajuste no topo da página que ele resolve por aí 💪';
+    }
     box.appendChild(_chatBubble('assistant', resposta));
     _chatHistory.push({ role: 'assistant', content: resposta });
-    if (j.tipo === 'pro_gh') _chatAddCta();
-    else if (j.tipo === 'pro_suporte') _chatAddSupportCta();
+    if (j.tipo === 'pro_suporte') _chatAddSupportCta();
     _chatSaveHistory();
     _chatScrollBottom();
     // Log da conversa pro GH (aba CHAT_LOGS do mestre) — fire-and-forget, não trava o chat
