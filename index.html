@@ -7056,7 +7056,10 @@ function _chatRenderAll() {
   }
   _chatHistory.forEach(m => box.appendChild(_chatBubble(m.role, m.content)));
 }
-function _chatAddCta() {
+// CTA opcional depois do pro_gh: o pedido JÁ foi registrado automático (garantido).
+// Esse botão só serve pra anexar foto (ex: máquina que tem em casa). Abre o form com
+// o MESMO reqId → o Apps Script atualiza a MESMA linha em AJUSTES_PEDIDOS (sem duplicar).
+function _chatAddCta(reqId, pedido, contexto) {
   const box = document.getElementById('chatMsgs');
   if (!box) return;
   const wrap = document.createElement('div');
@@ -7064,9 +7067,8 @@ function _chatAddCta() {
   const btn = document.createElement('button');
   btn.className = 'te-btn';
   btn.style.cssText = 'padding:8px 14px;font-size:12px;';
-  btn.textContent = '🔧 Registrar esse ajuste pro GH';
-  const lastUser = [..._chatHistory].reverse().find(m => m.role === 'user');
-  btn.onclick = () => { teHide('chatModal'); openAjusteModal(lastUser ? lastUser.content : ''); };
+  btn.textContent = '📷 Anexar foto a esse pedido (opcional)';
+  btn.onclick = () => { teHide('chatModal'); openAjusteModal(pedido || '', contexto || 'TREINO', reqId || ''); };
   wrap.appendChild(btn);
   box.appendChild(wrap);
   _chatScrollBottom();
@@ -7099,7 +7101,7 @@ function _chatGuessContexto(t) {
   if (/exerc|treino|s[eé]rie|repeti|carga|agacha|supino|rosca|flexora|\bleg\b|puxada|remada|panturr|ombro|peito|costas|b[ií]ceps|tr[ií]ceps|gl[uú]teo|cardio|aquecimento|abdominal|cadeira|crucifixo/.test(s)) return 'TREINO';
   return 'OUTRO';
 }
-function _chatRegisterAjusteAuto(pedido) {
+function _chatRegisterAjusteAuto(pedido, reqId, contexto) {
   try {
     fetch(LOG_ENDPOINT, {
       method: 'POST',
@@ -7108,9 +7110,10 @@ function _chatRegisterAjusteAuto(pedido) {
         type: 'ajuste_request',
         sheetId: SHEET_ID,
         studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
-        contexto: _chatGuessContexto(pedido),
+        contexto: contexto || _chatGuessContexto(pedido),
         pedido: pedido,
         fotos: [],
+        reqId: reqId || '', // permite anexar foto depois SEM duplicar a linha
         origem: 'chat'
       }),
       keepalive: true,
@@ -7189,14 +7192,19 @@ async function sendChat() {
     const j = await r.json().catch(() => ({}));
     const t1 = document.getElementById('chatTyping'); if (t1) t1.remove();
     let resposta = j.resposta || 'Não consegui responder agora, tenta de novo daqui a pouco 🙏';
+    let _ajReqId = '', _ajCtx = '';
     if (j.tipo === 'pro_gh') {
-      // Ajuste real: registra automático na caixa (garantido, sem depender de clique)
-      _chatRegisterAjusteAuto(text);
+      // Ajuste real: registra automático na caixa (garantido, sem depender de clique).
+      // reqId permite o aluno anexar foto depois SEM duplicar a linha (dedup no Apps Script).
+      _ajReqId = 'aj_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+      _ajCtx = _chatGuessContexto(text);
+      _chatRegisterAjusteAuto(text, _ajReqId, _ajCtx);
       resposta = '✅ Anotado! Já registrei teu pedido de ajuste pro GH. Fica de olho no banner de Ajuste no topo da página que ele resolve por aí 💪';
     }
     box.appendChild(_chatBubble('assistant', resposta));
     _chatHistory.push({ role: 'assistant', content: resposta });
-    if (j.tipo === 'pro_suporte') _chatAddSupportCta();
+    if (j.tipo === 'pro_gh') _chatAddCta(_ajReqId, text, _ajCtx);
+    else if (j.tipo === 'pro_suporte') _chatAddSupportCta();
     _chatSaveHistory();
     _chatScrollBottom();
     // Log da conversa pro GH (aba CHAT_LOGS do mestre) — fire-and-forget, não trava o chat
@@ -7233,7 +7241,7 @@ async function sendChat() {
 // (separada) lê pendentes e aplica nos sheets dos alunos.
 function closeAjusteOnBg(e) { if (e.target.id === 'ajusteModal') teHide('ajusteModal'); }
 
-function openAjusteModal(prefill) {
+function openAjusteModal(prefill, contexto, reqId) {
   document.getElementById('floatOptions').classList.remove('show');
   document.getElementById('floatBtn').classList.remove('open');
   // Reset modal pro estado inicial (form visível, success escondido)
@@ -7241,10 +7249,11 @@ function openAjusteModal(prefill) {
   document.getElementById('ajusteSuccess').style.display = 'none';
   const pf = (typeof prefill === 'string') ? prefill : '';
   document.getElementById('ajusteTexto').value = pf;
-  document.getElementById('ajusteContexto').value = 'TREINO';
+  document.getElementById('ajusteContexto').value = (contexto === 'DIETA' || contexto === 'OUTRO') ? contexto : 'TREINO';
   document.getElementById('ajusteCharCount').textContent = pf.length + ' / 2000';
   document.getElementById('ajusteSubmitBtn').disabled = false;
   document.getElementById('ajusteSubmitBtn').textContent = 'Enviar pedido';
+  _ajusteReqId = (typeof reqId === 'string') ? reqId : '';
   _ajustePics = [];
   _ajusteRenderFotos();
   teShow('ajusteModal');
@@ -7261,6 +7270,7 @@ document.addEventListener('input', function(e) {
 // Fotos opcionais anexadas ao pedido de ajuste (efêmeras — limpas no servidor).
 const _AJUSTE_MAX_FOTOS = 4;
 let _ajustePics = []; // File[]
+let _ajusteReqId = ''; // id do pedido auto-registrado (chat) — pro form atualizar a mesma linha
 
 function _ajusteRenderFotos() {
   const row = document.getElementById('ajusteFotosRow');
@@ -7337,7 +7347,8 @@ async function submitAjuste() {
         studentName: studentName,
         contexto: contexto,
         pedido: texto,
-        fotos: fotos
+        fotos: fotos,
+        reqId: _ajusteReqId || '' // se veio do chat (já auto-registrado), atualiza a mesma linha
       })
     });
     const result = await resp.json().catch(() => ({}));
