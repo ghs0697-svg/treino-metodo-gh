@@ -4923,6 +4923,7 @@ async function loadAndShowLastModified() {
       const pEl = document.getElementById('proxReajusteValue');
       const pBadge = document.getElementById('proxReajusteBadge');
       if (pEl && pBadge) { pEl.textContent = data.proxReajusteBR; pBadge.style.display = 'block'; }
+      _proxReajusteBR = data.proxReajusteBR;
     }
     // Detecta reajuste/ajuste comparando versão + data de modificação com o estado salvo
     _detectProtoAviso(data.version, data.lastModified);
@@ -7021,6 +7022,7 @@ function _logAgendaClick(profId, planLabel) {
 const CHAT_ENDPOINT = 'https://chat.metodogh.com.br/app/chat';
 let _chatHistory = [];   // [{role:'user'|'assistant', content}]
 let _chatBusy = false;
+let _proxReajusteBR = ''; // data da próxima anamnese de reajuste (col M) — vai no payload do chat
 let _chatLoaded = false;
 
 function _chatKey() { return 'gh_chat_' + (typeof SHEET_ID !== 'undefined' ? SHEET_ID : 'x'); }
@@ -7151,7 +7153,8 @@ async function sendChat() {
       body: JSON.stringify({
         sheetId: SHEET_ID,
         mensagem: text,
-        historico: _chatHistory.slice(-11, -1) // até 10 trocas anteriores (sem a atual)
+        historico: _chatHistory.slice(-11, -1), // até 10 trocas anteriores (sem a atual)
+        proxReajuste: _proxReajusteBR || '' // data da próxima anamnese de reajuste, pro bot usar se o aluno perguntar
       })
     });
     const j = await r.json().catch(() => ({}));
