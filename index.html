@@ -1969,13 +1969,13 @@
     <div style="color:var(--white);font-weight:700;font-size:12.5px;line-height:1.3;">Assistente de IA</div>
     <div style="color:var(--muted);font-size:10.5px;margin-top:2px;line-height:1.35;">Tira dúvidas na hora</div>
   </div>
-  <div id="ajusteBanner" onclick="openAjusteModal()" style="display:none;flex:1;min-width:0;background:var(--card);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:12px 12px 11px;cursor:pointer;position:relative;">
+  <div id="ajusteBanner" onclick="openChatModal()" style="display:none;flex:1;min-width:0;background:var(--card);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:12px 12px 11px;cursor:pointer;position:relative;">
     <button type="button" onclick="event.stopPropagation();dismissAjusteBanner()" title="Fechar" style="position:absolute;top:5px;right:9px;background:none;border:none;color:#54504a;font-size:15px;cursor:pointer;line-height:1;padding:2px;">×</button>
     <div style="width:30px;height:30px;border-radius:9px;background:var(--gold-soft);display:flex;align-items:center;justify-content:center;margin-bottom:8px;">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
     </div>
-    <div style="color:var(--white);font-weight:700;font-size:12.5px;line-height:1.3;">Ajuste rápido</div>
-    <div style="color:var(--muted);font-size:10.5px;margin-top:2px;line-height:1.35;">Pede mudança no protocolo</div>
+    <div style="color:var(--white);font-weight:700;font-size:12.5px;line-height:1.3;">Dúvida ou ajuste</div>
+    <div style="color:var(--muted);font-size:10.5px;margin-top:2px;line-height:1.35;">Pergunta ou pede mudança</div>
   </div>
 </div>
 
@@ -3069,8 +3069,8 @@
     <button type="button" class="float-opt" onclick="event.stopPropagation(); openFotosModal()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span><span>Minhas fotos do reajuste</span>
     </button>
-    <button type="button" class="float-opt" onclick="event.stopPropagation(); openAjusteModal()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></span><span>Solicitar ajuste</span>
+    <button type="button" class="float-opt" onclick="event.stopPropagation(); openChatModal()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></span><span>Tirar dúvida ou pedir ajuste</span>
     </button>
 
     <!-- BASE (perto do dedo) — Recarregar + Instalar app destacados -->
@@ -7042,7 +7042,7 @@ function _chatRenderAll() {
   if (!box) return;
   box.innerHTML = '';
   if (!_chatHistory.length) {
-    box.appendChild(_chatBubble('assistant', 'Oi! 🤖 Sou o assistente de IA do Gabriel, treinado por ele pra tirar tuas dúvidas rápidas. Manda a pergunta, eu conheço o teu protocolo.'));
+    box.appendChild(_chatBubble('assistant', 'Oi! 🤖 Sou o assistente do Gabriel. Tira dúvida do teu treino/dieta/suplemento, ou pede um ajuste (trocar exercício, mudar refeição...) — eu te respondo na hora ou registro o pedido pro GH.'));
     return;
   }
   _chatHistory.forEach(m => box.appendChild(_chatBubble(m.role, m.content)));
@@ -7055,9 +7055,28 @@ function _chatAddCta() {
   const btn = document.createElement('button');
   btn.className = 'te-btn';
   btn.style.cssText = 'padding:8px 14px;font-size:12px;';
-  btn.textContent = '🔧 Abrir Solicitar ajuste';
-  btn.onclick = () => { teHide('chatModal'); openAjusteModal(); };
+  btn.textContent = '🔧 Registrar esse ajuste pro GH';
+  const lastUser = [..._chatHistory].reverse().find(m => m.role === 'user');
+  btn.onclick = () => { teHide('chatModal'); openAjusteModal(lastUser ? lastUser.content : ''); };
   wrap.appendChild(btn);
+  box.appendChild(wrap);
+  _chatScrollBottom();
+}
+// pro_suporte: dúvida pessoal pro GH / clínica / fora da capacidade do bot →
+// não cai na caixa de ajustes; manda o aluno falar no WhatsApp de suporte (ele inicia).
+function _chatAddSupportCta() {
+  const box = document.getElementById('chatMsgs');
+  if (!box) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'chat-cta';
+  const a = document.createElement('a');
+  a.className = 'te-btn';
+  a.style.cssText = 'padding:8px 14px;font-size:12px;text-decoration:none;display:inline-block;background:#1f7a33;border-color:#25D366;color:#fff;';
+  a.href = 'https://wa.me/555520131470?text=' + encodeURIComponent('Oi! Tenho uma dúvida que é melhor falar direto com o Gabriel.');
+  a.target = '_blank';
+  a.rel = 'noopener';
+  a.textContent = '💬 Falar com o Gabriel no suporte';
+  wrap.appendChild(a);
   box.appendChild(wrap);
   _chatScrollBottom();
 }
@@ -7134,6 +7153,7 @@ async function sendChat() {
     box.appendChild(_chatBubble('assistant', resposta));
     _chatHistory.push({ role: 'assistant', content: resposta });
     if (j.tipo === 'pro_gh') _chatAddCta();
+    else if (j.tipo === 'pro_suporte') _chatAddSupportCta();
     _chatSaveHistory();
     _chatScrollBottom();
     // Log da conversa pro GH (aba CHAT_LOGS do mestre) — fire-and-forget, não trava o chat
@@ -7170,15 +7190,16 @@ async function sendChat() {
 // (separada) lê pendentes e aplica nos sheets dos alunos.
 function closeAjusteOnBg(e) { if (e.target.id === 'ajusteModal') teHide('ajusteModal'); }
 
-function openAjusteModal() {
+function openAjusteModal(prefill) {
   document.getElementById('floatOptions').classList.remove('show');
   document.getElementById('floatBtn').classList.remove('open');
   // Reset modal pro estado inicial (form visível, success escondido)
   document.getElementById('ajusteForm').style.display = '';
   document.getElementById('ajusteSuccess').style.display = 'none';
-  document.getElementById('ajusteTexto').value = '';
+  const pf = (typeof prefill === 'string') ? prefill : '';
+  document.getElementById('ajusteTexto').value = pf;
   document.getElementById('ajusteContexto').value = 'TREINO';
-  document.getElementById('ajusteCharCount').textContent = '0 / 2000';
+  document.getElementById('ajusteCharCount').textContent = pf.length + ' / 2000';
   document.getElementById('ajusteSubmitBtn').disabled = false;
   document.getElementById('ajusteSubmitBtn').textContent = 'Enviar pedido';
   _ajustePics = [];
