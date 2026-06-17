@@ -3940,19 +3940,49 @@ function updateUnitToggleLabel() {
 
 // ══ localStorage helpers ══
 function storageKey(d, e, w) { return `gh_${STUDENT_ID}_d${d}_e${e}_w${w}`; }
-function loadCarga(d, e, w) { return localStorage.getItem(storageKey(d, e, w)) || ""; }
+function placasKey(d, e, w) { return `gh_placas_${STUDENT_ID}_d${d}_e${e}_w${w}`; }
+// ── Carga validada por EXERCÍCIO (não só por posição) ──
+// O peso é gravado por posição (di/ei/semana), mas guardamos TAMBÉM o nome do exercício que
+// estava ali no momento do registro (companheiro exnKey). Na leitura, o peso só vale se esse
+// nome ainda bate com o exercício atual naquela posição. Se o treino foi reorganizado/encurtado
+// (a posição passou a ter outro exercício), o nome não bate → NÃO mostra o peso errado (volta em
+// branco, aluno re-loga). Legado sem companheiro = comporta como antes (alunos atuais intocados).
+function exnKey(d, e, w) { return `gh_exn_${STUDENT_ID}_d${d}_e${e}_w${w}`; }
+function _exNameAt(d, e) {
+  try {
+    const day = (typeof WORKOUT !== 'undefined') && WORKOUT[d];
+    if (!day || !day.exercises) return '';
+    const m = String(e).match(/^(\d+)([ab])$/);                // biset: "2a"/"2b"
+    if (m) { const ex = day.exercises[+m[1]]; if (!ex) return ''; const s = m[2] === 'a' ? ex.a : ex.b; return (s && s.name) || ''; }
+    const ex = day.exercises[parseInt(e)];
+    if (!ex) return '';
+    return ex.biset ? (((ex.a && ex.a.name) || '') + ' + ' + ((ex.b && ex.b.name) || '')) : (ex.name || '');
+  } catch (_) { return ''; }
+}
+function _cargaValida(d, e, w) {
+  const saved = localStorage.getItem(exnKey(d, e, w));
+  if (!saved) return true;          // sem companheiro (legado) → não valida, comporta como hoje
+  const now = _exNameAt(d, e);
+  if (!now) return true;            // não resolveu o exercício atual → não invalida (seguro)
+  // compara NORMALIZADO (_normEx: maiúsc/sem acento/espaço colapsado) — drift cosmético do nome
+  // (republish que limpa sufixo/acento/travessão) NÃO branqueia peso válido; só reorganização real.
+  return _normEx(saved) === _normEx(now);
+}
+function _stampExn(d, e, w) { const n = _exNameAt(d, e); if (n) localStorage.setItem(exnKey(d, e, w), n); }
+function loadCarga(d, e, w) { return _cargaValida(d, e, w) ? (localStorage.getItem(storageKey(d, e, w)) || "") : ""; }
 function saveCarga(d, e, w, v) {
   localStorage.setItem(storageKey(d, e, w), v);
+  _stampExn(d, e, w);
   syncCargaToServer_(d, e, w, v, null);
 }
-function getPrevCarga(d, e, w) { return w > 1 ? localStorage.getItem(storageKey(d, e, w - 1)) || null : null; }
-function placasKey(d, e, w) { return `gh_placas_${STUDENT_ID}_d${d}_e${e}_w${w}`; }
-function loadPlacas(d, e, w) { return localStorage.getItem(placasKey(d, e, w)) || ""; }
+function getPrevCarga(d, e, w) { return w > 1 && _cargaValida(d, e, w - 1) ? (localStorage.getItem(storageKey(d, e, w - 1)) || null) : null; }
+function loadPlacas(d, e, w) { return _cargaValida(d, e, w) ? (localStorage.getItem(placasKey(d, e, w)) || "") : ""; }
 function savePlacas(d, e, w, v) {
   localStorage.setItem(placasKey(d, e, w), v);
+  _stampExn(d, e, w);
   syncCargaToServer_(d, e, w, null, v);
 }
-function getPrevPlacas(d, e, w) { return w > 1 ? localStorage.getItem(placasKey(d, e, w - 1)) || null : null; }
+function getPrevPlacas(d, e, w) { return w > 1 && _cargaValida(d, e, w - 1) ? (localStorage.getItem(placasKey(d, e, w - 1)) || null) : null; }
 // ── Esforço (RIR-em-palavras) + flag de aparelho por exercício ──
 function esfKey(d, e, w) { return `gh_esf_${STUDENT_ID}_d${d}_e${e}_w${w}`; }
 function loadEsf(d, e, w) { return localStorage.getItem(esfKey(d, e, w)) || ""; }
@@ -4052,6 +4082,7 @@ function syncCargaToServer_(di, ei, w, carga, placas) {
     sheetId: SHEET_ID,
     studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
     di: di, ei: ei, w: w,
+    exercicio: _exNameAt(di, ei),
     carga: carga !== null && carga !== undefined ? String(carga) : '',
     placas: placas !== null && placas !== undefined ? String(placas) : '',
     ts: new Date().toISOString()
@@ -4123,10 +4154,12 @@ async function syncCargasFromServer_() {
       const kP = placasKey(c.di, c.ei, c.w);
       if (c.carga != null && c.carga !== '' && !localStorage.getItem(kC)) {
         localStorage.setItem(kC, String(c.carga));
+        if (c.exercicio) localStorage.setItem(exnKey(c.di, c.ei, c.w), String(c.exercicio));
         restored++;
       }
       if (c.placas != null && c.placas !== '' && !localStorage.getItem(kP)) {
         localStorage.setItem(kP, String(c.placas));
+        if (c.exercicio) localStorage.setItem(exnKey(c.di, c.ei, c.w), String(c.exercicio));
         restored++;
       }
     });
@@ -7034,6 +7067,7 @@ async function forceSyncFromServer() {
     const prefixesParaApagar = [
       `gh_${STUDENT_ID}_d`,         // cargas
       `gh_placas_${STUDENT_ID}_d`,  // placas
+      `gh_exn_${STUDENT_ID}_d`,     // companheiro nome-do-exercício (re-carimbado pelo servidor)
       `gh_done_${STUDENT_ID}_`      // checkbox
     ];
     const toDelete = [];
@@ -7052,10 +7086,12 @@ async function forceSyncFromServer() {
       (data.cargas || []).forEach(c => {
         if (c.carga != null && c.carga !== '') {
           localStorage.setItem(storageKey(c.di, c.ei, c.w), String(c.carga));
+          if (c.exercicio) localStorage.setItem(exnKey(c.di, c.ei, c.w), String(c.exercicio));
           totalCargas++;
         }
         if (c.placas != null && c.placas !== '') {
           localStorage.setItem(placasKey(c.di, c.ei, c.w), String(c.placas));
+          if (c.exercicio) localStorage.setItem(exnKey(c.di, c.ei, c.w), String(c.exercicio));
           totalCargas++;
         }
       });
