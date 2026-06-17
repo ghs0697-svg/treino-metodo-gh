@@ -670,6 +670,25 @@
   .esf-m-down { background: rgba(201,119,107,.16); color: #e08b7d; }
   .esf-m-equip { background: rgba(201,138,58,.16); color: #e0a05c; }
   .esf-m-none { background: #1f1f24; color: #6f6f76; }
+  /* ── Raio-X do aluno (painel treinador): 5 sinais + acao prioritaria ── */
+  .rx-panel { padding: 6px 2px 24px; }
+  .rx-acao { display: flex; align-items: center; gap: 10px; border-radius: 12px; padding: 14px 15px; margin: 4px 0 16px; font-size: 14px; font-weight: 700; line-height: 1.35; }
+  .rx-acao-ic { font-size: 20px; flex: 0 0 auto; }
+  .rx-acao.rx-urg { background: rgba(201,119,107,.14); border: 1px solid rgba(201,119,107,.4); color: #e89486; }
+  .rx-acao.rx-warn { background: rgba(224,160,92,.12); border: 1px solid rgba(224,160,92,.35); color: #e6b070; }
+  .rx-acao.rx-ok { background: rgba(74,170,90,.13); border: 1px solid rgba(74,170,90,.32); color: #7bd08e; }
+  .rx-acao.rx-none { background: #1c1c21; border: 1px solid #2c2c33; color: #9a9aa0; }
+  .rx-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+  .rx-cell { background: #16161a; border: 1px solid #232329; border-radius: 11px; padding: 11px 12px; min-width: 0; }
+  .rx-k { color: #8b8b92; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 5px; }
+  .rx-v { color: #ececf0; font-size: 14px; font-weight: 700; line-height: 1.3; }
+  .rx-v.rx-dim { color: #6f6f76; font-weight: 600; }
+  .rx-sub { color: #7a7a82; font-size: 11px; margin-top: 3px; line-height: 1.3; }
+  .rx-det { margin-top: 16px; }
+  .rx-det-h { color: var(--gold, #D4AF6A); font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; margin: 0 0 7px 2px; }
+  .rx-det-row { display: flex; align-items: center; gap: 8px; background: #141418; border: 1px solid #1f1f25; border-radius: 8px; padding: 7px 10px; margin-bottom: 5px; font-size: 12.5px; color: #cfcfd6; }
+  .rx-det-row .rx-tag { flex: 0 0 auto; font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 14px; }
+  .rx-hint { color: #6f6f76; font-size: 11px; margin: 13px 2px 0; font-style: italic; line-height: 1.4; }
   .focus-foot { display: flex; gap: 10px; padding: 12px 14px calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid #1d1d22; }
   .focus-nav { background: #1c1c21; border: 1px solid #2c2c33; color: #fff; font-size: 20px; width: 52px; border-radius: 10px; cursor: pointer; }
   .focus-nav:disabled { opacity: 0.3; }
@@ -10129,6 +10148,7 @@ function renderEditorTopBar() {
     <button class="te-mode-tab${currentEditMode === 'treino' ? ' active' : ''}" ${trainerData ? `onclick="switchEditMode('treino')"` : 'disabled'}>📋 TREINO</button>
     <button class="te-mode-tab${currentEditMode === 'dieta' ? ' active' : ''}" ${dietaData ? `onclick="switchEditMode('dieta')"` : 'disabled'}>🍽 DIETA</button>
     <button class="te-mode-tab${currentEditMode === 'esforco' ? ' active' : ''}" ${trainerData ? `onclick="switchEditMode('esforco')"` : 'disabled'}>📊 ESFORÇO</button>
+    <button class="te-mode-tab${currentEditMode === 'raiox' ? ' active' : ''}" ${trainerData ? `onclick="switchEditMode('raiox')"` : 'disabled'}>🩻 RAIO-X</button>
   `;
   document.getElementById('teModeTabs').innerHTML = tabs;
 }
@@ -10278,6 +10298,7 @@ async function ttApplyTemplate(cat, version) {
 function renderCurrentEditor() {
   if (currentEditMode === 'treino') renderTrainerEditor();
   else if (currentEditMode === 'esforco') renderEsforcoPanel();
+  else if (currentEditMode === 'raiox') renderRaioXPanel();
   else renderDietaEditor();
 }
 
@@ -10395,6 +10416,106 @@ async function renderEsforcoPanel() {
 }
 
 function escTrainer(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+// ── Raio-X do aluno: funde os 5 sinais (carga · aparelho · adesao · duvidas/ajustes ·
+// reajuste) numa tela so + UMA acao prioritaria. Carga/aparelho/reajuste rodam 100%
+// client-side (esforco + lastmod); adesao e ajustes vem do ?action=raiox (Apps Script).
+function _raioxFreqPrescrita() {
+  if (!trainerData) return '';
+  const info = trainerData.find(r => String(r[0] || '').toLowerCase().trim() === 'info');
+  if (!info) return '';
+  const m = (String(info[2] || '') + ' ' + String(info[3] || '')).match(/(\d)\s*x\s*\/?\s*sem/i);
+  return m ? m[1] + 'x/sem' : '';
+}
+
+// regra de prioridade: a coisa MAIS urgente vira a unica acao mostrada no topo
+function _raioxAcao(x) {
+  if (x.diasSem != null && x.diasSem >= 10) return { ic: '🔴', t: `Sumido há ${x.diasSem} dias — chamar o aluno`, cls: 'rx-urg' };
+  if (x.reaj != null && x.reaj < 0) return { ic: '🔴', t: `Reajuste vencido há ${-x.reaj} dia${x.reaj === -1 ? '' : 's'} — refazer`, cls: 'rx-urg' };
+  if (x.down >= 1) return { ic: '⚠️', t: `Baixar carga / rever técnica em ${x.down} ex` + (x.downEx.length ? ` (${x.downEx.slice(0, 2).join(', ')})` : ''), cls: 'rx-warn' };
+  if (x.equip >= 1) return { ic: '🔧', t: `Trocar exercício de ${x.equip} aparelho ruim` + (x.equipEx.length ? ` (${x.equipEx.slice(0, 2).join(', ')})` : ''), cls: 'rx-warn' };
+  if (x.reaj != null && x.reaj <= 7) return { ic: '📅', t: `Reajuste em ${x.reaj} dia${x.reaj === 1 ? '' : 's'} — preparar`, cls: 'rx-warn' };
+  if (x.up >= 2) return { ic: '🟢', t: `Subir carga em ${x.up} exercícios`, cls: 'rx-ok' };
+  if (x.nAj != null && x.nAj >= 1) return { ic: '💬', t: `${x.nAj} ajuste${x.nAj === 1 ? '' : 's'} recente${x.nAj === 1 ? '' : 's'} pra revisar`, cls: 'rx-warn' };
+  if (x.comDado === 0) return { ic: '⚪', t: 'Sem dados de esforço ainda — aluno marca no Modo Focado', cls: 'rx-none' };
+  return { ic: '✅', t: 'Tudo calibrado, sem ação urgente', cls: 'rx-ok' };
+}
+
+async function renderRaioXPanel() {
+  const cont = document.getElementById('trainerDaysContainer');
+  if (!cont) return;
+  cont.innerHTML = `<div style="padding:28px 16px;text-align:center;color:#9a9389;">Montando raio-x…</div>`;
+  const base = LOG_ENDPOINT, sid = encodeURIComponent(trainerSheetId);
+  const [esf, lm, rx] = await Promise.all([
+    fetch(`${base}?action=esforco&id=${sid}`, { cache: 'no-store' }).then(r => r.json()).catch(() => ({})),
+    fetch(`${base}?action=lastmod&id=${sid}`, { cache: 'no-store' }).then(r => r.json()).catch(() => ({})),
+    fetch(`${base}?action=raiox&id=${sid}`, { cache: 'no-store' }).then(r => r.json()).catch(() => ({}))
+  ]);
+
+  // 1) CARGA (calibracao): cruza esforco com o treino → subir/ideal/baixar/aparelho
+  const stats = Array.isArray(esf.esforco) ? esf.esforco : [];
+  const byKey = {}; stats.forEach(s => { byKey[`${s.di}|${s.ei}`] = s; });
+  const days = trainerData ? _esfBuildDays(trainerData) : [];
+  let up = 0, down = 0, equip = 0, ideal = 0, comDado = 0;
+  const upEx = [], downEx = [], equipEx = [];
+  days.forEach((day, di) => day.exercises.forEach((ex, ei) => {
+    if (ex.warmup) return;
+    const s = byKey[`${di}|${ei}`]; if (!s || !s.n) return;
+    const m = _esfMarker(s); comDado++;
+    if (m.cls === 'esf-m-up') { up++; upEx.push(ex.name); }
+    else if (m.cls === 'esf-m-down') { down++; downEx.push(ex.name); }
+    else if (m.cls === 'esf-m-equip') { equip++; equipEx.push(ex.name); }
+    else if (m.cls === 'esf-m-ok') ideal++;
+  }));
+
+  // 2) REAJUSTE: proxReajuste (col M) − hoje
+  let reaj = null;
+  if (lm.proxReajusteBR && /^\d{2}\/\d{2}\/\d{4}$/.test(lm.proxReajusteBR)) {
+    const [d, mo, y] = lm.proxReajusteBR.split('/').map(Number);
+    const alvo = new Date(y, mo - 1, d); const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    reaj = Math.round((alvo - hoje) / 86400000);
+  }
+
+  // 3) ADESAO + 4) AJUSTES: do ?action=raiox (degrada gracioso se endpoint nao deployado)
+  const temRaiox = rx && (typeof rx.diasSemTreinar === 'number' || typeof rx.nAjustes === 'number');
+  const diasSem = (rx && typeof rx.diasSemTreinar === 'number') ? rx.diasSemTreinar : null;
+  const nAj = (rx && typeof rx.nAjustes === 'number') ? rx.nAjustes : null;
+  const ajRecent = (rx && Array.isArray(rx.ajustes)) ? rx.ajustes : [];
+  const freqPrescr = _raioxFreqPrescrita();
+
+  // 5) PROTOCOLO: versao + ultima edicao
+  const versao = lm.version || '';
+  const lastModBR = lm.lastModifiedBR ? lm.lastModifiedBR.split(' ')[0] : '';
+
+  const acao = _raioxAcao({ diasSem, reaj, down, downEx, equip, equipEx, up, upEx, nAj, comDado });
+  const cell = (k, v, sub, dim) => `<div class="rx-cell"><div class="rx-k">${k}</div><div class="rx-v${dim ? ' rx-dim' : ''}">${v}</div>${sub ? `<div class="rx-sub">${escTrainer(sub)}</div>` : ''}</div>`;
+
+  let html = `<div class="rx-panel">
+    <div class="rx-acao ${acao.cls}"><span class="rx-acao-ic">${acao.ic}</span><span>${escTrainer(acao.t)}</span></div>
+    <div class="rx-grid">
+      ${cell('📊 Carga', comDado ? `${up} subir · ${ideal} ideal · ${down} baixar` : '—', comDado ? `${comDado} ex com esforço` : 'sem marcação ainda', !comDado)}
+      ${cell('🔧 Aparelho', equip ? `${equip} sinalizado${equip === 1 ? '' : 's'}` : (comDado ? 'nenhum' : '—'), equip ? equipEx.slice(0, 2).join(', ') : '', !equip && !comDado)}
+      ${cell('🏃 Adesão', diasSem != null ? (diasSem === 0 ? 'treinou hoje' : `treinou há ${diasSem}d`) : '—', freqPrescr ? `prescrito ${freqPrescr}` : '', diasSem == null)}
+      ${cell('💬 Dúvidas/ajustes', nAj != null ? (nAj === 0 ? 'nenhum' : `${nAj} recente${nAj === 1 ? '' : 's'}`) : '—', ajRecent[0] ? `último: há ${ajRecent[0].diasAtras}d` : '', nAj == null)}
+      ${cell('📅 Reajuste', reaj != null ? (reaj < 0 ? `vencido há ${-reaj}d` : (reaj === 0 ? 'hoje' : `em ${reaj}d`)) : '—', '', reaj == null)}
+      ${cell('📋 Protocolo', versao ? `v${versao}` : '—', lastModBR ? `editado ${lastModBR}` : '', !versao)}
+    </div>`;
+
+  const detRows = [];
+  downEx.slice(0, 6).forEach(n => detRows.push(`<div class="rx-det-row"><span class="rx-tag esf-m-down">🔴 baixar</span> ${escTrainer(n)}</div>`));
+  equipEx.slice(0, 6).forEach(n => detRows.push(`<div class="rx-det-row"><span class="rx-tag esf-m-equip">🔧 aparelho</span> ${escTrainer(n)}</div>`));
+  upEx.slice(0, 6).forEach(n => detRows.push(`<div class="rx-det-row"><span class="rx-tag esf-m-up">🟢 subir</span> ${escTrainer(n)}</div>`));
+  if (detRows.length) html += `<div class="rx-det"><div class="rx-det-h">Exercícios pra ajustar</div>${detRows.join('')}</div>`;
+
+  if (ajRecent.length) {
+    html += `<div class="rx-det"><div class="rx-det-h">Últimos ajustes/dúvidas</div>` +
+      ajRecent.map(a => `<div class="rx-det-row"><span class="rx-tag esf-m-equip">${escTrainer(a.tipo || '?')}</span> ${escTrainer(a.msg || '')} <span style="margin-left:auto;color:#6f6f76;white-space:nowrap;">há ${a.diasAtras}d</span></div>`).join('') + `</div>`;
+  }
+
+  if (!temRaiox) html += `<div class="rx-hint">Adesão e dúvidas/ajustes acendem após o deploy do endpoint raio-x no Apps Script.</div>`;
+  html += `</div>`;
+  cont.innerHTML = html;
+}
 
 // Update robusto pros inputs do editor de treino. Lê o data-idx do elemento
 // .te-ex pai NA HORA da digitação — imune a stale idx após drag/drop/remove
