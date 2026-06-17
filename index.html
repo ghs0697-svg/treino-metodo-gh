@@ -645,6 +645,31 @@
   .focus-carga { background: #17171b; border-radius: 10px; padding: 12px; margin-bottom: 10px; }
   .focus-carga-label { color: #9a9aa0; font-size: 11px; margin-bottom: 7px; }
   .focus-carga input { background: #101013; border: 1px solid #2c2c33; color: #fff; font-size: 18px; font-weight: 700; padding: 10px 6px; border-radius: 8px; width: 92px; text-align: center; }
+  .focus-esforco { background: #17171b; border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+  .esf-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .esf-chip { background: #101013; border: 1px solid #2c2c33; color: #cfcfd6; font-size: 12px; font-weight: 600; padding: 8px 9px; border-radius: 8px; cursor: pointer; flex: 1 1 28%; }
+  .esf-chip.sel { background: var(--gold, #D4AF6A); color: #1a1408; border-color: var(--gold, #D4AF6A); }
+  .esf-aptoggle { margin-top: 9px; background: transparent; border: none; color: #9a9aa0; font-size: 12px; cursor: pointer; padding: 4px 0; display: block; }
+  .esf-aptoggle.open { color: #e0b85c; }
+  .esf-apchips { flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .esf-apchip { background: #101013; border: 1px solid #2c2c33; color: #cfcfd6; font-size: 11.5px; padding: 7px 9px; border-radius: 8px; cursor: pointer; }
+  .esf-apchip.sel { background: #5a3b1a; color: #ffd9a0; border-color: #c98a3a; }
+  /* Painel ESFORÇO (treinador) */
+  .esf-panel { padding: 6px 2px 20px; }
+  .esf-summary { background: rgba(212,175,106,.07); border: 1px solid rgba(212,175,106,.18); border-radius: 10px; padding: 11px 13px; margin: 4px 0 14px; color: #cfcfd6; font-size: 13px; }
+  .esf-day { margin-bottom: 16px; }
+  .esf-day-h { color: var(--gold, #D4AF6A); font-size: 12px; font-weight: 700; letter-spacing: .08em; margin: 0 0 7px 2px; }
+  .esf-row { display: flex; align-items: center; gap: 10px; background: #16161a; border: 1px solid #232329; border-radius: 9px; padding: 9px 11px; margin-bottom: 6px; flex-wrap: wrap; }
+  .esf-exname { flex: 1 1 150px; color: #ececf0; font-size: 13.5px; font-weight: 600; min-width: 0; }
+  .esf-meta { flex: 1 1 130px; color: #8b8b92; font-size: 11.5px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .esf-meta b { color: #cfcfd6; }
+  .esf-aptag { background: #3a2a12; color: #e6b877; font-size: 10.5px; padding: 2px 6px; border-radius: 5px; }
+  .esf-mark { flex: 0 0 auto; font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 20px; white-space: nowrap; }
+  .esf-m-up { background: rgba(74,170,90,.16); color: #6fd083; }
+  .esf-m-ok { background: rgba(212,175,106,.16); color: #e0c184; }
+  .esf-m-down { background: rgba(201,119,107,.16); color: #e08b7d; }
+  .esf-m-equip { background: rgba(201,138,58,.16); color: #e0a05c; }
+  .esf-m-none { background: #1f1f24; color: #6f6f76; }
   .focus-foot { display: flex; gap: 10px; padding: 12px 14px calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid #1d1d22; }
   .focus-nav { background: #1c1c21; border: 1px solid #2c2c33; color: #fff; font-size: 20px; width: 52px; border-radius: 10px; cursor: pointer; }
   .focus-nav:disabled { opacity: 0.3; }
@@ -3865,6 +3890,16 @@ function savePlacas(d, e, w, v) {
   syncCargaToServer_(d, e, w, null, v);
 }
 function getPrevPlacas(d, e, w) { return w > 1 ? localStorage.getItem(placasKey(d, e, w - 1)) || null : null; }
+// ── Esforço (RIR-em-palavras) + flag de aparelho por exercício ──
+function esfKey(d, e, w) { return `gh_esf_${STUDENT_ID}_d${d}_e${e}_w${w}`; }
+function loadEsf(d, e, w) { return localStorage.getItem(esfKey(d, e, w)) || ""; }
+function apfKey(d, e, w) { return `gh_apf_${STUDENT_ID}_d${d}_e${e}_w${w}`; }
+function loadApf(d, e, w) { return localStorage.getItem(apfKey(d, e, w)) || ""; }
+function saveEsf(d, e, w, esf, apf) {
+  localStorage.setItem(esfKey(d, e, w), esf || '');
+  localStorage.setItem(apfKey(d, e, w), apf || '');
+  syncEsforcoToServer_(d, e, w, esf, apf);
+}
 
 // ══ Backup servidor pra cargas/placas (anti "não tá salvando") ══
 // Toda escrita local também sobe pro Apps Script → aba CARGAS no mestre.
@@ -3908,7 +3943,7 @@ async function flushSyncQueues() {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
   _syncFlushRunning = true;
   try {
-    for (const kind of ['carga', 'done']) {
+    for (const kind of ['carga', 'done', 'esforco']) {
       const q = _syncQueueGet(kind);
       if (!q.length) continue;
       const remaining = [];
@@ -3978,6 +4013,31 @@ function syncCargaToServer_(di, ei, w, carga, placas) {
   } catch (_) {
     enfileira();
   }
+}
+
+// Esforço (RIR) + flag de aparelho → aba ESFORCO no mestre. Fire-and-forget,
+// com fila de retry (mesma do carga). Pro painel do treinador calibrar carga.
+function syncEsforcoToServer_(di, ei, w, esforco, aparelho) {
+  if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
+  const payload = {
+    type: 'esforco',
+    sheetId: SHEET_ID,
+    studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+    di: di, ei: ei, w: w,
+    esforco: esforco || '',
+    aparelho: aparelho || '',
+    ts: new Date().toISOString()
+  };
+  const enfileira = () => _syncQueuePush('esforco', payload, p => `${p.di}|${p.ei}|${p.w}`);
+  try {
+    fetch(LOG_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+      keepalive: true,
+      redirect: 'follow'
+    }).then(resp => { if (!resp || !resp.ok) enfileira(); }).catch(enfileira);
+  } catch (_) { enfileira(); }
 }
 
 // On load: SEMPRE busca do servidor e faz merge — preenche local apenas
@@ -5340,6 +5400,40 @@ function _focusCargaBlock(di, key, label) {
     </div>
   </div>`;
 }
+// Grade de esforço (RIR-em-palavras) + flag de aparelho — 1 toque, opcional.
+// Vai logo depois da carga, por exercício (1 por exercício, não por série).
+const _ESF_OPTS = [['sobrou3', 'Sobrou 3+'], ['sobrou2', 'Sobrou 2'], ['sobrou1', 'Sobrou 1'], ['falha_ult', 'Falhei na última'], ['falha_antes', 'Falhei antes']];
+const _ESF_AP = [['maquina_ruim', 'Máquina ruim'], ['nao_sinto', 'Não sinto o músculo'], ['carga_estranha', 'Carga estranha']];
+function _focusEsforcoBlock(di, key) {
+  const curE = loadEsf(di, key, currentWeek);
+  const curA = (loadApf(di, key, currentWeek) || '').split(',').filter(Boolean);
+  const chips = _ESF_OPTS.map(([v, l]) => `<button class="esf-chip${curE === v ? ' sel' : ''}" onclick="onEsforco(${di},'${key}',this,'${v}')">${l}</button>`).join('');
+  const apChips = _ESF_AP.map(([v, l]) => `<button class="esf-apchip${curA.includes(v) ? ' sel' : ''}" data-v="${v}" onclick="onEsforcoAp(${di},'${key}',this)">${l}</button>`).join('');
+  const apOpen = curA.length > 0;
+  return `<div class="focus-esforco">
+    <div class="focus-carga-label">Como foi o esforço? <span style="color:#5f5f66;font-weight:400;">— quanto sobrou no tanque</span></div>
+    <div class="esf-chips">${chips}</div>
+    <button class="esf-aptoggle${apOpen ? ' open' : ''}" onclick="esfToggleAp(this)">⚠️ Problema no aparelho?</button>
+    <div class="esf-apchips" style="display:${apOpen ? 'flex' : 'none'};">${apChips}</div>
+  </div>`;
+}
+function esfToggleAp(btn) {
+  const wrap = btn.parentElement.querySelector('.esf-apchips');
+  if (!wrap) return;
+  const show = wrap.style.display === 'none';
+  wrap.style.display = show ? 'flex' : 'none';
+  btn.classList.toggle('open', show);
+}
+function onEsforco(di, key, btn, val) {
+  btn.parentElement.querySelectorAll('.esf-chip').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  saveEsf(di, key, currentWeek, val, loadApf(di, key, currentWeek));
+}
+function onEsforcoAp(di, key, btn) {
+  btn.classList.toggle('sel');
+  const sel = Array.from(btn.parentElement.querySelectorAll('.esf-apchip.sel')).map(b => b.getAttribute('data-v'));
+  saveEsf(di, key, currentWeek, loadEsf(di, key, currentWeek), sel.join(','));
+}
 function _focusRender() {
   const exs = WORKOUT[_focusDi].exercises;
   const ex = exs[_focusIdx];
@@ -5371,11 +5465,13 @@ function _focusRender() {
     html += `<div class="focus-name" style="font-size:20px;">${ex.b.name}</div>${vidBtn(ex.b)}`;
     if (ex.b.obs) html += `<div class="focus-obs">${ex.b.obs}</div>`;
     html += _focusCargaBlock(_focusDi, `${_focusIdx}b`, 'Carga B');
+    html += _focusEsforcoBlock(_focusDi, String(_focusIdx));
   } else {
     if (ex.warmup) html += `<span class="focus-badge">AQUECIMENTO</span>`;
     html += `<div class="focus-name">${ex.name}</div>${vidBtn(ex)}<div class="focus-tags">${tags(ex)}</div>`;
     if (ex.obs) html += `<div class="focus-obs">${ex.obs}</div>`;
     if (!ex.warmup) html += _focusCargaBlock(_focusDi, String(_focusIdx), 'Carga de hoje');
+    if (!ex.warmup) html += _focusEsforcoBlock(_focusDi, String(_focusIdx));
   }
   document.getElementById('focusBody').innerHTML = html;
   document.getElementById('focusBody').scrollTop = 0;
@@ -10041,6 +10137,7 @@ function renderEditorTopBar() {
   const tabs = `
     <button class="te-mode-tab${currentEditMode === 'treino' ? ' active' : ''}" ${trainerData ? `onclick="switchEditMode('treino')"` : 'disabled'}>📋 TREINO</button>
     <button class="te-mode-tab${currentEditMode === 'dieta' ? ' active' : ''}" ${dietaData ? `onclick="switchEditMode('dieta')"` : 'disabled'}>🍽 DIETA</button>
+    <button class="te-mode-tab${currentEditMode === 'esforco' ? ' active' : ''}" ${trainerData ? `onclick="switchEditMode('esforco')"` : 'disabled'}>📊 ESFORÇO</button>
   `;
   document.getElementById('teModeTabs').innerHTML = tabs;
 }
@@ -10189,7 +10286,121 @@ async function ttApplyTemplate(cat, version) {
 
 function renderCurrentEditor() {
   if (currentEditMode === 'treino') renderTrainerEditor();
+  else if (currentEditMode === 'esforco') renderEsforcoPanel();
   else renderDietaEditor();
+}
+
+// ══ Painel ESFORÇO (calibração) — visão do treinador ══
+// Lê os esforços RIR + flags de aparelho que o aluno marca no Modo Focado e
+// mostra, por exercício: último esforço, nº de marcações, flags e um marcador
+// (subir carga / ideal / baixar-técnica / aparelho ruim). O kg é incomparável
+// entre academias; o esforço é o sinal real de calibração.
+const _ESF_SCORE = { sobrou3: 3, sobrou2: 2, sobrou1: 1, falha_ult: 0, falha_antes: -1 };
+const _ESF_LABEL = { sobrou3: 'Sobrou 3+', sobrou2: 'Sobrou 2', sobrou1: 'Sobrou 1', falha_ult: 'Falhei na última', falha_antes: 'Falhei antes' };
+const _ESF_APLABEL = { maquina_ruim: 'Máquina ruim', nao_sinto: 'Não sinto o músculo', carga_estranha: 'Carga estranha' };
+
+// Replica o parser do WORKOUT (bloco @TREINO → dia col A → exercícios, merge
+// bi-set) pra mapear (di, ei) → nome do exercício no MESMO índice que o aluno loga.
+function _esfBuildDays(rows) {
+  const blocos = []; let cur = null;
+  const ensure = (nome) => { let b = blocos.find(x => x.nome === nome); if (!b) { b = { nome, days: {} }; blocos.push(b); } return b; };
+  for (const r of rows) {
+    const a = String(r[0] == null ? '' : r[0]).trim();
+    const al = a.toLowerCase();
+    if (al === 'info' || al === 'restrict' || al === 'link' || al === 'hipo') continue;
+    if (a === '' && r[1] && String(r[1]).trim().toUpperCase().startsWith('@TREINO')) {
+      cur = String(r[1]).replace(/^@TREINO\s*/i, '').trim(); ensure(cur); continue;
+    }
+    const dayNum = parseInt(a);
+    if (isNaN(dayNum)) continue;
+    const isBisetStart = /bi/.test(al);
+    if (cur === null) cur = '';
+    const b = ensure(cur);
+    if (!b.days[dayNum]) b.days[dayNum] = [];
+    b.days[dayNum].push({ name: r[1] || '', warmup: String(r[7] || '').toLowerCase() === 'sim', bisetStart: isBisetStart });
+  }
+  blocos.forEach(b => Object.keys(b.days).forEach(d => {
+    const o = b.days[d], m = [];
+    for (let i = 0; i < o.length; i++) {
+      const e = o[i];
+      if (e.bisetStart && i + 1 < o.length && !o[i + 1].warmup) { m.push({ name: e.name + ' + ' + o[i + 1].name, warmup: false }); i++; }
+      else m.push(e);
+    }
+    b.days[d] = m;
+  }));
+  const days = [];
+  blocos.forEach(b => Object.keys(b.days).sort((x, y) => +x - +y).forEach(d => days.push({ dia: d, exercises: b.days[d] })));
+  return days;
+}
+
+function _esfMarker(s) {
+  if (!s || !s.n) return { ic: '⚪', txt: 'sem dados', cls: 'esf-m-none' };
+  const apEntries = Object.entries(s.aparelho || {}).sort((a, b) => b[1] - a[1]);
+  if (apEntries.length && apEntries[0][1] / s.n >= 0.4) {
+    return { ic: '🔧', txt: 'aparelho: ' + (_ESF_APLABEL[apEntries[0][0]] || apEntries[0][0]), cls: 'esf-m-equip' };
+  }
+  const scores = (s.recent || []).map(r => _ESF_SCORE[r.esforco]).filter(v => v !== undefined);
+  if (!scores.length) return { ic: '⚪', txt: 'sem dados', cls: 'esf-m-none' };
+  if (s.n < 2) return { ic: '⚪', txt: 'coletando', cls: 'esf-m-none' };
+  const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+  if (avg >= 1.8) return { ic: '🟢', txt: 'subir carga', cls: 'esf-m-up' };
+  if (avg <= -0.3) return { ic: '🔴', txt: 'baixar / técnica', cls: 'esf-m-down' };
+  return { ic: '🎯', txt: 'ideal', cls: 'esf-m-ok' };
+}
+
+async function renderEsforcoPanel() {
+  const cont = document.getElementById('trainerDaysContainer');
+  if (!cont) return;
+  cont.innerHTML = `<div style="padding:28px 16px;text-align:center;color:#9a9389;">Carregando esforço…</div>`;
+  let stats = [];
+  try {
+    const res = await fetch(`${LOG_ENDPOINT}?action=esforco&id=${encodeURIComponent(trainerSheetId)}`, { cache: 'no-store' });
+    const j = await res.json();
+    stats = Array.isArray(j.esforco) ? j.esforco : [];
+  } catch (_) {
+    cont.innerHTML = `<div style="padding:28px 16px;text-align:center;color:#c9776b;">Não consegui carregar o esforço agora. Tenta de novo.</div>`;
+    return;
+  }
+  const days = trainerData ? _esfBuildDays(trainerData) : [];
+  const byKey = {};
+  stats.forEach(s => { byKey[`${s.di}|${s.ei}`] = s; });
+
+  let up = 0, equip = 0, totalComDado = 0;
+  days.forEach((day, di) => day.exercises.forEach((ex, ei) => {
+    if (ex.warmup) return;
+    const s = byKey[`${di}|${ei}`];
+    if (!s || !s.n) return;
+    totalComDado++;
+    const m = _esfMarker(s);
+    if (m.cls === 'esf-m-up') up++;
+    if (m.cls === 'esf-m-equip') equip++;
+  }));
+
+  let html = `<div class="esf-panel">
+    <div class="esf-summary">${totalComDado
+      ? `<b style="color:var(--gold);">${up}</b> pra subir carga · <b style="color:#e0a05c;">${equip}</b> aparelho${equip === 1 ? '' : 's'} sinalizado${equip === 1 ? '' : 's'} · ${totalComDado} exercício${totalComDado === 1 ? '' : 's'} com dado`
+      : 'Ainda sem marcações de esforço. Vai aparecendo aqui conforme os alunos marcam no Modo Focado.'}</div>`;
+
+  if (!days.length) {
+    html += `<div style="padding:18px;text-align:center;color:#9a9389;">Sem treino carregado pra cruzar os nomes dos exercícios.</div>`;
+  }
+  days.forEach((day, di) => {
+    const linhas = day.exercises.map((ex, ei) => {
+      if (ex.warmup) return '';
+      const s = byKey[`${di}|${ei}`];
+      const m = _esfMarker(s);
+      const ultimo = (s && s.recent && s.recent.length) ? (_ESF_LABEL[s.recent[s.recent.length - 1].esforco] || '—') : '—';
+      const apTags = (s && s.aparelho) ? Object.entries(s.aparelho).map(([k, v]) => `<span class="esf-aptag">${_ESF_APLABEL[k] || k} ×${v}</span>`).join('') : '';
+      return `<div class="esf-row">
+        <div class="esf-exname">${escTrainer(ex.name || '—')}</div>
+        <div class="esf-meta">${(s && s.n) ? `último: <b>${ultimo}</b> · ${s.n}×` : 'sem marcação'} ${apTags}</div>
+        <div class="esf-mark ${m.cls}">${m.ic} ${m.txt}</div>
+      </div>`;
+    }).join('');
+    html += `<div class="esf-day"><div class="esf-day-h">DIA ${day.dia}</div>${linhas}</div>`;
+  });
+  html += `</div>`;
+  cont.innerHTML = html;
 }
 
 function escTrainer(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
