@@ -646,6 +646,8 @@
   .focus-carga-label { color: #9a9aa0; font-size: 11px; margin-bottom: 7px; }
   .focus-carga input { background: #101013; border: 1px solid #2c2c33; color: #fff; font-size: 18px; font-weight: 700; padding: 10px 6px; border-radius: 8px; width: 92px; text-align: center; }
   .focus-esforco { background: #17171b; border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+  .focus-esf-alvo { background: rgba(212,175,106,.1); border: 1px solid rgba(212,175,106,.25); border-radius: 7px; padding: 7px 10px; margin: 7px 0 9px; font-size: 12px; color: #e0c184; line-height: 1.4; }
+  .focus-esf-alvo b { color: var(--gold, #D4AF6A); }
   .esf-chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .esf-chip { background: #101013; border: 1px solid #2c2c33; color: #cfcfd6; font-size: 12px; font-weight: 600; padding: 8px 9px; border-radius: 8px; cursor: pointer; flex: 1 1 28%; }
   .esf-chip.sel { background: var(--gold, #D4AF6A); color: #1a1408; border-color: var(--gold, #D4AF6A); }
@@ -1977,6 +1979,7 @@
   <h1 id="headerTitle">PROTOCOLO DE TREINO</h1>
   <div class="last-mod" id="lastModBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:0.3px;"><span id="versionBadge" style="display:none;color:var(--gold);font-weight:600;">Protocolo v<span id="versionValue"></span></span><span id="lastModSep" style="display:none;"> · </span>Atualizado em <span id="lastModValue"></span></div>
   <div class="last-mod" id="proxReajusteBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:0.3px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-1px;margin-right:3px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Próxima anamnese de reajuste: <span id="proxReajusteValue" style="color:var(--gold);font-weight:600;"></span></div>
+  <div class="last-mod" id="esforcoAlvoBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:0.3px;">💪 Esforço-alvo: <span id="esforcoAlvoValue" style="color:var(--gold);font-weight:600;"></span></div>
 </div>
 
 <!-- ══ AVISO DE REAJUSTE / AJUSTE NO PROTOCOLO (substitui o hook do WhatsApp) ══ -->
@@ -3828,6 +3831,26 @@ function _bankVideo(name){const k=_normEx(name);return k&&EX_VIDEO_BANK[k]?EX_VI
 })();
 
 let WORKOUT = [];
+let STUDENT_ESFORCO_ALVO = null; // {valor, texto} da linha 'meta' Esforco-alvo do TREINO (RIR alvo)
+// Esforco-alvo (RIR): linha 'meta' do TREINO (apos restrict), col B "Esforco-alvo".
+// gviz tira o col A 'meta' -> vem como ['', 'Esforco-alvo', valor, texto]. O regex no col B
+// desambigua do restrict (que tambem chega com col A vazio).
+function _parseEsforcoAlvo(rows) {
+  for (const r of (rows || [])) {
+    const a = String(r[0] == null ? '' : r[0]).toLowerCase().trim();
+    if ((a === 'meta' || a === '') && /esfor[çc]o[\s-]*alvo/i.test(String(r[1] || ''))) {
+      return { valor: String(r[2] || '').trim(), texto: String(r[3] || '').trim() };
+    }
+  }
+  return null;
+}
+// "2 a 3 no tanque" / "1-2" / "0-1 / falha" -> [lo, hi] em reps no tanque (RIR)
+function _parseAlvoRange(valor) {
+  const nums = String(valor || '').match(/\d+/g);
+  if (!nums || !nums.length) return null;
+  const lo = parseInt(nums[0], 10), hi = nums[1] != null ? parseInt(nums[1], 10) : lo;
+  return [Math.min(lo, hi), Math.max(lo, hi)];
+}
 let currentDay = 0;
 let BLOCOS = [];           // nomes dos blocos de treino (ex: ["Normal 6x","Viagem 3x"]). Vazio = sem toggle.
 let currentBlocoIdx = 0;   // índice do bloco selecionado
@@ -5421,8 +5444,13 @@ function _focusEsforcoBlock(di, key) {
   const chips = _ESF_OPTS.map(([v, l]) => `<button class="esf-chip${curE === v ? ' sel' : ''}" onclick="onEsforco(${di},'${key}',this,'${v}')">${l}</button>`).join('');
   const apChips = _ESF_AP.map(([v, l]) => `<button class="esf-apchip${curA.includes(v) ? ' sel' : ''}" data-v="${v}" onclick="onEsforcoAp(${di},'${key}',this)">${l}</button>`).join('');
   const apOpen = curA.length > 0;
+  const alvo = STUDENT_ESFORCO_ALVO;
+  const alvoHtml = (alvo && alvo.valor)
+    ? `<div class="focus-esf-alvo">🎯 Alvo (última série): deixe <b>${escTrainer(alvo.valor)}</b></div>`
+    : '';
   return `<div class="focus-esforco">
     <div class="focus-carga-label">Como foi o esforço? <span style="color:#5f5f66;font-weight:400;">quanto sobrou no tanque · ajuda o Gabriel a acertar tua carga</span></div>
+    ${alvoHtml}
     <div class="esf-chips">${chips}</div>
     <button class="esf-aptoggle${apOpen ? ' open' : ''}" onclick="esfToggleAp(this)">⚠️ Problema no aparelho?</button>
     <div class="esf-apchips" style="display:${apOpen ? 'flex' : 'none'};">${apChips}</div>
@@ -5795,6 +5823,14 @@ async function loadFromSheets() {
     document.getElementById('infoFreq').textContent = studentFreq;
     document.getElementById('infoObj').textContent = studentObj;
     document.getElementById('infoDur').textContent = studentDur;
+
+    // Esforco-alvo (RIR): badge no topo + valor global pro Modo Focado mostrar do lado do esforco
+    STUDENT_ESFORCO_ALVO = _parseEsforcoAlvo(rows);
+    if (STUDENT_ESFORCO_ALVO && STUDENT_ESFORCO_ALVO.valor) {
+      const eaV = document.getElementById('esforcoAlvoValue'), eaB = document.getElementById('esforcoAlvoBadge');
+      if (eaV) eaV.textContent = STUDENT_ESFORCO_ALVO.valor;
+      if (eaB) eaB.style.display = 'block';
+    }
 
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('studentInfo').style.display = 'grid';
@@ -10360,6 +10396,24 @@ function _esfMarker(s) {
   return { ic: '🎯', txt: 'ideal', cls: 'esf-m-ok' };
 }
 
+// Marcador do Raio-X COMPARANDO com o alvo prescrito (real x alvo). NAO toca o _esfMarker
+// (que o painel ESFORCO usa com limiar fixo, sem alvo). Com alvo, sobrar dentro da faixa =
+// no alvo; acima = facil demais (subir); abaixo = pesado demais (baixar). Aparelho tem prioridade.
+function _esfMarkerVsAlvo(s, range) {
+  if (!s || !s.n) return { ic: '⚪', txt: 'sem dados', cls: 'esf-m-none' };
+  const apEntries = Object.entries(s.aparelho || {}).sort((a, b) => b[1] - a[1]);
+  if (apEntries.length && apEntries[0][1] / s.n >= 0.4) {
+    return { ic: '🔧', txt: 'aparelho: ' + (_ESF_APLABEL[apEntries[0][0]] || apEntries[0][0]), cls: 'esf-m-equip' };
+  }
+  const scores = (s.recent || []).map(r => _ESF_SCORE[r.esforco]).filter(v => v !== undefined);
+  if (scores.length < 2) return { ic: '⚪', txt: 'coletando', cls: 'esf-m-none' };
+  const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+  const [lo, hi] = range;
+  if (avg > hi + 0.5) return { ic: '🟢', txt: 'acima do alvo, subir carga', cls: 'esf-m-up' };
+  if (avg < lo - 0.5) return { ic: '🔴', txt: 'abaixo do alvo, baixar/técnica', cls: 'esf-m-down' };
+  return { ic: '🎯', txt: 'no alvo', cls: 'esf-m-ok' };
+}
+
 async function renderEsforcoPanel() {
   const cont = document.getElementById('trainerDaysContainer');
   if (!cont) return;
@@ -10456,12 +10510,15 @@ async function renderRaioXPanel() {
   const stats = Array.isArray(esf.esforco) ? esf.esforco : [];
   const byKey = {}; stats.forEach(s => { byKey[`${s.di}|${s.ei}`] = s; });
   const days = trainerData ? _esfBuildDays(trainerData) : [];
+  // alvo prescrito (linha 'meta' do TREINO) → compara real x alvo; sem alvo, cai no marcador fixo
+  const alvoEsf = _parseEsforcoAlvo(trainerData);
+  const alvoRange = alvoEsf ? _parseAlvoRange(alvoEsf.valor) : null;
   let up = 0, down = 0, equip = 0, ideal = 0, comDado = 0;
   const upEx = [], downEx = [], equipEx = [];
   days.forEach((day, di) => day.exercises.forEach((ex, ei) => {
     if (ex.warmup) return;
     const s = byKey[`${di}|${ei}`]; if (!s || !s.n) return;
-    const m = _esfMarker(s); comDado++;
+    const m = alvoRange ? _esfMarkerVsAlvo(s, alvoRange) : _esfMarker(s); comDado++;
     if (m.cls === 'esf-m-up') { up++; upEx.push(ex.name); }
     else if (m.cls === 'esf-m-down') { down++; downEx.push(ex.name); }
     else if (m.cls === 'esf-m-equip') { equip++; equipEx.push(ex.name); }
@@ -10493,7 +10550,7 @@ async function renderRaioXPanel() {
   let html = `<div class="rx-panel">
     <div class="rx-acao ${acao.cls}"><span class="rx-acao-ic">${acao.ic}</span><span>${escTrainer(acao.t)}</span></div>
     <div class="rx-grid">
-      ${cell('📊 Carga', comDado ? `${up} subir · ${ideal} ideal · ${down} baixar` : '—', comDado ? `${comDado} ex com esforço` : 'sem marcação ainda', !comDado)}
+      ${cell('📊 Carga', comDado ? `${up} subir · ${ideal} ${alvoRange ? 'no alvo' : 'ideal'} · ${down} baixar` : '—', comDado ? `${comDado} ex com esforço${alvoEsf ? ' · alvo: ' + alvoEsf.valor : ''}` : 'sem marcação ainda', !comDado)}
       ${cell('🔧 Aparelho', equip ? `${equip} sinalizado${equip === 1 ? '' : 's'}` : (comDado ? 'nenhum' : '—'), equip ? equipEx.slice(0, 2).join(', ') : '', !equip && !comDado)}
       ${cell('🏃 Adesão', diasSem != null ? (diasSem === 0 ? 'treinou hoje' : `treinou há ${diasSem}d`) : '—', freqPrescr ? `prescrito ${freqPrescr}` : '', diasSem == null)}
       ${cell('💬 Dúvidas/ajustes', nAj != null ? (nAj === 0 ? 'nenhum' : `${nAj} recente${nAj === 1 ? '' : 's'}`) : '—', ajRecent[0] ? `último: há ${ajRecent[0].diasAtras}d` : '', nAj == null)}
