@@ -5277,6 +5277,19 @@ function allDoneOfDay(di) {
   if (!real.length) return false;
   return real.every(o => isDone(di, o.ei));
 }
+// Primeiro dia VISÍVEL (do bloco ativo) ainda NÃO concluído 100% na semana atual.
+// Abre direto nele ao carregar — ajuda o iniciante a saber qual treino fazer. Se todos
+// completos (ou sem dado), cai no 1º dia visível (comportamento de antes). Lê os checks
+// do localStorage da semana atual (currentWeek), então funciona no mesmo aparelho.
+function _primeiroDiaIncompleto() {
+  let primeiroVisivel = -1;
+  for (let di = 0; di < WORKOUT.length; di++) {
+    if (typeof _isVisibleDay === 'function' && !_isVisibleDay(WORKOUT[di])) continue;
+    if (primeiroVisivel < 0) primeiroVisivel = di;
+    if (!allDoneOfDay(di)) return di;
+  }
+  return primeiroVisivel >= 0 ? primeiroVisivel : 0;
+}
 function updateDayProgress() {
   const day = WORKOUT[currentDay];
   const bar = document.getElementById('dayProgress');
@@ -5879,6 +5892,11 @@ async function loadFromSheets() {
     }
 
     if (WORKOUT.length === 0) throw new Error('Nenhum exercício encontrado na aba. Verifique o formato da planilha.');
+
+    // Abre direto no 1º dia ainda não concluído (semana atual / bloco ativo) — iniciante
+    // não fica perdido em qual treino fazer. Override do default acima; se tudo completo,
+    // _primeiroDiaIncompleto devolve o 1º dia visível (igual a antes).
+    currentDay = _primeiroDiaIncompleto();
 
     // Update UI
     document.getElementById('infoNome').textContent = studentName;
