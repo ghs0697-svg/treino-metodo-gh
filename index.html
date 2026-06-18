@@ -5498,7 +5498,7 @@ function _focusCargaBlock(di, key, label) {
 }
 // Grade de esforço (RIR-em-palavras) + flag de aparelho — 1 toque, opcional.
 // Vai logo depois da carga, por exercício (1 por exercício, não por série).
-const _ESF_OPTS = [['sobrou3', 'Sobrou 3+'], ['sobrou2', 'Sobrou 2'], ['sobrou1', 'Sobrou 1'], ['falha_ult', 'Falhei na última'], ['falha_antes', 'Falhei antes']];
+const _ESF_OPTS = [['sobrou3', 'Sobrou 3+ reps'], ['sobrou2', 'Sobrou 2 reps'], ['sobrou1', 'Sobrou 1 rep'], ['falha_ult', 'Falhei na última série'], ['falha_antes', 'Falhei antes da última']];
 const _ESF_AP = [['maquina_ruim', 'Máquina ruim'], ['nao_sinto', 'Não sinto o músculo'], ['carga_estranha', 'Carga estranha']];
 function _focusEsforcoBlock(di, key) {
   const curE = loadEsf(di, key, currentWeek);
@@ -5511,7 +5511,7 @@ function _focusEsforcoBlock(di, key) {
     ? `<div class="focus-esf-alvo">🎯 Alvo (última série): deixe <b>${escTrainer(alvo.valor)}</b></div>`
     : '';
   return `<div class="focus-esforco">
-    <div class="focus-carga-label">Como foi o esforço? <span style="color:#5f5f66;font-weight:400;">quanto sobrou no tanque · ajuda o Gabriel a acertar tua carga</span></div>
+    <div class="focus-carga-label">Como foi o esforço? <span style="color:#5f5f66;font-weight:400;">na ÚLTIMA série, quantas repetições ainda dava pra fazer (o que sobrou no tanque)</span></div>
     ${alvoHtml}
     <div class="esf-chips">${chips}</div>
     <button class="esf-aptoggle${apOpen ? ' open' : ''}" onclick="esfToggleAp(this)">⚠️ Problema no aparelho?</button>
@@ -10467,7 +10467,7 @@ function renderCurrentEditor() {
 // (subir carga / ideal / baixar-técnica / aparelho ruim). O kg é incomparável
 // entre academias; o esforço é o sinal real de calibração.
 const _ESF_SCORE = { sobrou3: 3, sobrou2: 2, sobrou1: 1, falha_ult: 0, falha_antes: -1 };
-const _ESF_LABEL = { sobrou3: 'Sobrou 3+', sobrou2: 'Sobrou 2', sobrou1: 'Sobrou 1', falha_ult: 'Falhei na última', falha_antes: 'Falhei antes' };
+const _ESF_LABEL = { sobrou3: 'Sobrou 3+ reps', sobrou2: 'Sobrou 2 reps', sobrou1: 'Sobrou 1 rep', falha_ult: 'Falhei na última série', falha_antes: 'Falhei antes da última' };
 const _ESF_APLABEL = { maquina_ruim: 'Máquina ruim', nao_sinto: 'Não sinto o músculo', carga_estranha: 'Carga estranha' };
 
 // Replica o parser do WORKOUT (bloco @TREINO → dia col A → exercícios, merge
