@@ -1992,7 +1992,7 @@
   <h1 id="headerTitle">PROTOCOLO DE TREINO</h1>
   <div class="last-mod" id="lastModBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:0.3px;"><span id="versionBadge" style="display:none;color:var(--gold);font-weight:600;">Protocolo v<span id="versionValue"></span></span><span id="lastModSep" style="display:none;"> · </span>Atualizado em <span id="lastModValue"></span></div>
   <div class="last-mod" id="proxReajusteBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:0.3px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-1px;margin-right:3px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Próxima anamnese de reajuste: <span id="proxReajusteValue" style="color:var(--gold);font-weight:600;"></span></div>
-  <div class="last-mod" id="esforcoAlvoBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:0.3px;">💪 Esforço-alvo: <span id="esforcoAlvoValue" style="color:var(--gold);font-weight:600;"></span></div>
+  <div class="last-mod" id="esforcoAlvoBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:0.3px;">💪 Esforço: <span id="esforcoAlvoValue" style="color:var(--gold);font-weight:600;"></span></div>
 </div>
 
 <!-- ══ AVISO DE REAJUSTE / AJUSTE NO PROTOCOLO (substitui o hook do WhatsApp) ══ -->
@@ -3880,6 +3880,18 @@ function _parseAlvoRange(valor) {
   const lo = parseInt(nums[0], 10), hi = nums[1] != null ? parseInt(nums[1], 10) : lo;
   return [Math.min(lo, hi), Math.max(lo, hi)];
 }
+// Esforço-alvo (RIR) vira frase clara e que PUXA esforço (sem "no tanque", que lia como "segura").
+// 'badge' = resumo curto pro topo; 'focado' = instrução da última série no Modo Focado.
+function _esforcoFrase(valor, modo) {
+  const r = _parseAlvoRange(valor);
+  const falha = (r && r[0] === 0) || /falha/i.test(String(valor || ''));
+  if (modo === 'badge') {
+    return falha ? 'última série até a falha' : 'última série bem puxada, até quase travar';
+  }
+  return falha
+    ? 'Última série: vai ATÉ A FALHA. Repete até não sair mais nenhuma com técnica boa.'
+    : 'Última série: vai PESADO. As últimas repetições têm que ser bem difíceis, quase travando. Só para quando a técnica começar a cair.';
+}
 let currentDay = 0;
 let BLOCOS = [];           // nomes dos blocos de treino (ex: ["Normal 6x","Viagem 3x"]). Vazio = sem toggle.
 let currentBlocoIdx = 0;   // índice do bloco selecionado
@@ -5511,7 +5523,7 @@ function _focusCargaBlock(di, key, label) {
 }
 // Grade de esforço (RIR-em-palavras) + flag de aparelho — 1 toque, opcional.
 // Vai logo depois da carga, por exercício (1 por exercício, não por série).
-const _ESF_OPTS = [['sobrou3', 'Sobrou 3+ reps'], ['sobrou2', 'Sobrou 2 reps'], ['sobrou1', 'Sobrou 1 rep'], ['falha_ult', 'Falhei na última série'], ['falha_antes', 'Falhei antes da última']];
+const _ESF_OPTS = [['sobrou3', 'Fácil, ainda dava 3 ou mais'], ['sobrou2', 'Dava mais 2 repetições'], ['sobrou1', 'Dava mais 1 repetição'], ['falha_ult', 'Fiz todas, mas não dava nem mais 1'], ['falha_antes', 'Pesado demais, travei antes de terminar']];
 const _ESF_AP = [['maquina_ruim', 'Máquina ruim'], ['nao_sinto', 'Não sinto o músculo'], ['carga_estranha', 'Carga estranha']];
 function _focusEsforcoBlock(di, key) {
   const curE = loadEsf(di, key, currentWeek);
@@ -5521,10 +5533,10 @@ function _focusEsforcoBlock(di, key) {
   const apOpen = curA.length > 0;
   const alvo = STUDENT_ESFORCO_ALVO;
   const alvoHtml = (alvo && alvo.valor)
-    ? `<div class="focus-esf-alvo">🎯 Alvo (última série): deixe <b>${escTrainer(alvo.valor)}</b></div>`
+    ? `<div class="focus-esf-alvo">🎯 ${_esforcoFrase(alvo.valor, 'focado')}</div>`
     : '';
   return `<div class="focus-esforco">
-    <div class="focus-carga-label">Como foi o esforço? <span style="color:#5f5f66;font-weight:400;">na ÚLTIMA série, quantas repetições ainda dava pra fazer (o que sobrou no tanque)</span></div>
+    <div class="focus-carga-label">Como foi a ÚLTIMA série? <span style="color:#5f5f66;font-weight:400;">quantas repetições ainda dava pra fazer no fim</span></div>
     ${alvoHtml}
     <div class="esf-chips">${chips}</div>
     <button class="esf-aptoggle${apOpen ? ' open' : ''}" onclick="esfToggleAp(this)">⚠️ Problema no aparelho?</button>
@@ -5908,7 +5920,7 @@ async function loadFromSheets() {
     STUDENT_ESFORCO_ALVO = _parseEsforcoAlvo(rows);
     if (STUDENT_ESFORCO_ALVO && STUDENT_ESFORCO_ALVO.valor) {
       const eaV = document.getElementById('esforcoAlvoValue'), eaB = document.getElementById('esforcoAlvoBadge');
-      if (eaV) eaV.textContent = STUDENT_ESFORCO_ALVO.valor;
+      if (eaV) eaV.textContent = _esforcoFrase(STUDENT_ESFORCO_ALVO.valor, 'badge');
       if (eaB) eaB.style.display = 'block';
     }
 
@@ -10485,7 +10497,7 @@ function renderCurrentEditor() {
 // (subir carga / ideal / baixar-técnica / aparelho ruim). O kg é incomparável
 // entre academias; o esforço é o sinal real de calibração.
 const _ESF_SCORE = { sobrou3: 3, sobrou2: 2, sobrou1: 1, falha_ult: 0, falha_antes: -1 };
-const _ESF_LABEL = { sobrou3: 'Sobrou 3+ reps', sobrou2: 'Sobrou 2 reps', sobrou1: 'Sobrou 1 rep', falha_ult: 'Falhei na última série', falha_antes: 'Falhei antes da última' };
+const _ESF_LABEL = { sobrou3: 'Fácil, ainda dava 3 ou mais', sobrou2: 'Dava mais 2 repetições', sobrou1: 'Dava mais 1 repetição', falha_ult: 'Fiz todas, mas não dava nem mais 1', falha_antes: 'Pesado demais, travei antes de terminar' };
 const _ESF_APLABEL = { maquina_ruim: 'Máquina ruim', nao_sinto: 'Não sinto o músculo', carga_estranha: 'Carga estranha' };
 
 // Replica o parser do WORKOUT (bloco @TREINO → dia col A → exercícios, merge
@@ -10596,7 +10608,7 @@ async function renderEsforcoPanel() {
       if (ex.warmup) return '';
       const s = byKey[`${di}|${ei}`];
       const m = _esfMarker(s);
-      const ultimo = (s && s.recent && s.recent.length) ? (_ESF_LABEL[s.recent[s.recent.length - 1].esforco] || '—') : '—';
+      const ultimo = (s && s.recent && s.recent.length) ? (_ESF_LABEL[s.recent[s.recent.length - 1].esforco] || '...') : '...';
       const apTags = (s && s.aparelho) ? Object.entries(s.aparelho).map(([k, v]) => `<span class="esf-aptag">${_ESF_APLABEL[k] || k} ×${v}</span>`).join('') : '';
       return `<div class="esf-row">
         <div class="esf-exname">${escTrainer(ex.name || '—')}</div>
