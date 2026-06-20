@@ -9657,12 +9657,33 @@ function copyTreinoCSV() {
 // ══════════════════════════════════════════════════════════════
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby0Kej7V7Gi2gIDKorBookSLofBMHOF50UFWq4Q1fTmstCD8ed8O9XLyCaZo8QIeUPfeQ/exec';
 
+// ── Guard anti-footgun: linha 'ciclo' com nome de composto hormonal ──
+// No editor, 'proto' e 'ciclo' caem no mesmo bloco PROTOCOLOS/CICLOS, mas no app do aluno
+// uma linha 'ciclo' vira CABEÇALHO de ciclo de carbo e o hormônio SOME do card de Protocolo
+// (caso Romulo). Ciclo de carbo legítimo se chama "Dia ALTO/BAIXO carbo" (e hoje é via op abas).
+const _HORMONIO_RE = /test(osterona|o)?\b|enantato|cipionato|propionato|nandrolona|\bnpp\b|\bdeca\b|durateston|boldenona|equipoise|masteron|drostanolona|trembolona|\btren\b|trestolona|\bment\b|hemogenin|oximetolona|oxandrolona|\banavar\b|stanozolol|winstrol|dianabol|metandrost|halotestin|fluoximest|primobolan|metenolona|turinabol|anastrozol|tamoxifeno|\bhcg\b|clomi|proviron|mesterolona|sustanon|deposteron|parabolan/i;
+function guardCicloHormonio(values) {
+  const susp = [];
+  (values || []).forEach((r, i) => {
+    if (String(r[0] || '').toLowerCase().trim() === 'ciclo' && _HORMONIO_RE.test(String(r[1] || ''))) susp.push(i);
+  });
+  if (!susp.length) return true;
+  const lista = susp.map(i => '• ' + (values[i][1] || '')).join('\n');
+  const msg = 'ATENÇÃO: linha(s) de Ciclo com nome de composto hormonal:\n\n' + lista +
+    '\n\nNo app do aluno, uma linha "Ciclo" vira cabeçalho de ciclo de carbo e o hormônio SOME do card de Protocolo.\n\n' +
+    'OK = troco essas linhas pra Protocolo e salvo.\nCancelar = volto pra tu revisar.';
+  if (confirm(msg)) { susp.forEach(i => { values[i][0] = 'proto'; }); return true; }
+  return false;
+}
+
 async function publishToSheet(tab) {
   const sheetId = document.getElementById('adminSheetId').value.trim();
   if (!sheetId) { alert('Preencha o ID da planilha do aluno.'); return; }
   const data = tab === 'DIETA' ? editorData : editorTreinoData;
   if (!data || data.length < 2) { alert('Carregue um template primeiro.'); return; }
   const statusEl = document.getElementById(tab === 'DIETA' ? 'edStatus' : 'treinoStatus');
+  // Guard anti-footgun: ciclo com nome de hormonio some do card de Protocolo no app do aluno.
+  if (tab === 'DIETA' && !guardCicloHormonio(data)) return;
   statusEl.textContent = 'Publicando...';
   statusEl.style.display = 'inline';
   try {
@@ -11314,6 +11335,8 @@ async function trainerSave() {
   const tab = isTreino ? 'TREINO' : 'DIETA';
   if (!data || !data.length) return;
   if (!confirm(`Salvar todas as mudanças em ${tab}? (a aba ${tab} vai ser sobrescrita)`)) return;
+  // Guard anti-footgun: linha 'ciclo' com nome de hormonio some do card de Protocolo no app do aluno (caso Romulo).
+  if (!isTreino && !guardCicloHormonio(data)) return;
   const btn = document.getElementById('trainerSaveBtn');
   const orig = btn.textContent;
   btn.textContent = 'Salvando…';
@@ -11418,7 +11441,6 @@ function renderDietaEditor() {
       sections.proto.map(r => renderDietaSimpleRow(r, ['Item', 'Dose', 'Observação'])).join('') +
       `<div class="di-action-bar">
          <button class="di-add-btn" onclick="dietaAddSimple('proto')">+ Protocolo</button>
-         <button class="di-add-btn" onclick="dietaAddSimple('ciclo')">+ Ciclo</button>
        </div>`);
   }
 
