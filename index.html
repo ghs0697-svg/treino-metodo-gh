@@ -9105,6 +9105,17 @@ function renovBannerDismiss() {
   try { sessionStorage.setItem('renovBannerOff', '1'); var b = document.getElementById('renovBanner'); if (b) b.classList.remove('show'); } catch (e) {}
 }
 
+// Mostra o bloqueio de acesso. motivo='cancelado' troca o texto; 'vencido' usa o HTML padrão.
+function mostrarPlanBlock(motivo) {
+  var ov = document.getElementById('planBlockOverlay'); if (!ov) return;
+  if (motivo === 'cancelado') {
+    var h = ov.querySelector('h2'), p = ov.querySelector('p');
+    if (h) h.textContent = 'Plano cancelado';
+    if (p) p.textContent = 'Teu plano foi cancelado e o acesso ao protocolo está encerrado. Se quiser voltar a treinar com a gente, fala no WhatsApp de suporte.';
+  }
+  ov.classList.add('show'); document.body.style.overflow = 'hidden';
+}
+
 (function planBlockGate() {
   try {
     if (typeof SHEET_ID === 'undefined' || !SHEET_ID) return;
@@ -9116,24 +9127,21 @@ function renovBannerDismiss() {
     fetch(LOG_ENDPOINT + '?action=planstatus&sheet=' + encodeURIComponent(SHEET_ID) + '&_=' + Date.now())
       .then(function (r) { return r.json(); })
       .then(function (j) {
-        if (!j || !j.found || !j.vencimento) return; // fail open
+        if (!j || !j.found) return; // fail open (sem dado)
+        var st = String(j.status || '').trim().toLowerCase();
+        // 0. Cancelado: bloqueio duro imediato (sem carência, sem banner). Independe do vencimento.
+        if (st === 'cancelado') { mostrarPlanBlock('cancelado'); return; }
+        if (!j.vencimento) return; // fail open
         var vencDate = new Date(j.vencimento + 'T00:00:00');
         if (isNaN(vencDate.getTime())) return;       // fail open
         var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
         var diasToVenc = Math.round((vencDate.getTime() - hoje.getTime()) / 86400000); // + futuro, - passado
-        // Col K (Ativo/Vencido): 'Vencido' = a formula virou (TODAY()>venc) ou o GH marcou.
-        var isVencido = String(j.status || '').trim().toLowerCase() === 'vencido';
+        // Col K: 'Vencido' = a formula virou (TODAY()>venc) ou o GH marcou.
+        var isVencido = st === 'vencido';
         // 1. Bloqueio duro: vencido E passou a carência (mais de GRACE dias depois do vencimento).
-        if (isVencido && diasToVenc < -GRACE) {
-          var ov = document.getElementById('planBlockOverlay');
-          if (ov) { ov.classList.add('show'); document.body.style.overflow = 'hidden'; }
-          return;
-        }
+        if (isVencido && diasToVenc < -GRACE) { mostrarPlanBlock('vencido'); return; }
         // 2. Carência: vencido mas dentro dos GRACE dias → banner forte (dias restantes), não acesso mudo.
-        if (isVencido) {
-          renovBannerShow('carencia', Math.max(1, GRACE + diasToVenc + 1));
-          return;
-        }
+        if (isVencido) { renovBannerShow('carencia', Math.max(1, GRACE + diasToVenc + 1)); return; }
         // 3. Pré-vencimento: ativo e vence em ≤ PRE_DIAS dias → banner aviso.
         if (diasToVenc >= 0 && diasToVenc <= PRE_DIAS) renovBannerShow('prevenc', diasToVenc);
       })
