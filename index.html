@@ -9119,6 +9119,7 @@ function renovBannerDismiss() {
 // renovBannerShow esconde o reajuste). Tom positivo: é sobre evoluir, não sobre problema.
 var REAJ_PRE_DIAS = 7;     // avisa até 7 dias antes
 var REAJ_CAP_ATRASO = 21;  // some 21 dias depois (aí é churn/follow-sumidos, não banner gentil)
+var REAJ_FORM = 'https://forms.gle/6NbYKYDQy7ANjHLM6'; // anamnese de reajuste (CTA do banner). Canal complementar ao WhatsApp dos 50 dias (automação no Make).
 function reajusteBannerShow(dias) {
   try {
     if (sessionStorage.getItem('reajBannerOff') === '1') return;
@@ -9129,7 +9130,7 @@ function reajusteBannerShow(dias) {
     if (dias > 0) txt.textContent = 'Teu reajuste tá chegando (em ' + dias + (dias === 1 ? ' dia' : ' dias') + '). Bora atualizar teu protocolo pra continuar evoluindo.';
     else if (dias === 0) txt.textContent = 'Teu reajuste é hoje! Fala com a gente pra atualizar teu protocolo.';
     else txt.textContent = 'Tá na hora do teu reajuste. Atualiza teu protocolo pra não travar a evolução.';
-    cta.href = RENOV_WA + encodeURIComponent('Oi! Quero fazer meu reajuste e atualizar meu protocolo.');
+    cta.href = REAJ_FORM; // direto pra anamnese de reajuste (abre em nova aba)
     b.classList.add('show');
   } catch (e) {}
 }
