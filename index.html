@@ -622,6 +622,7 @@
   .renov-banner.show { display: flex; }
   .renov-banner.prevenc { background: #2a2113; color: #ffd591; border-bottom: 1px solid var(--gold); }
   .renov-banner.carencia { background: #2e1616; color: #ffb0b0; border-bottom: 1px solid #e05656; }
+  .renov-banner.reaj { background: #13241f; color: #9ff0c8; border-bottom: 1px solid #25D366; }
   .renov-banner-txt { flex: 1; min-width: 0; }
   .renov-banner-cta { background: #25D366; color: #07310f; font-weight: 800; padding: 6px 13px; border-radius: 999px; text-decoration: none; white-space: nowrap; flex-shrink: 0; }
   .renov-banner-x { background: none; border: none; color: inherit; opacity: 0.7; font-size: 18px; line-height: 1; cursor: pointer; padding: 0 2px; flex-shrink: 0; }
@@ -3103,6 +3104,11 @@
   <a class="renov-banner-cta" id="renovBannerCta" href="#" target="_blank" rel="noopener">Renovar</a>
   <button class="renov-banner-x" onclick="renovBannerDismiss()" aria-label="Fechar">&times;</button>
 </div>
+<div id="reajusteBanner" class="renov-banner reaj">
+  <span class="renov-banner-txt" id="reajusteBannerTxt"></span>
+  <a class="renov-banner-cta" id="reajusteBannerCta" href="#" target="_blank" rel="noopener">Fazer reajuste</a>
+  <button class="renov-banner-x" onclick="reajusteBannerDismiss()" aria-label="Fechar">&times;</button>
+</div>
 
 <!-- Botão flutuante combinado: instala app + abre WhatsApp -->
 <div id="floatMenu">
@@ -5108,6 +5114,7 @@ async function loadAndShowLastModified() {
       const pBadge = document.getElementById('proxReajusteBadge');
       if (pEl && pBadge) { pEl.textContent = data.proxReajusteBR; pBadge.style.display = 'block'; }
       _proxReajusteBR = data.proxReajusteBR;
+      reajusteBannerCheck(); // empurrão proativo quando o reajuste tá perto/vencido
     }
     // Detecta reajuste/ajuste comparando versão + data de modificação com o estado salvo
     _detectProtoAviso(data.version, data.lastModified);
@@ -9098,11 +9105,47 @@ function renovBannerShow(tipo, dias) {
       txt.textContent = (dias <= 0 ? 'Teu plano vence HOJE.' : 'Teu plano vence em ' + dias + (dias === 1 ? ' dia' : ' dias') + '.') + ' Renova pra não pausar teu treino.';
       cta.href = RENOV_WA + encodeURIComponent('Oi! Quero renovar meu plano.');
     }
+    var rb = document.getElementById('reajusteBanner'); if (rb) rb.classList.remove('show'); // renovação tem precedência
     b.classList.add('show');
   } catch (e) {}
 }
 function renovBannerDismiss() {
   try { sessionStorage.setItem('renovBannerOff', '1'); var b = document.getElementById('renovBanner'); if (b) b.classList.remove('show'); } catch (e) {}
+}
+
+// ── Lembrete proativo de reajuste (espelha o de renovação) ──
+// Driven by _proxReajusteBR (col M = Protocolo Atual + 50 dias). PRECEDÊNCIA: a renovação
+// manda; os dois nunca aparecem juntos (reajuste pula se renovBanner tá visível, e
+// renovBannerShow esconde o reajuste). Tom positivo: é sobre evoluir, não sobre problema.
+var REAJ_PRE_DIAS = 7;     // avisa até 7 dias antes
+var REAJ_CAP_ATRASO = 21;  // some 21 dias depois (aí é churn/follow-sumidos, não banner gentil)
+function reajusteBannerShow(dias) {
+  try {
+    if (sessionStorage.getItem('reajBannerOff') === '1') return;
+    var rv = document.getElementById('renovBanner');
+    if (rv && rv.classList.contains('show')) return; // renovação tem precedência
+    var b = document.getElementById('reajusteBanner'); if (!b) return;
+    var txt = document.getElementById('reajusteBannerTxt'), cta = document.getElementById('reajusteBannerCta');
+    if (dias > 0) txt.textContent = 'Teu reajuste tá chegando (em ' + dias + (dias === 1 ? ' dia' : ' dias') + '). Bora atualizar teu protocolo pra continuar evoluindo.';
+    else if (dias === 0) txt.textContent = 'Teu reajuste é hoje! Fala com a gente pra atualizar teu protocolo.';
+    else txt.textContent = 'Tá na hora do teu reajuste. Atualiza teu protocolo pra não travar a evolução.';
+    cta.href = RENOV_WA + encodeURIComponent('Oi! Quero fazer meu reajuste e atualizar meu protocolo.');
+    b.classList.add('show');
+  } catch (e) {}
+}
+function reajusteBannerDismiss() {
+  try { sessionStorage.setItem('reajBannerOff', '1'); var b = document.getElementById('reajusteBanner'); if (b) b.classList.remove('show'); } catch (e) {}
+}
+// Avalia _proxReajusteBR (DD/MM/AAAA) e decide o banner. Chamado quando o dado chega.
+function reajusteBannerCheck() {
+  try {
+    if (!_proxReajusteBR || !/^\d{2}\/\d{2}\/\d{4}$/.test(_proxReajusteBR)) return;
+    var p = _proxReajusteBR.split('/').map(Number);
+    var reaj = new Date(p[2], p[1] - 1, p[0]); reaj.setHours(0, 0, 0, 0);
+    var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    var dias = Math.round((reaj.getTime() - hoje.getTime()) / 86400000);
+    if (dias <= REAJ_PRE_DIAS && dias >= -REAJ_CAP_ATRASO) reajusteBannerShow(dias);
+  } catch (e) {}
 }
 
 // Mostra o bloqueio de acesso. motivo='cancelado' troca o texto; 'vencido' usa o HTML padrão.
