@@ -1207,7 +1207,7 @@
   .meal-photo-box { background: var(--card, #141416); border: 1px solid #2a2a2f; border-radius: 16px; max-width: 380px; width: 100%; padding: 20px; text-align: center; }
   .meal-photo-box h3 { color: var(--gold); font-size: 16px; margin: 0 0 4px; }
   .meal-photo-box p { color: #9a9aa0; font-size: 12px; margin: 0 0 14px; line-height: 1.4; }
-  .meal-photo-prev { width: 100%; aspect-ratio: 1/1; border-radius: 12px; object-fit: cover; background: #1b1b1e; border: 1px solid #232329; margin-bottom: 12px; display: none; }
+  .meal-photo-prev { width: auto; max-height: 56vh; aspect-ratio: 9/16; border-radius: 12px; object-fit: contain; background: #1b1b1e; border: 1px solid #232329; margin: 0 auto 12px; display: none; }
   .meal-photo-prev.on { display: block; }
   .meal-photo-pick { width: 100%; aspect-ratio: 16/10; border: 1.5px dashed #3a3a40; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #9a9aa0; font-size: 13px; cursor: pointer; margin-bottom: 12px; }
   .meal-photo-pick svg { width: 30px; height: 30px; color: var(--gold); }
@@ -8982,20 +8982,7 @@ function _onMealPhotoFile(input) {
   reader.onload = e => {
     const img = new Image();
     img.onload = () => {
-      const S = 1080, canvas = document.createElement('canvas');
-      canvas.width = S; canvas.height = S;
-      const ctx = canvas.getContext('2d');
-      const scale = Math.max(S / img.width, S / img.height); // cover
-      const w = img.width * scale, h = img.height * scale;
-      ctx.drawImage(img, (S - w) / 2, (S - h) / 2, w, h);
-      const bh = 120; // faixa inferior com selo
-      ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(0, S - bh, S, bh);
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#c9a24b'; ctx.font = '800 46px -apple-system,Arial';
-      ctx.fillText('MÉTODO GH', 40, S - bh / 2 - 16);
-      ctx.fillStyle = '#f1ede4'; ctx.font = '500 30px -apple-system,Arial';
-      ctx.fillText('Refeição em dia', 40, S - bh / 2 + 26);
-      _mealPhotoDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      _mealPhotoDataUrl = drawMealCard(img);   // card 1080×1920 caprichado (mesmo padrão do treino)
       const prev = document.getElementById('mpPrev');
       prev.src = _mealPhotoDataUrl; prev.classList.add('on');
       document.getElementById('mpPick').style.display = 'none';
@@ -9005,6 +8992,39 @@ function _onMealPhotoFile(input) {
   };
   reader.readAsDataURL(f);
   input.value = '';
+}
+
+// Card de compartilhamento da refeição — MESMO capricho do card de treino: foto de fundo (cover) +
+// gradiente vertical + cantos ornamentais + header dourado espaçado + assinatura @gh.scheuermann.
+// 1080×1920 (story). Reusa drawCornerOrnaments / fillTextSpaced / drawBottomSig / ACH_FONT do treino.
+function drawMealCard(photoImg) {
+  const W = 1080, H = 1920;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  // fundo: foto da refeição (cover) + overlay vertical pra leitura
+  const scale = Math.max(W / photoImg.width, H / photoImg.height);
+  const w = photoImg.width * scale, h = photoImg.height * scale;
+  ctx.drawImage(photoImg, (W - w) / 2, (H - h) / 2, w, h);
+  const ov = ctx.createLinearGradient(0, 0, 0, H);
+  ov.addColorStop(0, 'rgba(0,0,0,0.72)');
+  ov.addColorStop(0.30, 'rgba(0,0,0,0.16)');
+  ov.addColorStop(0.60, 'rgba(0,0,0,0.30)');
+  ov.addColorStop(1, 'rgba(0,0,0,0.93)');
+  ctx.fillStyle = ov; ctx.fillRect(0, 0, W, H);
+  if (typeof drawCornerOrnaments === 'function') drawCornerOrnaments(ctx, W, H);
+  ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'center';
+  ctx.font = `300 34px ${ACH_FONT}`;
+  ctx.fillStyle = 'rgba(212, 167, 106, 0.85)';
+  fillTextSpaced(ctx, 'REFEIÇÃO  EM  DIA', W / 2, 215, 6);
+  ctx.font = `800 80px ${ACH_FONT}`;
+  ctx.fillStyle = '#f1ede4';
+  ctx.fillText('MÉTODO GH', W / 2, H - 420);
+  ctx.font = `300 38px ${ACH_FONT}`;
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  fillTextSpaced(ctx, 'Dieta no foco, todo dia', W / 2, H - 362, 1);
+  if (typeof drawBottomSig === 'function') drawBottomSig(ctx, W, H);
+  return c.toDataURL('image/jpeg', 0.9);
 }
 async function mealPhotoShare() {
   if (!_mealPhotoDataUrl) return;
