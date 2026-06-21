@@ -1665,6 +1665,18 @@
   .cmp-chip { padding:6px 11px; background:#1a1a1a; border:1px solid #2a2a2a;
     border-radius:18px; color:#aaa; font-size:11px; font-weight:600; cursor:pointer; transition:all .15s; }
   .cmp-chip:hover { border-color:var(--gold); color:var(--gold); }
+  /* Laudo de evolução (gerado no reajuste, vem da pasta Evolução do aluno) */
+  .laudo-card { margin:0 0 16px; }
+  .laudo-h { color:var(--gold); font-size:13px; font-weight:700; letter-spacing:.04em; margin-bottom:9px; display:flex; align-items:center; gap:6px; }
+  .laudo-vers { display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
+  .laudo-chip { background:#1b1b1e; border:1px solid #2a2a2f; color:#9a9aa0; font-size:12px; font-weight:700; padding:4px 12px; border-radius:999px; cursor:pointer; }
+  .laudo-chip.on { background:var(--gold); color:#0c0c0d; border-color:var(--gold); }
+  .laudo-imgwrap { background:#0c0c0d; border:1px solid #232329; border-radius:11px; overflow:hidden; min-height:60px; display:flex; align-items:center; justify-content:center; }
+  .laudo-img { width:100%; display:block; cursor:zoom-in; }
+  .laudo-loading { color:#888; font-size:12px; padding:22px; }
+  .laudo-full { position:fixed; inset:0; background:rgba(0,0,0,.95); z-index:10002; display:none; align-items:center; justify-content:center; padding:12px; }
+  .laudo-full.on { display:flex; }
+  .laudo-full img { max-width:100%; max-height:100%; object-fit:contain; border-radius:8px; }
   .cmp-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .cmp-col { display:flex; flex-direction:column; }
   .cmp-label { text-align:center; font-size:11px; font-weight:700; padding:6px;
@@ -3248,6 +3260,8 @@
 
     <!-- ══ ABA COMPARAR EVOLUÇÃO ══ -->
     <div id="fotosPaneComparar" style="display:none;flex:1;overflow-y:auto;min-height:0;">
+      <!-- Laudo de evolução gerado no reajuste (só aparece se existir) -->
+      <div id="laudoEvoArea"></div>
       <p style="color:#aaa;font-size:11px;margin:0 0 12px;line-height:1.45;">
         Escolhe qualquer foto pra cada lado e compara tua evolução. Toca em "Trocar foto" pra mudar o round ou usar uma foto nova do celular como prévia.
       </p>
@@ -7915,11 +7929,50 @@ function switchFotosTab(tab) {
   document.getElementById('fotosPaneEnviar').style.display = isEnviar ? 'flex' : 'none';
   document.getElementById('fotosPaneComparar').style.display = isEnviar ? 'none' : 'block';
   if (!isEnviar && !_cmpState.loaded) loadFotosCompare();
+  if (!isEnviar) loadLaudos();
 }
 
 // Medidas corporais NÃO são mais coletadas/exibidas pelo app: vêm só da anamnese (inicial/reajuste)
 // e aparecem no laudo de evolução gerado no reajuste (gerar-comparacao.mjs), sem avaliação de bom/ruim.
 // O input semanal e o before/after avaliativo (verde/laranja) foram removidos de propósito.
+
+// ── Laudo de evolução: gerado no reajuste, guardado na pasta "Evolução" do aluno ──
+let _laudosLoaded = false;
+async function loadLaudos() {
+  const area = document.getElementById('laudoEvoArea');
+  if (!area || _laudosLoaded) return;
+  if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
+  try {
+    const j = await (await fetch(`${LOG_ENDPOINT}?action=comparacoes_list&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`, { cache: 'no-store' })).json();
+    _laudosLoaded = true;
+    const laudos = (j && j.laudos) || [];
+    if (!laudos.length) { area.innerHTML = ''; return; }
+    const chips = laudos.length > 1
+      ? `<div class="laudo-vers">${laudos.map((l, i) => `<span class="laudo-chip${i === 0 ? ' on' : ''}" data-fid="${l.fid}" onclick="showLaudo('${l.fid}', this)">V${l.versao}</span>`).join('')}</div>`
+      : '';
+    area.innerHTML = `<div class="laudo-card"><div class="laudo-h">📊 Tua evolução</div>${chips}<div class="laudo-imgwrap"><div class="laudo-loading" id="laudoLoading">Carregando…</div><img id="laudoImg" class="laudo-img" onclick="laudoFull()" alt="Evolução" style="display:none;"></div></div>`;
+    showLaudo(laudos[0].fid);
+  } catch (_) { _laudosLoaded = true; area.innerHTML = ''; }
+}
+async function showLaudo(fid, chipEl) {
+  if (chipEl) { document.querySelectorAll('.laudo-chip').forEach(c => c.classList.remove('on')); chipEl.classList.add('on'); }
+  const img = document.getElementById('laudoImg'), ld = document.getElementById('laudoLoading');
+  if (!img) return;
+  img.style.display = 'none'; if (ld) { ld.style.display = 'block'; ld.textContent = 'Carregando…'; }
+  try {
+    const j = await (await fetch(`${LOG_ENDPOINT}?action=comparacao_img&fid=${encodeURIComponent(fid)}&_=${Date.now()}`, { cache: 'no-store' })).json();
+    if (j && j.ok) { img.src = `data:${j.mime};base64,${j.b64}`; img.style.display = 'block'; if (ld) ld.style.display = 'none'; }
+    else if (ld) ld.textContent = 'Não consegui carregar o laudo.';
+  } catch (_) { if (ld) ld.textContent = 'Não consegui carregar o laudo.'; }
+}
+function laudoFull() {
+  const src = document.getElementById('laudoImg')?.src;
+  if (!src) return;
+  let ov = document.getElementById('laudoFullOverlay');
+  if (!ov) { ov = document.createElement('div'); ov.id = 'laudoFullOverlay'; ov.className = 'laudo-full'; ov.onclick = () => ov.classList.remove('on'); ov.innerHTML = '<img alt="Evolução">'; document.body.appendChild(ov); }
+  ov.querySelector('img').src = src;
+  ov.classList.add('on');
+}
 
 async function loadFotosCompare() {
   const status = document.getElementById('cmpStatus');
