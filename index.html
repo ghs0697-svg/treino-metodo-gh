@@ -8998,32 +8998,34 @@ function _onMealPhotoFile(input) {
 // gradiente vertical + cantos ornamentais + header dourado espaçado + assinatura @gh.scheuermann.
 // 1080×1920 (story). Reusa drawCornerOrnaments / fillTextSpaced / drawBottomSig / ACH_FONT do treino.
 function drawMealCard(photoImg) {
+  // Estilo minimal-elegante: a foto do prato manda; só um crédito discreto embaixo.
   const W = 1080, H = 1920;
   const c = document.createElement('canvas'); c.width = W; c.height = H;
   const ctx = c.getContext('2d');
-  // fundo: foto da refeição (cover) + overlay vertical pra leitura
+  // foto da refeição (cover) — ocupa o card inteiro
   const scale = Math.max(W / photoImg.width, H / photoImg.height);
   const w = photoImg.width * scale, h = photoImg.height * scale;
   ctx.drawImage(photoImg, (W - w) / 2, (H - h) / 2, w, h);
-  const ov = ctx.createLinearGradient(0, 0, 0, H);
-  ov.addColorStop(0, 'rgba(0,0,0,0.72)');
-  ov.addColorStop(0.30, 'rgba(0,0,0,0.16)');
-  ov.addColorStop(0.60, 'rgba(0,0,0,0.30)');
-  ov.addColorStop(1, 'rgba(0,0,0,0.93)');
-  ctx.fillStyle = ov; ctx.fillRect(0, 0, W, H);
-  if (typeof drawCornerOrnaments === 'function') drawCornerOrnaments(ctx, W, H);
+  // scrim suave só no terço de baixo, pra legibilidade do crédito sobre qualquer foto
+  const ov = ctx.createLinearGradient(0, H * 0.55, 0, H);
+  ov.addColorStop(0, 'rgba(10,8,6,0)');
+  ov.addColorStop(0.6, 'rgba(10,8,6,0.45)');
+  ov.addColorStop(1, 'rgba(8,6,4,0.82)');
+  ctx.fillStyle = ov; ctx.fillRect(0, H * 0.55, W, H * 0.45);
   ctx.textBaseline = 'alphabetic';
   ctx.textAlign = 'center';
-  ctx.font = `300 34px ${ACH_FONT}`;
-  ctx.fillStyle = 'rgba(212, 167, 106, 0.85)';
-  fillTextSpaced(ctx, 'REFEIÇÃO  EM  DIA', W / 2, 215, 6);
-  ctx.font = `800 80px ${ACH_FONT}`;
-  ctx.fillStyle = '#f1ede4';
-  ctx.fillText('MÉTODO GH', W / 2, H - 420);
-  ctx.font = `300 38px ${ACH_FONT}`;
-  ctx.fillStyle = 'rgba(255,255,255,0.85)';
-  fillTextSpaced(ctx, 'Dieta no foco, todo dia', W / 2, H - 362, 1);
-  if (typeof drawBottomSig === 'function') drawBottomSig(ctx, W, H);
+  // fiozinho dourado
+  ctx.strokeStyle = 'rgba(212,167,106,0.55)';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(W / 2 - 70, H - 260); ctx.lineTo(W / 2 + 70, H - 260); ctx.stroke();
+  // wordmark discreto (caps espaçado, não bold gritante)
+  ctx.font = `600 40px ${ACH_FONT}`;
+  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  fillTextSpaced(ctx, 'MÉTODO GH', W / 2, H - 200, 8);
+  // handle dourado
+  ctx.font = `500 34px ${ACH_FONT}`;
+  ctx.fillStyle = '#d4a76a';
+  ctx.fillText('@gh.scheuermann', W / 2, H - 145);
   return c.toDataURL('image/jpeg', 0.9);
 }
 async function mealPhotoShare() {
