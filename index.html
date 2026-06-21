@@ -1168,7 +1168,45 @@
     font-size: 14px;
     padding: 12px 14px;
     letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
   }
+  .diet-meal-header .dm-nome { flex: 1; min-width: 0; }
+  /* botão "refeição feita" — espelha o check do treino, mas reseta TODO DIA */
+  .diet-meal-check {
+    flex: none; display: inline-flex; align-items: center; gap: 5px;
+    background: transparent; border: 1.5px solid rgba(201,162,75,.5);
+    color: var(--gold); font-size: 11px; font-weight: 800; letter-spacing: .3px;
+    padding: 5px 11px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .diet-meal-check svg { width: 13px; height: 13px; }
+  .diet-meal-check .dm-tick { display: none; }
+  .diet-meal-check .dm-plus { display: inline; }
+  .diet-meal-check.done { background: var(--gold); color: #0c0c0d; border-color: var(--gold); }
+  .diet-meal-check.done .dm-tick { display: inline; }
+  .diet-meal-check.done .dm-plus { display: none; }
+  /* barra de progresso da dieta do dia (espelha a do treino) */
+  .diet-day-progress { margin: 12px 12px 0; }
+  .diet-day-progress .ddp-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+  .diet-day-progress .ddp-bar { height: 7px; background: rgba(255,255,255,.08); border-radius: 99px; overflow: hidden; }
+  .diet-day-progress .ddp-fill { height: 100%; background: var(--gold); width: 0; transition: width .3s; }
+  /* card de foto da refeição */
+  .meal-photo-modal { position: fixed; inset: 0; background: rgba(0,0,0,.82); z-index: 10003; display: none; align-items: center; justify-content: center; padding: 16px; }
+  .meal-photo-modal.on { display: flex; }
+  .meal-photo-box { background: var(--card, #141416); border: 1px solid #2a2a2f; border-radius: 16px; max-width: 380px; width: 100%; padding: 20px; text-align: center; }
+  .meal-photo-box h3 { color: var(--gold); font-size: 16px; margin: 0 0 4px; }
+  .meal-photo-box p { color: #9a9aa0; font-size: 12px; margin: 0 0 14px; line-height: 1.4; }
+  .meal-photo-prev { width: 100%; aspect-ratio: 1/1; border-radius: 12px; object-fit: cover; background: #1b1b1e; border: 1px solid #232329; margin-bottom: 12px; display: none; }
+  .meal-photo-prev.on { display: block; }
+  .meal-photo-pick { width: 100%; aspect-ratio: 16/10; border: 1.5px dashed #3a3a40; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #9a9aa0; font-size: 13px; cursor: pointer; margin-bottom: 12px; }
+  .meal-photo-pick svg { width: 30px; height: 30px; color: var(--gold); }
+  .meal-photo-actions { display: flex; gap: 8px; }
+  .meal-photo-actions button { flex: 1; padding: 11px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; border: 1px solid transparent; }
+  .mp-share { background: var(--gold); color: #0c0c0d; }
+  .mp-skip { background: transparent; color: #9a9aa0; border-color: #2a2a2f; }
   .diet-meal-instruction {
     color: var(--muted);
     font-size: 11px;
@@ -3295,6 +3333,24 @@
     </div><!-- /fotosPaneComparar -->
 
     <button class="te-btn ghost" onclick="teHide('fotosModal')" style="width:100%;margin-top:12px;">Fechar</button>
+  </div>
+</div>
+
+<!-- Card de foto da refeição (diário alimentar) -->
+<div class="meal-photo-modal" id="mealPhotoModal" onclick="if(event.target.id==='mealPhotoModal')mealPhotoClose()">
+  <div class="meal-photo-box">
+    <h3>📸 Refeição feita!</h3>
+    <p>Tira uma foto do prato e posta. Compartilhar conta como desempate no teu ranking.</p>
+    <input type="file" id="mpFile" accept="image/*" capture="environment" style="display:none" onchange="_onMealPhotoFile(this)">
+    <div class="meal-photo-pick" id="mpPick" onclick="_mealPhotoPickClick()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      Tirar ou escolher foto
+    </div>
+    <img class="meal-photo-prev" id="mpPrev" alt="Refeição">
+    <div class="meal-photo-actions">
+      <button class="mp-skip" type="button" onclick="mealPhotoClose()">Agora não</button>
+      <button class="mp-share" type="button" id="mpShareBtn" onclick="mealPhotoShare()" disabled>Compartilhar</button>
+    </div>
   </div>
 </div>
 
@@ -8821,6 +8877,124 @@ async function loadRecado() {
   } catch (e) { slot.innerHTML = ''; }
 }
 
+// ══════════════════════════════════════════════════════════════
+// ══ DIÁRIO ALIMENTAR — refeição feita (reseta TODO DIA) + foto + ranking ══
+// ══════════════════════════════════════════════════════════════
+// Espelha o "exercício feito" do treino, MAS a chave é por DIA (todayKey), não por semana:
+// dieta é diária, zera todo dia. Quando todas as refeições do dia são marcadas, conta como
+// "dia de dieta cumprido" no ranking (espelha a conclusão do treino). Cada refeição marcada
+// abre um card pra tirar foto e postar. Conta por índice da refeição (cego ao ciclo: Alto/
+// Baixo carbo são variações da mesma refeição).
+function mealDoneKey(ri) { return `gh_meal_${STUDENT_ID}_${todayKey()}_r${ri}`; }
+function isMealDone(ri) { return localStorage.getItem(mealDoneKey(ri)) === '1'; }
+function dietTotalMeals() {
+  if (typeof DIET_DATA === 'undefined' || !DIET_DATA || !DIET_DATA.ciclos) return 0;
+  return Math.max(0, ...DIET_DATA.ciclos.map(cy => (cy.refeicoes || []).length));
+}
+function dietMealsDone() {
+  const n = dietTotalMeals(); let c = 0;
+  for (let ri = 0; ri < n; ri++) if (isMealDone(ri)) c++;
+  return c;
+}
+function allMealsDone() {
+  const n = dietTotalMeals();
+  return n > 0 && dietMealsDone() === n;
+}
+function updateDietProgress() {
+  const n = dietTotalMeals(), done = dietMealsDone();
+  const cnt = document.getElementById('ddpCount'), fill = document.getElementById('ddpFill');
+  if (cnt) cnt.textContent = `${done}/${n}`;
+  if (fill) fill.style.width = (n ? (done / n) * 100 : 0) + '%';
+}
+function onCheckMeal(ri) {
+  const nv = !isMealDone(ri);
+  if (nv) localStorage.setItem(mealDoneKey(ri), '1'); else localStorage.removeItem(mealDoneKey(ri));
+  // atualiza TODAS as cópias do botão dessa refeição (cada ciclo renderiza a sua)
+  document.querySelectorAll(`.diet-meal-check[data-meal-ri="${ri}"]`).forEach(b => b.classList.toggle('done', nv));
+  updateDietProgress();
+  if (nv) {
+    setTimeout(() => showMealPhotoCard(ri), 120);      // tirar foto + postar
+    if (allMealsDone()) notifyDietCompletion(false);   // dia de dieta cumprido (pontua no ranking)
+  }
+}
+// Espelha notifyDayCompletion do treino, com plano:'dieta'. shared=false → cumpriu a dieta do
+// dia (pontos). shared=true → compartilhou foto (desempate). Fire-and-forget, dedup local.
+function notifyDietCompletion(shared) {
+  if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
+  const kind = shared ? 'share' : 'concl';
+  const dedupKey = `gh_dietlog_${SHEET_ID}_${todayKey()}_${kind}`;
+  if (localStorage.getItem(dedupKey) === '1') return;
+  localStorage.setItem(dedupKey, '1');
+  const payload = {
+    type: 'completion', plano: 'dieta',
+    sheetId: SHEET_ID,
+    studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+    date: todayKey(), totalRef: dietTotalMeals(),
+    shared: !!shared, ts: new Date().toISOString()
+  };
+  try {
+    fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), keepalive: true, redirect: 'follow' }).catch(() => {});
+  } catch (_) {}
+}
+
+// ── Card de foto da refeição: tira/escolhe a foto, sobrepõe selo Método GH (canvas), compartilha ──
+let _mealPhotoRi = null, _mealPhotoDataUrl = null;
+function showMealPhotoCard(ri) {
+  _mealPhotoRi = ri; _mealPhotoDataUrl = null;
+  const ov = document.getElementById('mealPhotoModal');
+  if (!ov) return;
+  const prev = document.getElementById('mpPrev'); if (prev) { prev.classList.remove('on'); prev.src = ''; }
+  const pick = document.getElementById('mpPick'); if (pick) pick.style.display = 'flex';
+  const sb = document.getElementById('mpShareBtn'); if (sb) sb.disabled = true;
+  ov.classList.add('on');
+}
+function mealPhotoClose() { const ov = document.getElementById('mealPhotoModal'); if (ov) ov.classList.remove('on'); }
+function _mealPhotoPickClick() { document.getElementById('mpFile').click(); }
+function _onMealPhotoFile(input) {
+  const f = input.files && input.files[0]; if (!f) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const S = 1080, canvas = document.createElement('canvas');
+      canvas.width = S; canvas.height = S;
+      const ctx = canvas.getContext('2d');
+      const scale = Math.max(S / img.width, S / img.height); // cover
+      const w = img.width * scale, h = img.height * scale;
+      ctx.drawImage(img, (S - w) / 2, (S - h) / 2, w, h);
+      const bh = 120; // faixa inferior com selo
+      ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(0, S - bh, S, bh);
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#c9a24b'; ctx.font = '800 46px -apple-system,Arial';
+      ctx.fillText('MÉTODO GH', 40, S - bh / 2 - 16);
+      ctx.fillStyle = '#f1ede4'; ctx.font = '500 30px -apple-system,Arial';
+      ctx.fillText('Refeição em dia', 40, S - bh / 2 + 26);
+      _mealPhotoDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      const prev = document.getElementById('mpPrev');
+      prev.src = _mealPhotoDataUrl; prev.classList.add('on');
+      document.getElementById('mpPick').style.display = 'none';
+      const sb = document.getElementById('mpShareBtn'); if (sb) sb.disabled = false;
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(f);
+  input.value = '';
+}
+async function mealPhotoShare() {
+  if (!_mealPhotoDataUrl) return;
+  try {
+    const blob = await (await fetch(_mealPhotoDataUrl)).blob();
+    const file = new File([blob], 'refeicao-metodo-gh.jpg', { type: 'image/jpeg' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: 'Método GH', text: 'Refeição em dia 💪 #MétodoGH' });
+    } else {
+      const a = document.createElement('a'); a.href = _mealPhotoDataUrl; a.download = 'refeicao-metodo-gh.jpg'; a.click();
+    }
+    notifyDietCompletion(true); // compartilhou = desempate no ranking
+  } catch (_) { /* cancelou o share */ }
+  mealPhotoClose();
+}
+
 function renderDiet() {
   if (!DIET_DATA) return;
   const d = DIET_DATA;
@@ -8885,6 +9059,13 @@ function renderDiet() {
     html += `</div>`;
   }
 
+  // Progresso da dieta do dia: refeições marcadas (reseta todo dia). Refeições são as mesmas
+  // entre ciclos (Alto/Baixo carbo são variações), então conta por índice, cego ao ciclo.
+  const _nMeals = Math.max(0, ...d.ciclos.map(cy => (cy.refeicoes || []).length));
+  if (_nMeals > 0) {
+    html += `<div class="diet-day-progress"><div class="ddp-label"><span>Refeições de hoje</span><span id="ddpCount">0/${_nMeals}</span></div><div class="ddp-bar"><div class="ddp-fill" id="ddpFill"></div></div></div>`;
+  }
+
   d.ciclos.forEach((cy, ci) => {
     const prefix = `c${ci}_`;
     if (multiCiclo) {
@@ -8897,7 +9078,7 @@ function renderDiet() {
       const uid = `${prefix}${ri}`;
       const hasOps = ref.opcoes.length > 0;
       html += `<div class="diet-meal-card">`;
-      html += `<div class="diet-meal-header">${ref.nome}</div>`;
+      html += `<div class="diet-meal-header"><span class="dm-nome">${ref.nome}</span><button type="button" class="diet-meal-check${isMealDone(ri) ? ' done' : ''}" data-meal-ri="${ri}" onclick="onCheckMeal(${ri})" aria-label="Marcar refeição feita"><svg class="dm-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><svg class="dm-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span class="dm-txt">Feita</span></button></div>`;
       if (ref.instrucao) html += `<div class="diet-meal-instruction">${ref.instrucao}</div>`;
 
       if (hasOps) {
@@ -8998,6 +9179,7 @@ function renderDiet() {
   container.innerHTML = html;
   container.style.display = 'block';
   loadRecado(); // preenche o #recadoSlot com o player do recado (se houver)
+  updateDietProgress(); // sincroniza a barra de refeições do dia com o que já tá marcado
 }
 
 function renderFoodItem(a) {
