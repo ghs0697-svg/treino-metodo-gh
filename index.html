@@ -628,6 +628,9 @@
   .renov-banner.prevenc { background: #2a2113; color: #ffd591; border-bottom: 1px solid var(--gold); }
   .renov-banner.carencia { background: #2e1616; color: #ffb0b0; border-bottom: 1px solid #e05656; }
   .renov-banner.reaj { background: #13241f; color: #9ff0c8; border-bottom: 1px solid #25D366; }
+  .renov-banner.diary { background: #221a0d; color: #f0d99a; border-bottom: 1px solid var(--gold); }
+  .renov-banner.diary .renov-banner-cta { background: var(--gold); color: #1a1407; }
+  .renov-banner.diary b { color: #ffe9b8; }
   .renov-banner-txt { flex: 1; min-width: 0; }
   .renov-banner-cta { background: #25D366; color: #07310f; font-weight: 800; padding: 6px 13px; border-radius: 999px; text-decoration: none; white-space: nowrap; flex-shrink: 0; }
   .renov-banner-x { background: none; border: none; color: inherit; opacity: 0.7; font-size: 18px; line-height: 1; cursor: pointer; padding: 0 2px; flex-shrink: 0; }
@@ -3139,6 +3142,11 @@
   <a class="renov-banner-cta" id="reajusteBannerCta" href="#" target="_blank" rel="noopener">Fazer reajuste</a>
   <button class="renov-banner-x" onclick="reajusteBannerDismiss()" aria-label="Fechar">&times;</button>
 </div>
+<div id="dietDiaryBanner" class="renov-banner diary">
+  <span class="renov-banner-txt">📸 Novidade: marca cada refeição como <b>Feita</b> e posta a foto do prato. A partir de julho a dieta conta no teu ranking!</span>
+  <a class="renov-banner-cta" href="#" onclick="dietBannerGoto();return false;">Ver dieta</a>
+  <button class="renov-banner-x" onclick="dietBannerDismiss()" aria-label="Fechar">&times;</button>
+</div>
 
 <!-- Botão flutuante combinado: instala app + abre WhatsApp -->
 <div id="floatMenu">
@@ -5152,6 +5160,7 @@ async function loadAndShowLastModified() {
     }
     // Detecta reajuste/ajuste comparando versão + data de modificação com o estado salvo
     _detectProtoAviso(data.version, data.lastModified);
+    dietBannerCheck(); // aviso da novidade do diário alimentar (só se nenhum banner mais importante)
   } catch (_) { /* silencioso — sem erro pro aluno */ }
 }
 
@@ -9263,6 +9272,7 @@ function renovBannerShow(tipo, dias) {
       cta.href = RENOV_WA + encodeURIComponent('Oi! Quero renovar meu plano.');
     }
     var rb = document.getElementById('reajusteBanner'); if (rb) rb.classList.remove('show'); // renovação tem precedência
+    var db = document.getElementById('dietDiaryBanner'); if (db) db.classList.remove('show'); // precedência sobre o aviso da dieta
     b.classList.add('show');
   } catch (e) {}
 }
@@ -9288,11 +9298,32 @@ function reajusteBannerShow(dias) {
     else if (dias === 0) txt.textContent = 'Teu reajuste é hoje! Fala com a gente pra atualizar teu protocolo.';
     else txt.textContent = 'Tá na hora do teu reajuste. Atualiza teu protocolo pra não travar a evolução.';
     cta.href = REAJ_FORM; // direto pra anamnese de reajuste (abre em nova aba)
+    var db = document.getElementById('dietDiaryBanner'); if (db) db.classList.remove('show'); // reajuste tem precedência sobre o aviso da dieta
     b.classList.add('show');
   } catch (e) {}
 }
 function reajusteBannerDismiss() {
   try { sessionStorage.setItem('reajBannerOff', '1'); var b = document.getElementById('reajusteBanner'); if (b) b.classList.remove('show'); } catch (e) {}
+}
+
+// ── Aviso da novidade do diário alimentar (precedência mais BAIXA: só se não tem renov/reajuste) ──
+// Dismiss PERMANENTE (localStorage) — é anúncio de feature, não re-nag toda sessão. Some sozinho
+// depois de 31/07 (anúncio velho). Espelha o visual dos outros banners.
+function dietBannerCheck() {
+  try {
+    if (localStorage.getItem('gh_dietBannerOff') === '1') return;            // já fechou de vez
+    if (typeof todayKey === 'function' && todayKey() > '2026-07-31') return; // anúncio velho
+    var rv = document.getElementById('renovBanner'), rj = document.getElementById('reajusteBanner');
+    if ((rv && rv.classList.contains('show')) || (rj && rj.classList.contains('show'))) return; // banners mais importantes mandam
+    var b = document.getElementById('dietDiaryBanner'); if (b) b.classList.add('show');
+  } catch (e) {}
+}
+function dietBannerDismiss() {
+  try { localStorage.setItem('gh_dietBannerOff', '1'); var b = document.getElementById('dietDiaryBanner'); if (b) b.classList.remove('show'); } catch (e) {}
+}
+function dietBannerGoto() {
+  dietBannerDismiss();
+  if (typeof switchView === 'function') switchView('dieta');
 }
 // Avalia _proxReajusteBR (DD/MM/AAAA) e decide o banner. Chamado quando o dado chega.
 function reajusteBannerCheck() {
