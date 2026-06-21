@@ -554,6 +554,11 @@
   .rk-stats { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
   .rk-score { font-weight: 800; font-size: 14px; color: var(--gold); line-height: 1; }
   .rk-meta { font-size: 10px; color: #888; }
+  /* breakdown treino/dieta — só na linha do próprio aluno */
+  .rk-breakdown { grid-column: 1 / -1; display: flex; gap: 14px; margin-top: 5px; padding-top: 6px; border-top: 1px solid rgba(212,175,106,0.22); }
+  .rk-bd { font-size: 10.5px; color: #b8b2a6; }
+  .rk-bd b { color: var(--gold); font-weight: 800; }
+  .rk-bd.soon { color: #8e8a82; }
 
   /* ── Chat assistente ── */
   .chat-msgs { flex: 1; overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 4px 2px; }
@@ -8567,6 +8572,8 @@ async function openRankingModal() {
         }
       }
     } catch (e) {}
+    // dieta passa a pontuar no ranking a partir de 01/07/2026 (espelha RANKING_DIETA_DESDE do .gs)
+    const dietaConta = todayKey() >= '2026-07-01';
     list.innerHTML = ranking.slice(0, 50).map((r, i) => {
       const isMe = myName && String(r.name || '').toLowerCase().trim() === myName;
       const pos = i + 1;
@@ -8574,6 +8581,15 @@ async function openRankingModal() {
       if (pos === 1) { posCls = 'gold'; posTxt = '1º'; }
       else if (pos === 2) { posCls = 'silver'; posTxt = '2º'; }
       else if (pos === 3) { posCls = 'bronze'; posTxt = '3º'; }
+      // breakdown treino/dieta só na própria linha (o número grande é o score: em julho = média)
+      let breakdown = '';
+      if (isMe && (r.adesaoTreino != null || r.dietaAdesao != null)) {
+        const t = r.adesaoTreino != null ? r.adesaoTreino : (r.adherence || 0);
+        const di = r.dietaAdesao || 0;
+        breakdown = dietaConta
+          ? `<div class="rk-breakdown"><span class="rk-bd">Treino <b>${t}%</b></span><span class="rk-bd">Dieta <b>${di}%</b></span></div>`
+          : `<div class="rk-breakdown"><span class="rk-bd">Treino <b>${t}%</b></span><span class="rk-bd soon">Dieta <b>${di}%</b> · conta a partir de julho</span></div>`;
+      }
       return `<div class="rk-row${isMe ? ' me' : ''}">
         <div class="rk-pos ${posCls}">${posTxt}</div>
         <div class="rk-name">${escHtml(r.name)}${isMe ? '<span class="you">(você)</span>' : ''}</div>
@@ -8581,6 +8597,7 @@ async function openRankingModal() {
           <span class="rk-score">${r.adherence != null ? r.adherence : (r.score || 0)}%</span>
           <span class="rk-meta">${Math.min(r.daysThisMonth || 0, r.prescritos || 0)}/${r.prescritos || 0} dias · <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-1px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> ${r.daysShared || 0}</span>
         </div>
+        ${breakdown}
       </div>`;
     }).join('');
   } catch (e) {
