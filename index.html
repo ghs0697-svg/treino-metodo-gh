@@ -1700,18 +1700,6 @@
   .cmp-share-btn:hover { background:#c19a5d; }
   .cmp-share-btn:disabled { opacity:.6; cursor:default; }
   /* ── Medidas (captura no Enviar + before/after no Comparar) ── */
-  .med-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-  .med-fld { display:flex; flex-direction:column; gap:3px; color:#aaa; font-size:11px; font-weight:600; }
-  .med-fld input { background:#1a1a1a; border:1px solid #333; border-radius:7px; color:#fff; font-size:15px; padding:8px 9px; }
-  .med-fld input:focus { border-color:var(--gold); outline:none; }
-  .medevo { margin-top:16px; background:#16161a; border:1px solid #232329; border-radius:11px; padding:12px 13px; }
-  .medevo-h { color:var(--gold); font-size:12px; font-weight:700; letter-spacing:.04em; margin-bottom:9px; }
-  .medevo-row { display:flex; align-items:center; gap:8px; padding:5px 0; border-top:1px solid #1f1f25; font-size:13px; }
-  .medevo-row:first-of-type { border-top:none; }
-  .medevo-k { flex:0 0 78px; color:#9a9aa0; font-size:11.5px; }
-  .medevo-v { flex:1; color:#ececf0; }
-  .medevo-v b { color:#fff; }
-  .medevo-d { flex:0 0 auto; font-weight:800; font-size:13px; }
   .cmp-adj-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
   .cmp-adj-lbl { flex:0 0 130px; font-size:12px; color:#bbb; font-weight:600; }
   .cmp-adj-row input[type=range] { flex:1; accent-color:var(--gold); height:6px; }
@@ -3256,21 +3244,6 @@
       <button class="te-btn primary" type="button" id="fotosSendBtn" onclick="enviarFotos()" style="width:100%;margin-top:12px;display:none;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Enviar</button>
     </div>
     <div id="fotosFeedback" style="margin-top:8px;font-size:13px;"></div>
-    <div id="medidasForm" style="margin-top:18px;border-top:1px solid #2a2a2a;padding-top:16px;">
-      <div style="color:var(--gold);font-size:13px;font-weight:700;margin-bottom:4px;">📏 Registrar minhas medidas</div>
-      <p style="color:#888;font-size:11px;margin:0 0 12px;line-height:1.4;">Anota tuas medidas de hoje (opcional). O GH acompanha tua evolução e tu vê o antes/depois na aba Comparar.</p>
-      <div class="med-grid">
-        <label class="med-fld">Peso (kg)<input type="number" inputmode="decimal" id="med_peso" placeholder="—"></label>
-        <label class="med-fld">Cintura (cm)<input type="number" inputmode="decimal" id="med_cintura" placeholder="—"></label>
-        <label class="med-fld">Abdômen (cm)<input type="number" inputmode="decimal" id="med_abdomen" placeholder="—"></label>
-        <label class="med-fld">Quadril (cm)<input type="number" inputmode="decimal" id="med_quadril" placeholder="—"></label>
-        <label class="med-fld">Braço (cm)<input type="number" inputmode="decimal" id="med_braco" placeholder="—"></label>
-        <label class="med-fld">Coxa (cm)<input type="number" inputmode="decimal" id="med_coxa" placeholder="—"></label>
-        <label class="med-fld">Peitoral (cm)<input type="number" inputmode="decimal" id="med_peitoral" placeholder="—"></label>
-      </div>
-      <button class="te-btn primary" type="button" id="medSaveBtn" onclick="salvarMedidasApp()" style="width:100%;margin-top:12px;">Salvar medidas</button>
-      <div id="medFeedback" style="margin-top:8px;font-size:13px;"></div>
-    </div>
     </div><!-- /fotosPaneEnviar -->
 
     <!-- ══ ABA COMPARAR EVOLUÇÃO ══ -->
@@ -3305,7 +3278,6 @@
         <button class="cmp-share-btn" id="cmpShareBtn" onclick="cmpShare()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Compartilhar antes/depois</button>
         <div id="cmpEvoArea"></div>
       </div>
-      <div id="medidasEvoArea"></div>
     </div><!-- /fotosPaneComparar -->
 
     <button class="te-btn ghost" onclick="teHide('fotosModal')" style="width:100%;margin-top:12px;">Fechar</button>
@@ -7943,63 +7915,11 @@ function switchFotosTab(tab) {
   document.getElementById('fotosPaneEnviar').style.display = isEnviar ? 'flex' : 'none';
   document.getElementById('fotosPaneComparar').style.display = isEnviar ? 'none' : 'block';
   if (!isEnviar && !_cmpState.loaded) loadFotosCompare();
-  if (!isEnviar) loadMedidasEvo();
 }
 
-// ── Medidas: salvar (Enviar) — peso + medidas vão pra aba MEDIDAS no mestre, junto do round ──
-async function salvarMedidasApp() {
-  const fb = document.getElementById('medFeedback');
-  if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') { if (fb) { fb.style.color = '#c9776b'; fb.textContent = 'Não consegui identificar o aluno.'; } return; }
-  const campos = ['peso', 'cintura', 'abdomen', 'quadril', 'braco', 'coxa', 'peitoral'];
-  const payload = { type: 'medidas', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(), ts: new Date().toISOString() };
-  let algum = false;
-  campos.forEach(c => { const el = document.getElementById('med_' + c); const v = el && el.value != null ? String(el.value).trim() : ''; if (v) { payload[c] = v; algum = true; } });
-  if (!algum) { fb.style.color = '#c9776b'; fb.textContent = 'Preenche pelo menos uma medida.'; return; }
-  const btn = document.getElementById('medSaveBtn'); const orig = btn.textContent; btn.disabled = true; btn.textContent = 'Salvando…';
-  try {
-    await fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), redirect: 'follow' });
-    fb.style.color = '#6fd083'; fb.textContent = '✓ Medidas salvas! Vê o antes/depois na aba Comparar.';
-    campos.forEach(c => { const el = document.getElementById('med_' + c); if (el) el.value = ''; });
-    _medEvoLoaded = false; // força recarregar o before/after na próxima abertura do Comparar
-  } catch (_) { fb.style.color = '#c9776b'; fb.textContent = 'Erro ao salvar. Tenta de novo daqui a pouco.'; }
-  btn.disabled = false; btn.textContent = orig;
-}
-
-// ── Medidas: before/after (Comparar) — primeiro × último ponto por medida, com delta ──
-let _medEvoLoaded = false;
-async function loadMedidasEvo() {
-  const area = document.getElementById('medidasEvoArea');
-  if (!area || _medEvoLoaded) return;
-  if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
-  try {
-    const resp = await fetch(`${LOG_ENDPOINT}?action=medidas&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`, { cache: 'no-store' });
-    const j = await resp.json();
-    const pts = (j && j.pontos) || [];
-    _medEvoLoaded = true;
-    if (!pts.length) { area.innerHTML = ''; return; }
-    const labels = { peso: ['Peso', 'kg'], cintura: ['Cintura', 'cm'], abdomen: ['Abdômen', 'cm'], quadril: ['Quadril', 'cm'], braco: ['Braço', 'cm'], coxa: ['Coxa', 'cm'], peitoral: ['Peitoral', 'cm'] };
-    const fmt = n => (Math.round(n * 10) / 10).toString().replace(/\.0$/, '');
-    let rows = '';
-    Object.keys(labels).forEach(k => {
-      const com = pts.filter(p => p[k] != null);
-      if (!com.length) return;
-      const first = com[0][k], last = com[com.length - 1][k];
-      const tem2 = com.length > 1 && first !== last;
-      let dtxt = '', cor = '#888';
-      if (tem2) {
-        const d = last - first;
-        // cintura/abdômen/quadril/peso: cair é bom (verde). braço/coxa/peitoral: subir é bom.
-        const bomCair = /cintura|abdomen|quadril|peso/.test(k);
-        cor = (bomCair ? d < 0 : d > 0) ? '#6fd083' : '#e0a05c';
-        dtxt = (d > 0 ? '+' : '') + fmt(d);
-      }
-      rows += `<div class="medevo-row"><span class="medevo-k">${labels[k][0]}</span><span class="medevo-v">${fmt(first)}${tem2 ? ` → <b>${fmt(last)}</b>` : ''} ${labels[k][1]}</span>${dtxt ? `<span class="medevo-d" style="color:${cor}">${dtxt}</span>` : ''}</div>`;
-    });
-    if (!rows) { area.innerHTML = ''; return; }
-    const periodo = pts.length > 1 ? `${pts[0].data} → ${pts[pts.length - 1].data}` : pts[0].data;
-    area.innerHTML = `<div class="medevo"><div class="medevo-h">📏 Tuas medidas · ${periodo}</div>${rows}</div>`;
-  } catch (_) { _medEvoLoaded = true; area.innerHTML = ''; }
-}
+// Medidas corporais NÃO são mais coletadas/exibidas pelo app: vêm só da anamnese (inicial/reajuste)
+// e aparecem no laudo de evolução gerado no reajuste (gerar-comparacao.mjs), sem avaliação de bom/ruim.
+// O input semanal e o before/after avaliativo (verde/laranja) foram removidos de propósito.
 
 async function loadFotosCompare() {
   const status = document.getElementById('cmpStatus');
