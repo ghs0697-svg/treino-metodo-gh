@@ -3143,7 +3143,7 @@
   <button class="renov-banner-x" onclick="reajusteBannerDismiss()" aria-label="Fechar">&times;</button>
 </div>
 <div id="dietDiaryBanner" class="renov-banner diary">
-  <span class="renov-banner-txt">📸 Novidade: marca cada refeição como <b>Feita</b> e posta a foto do prato. A partir de julho a dieta conta no teu ranking!</span>
+  <span class="renov-banner-txt">📸 Novidade: marca cada refeição como <b>Feita</b> e posta a foto do prato. Agora a dieta também conta no teu ranking!</span>
   <a class="renov-banner-cta" href="#" onclick="dietBannerGoto();return false;">Ver dieta</a>
   <button class="renov-banner-x" onclick="dietBannerDismiss()" aria-label="Fechar">&times;</button>
 </div>
@@ -8581,8 +8581,8 @@ async function openRankingModal() {
         }
       }
     } catch (e) {}
-    // dieta passa a pontuar no ranking a partir de 01/07/2026 (espelha RANKING_DIETA_DESDE do .gs)
-    const dietaConta = todayKey() >= '2026-07-01';
+    // dieta pontua no ranking a partir de RANKING_DIETA_DESDE do .gs (rollout 2026-06-21, já vale)
+    const dietaConta = todayKey() >= '2026-06-21';
     list.innerHTML = ranking.slice(0, 50).map((r, i) => {
       const isMe = myName && String(r.name || '').toLowerCase().trim() === myName;
       const pos = i + 1;
@@ -8590,14 +8590,14 @@ async function openRankingModal() {
       if (pos === 1) { posCls = 'gold'; posTxt = '1º'; }
       else if (pos === 2) { posCls = 'silver'; posTxt = '2º'; }
       else if (pos === 3) { posCls = 'bronze'; posTxt = '3º'; }
-      // breakdown treino/dieta só na própria linha (o número grande é o score: em julho = média)
+      // breakdown treino/dieta só na própria linha (o número grande é o score = média treino+dieta)
       let breakdown = '';
       if (isMe && (r.adesaoTreino != null || r.dietaAdesao != null)) {
         const t = r.adesaoTreino != null ? r.adesaoTreino : (r.adherence || 0);
         const di = r.dietaAdesao || 0;
         breakdown = dietaConta
           ? `<div class="rk-breakdown"><span class="rk-bd">Treino <b>${t}%</b></span><span class="rk-bd">Dieta <b>${di}%</b></span></div>`
-          : `<div class="rk-breakdown"><span class="rk-bd">Treino <b>${t}%</b></span><span class="rk-bd soon">Dieta <b>${di}%</b> · conta a partir de julho</span></div>`;
+          : `<div class="rk-breakdown"><span class="rk-bd">Treino <b>${t}%</b></span></div>`;
       }
       return `<div class="rk-row${isMe ? ' me' : ''}">
         <div class="rk-pos ${posCls}">${posTxt}</div>
