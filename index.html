@@ -3374,14 +3374,14 @@
 <!-- Card de foto da refeição (diário alimentar) -->
 <div class="meal-photo-modal" id="mealPhotoModal" onclick="if(event.target.id==='mealPhotoModal')mealPhotoClose()">
   <div class="meal-photo-box">
-    <h3>📸 Refeição feita!</h3>
-    <p>Tira uma foto do prato e posta. Compartilhar conta como desempate no teu ranking.</p>
+    <h3 id="mpTitle">📸 Refeição feita!</h3>
+    <p id="mpSub">Tira uma foto do prato e posta. Compartilhar conta como desempate no teu ranking.</p>
     <input type="file" id="mpFile" accept="image/*" capture="environment" style="display:none" onchange="_onMealPhotoFile(this)">
     <div class="meal-photo-pick" id="mpPick" onclick="_mealPhotoPickClick()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
       Tirar ou escolher foto
     </div>
-    <img class="meal-photo-prev" id="mpPrev" alt="Refeição">
+    <img class="meal-photo-prev" id="mpPrev" alt="Foto">
     <div class="meal-photo-actions">
       <button class="mp-skip" type="button" onclick="mealPhotoClose()">Agora não</button>
       <button class="mp-share" type="button" id="mpShareBtn" onclick="mealPhotoShare()" disabled>Compartilhar</button>
@@ -9063,7 +9063,29 @@ function onCardioDone() {
   if (isCardioDoneToday()) return;                 // 1 por dia
   localStorage.setItem(cardioMarkKey(todayKey()), '1');
   updateCardioProgress();
-  notifyCardioCompletion();
+  logCardioRegistro();                             // backup granular (aba CARDIO)
+  notifyCardioCompletion();                        // pontua no ranking (LOGS plano='cardio')
+  setTimeout(() => showCardioPhotoCard(), 120);    // card de foto pra compartilhar (opcional)
+}
+// Backup granular de cada dia de cardio (aba CARDIO), igual logMealRegistro é da dieta. Dedup 1/dia.
+// NÃO pontua sozinho (o ranking conta via notifyCardioCompletion); é lastro de auditoria.
+function logCardioRegistro() {
+  if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
+  const dedupKey = `gh_cardioreg_${SHEET_ID}_${todayKey()}`;
+  if (localStorage.getItem(dedupKey) === '1') return;
+  localStorage.setItem(dedupKey, '1');
+  const payload = {
+    type: 'cardio_reg', plano: 'cardio',
+    sheetId: SHEET_ID,
+    studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+    date: todayKey(),
+    freq: cardioTarget(),                          // meta semanal prescrita do aluno
+    naSemana: cardioWeekCount(),                   // X de N nesta semana
+    ts: new Date().toISOString()
+  };
+  try {
+    fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), keepalive: true, redirect: 'follow' }).catch(() => {});
+  } catch (_) {}
 }
 // Espelha notifyDietCompletion: dia de cardio cumprido → log no servidor (pontua no ranking). Dedup 1/dia.
 function notifyCardioCompletion() {
@@ -9163,16 +9185,32 @@ function notifyDietCompletion(shared) {
   } catch (_) {}
 }
 
-// ── Card de foto da refeição: tira/escolhe a foto, sobrepõe selo Método GH (canvas), compartilha ──
-let _mealPhotoRi = null, _mealPhotoDataUrl = null;
+// ── Card de foto (refeição OU cardio): tira/escolhe a foto, sobrepõe selo Método GH (canvas), compartilha ──
+// Mesmo modal e mesmo card de marca (drawMealCard é genérico). _photoCardKind decide texto/ação do share.
+let _mealPhotoRi = null, _mealPhotoDataUrl = null, _photoCardKind = 'meal';
 function showMealPhotoCard(ri) {
-  _mealPhotoRi = ri; _mealPhotoDataUrl = null;
+  _photoCardKind = 'meal'; _mealPhotoRi = ri; _mealPhotoDataUrl = null;
   const ov = document.getElementById('mealPhotoModal');
   if (!ov) return;
   const prev = document.getElementById('mpPrev'); if (prev) { prev.classList.remove('on'); prev.src = ''; }
   const pick = document.getElementById('mpPick'); if (pick) pick.style.display = 'flex';
   const sb = document.getElementById('mpShareBtn'); if (sb) sb.disabled = true;
+  _photoModalTitle('📸 Refeição feita!', 'Tira uma foto do prato e posta. Compartilhar conta como desempate no teu ranking.');
   ov.classList.add('on');
+}
+function showCardioPhotoCard() {                    // mesmo modal, kind='cardio'
+  _photoCardKind = 'cardio'; _mealPhotoRi = null; _mealPhotoDataUrl = null;
+  const ov = document.getElementById('mealPhotoModal');
+  if (!ov) return;
+  const prev = document.getElementById('mpPrev'); if (prev) { prev.classList.remove('on'); prev.src = ''; }
+  const pick = document.getElementById('mpPick'); if (pick) pick.style.display = 'flex';
+  const sb = document.getElementById('mpShareBtn'); if (sb) sb.disabled = true;
+  _photoModalTitle('🏃 Cardio feito!', 'Tira uma foto e posta o teu cardio. Bora mostrar a consistência!');
+  ov.classList.add('on');
+}
+function _photoModalTitle(titulo, sub) {
+  const t = document.getElementById('mpTitle'); if (t) t.textContent = titulo;
+  const s = document.getElementById('mpSub'); if (s) s.textContent = sub;
 }
 function mealPhotoClose() { const ov = document.getElementById('mealPhotoModal'); if (ov) ov.classList.remove('on'); }
 function _mealPhotoPickClick() { document.getElementById('mpFile').click(); }
@@ -9230,15 +9268,18 @@ function drawMealCard(photoImg) {
 }
 async function mealPhotoShare() {
   if (!_mealPhotoDataUrl) return;
+  const isCardio = _photoCardKind === 'cardio';
+  const fname = isCardio ? 'cardio-metodo-gh.jpg' : 'refeicao-metodo-gh.jpg';
+  const txt = isCardio ? 'Cardio em dia 🏃 #MétodoGH' : 'Refeição em dia 💪 #MétodoGH';
   try {
     const blob = await (await fetch(_mealPhotoDataUrl)).blob();
-    const file = new File([blob], 'refeicao-metodo-gh.jpg', { type: 'image/jpeg' });
+    const file = new File([blob], fname, { type: 'image/jpeg' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file], title: 'Método GH', text: 'Refeição em dia 💪 #MétodoGH' });
+      await navigator.share({ files: [file], title: 'Método GH', text: txt });
     } else {
-      const a = document.createElement('a'); a.href = _mealPhotoDataUrl; a.download = 'refeicao-metodo-gh.jpg'; a.click();
+      const a = document.createElement('a'); a.href = _mealPhotoDataUrl; a.download = fname; a.click();
     }
-    notifyDietCompletion(true); // compartilhou = desempate no ranking
+    if (!isCardio) notifyDietCompletion(true); // dieta: compartilhar = desempate no ranking. cardio: só social
   } catch (_) { /* cancelou o share */ }
   mealPhotoClose();
 }
