@@ -559,6 +559,16 @@
   .rk-bd { font-size: 10.5px; color: #b8b2a6; }
   .rk-bd b { color: var(--gold); font-weight: 800; }
   .rk-bd.soon { color: #8e8a82; }
+  /* troféu do campeão do mês anterior (topo da lista) */
+  .rk-champ { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; padding: 12px 14px;
+    border-radius: 12px; background: linear-gradient(135deg, rgba(212,167,106,0.20), rgba(212,167,106,0.06));
+    border: 1px solid rgba(212,167,106,0.45); }
+  .rk-champ-tr { font-size: 28px; line-height: 1; flex-shrink: 0; }
+  .rk-champ-txt { flex: 1; min-width: 0; }
+  .rk-champ-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.6px; color: #d4a76a; font-weight: 700; }
+  .rk-champ-name { font-size: 16px; font-weight: 800; color: #f1ede4; line-height: 1.2; margin-top: 1px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rk-champ-score { font-size: 15px; font-weight: 800; color: var(--gold); flex-shrink: 0; }
 
   /* ── Chat assistente ── */
   .chat-msgs { flex: 1; overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 4px 2px; }
@@ -8553,8 +8563,14 @@ async function openRankingModal() {
     const resp = await fetch(LOG_ENDPOINT + '?action=ranking&_=' + Date.now(), { cache: 'no-store' });
     const j = await resp.json();
     const ranking = (j && j.ranking) || [];
+    const champion = (j && j.champion) || null;
+    const escHtml = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    // 🏆 campeão do mês anterior (congelado no .gs). Aparece no topo, acima da lista do mês corrente.
+    const champHtml = (champion && champion.name)
+      ? `<div class="rk-champ"><span class="rk-champ-tr">🏆</span><div class="rk-champ-txt"><div class="rk-champ-label">Campeão de ${escHtml(champion.mesNome || '')}</div><div class="rk-champ-name">${escHtml(champion.name)}</div></div><div class="rk-champ-score">${Math.round(champion.score || 0)}%</div></div>`
+      : '';
     if (!ranking.length) {
-      list.innerHTML = '<p style="color:#888;text-align:center;padding:30px;font-size:13px;">Ranking ainda vazio.<br>Treina hoje pra entrar! 💪</p>';
+      list.innerHTML = champHtml + '<p style="color:#888;text-align:center;padding:30px;font-size:13px;">Ranking ainda vazio.<br>Treina hoje pra entrar! 💪</p>';
       return;
     }
     // Acha o nome do aluno atual pra destacar
@@ -8565,7 +8581,6 @@ async function openRankingModal() {
         return String(rawName || '').toLowerCase().trim();
       } catch (e) { return ''; }
     })();
-    const escHtml = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     // Sincroniza a streak do aluno com o servidor (fonte da verdade,
     // calculada da planilha). Se o celular ficou com streak baixa por
     // causa da regra antiga, isso corrige na hora — nunca pra baixo.
@@ -8583,7 +8598,7 @@ async function openRankingModal() {
     } catch (e) {}
     // dieta pontua no ranking a partir de RANKING_DIETA_DESDE do .gs (rollout 2026-06-21, já vale)
     const dietaConta = todayKey() >= '2026-06-21';
-    list.innerHTML = ranking.slice(0, 50).map((r, i) => {
+    list.innerHTML = champHtml + ranking.slice(0, 50).map((r, i) => {
       const isMe = myName && String(r.name || '').toLowerCase().trim() === myName;
       const pos = i + 1;
       let posCls = '', posTxt = pos + 'º';
