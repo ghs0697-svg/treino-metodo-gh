@@ -8954,9 +8954,38 @@ function onCheckMeal(ri) {
   document.querySelectorAll(`.diet-meal-check[data-meal-ri="${ri}"]`).forEach(b => b.classList.toggle('done', nv));
   updateDietProgress();
   if (nv) {
+    logMealRegistro(ri);                               // registra a refeição na planilha (backup granular)
     setTimeout(() => showMealPhotoCard(ri), 120);      // tirar foto + postar
     if (allMealsDone()) notifyDietCompletion(false);   // dia de dieta cumprido (pontua no ranking)
   }
+}
+// Registra CADA refeição marcada no servidor (aba REFEICOES) — backup granular, igual os dias de treino.
+// Dedup local por refeição/dia. Não pontua sozinho (o ranking conta o DIA completo via notifyDietCompletion);
+// serve de lastro pra reconstruir a contagem se o ranking do site der problema.
+function logMealRegistro(ri) {
+  if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
+  const dedupKey = `gh_meallog_${SHEET_ID}_${todayKey()}_r${ri}`;
+  if (localStorage.getItem(dedupKey) === '1') return;
+  localStorage.setItem(dedupKey, '1');
+  let refNome = '';
+  try {
+    const cy = ((typeof DIET_DATA !== 'undefined' && DIET_DATA && DIET_DATA.ciclos) || []).find(c => (c.refeicoes || [])[ri]);
+    const rf = cy && cy.refeicoes[ri];
+    refNome = (rf && rf.nome) || '';
+  } catch (_) {}
+  const payload = {
+    type: 'meal', plano: 'dieta',
+    sheetId: SHEET_ID,
+    studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+    date: todayKey(),
+    refIdx: ri, refNome: refNome,
+    totalRef: dietTotalMeals(),
+    diaCompleto: allMealsDone(),
+    ts: new Date().toISOString()
+  };
+  try {
+    fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), keepalive: true, redirect: 'follow' }).catch(() => {});
+  } catch (_) {}
 }
 // Espelha notifyDayCompletion do treino, com plano:'dieta'. shared=false → cumpriu a dieta do
 // dia (pontos). shared=true → compartilhou foto (desempate). Fire-and-forget, dedup local.
