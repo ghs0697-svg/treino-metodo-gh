@@ -1211,6 +1211,15 @@
   .diet-day-progress .ddp-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
   .diet-day-progress .ddp-bar { height: 7px; background: rgba(255,255,255,.08); border-radius: 99px; overflow: hidden; }
   .diet-day-progress .ddp-fill { height: 100%; background: var(--gold); width: 0; transition: width .3s; }
+  /* card de cardio da semana (meta semanal = freq de treino) */
+  .cardio-week { margin: 10px 12px 0; padding: 11px 13px; border-radius: 12px; background: linear-gradient(135deg, rgba(212,167,106,0.12), rgba(212,167,106,0.04)); border: 1px solid rgba(212,167,106,0.30); }
+  .cardio-week .cw-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
+  .cardio-week .cw-title { font-size: 13px; font-weight: 700; color: #e8d8bd; display: flex; align-items: center; gap: 6px; }
+  .cardio-week .cw-count { font-size: 13px; font-weight: 800; color: var(--gold); }
+  .cardio-week .cw-bar { height: 7px; background: rgba(255,255,255,.08); border-radius: 99px; overflow: hidden; margin-bottom: 10px; }
+  .cardio-week .cw-fill { height: 100%; background: var(--gold); width: 0; transition: width .3s; }
+  .cardio-week .cw-btn { width: 100%; padding: 9px; border-radius: 9px; border: 1px solid var(--gold); background: transparent; color: var(--gold); font-size: 13px; font-weight: 700; cursor: pointer; }
+  .cardio-week .cw-btn.done { background: var(--gold); color: #0c0c0d; border-color: var(--gold); }
   /* card de foto da refeição */
   .meal-photo-modal { position: fixed; inset: 0; background: rgba(0,0,0,.82); z-index: 10003; display: none; align-items: center; justify-content: center; padding: 16px; }
   .meal-photo-modal.on { display: flex; }
@@ -6026,6 +6035,12 @@ async function loadFromSheets() {
     document.getElementById('infoObj').textContent = studentObj;
     document.getElementById('infoDur').textContent = studentDur;
 
+    // A DIETA carrega ANTES do TREINO (loadDietFromSheets().then(loadFromSheets)). Pra aluno SEM
+    // prescrição numérica de cardio, cardioTarget cai no fallback = freq de treino — que só existe
+    // AGORA (infoFreq/WORKOUT acabaram de ser setados). Resincroniza a barra com a meta correta
+    // antes do loadingScreen sumir (no-op se a dieta nem renderizou o card).
+    if (typeof updateCardioProgress === 'function') updateCardioProgress();
+
     // Esforco-alvo (RIR): badge no topo + valor global pro Modo Focado mostrar do lado do esforco
     STUDENT_ESFORCO_ALVO = _parseEsforcoAlvo(rows);
     if (STUDENT_ESFORCO_ALVO && STUDENT_ESFORCO_ALVO.valor) {
@@ -8655,8 +8670,9 @@ async function openRankingModal() {
         }
       }
     } catch (e) {}
-    // dieta pontua no ranking a partir de RANKING_DIETA_DESDE do .gs (rollout 2026-06-21, já vale)
+    // dieta/cardio pontuam no ranking a partir das datas de rollout do .gs (já valem). Espelham RANKING_*_DESDE.
     const dietaConta = todayKey() >= '2026-06-21';
+    const cardioConta = todayKey() >= '2026-06-22';
     list.innerHTML = champHtml + ranking.slice(0, 50).map((r, i) => {
       const isMe = myName && String(r.name || '').toLowerCase().trim() === myName;
       const pos = i + 1;
@@ -8664,14 +8680,14 @@ async function openRankingModal() {
       if (pos === 1) { posCls = 'gold'; posTxt = '1º'; }
       else if (pos === 2) { posCls = 'silver'; posTxt = '2º'; }
       else if (pos === 3) { posCls = 'bronze'; posTxt = '3º'; }
-      // breakdown treino/dieta só na própria linha (o número grande é o score = média treino+dieta)
+      // breakdown só na própria linha (o número grande é o score = média dos componentes que contam)
       let breakdown = '';
-      if (isMe && (r.adesaoTreino != null || r.dietaAdesao != null)) {
+      if (isMe && (r.adesaoTreino != null || r.dietaAdesao != null || r.cardioAdesao != null)) {
         const t = r.adesaoTreino != null ? r.adesaoTreino : (r.adherence || 0);
-        const di = r.dietaAdesao || 0;
-        breakdown = dietaConta
-          ? `<div class="rk-breakdown"><span class="rk-bd">Treino <b>${t}%</b></span><span class="rk-bd">Dieta <b>${di}%</b></span></div>`
-          : `<div class="rk-breakdown"><span class="rk-bd">Treino <b>${t}%</b></span></div>`;
+        const spans = [`<span class="rk-bd">Treino <b>${t}%</b></span>`];
+        if (dietaConta) spans.push(`<span class="rk-bd">Dieta <b>${r.dietaAdesao || 0}%</b></span>`);
+        if (cardioConta) spans.push(`<span class="rk-bd">Cardio <b>${r.cardioAdesao || 0}%</b></span>`);
+        breakdown = `<div class="rk-breakdown">${spans.join('')}</div>`;
       }
       return `<div class="rk-row${isMe ? ' me' : ''}">
         <div class="rk-pos ${posCls}">${posTxt}</div>
@@ -8985,6 +9001,87 @@ async function loadRecado() {
 // "dia de dieta cumprido" no ranking (espelha a conclusão do treino). Cada refeição marcada
 // abre um card pra tirar foto e postar. Conta por índice da refeição (cego ao ciclo: Alto/
 // Baixo carbo são variações da mesma refeição).
+// ── Cardio: meta SEMANAL PERSONALIZADA (= cardio prescrito de CADA aluno), marca 1x por dia, reseta toda semana ──
+// Espelha treino/dieta. A barra mostra X/N da semana corrente (segunda a domingo). Cada dia
+// marcado vira 1 log no servidor (plano:'cardio') que entra no ranking junto de treino+dieta.
+// A meta N vem da linha `cardio` da DIETA do aluno (ex: "5x/sem", "6x na semana", "4x por semana",
+// "3-4x/sem" → piso 3). Sem número explícito (ex: "já caminha — manter") → cai na freq de treino.
+function _cardioWeeklyFromText(t) {
+  t = String(t || '').toLowerCase().replace(/[–—]/g, '-').replace(/\s+/g, ' ');
+  // marcador de cadência: "x" OU "vez(es)" OU "vzs" (ex: "5x/sem", "4 vezes na semana", "5 vzs/sem")
+  const re = /(\d+)\s*(?:(?:-|a|at[eé])\s*(\d+))?\s*(?:x|vez(?:es)?|vzs)\s*(?:\/|na|por)?\s*sem(?:ana)?/gi;
+  let best = 0, m;
+  while ((m = re.exec(t)) !== null) { const n = parseInt(m[1], 10); if (n > best) best = n; } // m[1]=piso (faixa "3-4x"→3)
+  if (best) return best;                                  // cadência explícita Nx/sem sempre manda
+  if (/todo[s]?\s+os?\s+dias|todo dia|diariamente|cardio di[aá]ri/.test(t)) return 7; // só se NÃO houver Nx/sem
+  return 0;
+}
+function cardioTarget() {
+  let best = 0;
+  const D = (typeof DIET_DATA !== 'undefined' && DIET_DATA) ? DIET_DATA : null;
+  if (D) {
+    (D.aerobicos || []).forEach(a => {
+      const n = _cardioWeeklyFromText((a.freq || '') + ' ' + (a.duracao || '') + ' ' + (a.obs || ''));
+      if (n > best) best = n;
+    });
+    (D.orientacoes || []).forEach(o => {                  // cardio que veio como `orient`/`dica` cat. aeróbico
+      if (/a[eé]r[oó]bic|cardio/i.test(o.categoria || '')) {
+        const n = _cardioWeeklyFromText((o.categoria || '') + ' ' + (o.texto || ''));
+        if (n > best) best = n;
+      }
+    });
+  }
+  if (!best) {                                            // sem cardio prescrito numérico → freq de treino (default GH)
+    const f = parseInt(((document.getElementById('infoFreq')?.textContent) || '').match(/\d+/)?.[0] || '', 10);
+    best = f || ((typeof WORKOUT !== 'undefined' && WORKOUT) ? WORKOUT.length : 0) || 3;
+  }
+  return Math.min(7, Math.max(1, best));
+}
+function cardioMarkKey(date) { return `gh_cardio_${STUDENT_ID}_${date}`; }
+function isCardioDoneToday() { return localStorage.getItem(cardioMarkKey(todayKey())) === '1'; }
+function _cardioWeekStart() {                       // segunda-feira 00:00 da semana corrente
+  const d = new Date(); const dow = (d.getDay() + 6) % 7; // 0=segunda ... 6=domingo
+  d.setDate(d.getDate() - dow); d.setHours(0, 0, 0, 0); return d;
+}
+function cardioWeekCount() {
+  const start = _cardioWeekStart(); let c = 0;
+  for (let i = 0; i < 7; i++) {
+    const dt = new Date(start); dt.setDate(start.getDate() + i);
+    const k = `${dt.getFullYear()}-${('0' + (dt.getMonth() + 1)).slice(-2)}-${('0' + dt.getDate()).slice(-2)}`;
+    if (localStorage.getItem(cardioMarkKey(k)) === '1') c++;
+  }
+  return c;
+}
+function updateCardioProgress() {
+  const target = cardioTarget(), done = cardioWeekCount();
+  const cnt = document.getElementById('cwCount'), fill = document.getElementById('cwFill'), btn = document.getElementById('cwBtn');
+  if (cnt) cnt.textContent = `${Math.min(done, target)}/${target}`; // capa display (fazer +q o mínimo não vira "4/3")
+  if (fill) fill.style.width = (target ? Math.min(100, done / target * 100) : 0) + '%';
+  if (btn) { const t = isCardioDoneToday(); btn.classList.toggle('done', t); btn.textContent = t ? '✓ Cardio feito hoje' : 'Fiz o cardio hoje'; }
+}
+function onCardioDone() {
+  if (isCardioDoneToday()) return;                 // 1 por dia
+  localStorage.setItem(cardioMarkKey(todayKey()), '1');
+  updateCardioProgress();
+  notifyCardioCompletion();
+}
+// Espelha notifyDietCompletion: dia de cardio cumprido → log no servidor (pontua no ranking). Dedup 1/dia.
+function notifyCardioCompletion() {
+  if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
+  const dedupKey = `gh_cardiolog_${SHEET_ID}_${todayKey()}`;
+  if (localStorage.getItem(dedupKey) === '1') return;
+  localStorage.setItem(dedupKey, '1');
+  const payload = {
+    type: 'completion', plano: 'cardio',
+    sheetId: SHEET_ID,
+    studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+    date: todayKey(), freq: cardioTarget(),
+    shared: false, ts: new Date().toISOString()
+  };
+  try {
+    fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), keepalive: true, redirect: 'follow' }).catch(() => {});
+  } catch (_) {}
+}
 function mealDoneKey(ri) { return `gh_meal_${STUDENT_ID}_${todayKey()}_r${ri}`; }
 function isMealDone(ri) { return localStorage.getItem(mealDoneKey(ri)) === '1'; }
 function dietTotalMeals() {
@@ -9216,6 +9313,8 @@ function renderDiet() {
   if (_nMeals > 0) {
     html += `<div class="diet-day-progress"><div class="ddp-label"><span>Refeições de hoje</span><span id="ddpCount">0/${_nMeals}</span></div><div class="ddp-bar"><div class="ddp-fill" id="ddpFill"></div></div></div>`;
   }
+  // Cardio da semana: meta = cardio prescrito do aluno (cardioTarget lê a DIETA). Marca 1x/dia, reseta toda semana. Conta no ranking.
+  html += `<div class="cardio-week" id="cardioWeekCard"><div class="cw-row"><span class="cw-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="5" r="1.6"/><path d="M5 21l3-5 3 1 2-3"/><path d="M13 14l4 1 2 4"/><path d="M9 9l3-2 3 2 2-1"/></svg> Cardio da semana</span><span class="cw-count" id="cwCount">0/${cardioTarget()}</span></div><div class="cw-bar"><div class="cw-fill" id="cwFill"></div></div><button type="button" class="cw-btn" id="cwBtn" onclick="onCardioDone()">Fiz o cardio hoje</button></div>`;
 
   d.ciclos.forEach((cy, ci) => {
     const prefix = `c${ci}_`;
@@ -9331,6 +9430,7 @@ function renderDiet() {
   container.style.display = 'block';
   loadRecado(); // preenche o #recadoSlot com o player do recado (se houver)
   updateDietProgress(); // sincroniza a barra de refeições do dia com o que já tá marcado
+  updateCardioProgress(); // sincroniza a barra de cardio da semana
 }
 
 function renderFoodItem(a) {
