@@ -3200,6 +3200,9 @@
     <button type="button" class="float-opt" onclick="event.stopPropagation(); forceSyncFromServer()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span><span>Recarregar do servidor</span>
     </button>
+    <button type="button" class="float-opt" onclick="event.stopPropagation(); apagarPesosMarcados()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span><span>Apagar pesos marcados</span>
+    </button>
     <button type="button" class="float-opt install" onclick="event.stopPropagation(); showInstallInstructions()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span><span>Instalar app na tela inicial</span>
     </button>
@@ -7155,6 +7158,42 @@ function closeShoppingOnBg(e) { if (e.target.id === 'shoppingListModal') teHide(
 // merge auto não resolveu (caso Matheus: semana 4 não voltou porque
 // tinha algum dado fantasma local que bloqueou o restore).
 // É drástico, então confirma antes. Cobre cargas + placas + done.
+// ══ APAGAR PESOS MARCADOS ══
+// Aluno pediu pra zerar as cargas (caso típico: treino reorganizado/dia removido
+// fez o peso aparecer no exercício errado, e o dado é legado/sem nome pra validar).
+// Limpa LOCAL (cargas+placas+companheiro de nome) E o backup do servidor — senão o
+// syncCargasFromServer_ no próximo load traz tudo de volta. NÃO toca treino/feito/histórico.
+async function apagarPesosMarcados() {
+  document.getElementById('floatOptions').classList.remove('show');
+  document.getElementById('floatBtn').classList.remove('open');
+  if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
+  if (!confirm(
+    'Apagar TODOS os pesos e placas que você marcou?\n\n' +
+    'Zera as cargas aqui no app E no backup do servidor, pra você marcar do zero. ' +
+    'O treino, as marcações de "feito" e o histórico NÃO são afetados.\n\nContinuar?'
+  )) return;
+  // 1. local: cargas + placas + companheiro nome-do-exercício
+  const prefs = [`gh_${STUDENT_ID}_d`, `gh_placas_${STUDENT_ID}_d`, `gh_exn_${STUDENT_ID}_d`];
+  const del = [];
+  for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && prefs.some(p => k.startsWith(p))) del.push(k); }
+  del.forEach(k => localStorage.removeItem(k));
+  // 2. backup do servidor (tombstone) — senão volta no próximo load
+  let serverOk = false;
+  try {
+    const r = await fetch(LOG_ENDPOINT, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ type: 'clearCargas', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim() }),
+      redirect: 'follow'
+    });
+    const j = await r.json(); serverOk = !!(j && j.ok);
+  } catch (_) {}
+  // 3. re-render (tudo em branco)
+  if (typeof renderExercises === 'function' && document.getElementById('exerciseContainer')) renderExercises();
+  alert(serverOk
+    ? '✅ Pesos apagados! Pode marcar de novo do zero.'
+    : '✅ Pesos apagados aqui no app. O backup do servidor pode levar um instante — se algum valor voltar, é só tocar de novo.');
+}
+
 async function forceSyncFromServer() {
   document.getElementById('floatOptions').classList.remove('show');
   document.getElementById('floatBtn').classList.remove('open');
