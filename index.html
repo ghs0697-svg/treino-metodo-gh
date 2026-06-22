@@ -4048,6 +4048,21 @@ function _exNameAt(d, e) {
     return ex.biset ? (((ex.a && ex.a.name) || '') + ' + ' + ((ex.b && ex.b.name) || '')) : (ex.name || '');
   } catch (_) { return ''; }
 }
+// Posição ATUAL (di,ei) de um exercício pelo NOME — só se ele for ÚNICO no treino.
+// Usado pra REALINHAR o peso quando o treino foi reorganizado (dia removido/movido): o peso volta
+// pro exercício onde ele está AGORA, não na posição velha onde foi salvo. Nome duplicado (ex.:
+// Cadeira Flexora em 2 dias) ou inexistente → null (não adivinha; cai no fallback = posição salva).
+function _uniquePosByName(name) {
+  if (!name || typeof WORKOUT === 'undefined' || !WORKOUT) return null;
+  const target = _normEx(name);
+  if (!target) return null;
+  let found = null, count = 0;
+  WORKOUT.forEach((day, di) => (day.exercises || []).forEach((ex, ei) => {
+    if (ex.biset) return;                 // biset: nome combinado + posição a/b, não realinha
+    if (_normEx(ex.name || '') === target) { count++; found = { di, ei }; }
+  }));
+  return count === 1 ? found : null;
+}
 function _cargaValida(d, e, w) {
   const saved = localStorage.getItem(exnKey(d, e, w));
   if (!saved) return true;          // sem companheiro (legado) → não valida, comporta como hoje
@@ -4229,6 +4244,36 @@ function syncEsforcoToServer_(di, ei, w, esforco, aparelho) {
 // quando navegador limpava parcialmente o storage (iOS PWA faz isso) —
 // algumas semanas voltavam, outras não. Caso real: Matheus Nunes
 // semanas 3 e 4 sumiram localmente mas estavam intactas no servidor.
+// Restaura cargas/placas do servidor REALINHANDO por nome (cura reorg de dia), de forma DETERMINÍSTICA.
+// O servidor deduplica por POSIÇÃO, não por nome: se um exercício foi logado em 2 posições (a velha e a
+// nova, após reorg), vêm 2 entradas com o mesmo nome → as 2 realinham pro mesmo lugar. Pra o peso ATUAL
+// ganhar do velho: processa primeiro as entradas que JÁ estão na posição certa (original == realinhada =
+// a verdade daquela posição); as MOVIDAS (peso de posição velha migrando) só preenchem posição ainda não
+// reivindicada nesta passada (set `seen`). ifEmpty=true respeita peso local existente (não sobrescreve).
+function _restoreCargasRealign(cargas, ifEmpty) {
+  let n = 0;
+  const items = (cargas || []).map(c => {
+    let di = c.di, ei = c.ei;
+    if (c.exercicio) { const p = _uniquePosByName(c.exercicio); if (p) { di = p.di; ei = p.ei; } }
+    return { c, di, ei, moved: (di !== c.di || ei !== c.ei) };
+  });
+  items.sort((a, b) => (a.moved ? 1 : 0) - (b.moved ? 1 : 0)); // não-movidos (a verdade da posição) primeiro
+  const seen = new Set();
+  items.forEach(({ c, di, ei }) => {
+    const kC = storageKey(di, ei, c.w), kP = placasKey(di, ei, c.w);
+    if (c.carga != null && c.carga !== '' && !seen.has(kC) && (!ifEmpty || !localStorage.getItem(kC))) {
+      localStorage.setItem(kC, String(c.carga));
+      if (c.exercicio) localStorage.setItem(exnKey(di, ei, c.w), String(c.exercicio));
+      seen.add(kC); n++;
+    }
+    if (c.placas != null && c.placas !== '' && !seen.has(kP) && (!ifEmpty || !localStorage.getItem(kP))) {
+      localStorage.setItem(kP, String(c.placas));
+      if (c.exercicio) localStorage.setItem(exnKey(di, ei, c.w), String(c.exercicio));
+      seen.add(kP); n++;
+    }
+  });
+  return n;
+}
 async function syncCargasFromServer_() {
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
   try {
@@ -4237,21 +4282,7 @@ async function syncCargasFromServer_() {
     if (!res.ok) return;
     const data = await res.json();
     if (!data || !Array.isArray(data.cargas)) return;
-    let restored = 0;
-    data.cargas.forEach(c => {
-      const kC = storageKey(c.di, c.ei, c.w);
-      const kP = placasKey(c.di, c.ei, c.w);
-      if (c.carga != null && c.carga !== '' && !localStorage.getItem(kC)) {
-        localStorage.setItem(kC, String(c.carga));
-        if (c.exercicio) localStorage.setItem(exnKey(c.di, c.ei, c.w), String(c.exercicio));
-        restored++;
-      }
-      if (c.placas != null && c.placas !== '' && !localStorage.getItem(kP)) {
-        localStorage.setItem(kP, String(c.placas));
-        if (c.exercicio) localStorage.setItem(exnKey(c.di, c.ei, c.w), String(c.exercicio));
-        restored++;
-      }
-    });
+    const restored = _restoreCargasRealign(data.cargas, true); // if-empty: respeita peso local
     if (restored > 0) {
       console.log(`[gh] Cargas sincronizadas do servidor: ${restored} preenchidas`);
       if (typeof renderExercises === 'function' && document.getElementById('exerciseContainer')) {
@@ -7228,18 +7259,7 @@ async function forceSyncFromServer() {
       const url = `${LOG_ENDPOINT}?action=cargas&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`;
       const res = await fetch(url, { cache: 'no-store' });
       const data = await res.json();
-      (data.cargas || []).forEach(c => {
-        if (c.carga != null && c.carga !== '') {
-          localStorage.setItem(storageKey(c.di, c.ei, c.w), String(c.carga));
-          if (c.exercicio) localStorage.setItem(exnKey(c.di, c.ei, c.w), String(c.exercicio));
-          totalCargas++;
-        }
-        if (c.placas != null && c.placas !== '') {
-          localStorage.setItem(placasKey(c.di, c.ei, c.w), String(c.placas));
-          if (c.exercicio) localStorage.setItem(exnKey(c.di, c.ei, c.w), String(c.exercicio));
-          totalCargas++;
-        }
-      });
+      totalCargas += _restoreCargasRealign(data.cargas, false); // local já foi limpo acima (não if-empty)
     } catch (e) { falhas++; console.warn('forceSync cargas fail:', e); }
 
     // 3. Busca done (checkbox) do servidor
