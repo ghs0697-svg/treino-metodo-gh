@@ -4,28 +4,57 @@
 //  Reajustes, Ajustes diários, ou montagem manual sua/do funcionário),
 //  porque o app casa pelo NOME do exercício na hora de renderizar.
 //
-//  COMO PREENCHER (no bloco SUBSTITUTOS abaixo):
-//   - chave  = exercício PRESCRITO (como aparece no protocolo)
-//   - valor  = SUBSTITUTO que o aluno pode escolher
+//  COMO PREENCHER (no bloco GRUPOS_SUBSTITUTOS abaixo):
+//   - UMA LINHA por GRUPO. Os exercícios da mesma linha se substituem ENTRE
+//     SI (mão dupla: vale pra grupos de 2, 3, 4 ou mais).
+//   - separe os nomes por " / ".
+//   - SEM aspas, SEM vírgula, SEM dois-pontos — é só escrever os nomes.
+//     (não tem como quebrar o arquivo escrevendo errado o texto.)
 //   - copie os nomes EXATOS da LISTA DE REFERÊNCIA no fim deste arquivo.
-//   - se digitar errado ou usar exercício sem vídeo, o app IGNORA a entrada
-//     (não mostra o botão) — não quebra nada, só não aparece a troca.
-//   - sem entrada aqui = sem botão de troca (os "não-substituíveis" ficam
-//     de fora naturalmente — é só não listar).
-//   - bidirecional? põe as DUAS linhas. Ex: "A":"B" e "B":"A".
-//   - se o principal E o substituto estiverem no MESMO dia, o app não oferece
-//     a troca (não duplica) — você não precisa se preocupar com isso.
-//   - um exercício tem UM substituto (se quiser vários, me avisa).
+//   - nome digitado errado, ou exercício sem vídeo, o app IGNORA (não mostra
+//     a opção) — não quebra nada, só não aparece.
+//   - exercício SEM grupo aqui = sem botão de troca (os "não-substituíveis"
+//     ficam de fora naturalmente — é só não listar).
+//   - se o exercício prescrito E um do grupo caírem no MESMO dia, o app não
+//     oferece o que já está no dia (não duplica) — você não se preocupa.
+//   - cargas/cronômetro/histórico NÃO mudam ao trocar — só o nome e o vídeo.
+//
+//  ⚠ um exercício só pode estar em UM grupo. Se aparecer em dois, o app usa
+//    o primeiro e ignora no segundo.
 // ════════════════════════════════════════════════════════════════════════
-const SUBSTITUTOS = {
-  // ── PREENCHA AQUI (exemplos pra você revisar/trocar/apagar) ──
-  "Agachamento Hack": "Agachamento Smith",
-  "Agachamento Smith": "Agachamento Hack",
-  "Leg Press 45º": "Leg Horizontal",
-  "Mesa Flexora": "Cadeira Flexora",
-  "Cadeira Flexora": "Mesa Flexora",
-  "Supino Inclinado na Máquina": "Supino Inclinado com Halteres"
-};
+const GRUPOS_SUBSTITUTOS = `
+Agachamento Hack / Agachamento Smith
+Leg Press 45º / Leg Press 45º Unilateral
+Mesa Flexora / Flexora Unilateral em Pé
+Supino Inclinado na Máquina / Supino Inclinado com Halteres
+Afundo no Chão / Afundo Smith / Afundo Smith com Step
+Búlgaro / Búlgaro na Máquina
+Levantamento Terra / Levantamento Terra na Máquina
+Stiff / Stiff na Máquina / Stiff no Hiperextensor
+Agachamento Sumo Smith / Terra Sumô
+Meio Terra / Hiperextensão de Lombar / Hiperextensor de Lombar na Máquina com Carga
+Elevação Pélvica 2D ou Livre / Elevação Pélvica na Máquina
+Extensão de Glúteo na Máquina / Extensão de Glúteo na Polia / Extensão de Glúteo com Caneleira
+Supino Reto na Máquina / Supino Reto na Máquina Sentado
+Crucifixo Inclinado / Crucifixo Inclinado no Cross
+Pulldown / Pulldown na Máquina
+Puxada Alta Pronada / Puxada Alta na Máquina Articulada
+Remada Curvada Pronada / Remada Curvada Sentado / Remada Curvada na Máquina Guiada
+Remada Neutra no Cross / Remada Baixa com Triângulo
+Remada Unilateral na Máquina / Serrote com Halter / Remada Neutra no Cross
+Crucifixo Inverso com Halteres / Crucifixo Inverso no Cross / Crucifixo Inverso no Voador
+Desenvolvimento com Halteres / Desenvolvimento na Máquina / Desenvolvimento na Máquina Inclinado / Desenvolvimento na Máquina Sentado
+Elevação Lateral / Elevação Lateral na Máquina / Elevação Lateral no Cross
+Face Pull / Facepull com Corda no Cross / Remada Alta na Polia
+Elevação Frontal com Anilha / Elevação Frontal com Halteres em Isometria / Elevação Frontal Neutra com Halteres / Elevação Frontal no Cross
+Rosca Concentrada com Halter / Rosca Unilateral no Cross / Rosca Scott Unilateral
+Rosca Direta Alternada / Rosca Direta com Halteres / Rosca Scott Fechada
+Rosca Direta com Barra W / Rosca Direta no Cross
+Tríceps Pulley com Barra / Tríceps Pulley com Corda / Tríceps Pulley na Máquina / Tríceps Pulley Unilateral
+Tríceps Testa em Pé / Tríceps Testa no Banco Inclinado
+Abdominal Elevação de Pernas com Halter ou Caneleira / Abdominal Elevação de Pernas na Paralela / Abdominal na Barra Fixa
+Abdominal na Máquina / Abdominal na Remada Baixa ou Cross / Abdominal no Banco Declinado
+`;
 
 // ════════════════════════════════════════════════════════════════════════
 //  LISTA DE REFERÊNCIA — os 143 exercícios do banco oficial (com vídeo).

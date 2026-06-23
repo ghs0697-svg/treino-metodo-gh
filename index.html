@@ -608,6 +608,18 @@
   /* botão de trocar exercício no Modo Focado */
   .focus-sub-btn { display: inline-block; margin-top: 8px; background: transparent; border: 1px solid var(--gold); color: var(--gold); padding: 7px 14px; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer; }
   .focus-sub-btn:active { background: var(--gold-dim); }
+  /* ── Seletor de troca de exercício (grupo de substitutos) ── */
+  .sub-picker-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.72); z-index: 9200; display: none; align-items: flex-end; justify-content: center; }
+  .sub-picker-overlay.show { display: flex; }
+  .sub-picker-card { background: #16161a; border: 1px solid #2a2a30; border-radius: 18px 18px 0 0; width: 100%; max-width: 480px; padding: 18px 16px calc(18px + env(safe-area-inset-bottom)); max-height: 78vh; overflow-y: auto; }
+  .sub-picker-title { font-size: 16px; font-weight: 800; color: #fff; margin-bottom: 2px; }
+  .sub-picker-orig { font-size: 12px; color: #8a8a92; margin-bottom: 14px; }
+  .sub-opt { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: #1f1f25; border: 1px solid #2e2e36; color: #ececf0; padding: 13px 14px; border-radius: 11px; font-size: 15px; font-weight: 600; margin-bottom: 8px; cursor: pointer; }
+  .sub-opt-on { border-color: var(--gold); background: var(--gold-dim); }
+  .sub-opt-name { flex: 1; }
+  .sub-opt-tag { font-size: 10px; font-weight: 700; color: #8a8a92; border: 1px solid #3a3a42; border-radius: 5px; padding: 1px 6px; }
+  .sub-opt-check { color: var(--gold); font-weight: 900; }
+  .sub-picker-close { width: 100%; margin-top: 6px; background: transparent; border: 1px solid #3a3a42; color: #b8b8c0; padding: 12px; border-radius: 11px; font-size: 14px; font-weight: 600; cursor: pointer; }
 
   /* ── Timer overlay ── */
   .timer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 11000; }
@@ -2272,6 +2284,15 @@
 <div id="exerciseContainer"></div>
 
 <!-- ══ TIMER OVERLAY ══ -->
+<div class="sub-picker-overlay" id="subPickerOverlay" onclick="if(event.target===this)closeSubPicker()">
+  <div class="sub-picker-card">
+    <div class="sub-picker-title">Trocar exercício</div>
+    <div class="sub-picker-orig" id="subPickerOrig"></div>
+    <div id="subPickerList"></div>
+    <button class="sub-picker-close" onclick="closeSubPicker()">Fechar</button>
+  </div>
+</div>
+
 <div class="timer-overlay" id="timerOverlay">
   <div class="timer-name" id="timerName"></div>
   <div class="timer-ring">
@@ -3730,7 +3751,7 @@
 </div>
 
 <script src="editor-data.js?v=137"></script>
-<script src="substitutos.js?v=1"></script>
+<script src="substitutos.js?v=2"></script>
 <script>
 // ══════════════════════════════════════════════════════════════
 // ══ CONFIGURAÇÃO — lê parâmetros da URL ══
@@ -3917,60 +3938,133 @@ const EX_VIDEO_BANK = {
 function _normEx(s){return String(s||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();}
 function _bankVideo(name){const k=_normEx(name);return k&&EX_VIDEO_BANK[k]?EX_VIDEO_BANK[k]:'';}
 
-// ── Substituto pré-definido de exercício (mapa global SUBSTITUTOS, substitutos.js) ──
-// O aluno pode trocar um exercício pelo substituto que o GH definiu no mapa. Casa pelo NOME
-// (normalizado), então vale pra QUALQUER protocolo sem o dado precisar carregar nada. A troca
-// muda só o NOME EXIBIDO + o VÍDEO; carga/cronômetro/histórico continuam por posição (intocados).
-const _SUB_MAP = (function () {
+// ── Substituto pré-definido de exercício (mapa global GRUPOS_SUBSTITUTOS, substitutos.js) ──
+// O aluno pode trocar um exercício por outro do MESMO GRUPO (mão dupla: todos de um grupo se
+// substituem entre si — vale pra grupos de 2, 3, 4...). Casa pelo NOME (normalizado), então vale
+// pra QUALQUER protocolo, inclusive montagem manual. A troca muda só o NOME EXIBIDO + o VÍDEO;
+// carga/cronômetro/histórico continuam por POSIÇÃO (di,ei), 100% intocados — trocar exercício
+// NUNCA escreve nada na carga. Persistência: gh_sub_<id>_<normNome> = nome ESCOLHIDO do grupo
+// (por NOME → sobrevive a reorganização do treino).
+const _SUB_GRUPOS = (function () {
+  const out = [];
+  try {
+    const raw = (typeof GRUPOS_SUBSTITUTOS === 'string') ? GRUPOS_SUBSTITUTOS
+              : (typeof SUBSTITUTOS === 'string' ? SUBSTITUTOS : '');   // tolera nome antigo
+    String(raw).split('\n').forEach(line => {
+      const parts = line.split('/').map(s => s.trim()).filter(Boolean);
+      if (parts.length >= 2) out.push(parts.map(n => ({ name: n, norm: _normEx(n) })));
+    });
+  } catch (_) {}
+  return out;
+})();
+// norm(nome) → grupo. 1ª ocorrência vence (exercício repetido em 2 grupos por engano fica no 1º).
+const _SUB_GRUPO_BY_NORM = (function () {
   const m = {};
-  try { if (typeof SUBSTITUTOS === 'object' && SUBSTITUTOS) for (const k in SUBSTITUTOS) { const v = SUBSTITUTOS[k]; if (v) m[_normEx(k)] = v; } } catch (_) {}
+  _SUB_GRUPOS.forEach(g => g.forEach(x => { if (!m[x.norm]) m[x.norm] = g; }));
   return m;
 })();
-// {name, video} do substituto SE existe no mapa E tem vídeo no banco; senão null (sem botão).
-function _subDe(name) {
-  const sub = _SUB_MAP[_normEx(name)];
-  if (!sub) return null;
-  if (_normEx(sub) === _normEx(name)) return null;   // substituto == ele mesmo: ignora
-  const v = _bankVideo(sub);
-  if (!v) return null;                               // substituto sem vídeo no banco = não oferece
-  return { name: sub, video: v };
-}
+function _grupoDe(name) { return _SUB_GRUPO_BY_NORM[_normEx(name)] || null; }
 function _subKey(name) { return `gh_sub_${STUDENT_ID}_${_normEx(name)}`; }   // por NOME → sobrevive a reorg
-function _subAtivo(name) { return localStorage.getItem(_subKey(name)) === '1'; }
-// Se o substituto JÁ está prescrito no MESMO dia (como outro exercício), NÃO troca — senão o aluno
-// faria o mesmo exercício 2x. Ex: o dia tem Agachamento Hack E Agachamento Smith; trocar Hack→Smith
-// daria Smith duas vezes. Nesse caso o app não oferece a troca (e nem aplica, se o flag veio de outro dia).
-function _subColideNoDia(di, origName, subName) {
-  try {
-    if (di == null) return false;
-    const day = WORKOUT[di]; if (!day || !day.exercises) return false;
-    const sn = _normEx(subName), on = _normEx(origName);
-    return day.exercises.some(e => e && !e.biset && _normEx(e.name) !== on && _normEx(e.name) === sn);
-  } catch (_) { return false; }
+// {name, video} do substituto ESCOLHIDO e válido (no grupo do exercício + com vídeo no banco +
+// diferente do original); senão null (mostra o original). NÃO checa colisão de dia (isso é no resolve).
+function _subEscolhidoValido(ex) {
+  if (!ex || ex.biset || ex.warmup) return null;
+  const chosen = localStorage.getItem(_subKey(ex.name));
+  if (!chosen) return null;
+  const grp = _grupoDe(ex.name);
+  if (!grp) return null;
+  const cn = _normEx(chosen);
+  if (cn === _normEx(ex.name)) return null;          // escolheu o próprio original
+  const m = grp.find(x => x.norm === cn);            // a escolha tem que estar no MESMO grupo
+  if (!m) return null;                               // escolha estranha/antiga: ignora → original
+  const v = _bankVideo(m.name);
+  if (!v) return null;                               // substituto sem vídeo: não aplica
+  return { name: m.name, video: v };
 }
-// Substituto OFERECÍVEL pra este exercício NESTE dia: existe no mapa/banco E não colide no dia.
-function _subOferecivel(ex, di) {
-  if (ex.warmup) return null;
-  const s = _subDe(ex.name);
-  if (!s || _subColideNoDia(di, ex.name, s.name)) return null;
-  return s;
+// Resolve os nomes ATIVOS (exibidos) de TODOS os exercícios do dia, sem duplicar: trava os
+// não-trocados no original primeiro, depois aplica as trocas só se o nome ainda não estiver em uso
+// no dia. Determinístico, sem recursão — nunca mostra o mesmo exercício 2x.
+function _resolveDayActive(di) {
+  const res = {};
+  const day = WORKOUT[di];
+  if (!day || !day.exercises) return res;
+  const exs = day.exercises;
+  const used = {};
+  exs.forEach((e, ei) => {                            // 1ª passada: biset e não-trocados travam o original
+    if (!e) { res[ei] = { name: '', video: '', sub: false }; return; }
+    if (e.biset) { res[ei] = { name: e.name || '', video: e.video || '', sub: false }; return; }
+    if (!_subEscolhidoValido(e)) { res[ei] = { name: e.name, video: e.video, sub: false }; used[_normEx(e.name)] = true; }
+  });
+  exs.forEach((e, ei) => {                            // 2ª passada: aplica troca só se o nome está livre no dia
+    if (!e || res[ei]) return;
+    const s = _subEscolhidoValido(e);
+    if (s && !used[_normEx(s.name)]) { res[ei] = { name: s.name, video: s.video, sub: true }; used[_normEx(s.name)] = true; }
+    else { res[ei] = { name: e.name, video: e.video, sub: false }; used[_normEx(e.name)] = true; }
+  });
+  return res;
 }
-// Exercício a EXIBIR: se trocou e há substituto OFERECÍVEL no dia, mostra o substituto; senão o original.
-function _exAtivo(ex, di) {
-  const s = _subOferecivel(ex, di);
-  if (s && _subAtivo(ex.name)) return { name: s.name, video: s.video, sub: true };
-  return { name: ex.name, video: ex.video, sub: false };
+// Exercício a EXIBIR na posição (di,ei): substituto ativo (se trocado e sem colidir) OU original.
+function _exAtivo(di, ei) {
+  try { const r = _resolveDayActive(di)[ei]; if (r) return r; } catch (_) {}
+  const ex = WORKOUT[di] && WORKOUT[di].exercises && WORKOUT[di].exercises[ei];
+  return { name: (ex && ex.name) || '', video: (ex && ex.video) || '', sub: false };
 }
-function toggleSub(di, ei) {
+// Alternativas oferecíveis pra trocar (di,ei): membros do grupo COM vídeo, menos os já exibidos em
+// OUTRO exercício do dia (não duplica). Inclui sempre o original (pra voltar). 2+ itens, ou null.
+function _alternativasNoDia(di, ei) {
+  const ex = WORKOUT[di] && WORKOUT[di].exercises && WORKOUT[di].exercises[ei];
+  if (!ex || ex.biset || ex.warmup) return null;
+  const grp = _grupoDe(ex.name);
+  if (!grp || grp.length < 2) return null;
+  const resolved = _resolveDayActive(di);
+  const ativoAqui = (resolved[ei] && _normEx(resolved[ei].name)) || _normEx(ex.name);
+  const ativoOutros = {};
+  for (const k in resolved) { if (+k !== ei && resolved[k] && resolved[k].name) ativoOutros[_normEx(resolved[k].name)] = true; }
+  const orig = _normEx(ex.name);
+  const out = [];
+  grp.forEach(x => {
+    const v = _bankVideo(x.name);
+    if (!v) return;                                  // sem vídeo: não entra
+    if (x.norm === orig || !ativoOutros[x.norm]) out.push({ name: x.name, norm: x.norm, atual: x.norm === ativoAqui });
+  });
+  return out.length >= 2 ? out : null;
+}
+// Aplica a escolha (chamado pelo seletor). chosenNorm === original → volta ao original.
+function escolherSub(di, ei, chosenNorm) {
   try {
     const ex = WORKOUT[di] && WORKOUT[di].exercises && WORKOUT[di].exercises[ei];
-    if (!ex || !_subDe(ex.name)) return;
+    if (!ex) return;
     const k = _subKey(ex.name);
-    if (localStorage.getItem(k) === '1') localStorage.removeItem(k); else localStorage.setItem(k, '1');
+    if (!chosenNorm || _normEx(chosenNorm) === _normEx(ex.name)) localStorage.removeItem(k);
+    else localStorage.setItem(k, _normEx(chosenNorm));
+    closeSubPicker();
     renderExercises();
     const fo = document.getElementById('focusOverlay');
-    if (fo && fo.classList.contains('show') && typeof _focusRender === 'function') _focusRender(); // espelha no player
+    if (fo && fo.classList.contains('show') && typeof _focusRender === 'function') _focusRender();
   } catch (_) {}
+}
+function openSubPicker(di, ei) {
+  const alts = _alternativasNoDia(di, ei);
+  if (!alts) return;
+  const ex = WORKOUT[di].exercises[ei];
+  const ov = document.getElementById('subPickerOverlay');
+  const list = document.getElementById('subPickerList');
+  const orig = document.getElementById('subPickerOrig');
+  if (!ov || !list || !orig) return;
+  const escAttr = s => String(s).replace(/'/g, "\\'");
+  const escHtml = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  orig.textContent = 'Prescrito: ' + ex.name;
+  list.innerHTML = alts.map(a =>
+    `<button class="sub-opt ${a.atual ? 'sub-opt-on' : ''}" onclick="escolherSub(${di}, ${ei}, '${escAttr(a.norm)}')">` +
+      `<span class="sub-opt-name">${escHtml(a.name)}</span>` +
+      (a.norm === _normEx(ex.name) ? '<span class="sub-opt-tag">original</span>' : '') +
+      (a.atual ? '<span class="sub-opt-check">&#10003;</span>' : '') +
+    `</button>`).join('');
+  ov.classList.add('show');
+}
+function closeSubPicker() {
+  const ov = document.getElementById('subPickerOverlay');
+  if (ov) ov.classList.remove('show');
 }
 
 
@@ -5784,10 +5878,10 @@ function _focusRender() {
   } else {
     if (ex.warmup) html += `<span class="focus-badge">AQUECIMENTO</span>`;
     // respeita o substituto ativo (se o aluno trocou na lista, o player mostra o substituto) + botão próprio
-    const _fact = (typeof _exAtivo === 'function') ? _exAtivo(ex, _focusDi) : { name: ex.name, video: ex.video, sub: false };
-    const _fsub = (typeof _subOferecivel === 'function') ? _subOferecivel(ex, _focusDi) : null;
+    const _fact = (typeof _exAtivo === 'function') ? _exAtivo(_focusDi, _focusIdx) : { name: ex.name, video: ex.video, sub: false };
+    const _falts = (typeof _alternativasNoDia === 'function') ? _alternativasNoDia(_focusDi, _focusIdx) : null;
     html += `<div class="focus-name">${_fact.name}${_fact.sub ? ' <span class="ex-sub-badge">SUBST.</span>' : ''}</div>${vidBtn(_fact)}`;
-    if (_fsub) html += `<button class="focus-sub-btn" onclick="toggleSub(${_focusDi}, ${_focusIdx})">${_fact.sub ? '↩ Voltar pro original' : '🔄 Trocar por ' + _focusEsc(_fsub.name)}</button>`;
+    if (_falts) html += `<button class="focus-sub-btn" onclick="openSubPicker(${_focusDi}, ${_focusIdx})">🔄 Trocar exercício</button>`;
     html += `<div class="focus-tags">${tags(ex)}</div>`;
     if (ex.obs) html += `<div class="focus-obs">${ex.obs}</div>`;
     if (!ex.warmup) html += _focusCargaBlock(_focusDi, String(_focusIdx), 'Carga de hoje');
@@ -6319,8 +6413,8 @@ function renderExercises() {
       const prevP = getPrevPlacas(di, ei, currentWeek);
       const curP = loadPlacas(di, ei, currentWeek);
       const isWarmup = ex.warmup;
-      const act = _exAtivo(ex, di);                        // substituto ativo OU original (nome + vídeo exibidos)
-      const subInfo = _subOferecivel(ex, di);              // substituto oferecível neste dia (existe + não colide)
+      const act = _exAtivo(di, ei);                        // substituto ativo OU original (nome + vídeo exibidos)
+      const subAlts = _alternativasNoDia(di, ei);          // alternativas oferecíveis neste dia (2+) OU null
       const hasVid = act.video && act.video.length > 0;
       const tags = [];
       if (ex.series) tags.push(`<span class="exercise-tag"><span class="tl">S</span>${ex.series}</span>`);
@@ -6368,7 +6462,7 @@ function renderExercises() {
               <button class="ex-action-btn save-btn" onclick="saveCargaManual(${di}, ${ei}, this)" title="Salvar cargas agora"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></button>
               <button class="ex-action-btn" onclick="startTimer('${safeName}', parseIntervalSeconds('${safeRest}'))" title="Cronômetro de descanso (${ex.rest || 'auto'})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></button>
               <button class="ex-action-btn" onclick="showHistory(${di}, ${ei})" title="Histórico de cargas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></button>
-              ${subInfo ? `<button class="ex-action-btn sub-btn ${act.sub ? 'sub-on' : ''}" onclick="toggleSub(${di}, ${ei})" title="${act.sub ? 'Voltar pro exercício original' : 'Trocar por: ' + subInfo.name.replace(/"/g, '&quot;')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></button>` : ''}
+              ${subAlts ? `<button class="ex-action-btn sub-btn ${act.sub ? 'sub-on' : ''}" onclick="openSubPicker(${di}, ${ei})" title="Trocar exercício"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></button>` : ''}
             </div>
           </div>
           ${_focusEsforcoBlock(di, ei)}` : ''}
@@ -6420,7 +6514,7 @@ function _buildTreinoPrintHTML() {
     // NÃO troca — o card biset não tem botão de troca, então não aplica substituto a ele (senão um
     // exercício solto trocado contaminaria um componente de biset de mesmo nome, pois a chave é global).
     const isBisetComp = label === 'A' || label === 'B';
-    const act = (!isBisetComp && typeof _exAtivo === 'function') ? _exAtivo(ex, di) : { name: ex.name, sub: false };
+    const act = (!isBisetComp && typeof _exAtivo === 'function') ? _exAtivo(di, ei) : { name: ex.name, sub: false };
     const nome = esc(act.name) + (ex.warmup ? ' (aquecimento)' : '') + (act.sub ? ' *' : '');
     const carga = (typeof loadCarga === 'function') ? loadCarga(di, ei, currentWeek) : '';
     const placas = (typeof loadPlacas === 'function') ? loadPlacas(di, ei, currentWeek) : '';
