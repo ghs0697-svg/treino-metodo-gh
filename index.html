@@ -3964,12 +3964,12 @@ const _SUB_GRUPO_BY_NORM = (function () {
   return m;
 })();
 function _grupoDe(name) { return _SUB_GRUPO_BY_NORM[_normEx(name)] || null; }
-function _subKey(name) { return `gh_sub_${STUDENT_ID}_${_normEx(name)}`; }   // por NOME → sobrevive a reorg
+function _subKey(di, name) { return `gh_sub_${STUDENT_ID}_d${di}_${_normEx(name)}`; }   // por DIA+NOME → troca vale SÓ no dia que o aluno trocou
 // {name, video} do substituto ESCOLHIDO e válido (no grupo do exercício + com vídeo no banco +
 // diferente do original); senão null (mostra o original). NÃO checa colisão de dia (isso é no resolve).
-function _subEscolhidoValido(ex) {
+function _subEscolhidoValido(ex, di) {
   if (!ex || ex.biset || ex.warmup) return null;
-  const chosen = localStorage.getItem(_subKey(ex.name));
+  const chosen = localStorage.getItem(_subKey(di, ex.name));
   if (!chosen) return null;
   const grp = _grupoDe(ex.name);
   if (!grp) return null;
@@ -3993,11 +3993,11 @@ function _resolveDayActive(di) {
   exs.forEach((e, ei) => {                            // 1ª passada: biset e não-trocados travam o original
     if (!e) { res[ei] = { name: '', video: '', sub: false }; return; }
     if (e.biset) { res[ei] = { name: e.name || '', video: e.video || '', sub: false }; return; }
-    if (!_subEscolhidoValido(e)) { res[ei] = { name: e.name, video: e.video, sub: false }; used[_normEx(e.name)] = true; }
+    if (!_subEscolhidoValido(e, di)) { res[ei] = { name: e.name, video: e.video, sub: false }; used[_normEx(e.name)] = true; }
   });
   exs.forEach((e, ei) => {                            // 2ª passada: aplica troca só se o nome está livre no dia
     if (!e || res[ei]) return;
-    const s = _subEscolhidoValido(e);
+    const s = _subEscolhidoValido(e, di);
     if (s && !used[_normEx(s.name)]) { res[ei] = { name: s.name, video: s.video, sub: true }; used[_normEx(s.name)] = true; }
     else { res[ei] = { name: e.name, video: e.video, sub: false }; used[_normEx(e.name)] = true; }
   });
@@ -4034,7 +4034,7 @@ function escolherSub(di, ei, chosenNorm) {
   try {
     const ex = WORKOUT[di] && WORKOUT[di].exercises && WORKOUT[di].exercises[ei];
     if (!ex) return;
-    const k = _subKey(ex.name);
+    const k = _subKey(di, ex.name);
     if (!chosenNorm || _normEx(chosenNorm) === _normEx(ex.name)) localStorage.removeItem(k);
     else localStorage.setItem(k, _normEx(chosenNorm));
     closeSubPicker();
@@ -5814,13 +5814,8 @@ function _focusEsforcoBlock(di, key) {
   const chips = _ESF_OPTS.map(([v, l]) => `<button class="esf-chip${curE === v ? ' sel' : ''}" onclick="onEsforco(${di},'${key}',this,'${v}')">${l}</button>`).join('');
   const apChips = _ESF_AP.map(([v, l]) => `<button class="esf-apchip${curA.includes(v) ? ' sel' : ''}" data-v="${v}" onclick="onEsforcoAp(${di},'${key}',this)">${l}</button>`).join('');
   const apOpen = curA.length > 0;
-  const alvo = STUDENT_ESFORCO_ALVO;
-  const alvoHtml = (alvo && alvo.valor)
-    ? `<div class="focus-esf-alvo">🎯 ${_esforcoFrase(alvo.valor, 'focado')}</div>`
-    : '';
   return `<div class="focus-esforco">
     <div class="focus-carga-label">Na ÚLTIMA SÉRIE de cada exercício, quantas repetições ainda dava pra fazer?</div>
-    ${alvoHtml}
     <div class="esf-chips">${chips}</div>
     <button class="esf-aptoggle${apOpen ? ' open' : ''}" onclick="esfToggleAp(this)">⚠️ Problema no aparelho?</button>
     <div class="esf-apchips" style="display:${apOpen ? 'flex' : 'none'};">${apChips}</div>
