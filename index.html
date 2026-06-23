@@ -3931,9 +3931,27 @@ function _subDe(name) {
 }
 function _subKey(name) { return `gh_sub_${STUDENT_ID}_${_normEx(name)}`; }   // por NOME → sobrevive a reorg
 function _subAtivo(name) { return localStorage.getItem(_subKey(name)) === '1'; }
-// Exercício a EXIBIR: se trocou e há substituto válido, mostra o substituto; senão o original.
-function _exAtivo(ex) {
+// Se o substituto JÁ está prescrito no MESMO dia (como outro exercício), NÃO troca — senão o aluno
+// faria o mesmo exercício 2x. Ex: o dia tem Agachamento Hack E Agachamento Smith; trocar Hack→Smith
+// daria Smith duas vezes. Nesse caso o app não oferece a troca (e nem aplica, se o flag veio de outro dia).
+function _subColideNoDia(di, origName, subName) {
+  try {
+    if (di == null) return false;
+    const day = WORKOUT[di]; if (!day || !day.exercises) return false;
+    const sn = _normEx(subName), on = _normEx(origName);
+    return day.exercises.some(e => e && !e.biset && _normEx(e.name) !== on && _normEx(e.name) === sn);
+  } catch (_) { return false; }
+}
+// Substituto OFERECÍVEL pra este exercício NESTE dia: existe no mapa/banco E não colide no dia.
+function _subOferecivel(ex, di) {
+  if (ex.warmup) return null;
   const s = _subDe(ex.name);
+  if (!s || _subColideNoDia(di, ex.name, s.name)) return null;
+  return s;
+}
+// Exercício a EXIBIR: se trocou e há substituto OFERECÍVEL no dia, mostra o substituto; senão o original.
+function _exAtivo(ex, di) {
+  const s = _subOferecivel(ex, di);
   if (s && _subAtivo(ex.name)) return { name: s.name, video: s.video, sub: true };
   return { name: ex.name, video: ex.video, sub: false };
 }
@@ -5760,8 +5778,8 @@ function _focusRender() {
   } else {
     if (ex.warmup) html += `<span class="focus-badge">AQUECIMENTO</span>`;
     // respeita o substituto ativo (se o aluno trocou na lista, o player mostra o substituto) + botão próprio
-    const _fact = (typeof _exAtivo === 'function') ? _exAtivo(ex) : { name: ex.name, video: ex.video, sub: false };
-    const _fsub = ex.warmup ? null : ((typeof _subDe === 'function') ? _subDe(ex.name) : null);
+    const _fact = (typeof _exAtivo === 'function') ? _exAtivo(ex, _focusDi) : { name: ex.name, video: ex.video, sub: false };
+    const _fsub = (typeof _subOferecivel === 'function') ? _subOferecivel(ex, _focusDi) : null;
     html += `<div class="focus-name">${_fact.name}${_fact.sub ? ' <span class="ex-sub-badge">SUBST.</span>' : ''}</div>${vidBtn(_fact)}`;
     if (_fsub) html += `<button class="focus-sub-btn" onclick="toggleSub(${_focusDi}, ${_focusIdx})">${_fact.sub ? '↩ Voltar pro original' : '🔄 Trocar por ' + _focusEsc(_fsub.name)}</button>`;
     html += `<div class="focus-tags">${tags(ex)}</div>`;
@@ -6295,8 +6313,8 @@ function renderExercises() {
       const prevP = getPrevPlacas(di, ei, currentWeek);
       const curP = loadPlacas(di, ei, currentWeek);
       const isWarmup = ex.warmup;
-      const act = _exAtivo(ex);                           // substituto ativo OU original (nome + vídeo exibidos)
-      const subInfo = isWarmup ? null : _subDe(ex.name);  // tem substituto definido? (só exercício de trabalho)
+      const act = _exAtivo(ex, di);                        // substituto ativo OU original (nome + vídeo exibidos)
+      const subInfo = _subOferecivel(ex, di);              // substituto oferecível neste dia (existe + não colide)
       const hasVid = act.video && act.video.length > 0;
       const tags = [];
       if (ex.series) tags.push(`<span class="exercise-tag"><span class="tl">S</span>${ex.series}</span>`);
@@ -6396,7 +6414,7 @@ function _buildTreinoPrintHTML() {
     // NÃO troca — o card biset não tem botão de troca, então não aplica substituto a ele (senão um
     // exercício solto trocado contaminaria um componente de biset de mesmo nome, pois a chave é global).
     const isBisetComp = label === 'A' || label === 'B';
-    const act = (!isBisetComp && typeof _exAtivo === 'function') ? _exAtivo(ex) : { name: ex.name, sub: false };
+    const act = (!isBisetComp && typeof _exAtivo === 'function') ? _exAtivo(ex, di) : { name: ex.name, sub: false };
     const nome = esc(act.name) + (ex.warmup ? ' (aquecimento)' : '') + (act.sub ? ' *' : '');
     const carga = (typeof loadCarga === 'function') ? loadCarga(di, ei, currentWeek) : '';
     const placas = (typeof loadPlacas === 'function') ? loadPlacas(di, ei, currentWeek) : '';
