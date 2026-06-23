@@ -601,6 +601,13 @@
   .ex-actions { display: inline-flex; gap: 4px; margin-left: auto; }
   .ex-action-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.10); color: var(--gold); padding: 5px 9px; border-radius: 8px; font-size: 13px; cursor: pointer; line-height: 1; }
   .ex-action-btn:hover { background: var(--gold-dim); }
+  /* botão de substituto ATIVO (aluno trocou) — preenchido dourado */
+  .ex-action-btn.sub-btn.sub-on { background: var(--gold); color: #0c0c0d; border-color: var(--gold); }
+  /* selo "SUBST." ao lado do nome quando o aluno está no substituto */
+  .ex-sub-badge { display: inline-block; font-size: 9px; font-weight: 800; letter-spacing: .5px; color: #0c0c0d; background: var(--gold); padding: 1px 5px; border-radius: 4px; vertical-align: 1px; margin-left: 3px; }
+  /* botão de trocar exercício no Modo Focado */
+  .focus-sub-btn { display: inline-block; margin-top: 8px; background: transparent; border: 1px solid var(--gold); color: var(--gold); padding: 7px 14px; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .focus-sub-btn:active { background: var(--gold-dim); }
 
   /* ── Timer overlay ── */
   .timer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 11000; }
@@ -3717,6 +3724,7 @@
 </div>
 
 <script src="editor-data.js?v=137"></script>
+<script src="substitutos.js?v=1"></script>
 <script>
 // ══════════════════════════════════════════════════════════════
 // ══ CONFIGURAÇÃO — lê parâmetros da URL ══
@@ -3902,6 +3910,44 @@ const EX_VIDEO_BANK = {
 };
 function _normEx(s){return String(s||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();}
 function _bankVideo(name){const k=_normEx(name);return k&&EX_VIDEO_BANK[k]?EX_VIDEO_BANK[k]:'';}
+
+// ── Substituto pré-definido de exercício (mapa global SUBSTITUTOS, substitutos.js) ──
+// O aluno pode trocar um exercício pelo substituto que o GH definiu no mapa. Casa pelo NOME
+// (normalizado), então vale pra QUALQUER protocolo sem o dado precisar carregar nada. A troca
+// muda só o NOME EXIBIDO + o VÍDEO; carga/cronômetro/histórico continuam por posição (intocados).
+const _SUB_MAP = (function () {
+  const m = {};
+  try { if (typeof SUBSTITUTOS === 'object' && SUBSTITUTOS) for (const k in SUBSTITUTOS) { const v = SUBSTITUTOS[k]; if (v) m[_normEx(k)] = v; } } catch (_) {}
+  return m;
+})();
+// {name, video} do substituto SE existe no mapa E tem vídeo no banco; senão null (sem botão).
+function _subDe(name) {
+  const sub = _SUB_MAP[_normEx(name)];
+  if (!sub) return null;
+  if (_normEx(sub) === _normEx(name)) return null;   // substituto == ele mesmo: ignora
+  const v = _bankVideo(sub);
+  if (!v) return null;                               // substituto sem vídeo no banco = não oferece
+  return { name: sub, video: v };
+}
+function _subKey(name) { return `gh_sub_${STUDENT_ID}_${_normEx(name)}`; }   // por NOME → sobrevive a reorg
+function _subAtivo(name) { return localStorage.getItem(_subKey(name)) === '1'; }
+// Exercício a EXIBIR: se trocou e há substituto válido, mostra o substituto; senão o original.
+function _exAtivo(ex) {
+  const s = _subDe(ex.name);
+  if (s && _subAtivo(ex.name)) return { name: s.name, video: s.video, sub: true };
+  return { name: ex.name, video: ex.video, sub: false };
+}
+function toggleSub(di, ei) {
+  try {
+    const ex = WORKOUT[di] && WORKOUT[di].exercises && WORKOUT[di].exercises[ei];
+    if (!ex || !_subDe(ex.name)) return;
+    const k = _subKey(ex.name);
+    if (localStorage.getItem(k) === '1') localStorage.removeItem(k); else localStorage.setItem(k, '1');
+    renderExercises();
+    const fo = document.getElementById('focusOverlay');
+    if (fo && fo.classList.contains('show') && typeof _focusRender === 'function') _focusRender(); // espelha no player
+  } catch (_) {}
+}
 
 
 // ── Migração one-shot: copia keys antigas (gh_treino_*, gh_atual_*, gh_dieta_*)
@@ -5713,7 +5759,12 @@ function _focusRender() {
     html += _focusEsforcoBlock(_focusDi, String(_focusIdx));
   } else {
     if (ex.warmup) html += `<span class="focus-badge">AQUECIMENTO</span>`;
-    html += `<div class="focus-name">${ex.name}</div>${vidBtn(ex)}<div class="focus-tags">${tags(ex)}</div>`;
+    // respeita o substituto ativo (se o aluno trocou na lista, o player mostra o substituto) + botão próprio
+    const _fact = (typeof _exAtivo === 'function') ? _exAtivo(ex) : { name: ex.name, video: ex.video, sub: false };
+    const _fsub = ex.warmup ? null : ((typeof _subDe === 'function') ? _subDe(ex.name) : null);
+    html += `<div class="focus-name">${_fact.name}${_fact.sub ? ' <span class="ex-sub-badge">SUBST.</span>' : ''}</div>${vidBtn(_fact)}`;
+    if (_fsub) html += `<button class="focus-sub-btn" onclick="toggleSub(${_focusDi}, ${_focusIdx})">${_fact.sub ? '↩ Voltar pro original' : '🔄 Trocar por ' + _focusEsc(_fsub.name)}</button>`;
+    html += `<div class="focus-tags">${tags(ex)}</div>`;
     if (ex.obs) html += `<div class="focus-obs">${ex.obs}</div>`;
     if (!ex.warmup) html += _focusCargaBlock(_focusDi, String(_focusIdx), 'Carga de hoje');
     if (!ex.warmup) html += _focusEsforcoBlock(_focusDi, String(_focusIdx));
@@ -6243,17 +6294,20 @@ function renderExercises() {
       const cur = loadCarga(di, ei, currentWeek);
       const prevP = getPrevPlacas(di, ei, currentWeek);
       const curP = loadPlacas(di, ei, currentWeek);
-      const hasVid = ex.video && ex.video.length > 0;
       const isWarmup = ex.warmup;
+      const act = _exAtivo(ex);                           // substituto ativo OU original (nome + vídeo exibidos)
+      const subInfo = isWarmup ? null : _subDe(ex.name);  // tem substituto definido? (só exercício de trabalho)
+      const hasVid = act.video && act.video.length > 0;
       const tags = [];
       if (ex.series) tags.push(`<span class="exercise-tag"><span class="tl">S</span>${ex.series}</span>`);
       if (ex.reps) tags.push(`<span class="exercise-tag"><span class="tl">R</span>${ex.reps}</span>`);
       if (ex.rest) tags.push(`<span class="exercise-tag"><span class="tl">I</span>${ex.rest}</span>`);
       if (!isWarmup) tags.push(cadenciaTag(ex.obs));
 
-      // Escape single quotes in name and video URL for onclick
-      const safeName = ex.name.replace(/'/g, "\\'");
-      const safeVideo = (ex.video || '').replace(/'/g, "\\'");
+      // Escape single quotes — usa o exercício ATIVO (substituto ou original) pra vídeo+label.
+      // Carga/cronômetro/histórico seguem por POSIÇÃO (di,ei), não pelo nome, então a troca não os afeta.
+      const safeName = act.name.replace(/'/g, "\\'");
+      const safeVideo = (act.video || '').replace(/'/g, "\\'");
 
       const exDone = isDone(di, ei);
       const safeRest = (ex.rest || '').replace(/'/g, "\\'");
@@ -6264,7 +6318,8 @@ function renderExercises() {
             <div class="ex-check ${exDone ? 'done' : ''}" onclick="event.stopPropagation(); onCheckExercise(${di}, ${ei})" title="Marcar como feito"></div>
             <div class="exercise-info">
               <div class="exercise-name">
-                ${ex.name}
+                ${act.name}
+                ${act.sub ? '<span class="ex-sub-badge">SUBST.</span>' : ''}
                 ${hasVid ? '<span class="video-icon">&#9654;</span>' : ''}
               </div>
               <div class="exercise-details">${tags.join("")}</div>
@@ -6289,6 +6344,7 @@ function renderExercises() {
               <button class="ex-action-btn save-btn" onclick="saveCargaManual(${di}, ${ei}, this)" title="Salvar cargas agora"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></button>
               <button class="ex-action-btn" onclick="startTimer('${safeName}', parseIntervalSeconds('${safeRest}'))" title="Cronômetro de descanso (${ex.rest || 'auto'})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></button>
               <button class="ex-action-btn" onclick="showHistory(${di}, ${ei})" title="Histórico de cargas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></button>
+              ${subInfo ? `<button class="ex-action-btn sub-btn ${act.sub ? 'sub-on' : ''}" onclick="toggleSub(${di}, ${ei})" title="${act.sub ? 'Voltar pro exercício original' : 'Trocar por: ' + subInfo.name.replace(/"/g, '&quot;')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></button>` : ''}
             </div>
           </div>
           ${_focusEsforcoBlock(di, ei)}` : ''}
@@ -6336,7 +6392,12 @@ function _buildTreinoPrintHTML() {
 
   const exRow = (ex, di, ei, label) => {
     const warm = ex.warmup ? ' class="pa-warm"' : '';
-    const nome = esc(ex.name) + (ex.warmup ? ' (aquecimento)' : '');
+    // PDF sai com o exercício ATIVO (substituto se o aluno trocou). Componente de BI-SET (label A/B)
+    // NÃO troca — o card biset não tem botão de troca, então não aplica substituto a ele (senão um
+    // exercício solto trocado contaminaria um componente de biset de mesmo nome, pois a chave é global).
+    const isBisetComp = label === 'A' || label === 'B';
+    const act = (!isBisetComp && typeof _exAtivo === 'function') ? _exAtivo(ex) : { name: ex.name, sub: false };
+    const nome = esc(act.name) + (ex.warmup ? ' (aquecimento)' : '') + (act.sub ? ' *' : '');
     const carga = (typeof loadCarga === 'function') ? loadCarga(di, ei, currentWeek) : '';
     const placas = (typeof loadPlacas === 'function') ? loadPlacas(di, ei, currentWeek) : '';
     let cargaTxt = '';

@@ -1,8 +1,9 @@
-const CACHE_NAME = 'metodo-gh-v233';
+const CACHE_NAME = 'metodo-gh-v234';
 const ASSETS = [
   './',
   './index.html',
   './editor-data.js',
+  './substitutos.js',
   './manifest.json',
   './gh-logo.png',
   './icon-192.png',
@@ -58,7 +59,7 @@ self.addEventListener('fetch', e => {
   // tem que vir SEMPRE fresco quando online, senão exercício novo no banco
   // não aparece no "Trocar Exercício" (ficava preso no cache antigo do SW).
   // Atualiza o cache em background pra fallback offline continuar válido.
-  if (e.request.url.includes('index.html') || e.request.url.includes('editor-data.js') || e.request.mode === 'navigate') {
+  if (e.request.url.includes('index.html') || e.request.url.includes('editor-data.js') || e.request.url.includes('substitutos.js') || e.request.mode === 'navigate') {
     e.respondWith(
       fetch(e.request).then(resp => {
         if (resp && resp.ok && e.request.method === 'GET') {
