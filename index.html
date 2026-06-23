@@ -3190,7 +3190,7 @@
   <button class="renov-banner-x" onclick="reajusteBannerDismiss()" aria-label="Fechar">&times;</button>
 </div>
 <div id="dietDiaryBanner" class="renov-banner diary">
-  <span class="renov-banner-txt">📸 Novidade: marca cada refeição como <b>Feita</b> e posta a foto do prato. Agora a dieta também conta no teu ranking!</span>
+  <span class="renov-banner-txt">📸 Novidade: marca cada refeição como <b>Feita</b> (posta a foto do prato) e marca o teu <b>cardio</b> da semana. Agora dieta e cardio também contam no teu ranking!</span>
   <a class="renov-banner-cta" href="#" onclick="dietBannerGoto();return false;">Ver dieta</a>
   <button class="renov-banner-x" onclick="dietBannerDismiss()" aria-label="Fechar">&times;</button>
 </div>
@@ -9531,8 +9531,8 @@ function renderDiet() {
   if (_nMeals > 0) {
     html += `<div class="diet-day-progress"><div class="ddp-label"><span>Refeições de hoje</span><span id="ddpCount">0/${_nMeals}</span></div><div class="ddp-bar"><div class="ddp-fill" id="ddpFill"></div></div></div>`;
   }
-  // Cardio da semana: meta = cardio prescrito do aluno (cardioTarget lê a DIETA). Marca 1x/dia, reseta toda semana. Conta no ranking.
-  html += `<div class="cardio-week" id="cardioWeekCard"><div class="cw-row"><span class="cw-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="5" r="1.6"/><path d="M5 21l3-5 3 1 2-3"/><path d="M13 14l4 1 2 4"/><path d="M9 9l3-2 3 2 2-1"/></svg> Cardio da semana</span><span class="cw-count" id="cwCount">0/${cardioTarget()}</span></div><div class="cw-bar"><div class="cw-fill" id="cwFill"></div></div><button type="button" class="cw-btn" id="cwBtn" onclick="onCardioDone()">Fiz o cardio hoje</button></div>`;
+  // (o card "Cardio da semana" + botão "Fiz o cardio hoje" vão LOGO ACIMA da aba Cardio, mais abaixo —
+  //  GH 2026-06-23: botão junto da prescrição pra ficar claro quanto de cardio foi pedido)
 
   d.ciclos.forEach((cy, ci) => {
     const prefix = `c${ci}_`;
@@ -9582,8 +9582,11 @@ function renderDiet() {
   const orientacoesReais = (d.orientacoes || []).filter(o => !isCardioCat(o.categoria));
   const temCardio = (d.aerobicos && d.aerobicos.length > 0) || cardioFromOrient.length > 0;
 
-  // Cardio — seção própria (separada das Orientações)
+  // Cardio — seção própria (separada das Orientações). O card "Cardio da semana" + botão vão
+  // LOGO ACIMA da aba (GH 2026-06-23): meta = cardio prescrito (cardioTarget lê a DIETA), marca
+  // 1x/dia, reseta toda semana, conta no ranking. Só aparece quando há prescrição de cardio.
   if (temCardio) {
+    html += `<div class="cardio-week" id="cardioWeekCard"><div class="cw-row"><span class="cw-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="5" r="1.6"/><path d="M5 21l3-5 3 1 2-3"/><path d="M13 14l4 1 2 4"/><path d="M9 9l3-2 3 2 2-1"/></svg> Cardio da semana</span><span class="cw-count" id="cwCount">0/${cardioTarget()}</span></div><div class="cw-bar"><div class="cw-fill" id="cwFill"></div></div><button type="button" class="cw-btn" id="cwBtn" onclick="onCardioDone()">Fiz o cardio hoje</button></div>`;
     html += `<div class="diet-section-toggle" onclick="toggleDietSection('cardio')"><span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span><span class="tog-label">Cardio</span><span class="tog-chev" id="cardioArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></div>`;
     html += `<div class="diet-section-content" id="cardioContent">`;
     if (d.aerobicos && d.aerobicos.length > 0) {
