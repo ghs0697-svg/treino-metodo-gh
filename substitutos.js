@@ -41,7 +41,7 @@ Pulldown / Pulldown na Máquina
 Puxada Alta Pronada / Puxada Alta na Máquina Articulada
 Remada Curvada Pronada / Remada Curvada Sentado / Remada Curvada na Máquina Guiada
 Remada Neutra no Cross / Remada Baixa com Triângulo
-Remada Unilateral na Máquina / Serrote com Halter / Remada Neutra no Cross
+Remada Unilateral na Máquina / Serrote com Halter
 Crucifixo Inverso com Halteres / Crucifixo Inverso no Cross / Crucifixo Inverso no Voador
 Desenvolvimento com Halteres / Desenvolvimento na Máquina / Desenvolvimento na Máquina Inclinado / Desenvolvimento na Máquina Sentado
 Elevação Lateral / Elevação Lateral na Máquina / Elevação Lateral no Cross
