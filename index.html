@@ -8959,7 +8959,43 @@ function openProgressoModal() {
     });
     html += `<p style="color:#7a7a82;font-size:10px;margin:10px 2px 0;">Toca num exercício pra ver o histórico semana a semana.</p>`;
   }
+
+  // ── Calculadora de 1RM (força máxima estimada) — escolhe o exercício, puxa a carga
+  // que ele já registrou, ele confirma as reps → estimativa (Epley). Motivacional, não prescrição.
+  const opts = items.slice().sort((a, b) => a.name.localeCompare(b.name)).map(it => {
+    const lat = (it.vals || []).filter(v => v > 0).pop() || it.max || 0;
+    return `<option value="${kgToDisplay(lat)}">${it.name.replace(/</g, '&lt;')}</option>`;
+  }).join('');
+  html += `<div style="color:var(--gold);font-size:11px;font-weight:700;letter-spacing:0.06em;margin:18px 0 8px;">CALCULADORA DE FORÇA (1RM ESTIMADO)</div>`;
+  html += `<div style="background:#1c1c21;border-radius:10px;padding:12px;">
+    <select id="c1rmEx" onchange="_calc1rmPick(this)" style="width:100%;background:#26262c;border:1px solid #36363e;color:#fff;padding:9px 10px;border-radius:8px;font-size:13px;">
+      <option value="">Escolha o exercício (puxa tua carga)…</option>${opts}
+    </select>
+    <div style="display:flex;gap:8px;margin-top:9px;">
+      <div style="flex:1;"><div style="color:#9a9aa0;font-size:10px;margin-bottom:3px;">Peso (${unit})</div><input id="c1rmW" type="number" inputmode="decimal" oninput="_calc1rm()" style="width:100%;background:#26262c;border:1px solid #36363e;color:#fff;padding:9px 10px;border-radius:8px;font-size:15px;"></div>
+      <div style="flex:1;"><div style="color:#9a9aa0;font-size:10px;margin-bottom:3px;">Reps que você fez</div><input id="c1rmR" type="number" inputmode="numeric" placeholder="ex: 8" oninput="_calc1rm()" style="width:100%;background:#26262c;border:1px solid #36363e;color:#fff;padding:9px 10px;border-radius:8px;font-size:15px;"></div>
+    </div>
+    <div id="c1rmOut" style="margin-top:11px;text-align:center;min-height:8px;"></div>
+    <p style="color:#7a7a82;font-size:10px;line-height:1.5;margin:11px 0 0;">O Método GH treina por <b style="color:#9a9aa0;">esforço</b> (até quase travar), não por %RM. Isso aqui é só pra você acompanhar tua força máxima estimada. 💪</p>
+  </div>`;
+
   body.innerHTML = html;
+}
+// pré-preenche o peso com a carga registrada do exercício escolhido
+function _calc1rmPick(sel) {
+  const w = sel.value, wi = document.getElementById('c1rmW');
+  if (w && wi) { wi.value = w; _calc1rm(); }
+}
+// estimativa de 1RM (Epley): 1RM = peso × (1 + reps/30). r=1 = o próprio peso.
+function _calc1rm() {
+  const out = document.getElementById('c1rmOut'); if (!out) return;
+  const w = parseFloat((document.getElementById('c1rmW') || {}).value);
+  const r = parseInt((document.getElementById('c1rmR') || {}).value, 10);
+  if (!w || !r || w <= 0 || r <= 0) { out.innerHTML = ''; return; }
+  if (r > 15) { out.innerHTML = '<span style="color:#9a9aa0;font-size:11.5px;">Acima de 15 reps a estimativa fica imprecisa. Usa uma série mais pesada (até ~10 reps).</span>'; return; }
+  const oneRM = r === 1 ? w : w * (1 + r / 30);
+  const val = Math.round(oneRM * 10) / 10;
+  out.innerHTML = `<div style="color:#9a9aa0;font-size:11px;">Tua força máxima estimada</div><div style="color:var(--gold);font-size:25px;font-weight:800;line-height:1.15;">${val} ${getUnit()}</div>`;
 }
 
 // ══ RANKING DO MÊS ══
