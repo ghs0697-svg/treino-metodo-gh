@@ -1374,6 +1374,29 @@
     border-top: 1px solid #1f1f1f;
   }
 
+  /* ── Item C (GH 2026-06-24): macro do dia + macro por refeição ── */
+  .diet-macro-card {
+    background: var(--card);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-left: 3px solid var(--gold);
+    border-radius: 14px;
+    margin: 14px;
+    padding: 14px 16px;
+    box-shadow: var(--hairline);
+  }
+  .diet-macro-title { color: var(--gold); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 11px; }
+  .diet-macro-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; }
+  .diet-macro-stat .v { font-size: 18px; font-weight: 700; color: var(--gold); line-height: 1.1; }
+  .diet-macro-stat .v.kcal { color: var(--white); }
+  .diet-macro-stat .l { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .diet-macro-cyclabel { color: var(--gold); font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; margin: 12px 0 6px; }
+  .diet-macro-cyclabel:first-of-type { margin-top: 0; }
+  .diet-macro-rawline { color: var(--white); font-size: 13px; font-weight: 600; }
+  .diet-macro-porque { border-top: 1px solid rgba(255, 255, 255, 0.08); margin-top: 12px; padding-top: 10px; font-size: 12.5px; line-height: 1.6; color: var(--muted); }
+  .diet-macro-porque b { color: var(--white); font-weight: 600; }
+  .diet-meal-macro { padding: 7px 14px 0; font-size: 12.5px; font-weight: 600; color: var(--gold); letter-spacing: 0.2px; }
+  .diet-meal-macro.muted { color: var(--muted); font-weight: 500; font-style: italic; }
+
   /* ── Diet Total Card ── */
   .diet-cycle-header {
     background: linear-gradient(90deg, var(--gold-dim) 0%, transparent 100%);
@@ -6729,7 +6752,7 @@ function _buildDietaPrintHTML() {
   if (d.info && d.info.kcal) info += `<tr><td><strong>Calorias</strong></td><td>${esc(d.info.kcal)}</td></tr>`;
   if (d.info && d.info.objetivo) info += `<tr><td><strong>Objetivo</strong></td><td>${esc(d.info.objetivo)}</td></tr>`;
   (d.metas || []).forEach(m => {
-    info += `<tr><td><strong>${esc(m.campo)}</strong></td><td>${esc(m.valor)}${m.detalhe ? ' — ' + esc(m.detalhe) : ''}</td></tr>`;
+    info += `<tr><td><strong>${esc(m.campo)}</strong></td><td>${esc(m.valor)}${m.detalhe ? ' · ' + esc(m.detalhe) : ''}</td></tr>`;
   });
   if (info) html += `<div class="pa-day"><h2 class="pa-day-title">Resumo</h2><table>${info}</table></div>`;
 
@@ -6737,7 +6760,7 @@ function _buildDietaPrintHTML() {
   if (d.regras && d.regras.length) {
     let rows = '';
     d.regras.forEach(r => {
-      rows += `<tr><td><strong>${esc(r.nome)}</strong></td><td>${esc(r.valor || '')}${r.detalhe ? ' — ' + esc(r.detalhe) : ''}</td></tr>`;
+      rows += `<tr><td><strong>${esc(r.nome)}</strong></td><td>${esc(r.valor || '')}${r.detalhe ? ' · ' + esc(r.detalhe) : ''}</td></tr>`;
     });
     html += `<div class="pa-day"><h2 class="pa-day-title">Regras Gerais</h2><table>${rows}</table></div>`;
   }
@@ -6792,7 +6815,7 @@ function _buildDietaPrintHTML() {
   if ((d.aerobicos && d.aerobicos.length) || cardioFromOrient.length) {
     let rows = '';
     (d.aerobicos || []).forEach(a => {
-      rows += `<tr><td class="pa-ex">Aeróbico</td><td>${esc(a.freq || '')} — ${esc(a.duracao || '')}${a.obs ? ' — ' + esc(a.obs) : ''}</td></tr>`;
+      rows += `<tr><td class="pa-ex">Aeróbico</td><td>${esc(a.freq || '')} · ${esc(a.duracao || '')}${a.obs ? ' · ' + esc(a.obs) : ''}</td></tr>`;
     });
     cardioFromOrient.forEach(o => {
       rows += `<tr><td class="pa-ex">${esc(o.categoria)}</td><td>${esc(o.texto)}</td></tr>`;
@@ -7483,7 +7506,7 @@ function _shoppingListAsText() {
   const data = _buildShoppingList();
   if (!data) return '';
   const studentName = (document.getElementById('infoNome')?.textContent || '').trim();
-  let txt = `🛒 *Lista de compras${studentName ? ' — ' + studentName : ''}*\n\n`;
+  let txt = `🛒 *Lista de compras${studentName ? ' · ' + studentName : ''}*\n\n`;
   const order = ['proteina', 'carbo', 'legume', 'fruta', 'gordura', 'outros'];
   order.forEach(cat => {
     const items = data.grouped[cat];
@@ -7494,7 +7517,7 @@ function _shoppingListAsText() {
   });
   if (data.supls.length) {
     txt += `*💊 SUPLEMENTOS*\n`;
-    data.supls.forEach(s => { txt += `• ${s.nome}${s.dose ? ' — ' + s.dose : ''}\n`; });
+    data.supls.forEach(s => { txt += `• ${s.nome}${s.dose ? ' · ' + s.dose : ''}\n`; });
     txt += '\n';
   }
   txt += `_Quantidades da dieta são cozidas. Compre conforme sua semana._`;
@@ -9168,6 +9191,8 @@ function parseDietData(rows) {
   const data = {
     info: {},
     metas: [],
+    macroDia: [],        // card "Meta de macros do dia" (item C, GH 2026-06-24)
+    macroPorque: '',     // texto do "Por que esses macros"
     regras: [],
     supls: {},
     ciclos: [],
@@ -9195,9 +9220,26 @@ function parseDietData(rows) {
       case 'aluno':
         data.info = { nome: r[1] || '', kcal: r[2] || '', objetivo: r[3] || '' };
         break;
-      case 'meta':
+      case 'meta': {
+        // Item C (GH 2026-06-24): intercepta "Macros do dia" (card dedicado) e
+        // "Por que esses macros" ANTES da lista generica de metas, pra renderizar o
+        // card que o GH aprovou e NAO passar pelo render generico de meta (que injeta
+        // travessao entre valor e detalhe). Suporta "Macros (dia ALTO)"/"(dia BAIXO)"
+        // pro ciclo de carbo.
+        const _mc = (r[1] || '').trim();
+        const _mcl = _mc.toLowerCase();
+        if (/^macros?\b/.test(_mcl) && /dia/.test(_mcl)) {
+          const _lab = (_mc.match(/\(([^)]+)\)/) || [])[1] || '';
+          data.macroDia.push({ label: _lab.trim(), pcg: (r[2] || '').trim(), kcal: (r[3] || '').trim() });
+          break;
+        }
+        if (/^por que/.test(_mcl) && /macro/.test(_mcl)) {
+          data.macroPorque = (r[2] || '').trim() || (r[3] || '').trim();
+          break;
+        }
         data.metas.push({ campo: r[1] || '', valor: r[2] || '', detalhe: r[3] || '' });
         break;
+      }
       case 'regra':
         data.regras.push({ nome: r[1] || '', valor: r[2] || '', detalhe: r[3] || '' });
         break;
@@ -9241,13 +9283,13 @@ function parseDietData(rows) {
         currentOp = null;
         break;
       case 'ref':
-        currentRef = { nome: r[1] || '', instrucao: r[3] || '', opcoes: [], alimentos: [], notas: [] };
+        currentRef = { nome: r[1] || '', instrucao: r[3] || '', opcoes: [], alimentos: [], notas: [], macroLinha: null };
         currentOp = null;
         currentCycle.refeicoes.push(currentRef);
         break;
       case 'op':
         if (currentRef) {
-          currentOp = { nome: r[1] || '', alimentos: [] };
+          currentOp = { nome: r[1] || '', alimentos: [], macroLinha: null };
           currentRef.opcoes.push(currentOp);
         }
         break;
@@ -9257,7 +9299,16 @@ function parseDietData(rows) {
         else if (currentRef) currentRef.alimentos.push(food);
         break;
       }
-      case 'macro':
+      case 'macro': {
+        // Item C (GH 2026-06-24): macro por refeicao. Guarda SEPARADO dos alimentos
+        // (ref.macroLinha / op.macroLinha) pra NAO vazar na lista de compras nem no PDF.
+        // Prende a currentOp se uma aba estiver aberta (ciclo de carbo ALTO/BAIXO),
+        // senao a refeicao inteira (opcoes equivalentes / simples). Orfa = ignora.
+        const _ml = { pcg: (r[1] || '').trim(), kcal: (r[2] || '').trim() };
+        if (currentOp) currentOp.macroLinha = _ml;
+        else if (currentRef) currentRef.macroLinha = _ml;
+        break;
+      }
       case 'total':
         break;
       case 'orient':
@@ -9675,9 +9726,13 @@ function renderDiet() {
   if (d.info.kcal) html += `<div class="diet-info-row"><span class="diet-info-label">Calorias:</span><span class="diet-info-value">${d.info.kcal}</span></div>`;
   if (d.info.objetivo) html += `<div class="diet-info-row"><span class="diet-info-label">Objetivo:</span><span class="diet-info-value">${d.info.objetivo}</span></div>`;
   d.metas.forEach(m => {
-    html += `<div class="diet-info-row"><span class="diet-info-label">${m.campo}:</span><span class="diet-info-value">${m.valor}${m.detalhe ? ' — ' + m.detalhe : ''}</span></div>`;
+    html += `<div class="diet-info-row"><span class="diet-info-label">${m.campo}:</span><span class="diet-info-value">${m.valor}${m.detalhe ? ' · ' + m.detalhe : ''}</span></div>`;
   });
   html += `</div>`;
+
+  // Card "Meta de macros do dia" (item C, GH 2026-06-24) — render dedicado, NAO passa
+  // pelo template de meta (que injeta travessao). So aparece se a dieta trouxer macro.
+  if (d.macroDia && d.macroDia.length) html += _renderMacroDia(d);
 
   // Ações rápidas da dieta — PDF + Lista de compras (padrão Shape de Elite)
   html += `<div class="diet-actions">
@@ -9690,7 +9745,7 @@ function renderDiet() {
     html += `<div class="diet-section-toggle" onclick="toggleDietSection('regras')"><span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><polyline points="3 5.5 4 6.5 6 4.5"/><polyline points="3 11.5 4 12.5 6 10.5"/><polyline points="3 17.5 4 18.5 6 16.5"/></svg></span><span class="tog-label">Regras Gerais</span><span class="tog-chev" id="regrasArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></div>`;
     html += `<div class="diet-section-content" id="regrasContent">`;
     d.regras.forEach(r => {
-      html += `<div class="diet-rule"><span class="diet-rule-name">${r.nome}:</span><span class="diet-rule-value">${r.valor || ''}${r.detalhe ? ' — ' + r.detalhe : ''}</span></div>`;
+      html += `<div class="diet-rule"><span class="diet-rule-name">${r.nome}:</span><span class="diet-rule-value">${r.valor || ''}${r.detalhe ? ' · ' + r.detalhe : ''}</span></div>`;
     });
     html += `</div>`;
   }
@@ -9747,6 +9802,7 @@ function renderDiet() {
       html += `<div class="diet-meal-card">`;
       html += `<div class="diet-meal-header"><span class="dm-nome">${ref.nome}</span><button type="button" class="diet-meal-check${isMealDone(ri) ? ' done' : ''}" data-meal-ri="${ri}" onclick="onCheckMeal(${ri})" aria-label="Marcar refeição feita"><svg class="dm-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><svg class="dm-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span class="dm-txt">Feita</span></button></div>`;
       if (ref.instrucao) html += `<div class="diet-meal-instruction">${ref.instrucao}</div>`;
+      if (ref.macroLinha) html += _renderMealMacro(ref.macroLinha);
 
       if (hasOps) {
         html += `<div class="diet-option-tabs" id="optTabs${uid}">`;
@@ -9756,6 +9812,7 @@ function renderDiet() {
         html += `</div>`;
         ref.opcoes.forEach((op, oi) => {
           html += `<div class="diet-option-content ${oi === 0 ? 'active' : ''}" id="opt${uid}_${oi}">`;
+          if (op.macroLinha) html += _renderMealMacro(op.macroLinha);
           op.alimentos.forEach(a => { html += renderFoodItem(a); });
           html += `</div>`;
         });
@@ -9790,7 +9847,7 @@ function renderDiet() {
     html += `<div class="diet-section-content" id="cardioContent">`;
     if (d.aerobicos && d.aerobicos.length > 0) {
       d.aerobicos.forEach(function(a) {
-        html += `<div class="diet-orient"><span class="diet-orient-cat">Aeróbico</span><span class="diet-orient-text">${a.freq} — ${a.duracao}${a.obs ? ' — ' + a.obs : ''}</span></div>`;
+        html += `<div class="diet-orient"><span class="diet-orient-cat">Aeróbico</span><span class="diet-orient-text">${a.freq} · ${a.duracao}${a.obs ? ' · ' + a.obs : ''}</span></div>`;
       });
     }
     cardioFromOrient.forEach(o => {
@@ -9858,6 +9915,48 @@ function renderFoodItem(a) {
     <div class="diet-food-main"><span class="diet-food-name">${a.nome}</span>${a.qtd ? `<span class="diet-food-qty">${a.qtd}</span>` : ''}</div>
     ${a.obs ? `<div class="diet-food-obs">${a.obs}</div>` : ''}
   </div>`;
+}
+
+// ── Item C (GH 2026-06-24): render do macro do dia + porque + macro por refeicao ──
+function _renderMacroDia(d) {
+  let h = `<div class="diet-macro-card"><div class="diet-macro-title">Meta de macros do dia</div>`;
+  (d.macroDia || []).forEach(m => {
+    if (m.label) h += `<div class="diet-macro-cyclabel">${m.label}</div>`;
+    h += _macroStatsGrid(m.pcg, m.kcal);
+  });
+  if (d.macroPorque) {
+    const txt = String(d.macroPorque).replace(/^por que esses macros[:\s]*/i, '').trim();
+    h += `<div class="diet-macro-porque"><b>Por que esses macros:</b> ${txt}</div>`;
+  }
+  h += `</div>`;
+  return h;
+}
+function _macroStatsGrid(pcg, kcal) {
+  // parseia "P 180g · C 210g · G 60g · 2.080 kcal" (ou com kcal na col D) em 4 stats.
+  const toks = String(pcg || '').split(/[·•|,]/).map(s => s.trim()).filter(Boolean);
+  const map = {};
+  let k = String(kcal || '').trim();
+  toks.forEach(t => {
+    if (/kcal/i.test(t)) { if (!k) k = t; return; }
+    const m = t.match(/^([PCG])\b\s*[:\-]?\s*(.+)$/i);
+    if (m) map[m[1].toUpperCase()] = m[2].trim();
+  });
+  const kdisp = k ? k.replace(/\s*kcal/ig, '').trim() : '';
+  if (!(map.P || map.C || map.G)) {           // parse falhou: mostra o texto cru (sem grid)
+    const raw = [pcg, kcal].filter(Boolean).join(' · ');
+    return `<div class="diet-macro-rawline">${raw}</div>`;
+  }
+  const cell = (v, l, cls) => `<div class="diet-macro-stat"><div class="v${cls ? ' ' + cls : ''}">${v || ''}</div><div class="l">${l}</div></div>`;
+  return `<div class="diet-macro-stats">${cell(map.P, 'Proteína')}${cell(map.C, 'Carbo')}${cell(map.G, 'Gordura')}${cell(kdisp, 'kcal', 'kcal')}</div>`;
+}
+function _renderMealMacro(ml) {
+  if (!ml) return '';
+  const pcg = String(ml.pcg || '').trim();
+  const kcal = String(ml.kcal || '').trim();
+  if (!pcg) return '';
+  if (!/\d/.test(pcg)) return `<div class="diet-meal-macro muted">${pcg}</div>`;   // rotulo ("Refeicao livre...")
+  const txt = kcal ? `${pcg} · ${kcal}` : pcg;
+  return `<div class="diet-meal-macro">${txt}</div>`;
 }
 
 function toggleInstallGuide(show) {
