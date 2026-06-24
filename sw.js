@@ -1,4 +1,4 @@
-const CACHE_NAME = 'metodo-gh-v249';
+const CACHE_NAME = 'metodo-gh-v250';
 const ASSETS = [
   './',
   './index.html',
@@ -67,13 +67,15 @@ self.addEventListener('fetch', e => {
           caches.open(CACHE_NAME).then(c => c.put(e.request, clone)).catch(() => {});
         }
         return resp;
-      }).catch(() => caches.match(e.request))
+      }).catch(() => caches.match(e.request, { ignoreSearch: true }))
     );
     return;
   }
-  // Cache-first pros assets estáticos
+  // Cache-first pros assets estáticos. ignoreSearch: o precache guarda './' e os
+  // assets SEM query, mas a navegacao vem com ?sheet=...&tab=... e os scripts com ?v=N
+  // — sem ignoreSearch o fallback offline dava miss e o PWA nao abria.
   e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request))
+    caches.match(e.request, { ignoreSearch: true }).then(r => r || fetch(e.request))
   );
 });
 

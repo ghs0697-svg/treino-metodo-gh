@@ -4777,7 +4777,7 @@ function onCheckExercise(di, ei) {
 
 // Flag local: já reivindicou pontos do dia (só dispara notifyDayCompletion 1x por dia)
 function pointsClaimedKey(di) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayKey();   // data LOCAL, alinha com os outros dedups (era UTC e desalinhava na virada da meia-noite)
   return `gh_pointsClaimed_${STUDENT_ID}_${today}_d${di}`;
 }
 function alreadyClaimedToday(di) { return localStorage.getItem(pointsClaimedKey(di)) === '1'; }
@@ -7382,7 +7382,7 @@ function _normalizeFoodKey(nome) {
     .toLowerCase().trim()
     .replace(/\s+/g, ' ')
     .replace(/^\d+\s*[.)]?\s*/, '') // remove "1. " ou "1) " no início
-    .replace(/\s+(ou|com|de|para|e)\s+.*/, '') // corta tudo após "ou", "com", "de", "para", "e" — só fica o item principal
+    .replace(/\s+ou\s+.*/, '') // corta so as alternativas depois de "ou" (preserva "Peito de frango", "Pasta de amendoim", "File de tilapia")
     .replace(/[(\[].*?[)\]]/g, '') // remove conteúdo em parênteses/colchetes
     .trim();
 }
@@ -9696,7 +9696,7 @@ async function mealPhotoShare() {
       const a = document.createElement('a'); a.href = _mealPhotoDataUrl; a.download = fname; a.click();
     }
     if (isCardio) notifyCardioCompletion(true);   // cardio compartilhado = pontua DOBRO no ranking
-    else notifyDietCompletion(true);              // dieta compartilhada = pontua DOBRO no ranking
+    else { if (allMealsDone()) notifyDietCompletion(true); }   // dieta so pontua (dobro) se o DIA INTEIRO estiver feito (espelha o treino; antes creditava com 1 refeicao marcada)
   } catch (_) { /* cancelou o share */ }
   mealPhotoClose();
 }
