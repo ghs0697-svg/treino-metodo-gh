@@ -4429,20 +4429,57 @@ function _cargaValida(d, e, w) {
   return _normEx(saved) === _normEx(now);
 }
 function _stampExn(d, e, w) { const n = _exNameAt(d, e); if (n) localStorage.setItem(exnKey(d, e, w), n); }
-function loadCarga(d, e, w) { return _cargaValida(d, e, w) ? (localStorage.getItem(storageKey(d, e, w)) || "") : ""; }
+// GH 2026-06-24: cada exercicio tem a SUA carga. O slot leva um sufixo com o nome do
+// SUBSTITUTO ativo; pro original o sufixo e vazio (slot LEGADO, 100% intocado, zero migracao).
+// Assim trocar pro substituto abre um slot proprio (zerado ate preencher) e o original fica intacto.
+function _cargaSlotSuffix(d, e) {
+  if (/[ab]$/.test(String(e))) return '';            // biset nao tem substituto
+  try { const a = _exAtivo(d, parseInt(e)); if (a && a.sub && a.name) return '_' + _normEx(a.name); } catch (_) {}
+  return '';
+}
+// nome/flag do exercicio ATIVO (substituto ou original) pro payload do servidor
+function _exAtivoNome_(d, e) {
+  if (/[ab]$/.test(String(e))) return _exNameAt(d, e);   // biset: mantem como hoje
+  try { const a = _exAtivo(d, parseInt(e)); return (a && a.name) || _exNameAt(d, e); } catch (_) { return _exNameAt(d, e); }
+}
+function _exAtivoSub_(d, e) {
+  if (/[ab]$/.test(String(e))) return false;
+  try { const a = _exAtivo(d, parseInt(e)); return !!(a && a.sub); } catch (_) { return false; }
+}
+function loadCarga(d, e, w) {
+  const sf = _cargaSlotSuffix(d, e);
+  if (sf) return localStorage.getItem(storageKey(d, e, w) + sf) || "";                        // substituto: slot proprio
+  return _cargaValida(d, e, w) ? (localStorage.getItem(storageKey(d, e, w)) || "") : "";       // original: legado + validacao
+}
 function saveCarga(d, e, w, v) {
-  localStorage.setItem(storageKey(d, e, w), v);
-  _stampExn(d, e, w);
+  const sf = _cargaSlotSuffix(d, e);
+  localStorage.setItem(storageKey(d, e, w) + sf, v);
+  if (!sf) _stampExn(d, e, w);
   syncCargaToServer_(d, e, w, v, null);
 }
-function getPrevCarga(d, e, w) { return w > 1 && _cargaValida(d, e, w - 1) ? (localStorage.getItem(storageKey(d, e, w - 1)) || null) : null; }
-function loadPlacas(d, e, w) { return _cargaValida(d, e, w) ? (localStorage.getItem(placasKey(d, e, w)) || "") : ""; }
+function getPrevCarga(d, e, w) {
+  if (w <= 1) return null;
+  const sf = _cargaSlotSuffix(d, e);
+  if (sf) return localStorage.getItem(storageKey(d, e, w - 1) + sf) || null;
+  return _cargaValida(d, e, w - 1) ? (localStorage.getItem(storageKey(d, e, w - 1)) || null) : null;
+}
+function loadPlacas(d, e, w) {
+  const sf = _cargaSlotSuffix(d, e);
+  if (sf) return localStorage.getItem(placasKey(d, e, w) + sf) || "";
+  return _cargaValida(d, e, w) ? (localStorage.getItem(placasKey(d, e, w)) || "") : "";
+}
 function savePlacas(d, e, w, v) {
-  localStorage.setItem(placasKey(d, e, w), v);
-  _stampExn(d, e, w);
+  const sf = _cargaSlotSuffix(d, e);
+  localStorage.setItem(placasKey(d, e, w) + sf, v);
+  if (!sf) _stampExn(d, e, w);
   syncCargaToServer_(d, e, w, null, v);
 }
-function getPrevPlacas(d, e, w) { return w > 1 && _cargaValida(d, e, w - 1) ? (localStorage.getItem(placasKey(d, e, w - 1)) || null) : null; }
+function getPrevPlacas(d, e, w) {
+  if (w <= 1) return null;
+  const sf = _cargaSlotSuffix(d, e);
+  if (sf) return localStorage.getItem(placasKey(d, e, w - 1) + sf) || null;
+  return _cargaValida(d, e, w - 1) ? (localStorage.getItem(placasKey(d, e, w - 1)) || null) : null;
+}
 // ── Esforço (RIR-em-palavras) + flag de aparelho por exercício ──
 function esfKey(d, e, w) { return `gh_esf_${STUDENT_ID}_d${d}_e${e}_w${w}`; }
 function loadEsf(d, e, w) { return localStorage.getItem(esfKey(d, e, w)) || ""; }
@@ -4542,13 +4579,14 @@ function syncCargaToServer_(di, ei, w, carga, placas) {
     sheetId: SHEET_ID,
     studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
     di: di, ei: ei, w: w,
-    exercicio: _exNameAt(di, ei),
+    exercicio: _exAtivoNome_(di, ei),   // nome do exercicio ATIVO (substituto ou original) — vai pra aba CARGAS
+    sub: _exAtivoSub_(di, ei),          // flag: e um substituto? (pro restore saber o slot)
     carga: carga !== null && carga !== undefined ? String(carga) : '',
     placas: placas !== null && placas !== undefined ? String(placas) : '',
     ts: new Date().toISOString()
   };
   const enfileira = () => {
-    _syncQueuePush('carga', payload, p => `${p.di}|${p.ei}|${p.w}`);
+    _syncQueuePush('carga', payload, p => `${p.di}|${p.ei}|${p.w}|${p.exercicio || ''}`);   // dedup por exercicio: original e substituto na mesma posicao nao se sobrescrevem
     setBadge('☁ pendente, vai reenviar', 'cloud-fail');
   };
   try {
@@ -4608,23 +4646,27 @@ function syncEsforcoToServer_(di, ei, w, esforco, aparelho) {
 // reivindicada nesta passada (set `seen`). ifEmpty=true respeita peso local existente (não sobrescreve).
 function _restoreCargasRealign(cargas, ifEmpty) {
   let n = 0;
+  const _isSub = v => v === true || v === 1 || v === 'TRUE' || v === 'true' || v === 'sim';
   const items = (cargas || []).map(c => {
+    // Substituto (GH 2026-06-24): slot PROPRIO na posicao do row (nome no key), SEM realign.
+    if (_isSub(c.sub)) return { c, di: c.di, ei: c.ei, suffix: c.exercicio ? '_' + _normEx(c.exercicio) : '', moved: false, sub: true };
+    // Original (ou dado ANTIGO sem flag = comportamento de hoje): realinha por nome (cura reorg), slot legado.
     let di = c.di, ei = c.ei;
     if (c.exercicio) { const p = _uniquePosByName(c.exercicio); if (p) { di = p.di; ei = p.ei; } }
-    return { c, di, ei, moved: (di !== c.di || ei !== c.ei) };
+    return { c, di, ei, suffix: '', moved: (di !== c.di || ei !== c.ei), sub: false };
   });
   items.sort((a, b) => (a.moved ? 1 : 0) - (b.moved ? 1 : 0)); // não-movidos (a verdade da posição) primeiro
   const seen = new Set();
-  items.forEach(({ c, di, ei }) => {
-    const kC = storageKey(di, ei, c.w), kP = placasKey(di, ei, c.w);
+  items.forEach(({ c, di, ei, suffix, sub }) => {
+    const kC = storageKey(di, ei, c.w) + suffix, kP = placasKey(di, ei, c.w) + suffix;
     if (c.carga != null && c.carga !== '' && !seen.has(kC) && (!ifEmpty || !localStorage.getItem(kC))) {
       localStorage.setItem(kC, String(c.carga));
-      if (c.exercicio) localStorage.setItem(exnKey(di, ei, c.w), String(c.exercicio));
+      if (!sub && c.exercicio) localStorage.setItem(exnKey(di, ei, c.w), String(c.exercicio));   // exn so pro slot original
       seen.add(kC); n++;
     }
     if (c.placas != null && c.placas !== '' && !seen.has(kP) && (!ifEmpty || !localStorage.getItem(kP))) {
       localStorage.setItem(kP, String(c.placas));
-      if (c.exercicio) localStorage.setItem(exnKey(di, ei, c.w), String(c.exercicio));
+      if (!sub && c.exercicio) localStorage.setItem(exnKey(di, ei, c.w), String(c.exercicio));
       seen.add(kP); n++;
     }
   });
