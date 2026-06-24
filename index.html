@@ -6800,7 +6800,7 @@ function _buildDietaPrintHTML() {
       if (!items || !items.length) return;
       rows += `<tr><td colspan="2" style="background:#f5f5f5;"><strong>${esc(timing)}</strong></td></tr>`;
       items.forEach(s => {
-        const obs = s.obs ? ` — ${esc(s.obs)}` : '';
+        const obs = s.obs ? ` · ${esc(s.obs)}` : '';
         rows += `<tr><td class="pa-ex">${esc(s.nome)}</td><td>${esc(s.dose || '')}${obs}</td></tr>`;
       });
     });
@@ -6836,7 +6836,7 @@ function _buildDietaPrintHTML() {
     let rows = '';
     d.protocolos.forEach(p => {
       const dose = p.dose ? esc(p.dose) : '';
-      const obs = p.obs ? ` — ${esc(p.obs)}` : '';
+      const obs = p.obs ? ` · ${esc(p.obs)}` : '';
       rows += `<tr><td class="pa-ex">${esc(p.nome || p.categoria || '')}</td><td>${dose}${obs}</td></tr>`;
     });
     html += `<div class="pa-day"><h2 class="pa-day-title">Protocolo Hormonal</h2><table>${rows}</table></div>`;
@@ -9226,7 +9226,7 @@ function parseDietData(rows) {
         // pro ciclo de carbo.
         const _mc = (r[1] || '').trim();
         const _mcl = _mc.toLowerCase();
-        if (/^macros?\b/.test(_mcl) && /\bdia\b/.test(_mcl)) {
+        if (/^macros?\b/.test(_mcl) && (/\bdia\b/.test(_mcl) || /\bdi[aá]ri/.test(_mcl))) {
           const _pl = (_mc.match(/\(([^)]+)\)/) || [])[1] || '';
           const _lab = /alto|baixo|moder/i.test(_pl) ? _pl.trim() : '';   // rotula SO ciclo de carbo (ALTO/BAIXO), nao "(aproximado)"
           data.macroDia.push({ label: _lab, pcg: (r[2] || '').trim(), kcal: (r[3] || '').trim() });
@@ -9921,7 +9921,7 @@ function _renderMacroDia(d) {
 }
 function _macroStatsGrid(pcg, kcal) {
   // parseia "P 180g · C 210g · G 60g · 2.080 kcal" (ou com kcal na col D) em 4 stats.
-  const toks = String(pcg || '').split(/[·•|,]/).map(s => s.trim()).filter(Boolean);
+  const toks = String(pcg || '').split(/[·•|]/).map(s => s.trim()).filter(Boolean);   // sem virgula: nao quebra "2,080 kcal"
   const map = {};
   let k = String(kcal || '').trim();
   toks.forEach(t => {
