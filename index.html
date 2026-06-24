@@ -9522,9 +9522,13 @@ function notifyCardioCompletion(shared) {
 }
 function mealDoneKey(ri) { return `gh_meal_${STUDENT_ID}_${todayKey()}_r${ri}`; }
 function isMealDone(ri) { return localStorage.getItem(mealDoneKey(ri)) === '1'; }
+let _dietCycleIdx = 0;   // ciclo (Alto/Baixo carbo) que o aluno esta vendo; a meta do dia conta por ELE
 function dietTotalMeals() {
-  if (typeof DIET_DATA === 'undefined' || !DIET_DATA || !DIET_DATA.ciclos) return 0;
-  return Math.max(0, ...DIET_DATA.ciclos.map(cy => (cy.refeicoes || []).length));
+  if (typeof DIET_DATA === 'undefined' || !DIET_DATA || !DIET_DATA.ciclos || !DIET_DATA.ciclos.length) return 0;
+  // GH 2026-06-24: conta as refeicoes do ciclo ATIVO (nao o max entre ciclos). Dietas com
+  // Alto/Baixo de tamanhos diferentes nao travam mais: o dia conta quando o aluno marca o que ve.
+  const cy = DIET_DATA.ciclos[_dietCycleIdx] || DIET_DATA.ciclos[0];
+  return (cy.refeicoes || []).length;
 }
 function dietMealsDone() {
   const n = dietTotalMeals(); let c = 0;
@@ -9704,6 +9708,7 @@ async function mealPhotoShare() {
 function renderDiet() {
   if (!DIET_DATA) return;
   const d = DIET_DATA;
+  _dietCycleIdx = 0;   // render abre sempre no 1o ciclo (aba ativa = 0); mantem a meta do dia em sincronia
   const container = document.getElementById('dietContent');
   let html = '';
 
@@ -10139,8 +10144,10 @@ function selectDietOption(uid, opIdx) {
 }
 
 function selectDietCycle(idx) {
+  _dietCycleIdx = idx;   // a meta de refeicoes do dia passa a contar por este ciclo
   document.querySelectorAll('#cycleTabs .diet-cycle-tab').forEach((t, i) => t.classList.toggle('active', i === idx));
   document.querySelectorAll('[id^="cycleContent"]').forEach((c, i) => c.classList.toggle('active', i === idx));
+  if (typeof updateDietProgress === 'function') updateDietProgress();   // atualiza a barra X/N pro ciclo escolhido
 }
 
 function toggleDietSection(id) {
