@@ -6500,15 +6500,17 @@ async function loadFromSheets() {
     migrateLegacyDoneKeys_();
     if (typeof _renderProtoAviso === 'function') _renderProtoAviso(); // mostra aviso salvo na hora (antes do fetch)
     loadAndShowLastModified();
-    // A8 (ordem): esvazia a fila de envios pendentes (cargas/done do offline anterior) ANTES de puxar do
-    // servidor, pra o restore nunca correr contra um flush em voo (janela de inconsistência). Tolerante a erro.
+    updateUnitToggleLabel();
+    renderExercises();   // render IMEDIATO dos exercicios (do local) — NAO espera rede. Senao um flush numa rede ruim segurava os cards do dia em branco.
+    // A8 (ordem dos DADOS, nao do render): esvazia a fila de envios pendentes (cargas/done do offline
+    // anterior) antes de puxar do servidor, pra o restore nao correr contra um flush em voo. O render acima
+    // ja aconteceu, entao a rede nao trava a tela. (flushSyncQueues tem guard de reentrancia — se ja houver
+    // um flush rodando, o await retorna na hora; a ordem aqui e best-effort, o restore e if-empty de qualquer jeito.)
     await flushSyncQueues().catch(() => {});
-    restoreCargasFromServerIfEmpty_();
+    restoreCargasFromServerIfEmpty_();   // se preencher peso do servidor, ele re-renderiza os cards
     restoreDoneFromServerIfEmpty_();
     checkFotosBannerOnLoad();
     checkChatBannerOnLoad();
-    updateUnitToggleLabel();
-    renderExercises();
 
   } catch (err) {
     document.getElementById('loadingScreen').style.display = 'none';
@@ -8294,6 +8296,7 @@ async function openFotosModal() {
 
   // Sempre abre na aba Enviar; zera cache de comparação pra recarregar fresco
   _cmpState.loaded = false;
+  _laudosLoaded = false;   // mesma aba Comparar, mesmo ciclo de vida: senao o laudo novo do reajuste nao aparece pra quem ja abriu a aba antes
   _cmpState.sel = { L:null, R:null };
   switchFotosTab('enviar');
 
