@@ -4771,6 +4771,12 @@ function syncDoneToServer_(di, ei, val) {
 // onde local está vazio. Mesma correção do syncCargasFromServer_ pelo
 // mesmo motivo (iOS limpa storage parcial e o restore "if empty"
 // antigo deixava aluno órfão).
+// Janela do rolling reset: marca de "feito" com mais de 4 semanas some (mantém
+// as recentes pro aluno não se confundir em qual semana está). Combinado com a
+// data do reajuste (corta o ciclo velho na hora), reseta os checkboxes SEM tocar
+// no ranking — o ranking lê o LOGS (logCompletion_), o checkbox é o PROGRESSO.
+const DONE_KEEP_MS = 28 * 24 * 60 * 60 * 1000; // 4 semanas
+
 async function syncDoneFromServer_() {
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
   try {
@@ -4779,17 +4785,48 @@ async function syncDoneFromServer_() {
     if (!res.ok) return;
     const data = await res.json();
     if (!data || !Array.isArray(data.done)) return;
-    let restored = 0;
+    // Corte = o mais recente entre (data do reajuste) e (hoje − 4 semanas).
+    // `atual` no futuro/inválido é ignorado (cai no rolling) pra um typo na col E
+    // não zerar tudo. Marca anterior ao corte = ciclo velho ou antiga demais:
+    // não restaura E limpa do local. Só mexe no checkbox; o ranking fica intacto.
+    let atualMs = Number(data.atual);
+    if (!(atualMs > 0) || atualMs > Date.now()) atualMs = 0;
+    // Reajuste: a data do "Protocolo Atual" AVANÇOU desde a última vez que vimos
+    // → ciclo novo → limpa TODAS as marcas locais por prefixo. Isso pega até a
+    // marca local-only legada (anterior a 22/05, antes do backup no servidor) que
+    // o reconcile por ts abaixo não enxerga. NÃO limpa no 1º load (seen vazio) —
+    // só quando a col E muda de fato, pra não zerar marca legítima na estreia.
+    const epochKey = `gh_done_atual_${STUDENT_ID}`;
+    const seen = Number(localStorage.getItem(epochKey)) || 0;
+    let wiped = 0;
+    if (seen && atualMs > seen) {
+      const pref = `gh_done_${STUDENT_ID}_w`; // só as marcas (w<sem>_d<dia>_e<ex>)
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(pref)) { localStorage.removeItem(k); wiped++; }
+      }
+    }
+    if (atualMs) localStorage.setItem(epochKey, String(atualMs));
+    const cutoff = Math.max(atualMs, Date.now() - DONE_KEEP_MS);
+    let restored = 0, cleared = 0;
     data.done.forEach(d => {
-      if (!d.feito) return;
       const key = `gh_done_${STUDENT_ID}_w${d.w}_d${d.di}_e${d.ei}`;
-      if (!localStorage.getItem(key)) {
+      // ts conhecido E anterior ao corte → marca velha: garante limpa no local.
+      // removeItem silencioso (sem POST de 'nao'): a linha no PROGRESSO permanece
+      // e é filtrada pelo corte a cada load — idempotente, durável a wipe do iOS
+      // (o restore abaixo nunca re-adiciona marca anterior ao corte).
+      if (d.ts && d.ts < cutoff) {
+        if (localStorage.getItem(key)) { localStorage.removeItem(key); cleared++; }
+        return;
+      }
+      // dentro da janela e marcada → restaura onde o local está vazio (merge).
+      if (d.feito && !localStorage.getItem(key)) {
         localStorage.setItem(key, '1');
         restored++;
       }
     });
-    if (restored > 0) {
-      console.log(`[gh] Treino marcado sincronizado do servidor: ${restored} exercícios`);
+    if (restored > 0 || cleared > 0 || wiped > 0) {
+      console.log(`[gh] Treino marcado sincronizado: +${restored} / −${cleared}${wiped ? ' / reajuste limpou ' + wiped : ''} (corte ${new Date(cutoff).toISOString().slice(0,10)})`);
       if (typeof renderExercises === 'function' && document.getElementById('exerciseContainer')) {
         renderExercises();
       }
