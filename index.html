@@ -4147,12 +4147,15 @@ const _SUB_GRUPO_BY_NORM = (function () {
   return m;
 })();
 function _grupoDe(name) { return _SUB_GRUPO_BY_NORM[_normEx(name)] || null; }
-function _subKey(di, name) { return `gh_sub_${STUDENT_ID}_d${di}_${_normEx(name)}`; }   // por DIA+NOME → troca vale SÓ no dia que o aluno trocou
+// A6 (GH 2026-06-24): chave por DIA+POSIÇÃO+NOME → desambigua o MESMO exercício 2x no mesmo dia
+// (antes era só dia+nome → trocar um pulava pra ocorrência errada).
+function _subKey(di, ei, name) { return `gh_sub_${STUDENT_ID}_d${di}_e${ei}_${_normEx(name)}`; }
+function _subKeyLegacy(di, name) { return `gh_sub_${STUDENT_ID}_d${di}_${_normEx(name)}`; }   // chave antiga (dia+nome): só leitura, p/ não quebrar swaps já feitos
 // {name, video} do substituto ESCOLHIDO e válido (no grupo do exercício + com vídeo no banco +
 // diferente do original); senão null (mostra o original). NÃO checa colisão de dia (isso é no resolve).
-function _subEscolhidoValido(ex, di) {
+function _subEscolhidoValido(ex, di, ei) {
   if (!ex || ex.biset || ex.warmup) return null;
-  const chosen = localStorage.getItem(_subKey(di, ex.name));
+  const chosen = localStorage.getItem(_subKey(di, ei, ex.name)) || localStorage.getItem(_subKeyLegacy(di, ex.name));
   if (!chosen) return null;
   const grp = _grupoDe(ex.name);
   if (!grp) return null;
@@ -4176,11 +4179,11 @@ function _resolveDayActive(di) {
   exs.forEach((e, ei) => {                            // 1ª passada: biset e não-trocados travam o original
     if (!e) { res[ei] = { name: '', video: '', sub: false }; return; }
     if (e.biset) { res[ei] = { name: e.name || '', video: e.video || '', sub: false }; return; }
-    if (!_subEscolhidoValido(e, di)) { res[ei] = { name: e.name, video: e.video, sub: false }; used[_normEx(e.name)] = true; }
+    if (!_subEscolhidoValido(e, di, ei)) { res[ei] = { name: e.name, video: e.video, sub: false }; used[_normEx(e.name)] = true; }
   });
   exs.forEach((e, ei) => {                            // 2ª passada: aplica troca só se o nome está livre no dia
     if (!e || res[ei]) return;
-    const s = _subEscolhidoValido(e, di);
+    const s = _subEscolhidoValido(e, di, ei);
     if (s && !used[_normEx(s.name)]) { res[ei] = { name: s.name, video: s.video, sub: true }; used[_normEx(s.name)] = true; }
     else { res[ei] = { name: e.name, video: e.video, sub: false }; used[_normEx(e.name)] = true; }
   });
@@ -4217,7 +4220,8 @@ function escolherSub(di, ei, chosenNorm) {
   try {
     const ex = WORKOUT[di] && WORKOUT[di].exercises && WORKOUT[di].exercises[ei];
     if (!ex) return;
-    const k = _subKey(di, ex.name);
+    const k = _subKey(di, ei, ex.name);
+    localStorage.removeItem(_subKeyLegacy(di, ex.name));   // A6: migra — limpa a chave antiga (dia+nome) ao mexer na troca
     if (!chosenNorm || _normEx(chosenNorm) === _normEx(ex.name)) localStorage.removeItem(k);
     else localStorage.setItem(k, _normEx(chosenNorm));
     closeSubPicker();
@@ -4419,6 +4423,23 @@ function _uniquePosByName(name) {
   }));
   return count === 1 ? found : null;
 }
+// A7 (GH 2026-06-24): posição única do exercício DENTRO de um bloco nomeado. O nome do bloco é estável
+// (reordenar blocos não muda "Normal 6x"), então casar por bloco+nome reencontra a carga mesmo depois
+// de reordenar bloco — o que o _uniquePosByName global não conseguia quando o nome repete entre blocos.
+function _posByNameInBloco(name, bloco) {
+  if (!name || typeof WORKOUT === 'undefined' || !WORKOUT) return null;
+  const target = _normEx(name), bt = _normEx(bloco || '');
+  if (!target) return null;
+  let found = null, count = 0;
+  WORKOUT.forEach((day, di) => {
+    if (_normEx(day.bloco || '') !== bt) return;
+    (day.exercises || []).forEach((ex, ei) => {
+      if (ex.biset) return;
+      if (_normEx(ex.name || '') === target) { count++; found = { di, ei }; }
+    });
+  });
+  return count === 1 ? found : null;
+}
 function _cargaValida(d, e, w) {
   const saved = localStorage.getItem(exnKey(d, e, w));
   if (!saved) return true;          // sem companheiro (legado) → não valida, comporta como hoje
@@ -4581,6 +4602,7 @@ function syncCargaToServer_(di, ei, w, carga, placas) {
     di: di, ei: ei, w: w,
     exercicio: _exAtivoNome_(di, ei),   // nome do exercicio ATIVO (substituto ou original) — vai pra aba CARGAS
     sub: _exAtivoSub_(di, ei),          // flag: e um substituto? (pro restore saber o slot)
+    bloco: (typeof WORKOUT !== 'undefined' && WORKOUT[di] && WORKOUT[di].bloco) || '',   // A7: bloco estável → restore casa por bloco+nome (robusto a reordenar bloco)
     carga: carga !== null && carga !== undefined ? String(carga) : '',
     placas: placas !== null && placas !== undefined ? String(placas) : '',
     ts: new Date().toISOString()
@@ -4652,7 +4674,13 @@ function _restoreCargasRealign(cargas, ifEmpty) {
     if (_isSub(c.sub)) return { c, di: c.di, ei: c.ei, suffix: c.exercicio ? '_' + _normEx(c.exercicio) : '', moved: false, sub: true };
     // Original (ou dado ANTIGO sem flag = comportamento de hoje): realinha por nome (cura reorg), slot legado.
     let di = c.di, ei = c.ei;
-    if (c.exercicio) { const p = _uniquePosByName(c.exercicio); if (p) { di = p.di; ei = p.ei; } }
+    if (c.exercicio) {
+      // A7: se o log trouxe o bloco (dado novo), casa por bloco+nome primeiro (robusto a reordenar bloco).
+      // Sem bloco (dado antigo) ou sem match no bloco → cai no nome único global = comportamento de hoje.
+      let p = c.bloco ? _posByNameInBloco(c.exercicio, c.bloco) : null;
+      if (!p) p = _uniquePosByName(c.exercicio);
+      if (p) { di = p.di; ei = p.ei; }
+    }
     return { c, di, ei, suffix: '', moved: (di !== c.di || ei !== c.ei), sub: false };
   });
   items.sort((a, b) => (a.moved ? 1 : 0) - (b.moved ? 1 : 0)); // não-movidos (a verdade da posição) primeiro
@@ -6472,20 +6500,25 @@ async function loadFromSheets() {
     migrateLegacyDoneKeys_();
     if (typeof _renderProtoAviso === 'function') _renderProtoAviso(); // mostra aviso salvo na hora (antes do fetch)
     loadAndShowLastModified();
+    // A8 (ordem): esvazia a fila de envios pendentes (cargas/done do offline anterior) ANTES de puxar do
+    // servidor, pra o restore nunca correr contra um flush em voo (janela de inconsistência). Tolerante a erro.
+    await flushSyncQueues().catch(() => {});
     restoreCargasFromServerIfEmpty_();
     restoreDoneFromServerIfEmpty_();
     checkFotosBannerOnLoad();
     checkChatBannerOnLoad();
-    flushSyncQueues(); // processa cargas/done que ficaram pendentes (offline anterior)
     updateUnitToggleLabel();
     renderExercises();
 
   } catch (err) {
     document.getElementById('loadingScreen').style.display = 'none';
-    // Se treino falhou mas dieta existe, mostra só dieta
+    // Se treino falhou mas dieta existe, mostra só dieta. (A16: o redirecionamento real fica AQUI — antes
+    // a linha showSection era dead code, quem escondia o TREINO + abria a DIETA era o .catch externo do
+    // startup. Agora o catch interno faz de fato, e o .catch externo é só guarda anti-unhandled-rejection.)
     if (dietLoaded) {
       document.getElementById('mainNav').style.display = 'flex';
-      document.querySelector('[onclick*="showSection(\'dieta\')"]')?.click();
+      var _nt = document.getElementById('navTreino'); if (_nt) _nt.style.display = 'none';
+      switchView('dieta');
     } else {
       document.getElementById('errorBox').style.display = 'block';
       document.getElementById('errorMsg').textContent = err.message;
@@ -9074,6 +9107,11 @@ async function openRankingModal() {
     const j = await resp.json();
     const ranking = (j && j.ranking) || [];
     const champion = (j && j.champion) || null;
+    // A4 (GH 2026-06-24): o SERVIDOR é a fonte da verdade de quando dieta/cardio entram no score
+    // (flags incluiDieta/incluiCardio, derivadas das constantes RANKING_*_DESDE do .gs). App obedece;
+    // as datas chumbadas ficam só de fallback se a resposta vier de um .gs antigo (sem as flags).
+    const incluiDietaSrv  = (j && typeof j.incluiDieta  !== 'undefined') ? !!j.incluiDieta  : (todayKey() >= '2026-06-21');
+    const incluiCardioSrv = (j && typeof j.incluiCardio !== 'undefined') ? !!j.incluiCardio : (todayKey() >= '2026-06-22');
     const escHtml = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     // 🏆 campeão do mês anterior (congelado no .gs). Aparece no topo, acima da lista do mês corrente.
     const champHtml = (champion && champion.name)
@@ -9106,9 +9144,9 @@ async function openRankingModal() {
         }
       }
     } catch (e) {}
-    // dieta/cardio pontuam no ranking a partir das datas de rollout do .gs (já valem). Espelham RANKING_*_DESDE.
-    const dietaConta = todayKey() >= '2026-06-21';
-    const cardioConta = todayKey() >= '2026-06-22';
+    // dieta/cardio pontuam no ranking quando o servidor disser (flags acima). Já valem (rollout 21/22-jun).
+    const dietaConta = incluiDietaSrv;
+    const cardioConta = incluiCardioSrv;
     list.innerHTML = champHtml + ranking.slice(0, 50).map((r, i) => {
       const isMe = myName && String(r.name || '').toLowerCase().trim() === myName;
       const pos = i + 1;
@@ -9184,6 +9222,30 @@ function toggleParceiros() {
 // ══════════════════════════════════════════════════════════════
 var DIET_DATA = null;
 var dietLoaded = false;
+var dietFetchFailed = false;   // A15: falha REAL de rede/HTTP/parse (≠ aluno sem dieta) → mostra aviso + retry
+
+// A15: mostra o estado de erro da dieta (com botão de tentar de novo) na própria aba Dieta.
+function _showDietFetchError() {
+  try {
+    const mn = document.getElementById('mainNav'); if (mn) mn.style.display = 'flex';   // garante o acesso à aba Dieta
+    const loading = document.getElementById('dietLoading'); if (loading) loading.style.display = 'none';
+    const content = document.getElementById('dietContent'); if (content) content.style.display = 'none';
+    const box = document.getElementById('dietError');
+    const h = box && box.querySelector('h3');
+    const msg = document.getElementById('dietErrorMsg');
+    if (h) h.textContent = 'Não consegui carregar tua dieta';
+    if (msg) msg.innerHTML = 'Pode ter sido a conexão. Toca pra tentar de novo.<br><button onclick="retryDiet()" style="margin-top:12px;background:var(--gold,#d4a76a);color:#000;font-weight:700;font-size:13px;padding:9px 20px;border:none;border-radius:6px;cursor:pointer;">Tentar de novo</button>';
+    if (box) box.style.display = 'block';
+  } catch (_) {}
+}
+function retryDiet() {
+  try {
+    dietFetchFailed = false;
+    const box = document.getElementById('dietError'); if (box) box.style.display = 'none';
+    const loading = document.getElementById('dietLoading'); if (loading) loading.style.display = 'flex';
+    loadDietFromSheets();
+  } catch (_) {}
+}
 
 async function loadDietFromSheets() {
   // Tenta até 2x com cache buster — Safari iOS PWA standalone às vezes
@@ -9206,12 +9268,18 @@ async function loadDietFromSheets() {
     } catch (e2) {
       console.warn('[GH] DIETA load falhou (retry 2x):', e1?.message, '|', e2?.message);
       dietLoaded = false;
+      // A15: "rows<3" em qualquer tentativa = fetch OK porém VAZIO → aluno só treino (sem dieta): silencioso.
+      // Caso contrário (HTTP/rede nas DUAS) = falha real → avisa com retry.
+      const semConteudo = /rows<3/.test(String((e1 && e1.message) || '')) || /rows<3/.test(String((e2 && e2.message) || ''));
+      dietFetchFailed = !semConteudo;
+      if (dietFetchFailed) _showDietFetchError();
       return;
     }
   }
   try {
     DIET_DATA = parseDietData(rows);
     dietLoaded = true;
+    dietFetchFailed = false;
     document.getElementById('mainNav').style.display = 'flex';
     document.getElementById('accompToggle').style.display = 'flex';
     document.getElementById('glossarioToggle').style.display = 'flex';
@@ -9224,6 +9292,8 @@ async function loadDietFromSheets() {
   } catch (e) {
     console.warn('[GH] DIETA parse falhou:', e?.message);
     dietLoaded = false;
+    dietFetchFailed = true;   // A15: dieta existe mas quebrou ao processar = erro real → avisa com retry
+    _showDietFetchError();
   }
 }
 
@@ -9940,6 +10010,9 @@ function renderDiet() {
 
   container.innerHTML = html;
   container.style.display = 'block';
+  // A15: dieta renderizou → esconde qualquer estado de aviso/loading que tenha ficado de uma falha anterior
+  const _de = document.getElementById('dietError'); if (_de) _de.style.display = 'none';
+  const _dl = document.getElementById('dietLoading'); if (_dl) _dl.style.display = 'none';
   loadRecado(); // preenche o #recadoSlot com o player do recado (se houver)
   updateDietProgress(); // sincroniza a barra de refeições do dia com o que já tá marcado
   updateCardioProgress(); // sincroniza a barra de cardio da semana
@@ -9993,7 +10066,9 @@ function toggleInstallGuide(show) {
 function switchView(view) {
   document.body.classList.toggle('view-dieta', view === 'dieta');
   document.body.classList.toggle('view-ghflix', view === 'ghflix');
-  if (view === 'dieta' && !dietLoaded) loadDietFromSheets();
+  // A15: se já falhou de verdade, NÃO re-tenta sozinho a cada toque (o aviso na aba tem botão "Tentar de novo");
+  // se ainda não carregou e não falhou, carrega.
+  if (view === 'dieta' && !dietLoaded) { if (dietFetchFailed) _showDietFetchError(); else loadDietFromSheets(); }
   if (view === 'ghflix') ensureGhflixFrame();
   document.getElementById('navTreino').classList.toggle('active', view === 'treino');
   document.getElementById('navDieta').classList.toggle('active', view === 'dieta');
@@ -10826,14 +10901,9 @@ if (SHEET_ID && TAB_NAME) {
   // TAB_NAME é só preferência de qual tab abrir primeiro
   loadDietFromSheets().then(() => {
     loadFromSheets()
-      .catch(() => {
-        // TREINO não existe mas DIETA sim → esconder TREINO, abrir DIETA
-        if (dietLoaded) {
-          document.getElementById('loadingScreen').style.display = 'none';
-          document.getElementById('navTreino').style.display = 'none';
-          switchView('dieta');
-        }
-      })
+      // loadFromSheets trata o próprio erro internamente (o catch interno já esconde o TREINO e abre a
+      // DIETA quando o treino falha mas a dieta existe). Este .catch é só guarda anti-unhandled-rejection.
+      .catch(() => {})
       .finally(() => {
         // Se URL pediu DIETA explicitamente e dieta existe, abre nela
         if (dietLoaded && TAB_NAME.toUpperCase() === 'DIETA') {
