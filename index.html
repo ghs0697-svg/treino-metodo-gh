@@ -4220,6 +4220,7 @@ function escolherSub(di, ei, chosenNorm) {
   try {
     const ex = WORKOUT[di] && WORKOUT[di].exercises && WORKOUT[di].exercises[ei];
     if (!ex) return;
+    if (typeof flushCargaPendente_ === 'function') flushCargaPendente_(di, ei);   // salva carga digitada no slot ATUAL antes da troca mudar o sufixo (corrida 400ms)
     const k = _subKey(di, ei, ex.name);
     localStorage.removeItem(_subKeyLegacy(di, ex.name));   // A6: migra — limpa a chave antiga (dia+nome) ao mexer na troca
     if (!chosenNorm || _normEx(chosenNorm) === _normEx(ex.name)) localStorage.removeItem(k);
@@ -6502,13 +6503,14 @@ async function loadFromSheets() {
     loadAndShowLastModified();
     updateUnitToggleLabel();
     renderExercises();   // render IMEDIATO dos exercicios (do local) — NAO espera rede. Senao um flush numa rede ruim segurava os cards do dia em branco.
-    // A8 (ordem dos DADOS, nao do render): esvazia a fila de envios pendentes (cargas/done do offline
-    // anterior) antes de puxar do servidor, pra o restore nao correr contra um flush em voo. O render acima
-    // ja aconteceu, entao a rede nao trava a tela. (flushSyncQueues tem guard de reentrancia — se ja houver
-    // um flush rodando, o await retorna na hora; a ordem aqui e best-effort, o restore e if-empty de qualquer jeito.)
-    await flushSyncQueues().catch(() => {});
+    // Dispara o restore do servidor JA (assincrono, nao-awaited): em device NOVO (local vazio) os pesos
+    // do servidor aparecem assim que o fetch volta, sem esperar o flush — evita o flash de carga em branco.
+    // Seguro: restore e IF-EMPTY (nunca sobrescreve peso local), entao a ordem vs flush nao afeta o dado.
     restoreCargasFromServerIfEmpty_();   // se preencher peso do servidor, ele re-renderiza os cards
     restoreDoneFromServerIfEmpty_();
+    // flush das pendencias offline por ultimo (push local→servidor). Nao segura render nem restore.
+    // (flushSyncQueues tem guard de reentrancia; o restore acima e if-empty, entao nao ha corrida de dado.)
+    await flushSyncQueues().catch(() => {});
     checkFotosBannerOnLoad();
     checkChatBannerOnLoad();
 
@@ -7015,6 +7017,21 @@ function onPlacas(di, ei, input) {
     const el = document.getElementById(`sv-${di}-${ei}`);
     if (el) { el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 1500); }
   }, 400);
+}
+// Flush do debounce pendente de carga/placas de (di,ei): grava o valor digitado AGORA, no slot ATUAL.
+// Chamado antes de trocar o substituto (escolherSub) — senao a troca muda o _cargaSlotSuffix e o save
+// debounced (400ms) cairia no slot do exercicio ERRADO. Caminho de carga e sagrado, entao salva no slot certo.
+function flushCargaPendente_(di, ei) {
+  const kC = `${di}-${ei}`, kP = `p-${di}-${ei}`;
+  const hadC = !!timers[kC], hadP = !!timers[kP];
+  if (!hadC && !hadP) return;
+  clearTimeout(timers[kC]); clearTimeout(timers[kP]);
+  const el = document.getElementById(`sv-${di}-${ei}`);
+  const card = el && el.closest('.exercise-card');
+  if (!card) return;
+  const inputs = card.querySelectorAll('.carga-input');
+  if (hadC && inputs[0]) saveCarga(di, ei, currentWeek, displayToKg(inputs[0].value));
+  if (hadP && inputs[1]) savePlacas(di, ei, currentWeek, inputs[1].value);
 }
 
 // ══ Video overlay ══
