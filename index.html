@@ -4732,8 +4732,12 @@ function todayKey() {
 // reseta natural ao mudar de semana (que é treino novo).
 function doneKey(di, ei) { return `gh_done_${STUDENT_ID}_w${currentWeek}_d${di}_e${ei}`; }
 function isDone(di, ei) { return localStorage.getItem(doneKey(di, ei)) === '1'; }
+// Marcas feitas NESTA sessão — a varredura de legado NUNCA as apaga (podem estar
+// em voo pro servidor, ainda não confirmadas no PROGRESSO). Junto com a fila de
+// sync, isto separa "recém-feita" de "legado local-only de verdade".
+const _doneMarkedThisSession = new Set();
 function setDone(di, ei, val) {
-  if (val) localStorage.setItem(doneKey(di, ei), '1');
+  if (val) { localStorage.setItem(doneKey(di, ei), '1'); _doneMarkedThisSession.add(`${currentWeek}|${di}|${ei}`); }
   else localStorage.removeItem(doneKey(di, ei));
   syncDoneToServer_(di, ei, val);
 }
@@ -4815,7 +4819,8 @@ async function syncDoneFromServer_() {
       // removeItem silencioso (sem POST de 'nao'): a linha no PROGRESSO permanece
       // e é filtrada pelo corte a cada load — idempotente, durável a wipe do iOS
       // (o restore abaixo nunca re-adiciona marca anterior ao corte).
-      if (d.ts && d.ts < cutoff) {
+      const _t = Number(d.ts) || 0; // ts ausente/inválido = idade desconhecida → trata como antiga
+      if (_t < cutoff) {
         if (localStorage.getItem(key)) { localStorage.removeItem(key); cleared++; }
         return;
       }
@@ -4835,6 +4840,53 @@ async function syncDoneFromServer_() {
 }
 // Alias retrocompatível
 const restoreDoneFromServerIfEmpty_ = syncDoneFromServer_;
+
+// Varredura ONE-TIME: limpa a marca de "feito" local-only LEGADA — a que ficou só
+// no aparelho (anterior a 22/05/2026, antes do backup no PROGRESSO existir) e que o
+// reconcile por ts NÃO enxerga, porque o servidor nem a conhece. Sem isso, o aluno
+// que já vinha treinando (ex.: Alexandre, PROGRESSO vazio) fica com a passada antiga
+// presa e não consegue remarcar. Roda DEPOIS do flush (toda marca enfileirada já
+// subiu pro PROGRESSO), então o que sobra como "local-only" é genuinamente legado.
+// Salvaguardas: (1) gate estrito res.ok + done array + atual presente → um blip de
+// rede ou o .gs antigo NÃO limpa nada (e não marca a flag, tenta no próximo load);
+// (2) auto-corretivo — se um glitch raro do servidor (done=[]) limpar demais, o
+// restore do próximo load readiciona as recentes do servidor. removeItem silencioso,
+// nunca passa por setDone → ZERO efeito no ranking (PROGRESSO ≠ LOGS). 1x por aluno.
+async function sweepLegacyDoneLocalOnly_() {
+  if (!SHEET_ID || !STUDENT_ID || typeof LOG_ENDPOINT === 'undefined') return;
+  const flagKey = `gh_done_legacy_swept_${STUDENT_ID}`;
+  if (localStorage.getItem(flagKey) === '1') return;
+  let data;
+  try {
+    const res = await fetch(`${LOG_ENDPOINT}?action=progresso&id=${encodeURIComponent(SHEET_ID)}`, { cache: 'no-store' });
+    if (!res.ok) return;                                   // blip → não marca flag, retenta depois
+    data = await res.json();
+  } catch (_) { return; }
+  // resposta degradada / .gs antigo (sem `atual`) → aborta sem marcar a flag
+  if (!data || !Array.isArray(data.done) || typeof data.atual === 'undefined') return;
+  const serverSet = new Set();
+  data.done.forEach(d => serverSet.add(`${d.w}|${d.di}|${d.ei}`)); // o que o servidor CONHECE
+  // Protege marca pendente (fila offline, ainda não subiu) e a feita NESTA sessão
+  // (em voo): sem o servidor confirmar, não dá pra chamar de legado — senão um race
+  // apagaria marca recém-feita. Legado = o que não está em lugar nenhum desses.
+  const pendingSet = new Set();
+  try { _syncQueueGet('done').forEach(p => pendingSet.add(`${p.w}|${p.di}|${p.ei}`)); } catch (_) {}
+  const pref = `gh_done_${STUDENT_ID}_w`;
+  let cleared = 0;
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const k = localStorage.key(i);
+    if (!k || !k.startsWith(pref)) continue;
+    const m = k.slice(pref.length).match(/^(\d+)_d(\d+)_e(\d+)$/); // "<w>_d<di>_e<ei>"
+    if (!m) continue;
+    const kk = `${m[1]}|${m[2]}|${m[3]}`;
+    if (!serverSet.has(kk) && !pendingSet.has(kk) && !_doneMarkedThisSession.has(kk)) { localStorage.removeItem(k); cleared++; }
+  }
+  localStorage.setItem(flagKey, '1');
+  if (cleared > 0) {
+    console.log(`[gh] Varredura legado: ${cleared} marca(s) local-only limpa(s)`);
+    if (typeof renderExercises === 'function' && document.getElementById('exerciseContainer')) renderExercises();
+  }
+}
 
 // Migração one-time: traz keys legadas (`gh_done_<id>_YYYY-MM-DD_dN_eN`) das
 // últimas 7 datas pro novo formato (`gh_done_<id>_w<currentWeek>_dN_eN`),
@@ -6548,6 +6600,9 @@ async function loadFromSheets() {
     // flush das pendencias offline por ultimo (push local→servidor). Nao segura render nem restore.
     // (flushSyncQueues tem guard de reentrancia; o restore acima e if-empty, entao nao ha corrida de dado.)
     await flushSyncQueues().catch(() => {});
+    // DEPOIS do flush: limpa a marca de "feito" local-only legada (1x por aluno).
+    // Tem que ser pós-flush pra não confundir marca enfileirada (recém-subida) com legado.
+    sweepLegacyDoneLocalOnly_().catch(() => {});
     checkFotosBannerOnLoad();
     checkChatBannerOnLoad();
 
