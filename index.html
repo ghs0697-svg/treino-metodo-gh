@@ -3783,25 +3783,30 @@ const params = new URLSearchParams(window.location.search);
 let SHEET_ID = params.get('sheet');
 let TAB_NAME = params.get('tab');
 
-// PWA: se abriu sem parâmetros mas com flag de instalação PWA do aluno, recuperar
-// Só recupera se NÃO estiver na raiz limpa (treinador) — detecta via referrer ou flag
+// Abriu SEM o link pessoal? (o ícone da home tem start_url sem ?sheet=, ou abriu numa aba)
+// Recupera qual aluno é da memória do aparelho (gh_pwa_params). ANTES isto era gated por
+// isPWA (standalone) — frágil: quando a detecção falhava (ou o aluno abria numa aba), ele
+// caía no portão do treinador e NADA salvava — marca ia pro id "demo" (caso Hugo Guenzo).
+// Agora recupera SEMPRE que houver aluno salvo. O TREINADOR força o painel com ?editor
+// (ou ?admin), que pula a recuperação e cai no portão de senha (o painel é protegido por
+// login de qualquer forma, então recuperar o aluno aqui não expõe o editor).
 if (!SHEET_ID && !TAB_NAME) {
-  const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-  if (isPWA) {
+  const forceEditor = params.has('editor') || params.has('admin');
+  if (!forceEditor) {
     const saved = localStorage.getItem('gh_pwa_params');
     if (saved) {
       try {
         const p = JSON.parse(saved);
-        SHEET_ID = p.sheet;
-        TAB_NAME = p.tab;
-      } catch(e) {}
+        SHEET_ID = p.sheet || SHEET_ID;
+        TAB_NAME = p.tab || TAB_NAME;
+      } catch (e) {}
     }
   }
 }
 
-// Salvar parâmetros para o PWA (só se veio pela URL)
-if (params.get('sheet') && params.get('tab')) {
-  localStorage.setItem('gh_pwa_params', JSON.stringify({ sheet: params.get('sheet'), tab: params.get('tab') }));
+// Salva o aluno pra recuperar nas próximas aberturas sem link (tab opcional → default TREINO)
+if (params.get('sheet')) {
+  localStorage.setItem('gh_pwa_params', JSON.stringify({ sheet: params.get('sheet'), tab: params.get('tab') || 'TREINO' }));
 }
 
 // STUDENT_ID baseado em SHEET_ID (único e estável por aluno).
