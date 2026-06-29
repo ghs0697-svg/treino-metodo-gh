@@ -583,6 +583,11 @@
   .chat-cta { align-self: flex-start; margin-top: -2px; }
   .chat-typing { align-self: flex-start; color: #888; font-size: 12px; padding: 6px 10px; }
   .chat-typing span { display: inline-block; animation: chatBlink 1.2s infinite both; }
+  /* Abas dúvida/ajuste: o aluno escolhe o tipo (a classificação por IA erra em casos-limite) */
+  .chat-mode-tabs { display: flex; border: 1px solid var(--gold-dim); border-radius: 10px; overflow: hidden; margin-bottom: 8px; }
+  .chat-mode-tab { flex: 1; padding: 9px 8px; background: transparent; border: none; color: #aaa; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background .15s, color .15s; }
+  .chat-mode-tab + .chat-mode-tab { border-left: 1px solid var(--gold-dim); }
+  .chat-mode-tab.active { background: var(--gold); color: #111; }
   .chat-typing span:nth-child(2) { animation-delay: 0.2s; }
   .chat-typing span:nth-child(3) { animation-delay: 0.4s; }
   @keyframes chatBlink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
@@ -3510,6 +3515,10 @@
       <b>Exames, hormônios e peptídeos</b> não passam por aqui. Esses são só no <a href="https://wa.me/555520131470" target="_blank" rel="noopener" style="color:#25D366;text-decoration:underline;font-weight:600;">WhatsApp de suporte</a>, onde o GH valida e te orienta direto. Foto pra avaliar ou dúvida mais robusta, também por lá <b>(de segunda à sexta, em horário comercial)</b>.
     </p>
     <div class="chat-msgs" id="chatMsgs"></div>
+    <div class="chat-mode-tabs" id="chatModeTabs">
+      <button type="button" class="chat-mode-tab active" id="chatModeDuvida" onclick="setChatMode('duvida')">💬 Tirar dúvida</button>
+      <button type="button" class="chat-mode-tab" id="chatModeAjuste" onclick="setChatMode('ajuste')">🔧 Pedir ajuste</button>
+    </div>
     <div style="display:flex;gap:8px;align-items:flex-end;margin-top:10px;">
       <textarea id="chatInput" rows="1" maxlength="600" placeholder="Pergunta o que quiser…" oninput="_chatAutogrow(this)" onkeydown="_chatKeydown(event)" style="flex:1;padding:10px;background:#222;border:1px solid var(--gold-dim);color:var(--white);border-radius:10px;font-size:13px;font-family:inherit;line-height:1.4;box-sizing:border-box;resize:none;max-height:100px;overflow-y:auto;"></textarea>
       <button class="te-btn" id="chatSendBtn" onclick="sendChat()" style="flex:0 0 auto;padding:10px 16px;">Enviar</button>
@@ -7960,6 +7969,21 @@ let _chatHistory = [];   // [{role:'user'|'assistant', content}]
 let _chatBusy = false;
 let _proxReajusteBR = ''; // data da próxima anamnese de reajuste (col M) — vai no payload do chat
 let _chatLoaded = false;
+let _chatMode = 'duvida'; // 'duvida' (assistente responde) | 'ajuste' (registra pro GH). O aluno escolhe
+
+// Aluno alterna entre tirar dúvida e pedir ajuste. Determinístico: tira a decisão da IA
+// (que classifica errado casos-limite tipo "posso tomar sopa?" → dúvida virando ajuste).
+function setChatMode(m) {
+  _chatMode = (m === 'ajuste') ? 'ajuste' : 'duvida';
+  const bD = document.getElementById('chatModeDuvida');
+  const bA = document.getElementById('chatModeAjuste');
+  if (bD) bD.classList.toggle('active', _chatMode === 'duvida');
+  if (bA) bA.classList.toggle('active', _chatMode === 'ajuste');
+  const inp = document.getElementById('chatInput');
+  if (inp) inp.placeholder = (_chatMode === 'ajuste')
+    ? 'Descreve o ajuste (ex: trocar exercício, mudar refeição)…'
+    : 'Pergunta o que quiser…';
+}
 
 function _chatKey() { return 'gh_chat_' + (typeof SHEET_ID !== 'undefined' ? SHEET_ID : 'x'); }
 function _chatLoadHistory() {
@@ -7987,7 +8011,7 @@ function _chatRenderAll() {
   if (!box) return;
   box.innerHTML = '';
   if (!_chatHistory.length) {
-    box.appendChild(_chatBubble('assistant', 'Oi! 🤖 Sou o assistente do GH. Tira dúvida do teu treino/dieta/suplemento, ou pede um ajuste (trocar exercício, mudar refeição...). Eu te respondo na hora ou registro o pedido pro GH.\n\n⚠️ Exames, hormônios e peptídeos só no WhatsApp de suporte. Esses o GH te orienta pessoalmente.'));
+    box.appendChild(_chatBubble('assistant', 'Oi! 🤖 Sou o assistente do GH. Escolhe ali em cima:\n\n💬 Tirar dúvida: eu respondo na hora sobre treino, dieta e suplementação.\n🔧 Pedir ajuste: registro teu pedido pro GH (trocar exercício, mudar refeição...).\n\n⚠️ Exames, hormônios e peptídeos só no WhatsApp de suporte. Esses o GH te orienta pessoalmente.'));
     return;
   }
   _chatHistory.forEach(m => box.appendChild(_chatBubble(m.role, m.content)));
@@ -8082,6 +8106,7 @@ function openChatModal() {
   document.getElementById('floatBtn').classList.remove('open');
   if (!_chatLoaded) { _chatLoadHistory(); _chatLoaded = true; }
   _chatRenderAll();
+  setChatMode('duvida'); // sempre abre em "tirar dúvida" (reseta a aba + placeholder)
   teShow('chatModal');
   setTimeout(() => { const inp = document.getElementById('chatInput'); if (inp) inp.focus(); _chatScrollBottom(); }, 120);
 }
@@ -8107,6 +8132,34 @@ async function sendChat() {
   box.appendChild(_chatBubble('user', text));
   _chatScrollBottom();
 
+  // MODO AJUSTE: o aluno escolheu "pedir ajuste" → registra DIRETO na caixa do GH, sem
+  // passar pela classificação por IA (que erra casos-limite). Determinístico, igual ao form.
+  if (_chatMode === 'ajuste') {
+    const reqId = 'aj_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    const ctx = _chatGuessContexto(text);
+    _chatRegisterAjusteAuto(text, reqId, ctx);
+    const resposta = '✅ Anotado! Já registrei teu pedido de ajuste pro GH. Fica de olho no banner de Ajuste no topo da página que ele resolve por aí 💪';
+    box.appendChild(_chatBubble('assistant', resposta));
+    _chatHistory.push({ role: 'assistant', content: resposta });
+    _chatAddCta(reqId, text, ctx);
+    _chatSaveHistory();
+    _chatScrollBottom();
+    try {
+      fetch(LOG_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          type: 'chat_log',
+          studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+          sheetId: SHEET_ID, pergunta: text, resposta: resposta, tipo: 'pro_gh'
+        }),
+        keepalive: true, redirect: 'follow'
+      }).catch(() => {});
+    } catch (_) {}
+    _chatBusy = false; sendBtn.disabled = false; inp.focus();
+    return;
+  }
+
   const typing = document.createElement('div');
   typing.className = 'chat-typing';
   typing.id = 'chatTyping';
@@ -8121,26 +8174,19 @@ async function sendChat() {
       body: JSON.stringify({
         sheetId: SHEET_ID,
         mensagem: text,
+        modo: 'duvida', // o aluno escolheu "tirar dúvida" → o bot responde, não registra ajuste
         historico: _chatHistory.slice(-11, -1), // até 10 trocas anteriores (sem a atual)
         proxReajuste: _proxReajusteBR || '' // data da próxima anamnese de reajuste, pro bot usar se o aluno perguntar
       })
     });
     const j = await r.json().catch(() => ({}));
     const t1 = document.getElementById('chatTyping'); if (t1) t1.remove();
-    let resposta = j.resposta || 'Não consegui responder agora, tenta de novo daqui a pouco 🙏';
-    let _ajReqId = '', _ajCtx = '';
-    if (j.tipo === 'pro_gh') {
-      // Ajuste real: registra automático na caixa (garantido, sem depender de clique).
-      // reqId permite o aluno anexar foto depois SEM duplicar a linha (dedup no Apps Script).
-      _ajReqId = 'aj_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-      _ajCtx = _chatGuessContexto(text);
-      _chatRegisterAjusteAuto(text, _ajReqId, _ajCtx);
-      resposta = '✅ Anotado! Já registrei teu pedido de ajuste pro GH. Fica de olho no banner de Ajuste no topo da página que ele resolve por aí 💪';
-    }
+    const resposta = j.resposta || 'Não consegui responder agora, tenta de novo daqui a pouco 🙏';
     box.appendChild(_chatBubble('assistant', resposta));
     _chatHistory.push({ role: 'assistant', content: resposta });
-    if (j.tipo === 'pro_gh') _chatAddCta(_ajReqId, text, _ajCtx);
-    else if (j.tipo === 'pro_suporte') _chatAddSupportCta();
+    // MODO DÚVIDA: nunca registra ajuste (ignora pro_gh; pra pedir ajuste o aluno usa a aba
+    // "Pedir ajuste"). pro_suporte (hormônio/exame/clínico) ainda roteia pro WhatsApp.
+    if (j.tipo === 'pro_suporte') _chatAddSupportCta();
     _chatSaveHistory();
     _chatScrollBottom();
     // Log da conversa pro GH (aba CHAT_LOGS do mestre) — fire-and-forget, não trava o chat
