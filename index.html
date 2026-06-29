@@ -3798,11 +3798,13 @@ let TAB_NAME = params.get('tab');
 // Recupera qual aluno é da memória do aparelho (gh_pwa_params). ANTES isto era gated por
 // isPWA (standalone) — frágil: quando a detecção falhava (ou o aluno abria numa aba), ele
 // caía no portão do treinador e NADA salvava — marca ia pro id "demo" (caso Hugo Guenzo).
-// Agora recupera SEMPRE que houver aluno salvo. O TREINADOR força o painel com ?editor
-// (ou ?admin), que pula a recuperação e cai no portão de senha (o painel é protegido por
-// login de qualquer forma, então recuperar o aluno aqui não expõe o editor).
+// Agora recupera SEMPRE que houver aluno salvo. O TREINADOR força o painel com ?editor,
+// ?admin ou ?edit=1, que pulam a recuperação e caem no portão de senha (o painel é protegido
+// por login de qualquer forma, então recuperar o aluno aqui não expõe o editor). Sem isso o
+// bookmark ?edit=1 do GH recuperava o último aluno do aparelho e abria o editor nele (Elton).
+// Os links de recado (?edit=1&sheet=ID) seguem abrindo o aluno certo: o sheet vem da URL.
 if (!SHEET_ID && !TAB_NAME) {
-  const forceEditor = params.has('editor') || params.has('admin');
+  const forceEditor = params.has('editor') || params.has('admin') || params.get('edit') === '1';
   if (!forceEditor) {
     const saved = localStorage.getItem('gh_pwa_params');
     if (saved) {
