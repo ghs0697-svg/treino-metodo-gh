@@ -8081,6 +8081,50 @@ function _chatRegisterAjusteAuto(pedido, reqId, contexto) {
     }).catch(() => {});
   } catch (_) {}
 }
+// Registra o ajuste + confirma no chat + CTA de foto + log. Usado pelo modo "ajuste" (aluno
+// escolheu a aba) E pelo botão do nudge (aluno confirmou o palpite do bot). Determinístico.
+function _chatConfirmAjuste(pedido, contexto) {
+  const reqId = 'aj_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  const ctx = contexto || _chatGuessContexto(pedido);
+  _chatRegisterAjusteAuto(pedido, reqId, ctx);
+  const box = document.getElementById('chatMsgs');
+  const resposta = '✅ Anotado! Já registrei teu pedido de ajuste pro GH. Fica de olho no banner de Ajuste no topo da página que ele resolve por aí 💪';
+  if (box) box.appendChild(_chatBubble('assistant', resposta));
+  _chatHistory.push({ role: 'assistant', content: resposta });
+  _chatAddCta(reqId, pedido, ctx);
+  _chatSaveHistory();
+  _chatScrollBottom();
+  try {
+    fetch(LOG_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        type: 'chat_log',
+        studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+        sheetId: SHEET_ID, pergunta: pedido, resposta: resposta, tipo: 'pro_gh'
+      }),
+      keepalive: true, redirect: 'follow'
+    }).catch(() => {});
+  } catch (_) {}
+}
+// Nudge: o aluno mandou em modo DÚVIDA, mas o bot acha que é pedido de ajuste (pro_gh). NÃO
+// auto-registra (a decisão é do aluno) — avisa que não foi marcado como ajuste e oferece
+// registrar com 1 toque. Aumenta a assertividade sem tirar o palpite do bot.
+function _chatAddAjusteNudge(pedido) {
+  const box = document.getElementById('chatMsgs');
+  if (!box) return;
+  box.appendChild(_chatBubble('assistant', '👉 Isso me parece um pedido de ajuste, mas tu mandaste como dúvida. Se tu quer que o GH MUDE teu protocolo (trocar exercício, mudar refeição...), toca no botão pra eu registrar:'));
+  const wrap = document.createElement('div');
+  wrap.className = 'chat-cta';
+  const btn = document.createElement('button');
+  btn.className = 'te-btn';
+  btn.style.cssText = 'padding:8px 14px;font-size:12px;';
+  btn.textContent = '🔧 Registrar como ajuste pro GH';
+  btn.onclick = () => { btn.disabled = true; btn.style.opacity = '0.5'; _chatConfirmAjuste(pedido); };
+  wrap.appendChild(btn);
+  box.appendChild(wrap);
+  _chatScrollBottom();
+}
 function _chatAutogrow(el) {
   el.style.height = 'auto';
   el.style.height = Math.min(100, el.scrollHeight) + 'px';
@@ -8135,27 +8179,7 @@ async function sendChat() {
   // MODO AJUSTE: o aluno escolheu "pedir ajuste" → registra DIRETO na caixa do GH, sem
   // passar pela classificação por IA (que erra casos-limite). Determinístico, igual ao form.
   if (_chatMode === 'ajuste') {
-    const reqId = 'aj_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-    const ctx = _chatGuessContexto(text);
-    _chatRegisterAjusteAuto(text, reqId, ctx);
-    const resposta = '✅ Anotado! Já registrei teu pedido de ajuste pro GH. Fica de olho no banner de Ajuste no topo da página que ele resolve por aí 💪';
-    box.appendChild(_chatBubble('assistant', resposta));
-    _chatHistory.push({ role: 'assistant', content: resposta });
-    _chatAddCta(reqId, text, ctx);
-    _chatSaveHistory();
-    _chatScrollBottom();
-    try {
-      fetch(LOG_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-          type: 'chat_log',
-          studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
-          sheetId: SHEET_ID, pergunta: text, resposta: resposta, tipo: 'pro_gh'
-        }),
-        keepalive: true, redirect: 'follow'
-      }).catch(() => {});
-    } catch (_) {}
+    _chatConfirmAjuste(text);
     _chatBusy = false; sendBtn.disabled = false; inp.focus();
     return;
   }
@@ -8174,7 +8198,7 @@ async function sendChat() {
       body: JSON.stringify({
         sheetId: SHEET_ID,
         mensagem: text,
-        modo: 'duvida', // o aluno escolheu "tirar dúvida" → o bot responde, não registra ajuste
+        modo: 'duvida', // aluno em "tirar dúvida": backend deve RESPONDER (não só classificar) e SEGUIR devolvendo tipo como palpite (pro_gh vira nudge no app, sem auto-registrar). NÃO suprimir pro_gh.
         historico: _chatHistory.slice(-11, -1), // até 10 trocas anteriores (sem a atual)
         proxReajuste: _proxReajusteBR || '' // data da próxima anamnese de reajuste, pro bot usar se o aluno perguntar
       })
@@ -8184,9 +8208,11 @@ async function sendChat() {
     const resposta = j.resposta || 'Não consegui responder agora, tenta de novo daqui a pouco 🙏';
     box.appendChild(_chatBubble('assistant', resposta));
     _chatHistory.push({ role: 'assistant', content: resposta });
-    // MODO DÚVIDA: nunca registra ajuste (ignora pro_gh; pra pedir ajuste o aluno usa a aba
-    // "Pedir ajuste"). pro_suporte (hormônio/exame/clínico) ainda roteia pro WhatsApp.
+    // MODO DÚVIDA: o bot responde. Se ele achar que é ajuste (pro_gh), NÃO auto-registra —
+    // avisa que não foi marcado como ajuste e oferece registrar com 1 toque (a decisão fica
+    // com o aluno, mas o palpite do bot continua valendo). pro_suporte → WhatsApp.
     if (j.tipo === 'pro_suporte') _chatAddSupportCta();
+    else if (j.tipo === 'pro_gh') _chatAddAjusteNudge(text);
     _chatSaveHistory();
     _chatScrollBottom();
     // Log da conversa pro GH (aba CHAT_LOGS do mestre) — fire-and-forget, não trava o chat
