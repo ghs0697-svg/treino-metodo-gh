@@ -11661,6 +11661,11 @@ function openTrainerSheetModal() {
 }
 
 let dietaData = null;
+// Linhas de alimento recém-adicionadas pelo "+ Alimento" (rastreadas por REFERÊNCIA do array).
+// Um alimento vazio é ['','','',''] = idêntico a uma linha separadora em branco; sem isto o
+// parser pulava a linha nova (não renderizava input pro treinador digitar). Só as rastreadas
+// aqui escapam do skip de linha-vazia; as separadoras pré-existentes seguem puladas.
+const _dietaNewFoodRows = new Set();
 let currentEditMode = 'treino'; // 'treino' | 'dieta'
 
 async function trainerLoadSheet(presetSid) {
@@ -11691,6 +11696,7 @@ async function trainerLoadSheet(presetSid) {
     teUpdateUndoBtn();
     if (!trainerData && !dietaData) throw new Error('aba TREINO ou DIETA não encontrada (verifique compartilhamento)');
     DIETA_OPEN_BLOCKS.clear(); // reset de blocos abertos pra novo aluno
+    _dietaNewFoodRows.clear(); // descarta referências de linhas do aluno anterior
     teHide('trainerSheetModal');
     document.getElementById('trainerEditor').classList.add('show');
     document.body.style.overflow = 'hidden';
@@ -12827,7 +12833,8 @@ function parseDietaSections(rows) {
   rows.forEach((r, idx) => {
     const sec = String(r[0] || '').toLowerCase().trim();
     const item = String(r[1] || '').trim();
-    if (!sec && !item) return; // linha vazia, pula
+    const isNewFood = _dietaNewFoodRows.has(r); // alimento recém-adicionado (vazio) — não pular
+    if (!sec && !item && !isNewFood) return; // linha vazia (separadora), pula
 
     switch (sec) {
       case 'info':
@@ -12868,8 +12875,8 @@ function parseDietaSections(rows) {
         sections.proto.push({ idx, type: sec });
         break;
       case '':
-        // alimento (col A vazio mas tem item)
-        if (item) {
+        // alimento (col A vazio): renderiza se tem nome OU se foi recém-adicionado (input vazio pra digitar)
+        if (item || isNewFood) {
           const food = { idx, type: 'alimento' };
           if (currentOp) currentOp.items.push(food);
           else if (currentRef) currentRef.items.push(food);
@@ -13147,7 +13154,9 @@ function dietaFindLastItemOfOp(opIdx) {
 function dietaAddFood(parentIdx, isOpcao) {
   teSnapshot();
   const last = isOpcao ? dietaFindLastItemOfOp(parentIdx) : dietaFindLastItemOfRef(parentIdx);
-  dietaInsertAfter(last, ['', '', '', '']);
+  const row = ['', '', '', '']; // rastreia por referência pra o parser não pular (vazia = separadora)
+  _dietaNewFoodRows.add(row);
+  dietaInsertAfter(last, row);
   renderDietaEditor();
 }
 
