@@ -673,6 +673,7 @@
   .renov-banner-txt { flex: 1; min-width: 0; }
   .renov-banner-cta { background: #25D366; color: #07310f; font-weight: 800; padding: 6px 13px; border-radius: 999px; text-decoration: none; white-space: nowrap; flex-shrink: 0; }
   .renov-banner-x { background: none; border: none; color: inherit; opacity: 0.7; font-size: 18px; line-height: 1; cursor: pointer; padding: 0 2px; flex-shrink: 0; }
+  .renov-banner-done { background: none; border: none; color: inherit; opacity: 0.85; font-size: 11.5px; font-weight: 600; text-decoration: underline; cursor: pointer; padding: 0 2px; flex-shrink: 0; white-space: nowrap; font-family: inherit; }
 
   /* ── Aviso de reajuste/ajuste no protocolo ── */
   .proto-aviso { display: flex; align-items: center; gap: 12px; margin: 12px 14px 0; padding: 12px 14px; background: var(--card); border: 1px solid rgba(212,175,106,0.42); border-radius: 14px; box-shadow: var(--hairline); }
@@ -3218,6 +3219,7 @@
 <div id="reajusteBanner" class="renov-banner reaj">
   <span class="renov-banner-txt" id="reajusteBannerTxt"></span>
   <a class="renov-banner-cta" id="reajusteBannerCta" href="#" target="_blank" rel="noopener">Fazer reajuste</a>
+  <button class="renov-banner-done" id="reajusteBannerDone" type="button" onclick="reajusteBannerJaRespondi()">Já respondi</button>
   <button class="renov-banner-x" onclick="reajusteBannerDismiss()" aria-label="Fechar">&times;</button>
 </div>
 <div id="dietDiaryBanner" class="renov-banner diary">
@@ -10323,6 +10325,7 @@ var REAJ_FORM = 'https://forms.gle/6NbYKYDQy7ANjHLM6'; // anamnese de reajuste (
 function reajusteBannerShow(dias) {
   try {
     if (sessionStorage.getItem('reajBannerOff') === '1') return;
+    if (_reajRespondidoEsteCiclo()) return; // aluno já confirmou "Já respondi" pra esta anamnese (volta no próximo ciclo)
     var rv = document.getElementById('renovBanner');
     if (rv && rv.classList.contains('show')) return; // renovação tem precedência
     var b = document.getElementById('reajusteBanner'); if (!b) return;
@@ -10337,6 +10340,35 @@ function reajusteBannerShow(dias) {
 }
 function reajusteBannerDismiss() {
   try { sessionStorage.setItem('reajBannerOff', '1'); var b = document.getElementById('reajusteBanner'); if (b) b.classList.remove('show'); } catch (e) {}
+}
+// Chave da confirmação "Já respondi", amarrada à DATA do reajuste atual (col M). Quando o
+// ciclo avança (nova data), a chave muda e o banner volta sozinho pro próximo reajuste.
+function _reajRespKey() {
+  var id = (typeof STUDENT_ID !== 'undefined' && STUDENT_ID) ? STUDENT_ID : (typeof SHEET_ID !== 'undefined' ? SHEET_ID : 'x');
+  return 'gh_reajResp_' + id + '_' + (_proxReajusteBR || '');
+}
+function _reajRespondidoEsteCiclo() {
+  try { return !!_proxReajusteBR && localStorage.getItem(_reajRespKey()) === '1'; } catch (e) { return false; }
+}
+// "Já respondi a anamnese": dispensa DURÁVEL pra este ciclo (não re-aparece toda sessão).
+// Volta sozinho no próximo reajuste, quando a data da col M avança (chave nova).
+function reajusteBannerJaRespondi() {
+  try {
+    if (_proxReajusteBR) localStorage.setItem(_reajRespKey(), '1');
+    sessionStorage.setItem('reajBannerOff', '1');
+    var b = document.getElementById('reajusteBanner'); if (!b) return;
+    var txt = document.getElementById('reajusteBannerTxt');
+    var cta = document.getElementById('reajusteBannerCta');
+    var done = document.getElementById('reajusteBannerDone');
+    if (txt) txt.textContent = '✅ Valeu! Te aviso no teu próximo reajuste.';
+    if (cta) cta.style.display = 'none';
+    if (done) done.style.display = 'none';
+    setTimeout(function () {
+      b.classList.remove('show');
+      if (cta) cta.style.display = ''; // restaura pro próximo ciclo
+      if (done) done.style.display = '';
+    }, 1600);
+  } catch (e) {}
 }
 
 // ── Aviso da novidade do diário alimentar (precedência mais BAIXA: só se não tem renov/reajuste) ──
