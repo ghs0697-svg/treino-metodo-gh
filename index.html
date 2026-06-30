@@ -13042,9 +13042,13 @@ function showFoodSuggest(input, idx) {
   if (!matches.length) {
     sug.innerHTML = '<div class="food-sug-empty">Nenhum match — digita texto livre</div>';
   } else {
+    // Args como string JS entre aspas SIMPLES (JSON.stringify usava aspas DUPLAS dentro do
+    // atributo onclick="..." → a 1ª " fechava o atributo e o handler virava HTML quebrado →
+    // clicar não fazia nada). onmousedown dispara ANTES do blur do input (igual ao editor antigo).
+    const jsArg = s => String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
     sug.innerHTML = matches.map(m => {
       const meta = [m.q, m.o].filter(Boolean).join(' · ');
-      return `<div class="food-sug-item" onclick="pickFood(${idx}, ${JSON.stringify(m.n)}, ${JSON.stringify(m.q)}, ${JSON.stringify(m.o || '')})">
+      return `<div class="food-sug-item" onmousedown="pickFood(${idx}, '${jsArg(m.n)}', '${jsArg(m.q)}', '${jsArg(m.o || '')}')">
         <strong>${escTrainer(m.n)}</strong>
         ${meta ? `<span class="food-sug-meta">${escTrainer(meta)}</span>` : ''}
       </div>`;
