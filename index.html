@@ -5931,7 +5931,11 @@ function notifyDayCompletion(di, shared) {
 }
 function allDoneOfDay(di) {
   if (!WORKOUT[di]) return false;
-  const real = WORKOUT[di].exercises.map((ex, ei) => ({ ex, ei }));
+  // aquecimento NÃO conta (igual ao contador "X/N" e ao total do ranking, que filtram warmup).
+  // Sem isto o dia nunca fechava: o aluno marcava todos os exercícios reais (contador cheio),
+  // mas allDoneOfDay exigia o warmup também (que o contador nem mostra) → "dia concluído"
+  // nunca disparava → LOGS vazio → ranking de treino zerado E follow-sumidos flagando ativo.
+  const real = WORKOUT[di].exercises.map((ex, ei) => ({ ex, ei })).filter(o => !o.ex.warmup);
   if (!real.length) return false;
   return real.every(o => isDone(di, o.ei));
 }
