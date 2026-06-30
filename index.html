@@ -11125,7 +11125,31 @@ function copyLink() {
 // ══════════════════════════════════════════════════════════════
 // ══ INICIALIZAÇÃO ══
 // ══════════════════════════════════════════════════════════════
+// Heartbeat: registra que o aluno ABRIU o app (mesmo sem marcar nada). É o sinal mais forte
+// de "está usando o app" pro follow-sumidos (pega quem só abre e olha). 1 por dia (dedup
+// local), fire-and-forget. Treinador (?edit=1) e demo não contam.
+function _sendAppPing() {
+  try {
+    if (typeof SHEET_ID === 'undefined' || !SHEET_ID || SHEET_ID === 'demo') return;
+    if (new URLSearchParams(location.search).get('edit') === '1') return;
+    var dia = (typeof todayKey === 'function') ? todayKey() : new Date().toISOString().slice(0, 10);
+    var key = 'gh_ping_' + SHEET_ID + '_' + dia;
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, '1');
+    fetch(LOG_ENDPOINT, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        type: 'ping', sheetId: SHEET_ID,
+        studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+        date: dia, ts: new Date().toISOString()
+      }),
+      keepalive: true, redirect: 'follow'
+    }).catch(function () {});
+  } catch (_) {}
+}
+
 if (SHEET_ID && TAB_NAME) {
+  _sendAppPing(); // marca a abertura (independe de carregar treino/dieta)
   // Modo aluno — carregar dieta + treino (ambos independentes)
   // TAB_NAME é só preferência de qual tab abrir primeiro
   loadDietFromSheets().then(() => {
