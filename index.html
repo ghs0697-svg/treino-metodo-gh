@@ -4488,7 +4488,24 @@ function _exAtivoSub_(d, e) {
   if (/[ab]$/.test(String(e))) return false;
   try { const a = _exAtivo(d, parseInt(e)); return !!(a && a.sub); } catch (_) { return false; }
 }
+// ── Bloco/ciclo do reajuste ──────────────────────────────────────────────
+// A carga é keyed por semana (1..N) SEM dimensão de bloco, então um reajuste (bloco novo)
+// reaproveitaria as mesmas semanas e o campo mostraria peso do ciclo anterior. Carimbamos cada
+// slot com QUANDO foi salvo (blkKey, ms) e escondemos DO CAMPO os slots anteriores ao bloco atual
+// (CURRENT_BLOCK_START = data do "Protocolo Atual", vinda do sync do progresso). NUNCA apaga: o
+// peso segue no localStorage e no lembrete "Ant" (getPrevCarga lê cru, ignora o bloco).
+let CURRENT_BLOCK_START = 0;   // ms; 0 = desconhecido → não filtra (seguro)
+function blkKey(d, e, w) { return `gh_blk_${STUDENT_ID}_d${d}_e${e}_w${w}`; }
+function _cargaBlocoAntigo(d, e, w) {
+  if (!(CURRENT_BLOCK_START > 0)) return false;                 // sem blockStart → não esconde
+  const sf = _cargaSlotSuffix(d, e);
+  const b = localStorage.getItem(blkKey(d, e, w) + sf);
+  if (b == null || b === '') return false;                      // sem carimbo (legado) → não esconde (retrocompat)
+  const n = Number(b);
+  return isFinite(n) && n < CURRENT_BLOCK_START;                // salvo antes do bloco atual → esconde do campo
+}
 function loadCarga(d, e, w) {
+  if (_cargaBlocoAntigo(d, e, w)) return "";                    // ciclo anterior → campo limpo (segue no lembrete)
   const sf = _cargaSlotSuffix(d, e);
   if (sf) return localStorage.getItem(storageKey(d, e, w) + sf) || "";                        // substituto: slot proprio
   return _cargaValida(d, e, w) ? (localStorage.getItem(storageKey(d, e, w)) || "") : "";       // original: legado + validacao
@@ -4496,6 +4513,7 @@ function loadCarga(d, e, w) {
 function saveCarga(d, e, w, v) {
   const sf = _cargaSlotSuffix(d, e);
   localStorage.setItem(storageKey(d, e, w) + sf, v);
+  localStorage.setItem(blkKey(d, e, w) + sf, String(Date.now()));   // carimba: salvo agora = bloco atual
   if (!sf) _stampExn(d, e, w);
   syncCargaToServer_(d, e, w, v, null);
 }
@@ -4521,6 +4539,7 @@ function _prevMarca(keyFn, d, e, w) {
 }
 function getPrevCarga(d, e, w) { return _prevMarca(storageKey, d, e, w); }
 function loadPlacas(d, e, w) {
+  if (_cargaBlocoAntigo(d, e, w)) return "";                    // ciclo anterior → campo limpo
   const sf = _cargaSlotSuffix(d, e);
   if (sf) return localStorage.getItem(placasKey(d, e, w) + sf) || "";
   return _cargaValida(d, e, w) ? (localStorage.getItem(placasKey(d, e, w)) || "") : "";
@@ -4528,6 +4547,7 @@ function loadPlacas(d, e, w) {
 function savePlacas(d, e, w, v) {
   const sf = _cargaSlotSuffix(d, e);
   localStorage.setItem(placasKey(d, e, w) + sf, v);
+  localStorage.setItem(blkKey(d, e, w) + sf, String(Date.now()));   // carimba bloco atual
   if (!sf) _stampExn(d, e, w);
   syncCargaToServer_(d, e, w, null, v);
 }
@@ -4720,17 +4740,21 @@ function _restoreCargasRealign(cargas, ifEmpty) {
   items.sort((a, b) => (a.moved ? 1 : 0) - (b.moved ? 1 : 0)); // não-movidos (a verdade da posição) primeiro
   const seen = new Set();
   items.forEach(({ c, di, ei, suffix, sub }) => {
-    const kC = storageKey(di, ei, c.w) + suffix, kP = placasKey(di, ei, c.w) + suffix;
+    const kC = storageKey(di, ei, c.w) + suffix, kP = placasKey(di, ei, c.w) + suffix, kB = blkKey(di, ei, c.w) + suffix;
+    let wrote = false;
     if (c.carga != null && c.carga !== '' && !seen.has(kC) && (!ifEmpty || !localStorage.getItem(kC))) {
       localStorage.setItem(kC, String(c.carga));
       if (!sub && c.exercicio) localStorage.setItem(exnKey(di, ei, c.w), String(c.exercicio));   // exn so pro slot original
-      seen.add(kC); n++;
+      seen.add(kC); n++; wrote = true;
     }
     if (c.placas != null && c.placas !== '' && !seen.has(kP) && (!ifEmpty || !localStorage.getItem(kP))) {
       localStorage.setItem(kP, String(c.placas));
       if (!sub && c.exercicio) localStorage.setItem(exnKey(di, ei, c.w), String(c.exercicio));
-      seen.add(kP); n++;
+      seen.add(kP); n++; wrote = true;
     }
+    // carimba o bloco do slot pelo ts do servidor (só quando restauramos de fato): dispositivo
+    // novo/forceSync classifica ciclo atual x anterior sem depender de ordem de fetch.
+    if (wrote && c.ts != null) localStorage.setItem(kB, String(c.ts));
   });
   return n;
 }
@@ -4828,6 +4852,28 @@ async function syncDoneFromServer_() {
     // não restaura E limpa do local. Só mexe no checkbox; o ranking fica intacto.
     let atualMs = Number(data.atual);
     if (!(atualMs > 0) || atualMs > Date.now()) atualMs = 0;
+    // ── CARGA: mesmo gatilho do done, mas ESCONDE (nunca apaga) o peso do ciclo anterior. ──
+    // Seta o bloco atual (loadCarga/loadPlacas usam) e, quando o Protocolo Atual AVANÇA, carimba
+    // como "antigo" os slots de carga/placa ainda SEM carimbo (legado) → loadCarga limpa o campo
+    // no bloco novo. NUNCA deleta: o peso segue no localStorage e no lembrete "Ant". Baseline-guard:
+    // não carimba no 1º load (cargaSeen vazio), só quando a col E muda de fato.
+    if (atualMs) CURRENT_BLOCK_START = atualMs;
+    const cargaEpochKey = `gh_carga_atual_${STUDENT_ID}`;
+    const cargaSeen = Number(localStorage.getItem(cargaEpochKey)) || 0;
+    if (atualMs && cargaSeen && atualMs > cargaSeen) {
+      const marca = String(cargaSeen || 1);   // carimbo "antigo" (< atualMs → escondido do campo)
+      const pc = `gh_${STUDENT_ID}_d`, pp = `gh_placas_${STUDENT_ID}_d`, pb = `gh_blk_${STUDENT_ID}_`;
+      const toStamp = [];
+      for (let i = 0; i < localStorage.length; i++) {   // coleta primeiro (não mutar durante o loop)
+        const k = localStorage.key(i);
+        if (k && (k.startsWith(pc) || k.startsWith(pp))) toStamp.push(k);
+      }
+      toStamp.forEach(k => {
+        const bk = k.startsWith(pp) ? pb + k.slice(`gh_placas_${STUDENT_ID}_`.length) : pb + k.slice(`gh_${STUDENT_ID}_`.length);
+        if (localStorage.getItem(bk) == null) localStorage.setItem(bk, marca);   // só carimba legado (sem carimbo)
+      });
+    }
+    if (atualMs) localStorage.setItem(cargaEpochKey, String(atualMs));
     // Reajuste: a data do "Protocolo Atual" AVANÇOU desde a última vez que vimos
     // → ciclo novo → limpa TODAS as marcas locais por prefixo. Isso pega até a
     // marca local-only legada (anterior a 22/05, antes do backup no servidor) que
