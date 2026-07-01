@@ -4499,12 +4499,27 @@ function saveCarga(d, e, w, v) {
   if (!sf) _stampExn(d, e, w);
   syncCargaToServer_(d, e, w, v, null);
 }
-function getPrevCarga(d, e, w) {
-  if (w <= 1) return null;
+// Última marca conhecida do exercício (carga OU placas) pra referência "Ant".
+// Ordem de busca: (1) semanas anteriores do bloco atual, da mais recente pra mais antiga;
+// (2) semanas mais altas, que no keyspace reciclado guardam as sobras do bloco anterior.
+// Assim, quando o aluno reajusta e cai no início de um bloco novo (Semana 1 vazia), o
+// último peso do exercício CONTINUA aparecendo como lembrete. SÓ LEITURA: nunca grava,
+// nunca apaga, e respeita a validação de nome (caminho de carga é sagrado). w-1 presente
+// = comportamento de antes (retorna a semana imediatamente anterior).
+function _prevMarca(keyFn, d, e, w) {
   const sf = _cargaSlotSuffix(d, e);
-  if (sf) return localStorage.getItem(storageKey(d, e, w - 1) + sf) || null;
-  return _cargaValida(d, e, w - 1) ? (localStorage.getItem(storageKey(d, e, w - 1)) || null) : null;
+  const read = ww => {
+    if (sf) return localStorage.getItem(keyFn(d, e, ww) + sf) || null;
+    return _cargaValida(d, e, ww) ? (localStorage.getItem(keyFn(d, e, ww)) || null) : null;
+  };
+  for (let ww = w - 1; ww >= 1; ww--) { const v = read(ww); if (v) return v; }
+  // varre semanas altas por um teto generoso (não só TOTAL_WEEKS): se o link vier com menos
+  // semanas do que o aluno já treinou, o peso das semanas altas ainda vira lembrete "Ant".
+  const hi = Math.max((typeof TOTAL_WEEKS === 'number' ? TOTAL_WEEKS : 8), 24);
+  for (let ww = hi; ww > w; ww--) { const v = read(ww); if (v) return v; }
+  return null;
 }
+function getPrevCarga(d, e, w) { return _prevMarca(storageKey, d, e, w); }
 function loadPlacas(d, e, w) {
   const sf = _cargaSlotSuffix(d, e);
   if (sf) return localStorage.getItem(placasKey(d, e, w) + sf) || "";
@@ -4516,12 +4531,7 @@ function savePlacas(d, e, w, v) {
   if (!sf) _stampExn(d, e, w);
   syncCargaToServer_(d, e, w, null, v);
 }
-function getPrevPlacas(d, e, w) {
-  if (w <= 1) return null;
-  const sf = _cargaSlotSuffix(d, e);
-  if (sf) return localStorage.getItem(placasKey(d, e, w - 1) + sf) || null;
-  return _cargaValida(d, e, w - 1) ? (localStorage.getItem(placasKey(d, e, w - 1)) || null) : null;
-}
+function getPrevPlacas(d, e, w) { return _prevMarca(placasKey, d, e, w); }
 // ── Esforço (RIR-em-palavras) + flag de aparelho por exercício ──
 function esfKey(d, e, w) { return `gh_esf_${STUDENT_ID}_d${d}_e${e}_w${w}`; }
 function loadEsf(d, e, w) { return localStorage.getItem(esfKey(d, e, w)) || ""; }
@@ -4695,7 +4705,10 @@ function _restoreCargasRealign(cargas, ifEmpty) {
     if (_isSub(c.sub)) return { c, di: c.di, ei: c.ei, suffix: c.exercicio ? '_' + _normEx(c.exercicio) : '', moved: false, sub: true };
     // Original (ou dado ANTIGO sem flag = comportamento de hoje): realinha por nome (cura reorg), slot legado.
     let di = c.di, ei = c.ei;
-    if (c.exercicio) {
+    // Biset ("2a"/"2b"): c.exercicio é o nome de UMA metade. NÃO realinhar — senão casa com um
+    // exercício standalone homônimo em outro lugar do treino e cola o peso do biset nele (bug de restore).
+    const isBiset = /[ab]$/.test(String(c.ei));
+    if (c.exercicio && !isBiset) {
       // A7: se o log trouxe o bloco (dado novo), casa por bloco+nome primeiro (robusto a reordenar bloco).
       // Sem bloco (dado antigo) ou sem match no bloco → cai no nome único global = comportamento de hoje.
       let p = c.bloco ? _posByNameInBloco(c.exercicio, c.bloco) : null;
@@ -7822,7 +7835,23 @@ async function forceSyncFromServer() {
 
   let totalCargas = 0, totalDone = 0, falhas = 0;
   try {
-    // 1. Limpa local pra essa sheet (cargas, placas, done) — vai ser substituído pelo server
+    // 1. Busca as cargas do servidor ANTES de apagar qualquer coisa. Se a rede/servidor falhar,
+    //    aborta sem tocar no local — assim este botão nunca apaga o peso do aluno quando ele está
+    //    offline (era um caminho de perda silenciosa: apagava local e o restore falhava).
+    let cargasData = null;
+    try {
+      const url = `${LOG_ENDPOINT}?action=cargas&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`;
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      cargasData = await res.json();
+      if (!cargasData || !Array.isArray(cargasData.cargas)) throw new Error('resposta invalida');
+    } catch (e) {
+      console.warn('forceSync cargas fetch fail:', e);
+      alert('Não consegui falar com o servidor agora, então NÃO apaguei nada aqui — teus pesos seguem salvos. Tenta de novo com internet.');
+      return;
+    }
+
+    // 2. Agora sim limpa o local dessa sheet (já temos o dado do servidor em mãos pra restaurar)
     const prefixesParaApagar = [
       `gh_${STUDENT_ID}_d`,         // cargas
       `gh_placas_${STUDENT_ID}_d`,  // placas
@@ -7837,13 +7866,8 @@ async function forceSyncFromServer() {
     }
     toDelete.forEach(k => localStorage.removeItem(k));
 
-    // 2. Busca cargas + placas do servidor
-    try {
-      const url = `${LOG_ENDPOINT}?action=cargas&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`;
-      const res = await fetch(url, { cache: 'no-store' });
-      const data = await res.json();
-      totalCargas += _restoreCargasRealign(data.cargas, false); // local já foi limpo acima (não if-empty)
-    } catch (e) { falhas++; console.warn('forceSync cargas fail:', e); }
+    // 3. Restaura as cargas já buscadas do servidor
+    totalCargas += _restoreCargasRealign(cargasData.cargas, false); // local já foi limpo acima (não if-empty)
 
     // 3. Busca done (checkbox) do servidor
     try {
