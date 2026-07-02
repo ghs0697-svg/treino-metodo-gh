@@ -2168,7 +2168,7 @@
 <!-- ══ MAIN NAVIGATION (Treino | Dieta) ══ -->
 <div class="main-nav" id="mainNav" style="display:none;">
   <button class="nav-btn active" id="navTreino" onclick="switchView('treino')">TREINO</button>
-  <button class="nav-btn" id="navDieta" onclick="switchView('dieta')">DIETA</button>
+  <button class="nav-btn" id="navDieta" onclick="switchView('dieta')" style="display:none;">DIETA</button>
   <button class="nav-btn" id="navGhflix" onclick="switchView('ghflix')">GHFLIX</button>
 </div>
 <div id="ghflixView"></div>
@@ -9582,8 +9582,20 @@ async function loadDietFromSheets() {
   }
   try {
     DIET_DATA = parseDietData(rows);
+    // Dieta REAL = tem refeição (ciclos com refeicoes). "Casco" de dieta (só info + observações,
+    // ex.: aluno treino-only / cortesia cujo publish gravou as observações do TREINO na aba DIETA)
+    // NÃO é dieta: não mostra a aba nem trata como carregada, senão aparece "PROTOCOLO ALIMENTAR"
+    // com texto de treino dentro (caso Meire, 2026-07-02). A origem (Entregas gravar o casco) é
+    // higiene; aqui o app degrada certo pra qualquer treino-only, sem depender de re-publicar.
+    const _temRefeicoes = !!(DIET_DATA && DIET_DATA.ciclos && DIET_DATA.ciclos.some(c => (c.refeicoes || []).length));
+    if (!_temRefeicoes) {
+      DIET_DATA = null; dietLoaded = false; dietFetchFailed = false;
+      const _nd = document.getElementById('navDieta'); if (_nd) _nd.style.display = 'none';
+      return; // treino-only: aba DIETA fica escondida
+    }
     dietLoaded = true;
     dietFetchFailed = false;
+    const _ndOn = document.getElementById('navDieta'); if (_ndOn) _ndOn.style.display = '';  // dieta real → revela a aba
     document.getElementById('mainNav').style.display = 'flex';
     document.getElementById('accompToggle').style.display = 'flex';
     document.getElementById('glossarioToggle').style.display = 'flex';
