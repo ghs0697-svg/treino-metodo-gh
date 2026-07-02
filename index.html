@@ -534,7 +534,14 @@
   .float-btn { width: 56px; height: 56px; border-radius: 50%; background: var(--gold); color: var(--dark); border: none; font-size: 26px; box-shadow: 0 4px 14px rgba(0,0,0,0.6); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; }
   .float-btn:hover { transform: scale(1.05); }
   .float-btn.open { transform: rotate(45deg); }
-  .float-options { display: none; flex-direction: column; gap: 8px; align-items: flex-end; }
+  .float-options { display: none; flex-direction: column; gap: 8px; align-items: flex-end; max-height: calc(100vh - 150px); overflow-y: auto; overscroll-behavior: contain; padding-top: 4px; }
+  /* grupo "Mais opções": itens raros/destrutivos ficam recolhidos fora do caminho do dia a dia */
+  #floatMoreGroup { display: none; flex-direction: column; gap: 8px; align-items: flex-end; }
+  #floatMoreGroup.open { display: flex; }
+  /* desktop: modo aluno centrado (o editor ?edit=1 marca body.wide-mode e segue full width) */
+  @media (min-width: 900px) {
+    body:not(.wide-mode) { max-width: 840px; margin-left: auto; margin-right: auto; }
+  }
   .float-options.show { display: flex; }
   .float-opt { background: #161513; border: 1px solid rgba(255,255,255,0.10); color: var(--white); padding: 10px 16px 10px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; letter-spacing: 0.01em; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,0.55); display: flex; align-items: center; gap: 10px; text-decoration: none; white-space: nowrap; transition: all 0.15s; }
   .float-opt:hover, .float-opt:active { background: #211f1b; border-color: rgba(212,175,106,0.45); }
@@ -3237,15 +3244,32 @@
          os do FINAL ficam perto do botão flutuante (ao alcance do dedo).
          Ordem do HTML segue ordem de leitura visual (cima → baixo). -->
 
-    <!-- TOPO (mais longe do dedo) — extras opcionais -->
-    <button type="button" class="float-opt" onclick="event.stopPropagation(); toggleUnit()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></span><span id="unitToggleLabel">Unidade: kg (trocar pra lb)</span>
+    <!-- TOPO (mais longe do dedo) — raros/destrutivos recolhidos em "Mais opções" -->
+    <div id="floatMoreGroup">
+      <button type="button" class="float-opt" onclick="event.stopPropagation(); toggleUnit()">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></span><span id="unitToggleLabel">Unidade: kg (trocar pra lb)</span>
+      </button>
+      <button type="button" class="float-opt" onclick="event.stopPropagation(); forceSyncFromServer()">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span><span>Recarregar do servidor</span>
+      </button>
+      <button type="button" class="float-opt" onclick="event.stopPropagation(); apagarPesosMarcados()">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span><span>Apagar pesos marcados</span>
+      </button>
+    </div>
+    <button type="button" class="float-opt" id="floatMoreToggle" onclick="event.stopPropagation(); toggleFloatMore()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></span><span id="floatMoreLabel">Mais opções</span>
     </button>
     <button type="button" class="float-opt" onclick="event.stopPropagation(); openRankingModal()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg></span><span>Ranking</span>
     </button>
     <button type="button" class="float-opt" onclick="event.stopPropagation(); openProgressoModal()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span><span>Meu progresso</span>
+    </button>
+    <button type="button" class="float-opt" onclick="event.stopPropagation(); openBibliotecaModal()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span><span>Biblioteca de exercícios</span>
+    </button>
+    <button type="button" class="float-opt" onclick="event.stopPropagation(); open1RMModal()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5h11v11h-11z" opacity="0"/><path d="M14.4 14.4 9.6 9.6"/><path d="M18.657 21.485a2 2 0 1 1-2.829-2.828l-1.767 1.768a2 2 0 1 1-2.829-2.829l6.364-6.364a2 2 0 1 1 2.829 2.829l-1.768 1.767a2 2 0 1 1 2.828 2.829z"/><path d="m21.5 21.5-1.4-1.4"/><path d="M3.9 3.9 2.5 2.5"/><path d="M6.404 12.768a2 2 0 1 1-2.829-2.829l1.768-1.767a2 2 0 1 1-2.828-2.829l2.828-2.828a2 2 0 1 1 2.829 2.828l1.767-1.768a2 2 0 1 1 2.829 2.829z"/></svg></span><span>Calculadora de 1RM</span>
     </button>
     <button type="button" class="float-opt" onclick="event.stopPropagation(); downloadPDF()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span><span id="pdfBtnLabel">Baixar treino em PDF</span>
@@ -3265,13 +3289,8 @@
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></span><span>Tirar dúvida ou pedir ajuste</span>
     </button>
 
-    <!-- BASE (perto do dedo) — Recarregar + Instalar app destacados -->
-    <button type="button" class="float-opt" onclick="event.stopPropagation(); forceSyncFromServer()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span><span>Recarregar do servidor</span>
-    </button>
-    <button type="button" class="float-opt" onclick="event.stopPropagation(); apagarPesosMarcados()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span><span>Apagar pesos marcados</span>
-    </button>
+    <!-- BASE (perto do dedo) — Instalar app destacado. Recarregar/Apagar subiram pro
+         grupo "Mais opções" (destrutivo/raro fora do alcance do toque reflexo). -->
     <button type="button" class="float-opt install" onclick="event.stopPropagation(); showInstallInstructions()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span><span>Instalar app na tela inicial</span>
     </button>
@@ -3294,6 +3313,38 @@
     </div>
     <p style="color:var(--gold);font-size:13px;font-weight:700;text-align:center;margin:12px 0 4px;">Toca no ícone dourado. Bom treino.</p>
     <button class="te-btn ghost" onclick="teHide('installModalV2')" style="width:100%;margin-top:8px;">Fechar</button>
+  </div>
+</div>
+
+<!-- ══ BIBLIOTECA DE EXERCÍCIOS (por músculo, com vídeo) ══ -->
+<div class="te-modal-overlay" id="bibliotecaModal" onclick="if(event.target===this)teHide('bibliotecaModal')">
+  <div class="te-modal-box" style="max-width:560px;max-height:88vh;display:flex;flex-direction:column;">
+    <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Biblioteca de exercícios</h3>
+    <p style="color:#aaa;font-size:11px;margin:0 0 10px;line-height:1.4;">Todos os exercícios do Método GH com vídeo de execução. Filtra por músculo ou busca pelo nome. Os marcados com <span style="color:var(--gold);font-weight:700;">●</span> estão no teu treino atual.</p>
+    <input type="text" id="bibSearchInput" placeholder="Buscar exercício..." oninput="renderBiblioteca()" style="width:100%;background:#161616;border:1px solid #2a2a2a;border-radius:6px;color:#eee;padding:9px 11px;font-size:13px;margin-bottom:8px;">
+    <div id="bibChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;"></div>
+    <div id="bibList" style="overflow-y:auto;flex:1;min-height:0;"></div>
+    <button class="te-btn ghost" onclick="teHide('bibliotecaModal')" style="width:100%;margin-top:10px;">Fechar</button>
+  </div>
+</div>
+
+<!-- ══ CALCULADORA DE 1RM ══ -->
+<div class="te-modal-overlay" id="rm1Modal" onclick="if(event.target===this)teHide('rm1Modal')">
+  <div class="te-modal-box" style="max-width:420px;">
+    <h3 style="margin:0 0 4px;">Calculadora de 1RM</h3>
+    <p style="color:#aaa;font-size:11px;margin:0 0 12px;line-height:1.4;">Estimativa da carga máxima pra 1 repetição, a partir de uma série que você fez até perto da falha. Não precisa testar 1RM de verdade: usa a conta e treina com as faixas de %.</p>
+    <div style="display:flex;gap:10px;margin-bottom:10px;">
+      <div style="flex:1;">
+        <label style="color:#888;font-size:10px;letter-spacing:1px;">CARGA (<span class="rm1-unit">kg</span>)</label>
+        <input type="number" inputmode="decimal" id="rm1Carga" placeholder="ex: 80" oninput="calc1RM()" style="width:100%;background:#161616;border:1px solid #2a2a2a;border-radius:6px;color:#eee;padding:9px 11px;font-size:14px;">
+      </div>
+      <div style="flex:1;">
+        <label style="color:#888;font-size:10px;letter-spacing:1px;">REPETIÇÕES FEITAS</label>
+        <input type="number" inputmode="numeric" id="rm1Reps" placeholder="ex: 8" min="1" max="15" oninput="calc1RM()" style="width:100%;background:#161616;border:1px solid #2a2a2a;border-radius:6px;color:#eee;padding:9px 11px;font-size:14px;">
+      </div>
+    </div>
+    <div id="rm1Out" style="min-height:40px;"></div>
+    <button class="te-btn ghost" onclick="teHide('rm1Modal')" style="width:100%;margin-top:10px;">Fechar</button>
   </div>
 </div>
 
@@ -3828,6 +3879,13 @@ if (params.get('sheet')) {
 // Antes era baseado em TAB_NAME, o que causava colisão quando aluno acessava
 // via links com tab=TREINO vs tab=ATUAL (cargas iam pra keys distintas).
 const STUDENT_ID = SHEET_ID || (TAB_NAME ? TAB_NAME.toLowerCase().replace(/\s+/g, '_') : 'demo');
+// Desktop: modo ALUNO fica centrado (max-width via CSS); editor/painel do treinador
+// (?edit=1 / ?editor / ?admin ou raiz sem aluno) marcam wide-mode e seguem full width.
+try {
+  if (params.has('editor') || params.has('admin') || params.get('edit') === '1' || !SHEET_ID) {
+    document.body.classList.add('wide-mode');
+  }
+} catch (_) {}
 const TOTAL_WEEKS = parseInt(params.get('weeks')) || 8;
 
 // ══ BANCO DE VÍDEOS OFICIAL (fallback) — embutido de 08-referencias/hiperlinks-novos.json ══
@@ -7840,11 +7898,16 @@ async function apagarPesosMarcados() {
   document.getElementById('floatOptions').classList.remove('show');
   document.getElementById('floatBtn').classList.remove('open');
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
-  if (!confirm(
+  // Destrutivo de verdade (local + servidor) e já causou incidente com toque acidental.
+  // Confirmação FORTE: digitar APAGAR (um "OK" no reflexo não passa).
+  const typed = prompt(
     'Apagar TODOS os pesos e placas que você marcou?\n\n' +
     'Zera as cargas aqui no app E no backup do servidor, pra você marcar do zero. ' +
-    'O treino, as marcações de "feito" e o histórico NÃO são afetados.\n\nContinuar?'
-  )) return;
+    'O treino, as marcações de "feito" e o histórico NÃO são afetados.\n\n' +
+    'Pra confirmar, digita APAGAR:'
+  );
+  if (typed === null) return;
+  if (String(typed).trim().toUpperCase() !== 'APAGAR') { alert('Não apaguei nada. Pra apagar de verdade, digita APAGAR.'); return; }
   // 1. local: cargas + placas + companheiro nome-do-exercício
   const prefs = [`gh_${STUDENT_ID}_d`, `gh_placas_${STUDENT_ID}_d`, `gh_exn_${STUDENT_ID}_d`];
   const del = [];
@@ -9532,16 +9595,21 @@ async function loadDietFromSheets() {
   try {
     rows = await tryFetch(false);
   } catch (e1) {
+    // aba VAZIA (rows<3) é determinístico: fetch OK, sem conteúdo (aluno só treino).
+    // Re-tentar não muda nada; sai silencioso sem 2ª request nem warn (higiene de log/rede).
+    if (/rows<3/.test(String((e1 && e1.message) || ''))) { dietLoaded = false; dietFetchFailed = false; return; }
     try {
       rows = await tryFetch(true);
     } catch (e2) {
-      console.warn('[GH] DIETA load falhou (retry 2x):', e1?.message, '|', e2?.message);
       dietLoaded = false;
-      // A15: "rows<3" em qualquer tentativa = fetch OK porém VAZIO → aluno só treino (sem dieta): silencioso.
+      // A15: "rows<3" no retry = fetch OK porém VAZIO → aluno só treino (sem dieta): silencioso.
       // Caso contrário (HTTP/rede nas DUAS) = falha real → avisa com retry.
-      const semConteudo = /rows<3/.test(String((e1 && e1.message) || '')) || /rows<3/.test(String((e2 && e2.message) || ''));
+      const semConteudo = /rows<3/.test(String((e2 && e2.message) || ''));
       dietFetchFailed = !semConteudo;
-      if (dietFetchFailed) _showDietFetchError();
+      if (dietFetchFailed) {
+        console.warn('[GH] DIETA load falhou (retry 2x):', e1?.message, '|', e2?.message);
+        _showDietFetchError();
+      }
       return;
     }
   }
@@ -9558,6 +9626,9 @@ async function loadDietFromSheets() {
     document.getElementById('floatMenu').classList.add('show');
     if (isWaterNotifOn()) startWaterNotif();
     renderDiet();
+    // banner da novidade de dieta: agora que DIET_DATA existe, re-avalia (o 1º check pode
+    // ter rodado antes da dieta carregar; o guard de DIET_DATA teria segurado o banner)
+    if (typeof dietBannerCheck === 'function') dietBannerCheck();
   } catch (e) {
     console.warn('[GH] DIETA parse falhou:', e?.message);
     dietLoaded = false;
@@ -10456,6 +10527,7 @@ function dietBannerCheck() {
   try {
     if (localStorage.getItem('gh_dietBannerOff') === '1') return;            // já fechou de vez
     if (typeof todayKey === 'function' && todayKey() > '2026-07-31') return; // anúncio velho
+    if (typeof DIET_DATA === 'undefined' || !DIET_DATA) return;              // sem dieta (só treino) = banner de dieta não faz sentido
     var rv = document.getElementById('renovBanner'), rj = document.getElementById('reajusteBanner');
     if ((rv && rv.classList.contains('show')) || (rj && rj.classList.contains('show'))) return; // banners mais importantes mandam
     var b = document.getElementById('dietDiaryBanner'); if (b) b.classList.add('show');
@@ -10467,6 +10539,130 @@ function dietBannerDismiss() {
 function dietBannerGoto() {
   dietBannerDismiss();
   if (typeof switchView === 'function') switchView('dieta');
+}
+// ── Layout dos banners fixos ──
+// A família .renov-banner é position:fixed top:0; sem compensação ela COBRE o topo da página
+// (badge "Próxima anamnese", topo do float menu). Aqui: empilha os visíveis (2+ não se
+// sobrepõem) e empurra o body pela altura total. Observa mudança de classe (show) em vez de
+// depender de cada call site, + resize (altura muda quando o texto quebra).
+function _bannersLayout() {
+  try {
+    var shown = Array.prototype.slice.call(document.querySelectorAll('.renov-banner.show'));
+    var top = 0;
+    shown.forEach(function (b) { b.style.top = top + 'px'; top += b.offsetHeight; });
+    document.body.style.paddingTop = top ? top + 'px' : '';
+  } catch (_) {}
+}
+(function _bannersWatch() {
+  try {
+    var els = document.querySelectorAll('.renov-banner');
+    if (!els.length || typeof MutationObserver === 'undefined') return;
+    var mo = new MutationObserver(function () { _bannersLayout(); });
+    els.forEach ? els.forEach(function (b) { mo.observe(b, { attributes: true, attributeFilter: ['class'] }); })
+                : Array.prototype.forEach.call(els, function (b) { mo.observe(b, { attributes: true, attributeFilter: ['class'] }); });
+    window.addEventListener('resize', _bannersLayout);
+    _bannersLayout(); // estado inicial (algum banner pode já estar .show no boot)
+  } catch (_) {}
+})();
+
+// ── "Mais opções" do float menu (raros/destrutivos recolhidos) ──
+function toggleFloatMore() {
+  try {
+    var g = document.getElementById('floatMoreGroup');
+    var lbl = document.getElementById('floatMoreLabel');
+    var open = g.classList.toggle('open');
+    if (lbl) lbl.textContent = open ? 'Menos opções' : 'Mais opções';
+  } catch (_) {}
+}
+
+// ── BIBLIOTECA DE EXERCÍCIOS (aluno) ──
+// Reusa o banco do editor (EXERCISE_DB nome+vídeo, classifyMuscle, chips de músculo) numa
+// vitrine read-only pro aluno: filtrar por músculo, buscar, assistir a execução. Marca com ●
+// os exercícios que estão no treino ATUAL dele (WORKOUT), inclusive metades de biset.
+let _bibFiltro = 'todos';
+function _bibNoTreino() {
+  const set = new Set();
+  try {
+    (typeof WORKOUT !== 'undefined' ? WORKOUT : []).forEach(d => (d.exercises || []).forEach(ex => {
+      if (ex.biset) { if (ex.a && ex.a.name) set.add(_normEx(ex.a.name)); if (ex.b && ex.b.name) set.add(_normEx(ex.b.name)); }
+      else if (ex.name) set.add(_normEx(ex.name));
+    }));
+  } catch (_) {}
+  return set;
+}
+function openBibliotecaModal() {
+  document.getElementById('floatOptions').classList.remove('show');
+  document.getElementById('floatBtn').classList.remove('open');
+  _bibFiltro = 'todos';
+  const inp = document.getElementById('bibSearchInput');
+  if (inp) inp.value = '';
+  renderBiblioteca();
+  teShow('bibliotecaModal');
+}
+function _bibSetFiltro(g) { _bibFiltro = g; renderBiblioteca(); }
+function renderBiblioteca() {
+  try {
+    const chips = document.getElementById('bibChips'), list = document.getElementById('bibList');
+    if (!chips || !list) return;
+    if (typeof EXERCISE_DB === 'undefined' || !EXERCISE_DB.length) { list.innerHTML = '<p style="color:#888;text-align:center;padding:20px;">Biblioteca indisponível agora.</p>'; return; }
+    chips.innerHTML = `<button class="te-muscle-chip${_bibFiltro === 'todos' ? ' active' : ''}" onclick="_bibSetFiltro('todos')">TODOS</button>` +
+      ALL_MUSCLES_ORDER.map(g => `<button class="te-muscle-chip${_bibFiltro === g ? ' active' : ''}" style="--chip-color:${MUSCLE_COLORS[g]}" onclick="_bibSetFiltro('${g}')">${MUSCLE_LABELS[g]}</button>`).join('');
+    const busca = (document.getElementById('bibSearchInput')?.value || '').toLowerCase();
+    const noTreino = _bibNoTreino();
+    let itens = EXERCISE_DB;
+    if (_bibFiltro !== 'todos') itens = itens.filter(e => classifyMuscle(e.n) === _bibFiltro);
+    if (busca) itens = itens.filter(e => e.n.toLowerCase().includes(busca));
+    if (!itens.length) { list.innerHTML = '<p style="color:#888;text-align:center;padding:20px;">Nenhum exercício aqui. Tenta outro filtro.</p>'; return; }
+    list.innerHTML = itens.map(e => {
+      const tem = !!(e.v && e.v.length);
+      const meu = noTreino.has(_normEx(e.n));
+      const safeN = e.n.replace(/'/g, "\\'"), safeV = (e.v || '').replace(/'/g, "\\'");
+      return `<div onclick="${tem ? `openVideo('${safeN}','${safeV}')` : ''}" style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-bottom:1px solid #222;${tem ? 'cursor:pointer;' : 'opacity:0.55;'}">
+        ${meu ? '<span style="color:var(--gold);font-size:9px;flex-shrink:0;" title="No teu treino atual">●</span>' : '<span style="width:9px;flex-shrink:0;"></span>'}
+        <span style="flex:1;color:#ddd;font-size:13px;line-height:1.3;">${e.n}</span>
+        ${tem ? '<span style="color:var(--gold);flex-shrink:0;">&#9654;</span>' : '<span style="color:#555;font-size:10px;flex-shrink:0;">sem vídeo</span>'}
+      </div>`;
+    }).join('');
+  } catch (err) { console.warn('biblioteca render fail:', err); }
+}
+
+// ── CALCULADORA DE 1RM ──
+// Estimativa por Epley + Brzycki (média das duas), com tabela de % pra prescrição.
+// Só leitura/conta local: não grava nada, não toca carga.
+function open1RMModal() {
+  document.getElementById('floatOptions').classList.remove('show');
+  document.getElementById('floatBtn').classList.remove('open');
+  try { document.querySelectorAll('.rm1-unit').forEach(el => el.textContent = getUnit().trim()); } catch (_) {}
+  calc1RM();
+  teShow('rm1Modal');
+}
+function calc1RM() {
+  const out = document.getElementById('rm1Out');
+  if (!out) return;
+  const w = parseFloat(String(document.getElementById('rm1Carga')?.value || '').replace(',', '.'));
+  const r = parseInt(document.getElementById('rm1Reps')?.value || '', 10);
+  if (!isFinite(w) || w <= 0 || !isFinite(r) || r < 1) { out.innerHTML = '<p style="color:#666;font-size:12px;text-align:center;padding:8px 0;">Preenche carga e repetições que eu calculo.</p>'; return; }
+  if (r === 1) {
+    out.innerHTML = `<div style="background:#161616;border:1px solid var(--gold);border-radius:8px;padding:12px;text-align:center;"><div style="color:#888;font-size:10px;letter-spacing:1px;">1RM (você já fez 1 repetição máxima)</div><div style="color:var(--gold);font-size:26px;font-weight:800;">${w % 1 ? w.toFixed(1) : w} ${getUnit().trim()}</div></div>`;
+    return;
+  }
+  const rr = Math.min(r, 15);
+  const epley = w * (1 + rr / 30);
+  const brzycki = w * 36 / (37 - rr);
+  const rm = (epley + brzycki) / 2;
+  const un = getUnit().trim();
+  const fmt = v => (Math.round(v * 2) / 2).toLocaleString('pt-BR'); // arredonda pra 0,5
+  const faixas = [[95, 2], [90, 4], [85, 6], [80, 8], [75, 10], [70, 12], [65, 15], [60, 20]];
+  out.innerHTML = `
+    <div style="background:#161616;border:1px solid var(--gold);border-radius:8px;padding:12px;text-align:center;margin-bottom:10px;">
+      <div style="color:#888;font-size:10px;letter-spacing:1px;">1RM ESTIMADO</div>
+      <div style="color:var(--gold);font-size:26px;font-weight:800;">${fmt(rm)} ${un}</div>
+      ${r > 12 ? '<div style="color:#b8860b;font-size:10px;margin-top:4px;">acima de 12 repetições a estimativa perde precisão</div>' : ''}
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <tr style="color:#888;font-size:10px;letter-spacing:1px;"><th style="text-align:left;padding:4px 6px;">% DO 1RM</th><th style="text-align:right;padding:4px 6px;">CARGA</th><th style="text-align:right;padding:4px 6px;">~REPS</th></tr>
+      ${faixas.map(([p, reps]) => `<tr style="border-top:1px solid #222;"><td style="padding:5px 6px;color:#ccc;">${p}%</td><td style="padding:5px 6px;text-align:right;color:var(--gold);font-weight:700;">${fmt(rm * p / 100)} ${un}</td><td style="padding:5px 6px;text-align:right;color:#888;">${reps}</td></tr>`).join('')}
+    </table>`;
 }
 // Avalia _proxReajusteBR (DD/MM/AAAA) e decide o banner. Chamado quando o dado chega.
 function reajusteBannerCheck() {
