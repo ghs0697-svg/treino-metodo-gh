@@ -9,8 +9,9 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>Treino | Método GH</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cinzel:wght@600;700&display=swap');
   :root {
+    --font-display: 'Cinzel', 'Times New Roman', serif;
     /* Dourado Método GH com tratamento premium (degradê + glow) */
     --gold: #D4AF6A;
     --gold-bright: #F1D69E;
@@ -64,7 +65,8 @@
     box-shadow: 0 0 16px var(--gold-glow);
   }
   .app-header .brand-name {
-    font-size: 30px; letter-spacing: 4px; font-weight: 800; line-height: 1.05;
+    font-family: var(--font-display);
+    font-size: 30px; letter-spacing: 4px; font-weight: 700; line-height: 1.05;
     background: linear-gradient(135deg, var(--gold-bright) 0%, var(--gold) 50%, var(--gold-dark) 100%);
     -webkit-background-clip: text; background-clip: text;
     -webkit-text-fill-color: transparent; color: var(--gold);
@@ -712,7 +714,7 @@
   .dh-head { display: flex; align-items: flex-start; gap: 10px; }
   .dh-head-l { min-width: 0; }
   .dh-kicker { color: rgba(212,175,106,.8); font-size: 9.5px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
-  .dh-title { color: var(--white); font-size: 19px; font-weight: 800; line-height: 1.15; margin-top: 3px; }
+  .dh-title { color: var(--white); font-family: var(--font-display); font-size: 18px; font-weight: 700; line-height: 1.2; margin-top: 4px; letter-spacing: .03em; }
   .dh-sub { color: #8d8579; font-size: 11.5px; margin-top: 3px; }
   .dh-head .pg-streak { margin-left: auto; flex: none; background: rgba(212,175,106,.12); color: var(--gold); font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 999px; }
   .dh-head .pg-streak:empty { display: none; }
@@ -727,7 +729,7 @@
   .intro-splash.out { animation: isOut .5s cubic-bezier(.4, 0, .2, 1) forwards; }
   @keyframes isOut { to { opacity: 0; transform: scale(1.045); } }
   .is-inner { text-align: center; padding: 0 20px; }
-  .is-logo { color: var(--white); font-size: 28px; font-weight: 800; letter-spacing: .34em; padding-left: .34em; opacity: 0; animation: isIn .8s cubic-bezier(.2, 0, .2, 1) .12s forwards; }
+  .is-logo { color: var(--white); font-family: var(--font-display); font-size: 27px; font-weight: 700; letter-spacing: .16em; padding-left: .16em; opacity: 0; animation: isIn .8s cubic-bezier(.2, 0, .2, 1) .12s forwards; }
   .is-logo span { color: var(--gold); }
   .is-line { width: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(212,175,106,.85), transparent); margin: 15px auto 13px; animation: isLine .7s cubic-bezier(.3, 0, .2, 1) .55s forwards; }
   @keyframes isLine { to { width: 190px; } }
@@ -738,12 +740,23 @@
 
   /* ── Motion premium: reveal, transição de view, brilho e burst ── */
   @media (prefers-reduced-motion: no-preference) {
-    .rv { opacity: 0; transform: translateY(14px); transition: opacity .5s cubic-bezier(.2, 0, .2, 1), transform .5s cubic-bezier(.2, 0, .2, 1); }
+    html { scroll-behavior: smooth; }
+    .rv { opacity: 0; transform: translateY(16px); transition: opacity .65s var(--ease-out), transform .65s var(--ease-out); }
     .rv.rv-in { opacity: 1; transform: none; }
-    #dayHero, #exerciseContainer, #dietContent, #studentInfo { animation: viewIn .3s cubic-bezier(.2, 0, .2, 1); }
+    #dayHero, #exerciseContainer, #dietContent, #studentInfo { animation: viewIn .3s var(--ease-out); }
     .pg-fill { background: linear-gradient(90deg, var(--gold) 0%, #E6CF9C 50%, var(--gold) 100%); background-size: 200% 100%; animation: pgShine 2.8s linear infinite; }
     .exercise-card.just-done { animation: cardDone .8s cubic-bezier(.3, 0, .2, 1); }
+    .exercise-card, .tec-card, .accomp-card, .diet-meal-card, .day-hero { transition: transform 240ms var(--ease-out), border-color 240ms var(--ease-out), box-shadow 240ms var(--ease-out); }
+    .exercise-card:active, .tec-card:active { transform: scale(.994); }
   }
+  /* Glass nas superfícies flutuantes (nav gruda no topo com blur, pill do timer) */
+  .main-nav {
+    position: sticky; top: 0; z-index: 900;
+    background: rgba(16, 13, 10, .72);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(212, 175, 106, .13);
+  }
+  .timer-pill { background: rgba(19, 19, 22, .78); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
   @keyframes viewIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
   @keyframes pgShine { 0% { background-position: 200% 0; } 100% { background-position: 0% 0; } }
   @keyframes cardDone {
