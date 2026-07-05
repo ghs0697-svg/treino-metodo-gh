@@ -857,6 +857,19 @@
   .timer-actions { display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap; justify-content: center; }
   .timer-btn { background: #2a2a2a; color: var(--white); border: 1px solid #444; padding: 12px 24px; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 600; }
   .timer-btn.primary { background: var(--gold); color: var(--dark); border-color: var(--gold); }
+
+  /* ── Coach de cadência (pacer) ── */
+  .pacer-tag { color: #9a9389; font-size: 12.5px; font-weight: 600; margin: -12px 0 18px; text-align: center; padding: 0 12px; }
+  .pacer-center { position: absolute; text-align: center; }
+  .pacer-phase { color: var(--gold); font-size: 29px; font-weight: 800; letter-spacing: .06em; }
+  .pacer-phase.iso { color: #E6CF9C; }
+  .pacer-phase.neg { color: #9a9389; }
+  .pacer-secs { color: var(--white); font-size: 38px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.15; }
+  .pacer-cue { color: #9a9389; font-size: 11.5px; margin-top: 3px; }
+  .pacer-reps { color: var(--white); font-size: 15px; margin-top: 20px; }
+  .pacer-reps b { color: var(--gold); font-size: 19px; }
+  #pacerRingFill.iso { stroke: #E6CF9C; }
+  #pacerRingFill.neg { stroke: #8a744a; }
   .timer-btn:hover { background: #3a3a3a; }
   .timer-btn.primary:hover { background: var(--gold-dim); }
 
@@ -2482,6 +2495,29 @@
   </div>
 </div>
 <button class="timer-pill" id="timerPill" onclick="timerReopen()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> <span id="timerPillTime">60s</span></button>
+
+<!-- ══ COACH DE CADÊNCIA (pacer) ══ -->
+<div class="timer-overlay" id="pacerOverlay">
+  <div class="timer-name" id="pacerName"></div>
+  <div class="pacer-tag" id="pacerTag"></div>
+  <div class="timer-ring" onclick="pacerPause()">
+    <svg viewBox="0 0 160 160" width="230" height="230" aria-hidden="true">
+      <circle cx="80" cy="80" r="70" fill="none" stroke="#2a2a2a" stroke-width="7"/>
+      <circle id="pacerRingFill" cx="80" cy="80" r="70" fill="none" stroke="#D4AF37" stroke-width="7" stroke-linecap="round" stroke-dasharray="439.8" stroke-dashoffset="439.8" transform="rotate(-90 80 80)"/>
+    </svg>
+    <div class="pacer-center">
+      <div class="pacer-phase" id="pacerPhase">SOBE</div>
+      <div class="pacer-secs" id="pacerSecs">1,0</div>
+      <div class="pacer-cue" id="pacerCue">explode e sopra o ar</div>
+    </div>
+  </div>
+  <div class="pacer-reps">Reps: <b id="pacerReps">0</b></div>
+  <div class="timer-actions">
+    <button class="timer-btn" onclick="closePacer()">Fechar</button>
+    <button class="timer-btn" id="pacerPauseBtn" onclick="pacerPause()">Pausar</button>
+    <button class="timer-btn primary" onclick="pacerToRest()">Descansar</button>
+  </div>
+</div>
 
 <!-- ══ MODO TREINO FOCADO ══ -->
 <div class="focus-overlay" id="focusOverlay">
@@ -6520,6 +6556,83 @@ function beep() {
   } catch(e) {}
 }
 
+// ══ COACH DE CADÊNCIA (pacer) ══
+// Anel + vibração no ritmo da repetição do exercício. parseCadencia lê a OBS:
+// padrão ouro 1/0,5/2 ou customizada do método (ex: excêntrica 5 seg).
+let _pacInt = null, _pacPh = 0, _pacT = 0, _pacReps = 0, _pacPhases = [], _pacPaused = false, _pacLast = 0, _pacBase = null;
+function openPacer(di, ei) {
+  const ex = WORKOUT[di] && WORKOUT[di].exercises[ei];
+  if (!ex) return;
+  _pacBase = ex.biset ? ex.a : ex;
+  const act = (!ex.biset && typeof _exAtivo === 'function') ? _exAtivo(di, ei) : null;
+  const cad = parseCadencia(_pacBase.obs);
+  _pacPhases = [
+    { lab: 'SOBE', cue: 'explode e sopra o ar', dur: cad.conc, cls: '' },
+    { lab: 'SEGURA', cue: 'aperta a contração', dur: cad.iso, cls: 'iso' },
+    { lab: 'DESCE', cue: 'controla e puxa o ar', dur: cad.exc, cls: 'neg' }
+  ].filter(p => p.dur > 0.05);
+  if (!_pacPhases.length) return;
+  _pacPh = 0; _pacT = 0; _pacReps = 0; _pacPaused = false;
+  document.getElementById('pacerName').textContent = (act && act.name) || _pacBase.name || '';
+  document.getElementById('pacerTag').textContent = 'Pos ' + fmtSec(cad.conc) + 's · Iso ' + fmtSec(cad.iso) + 's · Neg ' + fmtSec(cad.exc) + 's' + (cad.custom ? ' · cadência do método' : ' · padrão ouro');
+  document.getElementById('pacerReps').textContent = '0';
+  document.getElementById('pacerPauseBtn').textContent = 'Pausar';
+  document.getElementById('pacerOverlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  _timerLockOn();
+  _pacApplyPhase();
+  _pacLast = performance.now();
+  if (_pacInt) clearInterval(_pacInt);
+  _pacInt = setInterval(_pacTick, 50);
+}
+function _pacApplyPhase() {
+  const p = _pacPhases[_pacPh];
+  const ph = document.getElementById('pacerPhase');
+  ph.textContent = p.lab;
+  ph.className = 'pacer-phase ' + p.cls;
+  document.getElementById('pacerCue').textContent = p.cue;
+  document.getElementById('pacerRingFill').setAttribute('class', p.cls);
+}
+function _pacTick() {
+  if (_pacPaused) { _pacLast = performance.now(); return; }
+  const now = performance.now();
+  _pacT += (now - _pacLast) / 1000;
+  _pacLast = now;
+  let p = _pacPhases[_pacPh];
+  while (_pacT >= p.dur) {
+    _pacT -= p.dur;
+    _pacPh++;
+    if (_pacPh >= _pacPhases.length) {
+      _pacPh = 0;
+      _pacReps++;
+      document.getElementById('pacerReps').textContent = String(_pacReps);
+      if (navigator.vibrate) navigator.vibrate([60, 40, 60]);
+    } else if (navigator.vibrate) navigator.vibrate(30);
+    p = _pacPhases[_pacPh];
+    _pacApplyPhase();
+  }
+  // O anel enche na SOBE, fica cheio na SEGURA e esvazia na DESCE.
+  const frac = Math.max(0, Math.min(1, _pacT / p.dur));
+  const fill = p.lab === 'SOBE' ? frac : (p.lab === 'SEGURA' ? 1 : 1 - frac);
+  document.getElementById('pacerRingFill').style.strokeDashoffset = (439.8 * (1 - fill)).toFixed(1);
+  document.getElementById('pacerSecs').textContent = Math.max(0, p.dur - _pacT).toFixed(1).replace('.', ',');
+}
+function pacerPause() {
+  _pacPaused = !_pacPaused;
+  document.getElementById('pacerPauseBtn').textContent = _pacPaused ? 'Retomar' : 'Pausar';
+}
+function closePacer() {
+  if (_pacInt) { clearInterval(_pacInt); _pacInt = null; }
+  document.getElementById('pacerOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+  _timerLockOff();
+}
+function pacerToRest() {
+  const base = _pacBase;
+  closePacer();
+  if (base) startTimer(base.name || 'Descanso', parseIntervalSeconds(base.rest));
+}
+
 // ══ MODO TREINO FOCADO ══
 // Player de treino: um exercício por vez, tela cheia. Reusa o storage de carga
 // (onCarga/onPlacas), o check de conclusão (onCheckExercise → card + ranking) e
@@ -6552,6 +6665,7 @@ function focusNav(dir) {
 }
 function focusToggleDone() {
   onCheckExercise(_focusDi, _focusIdx);
+  if (isDone(_focusDi, _focusIdx) && navigator.vibrate) navigator.vibrate(35);
   if (allDoneOfDay(_focusDi)) { setTimeout(closeFocusMode, 350); return; }
   const exs = WORKOUT[_focusDi].exercises;
   if (isDone(_focusDi, _focusIdx) && _focusIdx < exs.length - 1) {
@@ -6641,6 +6755,7 @@ function _focusRender() {
     html += `<span class="focus-badge">BI-SET: sem descanso entre A e B</span>`;
     html += `<div class="focus-name">${ex.a.name}</div>${vidBtn(ex.a)}<div class="focus-tags">${tags(ex.a)}</div>`;
     if (ex.a.obs) html += `<div class="focus-obs">${ex.a.obs}</div>`;
+    html += `<button class="focus-sub-btn" onclick="openPacer(_focusDi, _focusIdx)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Treinar no ritmo</button>`;
     html += _focusCargaBlock(_focusDi, `${_focusIdx}a`, 'Carga A');
     html += `<div style="text-align:center;color:var(--gold);font-size:11px;font-weight:700;margin:10px 0;">↓ SEM DESCANSO ↓</div>`;
     html += `<div class="focus-name" style="font-size:20px;">${ex.b.name}</div>${vidBtn(ex.b)}`;
@@ -6656,6 +6771,7 @@ function _focusRender() {
     if (_falts) html += `<button class="focus-sub-btn" onclick="openSubPicker(${_focusDi}, ${_focusIdx})">🔄 Trocar exercício</button>`;
     html += `<div class="focus-tags">${tags(ex)}</div>`;
     if (ex.obs) html += `<div class="focus-obs">${ex.obs}</div>`;
+    html += `<button class="focus-sub-btn" onclick="openPacer(_focusDi, _focusIdx)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Treinar no ritmo</button>`;
     if (!ex.warmup) html += _focusCargaBlock(_focusDi, String(_focusIdx), 'Carga de hoje');
     if (!ex.warmup) html += _focusEsforcoBlock(_focusDi, String(_focusIdx));
   }
@@ -7244,6 +7360,7 @@ function renderExercises() {
             <span class="carga-saved" id="sv-${di}-${ei}">&#10003; salvo</span>
             <div class="ex-actions">
               <button class="ex-action-btn save-btn" onclick="saveCargaManual(${di}, ${ei}, this)" title="Salvar cargas agora"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></button>
+              <button class="ex-action-btn" onclick="openPacer(${di}, ${ei})" title="Treinar no ritmo (coach de cadência)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></button>
               <button class="ex-action-btn" onclick="startTimer('${safeName}', parseIntervalSeconds('${safeRest}'))" title="Cronômetro de descanso (${ex.rest || 'auto'})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></button>
               <button class="ex-action-btn" onclick="showHistory(${di}, ${ei})" title="Histórico de cargas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></button>
               ${subAlts ? `<button class="ex-action-btn sub-btn ${act.sub ? 'sub-on' : ''}" onclick="openSubPicker(${di}, ${ei})" title="Trocar exercício"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></button>` : ''}
