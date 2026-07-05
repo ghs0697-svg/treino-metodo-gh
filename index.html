@@ -899,6 +899,22 @@
   .rec-row.rec-pr .rec-label { white-space: normal; }
   .rec-row.rec-pr .rec-val { color: var(--gold); text-align: left; font-size: 13px; }
   .rec-sub { color: var(--gold); font-size: 10.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; margin: 10px 0 2px; }
+
+  /* ── Mapa muscular do dia ── */
+  .muscle-map {
+    margin: 10px 14px 0; padding: 12px 14px 10px;
+    background: var(--card); border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px; display: flex; align-items: center; gap: 12px;
+    box-shadow: var(--hairline);
+  }
+  .mm-svg { flex: none; width: 156px; }
+  .mm-info { flex: 1; min-width: 0; }
+  .mm-title { color: var(--gold); font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 7px; }
+  .mm-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .mm-chip { background: rgba(212,175,106,.13); color: var(--gold); font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 6px; letter-spacing: .04em; }
+  .mm-chip.sec { background: rgba(255,255,255,.05); color: #8d8065; }
+  .mm-lbl { color: #6f6a60; font-size: 9px; letter-spacing: .06em; text-transform: uppercase; }
+  body.view-dieta #muscleMap, body.view-ghflix #muscleMap { display: none !important; }
   .history-trend { padding: 10px 12px; background: #222; border-radius: 6px; font-size: 12px; color: #ccc; line-height: 1.4; }
   .history-trend.up { background: #1f3a1f; color: #6ed66e; }
   .history-trend.down { background: #3a1f1f; color: #ff7043; }
@@ -2480,6 +2496,8 @@
   </div>
   <div class="pg-bar"><div class="pg-fill" id="pgFill" style="width:0%"></div></div>
 </div>
+
+<div class="muscle-map" id="muscleMap" style="display:none;"></div>
 
 <div id="exerciseContainer"></div>
 
@@ -6432,6 +6450,85 @@ function updateDayProgress() {
   // Streak label
   const streak = getStreakDays();
   document.getElementById('pgStreak').textContent = streak > 0 ? `🔥 ${streak} dia${streak === 1 ? '' : 's'}` : '';
+  renderMuscleMap();
+}
+
+// ══ Mapa muscular do dia ══
+// Silhueta frente/costas com os grupos do dia acesos em dourado. Usa o
+// classifyMuscle que já alimenta o card de conclusão; respeita substituto ativo.
+function renderMuscleMap() {
+  const box = document.getElementById('muscleMap');
+  if (!box) return;
+  if (typeof classifyMuscle !== 'function' || typeof WORKOUT === 'undefined' || !WORKOUT[currentDay]) { box.style.display = 'none'; return; }
+  // lit: grupo → 'p' (primário, dourado cheio) ou 's' (secundário, dourado fosco),
+  // vindo do MUSCULOS_ALVO (mesma fonte da tag do card); fallback classifyMuscle.
+  const lit = new Map();
+  const setLit = (k, lvl) => { if (lvl === 'p' || !lit.has(k)) lit.set(k, lvl); };
+  const LBL2KEY = { quadriceps: 'quadriceps', gluteo: 'gluteo', posterior: 'posterior', peito: 'peito', costas: 'costas', ombro: 'ombro', biceps: 'biceps', triceps: 'triceps', panturrilha: 'panturrilha', abdomen: 'abdomen', lombar: 'costas', trapezio: 'costas' };
+  const addLabel = (lab, lvl) => {
+    const k = String(lab || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    if (LBL2KEY[k]) setLit(LBL2KEY[k], lvl);
+  };
+  WORKOUT[currentDay].exercises.forEach((ex, ei) => {
+    if (ex.warmup) return;
+    const nomes = ex.biset ? [(ex.a || {}).name, (ex.b || {}).name]
+      : [(typeof _exAtivo === 'function' ? _exAtivo(currentDay, ei).name : ex.name)];
+    nomes.forEach(n => {
+      if (!n) return;
+      const mv = (typeof MUSCULOS_ALVO !== 'undefined' && typeof _normEx === 'function') ? MUSCULOS_ALVO[_normEx(n)] : null;
+      if (mv) { (mv.p || []).forEach(l => addLabel(l, 'p')); (mv.s || []).forEach(l => addLabel(l, 's')); }
+      else { const g = classifyMuscle(n); if (g !== 'aquecimento' && g !== 'outros') setLit(g, 'p'); }
+    });
+  });
+  if (!lit.size) { box.style.display = 'none'; return; }
+  const C = g => lit.get(g) === 'p' ? '#D4AF6A' : (lit.get(g) === 's' ? '#7d6a44' : '#3a3428');
+  const BASE = '#2b261d';
+  // Esqueleto-base (frente em cx 52, costas em cx 158) + shapes por grupo por cima.
+  const fig = (ox, front) => {
+    let s = `<g>`;
+    s += `<circle cx="${ox}" cy="15" r="10" fill="${BASE}"/>`;
+    s += `<rect x="${ox-4}" y="24" width="8" height="7" rx="2" fill="${BASE}"/>`;
+    s += `<path d="M${ox-20} 30 L${ox+20} 30 L${ox+16} 62 L${ox+12} 92 L${ox-12} 92 L${ox-16} 62 Z" fill="${BASE}"/>`;
+    s += `<line x1="${ox-24}" y1="36" x2="${ox-31}" y2="62" stroke="${BASE}" stroke-width="10" stroke-linecap="round"/>`;
+    s += `<line x1="${ox+24}" y1="36" x2="${ox+31}" y2="62" stroke="${BASE}" stroke-width="10" stroke-linecap="round"/>`;
+    s += `<line x1="${ox-31}" y1="64" x2="${ox-35}" y2="86" stroke="${BASE}" stroke-width="8" stroke-linecap="round"/>`;
+    s += `<line x1="${ox+31}" y1="64" x2="${ox+35}" y2="86" stroke="${BASE}" stroke-width="8" stroke-linecap="round"/>`;
+    s += `<line x1="${ox-8}" y1="94" x2="${ox-11}" y2="130" stroke="${BASE}" stroke-width="13" stroke-linecap="round"/>`;
+    s += `<line x1="${ox+8}" y1="94" x2="${ox+11}" y2="130" stroke="${BASE}" stroke-width="13" stroke-linecap="round"/>`;
+    s += `<line x1="${ox-11}" y1="132" x2="${ox-12}" y2="158" stroke="${BASE}" stroke-width="9" stroke-linecap="round"/>`;
+    s += `<line x1="${ox+11}" y1="132" x2="${ox+12}" y2="158" stroke="${BASE}" stroke-width="9" stroke-linecap="round"/>`;
+    if (front) {
+      s += `<circle cx="${ox-22}" cy="36" r="8" fill="${C('ombro')}"/><circle cx="${ox+22}" cy="36" r="8" fill="${C('ombro')}"/>`;
+      s += `<path d="M${ox-16} 34 Q${ox} 37 ${ox} 45 Q${ox} 52 ${ox-12} 52 Q${ox-18} 45 ${ox-16} 34 Z" fill="${C('peito')}"/>`;
+      s += `<path d="M${ox+16} 34 Q${ox} 37 ${ox} 45 Q${ox} 52 ${ox+12} 52 Q${ox+18} 45 ${ox+16} 34 Z" fill="${C('peito')}"/>`;
+      s += `<line x1="${ox-25}" y1="43" x2="${ox-30}" y2="59" stroke="${C('biceps')}" stroke-width="8" stroke-linecap="round"/>`;
+      s += `<line x1="${ox+25}" y1="43" x2="${ox+30}" y2="59" stroke="${C('biceps')}" stroke-width="8" stroke-linecap="round"/>`;
+      s += `<rect x="${ox-8}" y="56" width="16" height="33" rx="7" fill="${C('abdomen')}"/>`;
+      s += `<line x1="${ox-8}" y1="97" x2="${ox-11}" y2="126" stroke="${C('quadriceps')}" stroke-width="11" stroke-linecap="round"/>`;
+      s += `<line x1="${ox+8}" y1="97" x2="${ox+11}" y2="126" stroke="${C('quadriceps')}" stroke-width="11" stroke-linecap="round"/>`;
+    } else {
+      s += `<path d="M${ox-13} 30 L${ox+13} 30 L${ox} 45 Z" fill="${C('costas')}"/>`;
+      s += `<path d="M${ox-16} 42 Q${ox-2} 46 ${ox-3} 62 Q${ox-13} 62 ${ox-17} 52 Z" fill="${C('costas')}"/>`;
+      s += `<path d="M${ox+16} 42 Q${ox+2} 46 ${ox+3} 62 Q${ox+13} 62 ${ox+17} 52 Z" fill="${C('costas')}"/>`;
+      s += `<rect x="${ox-6}" y="64" width="12" height="15" rx="4" fill="${C('costas')}"/>`;
+      s += `<circle cx="${ox-22}" cy="36" r="8" fill="${C('ombro')}"/><circle cx="${ox+22}" cy="36" r="8" fill="${C('ombro')}"/>`;
+      s += `<line x1="${ox-25}" y1="43" x2="${ox-30}" y2="59" stroke="${C('triceps')}" stroke-width="8" stroke-linecap="round"/>`;
+      s += `<line x1="${ox+25}" y1="43" x2="${ox+30}" y2="59" stroke="${C('triceps')}" stroke-width="8" stroke-linecap="round"/>`;
+      s += `<ellipse cx="${ox-7}" cy="95" rx="8" ry="9" fill="${C('gluteo')}"/><ellipse cx="${ox+7}" cy="95" rx="8" ry="9" fill="${C('gluteo')}"/>`;
+      s += `<line x1="${ox-8}" y1="107" x2="${ox-11}" y2="127" stroke="${C('posterior')}" stroke-width="11" stroke-linecap="round"/>`;
+      s += `<line x1="${ox+8}" y1="107" x2="${ox+11}" y2="127" stroke="${C('posterior')}" stroke-width="11" stroke-linecap="round"/>`;
+      s += `<line x1="${ox-11}" y1="135" x2="${ox-12}" y2="153" stroke="${C('panturrilha')}" stroke-width="8" stroke-linecap="round"/>`;
+      s += `<line x1="${ox+11}" y1="135" x2="${ox+12}" y2="153" stroke="${C('panturrilha')}" stroke-width="8" stroke-linecap="round"/>`;
+    }
+    s += `<text x="${ox}" y="169" fill="#6f6a60" font-size="8.5" letter-spacing="1" text-anchor="middle">${front ? 'FRENTE' : 'COSTAS'}</text>`;
+    s += `</g>`;
+    return s;
+  };
+  const ordem = ['peito','costas','quadriceps','posterior','gluteo','ombro','biceps','triceps','panturrilha','abdomen'];
+  const chips = ordem.filter(g => lit.has(g)).map(g => `<span class="mm-chip${lit.get(g) === 's' ? ' sec' : ''}">${MUSCLE_LABELS[g] || g}</span>`).join('');
+  box.innerHTML = `<svg class="mm-svg" viewBox="0 0 210 174" role="img" aria-label="Músculos trabalhados hoje">${fig(52, true)}${fig(158, false)}</svg>
+    <div class="mm-info"><div class="mm-title">Músculos de hoje</div><div class="mm-chips">${chips}</div></div>`;
+  box.style.display = 'flex';
 }
 
 // ══ Streak (sequência de dias treinando) ══
