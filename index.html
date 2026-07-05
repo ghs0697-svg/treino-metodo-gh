@@ -6464,6 +6464,24 @@ function updateDayProgress() {
 }
 
 // ══ Mapa muscular do dia ══
+// Resolve o label do MUSCULOS_ALVO pro grupo do mapa. Labels reais do banco:
+// Dorsal/Lombar/Trapézio → costas; Ombro anterior/lateral/Posterior de ombro → ombro
+// (checado ANTES de "posterior" de coxa); Glúteo médio → glúteo; Adutores → quadríceps.
+function _mmGroupFromLabel(lab) {
+  const k = String(lab || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  if (k.includes('ombro')) return 'ombro';
+  if (k.includes('dorsal') || k.includes('lombar') || k.includes('trapezio') || k.includes('costas')) return 'costas';
+  if (k.startsWith('gluteo')) return 'gluteo';
+  if (k.startsWith('posterior')) return 'posterior';
+  if (k.startsWith('quadri') || k.startsWith('adutor')) return 'quadriceps';
+  if (k.startsWith('antebrac')) return 'antebraco';
+  if (k.startsWith('bicep')) return 'biceps';
+  if (k.startsWith('tricep')) return 'triceps';
+  if (k.startsWith('panturr')) return 'panturrilha';
+  if (k.startsWith('abdom') || k.includes('obliquo') || k === 'core') return 'abdomen';
+  if (k.includes('peito') || k.includes('peitoral')) return 'peito';
+  return null;
+}
 // Silhueta frente/costas com os grupos do dia acesos em dourado. Usa o
 // classifyMuscle que já alimenta o card de conclusão; respeita substituto ativo.
 function renderMuscleMap() {
@@ -6474,24 +6492,7 @@ function renderMuscleMap() {
   // vindo do MUSCULOS_ALVO (mesma fonte da tag do card); fallback classifyMuscle.
   const lit = new Map();
   const setLit = (k, lvl) => { if (lvl === 'p' || !lit.has(k)) lit.set(k, lvl); };
-  // Resolve o label do MUSCULOS_ALVO pro grupo do mapa. Labels reais do banco:
-  // Dorsal/Lombar/Trapézio → costas; Ombro anterior/lateral/Posterior de ombro → ombro
-  // (checado ANTES de "posterior" de coxa); Glúteo médio → glúteo; Adutores → quadríceps.
-  const _mmKey = lab => {
-    const k = String(lab || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-    if (k.includes('ombro')) return 'ombro';
-    if (k.includes('dorsal') || k.includes('lombar') || k.includes('trapezio') || k.includes('costas')) return 'costas';
-    if (k.startsWith('gluteo')) return 'gluteo';
-    if (k.startsWith('posterior')) return 'posterior';
-    if (k.startsWith('quadri') || k.startsWith('adutor')) return 'quadriceps';
-    if (k.startsWith('bicep')) return 'biceps';
-    if (k.startsWith('tricep')) return 'triceps';
-    if (k.startsWith('panturr')) return 'panturrilha';
-    if (k.startsWith('abdom') || k.includes('obliquo') || k === 'core') return 'abdomen';
-    if (k.includes('peito') || k.includes('peitoral')) return 'peito';
-    return null;
-  };
-  const addLabel = (lab, lvl) => { const g = _mmKey(lab); if (g) setLit(g, lvl); };
+  const addLabel = (lab, lvl) => { const g = _mmGroupFromLabel(lab); if (g) setLit(g, lvl); };
   WORKOUT[currentDay].exercises.forEach((ex, ei) => {
     if (ex.warmup) return;
     const nomes = ex.biset ? [(ex.a || {}).name, (ex.b || {}).name]
@@ -6526,6 +6527,8 @@ function renderMuscleMap() {
       s += `<path d="M${ox+16} 34 Q${ox} 37 ${ox} 45 Q${ox} 52 ${ox+12} 52 Q${ox+18} 45 ${ox+16} 34 Z" fill="${C('peito')}"/>`;
       s += `<line x1="${ox-25}" y1="43" x2="${ox-30}" y2="59" stroke="${C('biceps')}" stroke-width="8" stroke-linecap="round"/>`;
       s += `<line x1="${ox+25}" y1="43" x2="${ox+30}" y2="59" stroke="${C('biceps')}" stroke-width="8" stroke-linecap="round"/>`;
+      s += `<line x1="${ox-31}" y1="66" x2="${ox-34}" y2="84" stroke="${C('antebraco')}" stroke-width="6.5" stroke-linecap="round"/>`;
+      s += `<line x1="${ox+31}" y1="66" x2="${ox+34}" y2="84" stroke="${C('antebraco')}" stroke-width="6.5" stroke-linecap="round"/>`;
       s += `<rect x="${ox-8}" y="56" width="16" height="33" rx="7" fill="${C('abdomen')}"/>`;
       s += `<line x1="${ox-8}" y1="97" x2="${ox-11}" y2="126" stroke="${C('quadriceps')}" stroke-width="11" stroke-linecap="round"/>`;
       s += `<line x1="${ox+8}" y1="97" x2="${ox+11}" y2="126" stroke="${C('quadriceps')}" stroke-width="11" stroke-linecap="round"/>`;
@@ -6547,8 +6550,9 @@ function renderMuscleMap() {
     s += `</g>`;
     return s;
   };
-  const ordem = ['peito','costas','quadriceps','posterior','gluteo','ombro','biceps','triceps','panturrilha','abdomen'];
-  const chips = ordem.filter(g => lit.has(g)).map(g => `<span class="mm-chip${lit.get(g) === 's' ? ' sec' : ''}">${MUSCLE_LABELS[g] || g}</span>`).join('');
+  const ordem = ['peito','costas','quadriceps','posterior','gluteo','ombro','biceps','triceps','antebraco','panturrilha','abdomen'];
+  const CHIP_LBL = Object.assign({ antebraco: 'ANTEBRAÇO' }, (typeof MUSCLE_LABELS !== 'undefined' ? MUSCLE_LABELS : {}));
+  const chips = ordem.filter(g => lit.has(g)).map(g => `<span class="mm-chip${lit.get(g) === 's' ? ' sec' : ''}">${CHIP_LBL[g] || g}</span>`).join('');
   box.innerHTML = `<svg class="mm-svg" viewBox="0 0 210 174" role="img" aria-label="Músculos trabalhados hoje">${fig(52, true)}${fig(158, false)}</svg>
     <div class="mm-info"><div class="mm-title">Músculos de hoje</div><div class="mm-chips">${chips}</div></div>`;
   box.style.display = 'flex';
