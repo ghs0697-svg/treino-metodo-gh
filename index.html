@@ -77,19 +77,26 @@
 
   /* ── Student info ── */
   .student-info {
-    background: var(--card);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 14px;
-    margin: 14px;
-    padding: 14px 16px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    box-shadow: var(--hairline);
+    margin: 12px 14px 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
   }
-  .student-info .field { font-size: 12.5px; line-height: 1.45; }
-  .student-info .label { display: block; color: var(--muted); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1px; }
-  .student-info .value { color: var(--white); font-weight: 600; }
+  .student-info .field {
+    background: var(--card);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 11.5px;
+    line-height: 1.3;
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    box-shadow: var(--hairline);
+    max-width: 100%;
+  }
+  .student-info .label { color: var(--muted); font-weight: 700; font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .student-info .value { color: var(--white); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   /* ── Loading ── */
   .loading-screen {
@@ -692,6 +699,27 @@
   .pg-text { display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: var(--muted); letter-spacing: 0.02em; }
   .pg-bar { background: rgba(255, 255, 255, 0.08); height: 4px; border-radius: 99px; overflow: hidden; margin-top: 6px; }
   .pg-fill { background: var(--gold); height: 100%; border-radius: 99px; transition: width 0.4s; }
+
+  /* ── Hero do dia ── */
+  .day-hero {
+    margin: 12px 14px 0;
+    padding: 14px 15px 13px;
+    background: linear-gradient(160deg, rgba(212,175,106,.10), rgba(212,175,106,.02) 45%, rgba(255,255,255,.015));
+    border: 1px solid rgba(212,175,106,.26);
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.35);
+  }
+  .dh-head { display: flex; align-items: flex-start; gap: 10px; }
+  .dh-head-l { min-width: 0; }
+  .dh-kicker { color: rgba(212,175,106,.8); font-size: 9.5px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
+  .dh-title { color: var(--white); font-size: 19px; font-weight: 800; line-height: 1.15; margin-top: 3px; }
+  .dh-sub { color: #8d8579; font-size: 11.5px; margin-top: 3px; }
+  .dh-head .pg-streak { margin-left: auto; flex: none; background: rgba(212,175,106,.12); color: var(--gold); font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 999px; }
+  .dh-head .pg-streak:empty { display: none; }
+  .day-hero .muscle-map { background: none; border: none; box-shadow: none; margin: 8px 0 0; padding: 0; }
+  .day-hero .day-progress { padding: 12px 0 0; }
+  .day-hero .focus-entry { margin: 12px 0 0; background: rgba(212,175,106,.07); }
+  body.view-dieta #dayHero, body.view-ghflix #dayHero { display: none !important; }
   .pg-streak { color: #ff7043; font-weight: 700; }
 
   /* ── Checkbox de exercício ── */
@@ -907,7 +935,19 @@
     border-radius: 14px; display: flex; align-items: center; gap: 12px;
     box-shadow: var(--hairline);
   }
-  .mm-svg { flex: none; width: 156px; }
+  .mm-stage { flex: none; width: 112px; perspective: 700px; }
+  .mm-tilt { transform-style: preserve-3d; }
+  .mm-card3d {
+    position: relative; width: 100%; aspect-ratio: 106 / 232;
+    transform-style: preserve-3d;
+    transition: transform .65s cubic-bezier(.35, 0, .25, 1);
+    cursor: pointer;
+  }
+  .mm-card3d.flip { transform: rotateY(180deg); }
+  .mm-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+  .mm-face svg { display: block; width: 100%; height: 100%; }
+  .mm-back { transform: rotateY(180deg); }
+  .mm-hint { text-align: center; color: #6f6a60; font-size: 8.5px; letter-spacing: .08em; text-transform: uppercase; margin-top: 4px; }
   .mm-info { flex: 1; min-width: 0; }
   .mm-title { color: var(--gold); font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 7px; }
   .mm-chips { display: flex; flex-wrap: wrap; gap: 5px; }
@@ -2475,8 +2515,8 @@
 <div class="student-info" id="studentInfo" style="display:none;">
   <div class="field"><span class="label">Aluno: </span><span class="value" id="infoNome">-</span></div>
   <div class="field"><span class="label">Frequência: </span><span class="value" id="infoFreq">-</span></div>
-  <div class="field"><span class="label">Objetivo: </span><span class="value" id="infoObj">-</span></div>
   <div class="field"><span class="label">Duração: </span><span class="value" id="infoDur">-</span></div>
+  <div class="field"><span class="label">Objetivo: </span><span class="value" id="infoObj">-</span></div>
 </div>
 
 <div class="treino-bloco-tabs" id="treinoBlocoTabs" style="display:none;"></div>
@@ -2489,15 +2529,23 @@
   <button class="week-btn" onclick="changeWeek(1)">&#8250;</button>
 </div>
 
-<div class="day-progress" id="dayProgress" style="display:none;">
-  <div class="pg-text">
-    <span id="pgLabel">Hoje: 0/0 exercícios</span>
+<!-- ══ HERO DO DIA ══ -->
+<div class="day-hero" id="dayHero" style="display:none;">
+  <div class="dh-head">
+    <div class="dh-head-l">
+      <div class="dh-kicker">Treino de hoje</div>
+      <div class="dh-title" id="dhTitle">DIA 1</div>
+      <div class="dh-sub" id="dhSub"></div>
+    </div>
     <span class="pg-streak" id="pgStreak"></span>
   </div>
-  <div class="pg-bar"><div class="pg-fill" id="pgFill" style="width:0%"></div></div>
+  <div class="muscle-map" id="muscleMap" style="display:none;"></div>
+  <div class="day-progress" id="dayProgress" style="display:none;">
+    <div class="pg-text"><span id="pgLabel">Hoje: 0/0 exercícios</span></div>
+    <div class="pg-bar"><div class="pg-fill" id="pgFill" style="width:0%"></div></div>
+  </div>
+  <button type="button" class="focus-entry" onclick="openFocusMode(currentDay)">▶&nbsp; Modo treino: um exercício por vez</button>
 </div>
-
-<div class="muscle-map" id="muscleMap" style="display:none;"></div>
 
 <div id="exerciseContainer"></div>
 
@@ -6457,6 +6505,8 @@ function updateDayProgress() {
   document.getElementById('pgLabel').textContent = `Hoje: ${done}/${total} exercícios`;
   document.getElementById('pgFill').style.width = pct + '%';
   bar.style.display = total > 0 ? 'block' : 'none';
+  const hero = document.getElementById('dayHero');
+  if (hero) hero.style.display = total > 0 ? 'block' : 'none';
   // Streak label
   const streak = getStreakDays();
   document.getElementById('pgStreak').textContent = streak > 0 ? `🔥 ${streak} dia${streak === 1 ? '' : 's'}` : '';
@@ -6564,11 +6614,48 @@ function renderMuscleMap() {
   };
   const ordem = ['peito','costas','quadriceps','posterior','gluteo','ombro','biceps','triceps','antebraco','panturrilha','abdomen'];
   const CHIP_LBL = Object.assign({ antebraco: 'ANTEBRAÇO' }, (typeof MUSCLE_LABELS !== 'undefined' ? MUSCLE_LABELS : {}));
+  // Título do hero do dia: grupos primários ("COSTAS + BÍCEPS"); fallback "DIA N"
+  const _dhT = document.getElementById('dhTitle'), _dhS = document.getElementById('dhSub');
+  if (_dhT) {
+    const prim = ordem.filter(g => lit.get(g) === 'p').map(g => CHIP_LBL[g] || g);
+    _dhT.textContent = prim.length ? prim.join(' + ') : ('DIA ' + (currentDay + 1));
+  }
+  if (_dhS) _dhS.textContent = 'Dia ' + (currentDay + 1) + (WORKOUT.length ? ' de ' + WORKOUT.length : '') + ' · Semana ' + (typeof currentWeek !== 'undefined' ? currentWeek : 1);
   const chips = ordem.filter(g => lit.has(g)).map(g => `<span class="mm-chip${lit.get(g) === 's' ? ' sec' : ''}">${CHIP_LBL[g] || g}</span>`).join('');
-  box.innerHTML = `<svg class="mm-svg" viewBox="0 0 210 232" role="img" aria-label="Músculos trabalhados hoje">${fig(52, true)}${fig(158, false)}</svg>
+  // Palco 3D: uma figura por face, flip frente/costas no toque (mantém o lado
+  // escolhido entre re-renders na mesma sessão via _mmFlipped).
+  const face = front => `<svg viewBox="0 0 106 232" width="100%" role="img" aria-label="Músculos trabalhados hoje (${front ? 'frente' : 'costas'})">${fig(53, front)}</svg>`;
+  box.innerHTML = `<div class="mm-stage">
+      <div class="mm-tilt" id="mmTilt">
+        <div class="mm-card3d${_mmFlipped ? ' flip' : ''}" id="mmCard3d" onclick="mmFlip()" role="button" aria-label="Girar figura">
+          <div class="mm-face mm-front">${face(true)}</div>
+          <div class="mm-face mm-back">${face(false)}</div>
+        </div>
+      </div>
+      <div class="mm-hint">toca pra girar</div>
+    </div>
     <div class="mm-info"><div class="mm-title">Músculos de hoje</div><div class="mm-chips">${chips}</div></div>`;
   box.style.display = 'flex';
 }
+// Flip 3D do mapa + tilt sutil com o giroscópio (Android direto; iOS só com
+// permissão de sensor, que não pedimos: sem sensor fica só o flip, sem erro).
+let _mmFlipped = false, _mmTiltX = 0, _mmTiltY = 0;
+function mmFlip() {
+  _mmFlipped = !_mmFlipped;
+  const c = document.getElementById('mmCard3d');
+  if (c) c.classList.toggle('flip', _mmFlipped);
+  if (navigator.vibrate) navigator.vibrate(15);
+}
+window.addEventListener('deviceorientation', function (e) {
+  const t = document.getElementById('mmTilt');
+  if (!t || e.beta == null || e.gamma == null) return;
+  // beta ~45° segurando o celular: centraliza nessa pegada e limita a ±6°
+  const tx = Math.max(-6, Math.min(6, (e.beta - 45) / 6));
+  const ty = Math.max(-6, Math.min(6, e.gamma / 6));
+  _mmTiltX += ((-tx) - _mmTiltX) * 0.15;
+  _mmTiltY += ((ty) - _mmTiltY) * 0.15;
+  t.style.transform = 'rotateX(' + _mmTiltX.toFixed(2) + 'deg) rotateY(' + _mmTiltY.toFixed(2) + 'deg)';
+}, { passive: true });
 
 // ══ Streak (sequência de dias treinando) ══
 function streakKey() { return `gh_streak_${STUDENT_ID}`; }
@@ -7338,7 +7425,7 @@ async function loadFromSheets() {
     }
 
     document.getElementById('loadingScreen').style.display = 'none';
-    document.getElementById('studentInfo').style.display = 'grid';
+    document.getElementById('studentInfo').style.display = 'flex';
     document.getElementById('weekSelector').style.display = 'flex';
     document.getElementById('instrToggle').style.display = 'flex';
     document.getElementById('accompToggle').style.display = 'flex';
@@ -7455,7 +7542,7 @@ function renderExercises() {
     const div = document.createElement("div");
     div.className = `day-content ${di === currentDay ? 'active' : ''}`;
     div.setAttribute('data-di', String(di));
-    div.innerHTML = _focusEntryBtn(di) + day.exercises.map((ex, ei) => {
+    div.innerHTML = day.exercises.map((ex, ei) => {
       // ── BI-SET ──
       if (ex.biset) {
         const a = ex.a, b = ex.b;
