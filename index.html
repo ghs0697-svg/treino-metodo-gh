@@ -540,6 +540,24 @@
   }
   .fase-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0 12px; }
   .fase-card { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 10px 6px; text-align: center; }
+  /* Pulso sincronizado com o ciclo de 3,5s dos bonecos (Pos 1s → Iso 0,5s → Neg 2s).
+     O toggleInstructions zera o relógio SMIL na abertura pra CSS e SVG partirem juntos. */
+  .fase-grid .fase-card:nth-child(1) { animation: faseHi1 3.5s linear infinite; }
+  .fase-grid .fase-card:nth-child(2) { animation: faseHi2 3.5s linear infinite; }
+  .fase-grid .fase-card:nth-child(3) { animation: faseHi3 3.5s linear infinite; }
+  @keyframes faseHi1 {
+    0%, 28.5% { border-color: rgba(212,175,106,.55); background: rgba(212,175,106,.09); }
+    28.6%, 100% { border-color: rgba(255,255,255,.08); background: rgba(255,255,255,.03); }
+  }
+  @keyframes faseHi2 {
+    0%, 28.5% { border-color: rgba(255,255,255,.08); background: rgba(255,255,255,.03); }
+    28.6%, 42.8% { border-color: rgba(212,175,106,.55); background: rgba(212,175,106,.09); }
+    42.9%, 100% { border-color: rgba(255,255,255,.08); background: rgba(255,255,255,.03); }
+  }
+  @keyframes faseHi3 {
+    0%, 42.8% { border-color: rgba(255,255,255,.08); background: rgba(255,255,255,.03); }
+    42.9%, 100% { border-color: rgba(212,175,106,.55); background: rgba(212,175,106,.09); }
+  }
   .fase-card .f-tag { font-size: 12px; font-weight: 800; color: var(--gold); }
   .fase-card .f-time { font-size: 17px; font-weight: 800; color: var(--white); margin: 2px 0 3px; }
   .fase-card .f-desc { font-size: 10.5px; color: var(--gray); line-height: 1.4; }
@@ -2555,6 +2573,10 @@
       <div class="gh4-cell">
         <svg viewBox="0 0 150 158" width="100%" role="img" aria-label="Boneco fazendo agachamento na cadência">
           <line x1="56" y1="152" x2="106" y2="152" stroke="#5f5e5a" stroke-width="4" stroke-linecap="round"/>
+          <g transform="translate(7,-4)" opacity="0.45">
+            <line x1="66" y1="147" x2="92" y2="147" stroke="#D4AF6A" stroke-width="7" stroke-linecap="round"/>
+            <polyline points="72 143 93 109 54 117" fill="none" stroke="#D4AF6A" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><animate attributeName="points" dur="3.5s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.286;0.429;1" keySplines="0.3 0 0.3 1;0 0 1 1;0.4 0 0.3 1" values="72 143 93 109 54 117;72 143 75 103 73 63;72 143 75 103 73 63;72 143 93 109 54 117"/></polyline>
+          </g>
           <line x1="66" y1="147" x2="92" y2="147" stroke="#D4AF6A" stroke-width="7" stroke-linecap="round"/>
           <polyline points="72 143 93 109 54 117" fill="none" stroke="#D4AF6A" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"><animate attributeName="points" dur="3.5s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.286;0.429;1" keySplines="0.3 0 0.3 1;0 0 1 1;0.4 0 0.3 1" values="72 143 93 109 54 117;72 143 75 103 73 63;72 143 75 103 73 63;72 143 93 109 54 117"/></polyline>
           <polyline points="54 117 80 85" fill="none" stroke="#D4AF6A" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"><animate attributeName="points" dur="3.5s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.286;0.429;1" keySplines="0.3 0 0.3 1;0 0 1 1;0.4 0 0.3 1" values="54 117 80 85;73 63 77 22;73 63 77 22;54 117 80 85"/></polyline>
@@ -2562,7 +2584,7 @@
           <circle cx="88" cy="75" r="8" fill="#D4AF6A"><animate attributeName="cx" dur="3.5s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.286;0.429;1" keySplines="0.3 0 0.3 1;0 0 1 1;0.4 0 0.3 1" values="88;80;80;88"/><animate attributeName="cy" dur="3.5s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.286;0.429;1" keySplines="0.3 0 0.3 1;0 0 1 1;0.4 0 0.3 1" values="75;9;9;75"/></circle>
           <g><animateTransform attributeName="transform" type="translate" dur="3.5s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.286;0.429;1" keySplines="0.3 0 0.3 1;0 0 1 1;0.4 0 0.3 1" values="0 0;-3 -63;-3 -63;0 0"/>
             <line x1="59" y1="82" x2="103" y2="82" stroke="#2a2114" stroke-width="4.5" stroke-linecap="round"/>
-            <circle cx="59" cy="82" r="6.5" fill="#2a2114"/><circle cx="103" cy="82" r="6.5" fill="#2a2114"/>
+            <circle cx="59" cy="82" r="6.5" fill="#2a2114" stroke="rgba(212,175,106,.45)" stroke-width="1.5"/><circle cx="103" cy="82" r="6.5" fill="#2a2114" stroke="rgba(212,175,106,.45)" stroke-width="1.5"/>
           </g>
         </svg>
         <div class="gh4-lbl">Agachamento</div>
@@ -2573,6 +2595,11 @@
           <line x1="103" y1="10" x2="101" y2="26" stroke="#5f5e5a" stroke-width="2.5"><animate attributeName="x2" dur="3.5s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.286;0.429;1" keySplines="0.3 0 0.3 1;0 0 1 1;0.4 0 0.3 1" values="101;88;88;101"/><animate attributeName="y2" dur="3.5s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.286;0.429;1" keySplines="0.3 0 0.3 1;0 0 1 1;0.4 0 0.3 1" values="26;74;74;26"/></line>
           <line x1="58" y1="116" x2="96" y2="116" stroke="#5f5e5a" stroke-width="5" stroke-linecap="round"/>
           <line x1="77" y1="118" x2="77" y2="142" stroke="#5f5e5a" stroke-width="5" stroke-linecap="round"/>
+          <g transform="translate(6,-4)" opacity="0.45">
+            <line x1="94" y1="144" x2="112" y2="144" stroke="#D4AF6A" stroke-width="7" stroke-linecap="round"/>
+            <polyline points="76 112 104 112 102 140" fill="none" stroke="#D4AF6A" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+            <polyline points="72 70 87 50 98 27" fill="none" stroke="#D4AF6A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><animate attributeName="points" dur="3.5s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.286;0.429;1" keySplines="0.3 0 0.3 1;0 0 1 1;0.4 0 0.3 1" values="72 70 87 50 98 27;64 72 71 96 85 75;64 72 71 96 85 75;72 70 87 50 98 27"/></polyline>
+          </g>
           <line x1="94" y1="144" x2="112" y2="144" stroke="#D4AF6A" stroke-width="7" stroke-linecap="round"/>
           <polyline points="76 112 104 112 102 140" fill="none" stroke="#D4AF6A" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
           <rect x="94" y="96" width="16" height="8" rx="2.5" fill="#5f5e5a"/>
@@ -2590,6 +2617,11 @@
           <rect x="26" y="106" width="96" height="8" rx="3" fill="#5f5e5a"/>
           <line x1="38" y1="114" x2="38" y2="142" stroke="#5f5e5a" stroke-width="6" stroke-linecap="round"/>
           <line x1="110" y1="114" x2="110" y2="142" stroke="#5f5e5a" stroke-width="6" stroke-linecap="round"/>
+          <g transform="translate(3,-6)" opacity="0.45">
+            <line x1="114" y1="146" x2="132" y2="146" stroke="#D4AF6A" stroke-width="7" stroke-linecap="round"/>
+            <polyline points="96 103 116 98 120 142" fill="none" stroke="#D4AF6A" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+            <polyline points="56 101 60 120 66 84" fill="none" stroke="#D4AF6A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><animate attributeName="points" dur="3.5s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.286;0.429;1" keySplines="0.3 0 0.3 1;0 0 1 1;0.4 0 0.3 1" values="56 101 60 120 66 84;56 101 66 84 62 48;56 101 66 84 62 48;56 101 60 120 66 84"/></polyline>
+          </g>
           <line x1="114" y1="146" x2="132" y2="146" stroke="#D4AF6A" stroke-width="7" stroke-linecap="round"/>
           <polyline points="96 103 116 98 120 142" fill="none" stroke="#D4AF6A" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
           <line x1="56" y1="101" x2="96" y2="103" stroke="#D4AF6A" stroke-width="11" stroke-linecap="round"/>
@@ -2597,7 +2629,7 @@
           <polyline points="56 101 60 120 66 84" fill="none" stroke="#D4AF6A" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"><animate attributeName="points" dur="3.5s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.286;0.429;1" keySplines="0.3 0 0.3 1;0 0 1 1;0.4 0 0.3 1" values="56 101 60 120 66 84;56 101 66 84 62 48;56 101 66 84 62 48;56 101 60 120 66 84"/></polyline>
           <g><animateTransform attributeName="transform" type="translate" dur="3.5s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.286;0.429;1" keySplines="0.3 0 0.3 1;0 0 1 1;0.4 0 0.3 1" values="0 0;-4 -36;-4 -36;0 0"/>
             <line x1="50" y1="84" x2="82" y2="84" stroke="#2a2114" stroke-width="4.5" stroke-linecap="round"/>
-            <circle cx="50" cy="84" r="6" fill="#2a2114"/><circle cx="82" cy="84" r="6" fill="#2a2114"/>
+            <circle cx="50" cy="84" r="6" fill="#2a2114" stroke="rgba(212,175,106,.45)" stroke-width="1.5"/><circle cx="82" cy="84" r="6" fill="#2a2114" stroke="rgba(212,175,106,.45)" stroke-width="1.5"/>
           </g>
         </svg>
         <div class="gh4-lbl">Supino</div>
@@ -2607,13 +2639,17 @@
           <rect x="10" y="80" width="36" height="8" rx="3" fill="#5f5e5a"/>
           <line x1="16" y1="88" x2="16" y2="122" stroke="#5f5e5a" stroke-width="6" stroke-linecap="round"/>
           <line x1="40" y1="88" x2="40" y2="122" stroke="#5f5e5a" stroke-width="6" stroke-linecap="round"/>
+          <g transform="translate(5,-5)" opacity="0.45">
+            <line x1="92" y1="150" x2="114" y2="150" stroke="#D4AF6A" stroke-width="7" stroke-linecap="round"/>
+            <polyline points="77 111 109 109 100 146" fill="none" stroke="#D4AF6A" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><animate attributeName="points" dur="3.5s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.286;0.429;1" keySplines="0.3 0 0.3 1;0 0 1 1;0.4 0 0.3 1" values="77 111 109 109 100 146;87 90 112 110 100 146;87 90 112 110 100 146;77 111 109 109 100 146"/></polyline>
+          </g>
           <line x1="92" y1="150" x2="114" y2="150" stroke="#D4AF6A" stroke-width="7" stroke-linecap="round"/>
           <polyline points="77 111 109 109 100 146" fill="none" stroke="#D4AF6A" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><animate attributeName="points" dur="3.5s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.286;0.429;1" keySplines="0.3 0 0.3 1;0 0 1 1;0.4 0 0.3 1" values="77 111 109 109 100 146;87 90 112 110 100 146;87 90 112 110 100 146;77 111 109 109 100 146"/></polyline>
           <polyline points="44 82 77 111" fill="none" stroke="#D4AF6A" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"><animate attributeName="points" dur="3.5s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.286;0.429;1" keySplines="0.3 0 0.3 1;0 0 1 1;0.4 0 0.3 1" values="44 82 77 111;44 82 87 90;44 82 87 90;44 82 77 111"/></polyline>
           <circle cx="30" cy="73" r="8" fill="#D4AF6A"/>
           <g><animateTransform attributeName="transform" type="translate" dur="3.5s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.286;0.429;1" keySplines="0.3 0 0.3 1;0 0 1 1;0.4 0 0.3 1" values="0 0;10 -21;10 -21;0 0"/>
             <line x1="64" y1="104" x2="92" y2="104" stroke="#2a2114" stroke-width="4.5" stroke-linecap="round"/>
-            <circle cx="64" cy="104" r="5.5" fill="#2a2114"/><circle cx="92" cy="104" r="5.5" fill="#2a2114"/>
+            <circle cx="64" cy="104" r="5.5" fill="#2a2114" stroke="rgba(212,175,106,.45)" stroke-width="1.5"/><circle cx="92" cy="104" r="5.5" fill="#2a2114" stroke="rgba(212,175,106,.45)" stroke-width="1.5"/>
           </g>
         </svg>
         <div class="gh4-lbl">Elevação pélvica</div>
@@ -7598,6 +7634,12 @@ function toggleInstructions() {
   const a = document.getElementById('instrArrow');
   c.classList.toggle('show');
   a.classList.toggle('open', c.classList.contains('show'));
+  // Ao abrir, zera o relógio SMIL dos SVGs: os bonecos, a timeline e o pulso
+  // CSS dos cards de fase (que só começa quando o conteúdo vira display:block)
+  // partem juntos do zero e ficam sincronizados.
+  if (c.classList.contains('show')) {
+    c.querySelectorAll('svg').forEach(s => { if (s.setCurrentTime) s.setCurrentTime(0); });
+  }
 }
 
 function toggleHipo() {
