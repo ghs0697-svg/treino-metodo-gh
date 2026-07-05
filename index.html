@@ -720,6 +720,37 @@
   .day-hero .day-progress { padding: 12px 0 0; }
   .day-hero .focus-entry { margin: 12px 0 0; background: rgba(212,175,106,.07); }
   body.view-dieta #dayHero, body.view-ghflix #dayHero { display: none !important; }
+
+  /* ── Abertura cinematográfica ── */
+  .intro-splash { position: fixed; inset: 0; z-index: 12000; background: radial-gradient(120% 90% at 50% 12%, #181410, #0D0D0D 72%); display: none; align-items: center; justify-content: center; }
+  .intro-splash.show { display: flex; }
+  .intro-splash.out { animation: isOut .5s cubic-bezier(.4, 0, .2, 1) forwards; }
+  @keyframes isOut { to { opacity: 0; transform: scale(1.045); } }
+  .is-inner { text-align: center; padding: 0 20px; }
+  .is-logo { color: var(--white); font-size: 28px; font-weight: 800; letter-spacing: .34em; padding-left: .34em; opacity: 0; animation: isIn .8s cubic-bezier(.2, 0, .2, 1) .12s forwards; }
+  .is-logo span { color: var(--gold); }
+  .is-line { width: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(212,175,106,.85), transparent); margin: 15px auto 13px; animation: isLine .7s cubic-bezier(.3, 0, .2, 1) .55s forwards; }
+  @keyframes isLine { to { width: 190px; } }
+  .is-day { color: var(--gold); font-size: 13px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; min-height: 18px; opacity: 0; }
+  .is-day.on { animation: isIn .6s cubic-bezier(.2, 0, .2, 1) forwards; }
+  @keyframes isIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .intro-splash { display: none !important; } }
+
+  /* ── Motion premium: reveal, transição de view, brilho e burst ── */
+  @media (prefers-reduced-motion: no-preference) {
+    .rv { opacity: 0; transform: translateY(14px); transition: opacity .5s cubic-bezier(.2, 0, .2, 1), transform .5s cubic-bezier(.2, 0, .2, 1); }
+    .rv.rv-in { opacity: 1; transform: none; }
+    #dayHero, #exerciseContainer, #dietContent, #studentInfo { animation: viewIn .3s cubic-bezier(.2, 0, .2, 1); }
+    .pg-fill { background: linear-gradient(90deg, var(--gold) 0%, #E6CF9C 50%, var(--gold) 100%); background-size: 200% 100%; animation: pgShine 2.8s linear infinite; }
+    .exercise-card.just-done { animation: cardDone .8s cubic-bezier(.3, 0, .2, 1); }
+  }
+  @keyframes viewIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes pgShine { 0% { background-position: 200% 0; } 100% { background-position: 0% 0; } }
+  @keyframes cardDone {
+    0% { box-shadow: 0 0 0 0 rgba(212, 175, 106, .5); transform: scale(1); }
+    35% { transform: scale(1.012); }
+    100% { box-shadow: 0 0 0 16px rgba(212, 175, 106, 0); transform: scale(1); }
+  }
   .pg-streak { color: #ff7043; font-weight: 700; }
 
   /* ── Checkbox de exercício ── */
@@ -2548,6 +2579,15 @@
 </div>
 
 <div id="exerciseContainer"></div>
+
+<!-- ══ ABERTURA CINEMATOGRÁFICA ══ -->
+<div class="intro-splash" id="introSplash" aria-hidden="true">
+  <div class="is-inner">
+    <div class="is-logo">MÉTODO <span>GH</span></div>
+    <div class="is-line"></div>
+    <div class="is-day" id="isDay"></div>
+  </div>
+</div>
 
 <!-- ══ TIMER OVERLAY ══ -->
 <div class="sub-picker-overlay" id="subPickerOverlay" onclick="if(event.target===this)closeSubPicker()">
@@ -5485,6 +5525,15 @@ function onCheckExercise(di, ei) {
   }
   // Re-render só esse card e a barra
   renderExercises();
+  // Burst dourado no card recém-concluído (some sozinho ao fim da animação)
+  if (newVal) {
+    const card = document.querySelectorAll('#exerciseContainer .exercise-card')[ei];
+    if (card) {
+      card.classList.add('just-done');
+      if (navigator.vibrate) navigator.vibrate(25);
+      setTimeout(() => card.classList.remove('just-done'), 900);
+    }
+  }
 }
 
 // Flag local: já reivindicou pontos do dia (só dispara notifyDayCompletion 1x por dia)
@@ -6511,6 +6560,10 @@ function updateDayProgress() {
   const streak = getStreakDays();
   document.getElementById('pgStreak').textContent = streak > 0 ? `🔥 ${streak} dia${streak === 1 ? '' : 's'}` : '';
   renderMuscleMap();
+  if (typeof _introDayReady === 'function') {
+    const t = document.getElementById('dhTitle');
+    _introDayReady(t ? t.textContent : '');
+  }
 }
 
 // ══ Mapa muscular do dia ══
@@ -6656,6 +6709,76 @@ window.addEventListener('deviceorientation', function (e) {
   _mmTiltY += ((ty) - _mmTiltY) * 0.15;
   t.style.transform = 'rotateX(' + _mmTiltX.toFixed(2) + 'deg) rotateY(' + _mmTiltY.toFixed(2) + 'deg)';
 }, { passive: true });
+
+// ══ Abertura cinematográfica ══
+// Cobre o carregamento da planilha: logo + linha entram na hora; quando o treino
+// renderiza, o título do dia acende e a abertura sai. Nunca prende (failsafe 6s),
+// pula revisor (?editor/?admin/?edit=1), reduced-motion e reaberturas na sessão.
+let _introOn = false, _introMin = 0;
+(function () {
+  try {
+    const p = new URLSearchParams(location.search);
+    if (p.has('editor') || p.has('admin') || p.get('edit') === '1') return;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (sessionStorage.getItem('gh_intro_seen') === '1') return;
+    sessionStorage.setItem('gh_intro_seen', '1');
+    const el = document.getElementById('introSplash');
+    if (!el) return;
+    el.classList.add('show');
+    _introOn = true;
+    _introMin = Date.now() + 1600;
+    setTimeout(_introClose, 6000);
+  } catch (_) {}
+})();
+function _introDayReady(title) {
+  if (!_introOn) return;
+  const d = document.getElementById('isDay');
+  if (d && title) { d.textContent = title; d.classList.add('on'); }
+  const wait = Math.max(0, _introMin - Date.now()) + (title ? 700 : 150);
+  setTimeout(_introClose, wait);
+  _introOn = 'closing';
+}
+function _introClose() {
+  const el = document.getElementById('introSplash');
+  if (!el || !_introOn) return;
+  _introOn = false;
+  el.classList.add('out');
+  setTimeout(() => { el.classList.remove('show', 'out'); }, 520);
+}
+
+// ══ Scroll reveal ══
+// Só marca pra animar o que está ABAIXO da viewport (o visível nunca pisca em
+// re-render); um scroll listener simples acende cada card quando ele entra.
+// De propósito SEM IntersectionObserver: se o reveal falhar por qualquer motivo,
+// o pior caso é card sem animação, nunca card invisível.
+function _rvTick() {
+  const pend = document.querySelectorAll('.rv:not(.rv-in)');
+  if (!pend.length) return;
+  const h = window.innerHeight;
+  pend.forEach(el => {
+    // Revela tudo que já cruzou a linha de gatilho, inclusive o que um pulo de
+    // scroll deixou pra trás: card nunca fica invisível acima da viewport.
+    const r = el.getBoundingClientRect();
+    if (r.top < h * 0.93) el.classList.add('rv-in');
+  });
+}
+function _rvScan(root) {
+  try {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    (root || document).querySelectorAll('.exercise-card:not(.rv), .diet-meal-card:not(.rv), .tec-card:not(.rv), .accomp-card:not(.rv), .level-card:not(.rv)').forEach(el => {
+      const r = el.getBoundingClientRect();
+      if (r.top > window.innerHeight * 0.92) el.classList.add('rv');
+    });
+    _rvTick();
+  } catch (_) {}
+}
+(function () {
+  window.addEventListener('scroll', _rvTick, { passive: true });
+  ['exerciseContainer', 'dietContent', 'instructionsContent', 'accompContent'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && 'MutationObserver' in window) new MutationObserver(() => _rvScan(el)).observe(el, { childList: true });
+  });
+})();
 
 // ══ Streak (sequência de dias treinando) ══
 function streakKey() { return `gh_streak_${STUDENT_ID}`; }
@@ -11130,6 +11253,7 @@ function renderDiet() {
 
   container.innerHTML = html;
   container.style.display = 'block';
+  if (typeof _introDayReady === 'function') _introDayReady('');
   // A15: dieta renderizou → esconde qualquer estado de aviso/loading que tenha ficado de uma falha anterior
   const _de = document.getElementById('dietError'); if (_de) _de.style.display = 'none';
   const _dl = document.getElementById('dietLoading'); if (_dl) _dl.style.display = 'none';
