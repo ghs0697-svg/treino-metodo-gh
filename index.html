@@ -6235,7 +6235,7 @@ async function loadAndShowLastModified() {
 // grava o baseline, sem banner (não inventa aviso retroativo).
 function _avisoKeys() {
   var id = (typeof STUDENT_ID !== 'undefined' && STUDENT_ID) ? STUDENT_ID : 'x';
-  return { ver: 'gh_avisoVer_' + id, mod: 'gh_avisoMod_' + id, ev: 'gh_avisoEvent_' + id, dis: 'gh_avisoDismiss_' + id };
+  return { ver: 'gh_avisoVer_' + id, mod: 'gh_avisoMod_' + id, ev: 'gh_avisoEvent_' + id, dis: 'gh_avisoDismiss_' + id, first: 'gh_avisoFirst_' + id };
 }
 function _detectProtoAviso(version, lastModISO) {
   try {
@@ -6244,11 +6244,19 @@ function _detectProtoAviso(version, lastModISO) {
     var M = String(lastModISO || '');
     var prevVraw = localStorage.getItem(K.ver);
     var prevM = localStorage.getItem(K.mod);
+    if (!localStorage.getItem(K.first)) localStorage.setItem(K.first, String(Date.now()));
     var event = null;
     if (prevVraw !== null) {
       var prevV = parseFloat(prevVraw) || 0;
       if (curV > prevV) event = { type: 'reajuste', at: M };
-      else if (prevM && M && M !== prevM) event = { type: 'ajuste', at: M };
+      else if (prevM && M && M !== prevM) {
+        // #490: em protocolo 1.0 recém-entregue, correção pós-entrega não vira banner
+        // de "ajuste" (a 1ª abertura neste navegador foi há menos de 48h). O banner
+        // de reajuste (versão subiu) segue intacto acima.
+        var firstMs = parseInt(localStorage.getItem(K.first), 10) || 0;
+        var recemEntregue = curV <= 1.01 && firstMs && (Date.now() - firstMs) < 48 * 3600000;
+        if (!recemEntregue) event = { type: 'ajuste', at: M };
+      }
     }
     localStorage.setItem(K.ver, String(version || ''));
     localStorage.setItem(K.mod, M);
@@ -6263,7 +6271,9 @@ function _renderProtoAviso() {
   var el = document.getElementById('protoAviso');
   if (!el) return;
   try {
-    if (new URLSearchParams(location.search).get('edit') === '1') { el.style.display = 'none'; return; }
+    // #490: revisor não é aluno — qualquer modo treinador (?editor / ?admin / ?edit=1) esconde o banner
+    var _bp = new URLSearchParams(location.search);
+    if (_bp.has('editor') || _bp.has('admin') || _bp.get('edit') === '1') { el.style.display = 'none'; return; }
     var K = _avisoKeys();
     var ev = JSON.parse(localStorage.getItem(K.ev) || 'null');
     if (!ev || !ev.at) { el.style.display = 'none'; return; }
@@ -6464,11 +6474,24 @@ function renderMuscleMap() {
   // vindo do MUSCULOS_ALVO (mesma fonte da tag do card); fallback classifyMuscle.
   const lit = new Map();
   const setLit = (k, lvl) => { if (lvl === 'p' || !lit.has(k)) lit.set(k, lvl); };
-  const LBL2KEY = { quadriceps: 'quadriceps', gluteo: 'gluteo', posterior: 'posterior', peito: 'peito', costas: 'costas', ombro: 'ombro', biceps: 'biceps', triceps: 'triceps', panturrilha: 'panturrilha', abdomen: 'abdomen', lombar: 'costas', trapezio: 'costas' };
-  const addLabel = (lab, lvl) => {
+  // Resolve o label do MUSCULOS_ALVO pro grupo do mapa. Labels reais do banco:
+  // Dorsal/Lombar/Trapézio → costas; Ombro anterior/lateral/Posterior de ombro → ombro
+  // (checado ANTES de "posterior" de coxa); Glúteo médio → glúteo; Adutores → quadríceps.
+  const _mmKey = lab => {
     const k = String(lab || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-    if (LBL2KEY[k]) setLit(LBL2KEY[k], lvl);
+    if (k.includes('ombro')) return 'ombro';
+    if (k.includes('dorsal') || k.includes('lombar') || k.includes('trapezio') || k.includes('costas')) return 'costas';
+    if (k.startsWith('gluteo')) return 'gluteo';
+    if (k.startsWith('posterior')) return 'posterior';
+    if (k.startsWith('quadri') || k.startsWith('adutor')) return 'quadriceps';
+    if (k.startsWith('bicep')) return 'biceps';
+    if (k.startsWith('tricep')) return 'triceps';
+    if (k.startsWith('panturr')) return 'panturrilha';
+    if (k.startsWith('abdom') || k.includes('obliquo') || k === 'core') return 'abdomen';
+    if (k.includes('peito') || k.includes('peitoral')) return 'peito';
+    return null;
   };
+  const addLabel = (lab, lvl) => { const g = _mmKey(lab); if (g) setLit(g, lvl); };
   WORKOUT[currentDay].exercises.forEach((ex, ei) => {
     if (ex.warmup) return;
     const nomes = ex.biset ? [(ex.a || {}).name, (ex.b || {}).name]
