@@ -885,6 +885,20 @@
   .history-bar-fill { background: var(--gold); height: 100%; transition: width 0.3s; min-width: 2px; }
   .history-bar-fill.empty { background: #333; }
   .history-bar-val { color: var(--white); font-size: 11px; font-weight: 700; text-align: right; }
+  .hist-chips { display: flex; gap: 7px; flex-wrap: wrap; margin: 10px 0 12px; }
+  .hist-chip { background: #222; border: 1px solid #333; color: #aaa; font-size: 11px; padding: 5px 10px; border-radius: 999px; }
+  .hist-chip b { color: var(--white); }
+  .hist-chip.pr { background: rgba(212,175,106,.12); border-color: rgba(212,175,106,.35); color: var(--gold); }
+  .hist-chip.pr b { color: var(--gold); }
+  .rec-row { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid #242424; font-size: 12px; align-items: baseline; }
+  .rec-row:last-child { border-bottom: none; }
+  .rec-label { color: #aaa; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rec-val { color: var(--white); font-weight: 700; text-align: right; flex: none; }
+  .rec-val b { color: #6ed66e; }
+  .rec-row.rec-pr { flex-direction: column; gap: 2px; align-items: flex-start; }
+  .rec-row.rec-pr .rec-label { white-space: normal; }
+  .rec-row.rec-pr .rec-val { color: var(--gold); text-align: left; font-size: 13px; }
+  .rec-sub { color: var(--gold); font-size: 10.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; margin: 10px 0 2px; }
   .history-trend { padding: 10px 12px; background: #222; border-radius: 6px; font-size: 12px; color: #ccc; line-height: 1.4; }
   .history-trend.up { background: #1f3a1f; color: #6ed66e; }
   .history-trend.down { background: #3a1f1f; color: #ff7043; }
@@ -3086,6 +3100,12 @@
     </div>
     <p style="color:#888;font-size:11px;margin:10px 0 0;line-height:1.4;">Conta 1 quando tu marca todos os exercícios do dia como ✓. Em dias sem treino não conta, mas se passar 2 dias sem fechar, a sequência atual zera.</p>
     <p style="color:#666;font-size:10px;margin:6px 0 0;line-height:1.4;font-style:italic;">Sequências e dias treinados são compartilhados com a equipe pra ranking de premiação mensal.</p>
+  </div>
+
+  <div class="accomp-card" id="recordesCard">
+    <h4>📈 Recordes pessoais</h4>
+    <div id="recordesBody" style="color:#888;font-size:12px;line-height:1.45;">Carregando...</div>
+    <p style="color:#666;font-size:10px;margin:8px 0 0;line-height:1.4;font-style:italic;">Registro pessoal do teu progresso de carga, calculado do que tu anota nos exercícios.</p>
   </div>
 </div>
 
@@ -6804,41 +6824,67 @@ function _focusRender() {
 function showHistory(di, ei) {
   const ex = WORKOUT[di] && WORKOUT[di].exercises[ei];
   if (!ex) return;
-  document.getElementById('historyTitle').textContent = '📈 ' + ex.name;
+  const _hnm = (!ex.biset && typeof _exAtivo === 'function') ? _exAtivo(di, ei).name : (ex.name || (ex.a || {}).name || '');
+  document.getElementById('historyTitle').textContent = '📈 ' + _hnm;
   const values = [];
   for (let w = 1; w <= TOTAL_WEEKS; w++) {
     const c = parseFloat(loadCarga(di, ei, w)) || 0;
     const p = parseFloat(loadPlacas(di, ei, w)) || 0;
     values.push({ w, kg: c, placas: p });
   }
-  const max = Math.max(...values.map(v => v.kg), 1);
-  const unit = getUnit();
-  const fmt = (kg) => kgToDisplay(kg) + unit;
-  let bars = '';
-  values.forEach(v => {
-    const pct = max > 0 ? (v.kg/max)*100 : 0;
-    const empty = v.kg === 0;
-    const valTxt = v.kg > 0 ? (v.placas > 0 ? `${fmt(v.kg)} · ${v.placas}pl` : fmt(v.kg)) : '—';
-    bars += `<div class="history-bar-row">
-      <span class="history-bar-label">Semana ${v.w}</span>
-      <div class="history-bar-track"><div class="history-bar-fill ${empty ? 'empty' : ''}" style="width:${empty ? 100 : pct}%"></div></div>
-      <span class="history-bar-val">${valTxt}</span>
+  // Série do gráfico: kg quando existe; exercício só de placas acompanha placas.
+  const anyKg = values.some(v => v.kg > 0);
+  const val = v => anyKg ? v.kg : v.placas;
+  const unit = anyKg ? getUnit() : 'pl';
+  const fmt = (n) => anyKg ? (kgToDisplay(n) + unit) : (n + 'pl');
+  const filled = values.filter(v => val(v) > 0);
+  let html = '';
+  if (!filled.length) {
+    html = '<div style="color:#888;font-size:12px;text-align:center;padding:18px 6px;">Sem cargas anotadas ainda. Anota semana a semana que a curva aparece aqui.</div>';
+  } else {
+    const pr = filled.reduce((a, b) => val(b) >= val(a) ? b : a);
+    const lo = Math.min(...filled.map(val)), hi = Math.max(...filled.map(val));
+    const W = 320, H = 148, padL = 10, padR = 26, padT = 22, padB = 24;
+    const x = w => padL + (TOTAL_WEEKS > 1 ? (w - 1) / (TOTAL_WEEKS - 1) : 0) * (W - padL - padR);
+    const yLo = lo === hi ? lo * 0.85 : lo - (hi - lo) * 0.25;
+    const yHi = lo === hi ? hi * 1.1 + 1 : hi + (hi - lo) * 0.18;
+    const y = v => padT + (1 - (v - yLo) / (yHi - yLo)) * (H - padT - padB);
+    const pts = filled.map(v => ({ px: x(v.w), py: y(val(v)), v }));
+    const lineD = pts.map((p, i) => (i ? 'L' : 'M') + p.px.toFixed(1) + ' ' + p.py.toFixed(1)).join(' ');
+    const areaD = lineD + ` L${pts[pts.length-1].px.toFixed(1)} ${H - padB} L${pts[0].px.toFixed(1)} ${H - padB} Z`;
+    let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Evolução da carga por semana">`;
+    svg += `<line x1="${padL}" y1="${H - padB}" x2="${W - padR}" y2="${H - padB}" stroke="rgba(255,255,255,.12)" stroke-width="1"/>`;
+    values.forEach(v => { svg += `<line x1="${x(v.w).toFixed(1)}" y1="${H - padB}" x2="${x(v.w).toFixed(1)}" y2="${H - padB + 3}" stroke="rgba(255,255,255,.2)" stroke-width="1"/>`; });
+    svg += `<text x="${x(1).toFixed(1)}" y="${H - 8}" fill="#8a8579" font-size="9.5" text-anchor="middle">S1</text>`;
+    svg += `<text x="${x(TOTAL_WEEKS).toFixed(1)}" y="${H - 8}" fill="#8a8579" font-size="9.5" text-anchor="middle">S${TOTAL_WEEKS}</text>`;
+    if (pts.length > 1) svg += `<path d="${areaD}" fill="rgba(212,175,106,.12)"/>`;
+    svg += `<path d="${lineD}" fill="none" stroke="#D4AF6A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+    pts.forEach(p => {
+      const isPr = p.v.w === pr.w && val(p.v) === val(pr);
+      svg += `<circle cx="${p.px.toFixed(1)}" cy="${p.py.toFixed(1)}" r="${isPr ? 5 : 3.5}" fill="${isPr ? '#E6CF9C' : '#D4AF6A'}" stroke="#14110c" stroke-width="1.5"/>`;
+      if (isPr) svg += `<text x="${p.px.toFixed(1)}" y="${(p.py - 9).toFixed(1)}" fill="#E6CF9C" font-size="10" font-weight="800" text-anchor="middle">PR ${fmt(val(p.v))}</text>`;
+    });
+    svg += `</svg>`;
+    const first = filled[0], last = filled[filled.length - 1];
+    html = svg + `<div class="hist-chips">
+      <span class="hist-chip">Início <b>${fmt(val(first))}</b></span>
+      <span class="hist-chip">Atual <b>${fmt(val(last))}</b></span>
+      <span class="hist-chip pr">PR <b>${fmt(val(pr))}</b> · S${pr.w}</span>
     </div>`;
-  });
-  document.getElementById('historyBars').innerHTML = bars;
+  }
+  document.getElementById('historyBars').innerHTML = html;
   // Trend
-  const filled = values.filter(v => v.kg > 0);
   const trend = document.getElementById('historyTrend');
   trend.classList.remove('up', 'down');
   if (filled.length === 0) {
     trend.textContent = 'Sem dados ainda, anota a carga semana a semana pra acompanhar a evolução.';
   } else if (filled.length === 1) {
-    trend.textContent = `Primeira carga registrada: ${fmt(filled[0].kg)} na semana ${filled[0].w}. Continua progredindo!`;
+    trend.textContent = `Primeira carga registrada: ${fmt(val(filled[0]))} na semana ${filled[0].w}. Continua progredindo!`;
   } else {
     const first = filled[0], last = filled[filled.length-1];
-    const diffKg = last.kg - first.kg;
-    const pct = ((diffKg/first.kg)*100).toFixed(0);
-    const diffDisp = unit === 'lb' ? (Math.round(diffKg * LB_PER_KG * 10) / 10) : (Math.round(diffKg * 10) / 10);
+    const diffKg = val(last) - val(first);
+    const pct = ((diffKg/val(first))*100).toFixed(0);
+    const diffDisp = (anyKg && unit === 'lb') ? (Math.round(diffKg * LB_PER_KG * 10) / 10) : (Math.round(diffKg * 10) / 10);
     if (diffKg > 0) {
       trend.textContent = `📈 Evoluiu +${diffDisp}${unit} (+${pct}%) da semana ${first.w} pra ${last.w}`;
       trend.classList.add('up');
@@ -6846,13 +6892,62 @@ function showHistory(di, ei) {
       trend.textContent = `⚠ Reduziu ${Math.abs(diffDisp)}${unit} da semana ${first.w} pra ${last.w}, checa se foi descanso/lesão`;
       trend.classList.add('down');
     } else {
-      trend.textContent = `⏸ Mesma carga ${fmt(first.kg)} em ${filled.length} semanas, hora de tentar progredir`;
+      trend.textContent = `⏸ Mesma carga ${fmt(val(first))} em ${filled.length} semanas, hora de tentar progredir`;
     }
   }
   document.getElementById('historyModal').classList.add('show');
 }
 function closeHistoryModal() { document.getElementById('historyModal').classList.remove('show'); }
 function closeHistoryOnBg(e) { if (e.target.id === 'historyModal') closeHistoryModal(); }
+
+// ══ Recordes pessoais (Acompanhamento) ══
+// Registro individual do progresso de carga: PR absoluto + maiores evoluções do
+// bloco. SÓ LEITURA (loadCarga), nada de premiação: é histórico do próprio aluno.
+function renderRecordes() {
+  const box = document.getElementById('recordesBody');
+  if (!box) return;
+  if (typeof WORKOUT === 'undefined' || !WORKOUT || !WORKOUT.length) {
+    box.innerHTML = 'Abre a aba TREINO primeiro pra carregar teus registros.';
+    return;
+  }
+  const items = [];
+  WORKOUT.forEach((day, di) => (day.exercises || []).forEach((ex, ei) => {
+    if (ex.warmup) return;
+    const partes = ex.biset
+      ? [{ k: ei + 'a', nome: (ex.a || {}).name }, { k: ei + 'b', nome: (ex.b || {}).name }]
+      : [{ k: String(ei), nome: (typeof _exAtivo === 'function' ? _exAtivo(di, ei).name : ex.name) }];
+    partes.forEach(pt => {
+      if (!pt.nome) return;
+      const serie = [];
+      for (let w = 1; w <= TOTAL_WEEKS; w++) {
+        const v = parseFloat(loadCarga(di, pt.k, w)) || 0;
+        if (v > 0) serie.push({ w, kg: v });
+      }
+      if (!serie.length) return;
+      const first = serie[0], last = serie[serie.length - 1];
+      const max = serie.reduce((a, b) => b.kg >= a.kg ? b : a);
+      items.push({ nome: pt.nome, first, last, max, ganho: last.kg - first.kg, pct: first.kg > 0 ? (last.kg - first.kg) / first.kg * 100 : 0 });
+    });
+  }));
+  if (!items.length) {
+    box.innerHTML = 'Anota tuas cargas nos exercícios que os teus recordes aparecem aqui.';
+    return;
+  }
+  const unit = getUnit();
+  const fmt = kg => kgToDisplay(kg) + unit;
+  const prGeral = items.reduce((a, b) => b.max.kg >= a.max.kg ? b : a);
+  const evol = items.filter(i => i.ganho > 0).sort((a, b) => b.pct - a.pct).slice(0, 3);
+  let html = `<div class="rec-row rec-pr"><span class="rec-label">Maior carga registrada</span><span class="rec-val">${fmt(prGeral.max.kg)} · ${prGeral.nome}</span></div>`;
+  if (evol.length) {
+    html += `<div class="rec-sub">Maiores evoluções do bloco</div>`;
+    evol.forEach(i => {
+      html += `<div class="rec-row"><span class="rec-label">${i.nome}</span><span class="rec-val">${fmt(i.first.kg)} → ${fmt(i.last.kg)} <b>+${i.pct.toFixed(0)}%</b></span></div>`;
+    });
+  } else {
+    html += `<div class="rec-sub" style="margin-top:8px;">Segue anotando as cargas: quando subirem, as evoluções aparecem aqui.</div>`;
+  }
+  box.innerHTML = html;
+}
 
 // ══ Cadência (concêntrica/isometria/excêntrica) ══
 // Padrão ouro: 1 / 0.5 / 2. Lê custom da OBS quando GH escreveu (excêntrica 5 seg etc).
@@ -7778,6 +7873,7 @@ function toggleAccomp() {
   c.classList.toggle('show');
   a.classList.toggle('open', c.classList.contains('show'));
   if (c.classList.contains('show')) {
+    renderRecordes();
     renderWater();
     renderStreakPanel();
     renderWaterToggleState();
