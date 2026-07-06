@@ -7089,17 +7089,24 @@ let _focusDi = 0, _focusIdx = 0;
 function _focusEntryBtn(di) {
   return `<button type="button" class="focus-entry" onclick="openFocusMode(${di})">▶&nbsp; Modo treino: um exercício por vez</button>`;
 }
+let _focusOpenedAt = 0;
 function openFocusMode(di) {
   _focusDi = di;
   const exs = (WORKOUT[di] && WORKOUT[di].exercises) || [];
   if (!exs.length) return;
   const start = exs.findIndex((ex, ei) => !isDone(di, ei));
   _focusIdx = start === -1 ? 0 : start;
+  _focusOpenedAt = Date.now();
   document.getElementById('focusOverlay').classList.add('show');
   document.body.style.overflow = 'hidden';
   _focusRender();
 }
 function closeFocusMode() {
+  // Blindagem (Hugo, 2026-07-06 "fecha sozinho ao abrir"): ignora qualquer close
+  // nos primeiros 300ms após abrir — um close nessa janela é sempre acidental
+  // (ghost-click/toque residual), nunca intencional (ninguém abre e fecha de fato
+  // em <300ms). O ✕ e o auto-close de "dia concluído" acontecem bem depois disso.
+  if (Date.now() - _focusOpenedAt < 300) return;
   document.getElementById('focusOverlay').classList.remove('show');
   document.body.style.overflow = '';
   renderExercises();
@@ -7271,7 +7278,8 @@ function _focusRender() {
     if (!ov || !ov.classList.contains('show') || sx === null) return;
     const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
     sx = sy = null;
-    if (e.target && e.target.tagName === 'INPUT') return;
+    // Não interpreta toque sobre controles como swipe (botão/input/link)
+    if (e.target && e.target.closest && e.target.closest('button, input, a')) return;
     if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) focusNav(dx < 0 ? 1 : -1);
   }, { passive: true });
 })();
