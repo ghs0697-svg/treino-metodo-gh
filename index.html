@@ -11626,6 +11626,29 @@ function mostrarPlanBlock(motivo) {
   ov.classList.add('show'); document.body.style.overflow = 'hidden';
 }
 
+// Decisão PURA do gate de acesso (testável, sem efeito colateral). Retorna
+// { action, arg } — action ∈ none/cancelado/pausado/vencido/carencia/prevenc.
+// GH 2026-07-06 (caso Andreza): o "vencido" que BLOQUEIA segue a DATA de
+// vencimento que o servidor entrega (col "Vencimento (protocolo)" = protocolo
+// INICIAL + plano; fallback J). A col K é J-based (data de COMPRA) e vira
+// "Vencido" cedo demais pra quem teve gap compra→entrega — então NÃO uso o
+// rótulo de K pra vencido, só pra Cancelado/Pausado (estados admin que a data
+// não expressa). Como o servidor entrega AB ≥ J, ativo-por-data nunca conflita.
+function _planGateDecision(j, GRACE, PRE_DIAS, hojeMs) {
+  if (!j || !j.found) return { action: 'none' };                 // fail open (sem dado)
+  var st = String(j.status || '').trim().toLowerCase();
+  if (st === 'cancelado') return { action: 'cancelado' };        // bloqueio duro, independe da data
+  if (st === 'pausado')   return { action: 'pausado' };          // congelamento total
+  if (!j.vencimento) return { action: 'none' };                  // fail open
+  var vencDate = new Date(j.vencimento + 'T00:00:00');
+  if (isNaN(vencDate.getTime())) return { action: 'none' };      // fail open
+  var diasToVenc = Math.round((vencDate.getTime() - hojeMs) / 86400000); // + futuro, - passado
+  var isVencido = diasToVenc < 0;                                // passou da data servida (protocolo)
+  if (isVencido && diasToVenc < -GRACE) return { action: 'vencido' };                       // duro pós-carência
+  if (isVencido) return { action: 'carencia', arg: Math.max(1, GRACE + diasToVenc + 1) };   // dentro da carência
+  if (diasToVenc >= 0 && diasToVenc <= PRE_DIAS) return { action: 'prevenc', arg: diasToVenc }; // aviso pré-venc
+  return { action: 'none' };
+}
 (function planBlockGate() {
   try {
     if (typeof SHEET_ID === 'undefined' || !SHEET_ID) return;
@@ -11637,27 +11660,11 @@ function mostrarPlanBlock(motivo) {
     fetch(LOG_ENDPOINT + '?action=planstatus&sheet=' + encodeURIComponent(SHEET_ID) + '&_=' + Date.now())
       .then(function (r) { return r.json(); })
       .then(function (j) {
-        if (!j || !j.found) return; // fail open (sem dado)
-        var st = String(j.status || '').trim().toLowerCase();
-        // 0. Cancelado: bloqueio duro imediato (sem carência, sem banner). Independe do vencimento.
-        if (st === 'cancelado') { mostrarPlanBlock('cancelado'); return; }
-        // 0b. Pausado: congelamento total. Bloqueio duro imediato, sem carência e sem banner de
-        // renovação. Independe do vencimento (a col K já prioriza Pausado sobre Vencido no mestre,
-        // mas bloqueamos no app de qualquer jeito). Os dias parados são creditados no retomar.
-        if (st === 'pausado') { mostrarPlanBlock('pausado'); return; }
-        if (!j.vencimento) return; // fail open
-        var vencDate = new Date(j.vencimento + 'T00:00:00');
-        if (isNaN(vencDate.getTime())) return;       // fail open
         var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
-        var diasToVenc = Math.round((vencDate.getTime() - hoje.getTime()) / 86400000); // + futuro, - passado
-        // Col K: 'Vencido' = a formula virou (TODAY()>venc) ou o GH marcou.
-        var isVencido = st === 'vencido';
-        // 1. Bloqueio duro: vencido E passou a carência (mais de GRACE dias depois do vencimento).
-        if (isVencido && diasToVenc < -GRACE) { mostrarPlanBlock('vencido'); return; }
-        // 2. Carência: vencido mas dentro dos GRACE dias → banner forte (dias restantes), não acesso mudo.
-        if (isVencido) { renovBannerShow('carencia', Math.max(1, GRACE + diasToVenc + 1)); return; }
-        // 3. Pré-vencimento: ativo e vence em ≤ PRE_DIAS dias → banner aviso.
-        if (diasToVenc >= 0 && diasToVenc <= PRE_DIAS) renovBannerShow('prevenc', diasToVenc);
+        var d = _planGateDecision(j, GRACE, PRE_DIAS, hoje.getTime());
+        if (d.action === 'cancelado' || d.action === 'pausado' || d.action === 'vencido') mostrarPlanBlock(d.action);
+        else if (d.action === 'carencia') renovBannerShow('carencia', d.arg);
+        else if (d.action === 'prevenc') renovBannerShow('prevenc', d.arg);
       })
       .catch(function () { /* fail open */ });
   } catch (e) { /* fail open */ }
