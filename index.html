@@ -757,6 +757,25 @@
     border-bottom: 1px solid rgba(212, 175, 106, .13);
   }
   .timer-pill { background: rgba(19, 19, 22, .78); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+
+  /* ── Densidade do card de exercício (GH 2026-07-06: mobile poluído) ── */
+  .carga-section { padding: 8px 12px; gap: 8px; }
+  .carga-input { padding: 7px 8px; font-size: 14px; width: 62px; }
+  .carga-label { font-size: 9.5px; }
+  .ex-action-btn { width: 31px; height: 31px; }
+  .esf-compact { padding: 0; }
+  .esf-compact .esf-summary {
+    display: flex; justify-content: space-between; align-items: center; width: 100%;
+    background: none; border: none; border-top: 1px solid rgba(255, 255, 255, .05);
+    color: #8d8579; font-size: 11.5px; font-weight: 600; padding: 9px 13px;
+    cursor: pointer; font-family: inherit; text-align: left;
+  }
+  .esf-compact.answered .esf-sum-tx { color: #9a9389; }
+  .esf-compact .esf-sum-tx b { color: var(--gold); font-weight: 700; }
+  .esf-chev { font-size: 9px; color: #6f6a60; transition: transform .2s; flex: none; margin-left: 8px; }
+  .esf-compact.open .esf-chev { transform: rotate(180deg); }
+  .esf-compact .esf-body { padding: 0 13px 11px; }
+  .esf-compact .esf-body .focus-carga-label { margin-top: 0; }
   @keyframes viewIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
   @keyframes pgShine { 0% { background-position: 200% 0; } 100% { background-position: 0% 0; } }
   @keyframes cardDone {
@@ -5546,6 +5565,8 @@ function onCheckExercise(di, ei) {
       if (navigator.vibrate) navigator.vibrate(25);
       setTimeout(() => card.classList.remove('just-done'), 900);
     }
+    // Marcou feito e ainda não contou como foi a última série: abre a pergunta
+    if (!loadEsf(di, ei, currentWeek)) esfToggleWrap(String(di), String(ei), true);
   }
 }
 
@@ -7078,18 +7099,34 @@ function _focusCargaBlock(di, key, label) {
 // Vai logo depois da carga, por exercício (1 por exercício, não por série).
 const _ESF_OPTS = [['sobrou3', 'Fácil, ainda dava 3 ou mais'], ['sobrou2', 'Dava mais 2 repetições'], ['sobrou1', 'Dava mais 1 repetição'], ['falha_ult', 'Fiz todas, mas não dava nem mais 1'], ['falha_antes', 'Pesado demais, travei antes de terminar']];
 const _ESF_AP = [['maquina_ruim', 'Máquina ruim'], ['nao_sinto', 'Não sinto o músculo'], ['carga_estranha', 'Carga estranha']];
-function _focusEsforcoBlock(di, key) {
+function _focusEsforcoBlock(di, key, compact) {
   const curE = loadEsf(di, key, currentWeek);
   const curA = (loadApf(di, key, currentWeek) || '').split(',').filter(Boolean);
   const chips = _ESF_OPTS.map(([v, l]) => `<button class="esf-chip${curE === v ? ' sel' : ''}" onclick="onEsforco(${di},'${key}',this,'${v}')">${l}</button>`).join('');
   const apChips = _ESF_AP.map(([v, l]) => `<button class="esf-apchip${curA.includes(v) ? ' sel' : ''}" data-v="${v}" onclick="onEsforcoAp(${di},'${key}',this)">${l}</button>`).join('');
   const apOpen = curA.length > 0;
-  return `<div class="focus-esforco">
-    <div class="focus-carga-label">Na ÚLTIMA SÉRIE de cada exercício, quantas repetições ainda dava pra fazer?</div>
+  const inner = `
+    <div class="focus-carga-label">Na ÚLTIMA SÉRIE, quantas repetições ainda dava pra fazer?</div>
     <div class="esf-chips">${chips}</div>
     <button class="esf-aptoggle${apOpen ? ' open' : ''}" onclick="esfToggleAp(this)">⚠️ Problema no aparelho?</button>
-    <div class="esf-apchips" style="display:${apOpen ? 'flex' : 'none'};">${apChips}</div>
+    <div class="esf-apchips" style="display:${apOpen ? 'flex' : 'none'};">${apChips}</div>`;
+  if (!compact) return `<div class="focus-esforco">${inner}</div>`;
+  // Card da lista (GH 2026-07-06): colapsado numa linha pra não poluir; expande no
+  // toque, auto-abre ao marcar feito sem resposta, e mostra a resposta escolhida.
+  const opt = _ESF_OPTS.find(([v]) => v === curE);
+  const resumo = opt ? `Última série: <b>${opt[1]}</b>` : 'Última série: como foi?';
+  return `<div class="focus-esforco esf-compact${opt ? ' answered' : ''}" id="esfw-${di}-${key}">
+    <button type="button" class="esf-summary" onclick="esfToggleWrap('${di}','${key}')"><span class="esf-sum-tx">${resumo}</span><span class="esf-chev">▾</span></button>
+    <div class="esf-body" style="display:none;">${inner}</div>
   </div>`;
+}
+function esfToggleWrap(di, key, force) {
+  const w = document.getElementById('esfw-' + di + '-' + key);
+  if (!w) return;
+  const b = w.querySelector('.esf-body');
+  const show = force === true ? true : b.style.display === 'none';
+  b.style.display = show ? 'block' : 'none';
+  w.classList.toggle('open', show);
 }
 function esfToggleAp(btn) {
   const wrap = btn.parentElement.querySelector('.esf-apchips');
@@ -7102,6 +7139,18 @@ function onEsforco(di, key, btn, val) {
   btn.parentElement.querySelectorAll('.esf-chip').forEach(b => b.classList.remove('sel'));
   btn.classList.add('sel');
   saveEsf(di, key, currentWeek, val, loadApf(di, key, currentWeek));
+  // No card compacto: atualiza o resumo e recolhe sozinho depois de responder
+  const w = btn.closest('.esf-compact');
+  if (w) {
+    const opt = _ESF_OPTS.find(([v]) => v === val);
+    const s = w.querySelector('.esf-sum-tx');
+    if (s && opt) s.innerHTML = 'Última série: <b>' + opt[1] + '</b>';
+    w.classList.add('answered');
+    setTimeout(() => {
+      const b = w.querySelector('.esf-body');
+      if (b) { b.style.display = 'none'; w.classList.remove('open'); }
+    }, 450);
+  }
 }
 function onEsforcoAp(di, key, btn) {
   btn.classList.toggle('sel');
@@ -7757,7 +7806,7 @@ function renderExercises() {
               </div>
               <span class="carga-saved" id="sv-${di}-${ei}">&#10003; salvo</span>
             </div>
-            ${_focusEsforcoBlock(di, ei)}
+            ${_focusEsforcoBlock(di, ei, true)}
           </div>`;
       }
 
@@ -7820,7 +7869,7 @@ function renderExercises() {
               ${subAlts ? `<button class="ex-action-btn sub-btn ${act.sub ? 'sub-on' : ''}" onclick="openSubPicker(${di}, ${ei})" title="Trocar exercício"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></button>` : ''}
             </div>
           </div>
-          ${_focusEsforcoBlock(di, ei)}` : ''}
+          ${_focusEsforcoBlock(di, ei, true)}` : ''}
         </div>`;
     }).join("");
     c.appendChild(div);
