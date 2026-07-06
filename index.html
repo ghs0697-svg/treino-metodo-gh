@@ -721,6 +721,13 @@
   .day-hero .muscle-map { background: none; border: none; box-shadow: none; margin: 6px 0 0; padding: 0; align-items: center; }
   .day-hero .day-progress { padding: 12px 0 0; }
   .day-hero .focus-entry { margin: 12px 0 0; background: rgba(212,175,106,.07); }
+  .week-reset {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: none; border: none; cursor: pointer; font-family: inherit;
+    color: #8d8579; font-size: 11px; font-weight: 600;
+    padding: 8px 0 0; letter-spacing: .02em;
+  }
+  .week-reset:active { color: var(--gold); }
   body.view-dieta #dayHero, body.view-ghflix #dayHero { display: none !important; }
 
   /* ── Abertura cinematográfica ── */
@@ -2607,7 +2614,20 @@
     <div class="pg-text"><span id="pgLabel">Hoje: 0/0 exercícios</span></div>
     <div class="pg-bar"><div class="pg-fill" id="pgFill" style="width:0%"></div></div>
   </div>
+  <button type="button" class="week-reset" id="weekResetBtn" onclick="openWeekReset()" style="display:none;">↺ Recomeçar semana do zero</button>
   <button type="button" class="focus-entry" onclick="openFocusMode(currentDay)">▶&nbsp; Modo treino: um exercício por vez</button>
+</div>
+
+<!-- ══ CONFIRMA RECOMEÇAR SEMANA ══ -->
+<div class="history-modal-overlay" id="weekResetModal" onclick="if(event.target.id==='weekResetModal')closeWeekReset()">
+  <div class="history-modal-box">
+    <h3>↺ Recomeçar a <span id="wrSemana">Semana 1</span>?</h3>
+    <p style="color:#ccc;font-size:12.5px;line-height:1.55;margin:0;">As marcações de <b>feito</b> desta semana voltam a zero pra tu marcar tudo de novo. Teu ranking e teus dias já treinados <b style="color:var(--gold);">continuam valendo</b>, nada se perde.</p>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="timer-btn" onclick="closeWeekReset()" style="flex:1;">Cancelar</button>
+      <button class="timer-btn primary" onclick="confirmWeekReset()" style="flex:1;">Recomeçar</button>
+    </div>
+  </div>
 </div>
 
 <div id="exerciseContainer"></div>
@@ -6594,10 +6614,38 @@ function updateDayProgress() {
   const streak = getStreakDays();
   document.getElementById('pgStreak').textContent = streak > 0 ? `🔥 ${streak} dia${streak === 1 ? '' : 's'}` : '';
   renderMuscleMap();
+  // Botão "Recomeçar semana": só aparece quando há marca de feito na semana atual
+  const wr = document.getElementById('weekResetBtn');
+  if (wr) {
+    let temMarca = false;
+    (WORKOUT || []).forEach((d, di) => (d.exercises || []).forEach((ex, ei) => {
+      if (!temMarca && isDone(di, ei)) temMarca = true;
+    }));
+    wr.style.display = temMarca ? 'inline-flex' : 'none';
+  }
   if (typeof _introDayReady === 'function') {
     const t = document.getElementById('dhTitle');
     _introDayReady(t ? t.textContent : '');
   }
+}
+
+// ══ Recomeçar semana (pedido do Lucas Theisen, GH 2026-07-06) ══
+// Zera SÓ as marcações de feito da semana atual (localStorage + PROGRESSO via
+// setDone(false), o mesmo caminho do desmarcar manual). NUNCA passa perto do
+// LOGS: ranking e dias treinados ficam intactos por construção.
+function openWeekReset() {
+  const el = document.getElementById('wrSemana');
+  if (el) el.textContent = 'Semana ' + (typeof currentWeek !== 'undefined' ? currentWeek : 1);
+  document.getElementById('weekResetModal').classList.add('show');
+}
+function closeWeekReset() { document.getElementById('weekResetModal').classList.remove('show'); }
+function confirmWeekReset() {
+  (WORKOUT || []).forEach((d, di) => (d.exercises || []).forEach((ex, ei) => {
+    if (isDone(di, ei)) setDone(di, ei, false);
+  }));
+  closeWeekReset();
+  if (navigator.vibrate) navigator.vibrate(30);
+  renderExercises();
 }
 
 // ══ Mapa muscular do dia ══
