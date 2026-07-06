@@ -11601,9 +11601,29 @@ function toggleFloatMore() {
 }
 
 
-// Avalia _proxReajusteBR (DD/MM/AAAA) e decide o banner. Chamado quando o dado chega.
+// Regra do GH (2026-07-06, registrada com a Reajustes): aluno vencido ou perto de
+// vencer NÃO recebe cutucão de reajuste — a régua de RENOVAÇÃO assume. Se ele
+// respondesse a anamnese de reajuste e renovasse em seguida, a resposta seria
+// descartada e ele preencheria TUDO de novo (caso Matheus Prasinos/Wilton).
+// _vencServidoISO chega do planstatus (col Vencimento-protocolo, fallback J).
+var _vencServidoISO = '';
+var REAJ_VENC_GATE_DIAS = 15;   // vence em ≤15d (ou já venceu) → suprime reajuste
+function _reajSuprimidoPorVenc() {
+  if (!_vencServidoISO) return false;                 // sem dado ainda: não suprime
+  var v = new Date(_vencServidoISO + 'T00:00:00');
+  if (isNaN(v.getTime())) return false;
+  var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  return Math.round((v.getTime() - hoje.getTime()) / 86400000) <= REAJ_VENC_GATE_DIAS;
+}
+// Avalia _proxReajusteBR (DD/MM/AAAA) e decide o banner. Chamado quando o dado
+// chega (lastmod) e reavaliado quando o vencimento chega (planstatus).
 function reajusteBannerCheck() {
   try {
+    if (_reajSuprimidoPorVenc()) {
+      var b = document.getElementById('reajusteBanner');
+      if (b) b.classList.remove('show');              // esconde se já estava visível
+      return;
+    }
     if (!_proxReajusteBR || !/^\d{2}\/\d{2}\/\d{4}$/.test(_proxReajusteBR)) return;
     var p = _proxReajusteBR.split('/').map(Number);
     var reaj = new Date(p[2], p[1] - 1, p[0]); reaj.setHours(0, 0, 0, 0);
@@ -11673,6 +11693,10 @@ function _planGateDecision(j, GRACE, PRE_DIAS, hojeMs) {
         if (d.action === 'cancelado' || d.action === 'pausado' || d.action === 'vencido') mostrarPlanBlock(d.action);
         else if (d.action === 'carencia') renovBannerShow('carencia', d.arg);
         else if (d.action === 'prevenc') renovBannerShow('prevenc', d.arg);
+        // Vencimento servido alimenta o gate do banner de reajuste (regra: quem
+        // está a ≤15d de vencer não é cutucado pra reajuste — renovação assume).
+        _vencServidoISO = (j && j.found && j.vencimento) || '';
+        reajusteBannerCheck();
       })
       .catch(function () { /* fail open */ });
   } catch (e) { /* fail open */ }
