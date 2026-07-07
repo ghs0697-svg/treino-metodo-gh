@@ -2214,7 +2214,7 @@
   .te-btn.danger { background: #c0392b; color: #fff; }
 
   #trainerEditor {
-    position: fixed; inset: 0; background: var(--dark); z-index: 8500;
+    position: fixed; inset: 0; background: var(--dark); z-index: 9600;
     display: none; flex-direction: column; overflow: hidden;
   }
   #trainerEditor.show { display: flex; }
@@ -2222,7 +2222,19 @@
     display: flex; align-items: center; gap: 10px; padding: 10px 14px;
     background: #111; border-bottom: 1px solid var(--gold-dim); flex-shrink: 0;
   }
-  .te-top-info { flex: 1; color: var(--white); font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .te-top-info { flex: 1; color: var(--white); font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 4px 10px; }
+  .te-info-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .te-info-link { display: inline-flex; align-items: center; gap: 8px; flex: none; }
+  .te-info-link a { color: var(--gold); text-decoration: underline; font-weight: 600; white-space: nowrap; }
+  .te-link-copy { background: #2a2a2a; border: 1px solid var(--gold-dim); color: var(--gold); padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; font-family: inherit; }
+  .te-link-copy:active { background: var(--gold-dim); }
+  /* Mobile: a barra quebra e o info (nome + link + copiar) ganha a linha inteira,
+     senão as abas/botões espremem o link a zero e ele some (GH 2026-07-06). */
+  @media (max-width: 760px) {
+    .te-top-bar { flex-wrap: wrap; }
+    .te-top-info { flex-basis: 100%; order: -1; overflow: visible; white-space: normal; text-overflow: clip; flex-wrap: wrap; }
+    .te-info-name { flex: 1 1 auto; }
+  }
   .te-mode-tabs { display: flex; gap: 4px; }
   .te-mode-tab { background: #222; border: 1px solid #333; color: #888; padding: 5px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; }
   .te-mode-tab:hover:not(:disabled) { color: #ccc; border-color: var(--gold-dim); }
@@ -12347,6 +12359,23 @@ function generateLink() {
   document.getElementById('adminResult').style.display = 'block';
 }
 
+// Copia o link do protocolo do aluno a partir do editor (nome do sheet + aba atual).
+function teCopyProtoLink(btn) {
+  const url = `https://app.metodogh.com.br/?sheet=${trainerSheetId}&tab=${currentEditMode === 'dieta' ? 'DIETA' : 'TREINO'}`;
+  const label = btn ? btn.textContent : '';
+  const done = () => { if (btn) { btn.textContent = '✅ copiado'; setTimeout(() => { btn.textContent = label; }, 1600); } };
+  const fallback = () => {
+    try {
+      const ta = document.createElement('textarea'); ta.value = url;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta); done();
+    } catch (_) { prompt('Copie o link do protocolo do aluno:', url); }
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(done).catch(fallback);
+  } else fallback();
+}
 function copyLink() {
   const url = document.getElementById('adminUrl').textContent;
   navigator.clipboard.writeText(url).then(() => {
@@ -12986,13 +13015,16 @@ function renderEditorTopBar() {
     if (m) studentName = m[1].trim();
   }
   if (!studentName) studentName = 'Aluno';
-  // Link clicável → abre o protocolo do aluno (visão do aluno) em nova aba
+  // Link do protocolo do aluno: abrir (nova aba) + copiar (pra mandar no zap).
+  // No mobile a barra quebra e essa linha fica inteira visível (antes era espremida
+  // a zero pelas abas/botões e o link sumia — GH 2026-07-06).
   const protoUrl = `https://app.metodogh.com.br/?sheet=${trainerSheetId}&tab=${currentEditMode === 'dieta' ? 'DIETA' : 'TREINO'}`;
   document.getElementById('trainerStudentInfo').innerHTML =
-    `<strong>${escTrainer(studentName)}</strong> · ${escTrainer(meta)} · ` +
-    `<a href="${protoUrl}" target="_blank" rel="noopener" ` +
-    `style="color:var(--gold);text-decoration:underline;font-weight:600;" ` +
-    `title="Abrir o protocolo do aluno numa nova aba">🔗 ver protocolo</a>`;
+    `<span class="te-info-name"><strong>${escTrainer(studentName)}</strong>${meta ? ' · ' + escTrainer(meta) : ''}</span>` +
+    `<span class="te-info-link">` +
+      `<a href="${protoUrl}" target="_blank" rel="noopener" title="Abrir o protocolo do aluno numa nova aba">🔗 abrir protocolo</a>` +
+      `<button type="button" class="te-link-copy" onclick="teCopyProtoLink(this)" title="Copiar o link do protocolo pra mandar pro aluno">📋 copiar link</button>` +
+    `</span>`;
 
   const tabs = `
     <button class="te-mode-tab${currentEditMode === 'treino' ? ' active' : ''}" ${trainerData ? `onclick="switchEditMode('treino')"` : 'disabled'}>📋 TREINO</button>
