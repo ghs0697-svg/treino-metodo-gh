@@ -9227,9 +9227,37 @@ function _chatRegisterAjusteAuto(pedido, reqId, contexto) {
     }).catch(() => {});
   } catch (_) {}
 }
+// Tarja preta = protocolo hormonal/peptídeo/clínico. O app NUNCA registra isso como
+// ajuste normal (regra GH #564, 2026-07-06): pega na ENTRADA, avisa o aluno pra falar
+// direto com o GH no WhatsApp e NÃO cria linha na AJUSTES_PEDIDOS. Lista conservadora
+// (alta precisão): só termos que são quase certamente hormonal/peptídeo, pra não barrar
+// ajuste legítimo por engano — o que escapar, o pré-filtro da conversa Ajustes é a rede.
+function _isTarjaPreta(t) {
+  const s = ' ' + String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '') + ' ';
+  return /(protocolo hormonal|\bhormon(io|al|ios)|peptideo|testosterona|enantato|cipionato|propionato|sustanon|durateston|oxandrolona|stanozolol|nandrolona|deca ?durabolin|trembolona|boldenona|masteron|primobolan|dianabol|hemogenin|oximetolona|winstrol|anavar|clembuterol|somatropina|\bhgh\b|bpc[ -]?157|tb[ -]?500|mots[ -]?c|ipamorelin|cjc[ -]?1295|sermorelin|tesamorelina|mk[ -]?677|ibutamoren|semaglutida|tirzepatida|retatrutida|ozempic|mounjaro|clomifeno|\bclomid\b|tamoxifeno|anastrozol|letrozol|\bselank\b|melanotan|aod[ -]?9604|ss[ -]?31|ghk[ -]?cu|meu ciclo|no meu ciclo)/.test(s);
+}
+function _chatTarjaPretaRedirect() {
+  const box = document.getElementById('chatMsgs');
+  const msg = 'Protocolo hormonal e peptídeo eu não mexo por aqui, isso é direto com o GH. Manda a tua mensagem no WhatsApp dele que ele te resolve 💪';
+  if (box) box.appendChild(_chatBubble('assistant', msg));
+  _chatHistory.push({ role: 'assistant', content: msg });
+  _chatAddSupportCta();
+  _chatSaveHistory();
+  _chatScrollBottom();
+  // Log pro GH (só registro da conversa; NÃO vai pra AJUSTES_PEDIDOS)
+  try {
+    fetch(LOG_ENDPOINT, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ type: 'chat_log', studentName: (document.getElementById('infoNome')?.textContent || '').trim(), sheetId: SHEET_ID, pergunta: '(tarja preta)', resposta: msg, tipo: 'pro_suporte' }),
+      keepalive: true, redirect: 'follow'
+    }).catch(() => {});
+  } catch (_) {}
+}
 // Registra o ajuste + confirma no chat + CTA de foto + log. Usado pelo modo "ajuste" (aluno
 // escolheu a aba) E pelo botão do nudge (aluno confirmou o palpite do bot). Determinístico.
 function _chatConfirmAjuste(pedido, contexto) {
+  // Tarja preta nunca vira ajuste registrado: redireciona o aluno pro GH (regra #564).
+  if (_isTarjaPreta(pedido)) { _chatTarjaPretaRedirect(); return; }
   const reqId = 'aj_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   const ctx = contexto || _chatGuessContexto(pedido);
   _chatRegisterAjusteAuto(pedido, reqId, ctx);
