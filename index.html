@@ -321,6 +321,31 @@
   .carga-input:focus { border-color: var(--gold); box-shadow: 0 0 6px rgba(212, 175, 55, 0.2); }
   .carga-input::placeholder { color: #444; }
   .carga-prev { font-size: 10px; color: var(--muted); white-space: nowrap; }
+  /* ── Grade de séries: peso (kg OU placa) + reps por série ── */
+  .sets-grid { display: flex; flex-direction: column; gap: 5px; width: 100%; }
+  .set-head, .set-row { display: flex; align-items: center; gap: 6px; }
+  .set-head { padding: 0 2px; }
+  .set-head span { font-size: 9px; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: .4px; text-align: center; }
+  .set-head .sh-kg { width: 58px; } .set-head .sh-pl { width: 44px; } .set-head .sh-reps { width: 52px; }
+  .set-num { width: 20px; min-width: 20px; text-align: center; font-size: 12px; font-weight: 700; color: var(--muted); }
+  .set-in {
+    background: #222; border: 1px solid var(--gold-dim); border-radius: 6px;
+    color: var(--white); padding: 6px 4px; font-size: 14px; text-align: center; outline: none;
+  }
+  .set-in:focus { border-color: var(--gold); box-shadow: 0 0 6px rgba(212, 175, 55, 0.2); }
+  .set-in::placeholder { color: #444; }
+  .set-in.set-kg { width: 58px; } .set-in.set-pl { width: 44px; } .set-in.set-reps { width: 52px; }
+  .set-prev { font-size: 10px; color: var(--muted); white-space: nowrap; margin-left: 2px; flex: 1; }
+  .set-del {
+    width: 22px; min-width: 22px; height: 26px; border: none; background: transparent;
+    color: #555; font-size: 18px; line-height: 1; cursor: pointer; border-radius: 5px; padding: 0;
+  }
+  .set-del:hover, .set-del:active { color: var(--red, #d46a6a); background: rgba(212,106,106,.12); }
+  .set-add {
+    align-self: flex-start; margin-top: 2px; background: transparent; border: 1px dashed var(--gold-dim);
+    color: var(--gold); font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 6px; cursor: pointer;
+  }
+  .set-add:hover, .set-add:active { background: rgba(212,175,55,.1); border-style: solid; }
   .carga-saved {
     color: var(--green);
     font-size: 11px;
@@ -5129,6 +5154,167 @@ function savePlacas(d, e, w, v) {
   syncCargaToServer_(d, e, w, null, v);
 }
 function getPrevPlacas(d, e, w) { return _prevMarca(placasKey, d, e, w); }
+
+// ══ SÉRIES — peso (kg OU placa) + reps POR SÉRIE, toda série ══
+// (GH 2026-07-08, pedido dos alunos). Cada exercício guarda uma LISTA de séries
+// [{kg, pl, reps}, ...] sob gh_sets_. Respeita os mesmos invariantes da carga única:
+// slot de substituto (_cargaSlotSuffix), carimbo de ciclo/reajuste (blkKey + _cargaBlocoAntigo)
+// e validação por nome (_cargaValida). RETROCOMPAT TOTAL: ao salvar, a Série 1 é ESPELHADA nas
+// chaves antigas (storageKey/placasKey), então histórico, ranking (esforço), "Ant" e restore
+// seguem lendo o peso como sempre. Quem já tinha carga única aparece na Série 1 (nada se perde).
+function setsKey(d, e, w) { return `gh_sets_${STUDENT_ID}_d${d}_e${e}_w${w}`; }
+// objeto do exercício naquela posição (trata biset "2a"/"2b")
+function _exObjAt(d, e) {
+  try {
+    const day = (typeof WORKOUT !== 'undefined') && WORKOUT[d];
+    if (!day || !day.exercises) return null;
+    const m = String(e).match(/^(\d+)([ab])$/);
+    if (m) { const x = day.exercises[+m[1]]; return x ? (m[2] === 'a' ? x.a : x.b) : null; }
+    return day.exercises[parseInt(e)] || null;
+  } catch (_) { return null; }
+}
+// nº de séries prescrito ("4", "3-4", "Aquece + 3") → maior inteiro; fallback 3
+function _serieCountPresc(ex) {
+  try {
+    const nums = String((ex && ex.series) || '').match(/\d+/g);
+    if (nums && nums.length) { const m = Math.max.apply(null, nums.map(Number)); if (m >= 1 && m <= 10) return m; }
+  } catch (_) {}
+  return 3;
+}
+// Lê a grade salva. null = nada salvo (o render seeda N linhas vazias do prescrito).
+function loadSets(d, e, w) {
+  if (_cargaBlocoAntigo(d, e, w)) return null;                 // ciclo anterior → grade limpa (seeda do prescrito)
+  const sf = _cargaSlotSuffix(d, e);
+  let raw = sf ? localStorage.getItem(setsKey(d, e, w) + sf)
+              : (_cargaValida(d, e, w) ? localStorage.getItem(setsKey(d, e, w)) : null);
+  if (raw) { try { const a = JSON.parse(raw); if (Array.isArray(a) && a.length) return a; } catch (_) {} }
+  // retrocompat: sem grade, mas com carga/placa única antiga → Série 1 = valor antigo
+  const kg = loadCarga(d, e, w), pl = loadPlacas(d, e, w);
+  if (kg || pl) return [{ kg: kg || '', pl: pl || '', reps: '' }];
+  return null;
+}
+function saveSets(d, e, w, arr) {
+  const sf = _cargaSlotSuffix(d, e);
+  const clean = (arr || []).map(s => ({
+    kg: (s && s.kg != null ? String(s.kg) : '').trim(),
+    pl: (s && s.pl != null ? String(s.pl) : '').trim(),
+    reps: (s && s.reps != null ? String(s.reps) : '').trim()
+  }));
+  localStorage.setItem(setsKey(d, e, w) + sf, JSON.stringify(clean));
+  localStorage.setItem(blkKey(d, e, w) + sf, String(Date.now()));   // carimba: salvo agora = bloco atual
+  if (!sf) _stampExn(d, e, w);
+  // ESPELHA a Série 1 nas chaves legadas (caminho de carga é sagrado: histórico/ranking/Ant/restore intactos)
+  const s1 = clean[0] || { kg: '', pl: '' };
+  localStorage.setItem(storageKey(d, e, w) + sf, s1.kg || '');
+  localStorage.setItem(placasKey(d, e, w) + sf, s1.pl || '');
+  // sync numa POST só: carga+placas da S1 (legado) + JSON das séries (novo)
+  syncCargaToServer_(d, e, w, s1.kg || '', s1.pl || '', JSON.stringify(clean));
+}
+// Grade da sessão anterior (semana < w, mais recente) pro lembrete "anterior" por série.
+function getPrevSets(d, e, w) {
+  const sf = _cargaSlotSuffix(d, e);
+  const read = ww => {
+    let raw = sf ? localStorage.getItem(setsKey(d, e, ww) + sf)
+                : (_cargaValida(d, e, ww) ? localStorage.getItem(setsKey(d, e, ww)) : null);
+    if (raw) { try { const a = JSON.parse(raw); if (Array.isArray(a) && a.length) return a; } catch (_) {} }
+    return null;
+  };
+  for (let ww = w - 1; ww >= 1; ww--) { const v = read(ww); if (v) return v; }
+  const hi = Math.max((typeof TOTAL_WEEKS === 'number' ? TOTAL_WEEKS : 8), 24);
+  for (let ww = hi; ww > w; ww--) { const v = read(ww); if (v) return v; }
+  const pk = getPrevCarga(d, e, w), pp = getPrevPlacas(d, e, w);   // fallback: carga única antiga como 1 série
+  if (pk || pp) return [{ kg: pk || '', pl: pp || '', reps: '' }];
+  return null;
+}
+// HTML da grade de séries de um exercício. ei = número (normal) ou "2a"/"2b" (biset). label opcional (A/B).
+function _setsGridHtml(di, ei, label) {
+  const w = currentWeek;
+  let sets = loadSets(di, ei, w);
+  if (!sets || !sets.length) {
+    const n = _serieCountPresc(_exObjAt(di, ei));
+    sets = Array.from({ length: n }, () => ({ kg: '', pl: '', reps: '' }));
+  }
+  const prev = getPrevSets(di, ei, w);
+  const eiS = String(ei);
+  const rows = sets.map((s, si) => {
+    const p = prev && prev[si];
+    const prevTxt = (p && (p.kg || p.pl || p.reps))
+      ? `<span class="set-prev">ant: ${p.kg ? kgToDisplay(p.kg) + getUnit() : (p.pl ? p.pl + 'pl' : '&mdash;')}${p.reps ? ' &times;' + p.reps : ''}</span>`
+      : '<span class="set-prev"></span>';
+    return `<div class="set-row" data-si="${si}">
+        <span class="set-num">${si + 1}</span>
+        <input class="set-in set-kg" type="number" inputmode="decimal" placeholder="${getUnit()}" value="${kgToDisplay(s.kg)}" oninput="onSetField(${di},'${eiS}')">
+        <input class="set-in set-pl" type="number" inputmode="numeric" placeholder="pl" value="${s.pl || ''}" oninput="onSetField(${di},'${eiS}')">
+        <input class="set-in set-reps" type="number" inputmode="numeric" placeholder="reps" value="${s.reps || ''}" oninput="onSetField(${di},'${eiS}')">
+        ${prevTxt}
+        <button type="button" class="set-del" onclick="removeSet(${di},'${eiS}',${si})" title="Remover série" aria-label="Remover série">&times;</button>
+      </div>`;
+  }).join('');
+  return `<div class="sets-grid" id="sets-${di}-${eiS}" data-di="${di}" data-ei="${eiS}">
+      ${label ? `<div class="carga-label" style="font-size:10px;margin-bottom:2px;">${label}</div>` : ''}
+      <div class="set-head"><span class="set-num"></span><span class="sh-kg">${getUnit()}</span><span class="sh-pl">placa</span><span class="sh-reps">reps</span><span style="flex:1"></span></div>
+      ${rows}
+      <button type="button" class="set-add" onclick="addSet(${di},'${eiS}')">+ série</button>
+    </div>`;
+}
+// Lê a grade direto do DOM (fonte da verdade na hora de salvar).
+function _readSetsFromDom(di, ei) {
+  const grid = document.getElementById(`sets-${di}-${ei}`);
+  if (!grid) return null;
+  return Array.from(grid.querySelectorAll('.set-row')).map(r => ({
+    kg: displayToKg((r.querySelector('.set-kg') || {}).value || ''),
+    pl: ((r.querySelector('.set-pl') || {}).value || '').trim(),
+    reps: ((r.querySelector('.set-reps') || {}).value || '').trim()
+  }));
+}
+function _reRenderSetsGrid(di, ei) {
+  const grid = document.getElementById(`sets-${di}-${ei}`);
+  if (!grid) return;
+  const label = grid.querySelector('.carga-label');
+  grid.outerHTML = _setsGridHtml(di, ei, label ? label.textContent : '');
+}
+let _setTimers = {};
+function onSetField(di, ei) {
+  const k = `s-${di}-${ei}`;
+  clearTimeout(_setTimers[k]);
+  _setTimers[k] = setTimeout(() => {
+    const arr = _readSetsFromDom(di, ei);
+    if (!arr) return;
+    saveSets(di, ei, currentWeek, arr);
+    const el = document.getElementById(`sv-${di}-${_setSvKey(ei)}`);
+    if (el) { el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 1500); }
+    const kg = Math.max(0, ...arr.map(s => parseFloat(displayToKg(s.kg)) || 0));   // PR pela maior carga entre as séries
+    if (kg > 0 && typeof checkPR === 'function') checkPR(di, /^\d+$/.test(String(ei)) ? parseInt(ei) : ei, kg);
+  }, 400);
+}
+// biset salva sob "2a"/"2b" mas o badge "salvo" é do card (sv-di-2) → normaliza pro badge
+function _setSvKey(ei) { const m = String(ei).match(/^(\d+)[ab]$/); return m ? m[1] : ei; }
+function addSet(di, ei) {
+  const arr = _readSetsFromDom(di, ei) || [];
+  if (arr.length >= 12) return;                 // teto de sanidade
+  arr.push({ kg: '', pl: '', reps: '' });
+  saveSets(di, ei, currentWeek, arr);
+  _reRenderSetsGrid(di, ei);
+}
+function removeSet(di, ei, si) {
+  const arr = _readSetsFromDom(di, ei) || [];
+  if (arr.length <= 1) return;                  // mantém pelo menos 1 série
+  arr.splice(si, 1);
+  saveSets(di, ei, currentWeek, arr);
+  _reRenderSetsGrid(di, ei);
+}
+// Salva imediato (botão 💾) — sem esperar o debounce.
+function saveSetsManual(di, ei, btn) {
+  clearTimeout(_setTimers[`s-${di}-${ei}`]);
+  const arr = _readSetsFromDom(di, ei);
+  if (arr) saveSets(di, ei, currentWeek, arr);
+  const el = document.getElementById(`sv-${di}-${_setSvKey(ei)}`);
+  if (el) { el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 1500); }
+  if (btn) {
+    const original = btn.innerHTML; btn.textContent = '✅'; btn.disabled = true;
+    setTimeout(() => { btn.innerHTML = original; btn.disabled = false; }, 1200);
+  }
+}
 // ── Esforço (RIR-em-palavras) + flag de aparelho por exercício ──
 function esfKey(d, e, w) { return `gh_esf_${STUDENT_ID}_d${d}_e${e}_w${w}`; }
 function loadEsf(d, e, w) { return localStorage.getItem(esfKey(d, e, w)) || ""; }
@@ -5212,11 +5398,11 @@ async function flushSyncQueues() {
   }
 }
 
-function syncCargaToServer_(di, ei, w, carga, placas) {
+function syncCargaToServer_(di, ei, w, carga, placas, sets) {
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
   // Atualiza badge visual: começa "salvo" (local), vira "na nuvem" se servidor confirmar
   const setBadge = (text, cls) => {
-    const el = document.getElementById(`sv-${di}-${ei}`);
+    const el = document.getElementById(`sv-${di}-${_setSvKey(ei)}`);
     if (!el) return;
     el.textContent = text;
     el.classList.remove('cloud-pending', 'cloud-ok', 'cloud-fail');
@@ -5233,6 +5419,7 @@ function syncCargaToServer_(di, ei, w, carga, placas) {
     bloco: (typeof WORKOUT !== 'undefined' && WORKOUT[di] && WORKOUT[di].bloco) || '',   // A7: bloco estável → restore casa por bloco+nome (robusto a reordenar bloco)
     carga: carga !== null && carga !== undefined ? String(carga) : '',
     placas: placas !== null && placas !== undefined ? String(placas) : '',
+    sets: sets !== null && sets !== undefined ? String(sets) : '',   // JSON [{kg,pl,reps}] das séries (novo)
     ts: new Date().toISOString()
   };
   const enfileira = () => {
@@ -5318,7 +5505,14 @@ function _restoreCargasRealign(cargas, ifEmpty) {
   const seen = new Set();
   items.forEach(({ c, di, ei, suffix, sub }) => {
     const kC = storageKey(di, ei, c.w) + suffix, kP = placasKey(di, ei, c.w) + suffix, kB = blkKey(di, ei, c.w) + suffix;
+    const kS = setsKey(di, ei, c.w) + suffix;
     let wrote = false;
+    // Grade de séries (novo): JSON completo do servidor. Espelha a mesma dedup/ifEmpty da carga.
+    if (c.sets != null && c.sets !== '' && !seen.has(kS) && (!ifEmpty || !localStorage.getItem(kS))) {
+      localStorage.setItem(kS, String(c.sets));
+      if (!sub && c.exercicio) localStorage.setItem(exnKey(di, ei, c.w), String(c.exercicio));
+      seen.add(kS); wrote = true;
+    }
     if (c.carga != null && c.carga !== '' && !seen.has(kC) && (!ifEmpty || !localStorage.getItem(kC))) {
       localStorage.setItem(kC, String(c.carga));
       if (!sub && c.exercicio) localStorage.setItem(exnKey(di, ei, c.w), String(c.exercicio));   // exn so pro slot original
@@ -7150,16 +7344,10 @@ function focusRest() {
 }
 function _focusEsc(s) { return String(s || '').replace(/'/g, "\\'"); }
 function _focusCargaBlock(di, key, label) {
-  const cur = loadCarga(di, key, currentWeek);
-  const curP = loadPlacas(di, key, currentWeek);
-  const prev = getPrevCarga(di, key, currentWeek);
   return `<div class="focus-carga">
-    <div class="focus-carga-label">${label} ${prev ? `· semana passada: <b style="color:var(--gold);">${kgToDisplay(prev)}${getUnit()}</b>` : ''}</div>
-    <div style="display:flex;gap:10px;align-items:center;">
-      <input type="number" inputmode="decimal" placeholder="${getUnit()}" value="${kgToDisplay(cur)}" oninput="onCarga(${di},'${key}',this)">
-      <input type="number" inputmode="numeric" placeholder="placas" value="${curP}" oninput="onPlacas(${di},'${key}',this)">
-      <span style="color:#5f5f66;font-size:11px;">salva sozinho</span>
-    </div>
+    <div class="focus-carga-label">${label}</div>
+    ${_setsGridHtml(di, key)}
+    <span style="color:#5f5f66;font-size:11px;">salva sozinho</span>
   </div>`;
 }
 // Grade de esforço (RIR-em-palavras) + flag de aparelho — 1 toque, opcional.
@@ -7855,23 +8043,9 @@ function renderExercises() {
                 ${b.obs ? `<div class="exercise-obs">${b.obs}</div>` : ''}
               </div>
             </div>
-            <div class="carga-section">
-              <div class="carga-group">
-                <span class="carga-label" style="font-size:10px;">A</span>
-                <input class="carga-input" type="number" inputmode="decimal" placeholder="${getUnit()}" style="width:60px"
-                  value="${kgToDisplay(curA)}" oninput="onCarga(${di},'${ei}a',this)">
-                <input class="carga-input" type="number" inputmode="numeric" placeholder="pl" style="width:45px"
-                  value="${curAP}" oninput="onPlacas(${di},'${ei}a',this)">
-                ${(prevA || prevAP) ? `<span class="carga-prev">${prevA ? kgToDisplay(prevA)+getUnit() : ''}${prevA && prevAP ? '/' : ''}${prevAP ? prevAP+'pl' : ''}</span>` : ''}
-              </div>
-              <div class="carga-group">
-                <span class="carga-label" style="font-size:10px;">B</span>
-                <input class="carga-input" type="number" inputmode="decimal" placeholder="${getUnit()}" style="width:60px"
-                  value="${kgToDisplay(curB)}" oninput="onCarga(${di},'${ei}b',this)">
-                <input class="carga-input" type="number" inputmode="numeric" placeholder="pl" style="width:45px"
-                  value="${curBP}" oninput="onPlacas(${di},'${ei}b',this)">
-                ${(prevB || prevBP) ? `<span class="carga-prev">${prevB ? kgToDisplay(prevB)+getUnit() : ''}${prevB && prevBP ? '/' : ''}${prevBP ? prevBP+'pl' : ''}</span>` : ''}
-              </div>
+            <div class="carga-section" style="flex-direction:column;align-items:stretch;gap:10px;">
+              ${_setsGridHtml(di, `${ei}a`, 'A')}
+              ${_setsGridHtml(di, `${ei}b`, 'B')}
               <span class="carga-saved" id="sv-${di}-${ei}">&#10003; salvo</span>
             </div>
             ${_focusEsforcoBlock(di, ei, true)}
@@ -7916,21 +8090,11 @@ function renderExercises() {
             </div>
           </div>
           ${!isWarmup ? `
-          <div class="carga-section">
-            <div class="carga-group">
-              <span class="carga-label">CARGA</span>
-              <input class="carga-input" type="number" inputmode="decimal" placeholder="${getUnit()}"
-                value="${kgToDisplay(cur)}" oninput="onCarga(${di},${ei},this)">
-            </div>
-            <div class="carga-group">
-              <span class="carga-label">PLACAS</span>
-              <input class="carga-input" type="number" inputmode="numeric" placeholder="nº" style="width:55px"
-                value="${curP}" oninput="onPlacas(${di},${ei},this)">
-            </div>
-            ${(prev || prevP) ? `<span class="carga-prev">Ant: ${prev ? kgToDisplay(prev)+getUnit() : ''}${prev && prevP ? ' / ' : ''}${prevP ? prevP+' pl' : ''}</span>` : ''}
+          <div class="carga-section" style="flex-direction:column;align-items:stretch;gap:8px;">
+            ${_setsGridHtml(di, ei)}
             <span class="carga-saved" id="sv-${di}-${ei}">&#10003; salvo</span>
             <div class="ex-actions">
-              <button class="ex-action-btn save-btn" onclick="saveCargaManual(${di}, ${ei}, this)" title="Salvar cargas agora"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></button>
+              <button class="ex-action-btn save-btn" onclick="saveSetsManual(${di}, '${ei}', this)" title="Salvar séries agora"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></button>
               <button class="ex-action-btn" onclick="openPacer(${di}, ${ei})" title="Treinar no ritmo (coach de cadência)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></button>
               <button class="ex-action-btn" onclick="startTimer('${safeName}', parseIntervalSeconds('${safeRest}'))" title="Cronômetro de descanso (${ex.rest || 'auto'})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></button>
               <button class="ex-action-btn" onclick="showHistory(${di}, ${ei})" title="Histórico de cargas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></button>
@@ -8241,20 +8405,15 @@ function onPlacas(di, ei, input) {
     if (el) { el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 1500); }
   }, 400);
 }
-// Flush do debounce pendente de carga/placas de (di,ei): grava o valor digitado AGORA, no slot ATUAL.
+// Flush do debounce pendente da grade de séries de (di,ei): grava o que está digitado AGORA, no slot ATUAL.
 // Chamado antes de trocar o substituto (escolherSub) — senao a troca muda o _cargaSlotSuffix e o save
 // debounced (400ms) cairia no slot do exercicio ERRADO. Caminho de carga e sagrado, entao salva no slot certo.
 function flushCargaPendente_(di, ei) {
-  const kC = `${di}-${ei}`, kP = `p-${di}-${ei}`;
-  const hadC = !!timers[kC], hadP = !!timers[kP];
-  if (!hadC && !hadP) return;
-  clearTimeout(timers[kC]); clearTimeout(timers[kP]);
-  const el = document.getElementById(`sv-${di}-${ei}`);
-  const card = el && el.closest('.exercise-card');
-  if (!card) return;
-  const inputs = card.querySelectorAll('.carga-input');
-  if (hadC && inputs[0]) saveCarga(di, ei, currentWeek, displayToKg(inputs[0].value));
-  if (hadP && inputs[1]) savePlacas(di, ei, currentWeek, inputs[1].value);
+  const kS = `s-${di}-${ei}`;
+  if (!_setTimers[kS]) return;
+  clearTimeout(_setTimers[kS]);
+  const arr = _readSetsFromDom(di, ei);
+  if (arr) saveSets(di, ei, currentWeek, arr);   // grava no slot vigente ANTES do sufixo mudar
 }
 
 // ══ Video overlay ══
@@ -8912,7 +9071,7 @@ async function apagarPesosMarcados() {
   if (typed === null) return;
   if (String(typed).trim().toUpperCase() !== 'APAGAR') { alert('Não apaguei nada. Pra apagar de verdade, digita APAGAR.'); return; }
   // 1. local: cargas + placas + companheiro nome-do-exercício
-  const prefs = [`gh_${STUDENT_ID}_d`, `gh_placas_${STUDENT_ID}_d`, `gh_exn_${STUDENT_ID}_d`];
+  const prefs = [`gh_${STUDENT_ID}_d`, `gh_sets_${STUDENT_ID}_d`, `gh_placas_${STUDENT_ID}_d`, `gh_exn_${STUDENT_ID}_d`];
   const del = [];
   for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && prefs.some(p => k.startsWith(p))) del.push(k); }
   del.forEach(k => localStorage.removeItem(k));
@@ -8966,6 +9125,7 @@ async function forceSyncFromServer() {
     // 2. Agora sim limpa o local dessa sheet (já temos o dado do servidor em mãos pra restaurar)
     const prefixesParaApagar = [
       `gh_${STUDENT_ID}_d`,         // cargas
+      `gh_sets_${STUDENT_ID}_d`,    // grade de séries (peso+reps por série)
       `gh_placas_${STUDENT_ID}_d`,  // placas
       `gh_exn_${STUDENT_ID}_d`,     // companheiro nome-do-exercício (re-carimbado pelo servidor)
       `gh_done_${STUDENT_ID}_`      // checkbox
