@@ -13613,14 +13613,14 @@ function renderTrainerEditor() {
     <button class="te-new-day-btn" onclick="addNewDay()" style="margin: 0 auto; max-width:340px;">+ Criar primeiro DIA de treino</button>`;
 }
 
-const ALL_MUSCLES_ORDER = ['peito', 'costas', 'ombro', 'biceps', 'triceps', 'quadriceps', 'posterior', 'gluteo', 'panturrilha', 'abdomen'];
+const ALL_MUSCLES_ORDER = ['peito', 'costas', 'ombro', 'biceps', 'triceps', 'quadriceps', 'posterior', 'gluteo', 'panturrilha', 'abdomen', 'aquecimento'];
 let swapMuscleFilter = 'todos';
 
 function openSwapModal(rowIdx) {
   swapTargetIdx = rowIdx;
   const name = trainerData[rowIdx][1];
   const muscle = classifyMuscle(name);
-  swapMuscleFilter = (muscle === 'outros' || muscle === 'aquecimento') ? 'todos' : muscle;
+  swapMuscleFilter = muscle === 'outros' ? 'todos' : muscle;   // aquecimento agora tem chip próprio (ALONG./MOBILIDADE)
   document.getElementById('swapSearchInput').value = '';
   const ci = document.getElementById('swapCustomInput');
   if (ci) ci.value = '';
@@ -13633,7 +13633,7 @@ function renderSwapModalContent() {
   const chipsContainer = document.getElementById('swapMuscleChips');
   const chipsHtml = `<button class="te-muscle-chip${swapMuscleFilter === 'todos' ? ' active' : ''}" onclick="setSwapFilter('todos')">TODOS</button>` +
     ALL_MUSCLES_ORDER.map(g =>
-      `<button class="te-muscle-chip${swapMuscleFilter === g ? ' active' : ''}" style="--chip-color:${MUSCLE_COLORS[g]}" onclick="setSwapFilter('${g}')">${MUSCLE_LABELS[g]}</button>`
+      `<button class="te-muscle-chip${swapMuscleFilter === g ? ' active' : ''}" style="--chip-color:${MUSCLE_COLORS[g]}" onclick="setSwapFilter('${g}')">${g === 'aquecimento' ? 'ALONG./MOBILIDADE' : MUSCLE_LABELS[g]}</button>`
     ).join('');
   chipsContainer.innerHTML = chipsHtml;
   renderSwapList();
