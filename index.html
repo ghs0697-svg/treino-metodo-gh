@@ -322,30 +322,38 @@
   .carga-input::placeholder { color: #444; }
   .carga-prev { font-size: 10px; color: var(--muted); white-space: nowrap; }
   /* ── Grade de séries: peso (kg OU placa) + reps por série ── */
-  .sets-grid { display: flex; flex-direction: column; gap: 5px; width: 100%; }
+  .sets-grid { display: flex; flex-direction: column; gap: 4px; width: 100%; }
   .set-head, .set-row { display: flex; align-items: center; gap: 6px; }
   .set-head { padding: 0 2px; }
-  .set-head span { font-size: 9px; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: .4px; text-align: center; }
+  .set-head span { font-size: 9px; font-weight: 700; color: #8a7a52; text-transform: uppercase; letter-spacing: .4px; text-align: center; }
   .set-head .sh-kg { width: 58px; } .set-head .sh-pl { width: 44px; } .set-head .sh-reps { width: 52px; }
-  .set-num { width: 20px; min-width: 20px; text-align: center; font-size: 12px; font-weight: 700; color: var(--muted); }
+  .set-num { width: 20px; min-width: 20px; text-align: center; font-size: 12px; font-weight: 700; color: #4d4d52; transition: color .25s; }
   .set-in {
     background: #222; border: 1px solid var(--gold-dim); border-radius: 6px;
     color: var(--white); padding: 6px 4px; font-size: 14px; text-align: center; outline: none;
+    transition: border-color .25s, background .25s;
   }
   .set-in:focus { border-color: var(--gold); box-shadow: 0 0 6px rgba(212, 175, 55, 0.2); }
   .set-in::placeholder { color: #444; }
   .set-in.set-kg { width: 58px; } .set-in.set-pl { width: 44px; } .set-in.set-reps { width: 52px; }
+  /* série preenchida "acende": número dourado + campos com borda viva (progressive enhancement via :has) */
+  .set-in:not(:placeholder-shown) { border-color: rgba(212,175,55,.55); background: #26221a; }
+  .set-row:has(.set-in:not(:placeholder-shown)) .set-num { color: var(--gold); }
   .set-prev { font-size: 10px; color: var(--muted); white-space: nowrap; margin-left: 2px; flex: 1; }
   .set-del {
-    width: 22px; min-width: 22px; height: 26px; border: none; background: transparent;
-    color: #555; font-size: 18px; line-height: 1; cursor: pointer; border-radius: 5px; padding: 0;
+    width: 20px; min-width: 20px; height: 24px; border: none; background: transparent;
+    color: #35353a; font-size: 15px; line-height: 1; cursor: pointer; border-radius: 5px; padding: 0;
   }
   .set-del:hover, .set-del:active { color: var(--red, #d46a6a); background: rgba(212,106,106,.12); }
   .set-add {
-    align-self: flex-start; margin-top: 2px; background: transparent; border: 1px dashed var(--gold-dim);
-    color: var(--gold); font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 6px; cursor: pointer;
+    align-self: flex-start; margin-top: 1px; background: transparent; border: 1px dashed rgba(212,175,55,.35);
+    color: #b39a4e; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 6px; cursor: pointer;
   }
-  .set-add:hover, .set-add:active { background: rgba(212,175,55,.1); border-style: solid; }
+  .set-add:hover, .set-add:active { background: rgba(212,175,55,.1); border-style: solid; color: var(--gold); }
+  /* rodapé do card: badge "salvo" à esquerda + botões de ação à direita, numa linha só (sem espaço morto) */
+  .sets-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .sets-footer .carga-saved { text-align: left; }
+  .sets-footer .ex-actions { margin: 0; }
   .carga-saved {
     color: var(--green);
     font-size: 11px;
@@ -5112,13 +5120,8 @@ function loadCarga(d, e, w) {
   if (sf) return localStorage.getItem(storageKey(d, e, w) + sf) || "";                        // substituto: slot proprio
   return _cargaValida(d, e, w) ? (localStorage.getItem(storageKey(d, e, w)) || "") : "";       // original: legado + validacao
 }
-function saveCarga(d, e, w, v) {
-  const sf = _cargaSlotSuffix(d, e);
-  localStorage.setItem(storageKey(d, e, w) + sf, v);
-  localStorage.setItem(blkKey(d, e, w) + sf, String(Date.now()));   // carimba: salvo agora = bloco atual
-  if (!sf) _stampExn(d, e, w);
-  syncCargaToServer_(d, e, w, v, null);
-}
+// (v301) saveCarga/savePlacas removidas: a grade de séries (saveSets) é o único caminho de
+// escrita e espelha a S1 nas chaves legadas direto. loadCarga/loadPlacas/getPrev* seguem vivas.
 // Última marca conhecida do exercício (carga OU placas) pra referência "Ant".
 // Ordem de busca: (1) semanas anteriores do bloco atual, da mais recente pra mais antiga;
 // (2) semanas mais altas, que no keyspace reciclado guardam as sobras do bloco anterior.
@@ -5145,13 +5148,6 @@ function loadPlacas(d, e, w) {
   const sf = _cargaSlotSuffix(d, e);
   if (sf) return localStorage.getItem(placasKey(d, e, w) + sf) || "";
   return _cargaValida(d, e, w) ? (localStorage.getItem(placasKey(d, e, w)) || "") : "";
-}
-function savePlacas(d, e, w, v) {
-  const sf = _cargaSlotSuffix(d, e);
-  localStorage.setItem(placasKey(d, e, w) + sf, v);
-  localStorage.setItem(blkKey(d, e, w) + sf, String(Date.now()));   // carimba bloco atual
-  if (!sf) _stampExn(d, e, w);
-  syncCargaToServer_(d, e, w, null, v);
 }
 function getPrevPlacas(d, e, w) { return _prevMarca(placasKey, d, e, w); }
 
@@ -5227,7 +5223,8 @@ function getPrevSets(d, e, w) {
   return null;
 }
 // HTML da grade de séries de um exercício. ei = número (normal) ou "2a"/"2b" (biset). label opcional (A/B).
-function _setsGridHtml(di, ei, label) {
+// noAdd: suprime o "+ série" interno (o card normal o coloca no rodapé, junto dos botões de ação).
+function _setsGridHtml(di, ei, label, noAdd) {
   const w = currentWeek;
   let sets = loadSets(di, ei, w);
   if (!sets || !sets.length) {
@@ -5250,11 +5247,11 @@ function _setsGridHtml(di, ei, label) {
         <button type="button" class="set-del" onclick="removeSet(${di},'${eiS}',${si})" title="Remover série" aria-label="Remover série">&times;</button>
       </div>`;
   }).join('');
-  return `<div class="sets-grid" id="sets-${di}-${eiS}" data-di="${di}" data-ei="${eiS}">
+  return `<div class="sets-grid" id="sets-${di}-${eiS}" data-di="${di}" data-ei="${eiS}" data-noadd="${noAdd ? '1' : ''}">
       ${label ? `<div class="carga-label" style="font-size:10px;margin-bottom:2px;">${label}</div>` : ''}
       <div class="set-head"><span class="set-num"></span><span class="sh-kg">${getUnit()}</span><span class="sh-pl">placa</span><span class="sh-reps">reps</span><span style="flex:1"></span></div>
       ${rows}
-      <button type="button" class="set-add" onclick="addSet(${di},'${eiS}')">+ série</button>
+      ${noAdd ? '' : `<button type="button" class="set-add" onclick="addSet(${di},'${eiS}')">+ série</button>`}
     </div>`;
 }
 // Lê a grade direto do DOM (fonte da verdade na hora de salvar).
@@ -5271,7 +5268,7 @@ function _reRenderSetsGrid(di, ei) {
   const grid = document.getElementById(`sets-${di}-${ei}`);
   if (!grid) return;
   const label = grid.querySelector('.carga-label');
-  grid.outerHTML = _setsGridHtml(di, ei, label ? label.textContent : '');
+  grid.outerHTML = _setsGridHtml(di, ei, label ? label.textContent : '', grid.dataset.noadd === '1');
 }
 let _setTimers = {};
 function onSetField(di, ei) {
@@ -7993,15 +7990,6 @@ function renderExercises() {
         const bName = b.name.replace(/'/g, "\\'");
         const hasA = a.video && a.video.length > 0;
         const hasB = b.video && b.video.length > 0;
-        // carga/placas são 2 — usamos ei como índice principal (a) e ei+0.5 pro b via subfix
-        const curA = loadCarga(di, `${ei}a`, currentWeek);
-        const prevA = getPrevCarga(di, `${ei}a`, currentWeek);
-        const curAP = loadPlacas(di, `${ei}a`, currentWeek);
-        const prevAP = getPrevPlacas(di, `${ei}a`, currentWeek);
-        const curB = loadCarga(di, `${ei}b`, currentWeek);
-        const prevB = getPrevCarga(di, `${ei}b`, currentWeek);
-        const curBP = loadPlacas(di, `${ei}b`, currentWeek);
-        const prevBP = getPrevPlacas(di, `${ei}b`, currentWeek);
         // Série/reps/intervalo compartilhados (usa do A; se B tiver diferente, mostra como badge)
         const tagsA = [];
         if (a.series) tagsA.push(`<span class="exercise-tag"><span class="tl">S</span>${a.series}</span>`);
@@ -8044,18 +8032,14 @@ function renderExercises() {
               </div>
             </div>
             <div class="carga-section" style="flex-direction:column;align-items:stretch;gap:10px;">
-              ${_setsGridHtml(di, `${ei}a`, 'A')}
-              ${_setsGridHtml(di, `${ei}b`, 'B')}
-              <span class="carga-saved" id="sv-${di}-${ei}">&#10003; salvo</span>
+              ${_setsGridHtml(di, `${ei}a`, 'A &middot; ' + a.name)}
+              ${_setsGridHtml(di, `${ei}b`, 'B &middot; ' + b.name)}
+              <span class="carga-saved" id="sv-${di}-${ei}" style="text-align:left;">&#10003; salvo</span>
             </div>
             ${_focusEsforcoBlock(di, ei, true)}
           </div>`;
       }
 
-      const prev = getPrevCarga(di, ei, currentWeek);
-      const cur = loadCarga(di, ei, currentWeek);
-      const prevP = getPrevPlacas(di, ei, currentWeek);
-      const curP = loadPlacas(di, ei, currentWeek);
       const isWarmup = ex.warmup;
       const act = _exAtivo(di, ei);                        // substituto ativo OU original (nome + vídeo exibidos)
       const subAlts = _alternativasNoDia(di, ei);          // alternativas oferecíveis neste dia (2+) OU null
@@ -8091,7 +8075,9 @@ function renderExercises() {
           </div>
           ${!isWarmup ? `
           <div class="carga-section" style="flex-direction:column;align-items:stretch;gap:8px;">
-            ${_setsGridHtml(di, ei)}
+            ${_setsGridHtml(di, ei, '', true)}
+            <div class="sets-footer">
+            <button type="button" class="set-add" onclick="addSet(${di},'${ei}')">+ série</button>
             <span class="carga-saved" id="sv-${di}-${ei}">&#10003; salvo</span>
             <div class="ex-actions">
               <button class="ex-action-btn save-btn" onclick="saveSetsManual(${di}, '${ei}', this)" title="Salvar séries agora"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></button>
@@ -8099,6 +8085,7 @@ function renderExercises() {
               <button class="ex-action-btn" onclick="startTimer('${safeName}', parseIntervalSeconds('${safeRest}'))" title="Cronômetro de descanso (${ex.rest || 'auto'})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></button>
               <button class="ex-action-btn" onclick="showHistory(${di}, ${ei})" title="Histórico de cargas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></button>
               ${subAlts ? `<button class="ex-action-btn sub-btn ${act.sub ? 'sub-on' : ''}" onclick="openSubPicker(${di}, ${ei})" title="Trocar exercício"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></button>` : ''}
+            </div>
             </div>
           </div>
           ${_focusEsforcoBlock(di, ei, true)}` : ''}
@@ -8351,60 +8338,8 @@ function changeWeek(d) {
   renderExercises();
 }
 
-let timers = {};
-function onCarga(di, ei, input) {
-  const k = `${di}-${ei}`;
-  clearTimeout(timers[k]);
-  timers[k] = setTimeout(() => {
-    // Converte do display (kg ou lb) pra kg interno SEMPRE antes de salvar
-    const kgValue = displayToKg(input.value);
-    saveCarga(di, ei, currentWeek, kgValue);
-    const el = document.getElementById(`sv-${di}-${ei}`);
-    if (el) { el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 1500); }
-    // ✨ PR detection (compara em kg)
-    const kg = parseFloat(kgValue) || 0;
-    if (kg > 0) checkPR(di, ei, kg);
-  }, 400);
-}
-
-// Salva imediato — chamado pelo botão 💾 (sem esperar o debounce de 400ms).
-// Lê o valor do DOM dos inputs irmãos e força o write no localStorage.
-function saveCargaManual(di, ei, btn) {
-  // Cancela debounce pendente pra não sobrescrever depois
-  clearTimeout(timers[`${di}-${ei}`]);
-  clearTimeout(timers[`p-${di}-${ei}`]);
-
-  const card = btn.closest('.exercise-card');
-  if (!card) return;
-  const inputs = card.querySelectorAll('.carga-input');
-  // ordem dos inputs no template: CARGA(kg), PLACAS(nº)
-  const kgInput = inputs[0];
-  const placasInput = inputs[1];
-
-  if (kgInput) saveCarga(di, ei, currentWeek, displayToKg(kgInput.value));
-  if (placasInput) savePlacas(di, ei, currentWeek, placasInput.value);
-
-  // PR detection no save manual também (em kg)
-  const kg = parseFloat(displayToKg(kgInput?.value || '')) || 0;
-  if (kg > 0) checkPR(di, ei, kg);
-
-  // Feedback visual: pulsa o ✓ + muda emoji do botão por 1.2s
-  const el = document.getElementById(`sv-${di}-${ei}`);
-  if (el) { el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 1500); }
-  const original = btn.textContent;
-  btn.textContent = '✅';
-  btn.disabled = true;
-  setTimeout(() => { btn.textContent = original; btn.disabled = false; }, 1200);
-}
-function onPlacas(di, ei, input) {
-  const k = `p-${di}-${ei}`;
-  clearTimeout(timers[k]);
-  timers[k] = setTimeout(() => {
-    savePlacas(di, ei, currentWeek, input.value);
-    const el = document.getElementById(`sv-${di}-${ei}`);
-    if (el) { el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 1500); }
-  }, 400);
-}
+// (v301) onCarga/onPlacas/saveCargaManual/saveCarga/savePlacas removidas: a grade de séries
+// (onSetField/saveSetsManual→saveSets) é o único caminho de escrita e espelha a S1 nas chaves legadas.
 // Flush do debounce pendente da grade de séries de (di,ei): grava o que está digitado AGORA, no slot ATUAL.
 // Chamado antes de trocar o substituto (escolherSub) — senao a troca muda o _cargaSlotSuffix e o save
 // debounced (400ms) cairia no slot do exercicio ERRADO. Caminho de carga e sagrado, entao salva no slot certo.
