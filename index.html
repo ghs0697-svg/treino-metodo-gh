@@ -6854,14 +6854,16 @@ function confirmWeekReset() {
 // ══ Mapa muscular do dia ══
 // Resolve o label do MUSCULOS_ALVO pro grupo do mapa. Labels reais do banco:
 // Dorsal/Lombar/Trapézio → costas; Ombro anterior/lateral/Posterior de ombro → ombro
-// (checado ANTES de "posterior" de coxa); Glúteo médio → glúteo; Adutores → quadríceps.
+// (checado ANTES de "posterior" de coxa); Glúteo médio → glúteo; Adutores → glúteo
+// (#600: consistente com classifyMuscle, que põe Cadeira Adutora no glúteo — dia de
+// posterior/glúteo com adutora acendia QUADRÍCEPS no boneco, caso Rafael L920).
 function _mmGroupFromLabel(lab) {
   const k = String(lab || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   if (k.includes('ombro')) return 'ombro';
   if (k.includes('dorsal') || k.includes('lombar') || k.includes('trapezio') || k.includes('costas')) return 'costas';
-  if (k.startsWith('gluteo')) return 'gluteo';
+  if (k.startsWith('gluteo') || k.startsWith('adutor')) return 'gluteo';
   if (k.startsWith('posterior')) return 'posterior';
-  if (k.startsWith('quadri') || k.startsWith('adutor')) return 'quadriceps';
+  if (k.startsWith('quadri')) return 'quadriceps';
   if (k.startsWith('antebrac')) return 'antebraco';
   if (k.startsWith('bicep')) return 'biceps';
   if (k.startsWith('tricep')) return 'triceps';
