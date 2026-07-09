@@ -1696,6 +1696,10 @@
   .diet-food-name { color: var(--white); font-size: 13px; font-weight: 500; }
   .diet-food-qty { color: var(--gold); font-size: 12px; font-weight: 600; white-space: nowrap; margin-left: 8px; }
   .diet-food-obs { color: var(--muted); font-size: 11px; font-style: italic; margin-top: 2px; }
+  /* linha de alternativa inline (op no meio da refeição): troca equivalente, tom de apoio */
+  .diet-food-alt { background: rgba(212,175,55,.04); }
+  .diet-food-alt .diet-food-name { color: #b39a4e; font-size: 12px; font-weight: 600; }
+  .diet-food-alt .diet-food-obs { color: #9c8a55; font-style: normal; }
   .diet-meal-note {
     padding: 6px 14px;
     font-size: 11px;
@@ -8221,10 +8225,10 @@ function _buildDietaPrintHTML() {
           rows += `<tr><td class="pa-ex">${esc(a.nome)}${obs}</td><td>${esc(a.qtd || '')}</td></tr>`;
         });
       };
+      // Base sempre presente + opções depois (refeição mista não esconde os alimentos base)
+      if (ref.alimentos && ref.alimentos.length) renderAlimentos(ref.alimentos, '');
       if (ref.opcoes && ref.opcoes.length) {
         ref.opcoes.forEach(op => renderAlimentos(op.alimentos, op.nome));
-      } else {
-        renderAlimentos(ref.alimentos, '');
       }
       (ref.notas || []).forEach(n => {
         if (n) rows += `<tr><td colspan="2" class="pa-obs">${esc(n)}</td></tr>`;
@@ -8838,13 +8842,13 @@ function _buildShoppingList() {
     seen[display] = { cat: _shoppingCategory(key), original: original };
   }
 
-  // Itera refeições — 1ª opção de cada refeição (alternativas o aluno escolhe)
+  // Itera refeições — alimentos base + 1ª opção (alternativas o aluno escolhe).
+  // Linhas de alternativa inline (alt) não são alimento de compra, ficam fora.
   d.ciclos.forEach(cy => {
     cy.refeicoes.forEach(ref => {
+      (ref.alimentos || []).forEach(a => { if (!a.alt) addFood(a.nome); });
       if (ref.opcoes && ref.opcoes.length > 0) {
-        ref.opcoes[0].alimentos.forEach(a => addFood(a.nome));
-      } else if (ref.alimentos) {
-        ref.alimentos.forEach(a => addFood(a.nome));
+        ref.opcoes[0].alimentos.forEach(a => { if (!a.alt) addFood(a.nome); });
       }
     });
   });
@@ -10875,12 +10879,24 @@ function parseDietData(rows) {
         currentOp = null;
         currentCycle.refeicoes.push(currentRef);
         break;
-      case 'op':
+      case 'op': {
+        // op INLINE (caso Paulo Lages, 2026-07-09): "Alternativas de proteína" com as trocas
+        // na col D, no MEIO da refeição. Não é grupo de opção (op real = "Opção N", col D
+        // vazia) — abrir grupo aqui engolia o resto da refeição pra dentro da "opção" e o
+        // render escondia os alimentos base (almoço virava "só arroz"). Vira uma linha de
+        // alternativa NA POSIÇÃO, e os alimentos seguintes continuam onde estavam.
+        const _opNome = (r[1] || '').trim(), _opObs = (r[3] || '').trim();
+        if (currentRef && _opObs && !/^op[çc][aã]o\b/i.test(_opNome)) {
+          const alvo = currentOp ? currentOp.alimentos : currentRef.alimentos;
+          alvo.push({ nome: _opNome, qtd: r[2] || '', obs: _opObs, alt: true });
+          break;
+        }
         if (currentRef) {
           currentOp = { nome: r[1] || '', alimentos: [] };
           currentRef.opcoes.push(currentOp);
         }
         break;
+      }
       case 'alimento': {
         const food = { nome: r[1] || '', qtd: r[2] || '', obs: r[3] || '' };
         if (currentOp) currentOp.alimentos.push(food);
@@ -11393,6 +11409,9 @@ function renderDiet() {
       html += `<div class="diet-meal-header"><span class="dm-nome">${ref.nome}</span><button type="button" class="diet-meal-check${isMealDone(ri) ? ' done' : ''}" data-meal-ri="${ri}" onclick="onCheckMeal(${ri})" aria-label="Marcar refeição feita"><svg class="dm-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><svg class="dm-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span class="dm-txt">Feita</span></button></div>`;
       if (ref.instrucao) html += `<div class="diet-meal-instruction">${ref.instrucao}</div>`;
 
+      // Alimentos base SEMPRE visíveis (caso Paulo Lages: refeição mista com alimentos +
+      // opções escondia os base e o almoço virava "só arroz"). Opções vêm depois, como abas.
+      ref.alimentos.forEach(a => { html += renderFoodItem(a); });
       if (hasOps) {
         html += `<div class="diet-option-tabs" id="optTabs${uid}">`;
         ref.opcoes.forEach((op, oi) => {
@@ -11404,8 +11423,6 @@ function renderDiet() {
           op.alimentos.forEach(a => { html += renderFoodItem(a); });
           html += `</div>`;
         });
-      } else {
-        ref.alimentos.forEach(a => { html += renderFoodItem(a); });
       }
 
       ref.notas.forEach(n => {
@@ -11518,6 +11535,13 @@ function renderDiet() {
 }
 
 function renderFoodItem(a) {
+  if (a.alt) {
+    // linha de alternativa inline ("op" no meio da refeição): troca equivalente, não item novo
+    return `<div class="diet-food-item diet-food-alt">
+      <div class="diet-food-main"><span class="diet-food-name">&#128260; ${a.nome}</span>${a.qtd ? `<span class="diet-food-qty">${a.qtd}</span>` : ''}</div>
+      ${a.obs ? `<div class="diet-food-obs">${a.obs}</div>` : ''}
+    </div>`;
+  }
   return `<div class="diet-food-item">
     <div class="diet-food-main"><span class="diet-food-name">${a.nome}</span>${a.qtd ? `<span class="diet-food-qty">${a.qtd}</span>` : ''}</div>
     ${a.obs ? `<div class="diet-food-obs">${a.obs}</div>` : ''}
