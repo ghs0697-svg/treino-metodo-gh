@@ -292,6 +292,11 @@ const ACESSO={liberado:IS_LOCAL||IS_PREVIEW,pronto:false};
    URL absoluta porque a copia do app roda em app.metodogh.com.br */
 const TOKEN_ENDPOINT='https://ghflix.metodogh.com.br/api/t';
 let TOKEN='';
+/* iPhone/iPad: o Safari pede o video em pedacos e cada pedaco paga ~2s de
+   latencia do Drive no proxy (trava). Nesses aparelhos usamos o player do
+   proprio Drive (adaptativo, liso) quando o video ja foi processado; o proxy
+   fica so pros ainda nao processados (lt) e pros outros aparelhos. */
+let ehIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 async function mintToken(){
   try{
     const qs=new URLSearchParams();
@@ -512,7 +517,7 @@ function openModal(id){
   // transcodificação do Drive). Fallback pro preview do Drive se o proxy falhar.
   // Amostra grátis de visitante: player do Drive direto (sem token, sem proxy).
   const player=v.drive_id
-    ? (!ACESSO.liberado
+    ? ((!ACESSO.liberado)||(ehIOS&&!v.lt)
         ? `<iframe src="https://drive.google.com/file/d/${v.drive_id}/preview" allow="autoplay; fullscreen" allowfullscreen></iframe>`
         : `<video controls autoplay playsinline preload="metadata" style="position:absolute;inset:0;width:100%;height:100%;background:#000" src="https://ghflix.metodogh.com.br/api/v?id=${v.drive_id}${TOKEN?'&t='+encodeURIComponent(TOKEN):''}" onerror="this.outerHTML='&lt;iframe src=\\'https://drive.google.com/file/d/${v.drive_id}/preview\\' allow=\\'autoplay; fullscreen\\' allowfullscreen&gt;&lt;/iframe&gt;'"></video>`)
     : `<video controls autoplay style="position:absolute;inset:0;width:100%;height:100%" src="${(v.pasta_rel+'/'+v.arquivo).split('/').map(encodeURIComponent).join('/')}"></video>`;
