@@ -5259,9 +5259,21 @@ function _setsGridHtml(di, ei, label, noAdd) {
       ${noAdd ? '' : `<button type="button" class="set-add" onclick="addSet(${di},'${eiS}')">+ série</button>`}
     </div>`;
 }
+// Resolve a grade CERTA de (di,ei). O modo foco ("um exercício por vez") renderiza a MESMA grade
+// que já está na lista atrás, gerando 2 elementos com o mesmo id sets-di-ei. getElementById pegava
+// a da LISTA (vazia) e o que o aluno digitava no FOCO não salvava (bug Ricardo Sbrissa 2026-07-13,
+// reps não salvavam no modo foco). Com o foco aberto, escopa a busca pra dentro do overlay.
+function _gridEl(di, ei) {
+  const fo = document.getElementById('focusOverlay');
+  if (fo && fo.classList.contains('show')) {
+    const g = fo.querySelector(`[id="sets-${di}-${ei}"]`);
+    if (g) return g;
+  }
+  return document.getElementById(`sets-${di}-${ei}`);
+}
 // Lê a grade direto do DOM (fonte da verdade na hora de salvar).
 function _readSetsFromDom(di, ei) {
-  const grid = document.getElementById(`sets-${di}-${ei}`);
+  const grid = _gridEl(di, ei);
   if (!grid) return null;
   return Array.from(grid.querySelectorAll('.set-row')).map(r => ({
     kg: displayToKg((r.querySelector('.set-kg') || {}).value || ''),
@@ -5270,7 +5282,7 @@ function _readSetsFromDom(di, ei) {
   }));
 }
 function _reRenderSetsGrid(di, ei) {
-  const grid = document.getElementById(`sets-${di}-${ei}`);
+  const grid = _gridEl(di, ei);
   if (!grid) return;
   const label = grid.querySelector('.carga-label');
   grid.outerHTML = _setsGridHtml(di, ei, label ? label.textContent : '', grid.dataset.noadd === '1');
@@ -7317,18 +7329,29 @@ function closeFocusMode() {
   // (ghost-click/toque residual), nunca intencional (ninguém abre e fecha de fato
   // em <300ms). O ✕ e o auto-close de "dia concluído" acontecem bem depois disso.
   if (Date.now() - _focusOpenedAt < 300) return;
+  _flushFocoPendente();          // salva série digitada antes de sair (overlay ainda .show → lê a grade do foco)
   document.getElementById('focusOverlay').classList.remove('show');
   document.body.style.overflow = '';
   renderExercises();
+}
+// Flush do debounce de séries do exercício em foco ANTES de navegar/fechar (o aluno pode digitar
+// e passar pro próximo em <400ms, senão a série se perderia). Cobre normal (idx) e biset (idx a/b).
+// Roda com o overlay ainda .show, então _gridEl lê a grade do FOCO. No-op se não há timer pendente.
+function _flushFocoPendente() {
+  if (typeof flushCargaPendente_ !== 'function' || typeof _focusDi === 'undefined') return;
+  const i = _focusIdx;
+  [String(i), i + 'a', i + 'b'].forEach(k => { try { flushCargaPendente_(_focusDi, k); } catch (_) {} });
 }
 function focusNav(dir) {
   const exs = WORKOUT[_focusDi].exercises;
   const n = _focusIdx + dir;
   if (n < 0 || n >= exs.length) return;
+  _flushFocoPendente();          // salva o que foi digitado no exercício atual antes de trocar
   _focusIdx = n;
   _focusRender();
 }
 function focusToggleDone() {
+  _flushFocoPendente();          // se marcou "feito" com série digitada e ainda no debounce, salva antes
   onCheckExercise(_focusDi, _focusIdx);
   if (isDone(_focusDi, _focusIdx) && navigator.vibrate) navigator.vibrate(35);
   if (allDoneOfDay(_focusDi)) { setTimeout(closeFocusMode, 350); return; }
