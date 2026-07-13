@@ -17,7 +17,9 @@
 //     ficam de fora naturalmente — é só não listar).
 //   - se o exercício prescrito E um do grupo caírem no MESMO dia, o app não
 //     oferece o que já está no dia (não duplica) — você não se preocupa.
-//   - cargas/cronômetro/histórico NÃO mudam ao trocar — só o nome e o vídeo.
+//   - carga/séries: cada exercício (original E cada substituto) tem o SEU
+//     registro de peso+reps, guardado separado. Trocar nunca apaga nem
+//     mistura: voltar pro original traz os números dele intactos.
 //
 //  ⚠ um exercício só pode estar em UM grupo. Se aparecer em dois, o app usa
 //    o primeiro e ignora no segundo.

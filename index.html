@@ -4758,10 +4758,11 @@ function _muscTag(name){
 // ── Substituto pré-definido de exercício (mapa global GRUPOS_SUBSTITUTOS, substitutos.js) ──
 // O aluno pode trocar um exercício por outro do MESMO GRUPO (mão dupla: todos de um grupo se
 // substituem entre si — vale pra grupos de 2, 3, 4...). Casa pelo NOME (normalizado), então vale
-// pra QUALQUER protocolo, inclusive montagem manual. A troca muda só o NOME EXIBIDO + o VÍDEO;
-// carga/cronômetro/histórico continuam por POSIÇÃO (di,ei), 100% intocados — trocar exercício
-// NUNCA escreve nada na carga. Persistência: gh_sub_<id>_<normNome> = nome ESCOLHIDO do grupo
-// (por NOME → sobrevive a reorganização do treino).
+// pra QUALQUER protocolo, inclusive montagem manual. A troca muda o NOME EXIBIDO + o VÍDEO e o
+// SLOT de carga/séries exibido: cada exercício (original e cada substituto) tem o seu, via
+// _cargaSlotSuffix (GH 2026-06-24) — trocar NUNCA escreve/apaga a carga do original; voltar
+// pro original traz os números dele intactos. Persistência da escolha: gh_sub_<id>_d<di>_e<ei>_
+// <normNome> = nome ESCOLHIDO do grupo (por NOME → sobrevive a reorganização do treino).
 const _SUB_GRUPOS = (function () {
   const out = [];
   try {
