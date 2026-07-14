@@ -9424,6 +9424,39 @@ function _chatAddAjusteNudge(pedido) {
   box.appendChild(wrap);
   _chatScrollBottom();
 }
+// Nudge SIMÉTRICO ao de cima: o aluno mandou em modo AJUSTE, mas o classificador tem CERTEZA que é
+// só dúvida (abriu a aba errada). O bot já respondeu acima; aqui NÃO registra — avisa e oferece
+// registrar mesmo assim com 1 toque. A escolha continua do aluno; só evita sujar a fila de ajuste.
+function _chatAddDuvidaNudge(pedido) {
+  const box = document.getElementById('chatMsgs');
+  if (!box) return;
+  box.appendChild(_chatBubble('assistant', '👆 Isso me parece só uma dúvida, então já respondi aí em cima. Se tu QUER MESMO que o GH MUDE teu protocolo (trocar exercício, mudar refeição...), toca no botão pra eu registrar como ajuste:'));
+  const wrap = document.createElement('div');
+  wrap.className = 'chat-cta';
+  const btn = document.createElement('button');
+  btn.className = 'te-btn';
+  btn.style.cssText = 'padding:8px 14px;font-size:12px;';
+  btn.textContent = '🔧 Registrar como ajuste mesmo assim';
+  btn.onclick = () => { btn.disabled = true; btn.style.opacity = '0.5'; _chatConfirmAjuste(pedido); };
+  wrap.appendChild(btn);
+  box.appendChild(wrap);
+  _chatScrollBottom();
+}
+// Log da conversa pro mestre (aba CHAT_LOGS) — fire-and-forget, não trava o chat.
+function _chatLogConversa(pergunta, resposta, tipo) {
+  try {
+    fetch(LOG_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        type: 'chat_log',
+        studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+        sheetId: SHEET_ID, pergunta: pergunta, resposta: resposta, tipo: tipo || 'resposta'
+      }),
+      keepalive: true, redirect: 'follow'
+    }).catch(() => {});
+  } catch (_) {}
+}
 function _chatAutogrow(el) {
   el.style.height = 'auto';
   el.style.height = Math.min(100, el.scrollHeight) + 'px';
@@ -9475,10 +9508,64 @@ async function sendChat() {
   box.appendChild(_chatBubble('user', text));
   _chatScrollBottom();
 
-  // MODO AJUSTE: o aluno escolheu "pedir ajuste" → registra DIRETO na caixa do GH, sem
-  // passar pela classificação por IA (que erra casos-limite). Determinístico, igual ao form.
+  // MODO AJUSTE: o aluno escolheu "pedir ajuste". Passa por um CLASSIFICADOR LEVE (best-effort) só
+  // pra pegar quem abriu a aba ERRADA (digitou uma dúvida). NUNCA bloqueia o registro: a escolha do
+  // aluno é o DEFAULT — se a IA falhar/demorar OU na dúvida achar que é ajuste, cai no registro
+  // DETERMINÍSTICO de sempre (a garantia de não perder ajuste real fica intacta, virou fallback).
+  // Só desvia quando a IA tem CERTEZA que é pergunta pura (tipo 'resposta' COM texto): aí responde
+  // ali e oferece "registrar mesmo assim" (simétrico ao nudge dúvida→ajuste). Nada se perde.
   if (_chatMode === 'ajuste') {
-    _chatConfirmAjuste(text);
+    // Tarja preta (hormonal/clínico) nem vai pra IA: _chatConfirmAjuste detecta e redireciona pro GH.
+    if (_isTarjaPreta(text)) {
+      _chatConfirmAjuste(text);
+      _chatBusy = false; sendBtn.disabled = false; inp.focus();
+      return;
+    }
+    const typingA = document.createElement('div');
+    typingA.className = 'chat-typing'; typingA.id = 'chatTyping';
+    typingA.innerHTML = 'assistente conferindo<span>.</span><span>.</span><span>.</span>';
+    box.appendChild(typingA); _chatScrollBottom();
+
+    let tipoA = 'pro_gh', respA = '';   // default: respeita a escolha do aluno → registra
+    try {
+      const ctrl = new AbortController();
+      const to = setTimeout(() => ctrl.abort(), 4500);   // não deixa o registro esperar demais
+      let rA;
+      try {
+        rA = await fetch(CHAT_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sheetId: SHEET_ID,
+            mensagem: text,
+            modo: 'ajuste', // aluno escolheu "pedir ajuste": backend classifica CONSERVADOR (só 'resposta' se for pergunta pura) e devolve 'resposta' pra mostrar se for dúvida; na dúvida mantém pro_gh.
+            historico: _chatHistory.slice(-11, -1),
+            proxReajuste: _proxReajusteBR || ''
+          }),
+          signal: ctrl.signal
+        });
+      } finally { clearTimeout(to); }
+      const jA = await rA.json().catch(() => ({}));
+      if (jA && jA.tipo) tipoA = jA.tipo;
+      respA = jA.resposta || '';
+    } catch (_) { tipoA = 'pro_gh'; respA = ''; }   // falha/timeout → registra (garantia preservada)
+    const tArm = document.getElementById('chatTyping'); if (tArm) tArm.remove();
+
+    if (tipoA === 'resposta' && respA) {
+      // Abriu a aba errada: é só dúvida. Responde aqui e oferece registrar mesmo assim (não grava).
+      box.appendChild(_chatBubble('assistant', respA));
+      _chatHistory.push({ role: 'assistant', content: respA });
+      _chatAddDuvidaNudge(text);
+      _chatSaveHistory(); _chatScrollBottom();
+      _chatLogConversa(text, respA, 'resposta');
+    } else if (tipoA === 'pro_suporte') {
+      if (respA) { box.appendChild(_chatBubble('assistant', respA)); _chatHistory.push({ role: 'assistant', content: respA }); }
+      _chatAddSupportCta(); _chatSaveHistory(); _chatScrollBottom();
+      _chatLogConversa(text, respA || '(pro_suporte)', 'pro_suporte');
+    } else {
+      // pro_gh, ou 'resposta' sem texto, ou erro → registro determinístico (comportamento de sempre)
+      _chatConfirmAjuste(text);
+    }
     _chatBusy = false; sendBtn.disabled = false; inp.focus();
     return;
   }
