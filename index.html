@@ -753,6 +753,16 @@
   .dh-head .pg-streak:empty { display: none; }
   .day-hero .muscle-map { background: none; border: none; box-shadow: none; margin: 6px 0 0; padding: 0; align-items: center; }
   .day-hero .day-progress { padding: 12px 0 0; }
+
+  /* ── Barra do ciclo do protocolo (dia N de 50 até o reajuste) ── */
+  .proto-progress { display: none; margin: 10px 14px 0; padding: 10px 12px; background: #161617; border: 1px solid #26262a; border-radius: 10px; cursor: pointer; }
+  .proto-progress .pp-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .proto-progress .pp-label { font-size: 11.5px; font-weight: 800; color: var(--gold); letter-spacing: .3px; }
+  .proto-progress .pp-dias { font-size: 10.5px; color: #888; white-space: nowrap; }
+  .proto-progress .pp-track { height: 6px; background: #26262a; border-radius: 999px; margin-top: 7px; overflow: hidden; }
+  .proto-progress .pp-fill { height: 100%; width: 0%; background: var(--gold); border-radius: 999px; transition: width .5s ease; }
+  .proto-progress.done .pp-fill { background: #4CAF50; }
+  .proto-progress.done .pp-label { color: #4CAF50; }
   .day-hero .focus-entry { margin: 12px 0 0; background: rgba(212,175,106,.07); }
   .week-reset {
     display: inline-flex; align-items: center; gap: 5px;
@@ -2639,6 +2649,12 @@
 </div>
 
 <div class="treino-bloco-tabs" id="treinoBlocoTabs" style="display:none;"></div>
+
+<!-- ══ BARRA DO CICLO DO PROTOCOLO (dia N de 50 até o reajuste) ══ -->
+<div class="proto-progress" id="protoProgress" onclick="protoProgressTap()">
+  <div class="pp-row"><span class="pp-label" id="ppLabel">Protocolo</span><span class="pp-dias" id="ppDias"></span></div>
+  <div class="pp-track"><div class="pp-fill" id="ppFill"></div></div>
+</div>
 
 <div class="day-tabs" id="dayTabs"></div>
 
@@ -6592,6 +6608,7 @@ async function loadAndShowLastModified() {
       if (pEl && pBadge) { pEl.textContent = data.proxReajusteBR; pBadge.style.display = 'block'; }
       _proxReajusteBR = data.proxReajusteBR;
       reajusteBannerCheck(); // empurrão proativo quando o reajuste tá perto/vencido
+      protoProgressUpdate(); // barra "Protocolo X · dia N de 50" no topo
     }
     // Detecta reajuste/ajuste comparando versão + data de modificação com o estado salvo
     _detectProtoAviso(data.version, data.lastModified);
@@ -11798,6 +11815,7 @@ function _reajRespondidoEsteCiclo() {
 function reajusteBannerJaRespondi() {
   try {
     if (_proxReajusteBR) localStorage.setItem(_reajRespKey(), '1');
+    protoProgressUpdate(); // barra vira "anamnese respondida ✓" na hora
     sessionStorage.setItem('reajBannerOff', '1');
     var b = document.getElementById('reajusteBanner'); if (!b) return;
     var txt = document.getElementById('reajusteBannerTxt');
@@ -11902,6 +11920,54 @@ function reajusteBannerCheck() {
     var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
     var dias = Math.round((reaj.getTime() - hoje.getTime()) / 86400000);
     if (dias <= REAJ_PRE_DIAS && dias >= -REAJ_CAP_ATRASO) reajusteBannerShow(dias);
+  } catch (e) {}
+}
+
+// ══ Barra do ciclo do protocolo ══
+// "Protocolo 2.0 · dia 23 de 50": deixa o ciclo de reajuste visível o tempo todo (o banner
+// só aparece no fim dele). Mesma fonte do banner: _proxReajusteBR (col M, já ciente de
+// renovação) + versão do sync. Some junto com o banner quando a renovação está próxima.
+var PROTO_CICLO_DIAS = 50;
+function protoProgressUpdate() {
+  try {
+    var box = document.getElementById('protoProgress');
+    if (!box) return;
+    if (_reajSuprimidoPorVenc() || !_proxReajusteBR || !/^\d{2}\/\d{2}\/\d{4}$/.test(_proxReajusteBR)) { box.style.display = 'none'; return; }
+    var p = _proxReajusteBR.split('/').map(Number);
+    var reaj = new Date(p[2], p[1] - 1, p[0]); reaj.setHours(0, 0, 0, 0);
+    var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    var faltam = Math.round((reaj.getTime() - hoje.getTime()) / 86400000);
+    var dia = Math.min(PROTO_CICLO_DIAS, Math.max(1, PROTO_CICLO_DIAS - faltam));
+    var v = '';
+    try { v = sessionStorage.getItem('gh_version_' + SHEET_ID) || ''; } catch (_e) {}
+    var nome = 'Protocolo' + (v ? ' ' + v : '');
+    var lbl = document.getElementById('ppLabel'), dEl = document.getElementById('ppDias'), fill = document.getElementById('ppFill');
+    box.classList.remove('done');
+    if (_reajRespondidoEsteCiclo()) {
+      lbl.textContent = nome + ' · anamnese respondida ✓';
+      dEl.textContent = 'novo protocolo a caminho';
+      fill.style.width = '100%';
+      box.classList.add('done');
+    } else if (faltam < 0) {
+      lbl.textContent = nome + ' · ciclo de 50 dias completo';
+      dEl.textContent = 'hora de atualizar';
+      fill.style.width = '100%';
+    } else {
+      lbl.textContent = nome + ' · dia ' + dia + ' de ' + PROTO_CICLO_DIAS;
+      dEl.textContent = faltam === 0 ? 'reajuste hoje' : ('reajuste em ' + faltam + (faltam === 1 ? ' dia' : ' dias'));
+      fill.style.width = Math.round(dia / PROTO_CICLO_DIAS * 100) + '%';
+    }
+    box.style.display = 'block';
+  } catch (e) {}
+}
+// Toque na barra: abre o Acompanhamento (sequência + recordes) e rola até ele.
+function protoProgressTap() {
+  try {
+    var t = document.getElementById('accompToggle');
+    if (!t || t.style.display === 'none') return;
+    var c = document.getElementById('accompContent');
+    if (c && !c.classList.contains('show')) toggleAccomp();
+    t.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (e) {}
 }
 
