@@ -751,6 +751,10 @@
   .dh-sub { color: #8d8579; font-size: 11.5px; margin-top: 3px; }
   .dh-head .pg-streak { margin-left: auto; flex: none; background: rgba(212,175,106,.12); color: var(--gold); font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 999px; }
   .dh-head .pg-streak:empty { display: none; }
+  /* Meta da semana: X de Y treinos, verde quando bate */
+  .dh-head .pg-week { flex: none; margin-left: 6px; background: rgba(212,175,106,.12); color: var(--gold); font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 999px; }
+  .dh-head .pg-week.hit { background: rgba(76,175,80,.16); color: #4CAF50; }
+  .dh-head .pg-week:empty { display: none; }
   .day-hero .muscle-map { background: none; border: none; box-shadow: none; margin: 6px 0 0; padding: 0; align-items: center; }
   .day-hero .day-progress { padding: 12px 0 0; }
 
@@ -2673,6 +2677,7 @@
       <div class="dh-sub" id="dhSub"></div>
     </div>
     <span class="pg-streak" id="pgStreak"></span>
+    <span class="pg-week" id="pgWeek"></span>
   </div>
   <div class="muscle-map" id="muscleMap" style="display:none;"></div>
   <div class="day-progress" id="dayProgress" style="display:none;">
@@ -6850,6 +6855,14 @@ function updateDayProgress() {
   // Streak label
   const streak = getStreakDays();
   document.getElementById('pgStreak').textContent = streak > 0 ? `🔥 ${streak} dia${streak === 1 ? '' : 's'}` : '';
+  // Meta da semana: dias fechados nesta semana vs a frequência do protocolo do aluno
+  const mw = _metaSemanaInfo();
+  const wEl = document.getElementById('pgWeek');
+  if (wEl) {
+    const bateu = mw.alvo > 0 && mw.feitos >= mw.alvo;
+    wEl.classList.toggle('hit', bateu);
+    wEl.textContent = mw.alvo > 0 ? ((bateu ? '✓ ' : '') + mw.feitos + ' de ' + mw.alvo + ' na semana') : '';
+  }
   renderMuscleMap();
   // Botão "Recomeçar semana": só aparece quando há marca de feito na semana atual
   const wr = document.getElementById('weekResetBtn');
@@ -10562,6 +10575,29 @@ function _progSpark(vals, color) {
   const lp = pts[pts.length - 1];
   return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="flex:0 0 auto;"><polyline points="${poly}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${x(lp.i).toFixed(1)}" cy="${y(lp.v).toFixed(1)}" r="2.6" fill="${color}"/></svg>`;
 }
+// Meta da semana: dias ÚNICOS de treino concluído na semana corrente (segunda a domingo),
+// contra a frequência que o aluno escolheu (= quantidade de dias do protocolo dele).
+// Mesmas chaves do streak/mês: gh_logsent_<SID>_<data>_dN_concl. Zera toda segunda sozinha.
+function _metaSemanaInfo() {
+  try {
+    const pref = `gh_logsent_${SHEET_ID}_`;
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    const seg = new Date(hoje); seg.setDate(hoje.getDate() - ((hoje.getDay() + 6) % 7)); // segunda desta semana
+    const dates = new Set();
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k || k.indexOf(pref) !== 0) continue;
+      const m = k.slice(pref.length).match(/^(\d{4})-(\d{2})-(\d{2})_d\d+_concl$/);
+      if (!m) continue;
+      const d = new Date(+m[1], +m[2] - 1, +m[3]); d.setHours(0, 0, 0, 0);
+      if (d >= seg && d <= hoje) dates.add(m[1] + m[2] + m[3]);
+    }
+    const alvo = (typeof WORKOUT !== 'undefined' && Array.isArray(WORKOUT) && WORKOUT.length)
+      ? Math.min(7, WORKOUT.length) : 0;
+    return { feitos: dates.size, alvo: alvo };
+  } catch (e) { return { feitos: 0, alvo: 0 }; }
+}
+
 function _progDiasNoMes() {
   // Datas únicas de treino concluído no mês corrente (keys gh_logsent_<SID>_<data>_dN_concl)
   try {
