@@ -336,6 +336,8 @@
   .set-in:focus { border-color: var(--gold); box-shadow: 0 0 6px rgba(212, 175, 55, 0.2); }
   .set-in::placeholder { color: #444; }
   .set-in.set-kg { width: 58px; } .set-in.set-pl { width: 44px; } .set-in.set-reps { width: 52px; }
+  /* "sobrou" = reps que sobraram na série (percepção de esforço, casa com o Esforço-alvo) */
+  .set-head .sh-rs { width: 46px; } .set-in.set-rs { width: 46px; }
   /* série preenchida "acende": número dourado + campos com borda viva (progressive enhancement via :has) */
   .set-in:not(:placeholder-shown) { border-color: rgba(212,175,55,.55); background: #26221a; }
   .set-row:has(.set-in:not(:placeholder-shown)) .set-num { color: var(--gold); }
@@ -767,6 +769,20 @@
   .proto-progress .pp-fill { height: 100%; width: 0%; background: var(--gold); border-radius: 999px; transition: width .5s ease; }
   .proto-progress.done .pp-fill { background: #4CAF50; }
   .proto-progress.done .pp-label { color: #4CAF50; }
+
+  /* ── Pesagem livre (Acompanhamento) ── */
+  .peso-input-row { display: flex; align-items: center; gap: 8px; }
+  .peso-saved { display: none; color: #4CAF50; font-size: 11px; font-weight: 700; }
+  .peso-saved.show { display: inline; }
+
+  /* ── Modal de evolução por exercício ── */
+  .evo-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.78); z-index: 99990; align-items: center; justify-content: center; padding: 18px; }
+  .evo-overlay.show { display: flex; }
+  .evo-box { background: #161617; border: 1px solid #2a2a2e; border-radius: 14px; max-width: 420px; width: 100%; padding: 16px; }
+  .evo-box h4 { margin: 0 0 2px; color: var(--gold); font-size: 14px; }
+  .evo-sub { color: #888; font-size: 11px; margin-bottom: 10px; }
+  .evo-close { width: 100%; margin-top: 12px; background: transparent; border: 1px solid #333; color: #ccc; border-radius: 9px; padding: 9px; font-size: 13px; cursor: pointer; }
+  .rec-row[data-evo] { cursor: pointer; }
   .day-hero .focus-entry { margin: 12px 0 0; background: rgba(212,175,106,.07); }
   .week-reset {
     display: inline-flex; align-items: center; gap: 5px;
@@ -2660,6 +2676,18 @@
   <div class="pp-track"><div class="pp-fill" id="ppFill"></div></div>
 </div>
 
+<!-- ══ MODAL DE EVOLUÇÃO POR EXERCÍCIO ══ -->
+<div class="evo-overlay" id="evoModal" onclick="if(event.target.id==='evoModal')evoClose()">
+  <div class="evo-box">
+    <h4 id="evoTitle">Evolução de carga</h4>
+    <div class="evo-sub" id="evoSub"></div>
+    <select id="evoSelect" class="set-in" style="width:100%;margin-bottom:10px;" onchange="evoRender(this.value)"></select>
+    <div id="evoChart"></div>
+    <div id="evoResumo" style="color:#aaa;font-size:12px;margin-top:8px;line-height:1.5;"></div>
+    <button type="button" class="evo-close" onclick="evoClose()">Fechar</button>
+  </div>
+</div>
+
 <div class="day-tabs" id="dayTabs"></div>
 
 <div class="week-selector" id="weekSelector" style="display:none;">
@@ -3328,6 +3356,18 @@
     </div>
     <p style="color:#888;font-size:11px;margin:10px 0 0;line-height:1.4;">Conta 1 quando tu marca todos os exercícios do dia como ✓. Em dias sem treino não conta, mas se passar 2 dias sem fechar, a sequência atual zera.</p>
     <p style="color:#666;font-size:10px;margin:6px 0 0;line-height:1.4;font-style:italic;">Sequências e dias treinados são compartilhados com a equipe pra ranking de premiação mensal.</p>
+  </div>
+
+  <div class="accomp-card" id="pesoCard">
+    <h4>⚖️ Peso corporal</h4>
+    <div class="peso-input-row">
+      <input class="set-in" id="pesoInput" type="number" inputmode="decimal" placeholder="kg" style="width:76px;">
+      <button class="water-btn" onclick="registrarPeso()">Registrar hoje</button>
+      <span class="peso-saved" id="pesoSaved">✓ salvo</span>
+    </div>
+    <div id="pesoChart" style="margin-top:10px;"></div>
+    <div id="pesoResumo" style="color:#888;font-size:11px;margin-top:6px;line-height:1.4;"></div>
+    <p style="color:#666;font-size:10px;margin:8px 0 0;line-height:1.4;font-style:italic;">Pesa sempre igual (de manhã, em jejum) que a linha mostra a tendência real entre os reajustes. O GH vê essa linha no teu acompanhamento.</p>
   </div>
 
   <div class="accomp-card" id="recordesCard">
@@ -5212,7 +5252,7 @@ function loadSets(d, e, w) {
   if (raw) { try { const a = JSON.parse(raw); if (Array.isArray(a) && a.length) return a; } catch (_) {} }
   // retrocompat: sem grade, mas com carga/placa única antiga → Série 1 = valor antigo
   const kg = loadCarga(d, e, w), pl = loadPlacas(d, e, w);
-  if (kg || pl) return [{ kg: kg || '', pl: pl || '', reps: '' }];
+  if (kg || pl) return [{ kg: kg || '', pl: pl || '', reps: '', rs: '' }];
   return null;
 }
 function saveSets(d, e, w, arr) {
@@ -5220,7 +5260,8 @@ function saveSets(d, e, w, arr) {
   const clean = (arr || []).map(s => ({
     kg: (s && s.kg != null ? String(s.kg) : '').trim(),
     pl: (s && s.pl != null ? String(s.pl) : '').trim(),
-    reps: (s && s.reps != null ? String(s.reps) : '').trim()
+    reps: (s && s.reps != null ? String(s.reps) : '').trim(),
+    rs: (s && s.rs != null ? String(s.rs) : '').trim()   // "sobrou": reps que sobraram (percepção de esforço)
   }));
   localStorage.setItem(setsKey(d, e, w) + sf, JSON.stringify(clean));
   localStorage.setItem(blkKey(d, e, w) + sf, String(Date.now()));   // carimba: salvo agora = bloco atual
@@ -5255,10 +5296,15 @@ function _setsGridHtml(di, ei, label, noAdd) {
   let sets = loadSets(di, ei, w);
   if (!sets || !sets.length) {
     const n = _serieCountPresc(_exObjAt(di, ei));
-    sets = Array.from({ length: n }, () => ({ kg: '', pl: '', reps: '' }));
+    sets = Array.from({ length: n }, () => ({ kg: '', pl: '', reps: '', rs: '' }));
   }
   const prev = getPrevSets(di, ei, w);
   const eiS = String(ei);
+  // "sobrou": quantas reps sobraram na série. O alvo prescrito (linha meta Esforço-alvo) vira
+  // o placeholder, então o aluno vê o padrão pedido sem poluir a tela.
+  const alvoR = (typeof STUDENT_ESFORCO_ALVO !== 'undefined' && STUDENT_ESFORCO_ALVO)
+    ? _parseAlvoRange(STUDENT_ESFORCO_ALVO.valor) : null;
+  const rsPh = alvoR ? (alvoR[0] === alvoR[1] ? String(alvoR[0]) : alvoR[0] + '-' + alvoR[1]) : '?';
   const rows = sets.map((s, si) => {
     const p = prev && prev[si];
     const prevTxt = (p && (p.kg || p.pl || p.reps))
@@ -5269,13 +5315,14 @@ function _setsGridHtml(di, ei, label, noAdd) {
         <input class="set-in set-kg" type="number" inputmode="decimal" placeholder="${getUnit()}" value="${kgToDisplay(s.kg)}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-pl" type="number" inputmode="numeric" placeholder="pl" value="${s.pl || ''}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-reps" type="number" inputmode="numeric" placeholder="reps" value="${s.reps || ''}" oninput="onSetField(${di},'${eiS}')">
+        <input class="set-in set-rs" type="number" inputmode="numeric" placeholder="${rsPh}" title="Quantas repetições sobraram nessa série" value="${s.rs || ''}" oninput="onSetField(${di},'${eiS}')">
         ${prevTxt}
         <button type="button" class="set-del" onclick="removeSet(${di},'${eiS}',${si})" title="Remover série" aria-label="Remover série">&times;</button>
       </div>`;
   }).join('');
   return `<div class="sets-grid" id="sets-${di}-${eiS}" data-di="${di}" data-ei="${eiS}" data-noadd="${noAdd ? '1' : ''}">
       ${label ? `<div class="carga-label" style="font-size:10px;margin-bottom:2px;">${label}</div>` : ''}
-      <div class="set-head"><span class="set-num"></span><span class="sh-kg">${getUnit()}</span><span class="sh-pl">placa</span><span class="sh-reps">reps</span><span style="flex:1"></span></div>
+      <div class="set-head"><span class="set-num"></span><span class="sh-kg">${getUnit()}</span><span class="sh-pl">placa</span><span class="sh-reps">reps</span><span class="sh-rs" title="Quantas repetições sobraram">sobrou</span><span style="flex:1"></span></div>
       ${rows}
       ${noAdd ? '' : `<button type="button" class="set-add" onclick="addSet(${di},'${eiS}')">+ série</button>`}
     </div>`;
@@ -5299,7 +5346,8 @@ function _readSetsFromDom(di, ei) {
   return Array.from(grid.querySelectorAll('.set-row')).map(r => ({
     kg: displayToKg((r.querySelector('.set-kg') || {}).value || ''),
     pl: ((r.querySelector('.set-pl') || {}).value || '').trim(),
-    reps: ((r.querySelector('.set-reps') || {}).value || '').trim()
+    reps: ((r.querySelector('.set-reps') || {}).value || '').trim(),
+    rs: ((r.querySelector('.set-rs') || {}).value || '').trim()
   }));
 }
 function _reRenderSetsGrid(di, ei) {
@@ -7624,6 +7672,136 @@ function closeHistoryOnBg(e) { if (e.target.id === 'historyModal') closeHistoryM
 // ══ Recordes pessoais (Acompanhamento) ══
 // Registro individual do progresso de carga: PR absoluto + maiores evoluções do
 // bloco. SÓ LEITURA (loadCarga), nada de premiação: é histórico do próprio aluno.
+// Gráfico de linha genérico (SVG inline, sem lib). pts = [{x: rótulo, y: valor}].
+function _lineChartSvg(pts, opts) {
+  opts = opts || {};
+  if (!pts || pts.length < 2) return '<div style="color:#666;font-size:11px;">Precisa de pelo menos 2 registros pra desenhar a linha.</div>';
+  const W = 320, H = opts.h || 110, P = 16, PB = 18;
+  const ys = pts.map(p => p.y);
+  const max = Math.max(...ys), min = Math.min(...ys);
+  const range = (max - min) || 1;
+  const x = i => P + (i / (pts.length - 1)) * (W - 2 * P);
+  const y = v => (H - PB) - ((v - min) / range) * (H - PB - P - 8);
+  const poly = pts.map((p, i) => x(i).toFixed(1) + ',' + y(p.y).toFixed(1)).join(' ');
+  const dots = pts.map((p, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(p.y).toFixed(1)}" r="2.6" fill="#D4AF6A"/>`).join('');
+  const fmtV = v => opts.fmt ? opts.fmt(v) : v;
+  return `<svg width="100%" viewBox="0 0 ${W} ${H}" style="display:block;">
+      <polyline points="${poly}" fill="none" stroke="#D4AF6A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      ${dots}
+      <text x="${P}" y="${H - 4}" font-size="9" fill="#777">${pts[0].x}</text>
+      <text x="${W - P}" y="${H - 4}" font-size="9" fill="#777" text-anchor="end">${pts[pts.length - 1].x}</text>
+      <text x="${P}" y="10" font-size="9" fill="#999">máx ${fmtV(max)}</text>
+      <text x="${W - P}" y="10" font-size="9" fill="#999" text-anchor="end">mín ${fmtV(min)}</text>
+    </svg>`;
+}
+
+// ══ Pesagem livre (Acompanhamento) ══
+// GET action=medidas (linha do tempo: anamnese inicial + reajustes + o que o aluno salvar aqui)
+// e POST type 'medidas' só com o peso. Dado novo ENTRE os reajustes; não mexe em prescrição.
+let _pesoPts = null;   // cache da sessão
+async function renderPeso(force) {
+  const chart = document.getElementById('pesoChart'), resumo = document.getElementById('pesoResumo');
+  if (!chart || typeof SHEET_ID === 'undefined' || !SHEET_ID) return;
+  if (_pesoPts === null || force) {
+    try {
+      const r = await fetch(`${LOG_ENDPOINT}?action=medidas&id=${encodeURIComponent(SHEET_ID)}`, { redirect: 'follow' });
+      const j = await r.json().catch(() => ({}));
+      _pesoPts = (j && j.ok && Array.isArray(j.pontos)) ? j.pontos.filter(p => p && p.peso > 0) : [];
+    } catch (_) { _pesoPts = []; }
+  }
+  const porDia = {};
+  _pesoPts.forEach(p => { porDia[p.data] = p; });   // 1 ponto por dia (o último do dia)
+  const pts = Object.values(porDia).sort((a, b) => (a.ts || 0) - (b.ts || 0));
+  if (!pts.length) {
+    chart.innerHTML = '';
+    resumo.textContent = 'Registra teu primeiro peso que a linha de tendência começa aqui.';
+    return;
+  }
+  const fmtP = v => v.toFixed(1).replace('.', ',') + 'kg';
+  chart.innerHTML = _lineChartSvg(pts.map(p => ({ x: String(p.data || '').slice(0, 5), y: p.peso })), { fmt: fmtP });
+  const first = pts[0], last = pts[pts.length - 1];
+  const delta = last.peso - first.peso;
+  const dtxt = (delta >= 0 ? '+' : '') + delta.toFixed(1).replace('.', ',') + 'kg';
+  resumo.textContent = pts.length === 1
+    ? `${fmtP(last.peso)} em ${last.data}`
+    : `Atual: ${fmtP(last.peso)} (${last.data}) · ${dtxt} desde ${first.data}`;
+}
+function registrarPeso() {
+  const inp = document.getElementById('pesoInput');
+  const v = parseFloat(String(inp.value || '').replace(',', '.'));
+  if (!v || v < 30 || v > 300) { alert('Coloca teu peso em kg, ex: 82,4'); return; }
+  const body = { type: 'medidas', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(), peso: v };
+  fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body), keepalive: true, redirect: 'follow' })
+    .then(r => r.json()).then(j => {
+      if (!j || !j.ok) throw new Error('save');
+      const s = document.getElementById('pesoSaved');
+      if (s) { s.classList.add('show'); setTimeout(() => s.classList.remove('show'), 1800); }
+      const now = new Date();
+      const dBR = ('0' + now.getDate()).slice(-2) + '/' + ('0' + (now.getMonth() + 1)).slice(-2) + '/' + now.getFullYear();
+      (_pesoPts = _pesoPts || []).push({ ts: now.getTime(), data: dBR, fonte: 'app', peso: v });
+      inp.value = '';
+      renderPeso();
+    })
+    .catch(() => alert('Não consegui salvar agora. Confere a internet e tenta de novo.'));
+}
+
+// ══ Evolução por exercício (gráfico grande) ══
+// Fonte preferida: histórico do servidor (action=cargasHist, toda a história na aba CARGAS).
+// Fallback: as semanas do bloco atual (mesma série dos recordes). Abre tocando num recorde.
+let _evoLocal = {};    // nome -> [{w, kg}] do bloco atual (montado pelo renderRecordes)
+let _evoHist = null;   // nome -> [{d, kg}] do servidor; null = ainda não buscou
+async function _evoFetchHist() {
+  if (_evoHist !== null) return;
+  _evoHist = {};
+  try {
+    const r = await fetch(`${LOG_ENDPOINT}?action=cargasHist&id=${encodeURIComponent(SHEET_ID)}`, { redirect: 'follow' });
+    const j = await r.json().catch(() => ({}));
+    if (j && j.ok && j.exercicios) _evoHist = j.exercicios;
+  } catch (_) {}
+}
+function _evoHistDe(nome) {
+  if (!_evoHist) return null;
+  const alvo = _normEx(nome);
+  for (const k of Object.keys(_evoHist)) { if (_normEx(k) === alvo) return _evoHist[k]; }
+  return null;
+}
+async function openEvoModal(nome) {
+  const sel = document.getElementById('evoSelect');
+  const nomes = Object.keys(_evoLocal).sort((a, b) => a.localeCompare(b));
+  sel.innerHTML = nomes.map(n => `<option value="${n.replace(/"/g, '&quot;')}"${n === nome ? ' selected' : ''}>${n}</option>`).join('');
+  document.getElementById('evoModal').classList.add('show');
+  evoRender(nome);
+  await _evoFetchHist();
+  const atual = document.getElementById('evoSelect').value || nome;
+  if (document.getElementById('evoModal').classList.contains('show')) evoRender(atual);
+}
+function evoClose() { document.getElementById('evoModal').classList.remove('show'); }
+function evoRender(nome) {
+  const chart = document.getElementById('evoChart'), resumo = document.getElementById('evoResumo'), sub = document.getElementById('evoSub');
+  document.getElementById('evoTitle').textContent = nome;
+  const unit = getUnit();
+  const fmt = kg => kgToDisplay(kg) + unit;
+  const hist = _evoHistDe(nome);
+  let pts;
+  if (hist && hist.length > 1) {
+    pts = hist.map(p => ({ x: p.d, y: p.kg }));
+    sub.textContent = 'toda a tua história nesse exercício';
+  } else {
+    pts = (_evoLocal[nome] || []).map(p => ({ x: 'S' + p.w, y: p.kg }));
+    sub.textContent = 'bloco atual';
+  }
+  chart.innerHTML = _lineChartSvg(pts, { fmt: fmt });
+  if (pts.length) {
+    const ys = pts.map(p => p.y);
+    const first = ys[0], last = ys[ys.length - 1], max = Math.max(...ys);
+    const ganho = last - first;
+    const pct = first > 0 ? Math.round(ganho / first * 100) : 0;
+    resumo.textContent = `Começou em ${fmt(first)} · atual ${fmt(last)} · recorde ${fmt(max)}` + (ganho > 0 ? ` · +${pct}% no período` : '');
+  } else {
+    resumo.textContent = 'Sem registros ainda nesse exercício.';
+  }
+}
+
 function renderRecordes() {
   const box = document.getElementById('recordesBody');
   if (!box) return;
@@ -7647,7 +7825,7 @@ function renderRecordes() {
       if (!serie.length) return;
       const first = serie[0], last = serie[serie.length - 1];
       const max = serie.reduce((a, b) => b.kg >= a.kg ? b : a);
-      items.push({ nome: pt.nome, first, last, max, ganho: last.kg - first.kg, pct: first.kg > 0 ? (last.kg - first.kg) / first.kg * 100 : 0 });
+      items.push({ nome: pt.nome, first, last, max, serie, ganho: last.kg - first.kg, pct: first.kg > 0 ? (last.kg - first.kg) / first.kg * 100 : 0 });
     });
   }));
   if (!items.length) {
@@ -7658,16 +7836,22 @@ function renderRecordes() {
   const fmt = kg => kgToDisplay(kg) + unit;
   const prGeral = items.reduce((a, b) => b.max.kg >= a.max.kg ? b : a);
   const evol = items.filter(i => i.ganho > 0).sort((a, b) => b.pct - a.pct).slice(0, 3);
-  let html = `<div class="rec-row rec-pr"><span class="rec-label">Maior carga registrada</span><span class="rec-val">${fmt(prGeral.max.kg)} · ${prGeral.nome}</span></div>`;
+  const attr = n => String(n || '').replace(/"/g, '&quot;');
+  let html = `<div class="rec-row rec-pr" data-evo="${attr(prGeral.nome)}"><span class="rec-label">Maior carga registrada</span><span class="rec-val">${fmt(prGeral.max.kg)} · ${prGeral.nome}</span></div>`;
   if (evol.length) {
     html += `<div class="rec-sub">Maiores evoluções do bloco</div>`;
     evol.forEach(i => {
-      html += `<div class="rec-row"><span class="rec-label">${i.nome}</span><span class="rec-val">${fmt(i.first.kg)} → ${fmt(i.last.kg)} <b>+${i.pct.toFixed(0)}%</b></span></div>`;
+      html += `<div class="rec-row" data-evo="${attr(i.nome)}"><span class="rec-label">${i.nome}</span><span class="rec-val">${fmt(i.first.kg)} → ${fmt(i.last.kg)} <b>+${i.pct.toFixed(0)}%</b></span></div>`;
     });
   } else {
     html += `<div class="rec-sub" style="margin-top:8px;">Segue anotando as cargas: quando subirem, as evoluções aparecem aqui.</div>`;
   }
+  html += `<div class="rec-sub" style="margin-top:8px;">📊 Toca num exercício pra ver o gráfico de evolução.</div>`;
   box.innerHTML = html;
+  // guarda as séries e liga o toque → modal de evolução
+  _evoLocal = {};
+  items.forEach(i => { _evoLocal[i.nome] = i.serie; });
+  box.querySelectorAll('[data-evo]').forEach(el => { el.onclick = () => openEvoModal(el.getAttribute('data-evo')); });
 }
 
 // ══ Cadência (concêntrica/isometria/excêntrica) ══
@@ -8506,6 +8690,7 @@ function toggleAccomp() {
     renderRecordes();
     renderWater();
     renderStreakPanel();
+    renderPeso();
     renderWaterToggleState();
   }
 }
