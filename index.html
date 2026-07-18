@@ -2489,7 +2489,7 @@
   <h1 id="headerTitle">PROTOCOLO DE TREINO</h1>
   <div class="last-mod" id="lastModBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:0.3px;"><span id="versionBadge" style="display:none;color:var(--gold);font-weight:600;">Protocolo v<span id="versionValue"></span></span><span id="lastModSep" style="display:none;"> · </span>Atualizado em <span id="lastModValue"></span></div>
   <div class="last-mod" id="proxReajusteBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:0.3px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-1px;margin-right:3px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Próxima anamnese de reajuste: <span id="proxReajusteValue" style="color:var(--gold);font-weight:600;"></span></div>
-  <div class="last-mod" id="esforcoAlvoBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:0.3px;">💪 Esforço: <span id="esforcoAlvoValue" style="color:var(--gold);font-weight:600;"></span></div>
+  <div class="last-mod" id="esforcoAlvoBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:0.3px;">💪 Esforço: <span id="esforcoAlvoValue" style="color:var(--gold);font-weight:600;"></span><div id="esforcoAlvoTexto" style="display:none;font-size:10.5px;color:#8d8579;font-weight:400;margin-top:2px;line-height:1.4;"></div></div>
 </div>
 
 <!-- ══ AVISO DE REAJUSTE / AJUSTE NO PROTOCOLO (substitui o hook do WhatsApp) ══ -->
@@ -8104,7 +8104,19 @@ async function loadFromSheets() {
     STUDENT_ESFORCO_ALVO = _parseEsforcoAlvo(rows);
     if (STUDENT_ESFORCO_ALVO && STUDENT_ESFORCO_ALVO.valor) {
       const eaV = document.getElementById('esforcoAlvoValue'), eaB = document.getElementById('esforcoAlvoBadge');
-      if (eaV) eaV.textContent = _esforcoFrase(STUDENT_ESFORCO_ALVO.valor, 'badge');
+      if (eaV) {
+        // Frase que puxa esforço + o NÚMERO do alvo (alvos mudam por fase/versão, o aluno
+        // precisa ver o dele; achado da Entregas, Sala #806: alvos diferentes = badge igual).
+        const rA = _parseAlvoRange(STUDENT_ESFORCO_ALVO.valor);
+        const falhaA = (rA && rA[0] === 0) || /falha/i.test(String(STUDENT_ESFORCO_ALVO.valor || ''));
+        let tA = _esforcoFrase(STUDENT_ESFORCO_ALVO.valor, 'badge');
+        if (!falhaA && rA) tA += ' · sobrar no máx ' + (rA[0] === rA[1] ? rA[0] : rA[0] + '-' + rA[1]);
+        eaV.textContent = tA;
+      }
+      // Coluna D (o texto da montagem que ensina a AGIR sobre o número, ex: "sobrou 4 ou
+      // mais, pode subir a carga") agora aparece: 2ª linha do badge.
+      const eaT = document.getElementById('esforcoAlvoTexto');
+      if (eaT && STUDENT_ESFORCO_ALVO.texto) { eaT.textContent = STUDENT_ESFORCO_ALVO.texto; eaT.style.display = 'block'; }
       if (eaB) eaB.style.display = 'block';
     }
 
