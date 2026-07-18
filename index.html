@@ -338,6 +338,8 @@
   .set-in.set-kg { width: 58px; } .set-in.set-pl { width: 44px; } .set-in.set-reps { width: 52px; }
   /* "sobrou" = reps que sobraram na série (percepção de esforço, casa com o Esforço-alvo) */
   .set-head .sh-rs { width: 46px; } .set-in.set-rs { width: 46px; }
+  /* ⓘ do "sobrou": explica pro aluno o que anotar (clareza > caixinha muda) */
+  .rs-info-btn { flex: none; width: 15px; height: 15px; padding: 0; margin-left: -2px; border-radius: 50%; border: 1px solid rgba(212,175,106,.5); background: transparent; color: var(--gold); font-size: 9px; font-weight: 800; font-style: italic; font-family: Georgia, serif; line-height: 1; cursor: pointer; }
   /* série preenchida "acende": número dourado + campos com borda viva (progressive enhancement via :has) */
   .set-in:not(:placeholder-shown) { border-color: rgba(212,175,55,.55); background: #26221a; }
   .set-row:has(.set-in:not(:placeholder-shown)) .set-num { color: var(--gold); }
@@ -2674,6 +2676,23 @@
 <div class="proto-progress" id="protoProgress" onclick="protoProgressTap()">
   <div class="pp-row"><span class="pp-label" id="ppLabel">Protocolo</span><span class="pp-dias" id="ppDias"></span></div>
   <div class="pp-track"><div class="pp-fill" id="ppFill"></div></div>
+</div>
+
+<!-- ══ MODAL "O QUE É O SOBROU?" (ⓘ da grade de séries) ══ -->
+<div class="evo-overlay" id="sobrouModal" onclick="if(event.target.id==='sobrouModal')sobrouInfoClose()">
+  <div class="evo-box">
+    <h4>O que é o "sobrou"?</h4>
+    <div style="color:#ccc;font-size:13px;line-height:1.65;">
+      <p style="margin:0 0 10px;">Quando tu termina uma série, pensa: <b style="color:var(--gold);">quantas repetições eu AINDA conseguiria fazer</b> com técnica boa? Esse número é o sobrou.</p>
+      <p style="margin:0 0 10px;">Acabou no limite, não saía mais nenhuma: <b>sobrou 0</b>. Dava pra fazer mais umas 2: <b>sobrou 2</b>.</p>
+      <div id="sobrouAlvoBox" style="display:none;background:rgba(212,175,106,.08);border:1px solid rgba(212,175,106,.25);border-radius:10px;padding:10px 12px;margin:0 0 10px;">
+        <div style="color:var(--gold);font-weight:700;font-size:12.5px;" id="sobrouAlvoLinha"></div>
+        <div style="color:#8d8579;font-size:11.5px;margin-top:3px;line-height:1.5;" id="sobrouAlvoTexto"></div>
+      </div>
+      <p style="margin:0;">Pra que serve: o peso na barra varia de dia pra dia, mas o esforço não mente. Anotando o sobrou, o GH enxerga se tu treina perto ou longe do teu limite e usa isso pra calibrar teu próximo protocolo.</p>
+    </div>
+    <button type="button" class="evo-close" onclick="sobrouInfoClose()">Entendi 💪</button>
+  </div>
 </div>
 
 <!-- ══ MODAL DE EVOLUÇÃO POR EXERCÍCIO ══ -->
@@ -5322,7 +5341,7 @@ function _setsGridHtml(di, ei, label, noAdd) {
   }).join('');
   return `<div class="sets-grid" id="sets-${di}-${eiS}" data-di="${di}" data-ei="${eiS}" data-noadd="${noAdd ? '1' : ''}">
       ${label ? `<div class="carga-label" style="font-size:10px;margin-bottom:2px;">${label}</div>` : ''}
-      <div class="set-head"><span class="set-num"></span><span class="sh-kg">${getUnit()}</span><span class="sh-pl">placa</span><span class="sh-reps">reps</span><span class="sh-rs" title="Quantas repetições sobraram">sobrou</span><span style="flex:1"></span></div>
+      <div class="set-head"><span class="set-num"></span><span class="sh-kg">${getUnit()}</span><span class="sh-pl">placa</span><span class="sh-reps">reps</span><span class="sh-rs" title="Quantas repetições sobraram">sobrou</span><button type="button" class="rs-info-btn" onclick="openSobrouInfo()" aria-label="O que é o sobrou?">i</button><span style="flex:1"></span></div>
       ${rows}
       ${noAdd ? '' : `<button type="button" class="set-add" onclick="addSet(${di},'${eiS}')">+ série</button>`}
     </div>`;
@@ -7744,6 +7763,32 @@ function registrarPeso() {
     })
     .catch(() => alert('Não consegui salvar agora. Confere a internet e tenta de novo.'));
 }
+
+// ══ "O que é o sobrou?" (ⓘ da grade de séries) ══
+// Explica a caixinha em linguagem de aluno e mostra o ALVO DELE (e a frase da montagem,
+// col D) quando existem. Clareza pedida pelo GH: caixa vazia sem explicação é adivinhação.
+function openSobrouInfo() {
+  try {
+    const box = document.getElementById('sobrouAlvoBox');
+    const linha = document.getElementById('sobrouAlvoLinha');
+    const texto = document.getElementById('sobrouAlvoTexto');
+    const alvo = (typeof STUDENT_ESFORCO_ALVO !== 'undefined' && STUDENT_ESFORCO_ALVO) ? STUDENT_ESFORCO_ALVO : null;
+    const r = alvo ? _parseAlvoRange(alvo.valor) : null;
+    const falha = alvo && ((r && r[0] === 0) || /falha/i.test(String(alvo.valor || '')));
+    if (alvo && (r || falha)) {
+      linha.textContent = falha
+        ? '🎯 Teu alvo atual: última série até a falha'
+        : ('🎯 Teu alvo atual: sobrar no máximo ' + (r[0] === r[1] ? r[0] : r[0] + ' a ' + r[1]) + ' por série');
+      texto.textContent = alvo.texto || '';
+      texto.style.display = alvo.texto ? 'block' : 'none';
+      box.style.display = 'block';
+    } else {
+      box.style.display = 'none';
+    }
+    document.getElementById('sobrouModal').classList.add('show');
+  } catch (e) {}
+}
+function sobrouInfoClose() { document.getElementById('sobrouModal').classList.remove('show'); }
 
 // ══ Evolução por exercício (gráfico grande) ══
 // Fonte preferida: histórico do servidor (action=cargasHist, toda a história na aba CARGAS).
