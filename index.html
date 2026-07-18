@@ -7781,13 +7781,15 @@ function evoRender(nome) {
   document.getElementById('evoTitle').textContent = nome;
   const unit = getUnit();
   const fmt = kg => kgToDisplay(kg) + unit;
-  const hist = _evoHistDe(nome);
+  // Filtro de sanidade: digitação antiga colada ("45 35" → 4535) esmaga a escala do gráfico.
+  const sane = v => v > 0 && v <= 600;
+  const hist = (_evoHistDe(nome) || []).filter(p => sane(p.kg));
   let pts;
-  if (hist && hist.length > 1) {
+  if (hist.length > 1) {
     pts = hist.map(p => ({ x: p.d, y: p.kg }));
     sub.textContent = 'toda a tua história nesse exercício';
   } else {
-    pts = (_evoLocal[nome] || []).map(p => ({ x: 'S' + p.w, y: p.kg }));
+    pts = (_evoLocal[nome] || []).filter(p => sane(p.kg)).map(p => ({ x: 'S' + p.w, y: p.kg }));
     sub.textContent = 'bloco atual';
   }
   chart.innerHTML = _lineChartSvg(pts, { fmt: fmt });
