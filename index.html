@@ -10382,7 +10382,20 @@ async function loadLaudos() {
     const j = await (await fetch(`${LOG_ENDPOINT}?action=comparacoes_list&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`, { cache: 'no-store' })).json();
     _laudosLoaded = true;
     const laudos = (j && j.laudos) || [];
-    if (!laudos.length) { area.innerHTML = ''; return; }
+    // Sem laudo o aluno via uma tela VAZIA e ninguem cobrava a foto dele (achado da Reajustes:
+    // quem nao manda foto some do laudo e a calibragem do protocolo fica no escuro). Agora
+    // convida, explicando pra que serve, e leva pra aba de enviar com 1 toque.
+    if (!laudos.length) {
+      area.innerHTML = `<div class="laudo-card">
+        <div class="laudo-h">📸 Teu antes e depois</div>
+        <div style="color:#bbb;font-size:12.5px;line-height:1.6;margin-top:6px;">
+          Ainda não tem comparação tua por aqui. Manda tuas fotos de <b>frente, costas e lado</b> que na próxima atualização do teu protocolo o GH monta teu antes e depois lado a lado.
+          <div style="color:#8d8579;font-size:11.5px;margin-top:7px;">Tira sempre parecido: mesma luz, mesma distância, de manhã. É assim que dá pra ver a diferença de verdade, e é com elas que o GH ajusta teu treino e tua dieta.</div>
+        </div>
+        <button class="cmp-share-btn" style="margin-top:11px;" onclick="switchFotosTab('enviar')">📤 Enviar minhas fotos</button>
+      </div>`;
+      return;
+    }
     const chips = laudos.length > 1
       ? `<div class="laudo-vers">${laudos.map((l, i) => `<span class="laudo-chip${i === 0 ? ' on' : ''}" data-fid="${l.fid}" onclick="showLaudo('${l.fid}', this)">V${l.versao}</span>`).join('')}</div>`
       : '';
