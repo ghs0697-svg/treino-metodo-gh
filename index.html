@@ -2519,6 +2519,12 @@
   </div>
 </div>
 
+<!-- ══ RECADO EM ÁUDIO DO GH ══
+     Fica AQUI, na área comum acima das abas, e NÃO dentro do dietaView: estava dentro do
+     renderDiet(), então o player só existia na aba DIETA (que fica display:none quando o aluno
+     está no TREINO, a aba padrão). Resultado: o aluno praticamente nunca via o recado. -->
+<div id="recadoSlot" style="margin:0 14px 12px;"></div>
+
 <!-- ══ AÇÃO RÁPIDA (assistente: dúvida ou ajuste) — tile compacto ══ -->
 <div style="display:flex;gap:10px;margin:0 14px 12px;align-items:stretch;">
   <div id="chatBanner" onclick="openChatModal()" style="display:none;flex:1;min-width:0;background:var(--card);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:12px 14px 11px;cursor:pointer;position:relative;">
@@ -8214,6 +8220,8 @@ async function loadFromSheets() {
     sweepLegacyDoneLocalOnly_().catch(() => {});
     checkFotosBannerOnLoad();
     checkChatBannerOnLoad();
+    loadRecado();   // recado em áudio do GH: roda no INIT (antes só rodava dentro do renderDiet,
+                    // então quem ficava na aba TREINO nunca via o recado)
 
   } catch (err) {
     document.getElementById('loadingScreen').style.display = 'none';
@@ -11744,8 +11752,7 @@ function renderDiet() {
   const container = document.getElementById('dietContent');
   let html = '';
 
-  // Slot do recado em áudio (preenchido async por loadRecado) + card de texto
-  html += `<div id="recadoSlot"></div>`;
+  // O slot do recado saiu daqui: virou área comum acima das abas (senão só aparecia na DIETA).
   html += _renderTopCards(d);
 
   // Info card
@@ -11950,7 +11957,6 @@ function renderDiet() {
   // A15: dieta renderizou → esconde qualquer estado de aviso/loading que tenha ficado de uma falha anterior
   const _de = document.getElementById('dietError'); if (_de) _de.style.display = 'none';
   const _dl = document.getElementById('dietLoading'); if (_dl) _dl.style.display = 'none';
-  loadRecado(); // preenche o #recadoSlot com o player do recado (se houver)
   updateDietProgress(); // sincroniza a barra de refeições do dia com o que já tá marcado
   updateCardioProgress(); // sincroniza a barra de cardio da semana
 }
