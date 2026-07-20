@@ -6687,6 +6687,7 @@ async function loadAndShowLastModified() {
       _proxReajusteBR = data.proxReajusteBR;
       reajusteBannerCheck(); // empurrão proativo quando o reajuste tá perto/vencido
       protoProgressUpdate(); // barra "Protocolo X · dia N de 50" no topo
+      _obsCardApplyTTL();    // some com o card de entrega se já passou dos 2 dias
     }
     // Detecta reajuste/ajuste comparando versão + data de modificação com o estado salvo
     _detectProtoAviso(data.version, data.lastModified);
@@ -11407,7 +11408,7 @@ function _suplTimingIcon(timing) {
 // do bloco observacoes terminada em ":" é o título. Vazio se não houver bloco.
 function _renderTopCards(d) {
   let h = '';
-  if (d.observacoes && d.observacoes.length) {
+  if (d.observacoes && d.observacoes.length && !_obsCardExpirado()) {
     let linhas = d.observacoes.slice();
     let titulo = 'O que ajustei agora'; // default (reajuste) se não vier título
     // 1ª linha terminada em ":" é o título. Inicial: "O que observei no teu caso:".
@@ -12236,7 +12237,7 @@ function protoProgressUpdate() {
     var reaj = new Date(p[2], p[1] - 1, p[0]); reaj.setHours(0, 0, 0, 0);
     var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
     var faltam = Math.round((reaj.getTime() - hoje.getTime()) / 86400000);
-    var dia = Math.min(PROTO_CICLO_DIAS, Math.max(1, PROTO_CICLO_DIAS - faltam));
+    var dia = Math.min(PROTO_CICLO_DIAS, _protoDiaDoCiclo() || 1);   // mesma fonte do card, sem divergir
     var v = '';
     try { v = sessionStorage.getItem('gh_version_' + SHEET_ID) || ''; } catch (_e) {}
     var nome = 'Protocolo' + (v ? ' ' + v : '');
@@ -12259,6 +12260,33 @@ function protoProgressUpdate() {
     box.style.display = 'block';
   } catch (e) {}
 }
+// ══ Card "O que observei/ajustei no teu caso": expira em 2 dias (GH 2026-07-20) ══
+// É uma nota DE ENTREGA, não conteúdo permanente do protocolo, então some depois de 2 dias.
+// Marco = dia do ciclo (derivado da col M, igual à barra de progresso), NÃO o lastModified da
+// planilha: a data de entrega não se mexe quando a Ajustes edita um exercício, o lastModified sim.
+var OBS_CARD_TTL_DIAS = 2;
+function _protoDiaDoCiclo() {
+  if (!_proxReajusteBR || !/^\d{2}\/\d{2}\/\d{4}$/.test(_proxReajusteBR)) return null;   // sem dado
+  var p = _proxReajusteBR.split('/').map(Number);
+  var reaj = new Date(p[2], p[1] - 1, p[0]); reaj.setHours(0, 0, 0, 0);
+  var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  var faltam = Math.round((reaj.getTime() - hoje.getTime()) / 86400000);
+  // +1 porque o DIA DA ENTREGA é o dia 1, não o dia 0 (faltam=50 → dia 1, faltam=49 → dia 2).
+  return Math.max(1, PROTO_CICLO_DIAS + 1 - faltam);
+}
+// Só esconde quando SABE que passou do prazo. Sem a data, mostra (nunca some por engano).
+function _obsCardExpirado() {
+  var dia = _protoDiaDoCiclo();
+  return dia !== null && dia > OBS_CARD_TTL_DIAS;
+}
+// A dieta pode renderizar ANTES da col M chegar; quando ela chega, reavalia e remove se venceu.
+function _obsCardApplyTTL() {
+  try {
+    if (!_obsCardExpirado()) return;
+    document.querySelectorAll('.gh-obs-card').forEach(function (el) { el.remove(); });
+  } catch (e) {}
+}
+
 // Toque na barra: abre o Acompanhamento (sequência + recordes) e rola até ele.
 function protoProgressTap() {
   try {
