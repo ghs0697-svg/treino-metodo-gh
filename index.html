@@ -4314,7 +4314,7 @@
     <div class="te-mode-tabs" id="teModeTabs"></div>
     <button class="te-btn ghost" id="teUndoBtn" onclick="undoTrainerAction()" disabled title="Desfazer última ação (Ctrl+Z)">↶ Desfazer</button>
     <button class="te-tpl-btn" id="trainerTplBtn" onclick="openTrainerTemplateModal()" style="display:none;" title="Carregar template oficial (substitui exercícios mantendo info do aluno)">📋 Template</button>
-    <button class="te-btn ghost" id="teRecadoBtn" onclick="openRecadoModal()" title="Gravar recado em áudio pro aluno (entrega inicial). Some em 7 dias.">🎙 Recado</button>
+    <button class="te-btn ghost" id="teRecadoBtn" onclick="openRecadoModal()" title="Gravar recado em áudio pro aluno (entrega inicial). Some em 2 dias.">🎙 Recado</button>
     <button class="te-btn" id="trainerSaveBtn" onclick="trainerSave()">💾 Salvar</button>
     <button class="te-btn ghost" onclick="trainerExit()">✕</button>
   </div>
@@ -4337,7 +4337,7 @@
     </div>
     <div style="display:flex;gap:6px;align-items:center;margin:8px 0;">
       <span style="font-size:12px;color:var(--muted);">Prazo:</span>
-      <button type="button" class="recado-prazo-btn active" id="recadoPrazo7" onclick="recadoSetPrazo(false)">7 dias</button>
+      <button type="button" class="recado-prazo-btn active" id="recadoPrazoTmp" onclick="recadoSetPrazo(false)">2 dias</button>
       <button type="button" class="recado-prazo-btn" id="recadoPrazoPerm" onclick="recadoSetPrazo(true)">Permanente</button>
     </div>
     <div class="recado-status" id="recadoStatus"></div>
@@ -11417,7 +11417,7 @@ function _renderTopCards(d) {
 
 // Recado em áudio do GH (entrega inicial). O treinador grava no editor → salva
 // no Drive do aluno → Apps Script serve em base64 (action=recado) → expira em
-// 7 dias. Preenche o #recadoSlot no topo do protocolo. Silencioso se não houver.
+// 2 dias (RECADO_TTL_DAYS no .gs). Preenche o #recadoSlot no topo do protocolo. Silencioso se não houver.
 async function loadRecado() {
   const slot = document.getElementById('recadoSlot');
   if (!slot) return;
@@ -13230,7 +13230,7 @@ function teHide(id) { document.getElementById(id).classList.remove('show'); }
 // ── Recado em áudio (só treinador, no editor) ──
 // Grava voz no navegador → base64 → POST type:'recado' pro Apps Script, que
 // salva no Drive do aluno (trainerSheetId). Player aparece no protocolo do
-// aluno e some em 7 dias. Prefere audio/mp4 (toca em iPhone). Máx 3 min.
+// aluno e some em 2 dias (RECADO_TTL_DAYS no .gs). Prefere audio/mp4 (toca em iPhone). Máx 3 min.
 let _recadoBlob = null, _recadoMime = 'audio/wav', _recadoRecording = false;
 let _recadoStream = null, _recadoTimerInt = null, _recadoT0 = 0, _recadoPerm = false;
 let _recadoCtx = null, _recadoProc = null, _recadoSrc = null, _recadoPCM = [], _recadoSampleRate = 44100;
@@ -13244,10 +13244,10 @@ function openRecadoModal() {
   _recadoLoadStatus();
 }
 
-// Toggle de prazo: 7 dias (default) ou permanente
+// Toggle de prazo: 2 dias (default, RECADO_TTL_DAYS no .gs) ou permanente
 function recadoSetPrazo(perm) {
   _recadoPerm = !!perm;
-  document.getElementById('recadoPrazo7').classList.toggle('active', !perm);
+  document.getElementById('recadoPrazoTmp').classList.toggle('active', !perm);
   document.getElementById('recadoPrazoPerm').classList.toggle('active', perm);
 }
 
@@ -13305,7 +13305,7 @@ function _recadoResetUI() {
   const prev = document.getElementById('recadoPreview');
   prev.style.display = 'none'; prev.removeAttribute('src');
   document.getElementById('recadoSendBtn').style.display = 'none';
-  recadoSetPrazo(false); // default 7 dias
+  recadoSetPrazo(false); // default: temporário (2 dias)
   document.getElementById('recadoExisting').style.display = 'none';
 }
 function _recadoStopStream() {
@@ -13426,7 +13426,7 @@ async function recadoSend() {
     });
     const j = await resp.json().catch(() => ({}));
     if (j && j.ok) {
-      const prazoTxt = _recadoPerm ? 'fica permanente' : 'some em 7 dias';
+      const prazoTxt = _recadoPerm ? 'fica permanente' : 'some em 2 dias';
       document.getElementById('recadoStatus').textContent = '✅ Recado enviado! O aluno já vê no topo do protocolo (' + prazoTxt + ').';
       sendBtn.style.display = 'none';
       _recadoLoadStatus();
