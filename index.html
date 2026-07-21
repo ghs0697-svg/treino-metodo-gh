@@ -10390,6 +10390,61 @@ function switchFotosTab(tab) {
 
 // ── Laudo de evolução: gerado no reajuste, guardado na pasta "Evolução" do aluno ──
 let _laudosLoaded = false;
+// ── TTL do laudo (GH 2026-07-21): a comparação (reajuste/renovação) fica no MÁXIMO LAUDO_TTL_DIAS
+//    dias no app; depois some. Dentro da janela o aluno pode BAIXAR em PDF pra guardar. ──────────
+const LAUDO_TTL_DIAS = 2;
+function _laudoRecente(dateStr) {
+  // dateStr = "dd/mm/aaaa" (vem do comparacoes_list, é a data do laudo). Fail-open se vier vazio/estranho.
+  const m = String(dateStr || '').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (!m) return true;
+  const d = new Date(+m[3], +m[2] - 1, +m[1]); d.setHours(0, 0, 0, 0);
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  return (hoje - d) / 86400000 <= LAUDO_TTL_DIAS;
+}
+function _jpegBytesDe(dataUrl) {
+  const b64 = String(dataUrl || '').split(',')[1] || '';
+  const bin = atob(b64), u = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  return u;
+}
+// Monta um PDF de 1 página com o JPEG do laudo embutido (Filter DCTDecode, sem lib externa → roda
+// offline/PWA sem violar a CSP). Devolve um Blob application/pdf.
+function _laudoPdfBlob(jpeg, w, h) {
+  const enc = s => new TextEncoder().encode(s);
+  const parts = []; let len = 0; const off = [];
+  const put = u => { parts.push(u); len += u.length; };
+  const putS = s => put(enc(s));
+  const obj = (n, body) => { off[n] = len; putS(`${n} 0 obj\n${body}\nendobj\n`); };
+  putS('%PDF-1.4\n');
+  obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+  obj(2, '<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+  obj(3, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${w} ${h}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>`);
+  off[4] = len;
+  putS(`4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${w} /Height ${h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpeg.length} >>\nstream\n`);
+  put(jpeg); putS('\nendstream\nendobj\n');
+  const cont = `q ${w} 0 0 ${h} 0 0 cm /Im0 Do Q`;
+  obj(5, `<< /Length ${cont.length} >>\nstream\n${cont}\nendstream`);
+  const xrefAt = len;
+  let xref = 'xref\n0 6\n0000000000 65535 f \n';
+  for (let i = 1; i <= 5; i++) xref += String(off[i]).padStart(10, '0') + ' 00000 n \n';
+  putS(xref);
+  putS(`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrefAt}\n%%EOF`);
+  const out = new Uint8Array(len); let o = 0; for (const p of parts) { out.set(p, o); o += p.length; }
+  return new Blob([out], { type: 'application/pdf' });
+}
+function _laudoBaixarPDF(imgId, versao) {
+  const img = document.getElementById(imgId);
+  if (!img || !img.src || !img.src.startsWith('data:')) return;
+  try {
+    const jpeg = _jpegBytesDe(img.src);
+    const w = img.naturalWidth || 1080, h = img.naturalHeight || 1400;
+    const url = URL.createObjectURL(_laudoPdfBlob(jpeg, w, h));
+    const a = document.createElement('a');
+    a.href = url; a.download = `Evolucao_MetodoGH${versao ? '_V' + versao : ''}.pdf`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  } catch (_) {}
+}
 async function loadLaudos() {
   const area = document.getElementById('laudoEvoArea');
   if (!area || _laudosLoaded) return;
@@ -10412,11 +10467,20 @@ async function loadLaudos() {
       </div>`;
       return;
     }
-    const chips = laudos.length > 1
-      ? `<div class="laudo-vers">${laudos.map((l, i) => `<span class="laudo-chip${i === 0 ? ' on' : ''}" data-fid="${l.fid}" onclick="showLaudo('${l.fid}', this)">V${l.versao}</span>`).join('')}</div>`
+    // TTL: só as comparações dos últimos LAUDO_TTL_DIAS dias. Passou disso, saiu do ar.
+    const recentes = laudos.filter(l => _laudoRecente(l.date));
+    if (!recentes.length) {
+      area.innerHTML = `<div class="laudo-card"><div class="laudo-h">📊 Tua evolução</div>
+        <div style="color:#bbb;font-size:12.5px;line-height:1.6;margin-top:6px;">Tua última comparação ficou disponível por ${LAUDO_TTL_DIAS} dias e já saiu do ar. A próxima aparece aqui quando sair teu próximo ajuste.</div></div>`;
+      return;
+    }
+    const chips = recentes.length > 1
+      ? `<div class="laudo-vers">${recentes.map((l, i) => `<span class="laudo-chip${i === 0 ? ' on' : ''}" data-fid="${l.fid}" onclick="showLaudo('${l.fid}', this)">V${l.versao}</span>`).join('')}</div>`
       : '';
-    area.innerHTML = `<div class="laudo-card"><div class="laudo-h">📊 Tua evolução</div>${chips}<div class="laudo-imgwrap"><div class="laudo-loading" id="laudoLoading">Carregando…</div><img id="laudoImg" class="laudo-img" onclick="laudoFull()" alt="Evolução" style="display:none;"></div></div>`;
-    showLaudo(laudos[0].fid);
+    area.innerHTML = `<div class="laudo-card"><div class="laudo-h">📊 Tua evolução</div>${chips}<div class="laudo-imgwrap"><div class="laudo-loading" id="laudoLoading">Carregando…</div><img id="laudoImg" class="laudo-img" onclick="laudoFull()" alt="Evolução" style="display:none;"></div>
+      <button class="cmp-share-btn" style="margin-top:10px;" onclick="_laudoBaixarPDF('laudoImg', ${recentes[0].versao || 0})">⬇️ Baixar em PDF</button>
+      <div style="color:#8d8579;font-size:11px;margin-top:6px;text-align:center;">Fica disponível por ${LAUDO_TTL_DIAS} dias. Baixa em PDF se quiser guardar.</div></div>`;
+    showLaudo(recentes[0].fid);
   } catch (_) { _laudosLoaded = true; area.innerHTML = ''; }
 }
 async function showLaudo(fid, chipEl) {
@@ -10450,9 +10514,13 @@ async function loadLaudoDestaque() {
     const laudos = (j && j.laudos) || [];
     if (!laudos.length) { slot.innerHTML = ''; return; }
     const L = laudos[0]; // o mais recente
+    // TTL: fora da janela de LAUDO_TTL_DIAS dias, não destaca mais na página principal.
+    if (!_laudoRecente(L.date)) { slot.innerHTML = ''; return; }
     slot.innerHTML = `<div class="gh-top-card">
       <div class="gh-top-card-title">📊 Tua evolução <span style="color:#8d8579;font-weight:400;font-size:11.5px;">· teu antes e depois, medido</span></div>
       <div class="laudo-imgwrap" style="margin-top:8px;"><div class="laudo-loading" id="laudoDestLoad">Carregando…</div><img id="laudoDestImg" class="laudo-img" style="display:none;" onclick="_laudoOpenFull(this.src)" alt="Tua evolução"></div>
+      <button class="cmp-share-btn" style="margin-top:9px;" onclick="_laudoBaixarPDF('laudoDestImg', ${L.versao || 0})">⬇️ Baixar em PDF</button>
+      <div style="color:#8d8579;font-size:11px;margin-top:6px;text-align:center;">Fica disponível por ${LAUDO_TTL_DIAS} dias. Baixa em PDF se quiser guardar.</div>
     </div>`;
     const ij = await (await fetch(`${LOG_ENDPOINT}?action=comparacao_img&fid=${encodeURIComponent(L.fid)}&_=${Date.now()}`, { cache: 'no-store' })).json();
     const img = document.getElementById('laudoDestImg'), ld = document.getElementById('laudoDestLoad');
