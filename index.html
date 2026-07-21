@@ -2525,6 +2525,12 @@
      está no TREINO, a aba padrão). Resultado: o aluno praticamente nunca via o recado. -->
 <div id="recadoSlot" style="margin:0 14px 12px;"></div>
 
+<!-- ══ EVOLUÇÃO (LAUDO) EM DESTAQUE ══
+     O antes-e-depois do reajuste (fotos + medidas) vivia SÓ na aba Comparar, dentro do modal de
+     fotos — entrega passiva, o aluno tinha que ir atrás. GH pediu pra ficar visível sem o modal.
+     Mostra o laudo mais recente aqui na área comum; a aba Comparar segue com o histórico completo. -->
+<div id="laudoSlot" style="margin:0 14px 12px;"></div>
+
 <!-- ══ AÇÃO RÁPIDA (assistente: dúvida ou ajuste) — tile compacto ══ -->
 <div style="display:flex;gap:10px;margin:0 14px 12px;align-items:stretch;">
   <div id="chatBanner" onclick="openChatModal()" style="display:none;flex:1;min-width:0;background:var(--card);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:12px 14px 11px;cursor:pointer;position:relative;">
@@ -8223,6 +8229,7 @@ async function loadFromSheets() {
     checkChatBannerOnLoad();
     loadRecado();   // recado em áudio do GH: roda no INIT (antes só rodava dentro do renderDiet,
                     // então quem ficava na aba TREINO nunca via o recado)
+    loadLaudoDestaque();   // antes-e-depois do reajuste em destaque na página principal (fora do modal)
 
   } catch (err) {
     document.getElementById('loadingScreen').style.display = 'none';
@@ -10423,13 +10430,35 @@ async function showLaudo(fid, chipEl) {
     else if (ld) ld.textContent = 'Não consegui carregar o laudo.';
   } catch (_) { if (ld) ld.textContent = 'Não consegui carregar o laudo.'; }
 }
-function laudoFull() {
-  const src = document.getElementById('laudoImg')?.src;
+function _laudoOpenFull(src) {
   if (!src) return;
   let ov = document.getElementById('laudoFullOverlay');
   if (!ov) { ov = document.createElement('div'); ov.id = 'laudoFullOverlay'; ov.className = 'laudo-full'; ov.onclick = () => ov.classList.remove('on'); ov.innerHTML = '<img alt="Evolução">'; document.body.appendChild(ov); }
   ov.querySelector('img').src = src;
   ov.classList.add('on');
+}
+function laudoFull() { _laudoOpenFull(document.getElementById('laudoImg')?.src); }
+
+// Destaque do laudo na PÁGINA PRINCIPAL (fora do modal). Mostra o laudo mais recente; toque abre
+// em tela cheia. Silencioso se o aluno ainda não tem laudo (não polui quem nunca reajustou).
+async function loadLaudoDestaque() {
+  const slot = document.getElementById('laudoSlot');
+  if (!slot) return;
+  if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') { slot.innerHTML = ''; return; }
+  try {
+    const j = await (await fetch(`${LOG_ENDPOINT}?action=comparacoes_list&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`, { cache: 'no-store' })).json();
+    const laudos = (j && j.laudos) || [];
+    if (!laudos.length) { slot.innerHTML = ''; return; }
+    const L = laudos[0]; // o mais recente
+    slot.innerHTML = `<div class="gh-top-card">
+      <div class="gh-top-card-title">📊 Tua evolução <span style="color:#8d8579;font-weight:400;font-size:11.5px;">· teu antes e depois, medido</span></div>
+      <div class="laudo-imgwrap" style="margin-top:8px;"><div class="laudo-loading" id="laudoDestLoad">Carregando…</div><img id="laudoDestImg" class="laudo-img" style="display:none;" onclick="_laudoOpenFull(this.src)" alt="Tua evolução"></div>
+    </div>`;
+    const ij = await (await fetch(`${LOG_ENDPOINT}?action=comparacao_img&fid=${encodeURIComponent(L.fid)}&_=${Date.now()}`, { cache: 'no-store' })).json();
+    const img = document.getElementById('laudoDestImg'), ld = document.getElementById('laudoDestLoad');
+    if (ij && ij.ok && img) { img.src = `data:${ij.mime};base64,${ij.b64}`; img.style.display = 'block'; if (ld) ld.style.display = 'none'; }
+    else { slot.innerHTML = ''; }   // não deixa card vazio se a imagem não veio
+  } catch (e) { slot.innerHTML = ''; }
 }
 
 async function loadFotosCompare() {
