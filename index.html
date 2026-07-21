@@ -2178,6 +2178,11 @@
   .rs-cmp-pair .cell { flex:1; aspect-ratio:3/4; background:#141416; border:1px solid #26262b; border-radius:8px; overflow:hidden; display:flex; align-items:center; justify-content:center; }
   .rs-cmp-pair .cell img { width:100%; height:100%; object-fit:cover; }
   .rs-cmp-pair .cell span { font-size:11px; color:#5d5a54; }
+  .rs-menu { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:10004; display:none; align-items:flex-end; }
+  .rs-menu.on { display:flex; }
+  .rs-menu-sheet { width:100%; background:#1b1b1e; border-radius:16px 16px 0 0; padding:10px 10px calc(10px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:8px; }
+  .rs-menu-sheet button { padding:15px; border:none; border-radius:11px; background:#26262b; color:#f1ede4; font-size:15px; font-weight:600; cursor:pointer; text-align:center; }
+  .rs-menu-sheet .rs-menu-cancel { background:transparent; color:#8d8579; font-weight:400; }
   .cmp-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .cmp-col { display:flex; flex-direction:column; }
   .cmp-label { text-align:center; font-size:11px; font-weight:700; padding:6px;
@@ -3429,10 +3434,10 @@
     <h4>📸 Meu registro de fotos</h4>
     <p style="color:#888;font-size:11.5px;line-height:1.5;margin:2px 0 12px;">Um espaço só teu pra registrar tuas fotos quando quiser (uma vez por semana fica ótimo) e acompanhar tua evolução com o tempo. Fica guardado pra ti, é só pro teu acompanhamento. As fotos que tu manda nas anamneses seguem separadas, no botão "Comparar" das fotos.</p>
     <div class="rs-grid">
-      <label class="rs-slot" data-role="frente"><input type="file" accept="image/*" onchange="_rsPickFile(this,'frente')"><span class="rs-plus">+</span><span class="rs-lbl">Frente</span></label>
-      <label class="rs-slot" data-role="costas"><input type="file" accept="image/*" onchange="_rsPickFile(this,'costas')"><span class="rs-plus">+</span><span class="rs-lbl">Costas</span></label>
-      <label class="rs-slot" data-role="direito"><input type="file" accept="image/*" onchange="_rsPickFile(this,'direito')"><span class="rs-plus">+</span><span class="rs-lbl">Perfil D</span></label>
-      <label class="rs-slot" data-role="esquerdo"><input type="file" accept="image/*" onchange="_rsPickFile(this,'esquerdo')"><span class="rs-plus">+</span><span class="rs-lbl">Perfil E</span></label>
+      <div class="rs-slot" data-role="frente" onclick="_rsSlotTap('frente')"><span class="rs-plus">+</span><span class="rs-lbl">Frente</span></div>
+      <div class="rs-slot" data-role="costas" onclick="_rsSlotTap('costas')"><span class="rs-plus">+</span><span class="rs-lbl">Costas</span></div>
+      <div class="rs-slot" data-role="direito" onclick="_rsSlotTap('direito')"><span class="rs-plus">+</span><span class="rs-lbl">Perfil D</span></div>
+      <div class="rs-slot" data-role="esquerdo" onclick="_rsSlotTap('esquerdo')"><span class="rs-plus">+</span><span class="rs-lbl">Perfil E</span></div>
     </div>
     <button class="water-btn" id="rsSendBtn" onclick="enviarRegistroSemanal()" style="width:100%;margin-top:10px;display:none;">Registrar fotos de hoje</button>
     <div id="rsFeedback" style="margin-top:8px;"></div>
@@ -10370,15 +10375,47 @@ function initRegistroSemanal() {
   loadRegistrosSemanais();
 }
 
-function _rsPickFile(input, role) {
-  const f = input.files && input.files[0];
-  if (!f) return;
-  _rsPick[role] = f;
-  const slot = input.closest('.rs-slot');
-  slot.classList.add('filled');
-  let img = slot.querySelector('img.rs-prev');
-  if (!img) { img = document.createElement('img'); img.className = 'rs-prev'; slot.insertBefore(img, slot.firstChild); }
-  img.src = URL.createObjectURL(f);
+// Ao tocar num slot: menu com 2 opções (câmera direto ou galeria). `capture` força a câmera;
+// sem `capture` abre o seletor (galeria). Um input descartável por escolha.
+let _rsMenuRole = null;
+function _rsSlotTap(role) {
+  _rsMenuRole = role;
+  let m = document.getElementById('rsSlotMenu');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'rsSlotMenu'; m.className = 'rs-menu';
+    m.innerHTML = `<div class="rs-menu-sheet">
+      <button onclick="_rsTrigger('camera')">📷 Tirar foto agora</button>
+      <button onclick="_rsTrigger('galeria')">🖼️ Escolher da galeria</button>
+      <button class="rs-menu-cancel" onclick="_rsCloseMenu()">Cancelar</button>
+    </div>`;
+    m.addEventListener('click', e => { if (e.target === m) _rsCloseMenu(); });
+    document.body.appendChild(m);
+  }
+  m.classList.add('on');
+}
+function _rsCloseMenu() { const m = document.getElementById('rsSlotMenu'); if (m) m.classList.remove('on'); }
+function _rsTrigger(mode) {
+  const role = _rsMenuRole;
+  _rsCloseMenu();
+  if (!role) return;
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*';
+  if (mode === 'camera') inp.setAttribute('capture', 'environment'); // câmera traseira direto
+  inp.style.display = 'none';
+  inp.onchange = () => { const f = inp.files && inp.files[0]; if (f) _rsSetPreview(role, f); if (inp.parentNode) inp.parentNode.removeChild(inp); };
+  document.body.appendChild(inp);
+  inp.click();
+}
+function _rsSetPreview(role, file) {
+  _rsPick[role] = file;
+  const slot = document.querySelector(`#registroSemanalCard .rs-slot[data-role="${role}"]`);
+  if (slot) {
+    slot.classList.add('filled');
+    let img = slot.querySelector('img.rs-prev');
+    if (!img) { img = document.createElement('img'); img.className = 'rs-prev'; slot.insertBefore(img, slot.firstChild); }
+    img.src = URL.createObjectURL(file);
+  }
   document.getElementById('rsSendBtn').style.display = Object.keys(_rsPick).length ? 'block' : 'none';
 }
 
@@ -10403,7 +10440,6 @@ async function enviarRegistroSemanal() {
     _rsPick = {}; _rsRegistros = null;
     document.querySelectorAll('#registroSemanalCard .rs-slot').forEach(s => {
       s.classList.remove('filled');
-      const inp = s.querySelector('input'); if (inp) inp.value = '';
       const img = s.querySelector('img.rs-prev'); if (img) img.remove();
     });
     document.getElementById('rsSendBtn').style.display = 'none';
