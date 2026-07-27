@@ -8830,7 +8830,7 @@ function wtFinish() {
   _wtServer[k] = { segundos: secs, duracao: dur };
   try {
     const hist = JSON.parse(localStorage.getItem(_wtHistKey()) || '{}');
-    hist[k] = { segundos: secs, duracao: dur };
+    hist[k] = { segundos: secs, duracao: dur, ts: Date.now() };   // ts: pro filtro de republicação
     localStorage.setItem(_wtHistKey(), JSON.stringify(hist));
   } catch (_) {}
   localStorage.removeItem(_wtKey());
@@ -8840,15 +8840,28 @@ function wtFinish() {
 }
 
 // Busca no servidor a duração mais recente de cada (dia, semana) e mescla com o cache local.
+// PROTOCOLO NOVO ZERA OS BADGES (decisão GH 2026-07-26): o servidor já filtra pelo protoMs
+// (data de publicação do protocolo atual) e devolve o protoMs; aqui o cache LOCAL passa pelo
+// mesmo pente (entrada mais velha que a republicação sai), senão o badge velho fica preso no
+// aparelho. O histórico completo segue na aba TEMPO_TREINO da mestre, nada se perde.
 async function loadTempoTreino() {
   if (typeof STUDENT_ID === 'undefined' || !SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
-  try {
-    const hist = JSON.parse(localStorage.getItem(_wtHistKey()) || '{}');
-    Object.assign(_wtServer, hist);
-  } catch (_) {}
+  let hist = {};
+  try { hist = JSON.parse(localStorage.getItem(_wtHistKey()) || '{}'); Object.assign(_wtServer, hist); } catch (_) {}
   try {
     const j = await (await fetch(`${LOG_ENDPOINT}?action=tempo_treino_list&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`, { cache: 'no-store' })).json();
-    (j && j.tempos || []).forEach(t => { _wtServer[t.di + '|' + t.w] = { segundos: t.segundos, duracao: t.duracao }; });
+    if (j && j.ok) {
+      const protoMs = Number(j.protoMs) || 0;
+      _wtServer = {};
+      let mudouHist = false;
+      Object.keys(hist).forEach(k => {
+        // entrada local sem ts (legado) ou anterior à republicação: descarta
+        if (protoMs && (!hist[k].ts || hist[k].ts < protoMs)) { delete hist[k]; mudouHist = true; return; }
+        _wtServer[k] = hist[k];
+      });
+      if (mudouHist) { try { localStorage.setItem(_wtHistKey(), JSON.stringify(hist)); } catch (_) {} }
+      (j.tempos || []).forEach(t => { _wtServer[t.di + '|' + t.w] = { segundos: t.segundos, duracao: t.duracao }; });
+    }
   } catch (_) {}
   renderTabs(); renderWtCard();
 }
