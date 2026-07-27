@@ -2183,6 +2183,18 @@
   .rs-menu-sheet { width:100%; background:#1b1b1e; border-radius:16px 16px 0 0; padding:10px 10px calc(10px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:8px; }
   .rs-menu-sheet button { padding:15px; border:none; border-radius:11px; background:#26262b; color:#f1ede4; font-size:15px; font-weight:600; cursor:pointer; text-align:center; }
   .rs-menu-sheet .rs-menu-cancel { background:transparent; color:#8d8579; font-weight:400; }
+  /* Cronômetro do treino */
+  .wt-card { margin-top:10px; background:rgba(201,162,75,.06); border:1px solid rgba(201,162,75,.25); border-radius:11px; padding:10px 12px; display:flex; align-items:center; gap:10px; }
+  .wt-time { font-variant-numeric:tabular-nums; font-size:22px; font-weight:700; color:var(--gold, #c9a24b); min-width:74px; letter-spacing:.5px; }
+  .wt-lbl { font-size:10.5px; color:#8d8579; letter-spacing:.4px; margin-top:1px; }
+  .wt-btns { margin-left:auto; display:flex; gap:7px; }
+  .wt-btn { border:none; border-radius:9px; padding:9px 13px; font-size:12.5px; font-weight:700; cursor:pointer; background:#26262b; color:#f1ede4; }
+  .wt-btn.start { background:var(--gold, #c9a24b); color:#141416; }
+  .wt-btn.fim { background:rgba(127,192,107,.16); color:#7fc06b; border:1px solid rgba(127,192,107,.4); }
+  .wt-card.running .wt-time { color:#e7c977; }
+  .wt-card.paused .wt-time { color:#8d8579; }
+  .wt-last { font-size:11px; color:#8d8579; margin-top:6px; }
+  .day-tab .wt-badge { display:block; font-size:9px; color:#9a8f7c; font-weight:500; margin-top:2px; letter-spacing:.2px; }
   .cmp-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .cmp-col { display:flex; flex-direction:column; }
   .cmp-label { text-align:center; font-size:11px; font-weight:700; padding:6px;
@@ -2772,6 +2784,14 @@
     <div class="pg-text"><span id="pgLabel">Hoje: 0/0 exercícios</span></div>
     <div class="pg-bar"><div class="pg-fill" id="pgFill" style="width:0%"></div></div>
   </div>
+  <div class="wt-card" id="wtCard">
+    <div>
+      <div class="wt-time" id="wtTime">00:00</div>
+      <div class="wt-lbl" id="wtLbl">Cronômetro do treino</div>
+    </div>
+    <div class="wt-btns" id="wtBtns"></div>
+  </div>
+  <div class="wt-last" id="wtLast" style="display:none;"></div>
   <button type="button" class="week-reset" id="weekResetBtn" onclick="openWeekReset()" style="display:none;">↺ Recomeçar semana do zero</button>
   <button type="button" class="focus-entry" onclick="openFocusMode(currentDay)">▶&nbsp; Modo treino: um exercício por vez</button>
 </div>
@@ -8274,6 +8294,8 @@ async function loadFromSheets() {
     loadRecado();   // recado em áudio do GH: roda no INIT (antes só rodava dentro do renderDiet,
                     // então quem ficava na aba TREINO nunca via o recado)
     loadLaudoDestaque();   // antes-e-depois do reajuste em destaque na página principal (fora do modal)
+    renderWtCard();        // cronômetro do treino (retoma sessão viva se o app foi fechado no meio)
+    loadTempoTreino();     // durações registradas → badges nos dias
 
   } catch (err) {
     document.getElementById('loadingScreen').style.display = 'none';
@@ -8331,7 +8353,10 @@ function selectTreinoBloco(idx) {
 function renderTabs() {
   document.getElementById("dayTabs").innerHTML = WORKOUT.map((w, i) => {
     if (!_isVisibleDay(w)) return '';
-    return `<div class="day-tab ${i === currentDay ? 'active' : ''}" onclick="selectDay(${i})">${w.day}</div>`;
+    // badge do cronômetro: tempo registrado deste dia NESTA semana (se houver)
+    const _wt = (typeof _wtServer !== 'undefined') && _wtServer[i + '|' + currentWeek];
+    const badge = _wt ? `<span class="wt-badge">⏱ ${_wt.duracao}</span>` : '';
+    return `<div class="day-tab ${i === currentDay ? 'active' : ''}" onclick="selectDay(${i})">${w.day}${badge}</div>`;
   }).join("");
 }
 
@@ -8691,6 +8716,7 @@ function selectDay(i) {
     el.classList.toggle('active', di === i);
   });
   updateDayProgress();
+  renderWtCard();   // linha "este treino na semana N" acompanha o dia selecionado
 }
 
 function changeWeek(d) {
@@ -8699,6 +8725,132 @@ function changeWeek(d) {
   currentWeek = n;
   document.getElementById("weekLabel").textContent = `Semana ${currentWeek}`;
   renderExercises();
+  renderTabs();        // badges de tempo por dia dependem da semana
+  renderWtCard();      // linha "este treino na semana N"
+}
+
+// ══ CRONÔMETRO DO TREINO (GH 2026-07-26) ═══════════════════════════════════
+// Iniciar / pausar / continuar / finalizar. A sessão pertence ao (dia, semana) em que FOI
+// INICIADA (trocar de aba não muda). Sobrevive a reload/fechar o app: o estado vive no
+// localStorage com TIMESTAMPS (o tempo é diferença de relógio, não contador de tick).
+// Ao finalizar, grava 1 linha na aba TEMPO_TREINO da mestre (type:'tempo_treino') e o
+// tempo vira badge no dia + linha "este treino". Sessão iniciada há mais de 16h é
+// descartada em silêncio (aluno esqueceu o cronômetro; evita registro lixo).
+const _WT_MAX_SESSION_MS = 16 * 3600 * 1000;
+const _WT_CAP_SECS = 6 * 3600;   // registro capado em 6h (ninguém treina mais que isso)
+let _wtTick = null;
+let _wtServer = {};              // 'di|w' → {segundos, duracao} (servidor + cache local)
+
+function _wtKey() { return `gh_wt_${STUDENT_ID}`; }
+function _wtHistKey() { return `gh_wt_hist_${STUDENT_ID}`; }
+function _wtLoad() {
+  try {
+    const s = JSON.parse(localStorage.getItem(_wtKey()) || 'null');
+    if (!s || !s.status) return null;
+    if (Date.now() - (s.startedAt || 0) > _WT_MAX_SESSION_MS) { localStorage.removeItem(_wtKey()); return null; }
+    return s;
+  } catch (_) { return null; }
+}
+function _wtSave(s) { try { localStorage.setItem(_wtKey(), JSON.stringify(s)); } catch (_) {} }
+function _wtElapsedMs(s) { return (s.accumMs || 0) + (s.status === 'running' ? Date.now() - s.startMs : 0); }
+function _wtFmt(secs) {
+  const h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60), ss = secs % 60;
+  const p = n => String(n).padStart(2, '0');
+  return h ? `${h}:${p(m)}:${p(ss)}` : `${p(m)}:${p(ss)}`;
+}
+function _wtDurTxt(secs) {   // espelho do _duracaoTxt_ do .gs: "1h 15min" | "45min"
+  const m = Math.max(1, Math.round(secs / 60));
+  const h = Math.floor(m / 60), mm = m % 60;
+  return h ? (h + 'h' + (mm ? ' ' + mm + 'min' : '')) : (mm + 'min');
+}
+
+function renderWtCard() {
+  const card = document.getElementById('wtCard');
+  if (!card || typeof STUDENT_ID === 'undefined') return;
+  const s = _wtLoad();
+  const t = document.getElementById('wtTime'), l = document.getElementById('wtLbl'), b = document.getElementById('wtBtns');
+  card.classList.toggle('running', !!s && s.status === 'running');
+  card.classList.toggle('paused', !!s && s.status === 'paused');
+  if (!s) {
+    t.textContent = '00:00';
+    l.textContent = 'Cronômetro do treino';
+    b.innerHTML = '<button type="button" class="wt-btn start" onclick="wtStart()">▶ Iniciar treino</button>';
+  } else {
+    t.textContent = _wtFmt(Math.floor(_wtElapsedMs(s) / 1000));
+    l.textContent = (s.status === 'paused' ? 'Pausado · ' : '') + 'Dia ' + (Number(s.di) + 1) + ' · Semana ' + s.w;
+    b.innerHTML = (s.status === 'running'
+      ? '<button type="button" class="wt-btn" onclick="wtPause()">⏸ Pausar</button>'
+      : '<button type="button" class="wt-btn start" onclick="wtResume()">▶ Continuar</button>')
+      + '<button type="button" class="wt-btn fim" onclick="wtFinish()">✓ Finalizar</button>';
+  }
+  const last = document.getElementById('wtLast');
+  if (last) {
+    const rec = _wtServer[currentDay + '|' + currentWeek];
+    if (rec && !s) { last.style.display = 'block'; last.textContent = '⏱ Este treino na semana ' + currentWeek + ': ' + rec.duracao; }
+    else last.style.display = 'none';
+  }
+  if (s && s.status === 'running') {
+    if (!_wtTick) _wtTick = setInterval(() => {
+      const el = document.getElementById('wtTime'); const st = _wtLoad();
+      if (el && st) el.textContent = _wtFmt(Math.floor(_wtElapsedMs(st) / 1000));
+      else if (_wtTick) { clearInterval(_wtTick); _wtTick = null; }
+    }, 1000);
+  } else if (_wtTick) { clearInterval(_wtTick); _wtTick = null; }
+}
+
+function wtStart() {
+  if (_wtLoad()) { renderWtCard(); return; }   // já tem sessão viva
+  _wtSave({ status: 'running', di: currentDay, w: currentWeek, startMs: Date.now(), startedAt: Date.now(), accumMs: 0, pausas: 0 });
+  renderWtCard();
+}
+function wtPause() {
+  const s = _wtLoad(); if (!s || s.status !== 'running') return;
+  s.accumMs = _wtElapsedMs(s); s.status = 'paused'; s.pausas = (s.pausas || 0) + 1;
+  _wtSave(s); renderWtCard();
+}
+function wtResume() {
+  const s = _wtLoad(); if (!s || s.status !== 'paused') return;
+  s.startMs = Date.now(); s.status = 'running';
+  _wtSave(s); renderWtCard();
+}
+function wtFinish() {
+  const s = _wtLoad(); if (!s) return;
+  const secs = Math.min(_WT_CAP_SECS, Math.max(1, Math.floor(_wtElapsedMs(s) / 1000)));
+  const dur = _wtDurTxt(secs);
+  // registra no servidor (fire-and-forget: rede caindo não trava o aluno; o cache local segura o badge)
+  try {
+    const studentName = (document.getElementById('infoNome')?.textContent || '').trim();
+    fetch(LOG_ENDPOINT, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ type: 'tempo_treino', sheetId: SHEET_ID, studentName, di: s.di, w: s.w, segundos: secs, pausas: s.pausas || 0 })
+    }).catch(() => {});
+  } catch (_) {}
+  // cache local pro badge aparecer na hora (e sobreviver até o servidor ter o dado)
+  const k = s.di + '|' + s.w;
+  _wtServer[k] = { segundos: secs, duracao: dur };
+  try {
+    const hist = JSON.parse(localStorage.getItem(_wtHistKey()) || '{}');
+    hist[k] = { segundos: secs, duracao: dur };
+    localStorage.setItem(_wtHistKey(), JSON.stringify(hist));
+  } catch (_) {}
+  localStorage.removeItem(_wtKey());
+  renderWtCard(); renderTabs();
+  const last = document.getElementById('wtLast');
+  if (last) { last.style.display = 'block'; last.textContent = '✅ Treino finalizado em ' + dur + '. Registrado!'; }
+}
+
+// Busca no servidor a duração mais recente de cada (dia, semana) e mescla com o cache local.
+async function loadTempoTreino() {
+  if (typeof STUDENT_ID === 'undefined' || !SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
+  try {
+    const hist = JSON.parse(localStorage.getItem(_wtHistKey()) || '{}');
+    Object.assign(_wtServer, hist);
+  } catch (_) {}
+  try {
+    const j = await (await fetch(`${LOG_ENDPOINT}?action=tempo_treino_list&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`, { cache: 'no-store' })).json();
+    (j && j.tempos || []).forEach(t => { _wtServer[t.di + '|' + t.w] = { segundos: t.segundos, duracao: t.duracao }; });
+  } catch (_) {}
+  renderTabs(); renderWtCard();
 }
 
 // (v301) onCarga/onPlacas/saveCargaManual/saveCarga/savePlacas removidas: a grade de séries
