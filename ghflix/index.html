@@ -88,6 +88,10 @@
   .rowwrap{position:relative}
   .row{display:flex;gap:13px;overflow-x:auto;scroll-snap-type:x proximity;padding:6px 4vw 18px;scrollbar-width:none}
   .row::-webkit-scrollbar{display:none}
+  /* prateleira ainda nao montada: reserva altura pra nao colapsar (senao o
+     observer montaria todas de uma vez). Some quando os cards entram. */
+  .row.lazy{min-height:288px}
+  @media(max-width:700px){ .row.lazy{min-height:250px} }
   .arr{position:absolute;top:0;bottom:18px;width:54px;z-index:5;display:flex;align-items:center;justify-content:center;opacity:0;transition:.2s;color:#fff}
   .rowwrap:hover .arr{opacity:1}
   .arr.l{left:0;background:linear-gradient(90deg,rgba(14,14,14,.92),transparent)}
@@ -113,6 +117,8 @@
   .playov span{width:50px;height:50px;border-radius:50%;background:rgba(255,167,38,.95);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 22px rgba(0,0,0,.5);transform:scale(.92);transition:.2s}
   .card:hover .playov span{transform:scale(1)}
   .playov span::after{content:'';border-left:15px solid #161616;border-top:9px solid transparent;border-bottom:9px solid transparent;margin-left:4px}
+  .card.more .thumb{display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1d1d1d,#242424);border:1px dashed rgba(212,167,106,.4)}
+  .card.more .thumb span{color:var(--gold);font-weight:800;font-size:13.5px;text-align:center;padding:12px;line-height:1.4}
   .cap{font-size:13px;line-height:1.35;margin-top:9px;color:#ececec;font-weight:500;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .sub{font-size:11px;color:var(--dim);margin-top:3px;font-weight:500}
   @media(max-width:700px){ .card{flex:0 0 142px} .cap{font-size:12px} }
@@ -381,17 +387,70 @@ function cardHTML(ref){
     <div class="sub">${novo?'<span class="novomark">NOVO</span> · ':''}${ref.data||''}</div>
   </div>`;
 }
+/* ---- prateleiras sob demanda ----
+   A pagina inteira tinha ~1300 cards e ~1300 miniaturas do Drive disparadas de
+   uma vez no load: travava feio no celular. Agora cada prateleira registra os
+   refs em SHELF_REFS e monta os cards SO quando o usuario chega perto no
+   scroll (IntersectionObserver), limitada a CAP cards + tile "Ver todos". */
+const SHELF_REFS={}; const CAP=24;
+let shelfObs=null, gridState=null;
 function shelfHTML(titulo,refs,id){
   if(!refs.length)return '';
+  SHELF_REFS[id]={titulo,refs};
   return `<section class="shelf" id="sh-${id}">
     <div class="shelf-head"><h2>${titulo}</h2><span class="count">${refs.length}</span></div>
     <div class="rowwrap">
       <button class="arr l" onclick="slide('${id}',-1)" aria-label="Anterior"><span>‹</span></button>
-      <div class="row" id="row-${id}">${refs.map(cardHTML).join('')}</div>
+      <div class="row lazy" id="row-${id}" data-shelf="${id}"></div>
       <button class="arr r" onclick="slide('${id}',1)" aria-label="Próximo"><span>›</span></button>
     </div>
   </section>`;
 }
+function mountRow(id){
+  const el=document.getElementById('row-'+id);
+  if(!el||!el.classList.contains('lazy'))return;
+  const s=SHELF_REFS[id]; if(!s)return;
+  let html=s.refs.slice(0,CAP).map(cardHTML).join('');
+  if(s.refs.length>CAP)html+=`<div class="card more" onclick="verTodos('${id}')" role="button" tabindex="0"><div class="thumb"><span>Ver todos<br>+${s.refs.length-CAP}</span></div></div>`;
+  el.innerHTML=html;
+  el.classList.remove('lazy');
+}
+function montaPerto(){
+  /* monta toda prateleira a ate 900px do viewport (fallback universal: nao
+     depende de IntersectionObserver funcionar no webview) */
+  document.querySelectorAll('.row.lazy').forEach(el=>{
+    if(el.getBoundingClientRect().top<innerHeight+900)mountRow(el.dataset.shelf);
+  });
+}
+let scrollTick=null;
+addEventListener('scroll',()=>{ if(scrollTick)return; scrollTick=setTimeout(()=>{scrollTick=null;montaPerto();},120); },{passive:true});
+function armaLazy(){
+  if(shelfObs)shelfObs.disconnect();
+  if('IntersectionObserver' in window){
+    shelfObs=new IntersectionObserver(es=>{
+      for(const e of es){ if(e.isIntersecting){ mountRow(e.target.dataset.shelf); shelfObs.unobserve(e.target); } }
+    },{rootMargin:'900px 0px'});
+    document.querySelectorAll('.row.lazy').forEach(el=>shelfObs.observe(el));
+  }
+  montaPerto(); /* garante o que ja esta na tela, sem esperar observer */
+}
+function verTodos(id){
+  const s=SHELF_REFS[id]; if(!s)return;
+  gridState={id,shown:60};
+  renderGrid();
+  window.scrollTo({top:0});
+}
+function renderGrid(){
+  const s=SHELF_REFS[gridState.id]; if(!s){gridState=null;render();return;}
+  document.getElementById('hero').style.display='none';
+  const vis=s.refs.slice(0,gridState.shown);
+  document.getElementById('main').innerHTML=`<section class="shelf" style="margin-top:140px">
+    <div class="shelf-head"><h2>${s.titulo}</h2><span class="count">${s.refs.length}</span><button class="chip" onclick="fecharGrid()">✕ Voltar</button></div>
+    <div class="grid">${vis.map(cardHTML).join('')}</div>
+    ${s.refs.length>gridState.shown?`<div style="text-align:center;padding:22px"><button class="chip" onclick="gridState.shown+=60;renderGrid()">Mostrar mais (${s.refs.length-gridState.shown})</button></div>`:''}
+  </section>`;
+}
+function fecharGrid(){ gridState=null; render(); window.scrollTo({top:0}); }
 function slide(id,dir){
   const r=document.getElementById('row-'+id);
   r.scrollBy({left:dir*(r.clientWidth*.82),behavior:'smooth'});
@@ -409,17 +468,21 @@ function allRefs(){
 }
 
 /* ================= render ================= */
+let searchShown=60;
 function render(){
   const main=document.getElementById('main');
   const hero=document.getElementById('hero');
+  gridState=null;
 
-  /* busca => grid */
+  /* busca => grid (limitada: resultado gigante tambem travava o celular) */
   if(termo){
     hero.style.display='none';
     const res=allRefs().filter(r=>matchFiltro(r)&&matchTermo(r)).sort((a,b)=>(b.views||0)-(a.views||0));
+    const vis=res.slice(0,searchShown);
     main.innerHTML=`<section class="shelf" style="margin-top:140px">
       <div class="shelf-head"><h2>Resultados para "${termo}"</h2><span class="count">${res.length}</span></div>
-      ${res.length?`<div class="grid">${res.map(cardHTML).join('')}</div>`:`<div class="empty">Nada encontrado. Tenta outro termo, tipo "supino" ou "glúteo".</div>`}
+      ${res.length?`<div class="grid">${vis.map(cardHTML).join('')}</div>`:`<div class="empty">Nada encontrado. Tenta outro termo, tipo "supino" ou "glúteo".</div>`}
+      ${res.length>searchShown?`<div style="text-align:center;padding:22px"><button class="chip" onclick="searchShown+=60;render()">Mostrar mais (${res.length-searchShown})</button></div>`:''}
     </section>`;
     return;
   }
@@ -471,6 +534,7 @@ function render(){
   }
 
   main.innerHTML=html||'<div class="empty" style="margin-top:140px">Nenhum vídeo neste filtro.</div>';
+  armaLazy(); /* monta cada prateleira so quando ela se aproxima do viewport */
 }
 
 function resetView(){ termo=''; document.getElementById('q').value=''; filtro='Tudo'; buildFilters(); render(); window.scrollTo({top:0,behavior:'smooth'}); }
@@ -550,7 +614,7 @@ function closeModal(){
   }
 }
 function buscarTag(t){
-  const q=document.getElementById('q'); q.value=t; termo=t; render();
+  const q=document.getElementById('q'); q.value=t; termo=t; searchShown=60; render();
   window.scrollTo({top:0});
 }
 document.getElementById('modal').addEventListener('click',e=>{ if(e.target.id==='modal')closeModal(); });
@@ -565,7 +629,7 @@ function buildFilters(){
 }
 function setFiltro(f){ filtro=f; buildFilters(); render(); }
 let tmr;
-document.getElementById('q').addEventListener('input',e=>{ clearTimeout(tmr); tmr=setTimeout(()=>{ termo=e.target.value.trim(); render(); },200); });
+document.getElementById('q').addEventListener('input',e=>{ clearTimeout(tmr); tmr=setTimeout(()=>{ termo=e.target.value.trim(); searchShown=60; render(); },200); });
 addEventListener('scroll',()=>{ document.getElementById('hdr').classList.toggle('solid',scrollY>30); },{passive:true});
 
 /* ================= acesso ================= */
