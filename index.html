@@ -4078,6 +4078,7 @@
       <div style="margin-top:8px;padding-top:7px;border-top:1px solid rgba(212,167,106,0.22);">⭐ <strong>Compartilhou? Pontua o DOBRO.</strong> Em todas as modalidades: cada treino, refeição ou cardio que você posta vale por 2. Compartilha sempre que terminar — espalha a vibe e dispara teus pontos.</div>
     </div>
     <div id="rankingList" style="flex:1;overflow-y:auto;min-height:0;"></div>
+    <div id="rankPrivacy" style="margin-top:10px;padding-top:10px;border-top:1px solid #2a2a2a;"></div>
     <button class="te-btn ghost" onclick="teHide('rankingModal')" style="width:100%;margin-top:10px;">Fechar</button>
   </div>
 </div>
@@ -11471,10 +11472,11 @@ async function openRankingModal() {
   list.innerHTML = '<p style="color:#888;text-align:center;padding:30px;font-size:13px;">Carregando ranking…</p>';
 
   try {
-    const resp = await fetch(LOG_ENDPOINT + '?action=ranking&_=' + Date.now(), { cache: 'no-store' });
+    const resp = await fetch(LOG_ENDPOINT + '?action=ranking&id=' + encodeURIComponent(SHEET_ID || '') + '&_=' + Date.now(), { cache: 'no-store' });
     const j = await resp.json();
     const ranking = (j && j.ranking) || [];
     const champion = (j && j.champion) || null;
+    _rankOculto = !!(j && j.meOculto);   // privacidade: escolha do próprio aluno (servidor manda)
     // A4 (GH 2026-06-24): o SERVIDOR é a fonte da verdade de quando dieta/cardio entram no score
     // (flags incluiDieta/incluiCardio, derivadas das constantes RANKING_*_DESDE do .gs). App obedece;
     // as datas chumbadas ficam só de fallback se a resposta vier de um .gs antigo (sem as flags).
@@ -11541,8 +11543,40 @@ async function openRankingModal() {
         ${breakdown}
       </div>`;
     }).join('');
+    renderRankPrivacy();
   } catch (e) {
     list.innerHTML = '<p style="color:#c0392b;text-align:center;padding:30px;font-size:13px;">Falha ao carregar ranking. Tenta de novo em alguns segundos.</p>';
+  }
+}
+
+// ── Privacidade do ranking (GH 2026-07-28): o aluno escolhe se aparece pros outros. ──
+// Escondido, ele CONTINUA pontuando e vendo o próprio ranking; só não é listado pros colegas.
+let _rankOculto = false;
+function renderRankPrivacy() {
+  const box = document.getElementById('rankPrivacy');
+  if (!box) return;
+  box.innerHTML = _rankOculto
+    ? `<div style="color:#8d8579;font-size:11.5px;line-height:1.5;margin-bottom:7px;">Tu estás <b style="color:#d4a76a;">invisível</b> no ranking: os outros alunos não te veem na lista. Teus pontos continuam contando normal.</div>
+       <button class="te-btn ghost" style="width:100%;" onclick="toggleRankPrivacy(false)">Voltar a aparecer no ranking</button>`
+    : `<div style="color:#8d8579;font-size:11.5px;line-height:1.5;margin-bottom:7px;">Não quer aparecer na lista pros outros alunos? Tu podes ficar invisível e seguir pontuando normal.</div>
+       <button class="te-btn ghost" style="width:100%;" onclick="toggleRankPrivacy(true)">Não quero aparecer no ranking</button>`;
+}
+async function toggleRankPrivacy(oculto) {
+  const box = document.getElementById('rankPrivacy');
+  if (box) box.innerHTML = '<p style="color:#888;font-size:12px;text-align:center;margin:0;">Salvando…</p>';
+  try {
+    const r = await fetch(LOG_ENDPOINT, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ type: 'ranking_optout', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(), oculto: !!oculto }),
+      redirect: 'follow'
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!j.ok) throw new Error('falha');
+    _rankOculto = !!j.oculto;
+    renderRankPrivacy();
+    openRankingModal();   // recarrega a lista já sem/com o aluno
+  } catch (_) {
+    if (box) box.innerHTML = '<p style="color:#c0392b;font-size:12px;text-align:center;margin:0;">Não consegui salvar agora. Tenta de novo.</p>';
   }
 }
 document.addEventListener('click', e => {
