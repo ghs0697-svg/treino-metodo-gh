@@ -13,7 +13,8 @@ const ASSETS = [
   './apple-touch-icon.png',
   './assets/bg-gym.jpg',
   './assets/bg-particles.jpg',
-  './assets/bg-texture.jpg'
+  './assets/bg-texture.jpg',
+  './assets/gh-hero.jpg'
 ];
 
 self.addEventListener('install', e => {

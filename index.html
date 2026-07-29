@@ -64,6 +64,17 @@
     background: linear-gradient(90deg, transparent, var(--gold-glow) 50%, transparent);
     box-shadow: 0 0 16px var(--gold-glow);
   }
+  /* Foto do GH no cabeçalho (2026-07-29): presença do coach, discreta — vinheta funde nos
+     cantos com o fundo escuro e o texto fica por cima. Trocar a foto = substituir
+     assets/gh-hero.jpg (mesmo nome) + bump do SW. */
+  .app-header .gh-hero-foto {
+    position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+    background: url('assets/gh-hero.jpg') no-repeat 78% 16% / cover;
+    opacity: .38;
+    -webkit-mask-image: radial-gradient(ellipse 46% 105% at 80% 46%, rgba(0,0,0,.95) 30%, transparent 72%);
+    mask-image: radial-gradient(ellipse 46% 105% at 80% 46%, rgba(0,0,0,.95) 30%, transparent 72%);
+  }
+  .app-header > *:not(.gh-hero-foto) { position: relative; z-index: 1; }
   .app-header .brand-name {
     font-family: var(--font-display);
     font-size: 30px; letter-spacing: 4px; font-weight: 700; line-height: 1.05;
@@ -2183,6 +2194,20 @@
   .rs-menu-sheet { width:100%; background:#1b1b1e; border-radius:16px 16px 0 0; padding:10px 10px calc(10px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:8px; }
   .rs-menu-sheet button { padding:15px; border:none; border-radius:11px; background:#26262b; color:#f1ede4; font-size:15px; font-weight:600; cursor:pointer; text-align:center; }
   .rs-menu-sheet .rs-menu-cancel { background:transparent; color:#8d8579; font-weight:400; }
+  /* Progressão de carga (sugestão determinística) */
+  .prog-chip { margin:8px 0 0; padding:8px 11px; border-radius:9px; font-size:12px; line-height:1.5; }
+  .prog-chip.up { background:rgba(212,175,55,.10); border-left:3px solid var(--gold); color:#e8d9ac; }
+  .prog-chip.down { background:rgba(255,255,255,.04); border-left:3px solid #6a6a70; color:#a9a49b; }
+  .prog-now { margin:9px 2px 0; font-size:12px; color:#c9bf9f; line-height:1.5; }
+  /* Modo pouco tempo */
+  .short-skip { opacity:.38; }
+  .short-skip .ex-check { pointer-events:auto; }
+  .short-tag { display:inline-block; background:#26262b; color:#8d8579; font-size:10px; padding:2px 7px; border-radius:9px; margin-left:6px; vertical-align:1px; }
+  /* Dieta: refeição que não rolou */
+  .dm-nao { background:none; border:none; color:#6f6a62; font-size:11px; cursor:pointer; padding:4px 6px; text-decoration:underline; text-underline-offset:2px; }
+  .dm-nao.marcado { color:#a9a49b; text-decoration:none; }
+  /* Toast genérico */
+  .gh-toast { position:fixed; left:50%; bottom:84px; transform:translateX(-50%); background:#1b1b1e; color:#f1ede4; border:1px solid #3a3a40; padding:11px 16px; border-radius:12px; font-size:12.5px; z-index:10008; max-width:86vw; text-align:center; line-height:1.5; box-shadow:0 6px 22px rgba(0,0,0,.5); }
   /* Cronômetro do treino */
   .wt-card { margin-top:10px; background:rgba(201,162,75,.06); border:1px solid rgba(201,162,75,.25); border-radius:11px; padding:10px 12px; display:flex; align-items:center; gap:10px; }
   .wt-time { font-variant-numeric:tabular-nums; font-size:22px; font-weight:700; color:var(--gold, #c9a24b); min-width:74px; letter-spacing:.5px; }
@@ -2528,6 +2553,7 @@
 <body>
 
 <div class="app-header">
+  <div class="gh-hero-foto" aria-hidden="true"></div>
   <div class="brand-name">MÉTODO GH</div>
   <h1 id="headerTitle">PROTOCOLO DE TREINO</h1>
   <div class="last-mod" id="lastModBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:0.3px;"><span id="versionBadge" style="display:none;color:var(--gold);font-weight:600;">Protocolo v<span id="versionValue"></span></span><span id="lastModSep" style="display:none;"> · </span>Atualizado em <span id="lastModValue"></span></div>
@@ -2794,6 +2820,7 @@
   <div class="wt-last" id="wtLast" style="display:none;"></div>
   <button type="button" class="week-reset" id="weekResetBtn" onclick="openWeekReset()" style="display:none;">↺ Recomeçar semana do zero</button>
   <button type="button" class="focus-entry" onclick="openFocusMode(currentDay)">▶&nbsp; Modo treino: um exercício por vez</button>
+  <button type="button" class="focus-entry" id="shortModeBtn" onclick="openShortMode()">⏱&nbsp; Pouco tempo hoje?</button>
 </div>
 
 <!-- ══ CONFIRMA RECOMEÇAR SEMANA ══ -->
@@ -2824,6 +2851,11 @@
   <div class="sub-picker-card">
     <div class="sub-picker-title">Trocar exercício</div>
     <div class="sub-picker-orig" id="subPickerOrig"></div>
+    <div style="color:#8d8579;font-size:11px;margin:8px 0 4px;">Por que a troca? (ajuda o GH a ajustar teu protocolo)</div>
+    <div id="subMotivoChips" style="display:flex;gap:6px;margin-bottom:10px;">
+      <button type="button" class="esf-chip" data-m="sem_aparelho" onclick="_subSetMotivo(this)">Não tem o aparelho</button>
+      <button type="button" class="esf-chip" data-m="desconforto" onclick="_subSetMotivo(this)">Sinto desconforto</button>
+    </div>
     <div id="subPickerList"></div>
     <button class="sub-picker-close" onclick="closeSubPicker()">Fechar</button>
   </div>
@@ -5008,6 +5040,23 @@ function _alternativasNoDia(di, ei) {
   return out.length >= 2 ? out : null;
 }
 // Aplica a escolha (chamado pelo seletor). chosenNorm === original → volta ao original.
+// Motivo da troca (GH 2026-07-29): fica registrado na mestre (aba TROCAS) atrelado ao aluno.
+// "desconforto" é o padrão detector de dor: o GH enxerga e age no ajuste/reajuste.
+let _subMotivo = '';
+function _subSetMotivo(btn) {
+  const on = !btn.classList.contains('sel');
+  document.querySelectorAll('#subMotivoChips .esf-chip').forEach(b => b.classList.remove('sel'));
+  if (on) btn.classList.add('sel');
+  _subMotivo = on ? (btn.getAttribute('data-m') || '') : '';
+}
+function _ghToast(txt, ms) {
+  try {
+    const t = document.createElement('div');
+    t.className = 'gh-toast'; t.innerHTML = txt;
+    document.body.appendChild(t);
+    setTimeout(() => { try { t.remove(); } catch (_) {} }, ms || 4200);
+  } catch (_) {}
+}
 function escolherSub(di, ei, chosenNorm) {
   try {
     const ex = WORKOUT[di] && WORKOUT[di].exercises && WORKOUT[di].exercises[ei];
@@ -5015,17 +5064,46 @@ function escolherSub(di, ei, chosenNorm) {
     if (typeof flushCargaPendente_ === 'function') flushCargaPendente_(di, ei);   // salva carga digitada no slot ATUAL antes da troca mudar o sufixo (corrida 400ms)
     const k = _subKey(di, ei, ex.name);
     localStorage.removeItem(_subKeyLegacy(di, ex.name));   // A6: migra — limpa a chave antiga (dia+nome) ao mexer na troca
-    if (!chosenNorm || _normEx(chosenNorm) === _normEx(ex.name)) localStorage.removeItem(k);
+    const voltouOriginal = (!chosenNorm || _normEx(chosenNorm) === _normEx(ex.name));
+    if (voltouOriginal) localStorage.removeItem(k);
     else localStorage.setItem(k, _normEx(chosenNorm));
+    // registro na mestre (fire-and-forget; a troca em si nunca depende do POST)
+    try {
+      if (SHEET_ID && typeof LOG_ENDPOINT !== 'undefined') {
+        fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true, redirect: 'follow',
+          body: JSON.stringify({ type: 'troca', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(), di, ei, w: currentWeek, de: ex.name, para: voltouOriginal ? '(voltou pro original)' : chosenNorm, motivo: _subMotivo || 'nao_informado' }) });
+      }
+    } catch (_) {}
+    if (_subMotivo === 'desconforto' && !voltouOriginal) _ghToast('Anotado 👊 Se o desconforto continuar mesmo com a troca, pede um ajuste pro Gabriel no botão <b>Solicitar ajuste</b>.');
+    _subMotivo = '';
     closeSubPicker();
     renderExercises();
     const fo = document.getElementById('focusOverlay');
     if (fo && fo.classList.contains('show') && typeof _focusRender === 'function') _focusRender();
   } catch (_) {}
 }
+// Exercício SEM troca no banco: em vez de silêncio, dá o caminho (pedir ajuste pro GH).
+function openSubFallback(di, ei) {
+  const ex = WORKOUT[di] && WORKOUT[di].exercises && WORKOUT[di].exercises[ei];
+  if (!ex) return;
+  let m = document.getElementById('subFallbackMenu');
+  if (m) m.remove();
+  m = document.createElement('div');
+  m.id = 'subFallbackMenu'; m.className = 'rs-menu on';
+  const nome = String(ex.name || '').replace(/</g, '&lt;');
+  m.innerHTML = `<div class="rs-menu-sheet">
+    <div style="color:#a9a49b;font-size:12.5px;line-height:1.55;padding:2px 6px 4px;"><b style="color:#f1ede4;">${nome}</b> ainda não tem troca pronta no app. Pede pro Gabriel que ele resolve direto no teu protocolo.</div>
+    <button onclick="document.getElementById('subFallbackMenu').remove(); openAjusteModal('Trocar o exercício ${nome.replace(/'/g, '\\&#39;')}: ', 'TREINO')">🔧 Pedir a troca pro Gabriel</button>
+    <button class="rs-menu-cancel" onclick="document.getElementById('subFallbackMenu').remove()">Cancelar</button>
+  </div>`;
+  m.addEventListener('click', e => { if (e.target === m) m.remove(); });
+  document.body.appendChild(m);
+}
 function openSubPicker(di, ei) {
   const alts = _alternativasNoDia(di, ei);
-  if (!alts) return;
+  if (!alts) { openSubFallback(di, ei); return; }
+  _subMotivo = '';
+  document.querySelectorAll('#subMotivoChips .esf-chip').forEach(b => b.classList.remove('sel'));
   const ex = WORKOUT[di].exercises[ei];
   const ov = document.getElementById('subPickerOverlay');
   const list = document.getElementById('subPickerList');
@@ -6961,13 +7039,88 @@ function notifyDayCompletion(di, shared) {
     }).catch(() => {});
   } catch (_) {}
 }
+// ══ MODO POUCO TEMPO (GH 2026-07-29) — corta o treino do dia, NUNCA inventa ══
+// O aluno escolhe 30/45 min e o app mantém os exercícios NA ORDEM do protocolo (que já é
+// ordem de prioridade do GH) até caber no tempo; o resto fica esmaecido "se sobrar tempo".
+// Descanso no modo curto: máx 30s isolados / máx 50s compostos (números do GH). Aquecimento
+// nunca cai, bi-set nunca é separado (é 1 card), piso de 4 exercícios. Dia curto PONTUA
+// normal (decisão GH). Ativação registrada na mestre (aba MODO_CURTO), atrelada ao aluno.
+const _SHORT_ISO = /rosca|tr[ií]ceps|crucifixo|voador|crossover|eleva[çc][ãa]o|cadeira|mesa flexora|panturr|encolhimento|abdominal|prancha|coice|pulldown|extensora|flexora|adutor|abdutor|face ?pull|pullover|serrote|remada alta/i;
+function _shortIsIsolado(nome) { return _SHORT_ISO.test(String(nome || '')); }
+function _shortRestCap(nome) { return _shortIsIsolado(nome) ? 30 : 50; }
+function _shortKey() { return `gh_short_${STUDENT_ID}_${todayKey()}`; }
+function _shortMin() { try { return parseInt(localStorage.getItem(_shortKey()) || '0', 10) || 0; } catch (_) { return 0; } }
+function _shortKeepSet(di) {
+  const min = _shortMin();
+  if (!min || !WORKOUT[di]) return null;
+  const budget = min * 60;
+  const keep = new Set();
+  let sum = 0, mantidos = 0;
+  WORKOUT[di].exercises.forEach((ex, ei) => {
+    if (ex.warmup) { keep.add(ei); sum += 120; return; }           // aquecimento sempre fica
+    const sets = parseInt(ex.series) || 3;
+    const restFull = (typeof parseIntervalSeconds === 'function' ? parseIntervalSeconds(ex.rest || '') : 0) || 60;
+    const rest = Math.min(restFull, _shortRestCap(ex.name));
+    const exec = ex.biset ? 90 : 45;                               // bi-set = par inteiro (1 card, nunca separa)
+    const t = sets * (exec + rest);
+    if (sum + t <= budget || mantidos < 4) { keep.add(ei); sum += t; mantidos++; }   // piso 4
+  });
+  return keep;
+}
+function _shortSkip(di, ei) { const k = _shortKeepSet(di); return !!(k && !k.has(ei)); }
+function _shortBtnSync() {
+  const b = document.getElementById('shortModeBtn');
+  if (!b) return;
+  const min = _shortMin();
+  b.innerHTML = min ? `⏱&nbsp; Modo ${min}min ativo · toca pra ajustar` : '⏱&nbsp; Pouco tempo hoje?';
+  b.style.borderColor = min ? 'var(--gold)' : '';
+  b.style.color = min ? 'var(--gold)' : '';
+}
+function openShortMode() {
+  let m = document.getElementById('shortModeMenu');
+  if (m) m.remove();
+  m = document.createElement('div');
+  m.id = 'shortModeMenu'; m.className = 'rs-menu on';
+  const cur = _shortMin();
+  m.innerHTML = `<div class="rs-menu-sheet">
+    <div style="color:#a9a49b;font-size:12.5px;line-height:1.55;padding:2px 6px 4px;">Sem tempo hoje? O app mantém o <b style="color:#f1ede4;">essencial do teu treino na ordem de prioridade</b> e deixa o resto pra quando sobrar tempo. Descanso encurta junto (30s isolados · 50s compostos). O dia conta normal no teu ranking.</div>
+    <button onclick="setShortMode(30)">${cur === 30 ? '✓ ' : ''}Treino de 30 minutos</button>
+    <button onclick="setShortMode(45)">${cur === 45 ? '✓ ' : ''}Treino de 45 minutos</button>
+    ${cur ? '<button onclick="setShortMode(0)">Voltar pro treino completo</button>' : ''}
+    <button class="rs-menu-cancel" onclick="document.getElementById('shortModeMenu').remove()">Cancelar</button>
+  </div>`;
+  m.addEventListener('click', e => { if (e.target === m) m.remove(); });
+  document.body.appendChild(m);
+}
+function setShortMode(min) {
+  try { if (min > 0) localStorage.setItem(_shortKey(), String(min)); else localStorage.removeItem(_shortKey()); } catch (_) {}
+  const menu = document.getElementById('shortModeMenu'); if (menu) menu.remove();
+  // registro na mestre (1x por escolha por dia; fire-and-forget)
+  try {
+    if (min > 0 && SHEET_ID && typeof LOG_ENDPOINT !== 'undefined') {
+      const dk = `gh_shortlog_${STUDENT_ID}_${todayKey()}_${min}`;
+      if (localStorage.getItem(dk) !== '1') {
+        localStorage.setItem(dk, '1');
+        const keep = _shortKeepSet(currentDay) || new Set();
+        const tot = (WORKOUT[currentDay] ? WORKOUT[currentDay].exercises.length : 0);
+        fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true, redirect: 'follow',
+          body: JSON.stringify({ type: 'modo_curto', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(), di: currentDay, w: currentWeek, minutos: min, mantidos: keep.size, cortados: Math.max(0, tot - keep.size) }) });
+      }
+    }
+  } catch (_) {}
+  renderExercises();
+  updateDayProgress();
+  if (min > 0) _ghToast(`⏱ Modo ${min}min ligado só por hoje: essencial primeiro, descanso encurtado. Amanhã volta o treino completo.`);
+}
 function allDoneOfDay(di) {
   if (!WORKOUT[di]) return false;
   // aquecimento NÃO conta (igual ao contador "X/N" e ao total do ranking, que filtram warmup).
   // Sem isto o dia nunca fechava: o aluno marcava todos os exercícios reais (contador cheio),
   // mas allDoneOfDay exigia o warmup também (que o contador nem mostra) → "dia concluído"
   // nunca disparava → LOGS vazio → ranking de treino zerado E follow-sumidos flagando ativo.
-  const real = WORKOUT[di].exercises.map((ex, ei) => ({ ex, ei })).filter(o => !o.ex.warmup);
+  // MODO CURTO: o dia fecha (e pontua) quando o ESSENCIAL mantido está feito (decisão GH).
+  const keep = _shortKeepSet(di);
+  const real = WORKOUT[di].exercises.map((ex, ei) => ({ ex, ei })).filter(o => !o.ex.warmup && (!keep || keep.has(o.ei)));
   if (!real.length) return false;
   return real.every(o => isDone(di, o.ei));
 }
@@ -6988,11 +7141,17 @@ function updateDayProgress() {
   const day = WORKOUT[currentDay];
   const bar = document.getElementById('dayProgress');
   if (!day || !bar) return;
-  const total = day.exercises.length;
-  let done = 0;
-  day.exercises.forEach((ex, ei) => { if (isDone(currentDay, ei)) done++; });
+  // modo curto: barra e contador refletem só o ESSENCIAL mantido (senão o dia curto nunca "fecha" visualmente)
+  const keepDP = _shortKeepSet(currentDay);
+  let total = 0, done = 0;
+  day.exercises.forEach((ex, ei) => {
+    if (keepDP && !keepDP.has(ei)) return;
+    total++;
+    if (isDone(currentDay, ei)) done++;
+  });
   const pct = total ? (done/total)*100 : 0;
-  document.getElementById('pgLabel').textContent = `Hoje: ${done}/${total} exercícios`;
+  document.getElementById('pgLabel').textContent = `Hoje: ${done}/${total} exercícios` + (keepDP ? ' · ⏱ modo ' + _shortMin() + 'min' : '');
+  _shortBtnSync();
   document.getElementById('pgFill').style.width = pct + '%';
   bar.style.display = total > 0 ? 'block' : 'none';
   const hero = document.getElementById('dayHero');
@@ -7306,6 +7465,8 @@ function _timerLockOff() {
   _timerWakeLock = null;
 }
 function startTimer(name, seconds) {
+  // modo pouco tempo: descanso encurtado (30s isolados / 50s compostos — números do GH)
+  if (typeof _shortMin === 'function' && _shortMin() && seconds > 0) seconds = Math.min(seconds, _shortRestCap(name));
   _timerLeft = seconds;
   _timerTotal = seconds;
   document.getElementById('timerName').textContent = name;
@@ -7554,6 +7715,54 @@ function _focusCargaBlock(di, key, label) {
 }
 // Grade de esforço (RIR-em-palavras) + flag de aparelho — 1 toque, opcional.
 // Vai logo depois da carga, por exercício (1 por exercício, não por série).
+// ══ PROGRESSÃO DE CARGA (GH 2026-07-29) — sugestão DETERMINÍSTICA, zero IA ══
+// Nasce só do que o PRÓPRIO aluno registrou (carga + "sobrou" da última série). Regras do GH:
+// sobrou3 → sobe 1 degrau · sobrou1-2 → mantém · falha_ult → mantém (É O ALVO: "puxa a última
+// série até quase travar") · falha_antes → segura ou desce. Degrau = menor passo físico real:
+// +1 placa; kg: +2 superiores, +5 inferiores. Sem histórico ou sem "sobrou" → NENHUMA sugestão.
+const _PROG_INF = /perna|agach|leg|stiff|terra|panturr|flexora|extensora|adutor|abdutor|hack|b[uú]lgaro|afundo|p[eé]lvica|gl[uú]teo|coxa|passada|sum[oô]|coice/i;
+function _progStepKg(nome) { return _PROG_INF.test(String(nome || '')) ? 5 : 2; }
+function _progBaseDoSets(sets) {
+  // última série preenchida (kg ou placas) — é a carga de trabalho real
+  if (!Array.isArray(sets)) return null;
+  for (let i = sets.length - 1; i >= 0; i--) {
+    const s = sets[i] || {};
+    if (String(s.pl || '').trim()) return { pl: parseFloat(String(s.pl).replace(',', '.')), txt: String(s.pl).trim() + ' placas' };
+    if (String(s.kg || '').trim()) return { kg: parseFloat(String(s.kg).replace(',', '.')), txt: String(s.kg).trim() + 'kg' };
+  }
+  return null;
+}
+// Último registro (carga + esforço juntos) do MESMO exercício em semanas anteriores do bloco.
+function _progUltReg(di, ei) {
+  try {
+    for (let w = currentWeek - 1; w >= 1; w--) {
+      const esf = loadEsf(di, String(ei), w);
+      if (!esf) continue;
+      const base = _progBaseDoSets(loadSets(di, String(ei), w));
+      if (!base) continue;
+      return { w, esf, base };
+    }
+  } catch (_) {}
+  return null;
+}
+function _progSugestao(nomeEx, base, esf) {
+  if (esf === 'sobrou3') {
+    if (base.pl != null && !isNaN(base.pl)) return { tipo: 'sobe', prox: (base.pl + 1) + ' placas' };
+    if (base.kg != null && !isNaN(base.kg)) { const st = _progStepKg(nomeEx); return { tipo: 'sobe', prox: (Math.round((base.kg + st) * 10) / 10) + 'kg', passo: '+' + st }; }
+    return null;
+  }
+  if (esf === 'falha_antes') return { tipo: 'segura' };
+  return null;   // sobrou1/2 e falha_ult: carga certa, sem chip (falha_ult É o alvo do método)
+}
+// Chip no card do exercício: só aparece quando há algo ÚTIL a dizer (sobe ou segura).
+function _progChipHtml(di, ei, nomeEx) {
+  const reg = _progUltReg(di, ei);
+  if (!reg) return '';
+  const sug = _progSugestao(nomeEx, reg.base, reg.esf);
+  if (!sug) return '';
+  if (sug.tipo === 'sobe') return `<div class="prog-chip up">💡 Semana passada: ${reg.base.txt}, sobrou 3+. Hoje <b>tenta ${sug.prox}</b>${sug.passo ? ' (' + sug.passo + ')' : ''}. Se travar, volta sem drama.</div>`;
+  return `<div class="prog-chip down">Semana passada travou antes de terminar: hoje vale <b>manter ou descer um degrau</b>.</div>`;
+}
 const _ESF_OPTS = [['sobrou3', 'Fácil, ainda dava 3 ou mais'], ['sobrou2', 'Dava mais 2 repetições'], ['sobrou1', 'Dava mais 1 repetição'], ['falha_ult', 'Fiz todas, mas não dava nem mais 1'], ['falha_antes', 'Pesado demais, travei antes de terminar']];
 const _ESF_AP = [['maquina_ruim', 'Máquina ruim'], ['nao_sinto', 'Não sinto o músculo'], ['carga_estranha', 'Carga estranha']];
 function _focusEsforcoBlock(di, key, compact) {
@@ -7596,6 +7805,25 @@ function onEsforco(di, key, btn, val) {
   btn.parentElement.querySelectorAll('.esf-chip').forEach(b => b.classList.remove('sel'));
   btn.classList.add('sel');
   saveEsf(di, key, currentWeek, val, loadApf(di, key, currentWeek));
+  // Feedback imediato da progressão (regras do GH): fecha o ciclo anota → orienta.
+  try {
+    const host = btn.closest('.focus-esforco');
+    if (host) {
+      let msg = '';
+      if (val === 'sobrou3') {
+        const base = _progBaseDoSets(loadSets(di, String(key), currentWeek));
+        const nomeEx = (WORKOUT[di] && WORKOUT[di].exercises[parseInt(key)] || {}).name || '';
+        const sug = base ? _progSugestao(nomeEx, base, 'sobrou3') : null;
+        msg = sug ? `💪 Sobrou 3+: na próxima <b>tenta ${sug.prox}</b>. Se travar, volta sem drama.` : '💪 Sobrou 3+: na próxima dá pra subir um degrau na carga.';
+      }
+      else if (val === 'falha_ult') msg = '🎯 Perfeito: é exatamente o alvo do método.';
+      else if (val === 'sobrou1' || val === 'sobrou2') msg = 'Carga certa, mantém.';
+      else if (val === 'falha_antes') msg = 'Tranquilo. Na próxima, segura ou desce um degrau.';
+      let el = host.querySelector('.prog-now');
+      if (!el) { el = document.createElement('div'); el.className = 'prog-now'; host.appendChild(el); }
+      el.innerHTML = msg;
+    }
+  } catch (_) {}
   // No card compacto: atualiza o resumo e recolhe sozinho depois de responder
   const w = btn.closest('.esf-compact');
   if (w) {
@@ -8448,13 +8676,14 @@ function renderExercises() {
       const safeRest = (ex.rest || '').replace(/'/g, "\\'");
 
       return `
-        <div class="exercise-card ${isWarmup ? 'warmup' : ''} ${hasVid ? 'has-video' : ''} ${exDone ? 'done' : ''}">
+        <div class="exercise-card ${isWarmup ? 'warmup' : ''} ${hasVid ? 'has-video' : ''} ${exDone ? 'done' : ''} ${_shortSkip(di, ei) ? 'short-skip' : ''}">
           <div class="exercise-main" ${hasVid ? `onclick="openVideo('${safeName}', '${safeVideo}')"` : ''}>
             <div class="ex-check ${exDone ? 'done' : ''}" onclick="event.stopPropagation(); onCheckExercise(${di}, ${ei})" title="Marcar como feito"></div>
             <div class="exercise-info">
               <div class="exercise-name">
                 ${act.name}
                 ${act.sub ? '<span class="ex-sub-badge">SUBST.</span>' : ''}
+                ${_shortSkip(di, ei) ? '<span class="short-tag">⏳ se sobrar tempo</span>' : ''}
                 ${hasVid ? '<span class="video-icon">&#9654;</span>' : ''}
               </div>
               <div class="exercise-details">${tags.join("")}</div>
@@ -8473,10 +8702,11 @@ function renderExercises() {
               <button class="ex-action-btn" onclick="openPacer(${di}, ${ei})" title="Treinar no ritmo (coach de cadência)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></button>
               <button class="ex-action-btn" onclick="startTimer('${safeName}', parseIntervalSeconds('${safeRest}'))" title="Cronômetro de descanso (${ex.rest || 'auto'})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></button>
               <button class="ex-action-btn" onclick="showHistory(${di}, ${ei})" title="Histórico de cargas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></button>
-              ${subAlts ? `<button class="ex-action-btn sub-btn ${act.sub ? 'sub-on' : ''}" onclick="openSubPicker(${di}, ${ei})" title="Trocar exercício"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></button>` : ''}
+              <button class="ex-action-btn sub-btn ${act.sub ? 'sub-on' : ''}" onclick="${subAlts ? `openSubPicker(${di}, ${ei})` : `openSubFallback(${di}, ${ei})`}" title="Trocar exercício"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></button>
             </div>
             </div>
           </div>
+          ${_progChipHtml(di, ei, act.name)}
           ${_focusEsforcoBlock(di, ei, true)}` : ''}
         </div>`;
     }).join("");
@@ -12069,6 +12299,40 @@ function notifyCardioCompletion(shared) {
     fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), keepalive: true, redirect: 'follow' }).catch(() => {});
   } catch (_) {}
 }
+// ══ DIETA SEM CULPA (GH 2026-07-29): "não rolou" vira SINAL, nunca bronca ══
+// Motivo registrado na mestre (aba DIETA_SINAIS) atrelado ao aluno; NÃO mexe em ranking
+// (não marcar já não pontuava — isto só transforma o silêncio em informação pro GH
+// individualizar a dieta no reajuste, sem o aluno precisar confessar nada).
+function _mealNaoKey(ri) { return `gh_mealnao_${STUDENT_ID}_${todayKey()}_r${ri}`; }
+function _mealNaoMotivo(ri) { try { return localStorage.getItem(_mealNaoKey(ri)) || ''; } catch (_) { return ''; } }
+function openMealNao(ri, nome) {
+  let m = document.getElementById('mealNaoMenu');
+  if (m) m.remove();
+  m = document.createElement('div');
+  m.id = 'mealNaoMenu'; m.className = 'rs-menu on';
+  m.innerHTML = `<div class="rs-menu-sheet">
+    <div style="color:#a9a49b;font-size:12.5px;line-height:1.55;padding:2px 6px 4px;">A <b style="color:#f1ede4;">${String(nome).replace(/</g, '&lt;')}</b> não rolou hoje? Acontece, zero culpa. Me diz o porquê que o Gabriel usa isso pra deixar tua dieta mais a tua cara no próximo ajuste.</div>
+    <button onclick="registrarMealNao(${ri}, '${String(nome).replace(/'/g, "\\'")}', 'enjoei_sem_fome')">Enjoei / sem fome</button>
+    <button onclick="registrarMealNao(${ri}, '${String(nome).replace(/'/g, "\\'")}', 'sem_tempo')">Sem tempo / correria</button>
+    <button onclick="registrarMealNao(${ri}, '${String(nome).replace(/'/g, "\\'")}', 'comi_outra_coisa')">Comi outra coisa</button>
+    <button class="rs-menu-cancel" onclick="document.getElementById('mealNaoMenu').remove()">Cancelar</button>
+  </div>`;
+  m.addEventListener('click', e => { if (e.target === m) m.remove(); });
+  document.body.appendChild(m);
+}
+function registrarMealNao(ri, nome, motivo) {
+  const m = document.getElementById('mealNaoMenu'); if (m) m.remove();
+  try { localStorage.setItem(_mealNaoKey(ri), motivo); } catch (_) {}
+  const btn = document.getElementById('dmnao-' + ri);
+  if (btn) { btn.textContent = 'anotado 🤝'; btn.classList.add('marcado'); }
+  try {
+    if (SHEET_ID && typeof LOG_ENDPOINT !== 'undefined') {
+      fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true, redirect: 'follow',
+        body: JSON.stringify({ type: 'dieta_sinal', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(), refeicao: nome, motivo: motivo }) });
+    }
+  } catch (_) {}
+  _ghToast('Anotado, sem culpa 🤝 Amanhã segue o jogo. Se repetir muito, o Gabriel já ajusta essa refeição pra ti.');
+}
 function mealDoneKey(ri) { return `gh_meal_${STUDENT_ID}_${todayKey()}_r${ri}`; }
 function isMealDone(ri) { return localStorage.getItem(mealDoneKey(ri)) === '1'; }
 let _dietCycleIdx = 0;   // ciclo (Alto/Baixo carbo) que o aluno esta vendo; a meta do dia conta por ELE
@@ -12343,7 +12607,7 @@ function renderDiet() {
       const uid = `${prefix}${ri}`;
       const hasOps = ref.opcoes.length > 0;
       html += `<div class="diet-meal-card">`;
-      html += `<div class="diet-meal-header"><span class="dm-nome">${ref.nome}</span><button type="button" class="diet-meal-check${isMealDone(ri) ? ' done' : ''}" data-meal-ri="${ri}" onclick="onCheckMeal(${ri})" aria-label="Marcar refeição feita"><svg class="dm-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><svg class="dm-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span class="dm-txt">Feita</span></button></div>`;
+      html += `<div class="diet-meal-header"><span class="dm-nome">${ref.nome}</span><button type="button" class="dm-nao${_mealNaoMotivo(ri) ? ' marcado' : ''}" id="dmnao-${ri}" onclick="openMealNao(${ri}, '${String(ref.nome || '').replace(/'/g, "\\'")}')">${_mealNaoMotivo(ri) ? 'anotado 🤝' : 'não rolou?'}</button><button type="button" class="diet-meal-check${isMealDone(ri) ? ' done' : ''}" data-meal-ri="${ri}" onclick="onCheckMeal(${ri})" aria-label="Marcar refeição feita"><svg class="dm-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><svg class="dm-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span class="dm-txt">Feita</span></button></div>`;
       if (ref.instrucao) html += `<div class="diet-meal-instruction">${ref.instrucao}</div>`;
 
       // Alimentos base SEMPRE visíveis (caso Paulo Lages: refeição mista com alimentos +
