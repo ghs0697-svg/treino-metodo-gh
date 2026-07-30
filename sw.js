@@ -1,4 +1,4 @@
-const CACHE_NAME = 'metodo-gh-v327';
+const CACHE_NAME = 'metodo-gh-v328';
 const ASSETS = [
   './',
   './index.html',
@@ -55,20 +55,24 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
-  // index.html + editor-data.js: network-first com fallback pro cache (offline).
-  // editor-data.js carrega o EXERCISE_DB/DIET_TEMPLATES do painel treinador —
-  // tem que vir SEMPRE fresco quando online, senão exercício novo no banco
-  // não aparece no "Trocar Exercício" (ficava preso no cache antigo do SW).
-  // Atualiza o cache em background pra fallback offline continuar válido.
+  // index.html + editor-data.js + substitutos.js: STALE-WHILE-REVALIDATE (2026-07-29, abertura
+  // instantânea). Serve o cache NA HORA (zero espera de rede pra pintar o app) e atualiza o cache
+  // em background — mudança no shell/banco de exercícios aparece na PRÓXIMA abertura. O dado do
+  // protocolo não passa por aqui (gviz/script.google.com = network direto, mais o cache de CSV do
+  // próprio app que revalida sozinho), então protocolo novo continua aparecendo na hora.
   if (e.request.url.includes('index.html') || e.request.url.includes('editor-data.js') || e.request.url.includes('substitutos.js') || e.request.mode === 'navigate') {
     e.respondWith(
-      fetch(e.request).then(resp => {
-        if (resp && resp.ok && e.request.method === 'GET') {
-          const clone = resp.clone();
-          caches.open(CACHE_NAME).then(c => c.put(e.request, clone)).catch(() => {});
-        }
-        return resp;
-      }).catch(() => caches.match(e.request, { ignoreSearch: true }))
+      caches.match(e.request, { ignoreSearch: true }).then(cached => {
+        const net = fetch(e.request).then(resp => {
+          if (resp && resp.ok && e.request.method === 'GET') {
+            const clone = resp.clone();
+            caches.open(CACHE_NAME).then(c => c.put(e.request, clone)).catch(() => {});
+          }
+          return resp;
+        }).catch(() => null);
+        // cache primeiro (instantâneo); sem cache, espera a rede; rede falhou, tenta cache de novo
+        return cached || net.then(r => r || caches.match(e.request, { ignoreSearch: true }));
+      })
     );
     return;
   }

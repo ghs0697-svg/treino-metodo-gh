@@ -2844,7 +2844,6 @@
   <div class="is-inner">
     <div class="is-logo">MÉTODO <span>GH</span></div>
     <div class="is-line"></div>
-    <div class="is-day" id="isDay"></div>
   </div>
 </div>
 
@@ -7371,10 +7370,10 @@ let _introOn = false, _introMin = 0;
   } catch (_) {}
 })();
 function _introDayReady(title) {
+  // GH 2026-07-29: splash mostra SÓ a marca (sem os músculos do dia). O param `title`
+  // fica na assinatura só pra não mexer nos chamadores; ele agora é ignorado.
   if (!_introOn) return;
-  const d = document.getElementById('isDay');
-  if (d && title) { d.textContent = title; d.classList.add('on'); }
-  const wait = Math.max(0, _introMin - Date.now()) + (title ? 700 : 150);
+  const wait = Math.max(0, _introMin - Date.now()) + 150;
   setTimeout(_introClose, wait);
   _introOn = 'closing';
 }
@@ -8293,16 +8292,24 @@ function parseCSV(text) {
 // Linha 3+:             1 | Exercício | 4X | 8 a 12 | 60 seg | Obs | URL | sim/não
 // ══════════════════════════════════════════════════════════════
 
-async function loadFromSheets() {
-  document.getElementById('loadingScreen').style.display = 'flex';
+async function loadFromSheets(injectedText) {
+  // CSV injetado (cache/prefetch) = render imediato, SEM tela de loading nem rede.
+  const fromInject = injectedText != null;
+  if (!fromInject) document.getElementById('loadingScreen').style.display = 'flex';
 
   try {
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=TREINO&headers=0`;
-    const res = await fetch(url);
+    let text;
+    if (fromInject) {
+      text = injectedText;
+    } else {
+      const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=TREINO&headers=0`;
+      const res = await fetch(url);
 
-    if (!res.ok) throw new Error('Não foi possível acessar a planilha. Verifique se ela está compartilhada (qualquer pessoa com link = leitor).');
+      if (!res.ok) throw new Error('Não foi possível acessar a planilha. Verifique se ela está compartilhada (qualquer pessoa com link = leitor).');
 
-    const text = await res.text();
+      text = await res.text();
+      _protoCacheSet({ treino: text });   // cache pra próxima abertura ser instantânea
+    }
     const rows = parseCSV(text);
 
     if (rows.length < 3) throw new Error('Planilha vazia ou formato incorreto.');
@@ -11881,7 +11888,27 @@ function retryDiet() {
   } catch (_) {}
 }
 
-async function loadDietFromSheets() {
+// ══ CACHE DO PROTOCOLO (abertura instantânea, GH 2026-07-29) ══════════════════
+// O CSV cru de TREINO/DIETA fica no localStorage por aluno. Na abertura, se há cache,
+// o app RENDERIZA NA HORA (zero tela preta) e revalida em background: só re-renderiza
+// se o protocolo MUDOU no Google (reajuste/ajuste). Primeira visita busca em PARALELO.
+function _protoCacheKey() { return `gh_protocsv_${SHEET_ID}`; }
+function _protoCacheGet() {
+  try { const j = JSON.parse(localStorage.getItem(_protoCacheKey()) || 'null'); return (j && typeof j.treino === 'string' && j.treino) ? j : null; } catch (_) { return null; }
+}
+function _protoCacheSet(patch) {
+  try { const cur = _protoCacheGet() || {}; localStorage.setItem(_protoCacheKey(), JSON.stringify(Object.assign(cur, patch, { ts: Date.now() }))); } catch (_) {}
+}
+// fetch cru de uma aba (1 tentativa, sem retry): null em qualquer falha — quem chama decide o fallback
+async function _fetchCsvRaw(tab) {
+  try {
+    const r = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}&headers=0&_=${Date.now()}`, { cache: 'no-store' });
+    if (!r.ok) return null;
+    return await r.text();
+  } catch (_) { return null; }
+}
+
+async function loadDietFromSheets(injectedText) {
   // Tenta até 2x com cache buster — Safari iOS PWA standalone às vezes
   // serve resposta cacheada/parcial na 1ª req pós-relaunch.
   const tryFetch = async (bust) => {
@@ -11891,10 +11918,17 @@ async function loadDietFromSheets() {
     const text = await res.text();
     const rows = parseCSV(text);
     if (rows.length < 3) throw new Error('rows<3');
+    _protoCacheSet({ dieta: text });   // cache pra próxima abertura ser instantânea
     return rows;
   };
   let rows = null;
-  try {
+  // CSV injetado (cache/prefetch): mesma semântica do fetch, sem rede
+  if (injectedText != null) {
+    const r = parseCSV(injectedText);
+    if (r.length < 3) { dietLoaded = false; dietFetchFailed = false; return; }
+    rows = r;
+  }
+  if (!rows) try {
     rows = await tryFetch(false);
   } catch (e1) {
     // aba VAZIA (rows<3) é determinístico: fetch OK, sem conteúdo (aluno só treino).
@@ -13840,20 +13874,45 @@ function _sendAppPing() {
 
 if (SHEET_ID && TAB_NAME) {
   _sendAppPing(); // marca a abertura (independe de carregar treino/dieta)
-  // Modo aluno — carregar dieta + treino (ambos independentes)
-  // TAB_NAME é só preferência de qual tab abrir primeiro
-  loadDietFromSheets().then(() => {
-    loadFromSheets()
-      // loadFromSheets trata o próprio erro internamente (o catch interno já esconde o TREINO e abre a
-      // DIETA quando o treino falha mas a dieta existe). Este .catch é só guarda anti-unhandled-rejection.
-      .catch(() => {})
-      .finally(() => {
-        // Se URL pediu DIETA explicitamente e dieta existe, abre nela
-        if (dietLoaded && TAB_NAME.toUpperCase() === 'DIETA') {
-          switchView('dieta');
-        }
-      });
-  });
+  // Modo aluno. ABERTURA INSTANTÂNEA (GH 2026-07-29): com cache do protocolo, renderiza
+  // NA HORA do localStorage (zero tela preta) e revalida em background — só re-renderiza
+  // se o protocolo mudou no Google. Sem cache (1ª visita), busca DIETA+TREINO em PARALELO
+  // (antes era sequencial) e processa na mesma ordem de sempre (dieta antes do treino).
+  (async () => {
+    const abreDieta = () => { if (dietLoaded && TAB_NAME.toUpperCase() === 'DIETA') switchView('dieta'); };
+    const cached = _protoCacheGet();
+    if (cached) {
+      // 1) pinta já com o último protocolo conhecido
+      try { await loadDietFromSheets(cached.dieta || ''); } catch (_) {}
+      try { await loadFromSheets(cached.treino); } catch (_) {}
+      abreDieta();
+      // 2) revalida em silêncio; re-renderiza só se mudou
+      setTimeout(async () => {
+        try {
+          const [dT, tT] = await Promise.all([_fetchCsvRaw('DIETA'), _fetchCsvRaw('TREINO')]);
+          const dNovo = (dT != null && dT !== (cached.dieta || ''));
+          const tNovo = (tT != null && tT !== cached.treino);
+          if (dT != null || tT != null) _protoCacheSet({ dieta: dT != null ? dT : (cached.dieta || ''), treino: tT != null ? tT : cached.treino });
+          if (dNovo || tNovo) {
+            try { await loadDietFromSheets(dT != null ? dT : (cached.dieta || '')); } catch (_) {}
+            try { await loadFromSheets(tT != null ? tT : cached.treino); } catch (_) {}
+            if (document.body.classList.contains('view-dieta') && typeof renderDiet === 'function') renderDiet();
+          }
+        } catch (_) {}
+      }, 700);
+    } else {
+      // 1ª visita deste aparelho: prefetch PARALELO das duas abas
+      const [dT, tT] = await Promise.all([_fetchCsvRaw('DIETA'), _fetchCsvRaw('TREINO')]);
+      // injeta quando veio; se falhou (null), cai no caminho de sempre (fetch próprio + retry)
+      try { await loadDietFromSheets(dT != null ? dT : undefined); } catch (_) {}
+      try {
+        await loadFromSheets(tT != null ? tT : undefined);
+        if (tT != null) _protoCacheSet({ treino: tT });
+        if (dT != null) _protoCacheSet({ dieta: dT });
+      } catch (_) {}
+      abreDieta();
+    }
+  })();
 } else {
   // Modo treinador — painel admin FICA ATRÁS DE LOGIN.
   // O público que apagar a URL até a raiz cai aqui: vê só o portão de senha,
