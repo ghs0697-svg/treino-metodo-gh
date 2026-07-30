@@ -1,4 +1,4 @@
-const CACHE_NAME = 'metodo-gh-v328';
+const CACHE_NAME = 'metodo-gh-v329';
 const ASSETS = [
   './',
   './index.html',
@@ -34,6 +34,17 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  // FONTES (Google Fonts): imutáveis — cache-first, senão caíam na regra 'Google = rede
+  // sempre' abaixo e eram baixadas em TODA abertura, bloqueando a primeira pintura.
+  if (e.request.url.includes('fonts.googleapis.com') || e.request.url.includes('fonts.gstatic.com')) {
+    e.respondWith(
+      caches.match(e.request).then(r => r || fetch(e.request).then(resp => {
+        if (resp && resp.ok) { const c = resp.clone(); caches.open(CACHE_NAME).then(x => x.put(e.request, c)).catch(() => {}); }
+        return resp;
+      }))
+    );
+    return;
+  }
   // URLs do Google Sheets / docs / Apps Script: SEMPRE network direto (sem cache)
   // Se falhar, propaga erro pro app — melhor que servir resposta cacheada/parcial
   // que estava bugando o reload do PWA standalone no iOS (DIETA sumindo).

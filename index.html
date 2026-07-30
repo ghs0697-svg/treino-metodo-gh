@@ -8,8 +8,13 @@
 <meta name="theme-color" content="#0D0D0D">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>Treino | Método GH</title>
+<!-- preconnect: corta DNS+TLS do primeiro fetch (fontes + protocolo no Google) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://docs.google.com">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cinzel:wght@600;700&display=swap">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cinzel:wght@600;700&display=swap');
   :root {
     --font-display: 'Cinzel', 'Times New Roman', serif;
     /* Dourado Método GH com tratamento premium (degradê + glow) */
@@ -7365,7 +7370,11 @@ let _introOn = false, _introMin = 0;
     if (!el) return;
     el.classList.add('show');
     _introOn = true;
-    _introMin = Date.now() + 1600;
+    // Abertura QUENTE (protocolo em cache = app pronto em ~300ms): splash curto, só a assinatura.
+    // Primeira visita (sem cache): 1600ms, cobrindo o carregamento real. (GH 2026-07-29: velocidade)
+    let _temCache = false;
+    try { for (let i = 0; i < localStorage.length; i++) { if (String(localStorage.key(i) || '').startsWith('gh_protocsv_')) { _temCache = true; break; } } } catch (_) {}
+    _introMin = Date.now() + (_temCache ? 700 : 1600);
     setTimeout(_introClose, 6000);
   } catch (_) {}
 })();
