@@ -4589,7 +4589,7 @@
 </div>
 
 <script src="editor-data.js?v=137"></script>
-<script src="substitutos.js?v=3"></script>
+<script src="substitutos.js?v=4"></script>
 <script>
 // ══════════════════════════════════════════════════════════════
 // ══ CONFIGURAÇÃO — lê parâmetros da URL ══
@@ -4787,7 +4787,7 @@ const EX_VIDEO_BANK = {
   "TRICEPS TESTA NO BANCO INCLINADO":"https://youtube.com/shorts/wO4a6MmVruw?feature=share",
   "VOADOR":"https://youtube.com/shorts/OOEOxr_q45I?feature=share"
 };
-function _normEx(s){return String(s||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();}
+function _normEx(s){return String(s||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\u00b0/g,'\u00ba').replace(/\s+/g,' ').trim();}   // ° (grau) vira º (ordinal): 'Leg Press 45°' casa com 'Leg Press 45º' (grupos + banco de vídeo)
 function _bankVideo(name){const k=_normEx(name);return k&&EX_VIDEO_BANK[k]?EX_VIDEO_BANK[k]:'';}
 
 // \u2500\u2500 M\u00fasculo-alvo por exerc\u00edcio (educativo, tag compacta no card) \u2500\u2500

@@ -25,37 +25,42 @@
 //    o primeiro e ignora no segundo.
 // ════════════════════════════════════════════════════════════════════════
 const GRUPOS_SUBSTITUTOS = `
-Agachamento Hack / Agachamento Smith
-Leg Press 45º / Leg Press 45º Unilateral
-Mesa Flexora / Flexora Unilateral em Pé
+Agachamento Hack / Agachamento Smith / Agachamento Livre
+Leg Press 45º / Leg Press 45º Unilateral / Afundo no Chão / Afundo Smith / Afundo Smith com Step
+Mesa Flexora / Flexora Unilateral em Pé / Mesa Flexora Livre com Halter
 Supino Inclinado na Máquina / Supino Inclinado com Halteres
-Afundo no Chão / Afundo Smith / Afundo Smith com Step
-Búlgaro / Búlgaro na Máquina
+Búlgaro / Búlgaro na Máquina / Coice no Cross com Polia Alta / Coice na Máquina
 Levantamento Terra / Levantamento Terra na Máquina
-Stiff / Stiff na Máquina / Stiff no Hiperextensor
+Stiff / Stiff na Máquina / Stiff no Hiperextensor / Stiff com Halteres
 Agachamento Sumo Smith / Terra Sumô
 Meio Terra / Hiperextensão de Lombar / Hiperextensor de Lombar na Máquina com Carga
 Elevação Pélvica 2D ou Livre / Elevação Pélvica na Máquina
 Extensão de Glúteo na Máquina / Extensão de Glúteo na Polia / Extensão de Glúteo com Caneleira
 Supino Reto na Máquina / Supino Reto na Máquina Sentado
-Crucifixo Inclinado / Crucifixo Inclinado no Cross
+Crucifixo Inclinado / Crucifixo Inclinado no Cross / Crossover Polia Média
 Pulldown / Pulldown na Máquina
 Puxada Alta Pronada / Puxada Alta na Máquina Articulada
-Remada Curvada Pronada / Remada Curvada Sentado / Remada Curvada na Máquina Guiada
+Remada Curvada Pronada / Remada Curvada Sentado / Remada Curvada na Máquina Guiada / Remada Pronada na Máquina
 Remada Neutra no Cross / Remada Baixa com Triângulo
-Remada Unilateral na Máquina / Serrote com Halter
+Remada Unilateral na Máquina / Serrote com Halter / Serrote Pêndulo com Halter
 Crucifixo Inverso com Halteres / Crucifixo Inverso no Cross / Crucifixo Inverso no Voador
 Desenvolvimento com Halteres / Desenvolvimento na Máquina / Desenvolvimento na Máquina Inclinado / Desenvolvimento na Máquina Sentado
-Elevação Lateral / Elevação Lateral na Máquina / Elevação Lateral no Cross
+Elevação Lateral / Elevação Lateral na Máquina / Elevação Lateral no Cross / Elevação Lateral Sentado / Elevação Lateral no Banco Inclinado
 Face Pull / Facepull com Corda no Cross / Remada Alta na Polia
-Elevação Frontal com Anilha / Elevação Frontal com Halteres em Isometria / Elevação Frontal Neutra com Halteres / Elevação Frontal no Cross
+Elevação Frontal com Anilha / Elevação Frontal com Halteres em Isometria / Elevação Frontal Neutra com Halteres / Elevação Frontal no Cross / Elevação Frontal Corda no Cross
 Rosca Concentrada com Halter / Rosca Unilateral no Cross / Rosca Scott Unilateral
 Rosca Direta Alternada / Rosca Direta com Halteres / Rosca Scott Fechada
 Rosca Direta com Barra W / Rosca Direta no Cross
 Tríceps Pulley com Barra / Tríceps Pulley com Corda / Tríceps Pulley na Máquina / Tríceps Pulley Unilateral
 Tríceps Testa em Pé / Tríceps Testa no Banco Inclinado
-Abdominal Elevação de Pernas com Halter ou Caneleira / Abdominal Elevação de Pernas na Paralela / Abdominal na Barra Fixa
+Abdominal Elevação de Pernas com Halter ou Caneleira / Abdominal Elevação de Pernas na Paralela / Abdominal na Barra Fixa / Abdominal Elevação de Pernas com Halter/Caneleira / Abdominal Elevação de Pernas com Halter
 Abdominal na Máquina / Abdominal na Remada Baixa ou Cross / Abdominal no Banco Declinado
+# Curadoria GH 30/07/2026 (checklist das trocas — uso real dos alunos)
+Cadeira Flexora / Flexor Nórdico na Máquina
+Cadeira Abdutora / Cadeira Abdutora 45° em Pé / Abdução no Cross / Abdução Deitada com Mini Band
+Panturrilha em Pé / Panturrilha no Leg 45º
+Rosca Martelo com Halteres / Rosca Martelo no Cross
+Tríceps Supinado / Tríceps na Paralela
 `;
 
 // ════════════════════════════════════════════════════════════════════════
