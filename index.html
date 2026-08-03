@@ -10387,6 +10387,8 @@ async function _supSend(text, inp) {
     });
     const j = await r.json().catch(() => ({}));
     ok = !!(j && j.success);
+    // marca que ESTE aluno usa o suporte: só a partir daqui o boot checa resposta nova
+    if (ok) { try { localStorage.setItem('gh_sup_used_' + SHEET_ID, '1'); } catch (_) {} }
   } catch (_) { ok = false; }
   if (!ok && box) {
     const err = document.createElement('div');
@@ -14198,20 +14200,34 @@ function _sendAppPing() {
   } catch (_) {}
 }
 
-// AVISO GLOBAL (ex.: número de suporte suspenso): texto vem da célula AVISOS!A2 da mestre a cada
-// abertura — ligar/desligar não precisa de deploy. Dispensável por conteúdo (texto novo reaparece).
+// AVISO GLOBAL (ex.: número de suporte suspenso): texto vem da célula AVISOS!A2 da mestre.
+// Ligar/desligar não precisa de deploy. Dispensável por conteúdo (texto novo reaparece).
+// CACHE LOCAL de 10 min: pinta na hora do localStorage e só consulta o Apps Script quando
+// o cache venceu. Sem isso era 1 chamada em TODA abertura de TODO aluno, e o servidor
+// engasgou na fila de execuções (2026-08-03). Mudança de texto propaga em até 10 min.
+function _avisoRender_(txt) {
+  const b = document.getElementById('avisoGlobalBanner');
+  if (!b) return;
+  if (!txt) { b.style.display = 'none'; return; }
+  let h = 0; for (let i = 0; i < txt.length; i++) h = (h * 31 + txt.charCodeAt(i)) >>> 0;
+  if (localStorage.getItem('gh_avisoglobal_off') === String(h)) return;
+  b.dataset.hash = String(h);
+  document.getElementById('avisoGlobalTxt').textContent = txt;
+  b.style.display = 'block';
+}
 async function loadAvisoGlobal() {
+  let cache = null;
+  try { cache = JSON.parse(localStorage.getItem('gh_aviso_cache') || 'null'); } catch (_) {}
+  if (cache && typeof cache.texto === 'string') {
+    _avisoRender_(cache.texto);
+    if (Date.now() - (cache.ts || 0) < 10 * 60 * 1000) return;   // fresco: nem chama o servidor
+  }
   try {
     const j = await (await fetch(LOG_ENDPOINT + '?action=aviso_global&_=' + Date.now(), { cache: 'no-store' })).json();
+    if (!j || j.ok === false) return;   // erro do servidor: fica com o que o cache mostrou
     const txt = (j && j.texto) ? String(j.texto).trim() : '';
-    const b = document.getElementById('avisoGlobalBanner');
-    if (!b) return;
-    if (!txt) { b.style.display = 'none'; return; }
-    let h = 0; for (let i = 0; i < txt.length; i++) h = (h * 31 + txt.charCodeAt(i)) >>> 0;
-    if (localStorage.getItem('gh_avisoglobal_off') === String(h)) return;
-    b.dataset.hash = String(h);
-    document.getElementById('avisoGlobalTxt').textContent = txt;
-    b.style.display = 'block';
+    try { localStorage.setItem('gh_aviso_cache', JSON.stringify({ ts: Date.now(), texto: txt })); } catch (_) {}
+    _avisoRender_(txt);
   } catch (_) {}
 }
 function dismissAvisoGlobal() {
@@ -14221,7 +14237,12 @@ function dismissAvisoGlobal() {
 if (SHEET_ID && TAB_NAME) {
   _sendAppPing(); // marca a abertura (independe de carregar treino/dieta)
   loadAvisoGlobal();
-  setTimeout(() => { try { _supFetch(); } catch (_) {} }, 2500); // suporte: resposta nova da equipe? acende a bolinha (depois do protocolo pintar)
+  // Suporte: checa resposta nova SÓ pra quem já usou a aba (flag local). Quem nunca mandou
+  // mensagem não tem thread, então a checagem seria uma chamada inútil ao Apps Script em
+  // TODA abertura de TODO aluno (a fila de execuções engasga o servidor, visto 2026-08-03).
+  if (localStorage.getItem('gh_sup_used_' + SHEET_ID)) {
+    setTimeout(() => { try { _supFetch(); } catch (_) {} }, 2500);
+  }
   // Modo aluno. ABERTURA INSTANTÂNEA (GH 2026-07-29): com cache do protocolo, renderiza
   // NA HORA do localStorage (zero tela preta) e revalida em background — só re-renderiza
   // se o protocolo mudou no Google. Sem cache (1ª visita), busca DIETA+TREINO em PARALELO
@@ -14298,19 +14319,20 @@ function initPainelGate() {
 }
 async function painelGateValidate_(tok, silent) {
   try {
-    var url = LOG_ENDPOINT + '?action=list_students&token=' + encodeURIComponent(tok) + '&_=' + Date.now();
+    // Valida na rota LEVE (suporte_threads lê uma aba minúscula, responde em ~1-2s).
+    // A antiga (list_students) varre a mestre inteira com 600+ alunos: chegou a levar
+    // 40s no login e o "Verificando…" parecia travado. A lista de alunos pra busca por
+    // nome carrega em BACKGROUND depois de entrar (loadTrainerStudents cuida do cache).
+    var url = LOG_ENDPOINT + '?action=suporte_threads&token=' + encodeURIComponent(tok) + '&_=' + Date.now();
     var resp = await fetch(url, { cache: 'no-store' });
     var j = await resp.json();
-    if (j && j.students) {
+    if (j && j.ok) {
       localStorage.setItem('gh_trainer_token', tok);
-      try {
-        var ord = j.students.slice().sort(function (a, b) { return a.n.localeCompare(b.n); });
-        localStorage.setItem(TRAINER_CACHE_KEY, JSON.stringify({ ts: Date.now(), students: ord }));
-      } catch (e) {}
       _revelaPainel_();
+      try { loadTrainerStudents(false); } catch (e) {}   // aquece a busca por nome sem travar o login
       return true;
     }
-    // resposta válida porém sem students = senha errada
+    // resposta válida porém sem ok = senha errada
     localStorage.removeItem('gh_trainer_token');
     return false;
   } catch (e) {
@@ -14325,7 +14347,7 @@ async function painelGateSubmit() {
   var err = document.getElementById('painelGateErr');
   var btn = document.getElementById('painelGateBtn');
   if (!v) { err.textContent = 'Digite a senha'; return; }
-  err.textContent = 'Verificando…'; err.style.color = '#888';
+  err.textContent = 'Verificando… (pode levar uns segundos, não fecha)'; err.style.color = '#888';
   if (btn) { btn.disabled = true; btn.textContent = '…'; }
   var ok = await painelGateValidate_(v, false);
   if (btn) { btn.disabled = false; btn.textContent = 'Entrar'; }
