@@ -2568,6 +2568,12 @@
   <div class="last-mod" id="esforcoAlvoBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:0.3px;">💪 Esforço: <span id="esforcoAlvoValue" style="color:var(--gold);font-weight:600;"></span><div id="esforcoAlvoTexto" style="display:none;font-size:10.5px;color:#8d8579;font-weight:400;margin-top:2px;line-height:1.4;"></div></div>
 </div>
 
+<!-- ══ AVISO GLOBAL (célula AVISOS!A2 da mestre; controlado sem deploy) ══ -->
+<div id="avisoGlobalBanner" style="display:none;background:linear-gradient(180deg,#2a1f10,#1d1710);border-bottom:1px solid #6b5324;padding:12px 40px 12px 14px;position:relative;">
+  <span id="avisoGlobalTxt" style="color:#e8d9ac;font-size:13px;line-height:1.55;display:block;"></span>
+  <button onclick="dismissAvisoGlobal()" aria-label="Fechar" style="position:absolute;top:8px;right:10px;background:none;border:none;color:#8d8579;font-size:20px;cursor:pointer;line-height:1;">&times;</button>
+</div>
+
 <!-- ══ AVISO DE REAJUSTE / AJUSTE NO PROTOCOLO (substitui o hook do WhatsApp) ══ -->
 <div id="protoAviso" class="proto-aviso" style="display:none;">
   <span class="proto-aviso-ic" id="protoAvisoIc"></span>
@@ -13881,8 +13887,29 @@ function _sendAppPing() {
   } catch (_) {}
 }
 
+// AVISO GLOBAL (ex.: número de suporte suspenso): texto vem da célula AVISOS!A2 da mestre a cada
+// abertura — ligar/desligar não precisa de deploy. Dispensável por conteúdo (texto novo reaparece).
+async function loadAvisoGlobal() {
+  try {
+    const j = await (await fetch(LOG_ENDPOINT + '?action=aviso_global&_=' + Date.now(), { cache: 'no-store' })).json();
+    const txt = (j && j.texto) ? String(j.texto).trim() : '';
+    const b = document.getElementById('avisoGlobalBanner');
+    if (!b) return;
+    if (!txt) { b.style.display = 'none'; return; }
+    let h = 0; for (let i = 0; i < txt.length; i++) h = (h * 31 + txt.charCodeAt(i)) >>> 0;
+    if (localStorage.getItem('gh_avisoglobal_off') === String(h)) return;
+    b.dataset.hash = String(h);
+    document.getElementById('avisoGlobalTxt').textContent = txt;
+    b.style.display = 'block';
+  } catch (_) {}
+}
+function dismissAvisoGlobal() {
+  const b = document.getElementById('avisoGlobalBanner');
+  if (b) { try { localStorage.setItem('gh_avisoglobal_off', b.dataset.hash || '1'); } catch (_) {} b.style.display = 'none'; }
+}
 if (SHEET_ID && TAB_NAME) {
   _sendAppPing(); // marca a abertura (independe de carregar treino/dieta)
+  loadAvisoGlobal();
   // Modo aluno. ABERTURA INSTANTÂNEA (GH 2026-07-29): com cache do protocolo, renderiza
   // NA HORA do localStorage (zero tela preta) e revalida em background — só re-renderiza
   // se o protocolo mudou no Google. Sem cache (1ª visita), busca DIETA+TREINO em PARALELO
