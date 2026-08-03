@@ -2792,7 +2792,7 @@
       </div>
       <div class="chat-msgs" id="atMsgs" style="height:52vh;max-height:52vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:10px;background:#161616;border:1px solid #262626;border-radius:12px;"></div>
       <div style="display:flex;gap:8px;align-items:flex-end;margin-top:10px;">
-        <textarea id="atReplyInput" rows="1" maxlength="1200" placeholder="Responder como Equipe GH…" oninput="_chatAutogrow(this)" style="flex:1;padding:10px;background:#222;border:1px solid var(--gold-dim);color:var(--white);border-radius:10px;font-size:13px;font-family:inherit;line-height:1.4;box-sizing:border-box;resize:none;max-height:100px;overflow-y:auto;"></textarea>
+        <textarea id="atReplyInput" rows="1" maxlength="1200" placeholder="Responder (o aluno vê como GH)…" oninput="_chatAutogrow(this)" style="flex:1;padding:10px;background:#222;border:1px solid var(--gold-dim);color:var(--white);border-radius:10px;font-size:13px;font-family:inherit;line-height:1.4;box-sizing:border-box;resize:none;max-height:100px;overflow-y:auto;"></textarea>
         <button class="admin-btn" id="atReplyBtn" style="width:auto;padding:10px 16px;margin:0;" onclick="_atReply()">Enviar</button>
       </div>
       <div id="atThreadStatus" style="color:#888;font-size:11px;min-height:14px;margin-top:6px;"></div>
@@ -10057,12 +10057,12 @@ function setChatMode(m) {
   const inp = document.getElementById('chatInput');
   if (inp) inp.placeholder = (_chatMode === 'ajuste')
     ? 'Descreve o ajuste (ex: trocar exercício, mudar refeição)…'
-    : (_chatMode === 'suporte' ? 'Escreve tua mensagem pra equipe…' : 'Pergunta o que quiser…');
+    : (_chatMode === 'suporte' ? 'Escreve tua mensagem pro GH…' : 'Pergunta o que quiser…');
   // aba Suporte tem conversa própria (com a EQUIPE, não com a IA): título/intro trocam,
   // miolo troca e o polling liga/desliga
   const tit = document.getElementById('chatTitulo');
   const intro = document.getElementById('chatIntro');
-  if (tit) tit.textContent = (_chatMode === 'suporte') ? 'Suporte da Equipe GH' : 'Assistente de IA do GH';
+  if (tit) tit.textContent = (_chatMode === 'suporte') ? 'Suporte direto com o GH' : 'Assistente de IA do GH';
   if (intro) intro.style.display = (_chatMode === 'suporte') ? 'none' : '';
   if (_chatMode === 'suporte') { _supRender(); _supFetch(); _supPollStart(); }
   else { _supPollStop(); _chatRenderAll(); }
@@ -10318,7 +10318,7 @@ function _supHora(ts) {
 function _supBubble(m) {
   const div = document.createElement('div');
   div.className = 'chat-msg ' + (m.autor === 'aluno' ? 'user' : 'bot');
-  div.innerHTML = _chatEsc(m.texto) + '<span class="sup-hora">' + (m.autor === 'equipe' ? 'Equipe GH · ' : '') + _supHora(m.ts) + '</span>';
+  div.innerHTML = _chatEsc(m.texto) + '<span class="sup-hora">' + (m.autor === 'equipe' ? 'GH · ' : '') + _supHora(m.ts) + '</span>';
   return div;
 }
 function _supRender() {
@@ -10326,7 +10326,7 @@ function _supRender() {
   if (!box) return;
   box.innerHTML = '';
   if (!_supMsgs.length) {
-    box.appendChild(_chatBubble('assistant', 'Aqui tu fala direto com a EQUIPE do GH (gente de verdade, não IA) 🎧\n\nManda tua mensagem que a gente responde o quanto antes. A resposta aparece aqui mesmo no app.'));
+    box.appendChild(_chatBubble('assistant', 'Aqui tu fala direto comigo (gente de verdade, não IA) 🎧\n\nManda tua mensagem que eu respondo o quanto antes. A resposta aparece aqui mesmo no app.'));
     return;
   }
   _supMsgs.forEach(m => box.appendChild(_supBubble(m)));
