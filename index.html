@@ -744,9 +744,13 @@
   .chat-typing span { display: inline-block; animation: chatBlink 1.2s infinite both; }
   /* Abas dúvida/ajuste: o aluno escolhe o tipo (a classificação por IA erra em casos-limite) */
   .chat-mode-tabs { display: flex; border: 1px solid var(--gold-dim); border-radius: 10px; overflow: hidden; margin-bottom: 8px; }
-  .chat-mode-tab { flex: 1; padding: 9px 8px; background: transparent; border: none; color: #aaa; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background .15s, color .15s; }
+  .chat-mode-tab { flex: 1; padding: 9px 8px; background: transparent; border: none; color: #aaa; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background .15s, color .15s; position: relative; }
   .chat-mode-tab + .chat-mode-tab { border-left: 1px solid var(--gold-dim); }
   .chat-mode-tab.active { background: var(--gold); color: #111; }
+  /* Bolinha de "resposta nova da equipe" (aba Suporte + botão flutuante) */
+  .sup-dot { display: none; width: 8px; height: 8px; border-radius: 50%; background: #e74c3c; position: absolute; top: 5px; right: 7px; box-shadow: 0 0 0 2px rgba(0,0,0,.4); }
+  .sup-dot.on { display: block; }
+  .chat-msg .sup-hora { display: block; font-size: 9.5px; opacity: .55; margin-top: 3px; }
   .chat-typing span:nth-child(2) { animation-delay: 0.2s; }
   .chat-typing span:nth-child(3) { animation-delay: 0.4s; }
   @keyframes chatBlink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
@@ -2665,6 +2669,7 @@
     <button class="admin-tab active" onclick="switchAdminTab('link')">LINK</button>
     <button class="admin-tab" onclick="switchAdminTab('dieta')">EDITAR DIETA</button>
     <button class="admin-tab" onclick="switchAdminTab('treino')">EDITAR TREINO</button>
+    <button class="admin-tab" style="position:relative;" onclick="switchAdminTab('atendimento')">ATENDIMENTO<span class="sup-dot" id="atDotTab" style="top:3px;right:3px;"></span></button>
   </div>
 
   <div class="admin-field">
@@ -2750,6 +2755,32 @@
       <button class="admin-btn" onclick="copyTreinoCSV()">COPIAR CSV</button>
       <button class="admin-btn" style="background:#4CAF50;border-color:#4CAF50;" onclick="publishToSheet('TREINO')">PUBLICAR NA PLANILHA</button>
       <span class="ed-status" id="treinoStatus"></span>
+    </div>
+  </div>
+
+  <!-- ── Tab: Atendimento (chat de suporte com os alunos; espelho da aba SUPORTE_CHAT) ── -->
+  <div id="adminTabAtendimento" style="display:none;">
+    <!-- Lista de conversas -->
+    <div id="atListView">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <span class="ed-section-label" style="margin:0;">CONVERSAS DE SUPORTE</span>
+        <button class="admin-btn secondary" style="width:auto;padding:6px 12px;font-size:11px;margin:0;" onclick="_atRefresh()">ATUALIZAR</button>
+      </div>
+      <div id="atThreads" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <div id="atListStatus" style="color:#888;font-size:12px;text-align:center;padding:14px 0;">Carregando conversas…</div>
+    </div>
+    <!-- Conversa aberta -->
+    <div id="atThreadView" style="display:none;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <button class="admin-btn secondary" style="width:auto;padding:6px 12px;font-size:11px;margin:0;" onclick="_atBack()">← VOLTAR</button>
+        <span id="atThreadNome" style="color:var(--gold);font-weight:700;font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+      </div>
+      <div class="chat-msgs" id="atMsgs" style="height:52vh;max-height:52vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:10px;background:#161616;border:1px solid #262626;border-radius:12px;"></div>
+      <div style="display:flex;gap:8px;align-items:flex-end;margin-top:10px;">
+        <textarea id="atReplyInput" rows="1" maxlength="1200" placeholder="Responder como Equipe GH…" oninput="_chatAutogrow(this)" style="flex:1;padding:10px;background:#222;border:1px solid var(--gold-dim);color:var(--white);border-radius:10px;font-size:13px;font-family:inherit;line-height:1.4;box-sizing:border-box;resize:none;max-height:100px;overflow-y:auto;"></textarea>
+        <button class="admin-btn" id="atReplyBtn" style="width:auto;padding:10px 16px;margin:0;" onclick="_atReply()">Enviar</button>
+      </div>
+      <div id="atThreadStatus" style="color:#888;font-size:11px;min-height:14px;margin-top:6px;"></div>
     </div>
   </div>
 </div>
@@ -4073,8 +4104,8 @@
     <button type="button" class="float-opt" onclick="event.stopPropagation(); openFotosModal()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span><span>Minhas fotos do reajuste</span>
     </button>
-    <button type="button" class="float-opt" onclick="event.stopPropagation(); openChatModal()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></span><span>Tirar dúvida ou pedir ajuste</span>
+    <button type="button" class="float-opt" style="position:relative;" onclick="event.stopPropagation(); openChatModal()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></span><span>Dúvida, ajuste ou suporte</span><span class="sup-dot" id="supDotOpt" style="top:50%;transform:translateY(-50%);right:10px;"></span>
     </button>
 
     <!-- BASE (perto do dedo) — Instalar app destacado. Recarregar/Apagar subiram pro
@@ -4083,7 +4114,7 @@
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span><span>Instalar app na tela inicial</span>
     </button>
   </div>
-  <button class="float-btn" id="floatBtn" onclick="toggleFloatMenu()" title="Menu rápido"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></button>
+  <button class="float-btn" id="floatBtn" onclick="toggleFloatMenu()" title="Menu rápido" style="position:relative;"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span class="sup-dot" id="supDotFab" style="top:4px;right:4px;"></span></button>
 </div>
 
 <!-- Modal de instruções de instalação -->
@@ -4321,8 +4352,8 @@
 <!-- ══ CHAT ASSISTENTE ══ -->
 <div class="te-modal-overlay" id="chatModal" onclick="closeChatOnBg(event)">
   <div class="te-modal-box" style="max-width:520px;height:88vh;max-height:88vh;display:flex;flex-direction:column;">
-    <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> Assistente de IA do GH</h3>
-    <p style="color:#aaa;font-size:11px;margin:0 0 10px;line-height:1.5;border-bottom:1px solid #222;padding-bottom:8px;">
+    <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> <span id="chatTitulo">Assistente de IA do GH</span></h3>
+    <p id="chatIntro" style="color:#aaa;font-size:11px;margin:0 0 10px;line-height:1.5;border-bottom:1px solid #222;padding-bottom:8px;">
       Sou um <b>assistente de IA</b>, treinado pelo GH pra tirar tuas dúvidas rápidas de <b>treino, dieta e suplementação</b>. Conheço o <b>teu protocolo</b>.<br>
       <b>Exames, hormônios e peptídeos</b> não passam por aqui. Esses são só no <a href="https://wa.me/555520131470" target="_blank" rel="noopener" style="color:#25D366;text-decoration:underline;font-weight:600;">WhatsApp de suporte</a>, onde o GH valida e te orienta direto. Foto pra avaliar ou dúvida mais robusta, também por lá <b>(de segunda à sexta, em horário comercial)</b>.
     </p>
@@ -4330,6 +4361,7 @@
     <div class="chat-mode-tabs" id="chatModeTabs">
       <button type="button" class="chat-mode-tab active" id="chatModeDuvida" onclick="setChatMode('duvida')">💬 Tirar dúvida</button>
       <button type="button" class="chat-mode-tab" id="chatModeAjuste" onclick="setChatMode('ajuste')">🔧 Pedir ajuste</button>
+      <button type="button" class="chat-mode-tab" id="chatModeSuporte" onclick="setChatMode('suporte')">🎧 Suporte<span class="sup-dot" id="supDotTab"></span></button>
     </div>
     <div style="display:flex;gap:8px;align-items:flex-end;margin-top:10px;">
       <textarea id="chatInput" rows="1" maxlength="600" placeholder="Pergunta o que quiser…" oninput="_chatAutogrow(this)" onkeydown="_chatKeydown(event)" style="flex:1;padding:10px;background:#222;border:1px solid var(--gold-dim);color:var(--white);border-radius:10px;font-size:13px;font-family:inherit;line-height:1.4;box-sizing:border-box;resize:none;max-height:100px;overflow-y:auto;"></textarea>
@@ -10000,15 +10032,25 @@ let _chatMode = 'duvida'; // 'duvida' (assistente responde) | 'ajuste' (registra
 // Aluno alterna entre tirar dúvida e pedir ajuste. Determinístico: tira a decisão da IA
 // (que classifica errado casos-limite tipo "posso tomar sopa?" → dúvida virando ajuste).
 function setChatMode(m) {
-  _chatMode = (m === 'ajuste') ? 'ajuste' : 'duvida';
+  _chatMode = (m === 'ajuste') ? 'ajuste' : (m === 'suporte' ? 'suporte' : 'duvida');
   const bD = document.getElementById('chatModeDuvida');
   const bA = document.getElementById('chatModeAjuste');
+  const bS = document.getElementById('chatModeSuporte');
   if (bD) bD.classList.toggle('active', _chatMode === 'duvida');
   if (bA) bA.classList.toggle('active', _chatMode === 'ajuste');
+  if (bS) bS.classList.toggle('active', _chatMode === 'suporte');
   const inp = document.getElementById('chatInput');
   if (inp) inp.placeholder = (_chatMode === 'ajuste')
     ? 'Descreve o ajuste (ex: trocar exercício, mudar refeição)…'
-    : 'Pergunta o que quiser…';
+    : (_chatMode === 'suporte' ? 'Escreve tua mensagem pra equipe…' : 'Pergunta o que quiser…');
+  // aba Suporte tem conversa própria (com a EQUIPE, não com a IA): título/intro trocam,
+  // miolo troca e o polling liga/desliga
+  const tit = document.getElementById('chatTitulo');
+  const intro = document.getElementById('chatIntro');
+  if (tit) tit.textContent = (_chatMode === 'suporte') ? 'Suporte da Equipe GH' : 'Assistente de IA do GH';
+  if (intro) intro.style.display = (_chatMode === 'suporte') ? 'none' : '';
+  if (_chatMode === 'suporte') { _supRender(); _supFetch(); _supPollStart(); }
+  else { _supPollStop(); _chatRenderAll(); }
 }
 
 function _chatKey() { return 'gh_chat_' + (typeof SHEET_ID !== 'undefined' ? SHEET_ID : 'x'); }
@@ -10219,6 +10261,129 @@ function _chatAutogrow(el) {
 function _chatKeydown(e) {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
 }
+// ══ ABA SUPORTE: conversa com a EQUIPE (humana) via aba SUPORTE_CHAT da mestre ══
+// Criada 2026-08-03 (número do WhatsApp de suporte suspenso; vira canal permanente).
+// O aluno manda por aqui, a equipe responde pela tela ATENDIMENTO do Painel do
+// Treinador. Polling só com o modal aberto na aba Suporte; fora dela, 1 checagem
+// no boot acende a bolinha de resposta nova (visto = localStorage por aluno).
+let _supMsgs = [];
+let _supTimer = null;
+let _supBusy = false;
+
+function _supSeenKey() { return 'gh_sup_seen_' + (typeof SHEET_ID !== 'undefined' ? SHEET_ID : 'x'); }
+function _supLastEquipeTs() {
+  let t = 0;
+  for (const m of _supMsgs) if (m.autor === 'equipe' && m.ts > t) t = m.ts;
+  return t;
+}
+function _supHasUnread() {
+  const seen = Number(localStorage.getItem(_supSeenKey()) || 0);
+  return _supLastEquipeTs() > seen;
+}
+function _supMarkSeen() {
+  const t = _supLastEquipeTs();
+  if (t) { try { localStorage.setItem(_supSeenKey(), String(t)); } catch (_) {} }
+  _supBadgeUpdate();
+}
+function _supBadgeUpdate() {
+  const on = _supHasUnread();
+  ['supDotTab', 'supDotOpt', 'supDotFab'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('on', on);
+  });
+}
+function _supHora(ts) {
+  if (!ts) return '';
+  const d = new Date(ts), hoje = new Date();
+  const mesmoDia = d.getDate() === hoje.getDate() && d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear();
+  const dd = String(d.getDate()).padStart(2, '0'), mm = String(d.getMonth() + 1).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0'), mi = String(d.getMinutes()).padStart(2, '0');
+  return (mesmoDia ? '' : dd + '/' + mm + ' ') + hh + ':' + mi;
+}
+function _supBubble(m) {
+  const div = document.createElement('div');
+  div.className = 'chat-msg ' + (m.autor === 'aluno' ? 'user' : 'bot');
+  div.innerHTML = _chatEsc(m.texto) + '<span class="sup-hora">' + (m.autor === 'equipe' ? 'Equipe GH · ' : '') + _supHora(m.ts) + '</span>';
+  return div;
+}
+function _supRender() {
+  const box = document.getElementById('chatMsgs');
+  if (!box) return;
+  box.innerHTML = '';
+  if (!_supMsgs.length) {
+    box.appendChild(_chatBubble('assistant', 'Aqui tu fala direto com a EQUIPE do GH (gente de verdade, não IA) 🎧\n\nManda tua mensagem que a gente responde o quanto antes. A resposta aparece aqui mesmo no app.'));
+    return;
+  }
+  _supMsgs.forEach(m => box.appendChild(_supBubble(m)));
+  _chatScrollBottom();
+  _supMarkSeen();
+}
+async function _supFetch() {
+  if (typeof SHEET_ID === 'undefined' || !SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
+  try {
+    const r = await fetch(LOG_ENDPOINT + '?action=suporte_msgs&id=' + encodeURIComponent(SHEET_ID) + '&_=' + Date.now(), { cache: 'no-store' });
+    const j = await r.json();
+    if (j && j.ok && Array.isArray(j.msgs)) {
+      const antes = _supMsgs.length;
+      _supMsgs = j.msgs;
+      const modalAberto = document.getElementById('chatModal')?.classList.contains('show');
+      if (modalAberto && _chatMode === 'suporte') {
+        if (_supMsgs.length !== antes) _supRender();
+        else _supMarkSeen();
+      } else {
+        _supBadgeUpdate();   // fora da aba: só acende/apaga a bolinha
+      }
+    }
+  } catch (_) {}
+}
+function _supPollStart() {
+  _supPollStop();
+  _supTimer = setInterval(() => {
+    const aberto = document.getElementById('chatModal')?.classList.contains('show');
+    if (!aberto || _chatMode !== 'suporte') { _supPollStop(); return; }
+    _supFetch();
+  }, 9000);
+}
+function _supPollStop() { if (_supTimer) { clearInterval(_supTimer); _supTimer = null; } }
+async function _supSend(text, inp) {
+  if (_supBusy) return;
+  _supBusy = true;
+  const sendBtn = document.getElementById('chatSendBtn');
+  if (sendBtn) sendBtn.disabled = true;
+  if (inp) { inp.value = ''; _chatAutogrow(inp); }
+  const box = document.getElementById('chatMsgs');
+  if (!_supMsgs.length && box) box.innerHTML = '';   // tira a saudação na primeira msg
+  const msg = { ts: Date.now(), autor: 'aluno', texto: text };
+  _supMsgs.push(msg);
+  if (box) { box.appendChild(_supBubble(msg)); _chatScrollBottom(); }
+  let ok = false;
+  try {
+    const r = await fetch(LOG_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        type: 'suporte_msg',
+        sheetId: SHEET_ID,
+        studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+        autor: 'aluno',
+        texto: text
+      }),
+      redirect: 'follow'
+    });
+    const j = await r.json().catch(() => ({}));
+    ok = !!(j && j.success);
+  } catch (_) { ok = false; }
+  if (!ok && box) {
+    const err = document.createElement('div');
+    err.className = 'chat-typing';
+    err.textContent = '⚠️ Não consegui enviar agora. Confere a internet e manda de novo.';
+    box.appendChild(err); _chatScrollBottom();
+  }
+  _supBusy = false;
+  if (sendBtn) sendBtn.disabled = false;
+  if (inp) inp.focus();
+}
+
 function closeChatOnBg(e) { if (e.target.id === 'chatModal') teHide('chatModal'); }
 
 // Banner do assistente no topo do card. Aparece sempre que o aluno abre
@@ -10237,7 +10402,8 @@ function openChatModal() {
   document.getElementById('floatBtn').classList.remove('open');
   if (!_chatLoaded) { _chatLoadHistory(); _chatLoaded = true; }
   _chatRenderAll();
-  setChatMode('duvida'); // sempre abre em "tirar dúvida" (reseta a aba + placeholder)
+  // abre em "tirar dúvida", EXCETO se a equipe respondeu no suporte (aí cai direto na resposta)
+  setChatMode(_supHasUnread() ? 'suporte' : 'duvida');
   teShow('chatModal');
   setTimeout(() => { const inp = document.getElementById('chatInput'); if (inp) inp.focus(); _chatScrollBottom(); }, 120);
 }
@@ -10251,6 +10417,7 @@ async function sendChat() {
     alert('Abre o app pelo teu link pessoal pra usar o assistente.');
     return;
   }
+  if (_chatMode === 'suporte') { _supSend(text, inp); return; }   // conversa com a EQUIPE, caminho próprio
   _chatBusy = true;
   const sendBtn = document.getElementById('chatSendBtn');
   sendBtn.disabled = true;
@@ -13232,14 +13399,133 @@ let editorData = [];
 const APPS_SCRIPT_URL_KEY = 'gh_editor_script_url';
 
 function switchAdminTab(tab) {
-  ['Link','Dieta','Treino'].forEach(t => {
+  ['Link','Dieta','Treino','Atendimento'].forEach(t => {
     const el = document.getElementById('adminTab' + t);
     if (el) el.style.display = t.toLowerCase() === tab ? 'block' : 'none';
   });
   const tabs = document.querySelectorAll('.admin-tab');
-  const keys = ['link','dieta','treino'];
+  const keys = ['link','dieta','treino','atendimento'];
   tabs.forEach((btn, i) => btn.classList.toggle('active', keys[i] === tab));
+  // Atendimento (chat de suporte): carrega/atualiza as conversas ao entrar; para o polling ao sair
+  if (tab === 'atendimento') { _atRefresh(); _atPollStart(); } else { _atPollStop(); }
 }
+
+// ══ ATENDIMENTO (painel do treinador): a equipe responde o chat de suporte dos alunos ══
+// Espelho da aba SUPORTE_CHAT da mestre, via rotas suporte_threads / suporte_thread /
+// suporte_msg (autor 'equipe' exige o TRAINER_TOKEN — mesma senha do portão do painel).
+let _atThreads = [];
+let _atOpenId = '';
+let _atOpenNome = '';
+let _atTimer = null;
+let _atBusy = false;
+
+function _atToken_() { return localStorage.getItem('gh_trainer_token') || ''; }
+function _atRefresh() { _atOpenId ? _atFetchThread() : _atFetchThreads(); }
+async function _atFetchThreads() {
+  const st = document.getElementById('atListStatus');
+  try {
+    const r = await fetch(LOG_ENDPOINT + '?action=suporte_threads&token=' + encodeURIComponent(_atToken_()) + '&_=' + Date.now(), { cache: 'no-store' });
+    const j = await r.json();
+    if (j && j.ok && Array.isArray(j.threads)) {
+      _atThreads = j.threads;
+      _atRenderThreads();
+    } else if (st) st.textContent = (j && j.error === 'unauthorized') ? 'Sessão expirada: sai e entra de novo no painel.' : 'Erro ao carregar as conversas.';
+  } catch (_) { if (st) st.textContent = 'Erro de rede ao carregar.'; }
+}
+function _atRenderThreads() {
+  const box = document.getElementById('atThreads');
+  const st = document.getElementById('atListStatus');
+  if (!box) return;
+  box.innerHTML = '';
+  let naoLidasTotal = 0;
+  _atThreads.forEach(t => {
+    naoLidasTotal += t.naoLidas || 0;
+    const el = document.createElement('div');
+    el.style.cssText = 'background:#1b1b1b;border:1px solid ' + (t.naoLidas ? 'var(--gold)' : '#2a2a2a') + ';border-radius:12px;padding:10px 12px;cursor:pointer;';
+    el.onclick = () => _atOpenThread(t.id, t.nome);
+    const prev = (t.ultAutor === 'equipe' ? 'Equipe: ' : '') + (t.ultMsg || '');
+    el.innerHTML = '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">'
+      + '<span style="color:' + (t.naoLidas ? 'var(--gold)' : '#ddd') + ';font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _chatEsc(t.nome || t.id) + '</span>'
+      + (t.naoLidas
+        ? '<span style="background:var(--gold);color:#111;font-size:10px;font-weight:800;border-radius:999px;padding:2px 8px;flex:none;">' + t.naoLidas + ' nova' + (t.naoLidas > 1 ? 's' : '') + '</span>'
+        : '<span style="color:#666;font-size:10px;flex:none;">' + _supHora(t.ts) + '</span>')
+      + '</div>'
+      + '<div style="color:#999;font-size:11.5px;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _chatEsc(prev) + '</div>';
+    box.appendChild(el);
+  });
+  if (st) st.textContent = _atThreads.length ? '' : 'Nenhuma conversa ainda. Quando um aluno mandar mensagem na aba Suporte do chat do app, ela aparece aqui.';
+  const dot = document.getElementById('atDotTab');
+  if (dot) dot.classList.toggle('on', naoLidasTotal > 0);
+}
+function _atOpenThread(id, nome) {
+  _atOpenId = id; _atOpenNome = nome || id;
+  document.getElementById('atListView').style.display = 'none';
+  document.getElementById('atThreadView').style.display = 'block';
+  document.getElementById('atThreadNome').textContent = _atOpenNome;
+  document.getElementById('atMsgs').innerHTML = '<div class="chat-typing">carregando…</div>';
+  _atFetchThread();
+}
+async function _atFetchThread() {
+  if (!_atOpenId) return;
+  try {
+    const r = await fetch(LOG_ENDPOINT + '?action=suporte_thread&id=' + encodeURIComponent(_atOpenId) + '&token=' + encodeURIComponent(_atToken_()) + '&_=' + Date.now(), { cache: 'no-store' });
+    const j = await r.json();
+    if (j && j.ok && Array.isArray(j.msgs)) _atRenderThread(j.msgs);
+  } catch (_) {}
+}
+function _atRenderThread(msgs) {
+  const box = document.getElementById('atMsgs');
+  if (!box) return;
+  box.innerHTML = '';
+  if (!msgs.length) box.innerHTML = '<div class="chat-typing">sem mensagens ainda</div>';
+  msgs.forEach(m => {
+    const div = document.createElement('div');
+    // perspectiva invertida: no painel, a EQUIPE fica à direita (dourado) e o aluno à esquerda
+    div.className = 'chat-msg ' + (m.autor === 'equipe' ? 'user' : 'bot');
+    div.innerHTML = _chatEsc(m.texto) + '<span class="sup-hora">' + (m.autor === 'equipe' ? 'Equipe · ' : '') + _supHora(m.ts) + '</span>';
+    box.appendChild(div);
+  });
+  box.scrollTop = box.scrollHeight;
+}
+function _atBack() {
+  _atOpenId = ''; _atOpenNome = '';
+  document.getElementById('atThreadView').style.display = 'none';
+  document.getElementById('atListView').style.display = 'block';
+  _atFetchThreads();
+}
+async function _atReply() {
+  if (_atBusy || !_atOpenId) return;
+  const inp = document.getElementById('atReplyInput');
+  const txt = (inp.value || '').trim();
+  if (!txt) return;
+  _atBusy = true;
+  const btn = document.getElementById('atReplyBtn');
+  const st = document.getElementById('atThreadStatus');
+  if (btn) btn.disabled = true;
+  if (st) st.textContent = 'Enviando…';
+  try {
+    const r = await fetch(LOG_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ type: 'suporte_msg', sheetId: _atOpenId, studentName: _atOpenNome, autor: 'equipe', token: _atToken_(), texto: txt }),
+      redirect: 'follow'
+    });
+    const j = await r.json().catch(() => ({}));
+    if (j && j.success) { inp.value = ''; _chatAutogrow(inp); if (st) st.textContent = ''; await _atFetchThread(); }
+    else if (st) st.textContent = 'Falhou: ' + ((j && j.error) || 'erro desconhecido');
+  } catch (_) { if (st) st.textContent = 'Erro de rede, tenta de novo.'; }
+  _atBusy = false;
+  if (btn) btn.disabled = false;
+}
+function _atPollStart() {
+  _atPollStop();
+  _atTimer = setInterval(() => {
+    const tabEl = document.getElementById('adminTabAtendimento');
+    if (!tabEl || tabEl.style.display === 'none') { _atPollStop(); return; }
+    _atRefresh();
+  }, 12000);
+}
+function _atPollStop() { if (_atTimer) { clearInterval(_atTimer); _atTimer = null; } }
 
 function saveScriptUrl(url) {
   localStorage.setItem(APPS_SCRIPT_URL_KEY, url.trim());
@@ -13910,6 +14196,7 @@ function dismissAvisoGlobal() {
 if (SHEET_ID && TAB_NAME) {
   _sendAppPing(); // marca a abertura (independe de carregar treino/dieta)
   loadAvisoGlobal();
+  setTimeout(() => { try { _supFetch(); } catch (_) {} }, 2500); // suporte: resposta nova da equipe? acende a bolinha (depois do protocolo pintar)
   // Modo aluno. ABERTURA INSTANTÂNEA (GH 2026-07-29): com cache do protocolo, renderiza
   // NA HORA do localStorage (zero tela preta) e revalida em background — só re-renderiza
   // se o protocolo mudou no Google. Sem cache (1ª visita), busca DIETA+TREINO em PARALELO
@@ -13971,6 +14258,7 @@ if (SHEET_ID && TAB_NAME) {
 function _revelaPainel_() {
   var g = document.getElementById('painelGate'); if (g) g.style.display = 'none';
   var p = document.getElementById('adminPanel'); if (p) p.style.display = 'block';
+  try { _atFetchThreads(); } catch (_) {}   // acende a bolinha do ATENDIMENTO se tem msg não lida
 }
 function initPainelGate() {
   var gate = document.getElementById('painelGate');
