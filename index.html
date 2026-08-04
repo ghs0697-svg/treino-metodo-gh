@@ -765,6 +765,17 @@
   .at-row.unread .at-nome { color: #fff; font-weight: 800; }
   .at-row.unread .at-hora { color: #25D366; font-weight: 700; }
   .at-row.unread .at-prev { color: #c9c9c9; }
+  /* ── Minhas medidas (anamneses) dentro do Meu progresso ── */
+  .med-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid #26262c; border-radius: 10px; }
+  .med-table { border-collapse: collapse; min-width: 100%; white-space: nowrap; }
+  .med-table th, .med-table td { padding: 8px 11px; font-size: 12px; text-align: center; border-bottom: 1px solid #26262c; }
+  .med-table thead th { color: #9a9aa0; font-size: 10px; font-weight: 700; letter-spacing: .04em; background: #1c1c21; }
+  .med-table thead th .med-dt { display: block; color: #6e6e76; font-weight: 600; font-size: 9.5px; margin-top: 2px; letter-spacing: 0; }
+  .med-table td { color: #ddd; }
+  .med-table th:first-child, .med-table td:first-child { position: sticky; left: 0; background: #17171b; text-align: left; color: #bbb; font-weight: 600; z-index: 1; }
+  .med-table thead th:first-child { background: #1c1c21; }
+  .med-table td.med-delta { color: var(--gold); font-weight: 800; }
+  .med-table tbody tr:last-child td { border-bottom: none; }
   .chat-typing span:nth-child(2) { animation-delay: 0.2s; }
   .chat-typing span:nth-child(3) { animation-delay: 0.4s; }
   @keyframes chatBlink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
@@ -11806,7 +11817,9 @@ function openProgressoModal() {
   const items = _progCollect();
   const body = document.getElementById('progressoBody');
   if (!items.length) {
-    body.innerHTML = '<p style="color:#888;text-align:center;padding:34px 16px;font-size:13px;line-height:1.6;">Ainda sem cargas anotadas.<br>Registra o peso que tu usa em cada exercício<br>e tua evolução aparece aqui. 💪</p>';
+    // sem cargas ainda: as medidas das anamneses aparecem mesmo assim
+    body.innerHTML = '<p style="color:#888;text-align:center;padding:34px 16px;font-size:13px;line-height:1.6;">Ainda sem cargas anotadas.<br>Registra o peso que tu usa em cada exercício<br>e tua evolução aparece aqui. 💪</p><div id="medidasSec"></div>';
+    renderMedidas();
     return;
   }
   const streak = getStreak();
@@ -11879,7 +11892,9 @@ function openProgressoModal() {
     <p style="color:#7a7a82;font-size:10px;line-height:1.5;margin:11px 0 0;">O Método GH treina por <b style="color:#9a9aa0;">esforço</b> (até quase travar), não por %RM. Isso aqui é só pra você acompanhar tua força máxima estimada. 💪</p>
   </div>`;
 
+  html += '<div id="medidasSec"></div>';
   body.innerHTML = html;
+  renderMedidas();
 }
 // pré-preenche o peso com a carga registrada do exercício escolhido
 function _calc1rmPick(sel) {
@@ -11896,6 +11911,64 @@ function _calc1rm() {
   const oneRM = r === 1 ? w : w * (1 + r / 30);
   const val = Math.round(oneRM * 10) / 10;
   out.innerHTML = `<div style="color:#9a9aa0;font-size:11px;">Tua força máxima estimada</div><div style="color:var(--gold);font-size:25px;font-weight:800;line-height:1.15;">${val} ${getUnit()}</div>`;
+}
+
+// ══ Minhas medidas (anamneses) dentro do Meu progresso ══
+// Usa a linha do tempo que a action=medidas já monta (anamnese inicial + reajustes +
+// renovações). Ninguém registra nada à mão: entra sozinho quando o aluno preenche a
+// anamnese. Os pontos fonte 'app' (pesagem livre) ficam FORA da tabela: eles já têm
+// o gráfico de peso no Acompanhamento.
+let _medTL = null;   // cache da sessão (linha do tempo completa)
+const _MED_DEFS = [
+  ['peso', 'Peso', 'kg'], ['cintura', 'Cintura', 'cm'], ['abdomen', 'Abdômen', 'cm'],
+  ['quadril', 'Quadril', 'cm'], ['braco', 'Braço', 'cm'], ['coxa', 'Coxa', 'cm'], ['peitoral', 'Peitoral', 'cm']
+];
+function _medFmt(v) { return (v == null || isNaN(v)) ? '–' : String(Math.round(v * 10) / 10).replace('.', ','); }
+async function renderMedidas() {
+  const sec = document.getElementById('medidasSec');
+  if (!sec || typeof SHEET_ID === 'undefined' || !SHEET_ID) return;
+  if (_medTL === null) {
+    sec.innerHTML = '<div style="color:#7a7a82;font-size:11px;margin:14px 2px 4px;">carregando tuas medidas…</div>';
+    try {
+      const r = await fetch(LOG_ENDPOINT + '?action=medidas&id=' + encodeURIComponent(SHEET_ID), { redirect: 'follow' });
+      const j = await r.json().catch(() => ({}));
+      if (!j || !j.ok || !Array.isArray(j.pontos)) { sec.innerHTML = ''; return; }   // erro: some e tenta na próxima
+      _medTL = j.pontos;
+    } catch (_) { const s = document.getElementById('medidasSec'); if (s) s.innerHTML = ''; return; }
+  }
+  const sec2 = document.getElementById('medidasSec');   // o modal pode ter re-renderizado no meio
+  if (!sec2) return;
+  const anams = _medTL.filter(p => p && (p.fonte === 'inicial' || p.fonte === 'reajuste') && _MED_DEFS.some(d => p[d[0]] != null));
+  let html = '<div style="color:var(--gold);font-size:11px;font-weight:700;letter-spacing:0.06em;margin:18px 0 8px;">📏 MINHAS MEDIDAS</div>';
+  if (!anams.length) {
+    sec2.innerHTML = html + '<p style="color:#7a7a82;font-size:11px;line-height:1.5;margin:0 2px;">Tuas medidas vão aparecer aqui a cada anamnese: a primeira veio com teu protocolo inicial e as próximas entram nos reajustes.</p>';
+    return;
+  }
+  // cabeçalho: INÍCIO, REAJUSTE 1..N, RENOVAÇÃO (2ª anamnese inicial em diante)
+  let nR = 0, nI = 0;
+  const totR = anams.filter(p => p.fonte === 'reajuste').length;
+  const heads = anams.map(p => {
+    let lbl;
+    if (p.fonte === 'inicial') { nI++; lbl = nI === 1 ? 'INÍCIO' : 'RENOVAÇÃO'; }
+    else { nR++; lbl = 'REAJUSTE' + (totR > 1 ? ' ' + nR : ''); }
+    return '<th>' + lbl + '<span class="med-dt">' + (p.data || '') + '</span></th>';
+  }).join('');
+  const rows = _MED_DEFS.map(d => {
+    const vals = anams.map(p => (typeof p[d[0]] === 'number' && !isNaN(p[d[0]])) ? p[d[0]] : null);
+    if (!vals.some(v => v != null)) return '';   // medida que nenhuma anamnese trouxe: linha some
+    const nn = vals.filter(v => v != null);
+    let delta = '';
+    if (nn.length >= 2) {
+      const df = Math.round((nn[nn.length - 1] - nn[0]) * 10) / 10;
+      delta = df === 0 ? '=' : (df > 0 ? '+' : '') + String(df).replace('.', ',');
+    }
+    return '<tr><td>' + d[1] + ' <span style="color:#6e6e76;font-size:10px;">' + d[2] + '</span></td>'
+      + vals.map(v => '<td>' + _medFmt(v) + '</td>').join('')
+      + '<td class="med-delta">' + delta + '</td></tr>';
+  }).join('');
+  html += '<div class="med-wrap"><table class="med-table"><thead><tr><th></th>' + heads + '<th>TOTAL</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+  html += '<p style="color:#7a7a82;font-size:10px;margin:8px 2px 0;line-height:1.5;">Registrado das tuas anamneses. TOTAL = diferença da primeira até a última medição. Arrasta a tabela pro lado pra ver todas as datas.</p>';
+  sec2.innerHTML = html;
 }
 
 // ══ RANKING DO MÊS ══
