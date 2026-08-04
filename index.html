@@ -4387,7 +4387,7 @@
     <div class="chat-mode-tabs" id="chatModeTabs">
       <button type="button" class="chat-mode-tab active" id="chatModeDuvida" onclick="setChatMode('duvida')">💬 Tirar dúvida</button>
       <button type="button" class="chat-mode-tab" id="chatModeAjuste" onclick="setChatMode('ajuste')">🔧 Pedir ajuste</button>
-      <button type="button" class="chat-mode-tab" id="chatModeSuporte" onclick="setChatMode('suporte')">🎧 Suporte<span class="sup-dot" id="supDotTab"></span></button>
+      <button type="button" class="chat-mode-tab" id="chatModeSuporte" style="display:none;" onclick="setChatMode('suporte')">🎧 Suporte<span class="sup-dot" id="supDotTab"></span></button>
     </div>
     <div style="display:flex;gap:8px;align-items:flex-end;margin-top:10px;">
       <textarea id="chatInput" rows="1" maxlength="600" placeholder="Pergunta o que quiser…" oninput="_chatAutogrow(this)" onkeydown="_chatKeydown(event)" style="flex:1;padding:10px;background:#222;border:1px solid var(--gold-dim);color:var(--white);border-radius:10px;font-size:13px;font-family:inherit;line-height:1.4;box-sizing:border-box;resize:none;max-height:100px;overflow-y:auto;"></textarea>
@@ -10058,6 +10058,7 @@ let _chatMode = 'duvida'; // 'duvida' (assistente responde) | 'ajuste' (registra
 // Aluno alterna entre tirar dúvida e pedir ajuste. Determinístico: tira a decisão da IA
 // (que classifica errado casos-limite tipo "posso tomar sopa?" → dúvida virando ajuste).
 function setChatMode(m) {
+  if (m === 'suporte' && !_supEnabled) m = 'duvida';   // aba desligada pelo interruptor remoto
   _chatMode = (m === 'ajuste') ? 'ajuste' : (m === 'suporte' ? 'suporte' : 'duvida');
   const bD = document.getElementById('chatModeDuvida');
   const bA = document.getElementById('chatModeAjuste');
@@ -10295,6 +10296,21 @@ function _chatKeydown(e) {
 let _supMsgs = [];
 let _supTimer = null;
 let _supBusy = false;
+// Interruptor remoto (AVISOS!B2 = 'on'/'off' via aviso_global): com o WhatsApp de suporte
+// no ar o GH mantém a aba DESLIGADA; numa queda é só digitar 'on' na célula, sem deploy.
+let _supEnabled = false;
+function _supSetEnabled(on) {
+  _supEnabled = !!on;
+  const tab = document.getElementById('chatModeSuporte');
+  if (tab) tab.style.display = _supEnabled ? '' : 'none';
+  if (!_supEnabled) {
+    _supPollStop();
+    ['supDotTab', 'supDotOpt', 'supDotFab'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('on'); });
+    if (_chatMode === 'suporte') setChatMode('duvida');
+  } else {
+    try { _supFetch(); } catch (_) {}   // ligou: já confere se tem resposta esperando
+  }
+}
 
 function _supSeenKey() { return 'gh_sup_seen_' + (typeof SHEET_ID !== 'undefined' ? SHEET_ID : 'x'); }
 function _supLastEquipeTs() {
@@ -10431,7 +10447,7 @@ function openChatModal() {
   if (!_chatLoaded) { _chatLoadHistory(); _chatLoaded = true; }
   _chatRenderAll();
   // abre em "tirar dúvida", EXCETO se a equipe respondeu no suporte (aí cai direto na resposta)
-  setChatMode(_supHasUnread() ? 'suporte' : 'duvida');
+  setChatMode(_supEnabled && _supHasUnread() ? 'suporte' : 'duvida');
   teShow('chatModal');
   setTimeout(() => { const inp = document.getElementById('chatInput'); if (inp) inp.focus(); _chatScrollBottom(); }, 120);
 }
@@ -14293,14 +14309,17 @@ async function loadAvisoGlobal() {
   try { cache = JSON.parse(localStorage.getItem('gh_aviso_cache') || 'null'); } catch (_) {}
   if (cache && typeof cache.texto === 'string') {
     _avisoRender_(cache.texto);
+    _supSetEnabled(cache.suporte === 'on');
     if (Date.now() - (cache.ts || 0) < 10 * 60 * 1000) return;   // fresco: nem chama o servidor
   }
   try {
     const j = await (await fetch(LOG_ENDPOINT + '?action=aviso_global&_=' + Date.now(), { cache: 'no-store' })).json();
     if (!j || j.ok === false) return;   // erro do servidor: fica com o que o cache mostrou
     const txt = (j && j.texto) ? String(j.texto).trim() : '';
-    try { localStorage.setItem('gh_aviso_cache', JSON.stringify({ ts: Date.now(), texto: txt })); } catch (_) {}
+    const sup = (j && j.suporte === 'on') ? 'on' : 'off';   // .gs antigo sem o campo = off
+    try { localStorage.setItem('gh_aviso_cache', JSON.stringify({ ts: Date.now(), texto: txt, suporte: sup })); } catch (_) {}
     _avisoRender_(txt);
+    _supSetEnabled(sup === 'on');
   } catch (_) {}
 }
 function dismissAvisoGlobal() {
@@ -14314,7 +14333,7 @@ if (SHEET_ID && TAB_NAME) {
   // mensagem não tem thread, então a checagem seria uma chamada inútil ao Apps Script em
   // TODA abertura de TODO aluno (a fila de execuções engasga o servidor, visto 2026-08-03).
   if (localStorage.getItem('gh_sup_used_' + SHEET_ID)) {
-    setTimeout(() => { try { _supFetch(); } catch (_) {} }, 2500);
+    setTimeout(() => { try { if (_supEnabled) _supFetch(); } catch (_) {} }, 2500);
   }
   // Modo aluno. ABERTURA INSTANTÂNEA (GH 2026-07-29): com cache do protocolo, renderiza
   // NA HORA do localStorage (zero tela preta) e revalida em background — só re-renderiza
