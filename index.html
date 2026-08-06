@@ -4093,7 +4093,7 @@
       </div>
       <span class="renov-opt-go">Renovar</span>
     </a>
-    <a href="https://wa.me/555520131470?text=Oi!%20Quero%20renovar%20meu%20plano%20mas%20tenho%20uma%20d%C3%BAvida." target="_blank" rel="noopener" style="display:block;text-align:center;color:#25D366;font-size:12px;margin:6px 0 2px;text-decoration:underline;">Prefere falar com a gente antes? Chama no WhatsApp</a>
+    <a href="https://wa.me/555520131470?text=Oi!%20Quero%20renovar%20meu%20plano%20mas%20tenho%20uma%20d%C3%BAvida." target="_blank" rel="noopener" style="display:block;text-align:center;color:#25D366;font-size:12px;margin:6px 0 2px;text-decoration:underline;">Prefere falar comigo antes? Chama no WhatsApp</a>
     <button class="te-btn ghost" onclick="teHide('renovModal')" style="width:100%;margin-top:10px;font-size:12px;padding:7px;">Fechar</button>
   </div>
 </div>
@@ -4167,7 +4167,7 @@
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span><span>Minhas fotos do reajuste</span>
     </button>
     <button type="button" class="float-opt" style="position:relative;" onclick="event.stopPropagation(); openChatModal()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></span><span>Dúvida, ajuste ou suporte</span><span class="sup-dot" id="supDotOpt" style="top:50%;transform:translateY(-50%);right:10px;"></span>
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></span><span id="floatChatLabel">Tirar dúvida ou pedir ajuste</span><span class="sup-dot" id="supDotOpt" style="top:50%;transform:translateY(-50%);right:10px;"></span>
     </button>
 
     <!-- BASE (perto do dedo) — Instalar app destacado. Recarregar/Apagar subiram pro
@@ -10339,6 +10339,9 @@ function _supSetEnabled(on) {
   _supEnabled = !!on;
   const tab = document.getElementById('chatModeSuporte');
   if (tab) tab.style.display = _supEnabled ? '' : 'none';
+  // rótulo do menu acompanha: só fala em "suporte" quando a aba existe de verdade
+  const lbl = document.getElementById('floatChatLabel');
+  if (lbl) lbl.textContent = _supEnabled ? 'Dúvida, ajuste ou suporte' : 'Tirar dúvida ou pedir ajuste';
   if (!_supEnabled) {
     _supPollStop();
     ['supDotTab', 'supDotOpt', 'supDotFab'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('on'); });
@@ -13255,7 +13258,7 @@ function reajusteBannerShow(dias) {
     var b = document.getElementById('reajusteBanner'); if (!b) return;
     var txt = document.getElementById('reajusteBannerTxt'), cta = document.getElementById('reajusteBannerCta');
     if (dias > 0) txt.textContent = 'Teu reajuste tá chegando (em ' + dias + (dias === 1 ? ' dia' : ' dias') + '). Bora atualizar teu protocolo pra continuar evoluindo.';
-    else if (dias === 0) txt.textContent = 'Teu reajuste é hoje! Fala com a gente pra atualizar teu protocolo.';
+    else if (dias === 0) txt.textContent = 'Teu reajuste é hoje! Fala comigo pra atualizar teu protocolo.';
     else txt.textContent = 'Tá na hora do teu reajuste. Atualiza teu protocolo pra não travar a evolução.';
     cta.href = REAJ_FORM; // direto pra anamnese de reajuste (abre em nova aba)
     var db = document.getElementById('dietDiaryBanner'); if (db) db.classList.remove('show'); // reajuste tem precedência sobre o aviso da dieta
@@ -13473,11 +13476,11 @@ function mostrarPlanBlock(motivo) {
   var h = ov.querySelector('h2'), p = ov.querySelector('p');
   if (motivo === 'cancelado') {
     if (h) h.textContent = 'Plano cancelado';
-    if (p) p.textContent = 'Teu plano foi cancelado e o acesso ao protocolo está encerrado. Se quiser voltar a treinar com a gente, fala no WhatsApp de suporte.';
+    if (p) p.textContent = 'Teu plano foi cancelado e o acesso ao protocolo está encerrado. Se quiser voltar a treinar comigo, fala no WhatsApp de suporte.';
     _planBlockCta('Falar no WhatsApp', 'Oi! Meu plano foi cancelado, quero voltar a treinar.');
   } else if (motivo === 'pausado') {
     if (h) h.textContent = 'Plano pausado';
-    if (p) p.textContent = 'Teu plano está pausado (congelamento temporário), o acesso fica bloqueado enquanto durar a pausa. Não perde nada: os dias parados são creditados no teu vencimento quando voltar. Pra retomar, fala com a gente no WhatsApp de suporte.';
+    if (p) p.textContent = 'Teu plano está pausado (congelamento temporário), o acesso fica bloqueado enquanto durar a pausa. Não perde nada: os dias parados são creditados no teu vencimento quando voltar. Pra retomar, fala comigo no WhatsApp de suporte.';
     _planBlockCta('Retomar no WhatsApp', 'Oi! Meu plano está pausado, quero retomar.');
   }
   ov.classList.add('show'); document.body.style.overflow = 'hidden';
