@@ -5518,8 +5518,13 @@ function _exObjAt(d, e) {
 // nº de séries prescrito ("4", "3-4", "Aquece + 3") → maior inteiro; fallback 3
 function _serieCountPresc(ex) {
   try {
-    const nums = String((ex && ex.series) || '').match(/\d+/g);
-    if (nums && nums.length) { const m = Math.max.apply(null, nums.map(Number)); if (m >= 1 && m <= 10) return m; }
+    const raw = String((ex && ex.series) || '');
+    // Formato série a série "1X / 1X / 1X / 1X" (usado quando as reps variam por série,
+    // ex: R "20 / 15 / 12 / 12") = SOMA dos segmentos (4 linhas). Antes o parser pegava o
+    // MAIOR número e seedava 1 linha só (bug pego pelo GH na Elevação Pélvica). "4X" segue = 4.
+    const segs = raw.split('/').map(s => (s.match(/\d+/) || [])[0]).filter(Boolean).map(Number);
+    if (segs.length > 1) { const soma = segs.reduce((a, b) => a + b, 0); if (soma >= 1 && soma <= 10) return soma; }
+    if (segs.length === 1 && segs[0] >= 1 && segs[0] <= 10) return segs[0];
   } catch (_) {}
   return 3;
 }
@@ -7164,7 +7169,7 @@ function _shortKeepSet(di) {
   let sum = 0, mantidos = 0;
   WORKOUT[di].exercises.forEach((ex, ei) => {
     if (ex.warmup) { keep.add(ei); sum += 120; return; }           // aquecimento sempre fica
-    const sets = parseInt(ex.series) || 3;
+    const sets = _serieCountPresc(ex);   // mesmo parser da grade (soma "1X / 1X / ..." certo)
     const restFull = (typeof parseIntervalSeconds === 'function' ? parseIntervalSeconds(ex.rest || '') : 0) || 60;
     const rest = Math.min(restFull, _shortRestCap(ex.name));
     const exec = ex.biset ? 90 : 45;                               // bi-set = par inteiro (1 card, nunca separa)
