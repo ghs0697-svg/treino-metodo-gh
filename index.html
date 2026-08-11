@@ -8651,10 +8651,16 @@ async function loadFromSheets(injectedText) {
 
   } catch (err) {
     document.getElementById('loadingScreen').style.display = 'none';
-    // Se treino falhou mas dieta existe, mostra só dieta. (A16: o redirecionamento real fica AQUI — antes
-    // a linha showSection era dead code, quem escondia o TREINO + abria a DIETA era o .catch externo do
-    // startup. Agora o catch interno faz de fato, e o .catch externo é só guarda anti-unhandled-rejection.)
-    if (dietLoaded) {
+    // Se o TREINO em si PARSEOU (WORKOUT tem dias), o erro veio de um EXTRA pós-parse (render,
+    // estado local corrompido do aparelho, cronômetro etc.): NÃO esconde a aba — o treino fica
+    // de pé best-effort. Caso Vitor 2026-08-10: aparelho com lixo local caía aqui todo dia e a
+    // aba TREINO "sumia" só naquele device, com planilha e rede perfeitas.
+    if (typeof WORKOUT !== 'undefined' && Array.isArray(WORKOUT) && WORKOUT.length) {
+      document.getElementById('mainNav').style.display = 'flex';
+      var _ntOk = document.getElementById('navTreino'); if (_ntOk) _ntOk.style.display = '';
+      try { renderExercises(); } catch (_re) {}
+    } else if (dietLoaded) {
+      // Socorro "só dieta" fica reservado pra quando o DADO do treino realmente não veio.
       document.getElementById('mainNav').style.display = 'flex';
       var _nt = document.getElementById('navTreino'); if (_nt) _nt.style.display = 'none';
       switchView('dieta');
@@ -14419,22 +14425,34 @@ if (SHEET_ID && TAB_NAME) {
     const abreDieta = () => { if (dietLoaded && TAB_NAME.toUpperCase() === 'DIETA') switchView('dieta'); };
     const cached = _protoCacheGet();
     if (cached) {
-      // 1) pinta já com o último protocolo conhecido
+      // 1) pinta já com o último protocolo conhecido (rastreando se o cache do treino PARSEIA:
+      // cache podre — ex. abertura no meio de uma republicação — escondia a aba TREINO pra sempre)
+      let cacheTreinoOk = true;
       try { await loadDietFromSheets(cached.dieta || ''); } catch (_) {}
-      try { await loadFromSheets(cached.treino); } catch (_) {}
+      try { await loadFromSheets(cached.treino); } catch (_) { cacheTreinoOk = false; }
       abreDieta();
-      // 2) revalida em silêncio; re-renderiza só se mudou
+      // 2) revalida em silêncio; re-renderiza se mudou OU se o cache veio podre
       setTimeout(async () => {
         try {
           const [dT, tT] = await Promise.all([_fetchCsvRaw('DIETA'), _fetchCsvRaw('TREINO')]);
           const dNovo = (dT != null && dT !== (cached.dieta || ''));
-          const tNovo = (tT != null && tT !== cached.treino);
-          if (dT != null || tT != null) _protoCacheSet({ dieta: dT != null ? dT : (cached.dieta || ''), treino: tT != null ? tT : cached.treino });
+          const tNovo = (tT != null && (tT !== cached.treino || !cacheTreinoOk));
+          let treinoParseou = cacheTreinoOk;
           if (dNovo || tNovo) {
             try { await loadDietFromSheets(dT != null ? dT : (cached.dieta || '')); } catch (_) {}
-            try { await loadFromSheets(tT != null ? tT : cached.treino); } catch (_) {}
+            try {
+              await loadFromSheets(tT != null ? tT : cached.treino);
+              treinoParseou = true;
+              // o socorro só-dieta pode ter escondido a aba com o cache podre; o fresh parseou: reexibe
+              const nt = document.getElementById('navTreino'); if (nt) nt.style.display = '';
+            } catch (_) { treinoParseou = false; }
             if (document.body.classList.contains('view-dieta') && typeof renderDiet === 'function') renderDiet();
           }
+          // cache só recebe treino que PARSEOU (nunca mais envenenar a próxima abertura)
+          if (dT != null || tT != null) _protoCacheSet({
+            dieta: dT != null ? dT : (cached.dieta || ''),
+            treino: (tT != null && treinoParseou) ? tT : cached.treino
+          });
         } catch (_) {}
       }, 700);
     } else {
