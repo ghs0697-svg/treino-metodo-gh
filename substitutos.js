@@ -57,6 +57,9 @@ Abdominal Elevação de Pernas com Halter ou Caneleira / Abdominal Elevação de
 Abdominal na Máquina / Abdominal na Remada Baixa ou Cross / Abdominal no Banco Declinado
 # Curadoria GH 30/07/2026 (checklist das trocas — uso real dos alunos)
 Cadeira Flexora / Flexor Nórdico na Máquina
+# Vídeos novos gravados pelo GH 13/08/2026 (itens 1 e 2 da lista de gravação)
+Voador / Crucifixo Reto com Halteres
+Crossover / Crucifixo Declinado com Halteres
 Cadeira Abdutora / Cadeira Abdutora 45° em Pé / Abdução no Cross / Abdução Deitada com Mini Band
 Panturrilha em Pé / Panturrilha no Leg 45º
 Rosca Martelo com Halteres / Rosca Martelo no Cross
@@ -128,8 +131,13 @@ PANTURRILHA
 PEITO
   Crossover
   Crossover Polia Média
+  Crucifixo Declinado com Halteres
   Crucifixo Inclinado
   Crucifixo Inclinado no Cross
+  Crucifixo Reto com Halteres
+  Supino Declinado
+  Supino Declinado com Barra
+  Supino Declinado com Halteres
   Supino Declinado na Máquina
   Supino Inclinado com Halteres
   Supino Inclinado na Máquina
