@@ -201,6 +201,12 @@
   /* prateleira fora da tela nem e renderizada (corta o custo de scroll no celular) */
   .shelf{content-visibility:auto;contain-intrinsic-size:auto 380px}
 
+  /* ---------- favoritos ---------- */
+  .favbtn{padding:9px 18px;border-radius:20px;font-size:13px;font-weight:700;border:1px solid rgba(255,107,129,.5);color:#ff6b81;background:transparent;transition:.15s}
+  .favbtn:hover{background:rgba(255,107,129,.12)}
+  .favbtn.on{background:#ff6b81;color:#161616;border-color:transparent}
+  .favmark{color:#ff6b81;font-weight:800}
+
   /* ---------- skeleton ---------- */
   .skel .thumb{background:linear-gradient(110deg,#191919 8%,#222 18%,#191919 33%);background-size:200% 100%;animation:sh 1.4s linear infinite;border:0}
   @keyframes sh{to{background-position-x:-200%}}
@@ -359,6 +365,15 @@ const isSheet=ref=>!ref.drive_id;
 
 function watchList(){ try{return JSON.parse(localStorage.getItem('ghflix_watch')||'[]')}catch(e){return[]} }
 function pushWatch(id){ let w=watchList().filter(x=>x!==id); w.unshift(id); localStorage.setItem('ghflix_watch',JSON.stringify(w.slice(0,14))); }
+/* favoritos: por aparelho (localStorage), coracao no modal + prateleira propria */
+const FAVS=new Set((()=>{ try{return JSON.parse(localStorage.getItem('ghflix_favs')||'[]')}catch(e){return[]} })());
+function toggleFav(id){
+  if(FAVS.has(id))FAVS.delete(id); else FAVS.add(id);
+  try{localStorage.setItem('ghflix_favs',JSON.stringify([...FAVS]))}catch(e){}
+  const b=document.getElementById('favbtn');
+  if(b){ b.textContent=FAVS.has(id)?'♥ Favoritado':'♡ Favoritar'; b.classList.toggle('on',FAVS.has(id)); }
+  if(gridState)renderGrid(); else render();
+}
 
 /* ================= filtros / busca ================= */
 function matchFiltro(ref){
@@ -392,7 +407,7 @@ function cardHTML(ref){
       <div class="playov"><span></span></div>
     </div>
     <div class="cap">${ref.nome||''}</div>
-    <div class="sub">${novo?'<span class="novomark">NOVO</span> · ':''}${ref.data||''}</div>
+    <div class="sub">${FAVS.has(ref.id)?'<span class="favmark">♥</span> ':''}${novo?'<span class="novomark">NOVO</span> · ':''}${ref.data||''}</div>
   </div>`;
 }
 /* ---- prateleiras sob demanda ----
@@ -506,6 +521,13 @@ function render(){
   const alta=allRefs().filter(matchFiltro).sort((a,b)=>(b.views||0)-(a.views||0)).slice(0,18);
   html+=shelfHTML('🔥 Em alta',alta,'alta');
 
+  /* Meus favoritos (por aparelho) */
+  const favs=[...FAVS].map(id=>{
+    const v=IDX.videos[id]; if(!v)return null;
+    return {...v,id};
+  }).filter(Boolean).filter(matchFiltro);
+  if(favs.length)html+=shelfHTML('❤️ Meus favoritos',favs,'favs');
+
   /* Continuar assistindo */
   const wl=watchList().map(id=>{
     const v=IDX.videos[id]; if(!v)return null;
@@ -609,6 +631,7 @@ async function openModal(id){
       <div class="fmt">${v.formato||v.sub_tipo||'Vídeo'}</div>
       <h3>${v.nome||''}</h3>
       <div class="line"><span>${fmtViews(v.views)} views</span><span>·</span><span>${v.data||''}</span>${v.dur?`<span>·</span><span>${fmtDur(v.dur)}</span>`:''}</div>
+      <div style="margin-top:12px"><button id="favbtn" class="favbtn ${FAVS.has(id)?'on':''}" onclick="toggleFav('${id}')">${FAVS.has(id)?'♥ Favoritado':'♡ Favoritar'}</button></div>
       <div class="tags">${(v.tags||[]).map(t=>`<span class="tag" onclick="closeModal();buscarTag('${t.replace(/'/g,"\\'")}')">${t}</span>`).join('')}</div>
       ${v.exercicios&&v.exercicios.length?`<div class="exs"><b>Exercícios:</b> ${v.exercicios.join(', ')}</div>`:''}
       ${v.resumo_busca?`<p>${v.resumo_busca}</p>`:''}
