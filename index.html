@@ -1418,21 +1418,24 @@
   .prog-screen .prog-row:active { background: rgba(255, 255, 255, .03); }
 
   /* ── BARRA DE NAVEGAÇÃO INFERIOR (GH 2026-08-13: menu ⚡ tinha virado gaveta de 13 itens) ── */
-  #bottomNav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 8900; display: none; background: rgba(15, 14, 12, .97); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-top: 1px solid rgba(212, 175, 106, .16); padding: 7px 2px; padding-bottom: max(calc(7px + env(safe-area-inset-bottom, 0px)), 22px); }
+  #bottomNav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 8900; display: none; background: rgba(15, 14, 12, .97); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-top: 1px solid rgba(212, 175, 106, .16); padding: 7px 2px; padding-bottom: max(calc(7px + env(safe-area-inset-bottom, 0px)), 34px); }
   body.has-bnav #bottomNav { display: flex; }
   #bottomNav .bn-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: none; color: #86807a; font-size: 9.5px; font-weight: 600; letter-spacing: .3px; cursor: pointer; padding: 3px 0 1px; font-family: inherit; position: relative; transition: color .15s; }
   #bottomNav .bn-item svg { width: 21px; height: 21px; }
   #bottomNav .bn-item.active { color: var(--gold); }
   #bottomNav .bn-item.locked { opacity: 0.45; }
   body.has-bnav .main-nav { display: none !important; }
-  body.has-bnav { padding-bottom: max(calc(66px + env(safe-area-inset-bottom, 0px)), 81px); }
-  body.has-bnav #floatMenu { bottom: max(calc(82px + env(safe-area-inset-bottom, 0px)), 97px); }
-  body.has-bnav #timerPill { bottom: max(calc(150px + env(safe-area-inset-bottom, 0px)), 165px); }
+  body.has-bnav { padding-bottom: max(calc(66px + env(safe-area-inset-bottom, 0px)), 93px); }
+  body.has-bnav #floatMenu { bottom: max(calc(82px + env(safe-area-inset-bottom, 0px)), 109px); }
+  body.has-bnav #timerPill { bottom: max(calc(150px + env(safe-area-inset-bottom, 0px)), 177px); }
+  /* installBtn flutuante antigo ficava METADE atrás da barra (print GH 14/08 01:37);
+     instalar o app agora é o item destacado da aba Mais — o flutuante sai de cena */
+  body.has-bnav #installBtn { display: none !important; }
 
   /* ── Aba "Mais" (folha que sobe da barra) ── */
   #maisSheetOverlay { position: fixed; inset: 0; z-index: 9600; background: rgba(0, 0, 0, .62); display: none; }
   #maisSheetOverlay.show { display: block; }
-  #maisSheet { position: absolute; bottom: 0; left: 0; right: 0; background: #16140f; border-top: 1px solid rgba(212, 175, 106, .3); border-radius: 18px 18px 0 0; padding: 10px 14px; padding-bottom: max(calc(18px + env(safe-area-inset-bottom, 0px)), 30px); max-height: 78vh; overflow: auto; animation: maisUp .22s ease; }
+  #maisSheet { position: absolute; bottom: 0; left: 0; right: 0; background: #16140f; border-top: 1px solid rgba(212, 175, 106, .3); border-radius: 18px 18px 0 0; padding: 10px 14px; padding-bottom: max(calc(18px + env(safe-area-inset-bottom, 0px)), 42px); max-height: 78vh; overflow: auto; animation: maisUp .22s ease; }
   @keyframes maisUp { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
   #maisSheet .mais-grab { width: 40px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, .18); margin: 2px auto 12px; }
   .mais-opt { display: flex; align-items: center; gap: 11px; width: 100%; background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .09); color: #eaeaea; border-radius: 12px; padding: 12px 14px; font-size: 13.5px; font-weight: 600; margin-bottom: 8px; cursor: pointer; font-family: inherit; text-align: left; text-decoration: none; position: relative; }
