@@ -346,6 +346,12 @@
   .set-head span { font-size: 9px; font-weight: 700; color: #8a7a52; text-transform: uppercase; letter-spacing: .4px; text-align: center; }
   .set-head .sh-kg { width: 58px; } .set-head .sh-pl { width: 44px; } .set-head .sh-reps { width: 52px; }
   .set-num { width: 20px; min-width: 20px; text-align: center; font-size: 12px; font-weight: 700; color: #4d4d52; transition: color .25s; }
+  /* número da série é BOTÃO: toque marca a série como feita (Vitor 14/08) */
+  button.set-num { background: transparent; border: 1px solid rgba(255, 255, 255, .14); border-radius: 7px; height: 24px; width: 24px; min-width: 24px; padding: 0; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; }
+  .set-row.feita button.set-num { background: var(--gold); border-color: var(--gold); color: #15100a; font-weight: 800; }
+  .set-row.feita .set-in { opacity: .38; }
+  .set-row.feita .set-prev { opacity: .38; }
+  .set-head .set-num { width: 24px; min-width: 24px; }
   .set-in {
     background: #222; border: 1px solid var(--gold-dim); border-radius: 6px;
     color: var(--white); padding: 6px 4px; font-size: 14px; text-align: center; outline: none;
@@ -4143,6 +4149,7 @@
       <button class="ach-btn primary" onclick="achShare()" id="achShareBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Compartilhar treino</button>
       <button class="ach-btn secondary" onclick="achSave()">Salvar PNG</button>
       <button class="ach-btn ghost" onclick="achClose()">Pular (treino já contou)</button>
+      <button class="ach-btn ghost" id="achWrongBtn" onclick="achDesfazerPR()" style="display:none;color:#ff9800;">Digitei errado, desfazer recorde</button>
     </div>
     <p style="color:#888;font-size:11px;text-align:center;margin:12px 0 0;line-height:1.5;"><strong>Foto do pump</strong> vira o background do card. <strong>Pra Stories:</strong> Compartilhar → role o sheet → Instagram Stories.</p>
   </div>
@@ -5744,6 +5751,8 @@ function saveSets(d, e, w, arr) {
   localStorage.setItem(placasKey(d, e, w) + sf, s1.pl || '');
   // sync numa POST só: carga+placas da S1 (legado) + JSON das séries (novo)
   syncCargaToServer_(d, e, w, s1.kg || '', s1.pl || '', JSON.stringify(clean));
+  // recorde armazenado nunca fica acima do que existe de verdade (corrigiu 255→25,5 = PR desce)
+  if (typeof _prReconcilia === 'function') _prReconcilia(d, e);
 }
 // Grade da sessão anterior (semana < w, mais recente) pro lembrete "anterior" por série.
 function getPrevSets(d, e, w) {
@@ -5777,13 +5786,15 @@ function _setsGridHtml(di, ei, label, noAdd) {
   const alvoR = (typeof STUDENT_ESFORCO_ALVO !== 'undefined' && STUDENT_ESFORCO_ALVO)
     ? _parseAlvoRange(STUDENT_ESFORCO_ALVO.valor) : null;
   const rsPh = alvoR ? (alvoR[0] === alvoR[1] ? String(alvoR[0]) : alvoR[0] + '-' + alvoR[1]) : '?';
+  const okSet = loadSetOk(di, eiS, w);
   const rows = sets.map((s, si) => {
     const p = prev && prev[si];
     const prevTxt = (p && (p.kg || p.pl || p.reps))
       ? `<span class="set-prev">ant: ${p.kg ? kgToDisplay(p.kg) + getUnit() : (p.pl ? p.pl + 'pl' : '&mdash;')}${p.reps ? ' &times;' + p.reps : ''}</span>`
       : '<span class="set-prev"></span>';
-    return `<div class="set-row" data-si="${si}">
-        <span class="set-num">${si + 1}</span>
+    const feita = okSet.has(si);
+    return `<div class="set-row ${feita ? 'feita' : ''}" data-si="${si}">
+        <button type="button" class="set-num" onclick="toggleSetFeita(${di},'${eiS}',${si})" title="Marcar série como feita" aria-label="Marcar série ${si + 1} como feita">${feita ? '✓' : si + 1}</button>
         <input class="set-in set-kg" type="number" inputmode="decimal" placeholder="${getUnit()}" value="${kgToDisplay(s.kg)}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-pl" type="number" inputmode="numeric" placeholder="pl" value="${s.pl || ''}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-reps" type="number" inputmode="numeric" placeholder="reps" value="${s.reps || ''}" oninput="onSetField(${di},'${eiS}')">
@@ -5828,6 +5839,46 @@ function _reRenderSetsGrid(di, ei) {
   const label = grid.querySelector('.carga-label');
   grid.outerHTML = _setsGridHtml(di, ei, label ? label.textContent : '', grid.dataset.noadd === '1');
 }
+// ══ Série FEITA (Vitor 14/08: "marcar a série igual marca o exercício") ══
+// Toque no número da série alterna feita (linha apaga, número vira ✓). Storage próprio
+// por semana, FORA do JSON de carga que vai pro servidor (caminho de carga intocado).
+function setOkKey(d, e, w) { return `gh_setok_${STUDENT_ID}_d${d}_e${e}_w${w}`; }
+function loadSetOk(d, e, w) {
+  try { return new Set(JSON.parse(localStorage.getItem(setOkKey(d, e, w)) || '[]')); } catch (_) { return new Set(); }
+}
+function saveSetOk(d, e, w, conj) {
+  try { localStorage.setItem(setOkKey(d, e, w), JSON.stringify([...conj].sort((a, b) => a - b))); } catch (_) {}
+}
+function toggleSetFeita(di, ei, si) {
+  const ok = loadSetOk(di, ei, currentWeek);
+  const marcando = !ok.has(si);
+  if (marcando) ok.add(si); else ok.delete(si);
+  saveSetOk(di, ei, currentWeek, ok);
+  // atualiza as duas grades (lista e modo foco compartilham o mesmo id)
+  document.querySelectorAll(`[id="sets-${di}-${ei}"]`).forEach(g => {
+    const row = g.querySelector(`.set-row[data-si="${si}"]`);
+    if (!row) return;
+    row.classList.toggle('feita', marcando);
+    const n = row.querySelector('.set-num');
+    if (n) n.textContent = marcando ? '✓' : String(si + 1);
+  });
+  if (!marcando) return;
+  if (navigator.vibrate) navigator.vibrate(15);
+  _autoRestDoExercicio(di, ei);            // série feita com treino rolando = descanso sozinho
+  // todas as séries feitas → o exercício se marca sozinho (no foco, com avanço automático)
+  const g = _gridEl(di, ei);
+  if (g && /^\d+$/.test(String(ei))) {
+    const rows = [...g.querySelectorAll('.set-row')];
+    if (rows.length && rows.every(r => r.classList.contains('feita'))) {
+      const eiNum = parseInt(ei, 10);
+      if (typeof isDone === 'function' && !isDone(di, eiNum)) {
+        const fo = document.getElementById('focusOverlay');
+        const noFoco = fo && fo.classList.contains('show') && _focusDi === di && _focusIdx === eiNum;
+        setTimeout(() => { noFoco ? focusToggleDone() : onCheckExercise(di, eiNum); }, 250);
+      }
+    }
+  }
+}
 let _setTimers = {};
 function onSetField(di, ei) {
   const k = `s-${di}-${ei}`;
@@ -5861,6 +5912,11 @@ function removeSet(di, ei, si) {
   if (arr.length <= 1) return;                  // mantém pelo menos 1 série
   arr.splice(si, 1);
   saveSets(di, ei, currentWeek, arr);
+  // remarca as séries feitas nos índices novos (removeu a 2ª: a 3ª vira 2ª e leva a marca junto)
+  const ok = loadSetOk(di, ei, currentWeek);
+  const novo = new Set();
+  ok.forEach(i => { if (i < si) novo.add(i); else if (i > si) novo.add(i - 1); });
+  saveSetOk(di, ei, currentWeek, novo);
   _reRenderSetsGrid(di, ei);
 }
 // Salva imediato (botão 💾) — sem esperar o debounce.
@@ -6419,9 +6475,22 @@ function showAchievementCard(type, data) {
   // Mesmo do botão "Pular": só relevante em completion
   const closeBtn = document.querySelector('button.ach-btn.ghost[onclick="achClose()"]');
   if (closeBtn) closeBtn.textContent = type === 'completion' ? 'Pular (treino já contou)' : 'Fechar';
+  // "Digitei errado" só no card de PR (Vitor 14/08: 25,5 virou 255 e travou o recorde pra sempre)
+  const wrongBtn = document.getElementById('achWrongBtn');
+  if (wrongBtn) wrongBtn.style.display = type === 'pr' ? '' : 'none';
   document.getElementById('achOverlay').classList.add('show');
   document.body.style.overflow = 'hidden';
   drawAchievementCard(1, 1); // estático, sem animação que não vai pro Stories
+}
+// Desfaz o recorde recém-registrado: volta o PR pro valor anterior. O aluno corrige o
+// número na grade em seguida (e a reconciliação ajusta sozinha dali em diante).
+function achDesfazerPR() {
+  try {
+    if (_achData && _achData.type === 'pr' && _achData.prDi !== undefined) {
+      localStorage.setItem(prKey(_achData.prDi, _achData.prEi), String(_achData.oldKg || 0));
+    }
+  } catch (_) {}
+  achClose();
 }
 
 function achClose() {
@@ -7051,12 +7120,36 @@ function checkPR(di, ei, newKg) {
         showAchievementCard('pr', {
           exerciseName: ex.name,
           oldKg: stored,
-          newKg: newKg
+          newKg: newKg,
+          prDi: di,   // pro "Digitei errado, desfazer" saber qual chave restaurar
+          prEi: ei
         });
       }
     }
     localStorage.setItem(k, String(newKg));
   }
+}
+// Reconciliação do PR com o dado REAL (Vitor 14/08): o recorde armazenado nunca pode
+// ficar acima do máximo que existe de verdade nas séries salvas. Aluno digitou 255 em
+// vez de 25,5 e corrigiu na grade → o 255 some das séries → o PR desce junto, sozinho.
+function _prReconcilia(di, ei) {
+  try {
+    const k = prKey(di, ei);
+    const stored = parseFloat(localStorage.getItem(k) || '0');
+    if (!stored || stored <= 0) return;
+    let max = 0;
+    const hi = Math.max((typeof TOTAL_WEEKS === 'number' ? TOTAL_WEEKS : 8), 24);
+    for (let w = 1; w <= hi; w++) {
+      const sets = loadSets(di, ei, w);
+      if (sets && sets.length) sets.forEach(s => { const v = parseFloat(s && s.kg); if (v > max) max = v; });
+      const leg = parseFloat(loadCarga(di, ei, w)) || 0;   // chave legada (S1 espelhada, histórico antigo)
+      if (leg > max) max = leg;
+    }
+    if (stored > max) {
+      if (max > 0) localStorage.setItem(k, String(max));
+      else localStorage.removeItem(k);   // apagou tudo: recorde órfão sai junto
+    }
+  } catch (_) {}
 }
 
 // ══ Completion card helper ══
@@ -7515,6 +7608,15 @@ function confirmWeekReset() {
   (WORKOUT || []).forEach((d, di) => (d.exercises || []).forEach((ex, ei) => {
     if (isDone(di, ei)) setDone(di, ei, false);
   }));
+  // séries marcadas como feitas da semana zeram junto (é marca de conclusão, não carga)
+  try {
+    const pref = `gh_setok_${STUDENT_ID}_`;
+    const suf = `_w${currentWeek}`;
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && k.indexOf(pref) === 0 && k.endsWith(suf)) localStorage.removeItem(k);
+    }
+  } catch (_) {}
   closeWeekReset();
   if (navigator.vibrate) navigator.vibrate(30);
   renderExercises();
@@ -7829,11 +7931,19 @@ function startTimerAuto(name, seconds) {
 }
 function _autoRestMaybe(di, ei, arr, repsAntes) {
   try {
+    const n = (arr || []).filter(s => String(s.reps || '').trim()).length;
+    if (n <= (repsAntes || 0)) return;              // só quando uma série NOVA ganhou reps (corrigir número não dispara)
+    _autoRestDoExercicio(di, ei);
+  } catch (_) {}
+}
+// Miolo compartilhado: dispara o descanso prescrito do exercício, SE o treino está
+// ativo (cronômetro ligado ou modo foco aberto) e não há descanso já rodando.
+// Usado pelo registro de reps e pelo toque de "série feita".
+function _autoRestDoExercicio(di, ei) {
+  try {
     const focoAberto = (() => { const f = document.getElementById('focusOverlay'); return f && f.classList.contains('show'); })();
     const treinoRolando = (typeof _wtTick !== 'undefined' && _wtTick);
     if (!focoAberto && !treinoRolando) return;      // fora de treino ativo: nada de timer sozinho
-    const n = (arr || []).filter(s => String(s.reps || '').trim()).length;
-    if (n <= (repsAntes || 0)) return;              // só quando uma série NOVA ganhou reps (corrigir número não dispara)
     if (_timerInt) return;                          // já tem descanso rodando
     const exs = (WORKOUT[di] && WORKOUT[di].exercises) || [];
     const base = exs[parseInt(ei)];
@@ -15137,7 +15247,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v353';
+    var APP_SHELL_V = 'metodo-gh-v354';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
