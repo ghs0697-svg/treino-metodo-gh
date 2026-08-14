@@ -1729,6 +1729,25 @@
     gap: 10px;
   }
   .diet-meal-header .dm-nome { flex: 1; min-width: 0; }
+  /* Horário da refeição definido PELO ALUNO (GH 14/08): chip relógio no cabeçalho.
+     Sem horário = relógio apagado; com horário = hora dourada; sino = lembrete ligado */
+  .dm-hora {
+    flex: none; display: inline-flex; align-items: center; gap: 4px;
+    background: transparent; border: 1.5px solid rgba(255, 255, 255, .18);
+    color: #8d8579; font-size: 11px; font-weight: 800; letter-spacing: .3px;
+    padding: 5px 9px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+    font-family: inherit; transition: border-color .15s, color .15s;
+  }
+  .dm-hora svg { width: 12px; height: 12px; }
+  .dm-hora.set { color: var(--gold); border-color: rgba(201, 162, 75, .55); }
+  /* modal do horário */
+  .rh-time { width: 100%; background: #26262c; border: 1px solid #36363e; color: #fff; padding: 12px; border-radius: 10px; font-size: 22px; font-family: inherit; text-align: center; font-variant-numeric: tabular-nums; }
+  .rh-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .09); border-radius: 12px; padding: 12px 14px; margin-top: 12px; }
+  .rh-toggle-row span { color: #eaeaea; font-size: 13px; font-weight: 600; }
+  .rh-switch { position: relative; width: 44px; height: 24px; border-radius: 12px; background: rgba(255, 255, 255, .15); border: none; cursor: pointer; transition: background .2s; flex: none; }
+  .rh-switch::after { content: ''; position: absolute; width: 18px; height: 18px; background: #fff; border-radius: 50%; top: 3px; left: 3px; transition: left .2s; }
+  .rh-switch.on { background: var(--gold); }
+  .rh-switch.on::after { left: 23px; }
   /* botão "refeição feita" — espelha o check do treino, mas reseta TODO DIA */
   .diet-meal-check {
     flex: none; display: inline-flex; align-items: center; gap: 5px;
@@ -4348,6 +4367,23 @@
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></span><span>Atualizar o app agora</span>
     </button>
     <div id="maisVersao" style="text-align:center;color:#6f6a60;font-size:10.5px;font-weight:600;letter-spacing:.5px;margin-top:10px;"></div>
+  </div>
+</div>
+
+<!-- ══ HORÁRIO DA REFEIÇÃO (definido pelo aluno) ══ -->
+<div class="te-modal-overlay" id="refHoraModal" onclick="if(event.target.id==='refHoraModal')teHide('refHoraModal')">
+  <div class="te-modal-box" style="max-width:360px;">
+    <h3 style="margin:0 0 2px;">🕐 Horário da refeição</h3>
+    <p id="rhTitulo" style="color:var(--gold);font-size:12.5px;font-weight:700;margin:0 0 14px;"></p>
+    <input type="time" id="rhTime" class="rh-time">
+    <div class="rh-toggle-row">
+      <span>Me lembrar nesse horário</span>
+      <button type="button" class="rh-switch" id="rhToggle" onclick="rhToggleLembrete()" aria-label="Ativar lembrete"></button>
+    </div>
+    <p style="color:#8d8579;font-size:11px;line-height:1.5;margin:10px 2px 14px;">Tu define, eu memorizo. Com o lembrete ligado, te aviso na hora certa todo dia.</p>
+    <button class="te-btn" style="width:100%;" onclick="salvarRefHora()">Salvar</button>
+    <button class="te-btn ghost" id="rhRemover" style="width:100%;margin-top:8px;color:#ff9800;" onclick="removerRefHora()">Remover horário</button>
+    <button class="te-btn ghost" style="width:100%;margin-top:8px;" onclick="teHide('refHoraModal')">Fechar</button>
   </div>
 </div>
 
@@ -13292,6 +13328,146 @@ function notifyCardioCompletion(shared) {
 // individualizar a dieta no reajuste, sem o aluno precisar confessar nada).
 function _mealNaoKey(ri) { return `gh_mealnao_${STUDENT_ID}_${todayKey()}_r${ri}`; }
 function _mealNaoMotivo(ri) { try { return localStorage.getItem(_mealNaoKey(ri)) || ''; } catch (_) { return ''; } }
+// ══ HORÁRIO DA REFEIÇÃO + LEMBRETE (GH 14/08: o ALUNO define, o app só salva,
+// memoriza e notifica; ninguém monta horário por ele) ══
+// Storage local por índice de refeição (ri, estável entre ciclos). Sync pro servidor
+// de push (mesma infra da água) pro lembrete chegar com o app fechado.
+function _refHorasKey() { return 'gh_refhoras_' + (typeof SHEET_ID !== 'undefined' ? SHEET_ID : 'x'); }
+function _refHoras() {
+  try { return JSON.parse(localStorage.getItem(_refHorasKey()) || '{}'); } catch (_) { return {}; }
+}
+function _refHorasSave(map) {
+  try { localStorage.setItem(_refHorasKey(), JSON.stringify(map)); } catch (_) {}
+  clearTimeout(window._refSyncT);
+  window._refSyncT = setTimeout(_refHorasSync, 1500);
+}
+function _refNome(ri) {
+  try {
+    const cy = DIET_DATA && DIET_DATA.ciclos && DIET_DATA.ciclos[0];
+    const nome = cy && cy.refeicoes && cy.refeicoes[ri] && cy.refeicoes[ri].nome;
+    return String(nome || ('Refeição ' + (ri + 1))).replace(/\s+/g, ' ').trim();
+  } catch (_) { return 'Refeição ' + (ri + 1); }
+}
+function _refHoraChipHtml(ri) {
+  const r = _refHoras()[ri];
+  const sino = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
+  const relogio = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+  if (r && r.h) return `<button type="button" class="dm-hora set" onclick="openRefHora(${ri})" title="Horário desta refeição">${r.on ? sino : relogio} ${r.h}</button>`;
+  return `<button type="button" class="dm-hora" onclick="openRefHora(${ri})" title="Definir horário desta refeição" aria-label="Definir horário desta refeição">${relogio}</button>`;
+}
+let _refHoraRi = null;
+function openRefHora(ri) {
+  _refHoraRi = ri;
+  const r = _refHoras()[ri] || {};
+  document.getElementById('rhTitulo').textContent = _refNome(ri);
+  document.getElementById('rhTime').value = r.h || '';
+  document.getElementById('rhToggle').classList.toggle('on', !!(r.h && r.on));
+  document.getElementById('rhRemover').style.display = r.h ? '' : 'none';
+  teShow('refHoraModal');
+}
+function rhToggleLembrete() { document.getElementById('rhToggle').classList.toggle('on'); }
+async function salvarRefHora() {
+  if (_refHoraRi === null) { teHide('refHoraModal'); return; }
+  const h = document.getElementById('rhTime').value;
+  if (!/^\d{1,2}:\d{2}$/.test(h)) { alert('Escolhe o horário primeiro.'); return; }
+  const querLembrete = document.getElementById('rhToggle').classList.contains('on');
+  const map = _refHoras();
+  map[_refHoraRi] = { h: h, on: querLembrete };
+  _refHorasSave(map);
+  _refHoraChipRefresh(_refHoraRi);
+  teHide('refHoraModal');
+  // Lembrete ligado: garante permissão + subscription (mesma infra do lembrete de água)
+  if (querLembrete) {
+    let nativeOk = false;
+    try {
+      if ('Notification' in window) {
+        let perm = Notification.permission;
+        if (perm === 'default') perm = await Notification.requestPermission();
+        nativeOk = (perm === 'granted');
+      }
+    } catch (_) {}
+    let push = { ok: false, reason: 'no-permission' };
+    if (nativeOk) push = await registerPushSubscription();
+    if (push.ok) {
+      _refToast('Lembrete ativado', 'Te aviso às ' + h + ', mesmo com o app fechado. 🤝');
+    } else if (push.reason === 'ios-not-installed') {
+      alert('⚠️ Pro lembrete chegar com o app fechado no iPhone, instala o app primeiro:\n\n1. Toca em Compartilhar no Safari\n2. Adicionar à Tela de Início\n3. Abre pelo ícone e ativa o lembrete de novo\n\nPor enquanto, te aviso quando o app estiver aberto.');
+    } else {
+      _refToast('Horário salvo', 'Te aviso às ' + h + ' quando o app estiver aberto.');
+    }
+  } else {
+    _refToast('Horário salvo', _refNome(_refHoraRi) + ' às ' + h + '.');
+  }
+}
+function removerRefHora() {
+  if (_refHoraRi === null) { teHide('refHoraModal'); return; }
+  const map = _refHoras();
+  delete map[_refHoraRi];
+  _refHorasSave(map);
+  _refHoraChipRefresh(_refHoraRi);
+  teHide('refHoraModal');
+}
+function _refHoraChipRefresh(ri) {
+  // re-render só dos chips dessa refeição (um por ciclo), sem reconstruir a dieta
+  document.querySelectorAll('.diet-meal-card').forEach(card => {
+    const nao = card.querySelector(`#dmnao-${ri}`);
+    if (!nao) return;
+    const chip = card.querySelector('.dm-hora');
+    if (chip) chip.outerHTML = _refHoraChipHtml(ri);
+  });
+}
+function _refHorasSync() {
+  try {
+    if (typeof PUSH_API_BASE === 'undefined' || typeof SHEET_ID === 'undefined' || !SHEET_ID) return;
+    const map = _refHoras();
+    const times = Object.keys(map).filter(ri => map[ri] && map[ri].h).map(ri => ({
+      uid: String(ri), h: map[ri].h, titulo: _refNome(parseInt(ri, 10)), on: map[ri].on !== false && !!map[ri].on
+    }));
+    const studentName = (document.getElementById('infoNome')?.textContent || '').trim();
+    fetch(PUSH_API_BASE + '/meal-times', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ studentId: SHEET_ID, studentName, times }),
+      keepalive: true
+    }).catch(() => {});
+  } catch (_) {}
+}
+// Fallback com o app ABERTO: confere a cada 45s; toast sempre, Notification nativa só
+// quando NÃO há push registrado (senão chegariam duas). Dedup diário por refeição.
+function _refTickLembrete() {
+  try {
+    const map = _refHoras();
+    const agora = new Date();
+    const hm = String(agora.getHours()).padStart(2, '0') + ':' + String(agora.getMinutes()).padStart(2, '0');
+    const dia = agora.getFullYear() + '-' + (agora.getMonth() + 1) + '-' + agora.getDate();
+    Object.keys(map).forEach(ri => {
+      const r = map[ri];
+      if (!r || !r.on || r.h !== hm) return;
+      const k = 'gh_refnotif_' + SHEET_ID + '_' + dia + '_' + ri;
+      if (localStorage.getItem(k) === '1') return;
+      localStorage.setItem(k, '1');
+      const nome = _refNome(parseInt(ri, 10));
+      _refToast(nome, r.h + '. Tá na hora. Depois marca como feita aqui na dieta.');
+      try {
+        if (!localStorage.getItem('gh_pushEndpoint') && 'Notification' in window && Notification.permission === 'granted') {
+          new Notification('🍽 ' + nome, { body: r.h + '. Tá na hora.', icon: 'icon-192.png', tag: 'meal-' + ri });
+        }
+      } catch (_) {}
+    });
+  } catch (_) {}
+}
+setInterval(_refTickLembrete, 45000);
+function _refToast(titulo, texto) {
+  let t = document.getElementById('refToast');
+  if (t) t.remove();
+  t = document.createElement('div');
+  t.id = 'refToast';
+  t.className = 'water-toast show';
+  t.innerHTML = `<span class="wt-icon">🍽</span><div class="wt-text"><strong>${titulo}</strong><span>${texto}</span></div><button class="wt-close" onclick="this.parentElement.remove()" aria-label="Fechar">×</button>`;
+  document.body.appendChild(t);
+  setTimeout(() => { try { t.remove(); } catch (_) {} }, 9000);
+}
+
 function openMealNao(ri, nome) {
   let m = document.getElementById('mealNaoMenu');
   if (m) m.remove();
@@ -13597,7 +13773,7 @@ function renderDiet() {
       const uid = `${prefix}${ri}`;
       const hasOps = ref.opcoes.length > 0;
       html += `<div class="diet-meal-card">`;
-      html += `<div class="diet-meal-header"><span class="dm-nome">${ref.nome}</span><button type="button" class="dm-nao${_mealNaoMotivo(ri) ? ' marcado' : ''}" id="dmnao-${ri}" onclick="openMealNao(${ri}, '${String(ref.nome || '').replace(/'/g, "\\'")}')">${_mealNaoMotivo(ri) ? 'anotado 🤝' : 'não rolou?'}</button><button type="button" class="diet-meal-check${isMealDone(ri) ? ' done' : ''}" data-meal-ri="${ri}" onclick="onCheckMeal(${ri})" aria-label="Marcar refeição feita"><svg class="dm-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><svg class="dm-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span class="dm-txt">Feita</span></button></div>`;
+      html += `<div class="diet-meal-header"><span class="dm-nome">${ref.nome}</span>${_refHoraChipHtml(ri)}<button type="button" class="dm-nao${_mealNaoMotivo(ri) ? ' marcado' : ''}" id="dmnao-${ri}" onclick="openMealNao(${ri}, '${String(ref.nome || '').replace(/'/g, "\\'")}')">${_mealNaoMotivo(ri) ? 'anotado 🤝' : 'não rolou?'}</button><button type="button" class="diet-meal-check${isMealDone(ri) ? ' done' : ''}" data-meal-ri="${ri}" onclick="onCheckMeal(${ri})" aria-label="Marcar refeição feita"><svg class="dm-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><svg class="dm-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span class="dm-txt">Feita</span></button></div>`;
       if (ref.instrucao) html += `<div class="diet-meal-instruction">${ref.instrucao}</div>`;
 
       // Alimentos base SEMPRE visíveis (caso Paulo Lages: refeição mista com alimentos +
@@ -15247,7 +15423,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v354';
+    var APP_SHELL_V = 'metodo-gh-v355';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
