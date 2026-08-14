@@ -840,6 +840,9 @@
   .evo-close { width: 100%; margin-top: 12px; background: transparent; border: 1px solid #333; color: #ccc; border-radius: 9px; padding: 9px; font-size: 13px; cursor: pointer; }
   .rec-row[data-evo] { cursor: pointer; }
   .day-hero .focus-entry { margin: 12px 0 0; background: rgba(212,175,106,.07); }
+  /* Entrada PRINCIPAL do modo treino em destaque (GH 2026-08-13: ninguém achava o botão) */
+  .day-hero .focus-entry:not(#shortModeBtn) { background: var(--gold); color: #0c0c0d; font-weight: 800; font-size: 14px; border: none; box-shadow: 0 4px 16px rgba(212, 175, 106, .25); }
+  .day-hero .focus-entry:not(#shortModeBtn):active { transform: scale(.985); }
   .week-reset {
     display: inline-flex; align-items: center; gap: 5px;
     background: none; border: none; cursor: pointer; font-family: inherit;
@@ -888,7 +891,7 @@
   .carga-section { padding: 8px 12px; gap: 8px; }
   .carga-input { padding: 7px 8px; font-size: 14px; width: 62px; }
   .carga-label { font-size: 9.5px; }
-  .ex-action-btn { width: 31px; height: 31px; }
+  .ex-action-btn { min-width: 34px; }
   .esf-compact { padding: 0; }
   .esf-compact .esf-summary {
     display: flex; justify-content: space-between; align-items: center; width: 100%;
@@ -911,6 +914,16 @@
   }
   .pg-streak { color: #ff7043; font-weight: 700; }
 
+  /* ── Constância da semana (bolinhas seg→dom no hero do dia) ── */
+  .const-dots { display: flex; align-items: center; gap: 9px; margin: 8px 2px 0; }
+  .const-dot { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .const-dot span { font-size: 8.5px; font-weight: 700; letter-spacing: .4px; color: #6f6a60; }
+  .const-dot i { width: 13px; height: 13px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.18); background: transparent; font-style: normal; display: flex; align-items: center; justify-content: center; font-size: 8px; color: transparent; }
+  .const-dot.feito i { background: var(--gold); border-color: var(--gold); color: #0c0c0d; font-weight: 800; }
+  .const-dot.hoje span { color: var(--gold); }
+  .const-dot.hoje i { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(212,175,106,.22); }
+  .const-dots .cd-lbl { font-size: 9.5px; color: #8d8579; font-weight: 600; margin-left: 4px; }
+
   /* ── Checkbox de exercício ── */
   .ex-check { width: 22px; height: 22px; min-width: 22px; border: 1.5px solid rgba(255, 255, 255, 0.22); border-radius: 7px; background: transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
   .ex-check:hover { border-color: var(--gold); }
@@ -921,8 +934,11 @@
 
   /* ── Botões de ação no card de exercício ── */
   .ex-actions { display: inline-flex; gap: 4px; margin-left: auto; }
-  .ex-action-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.10); color: var(--gold); padding: 5px 9px; border-radius: 8px; font-size: 13px; cursor: pointer; line-height: 1; }
+  .ex-action-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.10); color: var(--gold); padding: 5px 7px 4px; border-radius: 8px; font-size: 13px; cursor: pointer; line-height: 1; display: inline-flex; flex-direction: column; align-items: center; gap: 3px; }
   .ex-action-btn:hover { background: var(--gold-dim); }
+  /* rótulo embaixo do ícone (GH 2026-08-13: "ícone sem nome é adivinhação") */
+  .ex-action-lbl { font-size: 8px; font-weight: 600; letter-spacing: .2px; color: #9a9389; line-height: 1; white-space: nowrap; }
+  .ex-action-btn.sub-btn.sub-on .ex-action-lbl { color: #0c0c0d; }
   /* botão de substituto ATIVO (aluno trocou) — preenchido dourado */
   .ex-action-btn.sub-btn.sub-on { background: var(--gold); color: #0c0c0d; border-color: var(--gold); }
   /* selo "SUBST." ao lado do nome quando o aluno está no substituto */
@@ -1366,6 +1382,77 @@
   body.view-ghflix .nav-btn#navGhflix { color: var(--gold); border-bottom-color: var(--gold); }
   .nav-btn#navGhflix.locked { opacity: 0.38; }
   .nav-btn#navGhflix.locked::after { content: ' 🔒'; font-size: 11px; letter-spacing: 0; }
+
+  /* ── PROGRESSO como TELA (GH 2026-08-13: era modal apertado) ── */
+  body.view-progresso #studentInfo,
+  body.view-progresso #dayHero,
+  body.view-progresso #muscleMap,
+  body.view-progresso #dayProgress,
+  body.view-progresso #dayTabs,
+  body.view-progresso #weekSelector,
+  body.view-progresso #exerciseContainer,
+  body.view-progresso #instrToggle,
+  body.view-progresso #instructionsContent,
+  body.view-progresso #hipoToggle,
+  body.view-progresso #hipoContent,
+  body.view-progresso #errorBox,
+  body.view-progresso #loadingScreen,
+  body.view-progresso #videoOverlay,
+  body.view-progresso #adminPanel,
+  body.view-progresso #treinoBlocoTabs,
+  body.view-progresso #protoProgress,
+  body.view-progresso .focus-entry,
+  body.view-progresso #dietaView,
+  body.view-progresso #ghflixView,
+  body.view-progresso .instructions-toggle,
+  body.view-progresso .instructions-content { display: none !important; }
+  #progressoView { display: none; }
+  body.view-progresso #progressoView { display: block !important; }
+  .prog-screen { padding: 14px 14px 26px; max-width: 620px; margin: 0 auto; }
+  .pg-card { background: var(--card); border: 1px solid rgba(212, 175, 106, .16); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+  .pg-sec-t { color: var(--gold); font-size: 11px; font-weight: 700; letter-spacing: .06em; margin: 0 0 10px; }
+  .pg-sel { width: 100%; background: #26262c; border: 1px solid #36363e; color: #fff; padding: 10px 11px; border-radius: 9px; font-size: 13.5px; font-family: inherit; }
+  .pg-trendline { font-size: 11.5px; color: #9a9aa0; margin-top: 8px; line-height: 1.5; }
+  .pg-trendline.up { color: #4caf50; }
+  .pg-trendline.down { color: #ff9800; }
+  .prog-screen .prog-row:active { background: rgba(255, 255, 255, .03); }
+
+  /* ── BARRA DE NAVEGAÇÃO INFERIOR (GH 2026-08-13: menu ⚡ tinha virado gaveta de 13 itens) ── */
+  #bottomNav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 8900; display: none; background: rgba(15, 14, 12, .97); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-top: 1px solid rgba(212, 175, 106, .16); padding: 7px 2px calc(7px + env(safe-area-inset-bottom, 0px)); }
+  body.has-bnav #bottomNav { display: flex; }
+  #bottomNav .bn-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: none; color: #86807a; font-size: 9.5px; font-weight: 600; letter-spacing: .3px; cursor: pointer; padding: 3px 0 1px; font-family: inherit; position: relative; transition: color .15s; }
+  #bottomNav .bn-item svg { width: 21px; height: 21px; }
+  #bottomNav .bn-item.active { color: var(--gold); }
+  #bottomNav .bn-item.locked { opacity: 0.45; }
+  body.has-bnav .main-nav { display: none !important; }
+  body.has-bnav { padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px)); }
+  body.has-bnav #floatMenu { bottom: calc(82px + env(safe-area-inset-bottom, 0px)); }
+  body.has-bnav #timerPill { bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
+
+  /* ── Aba "Mais" (folha que sobe da barra) ── */
+  #maisSheetOverlay { position: fixed; inset: 0; z-index: 9600; background: rgba(0, 0, 0, .62); display: none; }
+  #maisSheetOverlay.show { display: block; }
+  #maisSheet { position: absolute; bottom: 0; left: 0; right: 0; background: #16140f; border-top: 1px solid rgba(212, 175, 106, .3); border-radius: 18px 18px 0 0; padding: 10px 14px calc(18px + env(safe-area-inset-bottom, 0px)); max-height: 78vh; overflow: auto; animation: maisUp .22s ease; }
+  @keyframes maisUp { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+  #maisSheet .mais-grab { width: 40px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, .18); margin: 2px auto 12px; }
+  .mais-opt { display: flex; align-items: center; gap: 11px; width: 100%; background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .09); color: #eaeaea; border-radius: 12px; padding: 12px 14px; font-size: 13.5px; font-weight: 600; margin-bottom: 8px; cursor: pointer; font-family: inherit; text-align: left; text-decoration: none; position: relative; }
+  .mais-opt .ic { display: flex; }
+  .mais-opt .ic svg { width: 18px; height: 18px; color: var(--gold); }
+  .mais-opt.destaque { background: rgba(212, 175, 106, .12); border-color: rgba(212, 175, 106, .4); }
+  .mais-sep { font-size: 10px; font-weight: 700; letter-spacing: 1.2px; color: #6f6a60; margin: 12px 2px 8px; }
+
+  /* ── TOUR DE PRIMEIRO ACESSO (spotlight: escurece tudo, destaca um feature por vez) ── */
+  #tourOverlay { position: fixed; inset: 0; z-index: 100060; display: none; }
+  #tourOverlay.show { display: block; }
+  .tour-hole { position: absolute; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(0, 0, 0, .8); transition: all .32s ease; pointer-events: none; border: 1.5px solid rgba(212, 175, 106, .85); }
+  .tour-tip { position: absolute; width: min(320px, calc(100vw - 28px)); background: #17150f; border: 1px solid rgba(212, 175, 106, .45); border-radius: 14px; padding: 14px 15px 12px; box-shadow: 0 10px 34px rgba(0, 0, 0, .6); transition: all .32s ease; }
+  .tour-tip h4 { margin: 0 0 6px; color: var(--gold); font-size: 14.5px; font-weight: 800; }
+  .tour-tip p { margin: 0 0 12px; color: #d9d4cb; font-size: 12.5px; line-height: 1.55; }
+  .tour-tip .tour-row { display: flex; align-items: center; gap: 10px; }
+  .tour-tip .tour-step { color: #8d8579; font-size: 10.5px; font-weight: 700; margin-right: auto; }
+  .tour-tip button { font-family: inherit; cursor: pointer; }
+  .tour-skip { background: none; border: none; color: #9a9389; font-size: 12px; font-weight: 600; padding: 8px 6px; }
+  .tour-next { background: var(--gold); border: none; color: #0c0c0d; font-size: 12.5px; font-weight: 800; padding: 9px 18px; border-radius: 9px; }
 
   /* ── Protocolo styles (dentro da dieta) ── */
   .proto-card {
@@ -2600,7 +2687,7 @@
   <div class="brand-name">MÉTODO GH</div>
   <h1 id="headerTitle">PROTOCOLO DE TREINO</h1>
   <div class="last-mod" id="lastModBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:0.3px;"><span id="versionBadge" style="display:none;color:var(--gold);font-weight:600;">Protocolo v<span id="versionValue"></span></span><span id="lastModSep" style="display:none;"> · </span>Atualizado em <span id="lastModValue"></span></div>
-  <div class="last-mod" id="proxReajusteBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:0.3px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-1px;margin-right:3px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Próxima anamnese de reajuste: <span id="proxReajusteValue" style="color:var(--gold);font-weight:600;"></span></div>
+  <div class="last-mod" id="proxReajusteBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:0.3px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-1px;margin-right:3px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span id="proxReajusteLabel">Próxima anamnese de reajuste: </span><span id="proxReajusteValue" style="color:var(--gold);font-weight:600;"></span></div>
   <div class="last-mod" id="esforcoAlvoBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:0.3px;">💪 Esforço: <span id="esforcoAlvoValue" style="color:var(--gold);font-weight:600;"></span><div id="esforcoAlvoTexto" style="display:none;font-size:10.5px;color:#8d8579;font-weight:400;margin-top:2px;line-height:1.4;"></div></div>
 </div>
 
@@ -2666,6 +2753,7 @@
   <button class="nav-btn" id="navGhflix" onclick="switchView('ghflix')">GHFLIX</button>
 </div>
 <div id="ghflixView"></div>
+<div id="progressoView"></div>
 
 <!-- ══ LOADING STATE ══ -->
 <div id="loadingScreen" class="loading-screen" style="display:none;">
@@ -2887,6 +2975,7 @@
     <div class="pg-text"><span id="pgLabel">Hoje: 0/0 exercícios</span></div>
     <div class="pg-bar"><div class="pg-fill" id="pgFill" style="width:0%"></div></div>
   </div>
+  <div class="const-dots" id="constDots" style="display:none;"></div>
   <div class="wt-card" id="wtCard">
     <div>
       <div class="wt-time" id="wtTime">00:00</div>
@@ -4176,7 +4265,90 @@
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span><span>Instalar app na tela inicial</span>
     </button>
   </div>
-  <button class="float-btn" id="floatBtn" onclick="toggleFloatMenu()" title="Menu rápido" style="position:relative;"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span class="sup-dot" id="supDotFab" style="top:4px;right:4px;"></span></button>
+  <button class="float-btn" id="floatBtn" onclick="openChatModal()" title="Tirar dúvida ou pedir ajuste" style="position:relative;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/></svg><span class="sup-dot" id="supDotFab" style="top:4px;right:4px;"></span></button>
+</div>
+
+<!-- ══ BARRA DE NAVEGAÇÃO INFERIOR (Treino · Dieta · Progresso · GHFlix · Mais) ══ -->
+<div id="bottomNav">
+  <button type="button" class="bn-item active" id="bnTreino" onclick="switchView('treino')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5h11v11h-11z" opacity="0"/><path d="M14.4 14.4 9.6 9.6"/><path d="M18.657 21.485a2 2 0 1 1-2.829-2.828l-1.767 1.768a2 2 0 1 1-2.829-2.829l6.364-6.364a2 2 0 1 1 2.829 2.829l1.767-1.768a2 2 0 1 1 2.829 2.828z"/><path d="m21.5 21.5-1.4-1.4"/><path d="M3.9 3.9 2.5 2.5"/><path d="M6.404 12.768a2 2 0 1 1-2.829-2.829l1.768-1.767a2 2 0 1 1-2.828-2.829l2.828-2.828a2 2 0 1 1 2.829 2.828l1.767-1.768a2 2 0 1 1 2.829 2.829z"/></svg>
+    <span>Treino</span>
+  </button>
+  <button type="button" class="bn-item" id="bnDieta" onclick="switchView('dieta')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>
+    <span>Dieta</span>
+  </button>
+  <button type="button" class="bn-item" id="bnProgresso" onclick="switchView('progresso')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+    <span>Progresso</span>
+  </button>
+  <button type="button" class="bn-item" id="bnGhflix" onclick="switchView('ghflix')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+    <span>GHFlix</span>
+  </button>
+  <button type="button" class="bn-item" id="bnMais" onclick="openMaisSheet()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+    <span>Mais</span>
+  </button>
+</div>
+
+<!-- ══ FOLHA "MAIS" ══ -->
+<div id="maisSheetOverlay" onclick="if(event.target.id==='maisSheetOverlay')closeMaisSheet()">
+  <div id="maisSheet">
+    <div class="mais-grab"></div>
+    <button type="button" class="mais-opt destaque" onclick="closeMaisSheet(); showInstallInstructions()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span><span>Instalar app na tela inicial</span>
+    </button>
+    <button type="button" class="mais-opt" style="position:relative;" onclick="closeMaisSheet(); openChatModal()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></span><span id="maisChatLabel">Tirar dúvida ou pedir ajuste</span><span class="sup-dot" id="supDotMais" style="top:50%;transform:translateY(-50%);right:10px;"></span>
+    </button>
+    <a class="mais-opt" href="https://wa.me/555520131470" target="_blank" rel="noopener">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span><span>Suporte no WhatsApp</span>
+    </a>
+    <button type="button" class="mais-opt" onclick="closeMaisSheet(); openRenovModal('menu')">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span><span>Renovar meu plano</span>
+    </button>
+    <div class="mais-sep">FERRAMENTAS</div>
+    <button type="button" class="mais-opt" onclick="closeMaisSheet(); openRankingModal()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg></span><span>Ranking</span>
+    </button>
+    <button type="button" class="mais-opt" onclick="closeMaisSheet(); openFotosModal()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span><span>Minhas fotos do reajuste</span>
+    </button>
+    <button type="button" class="mais-opt" onclick="closeMaisSheet(); openAgendaModal()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span>Personal &amp; Psicóloga</span>
+    </button>
+    <button type="button" class="mais-opt" onclick="closeMaisSheet(); downloadPDF()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span><span id="pdfBtnLabelMais">Baixar treino em PDF</span>
+    </button>
+    <div class="mais-sep">AJUSTES</div>
+    <button type="button" class="mais-opt" onclick="toggleUnit()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></span><span id="unitToggleLabelMais">Unidade: kg (trocar pra lb)</span>
+    </button>
+    <button type="button" class="mais-opt" onclick="closeMaisSheet(); reverTutorial()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><span>Rever o tour do app</span>
+    </button>
+    <button type="button" class="mais-opt" onclick="closeMaisSheet(); forceSyncFromServer()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span><span>Recarregar do servidor</span>
+    </button>
+    <button type="button" class="mais-opt" onclick="closeMaisSheet(); apagarPesosMarcados()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span><span>Apagar pesos marcados</span>
+    </button>
+  </div>
+</div>
+
+<!-- ══ TOUR DE PRIMEIRO ACESSO ══ -->
+<div id="tourOverlay">
+  <div class="tour-hole" id="tourHole"></div>
+  <div class="tour-tip" id="tourTip">
+    <h4 id="tourTitle"></h4>
+    <p id="tourTxt"></p>
+    <div class="tour-row">
+      <span class="tour-step" id="tourStep"></span>
+      <button type="button" class="tour-skip" onclick="tourEnd()">Pular</button>
+      <button type="button" class="tour-next" id="tourNextBtn" onclick="tourNext()">Próximo</button>
+    </div>
+  </div>
 </div>
 
 <!-- Modal de instruções de instalação -->
@@ -5365,8 +5537,11 @@ function toggleUnit() {
   fo && fo.classList.remove('show');
 }
 function updateUnitToggleLabel() {
-  const el = document.getElementById('unitToggleLabel');
-  if (el) el.textContent = `Unidade: ${getUnit() === 'kg' ? 'kg (trocar pra lb)' : 'lb (trocar pra kg)'}`;
+  const txt = `Unidade: ${getUnit() === 'kg' ? 'kg (trocar pra lb)' : 'lb (trocar pra kg)'}`;
+  ['unitToggleLabel', 'unitToggleLabelMais'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = txt;
+  });
 }
 
 // ══ localStorage helpers ══
@@ -5653,11 +5828,16 @@ function onSetField(di, ei) {
   _setTimers[k] = setTimeout(() => {
     const arr = _readSetsFromDom(di, ei);
     if (!arr) return;
+    // reps preenchidas ANTES deste save (fonte: storage) — é contra isso que o
+    // descanso automático decide se uma série NOVA acabou de ser anotada
+    let _repsAntes = 0;
+    try { _repsAntes = (loadSets(di, ei, currentWeek) || []).filter(s => String(s.reps || '').trim()).length; } catch (_) {}
     saveSets(di, ei, currentWeek, arr);
     const el = document.getElementById(`sv-${di}-${_setSvKey(ei)}`);
     if (el) { el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 1500); }
     const kg = Math.max(0, ...arr.map(s => parseFloat(displayToKg(s.kg)) || 0));   // PR pela maior carga entre as séries
     if (kg > 0 && typeof checkPR === 'function') checkPR(di, /^\d+$/.test(String(ei)) ? parseInt(ei) : ei, kg);
+    _autoRestMaybe(di, ei, arr, _repsAntes);   // reps nova + treino rolando = descanso dispara sozinho (pill)
   }, 400);
 }
 // biset salva sob "2a"/"2b" mas o badge "salvo" é do card (sv-di-2) → normaliza pro badge
@@ -6948,7 +7128,21 @@ async function loadAndShowLastModified() {
     if (data.proxReajusteBR) {
       const pEl = document.getElementById('proxReajusteValue');
       const pBadge = document.getElementById('proxReajusteBadge');
-      if (pEl && pBadge) { pEl.textContent = data.proxReajusteBR; pBadge.style.display = 'block'; }
+      if (pEl && pBadge) {
+        // Data no passado: em vez de exibir "próxima anamnese" vencida (parece bug),
+        // vira convite. new Date('dd/mm') não existe — parse manual do formato BR.
+        const m = /^([0-3]?\d)\/([01]?\d)\/(\d{4})/.exec(String(data.proxReajusteBR).trim());
+        const venceu = m && (new Date(+m[3], +m[2] - 1, +m[1], 23, 59, 59) < new Date());
+        const lbl = document.getElementById('proxReajusteLabel');
+        if (venceu) {
+          if (lbl) lbl.textContent = 'Reajuste liberado: ';
+          pEl.textContent = 'me responde a anamnese pra eu atualizar teu protocolo';
+        } else {
+          if (lbl) lbl.textContent = 'Próxima anamnese de reajuste: ';
+          pEl.textContent = data.proxReajusteBR;
+        }
+        pBadge.style.display = 'block';
+      }
       _proxReajusteBR = data.proxReajusteBR;
       reajusteBannerCheck(); // empurrão proativo quando o reajuste tá perto/vencido
       protoProgressUpdate(); // barra "Protocolo X · dia N de 50" no topo
@@ -7283,6 +7477,7 @@ function updateDayProgress() {
     wEl.classList.toggle('hit', bateu);
     wEl.textContent = mw.alvo > 0 ? ((bateu ? '✓ ' : '') + mw.feitos + ' de ' + mw.alvo + ' na semana') : '';
   }
+  _constDotsRender();
   renderMuscleMap();
   // Botão "Recomeçar semana": só aparece quando há marca de feito na semana atual
   const wr = document.getElementById('weekResetBtn');
@@ -7602,6 +7797,139 @@ function startTimer(name, seconds) {
   }, 1000);
   _timerLockOn();
 }
+// ── Descanso AUTOMÁTICO (GH 2026-08-13) ──
+// Anotou as reps de uma série com o treino rolando (cronômetro ligado ou modo foco aberto)
+// → o intervalo prescrito dispara sozinho, MINIMIZADO (pill), sem roubar a tela de quem
+// ainda vai preencher o "sobrou". Nunca atropela um descanso já em andamento.
+function startTimerAuto(name, seconds) {
+  if (typeof _shortMin === 'function' && _shortMin() && seconds > 0) seconds = Math.min(seconds, _shortRestCap(name));
+  _timerLeft = seconds;
+  _timerTotal = seconds;
+  document.getElementById('timerName').textContent = name;
+  document.getElementById('timerOverlay').classList.remove('show');
+  const pill = document.getElementById('timerPill');
+  pill.classList.remove('done');
+  pill.classList.add('show');
+  updateTimerDisplay();
+  if (_timerInt) clearInterval(_timerInt);
+  _timerInt = setInterval(() => {
+    _timerLeft--;
+    updateTimerDisplay();
+    if (_timerLeft <= 0) timerDone();
+  }, 1000);
+  _timerLockOn();
+  if (navigator.vibrate) navigator.vibrate(20);
+}
+function _autoRestMaybe(di, ei, arr, repsAntes) {
+  try {
+    const focoAberto = (() => { const f = document.getElementById('focusOverlay'); return f && f.classList.contains('show'); })();
+    const treinoRolando = (typeof _wtTick !== 'undefined' && _wtTick);
+    if (!focoAberto && !treinoRolando) return;      // fora de treino ativo: nada de timer sozinho
+    const n = (arr || []).filter(s => String(s.reps || '').trim()).length;
+    if (n <= (repsAntes || 0)) return;              // só quando uma série NOVA ganhou reps (corrigir número não dispara)
+    if (_timerInt) return;                          // já tem descanso rodando
+    const exs = (WORKOUT[di] && WORKOUT[di].exercises) || [];
+    const base = exs[parseInt(ei)];
+    if (!base) return;
+    const suf = String(ei).match(/[ab]$/);
+    const obj = base.biset ? ((suf && suf[0] === 'b') ? base.b : base.a) : base;
+    const secs = parseIntervalSeconds(obj.rest);
+    if (!secs || secs <= 0) return;
+    startTimerAuto(obj.name || 'Descanso', secs);
+  } catch (_) {}
+}
+
+// ══ TOUR DE PRIMEIRO ACESSO (GH 2026-08-13) ══
+// Escurece a tela e ilumina um feature por vez, SÓ os principais, só na primeira
+// visita (flag no aparelho). "Rever o tour do app" na aba Mais roda de novo.
+const _TOUR_KEY = 'gh_tour_v1_done';
+let _tourIdx = -1, _tourAtivo = false;
+function _tourSteps() {
+  return [
+    { sel: '#dayTabs', t: 'Teu treino da semana', p: 'Cada botão é um dia de treino. O app já abre no treino certo de hoje, é só seguir.' },
+    { sel: '.sets-grid', t: 'Anota tuas cargas aqui', p: 'Peso e repetições de cada série. É com isso que eu acompanho tua evolução e ajusto teu protocolo. Salva sozinho.' },
+    { sel: '.ex-action-btn.sub-btn', t: 'Sem o aparelho? Troca.', p: 'Toca em "trocar" que eu te mostro as opções equivalentes pro mesmo músculo, com vídeo.' },
+    { sel: '.focus-entry', t: 'Modo treino', p: 'Um exercício por vez, em tela cheia. Anotou a série com o treino rodando, o descanso cronometra sozinho.' },
+    { sel: '#bottomNav', t: 'Tua navegação', p: 'Dieta, teu progresso com gráficos e o resto do app moram aqui embaixo.' },
+    { sel: '#floatBtn', t: 'Fala comigo', p: 'Dúvida ou quer pedir um ajuste no protocolo? Me chama por esse botão.' }
+  ];
+}
+function _tourMaybeStart() {
+  try {
+    if (localStorage.getItem(_TOUR_KEY) === '1') return;
+    if (_tourAtivo) return;
+    if (typeof params !== 'undefined' && params.get('edit')) return;              // treinador não vê tour
+    if (typeof WORKOUT === 'undefined' || !Array.isArray(WORKOUT) || !WORKOUT.length) return;
+    setTimeout(() => { if (!_tourAtivo && localStorage.getItem(_TOUR_KEY) !== '1') tourStart(); }, 1600);
+  } catch (_) {}
+}
+function reverTutorial() {
+  try { localStorage.removeItem(_TOUR_KEY); } catch (_) {}
+  switchView('treino');
+  setTimeout(tourStart, 350);
+}
+function tourStart() {
+  const passos = _tourSteps().filter(s => {
+    const el = document.querySelector(s.sel);
+    return el && (el.offsetParent !== null || getComputedStyle(el).position === 'fixed');
+  });
+  if (passos.length < 2) { try { localStorage.setItem(_TOUR_KEY, '1'); } catch (_) {} return; }
+  _tourPassos = passos;
+  _tourIdx = -1;
+  _tourAtivo = true;
+  document.getElementById('tourOverlay').classList.add('show');
+  tourNext();
+}
+let _tourPassos = [];
+function tourNext() {
+  _tourIdx++;
+  if (_tourIdx >= _tourPassos.length) { tourEnd(); return; }
+  const s = _tourPassos[_tourIdx];
+  const el = document.querySelector(s.sel);
+  if (!el) { tourNext(); return; }
+  el.scrollIntoView({ block: 'center', behavior: 'auto' });
+  setTimeout(() => {
+    const r = el.getBoundingClientRect();
+    const pad = 6;
+    const hole = document.getElementById('tourHole');
+    const tip = document.getElementById('tourTip');
+    document.getElementById('tourTitle').textContent = s.t;
+    document.getElementById('tourTxt').textContent = s.p;
+    document.getElementById('tourStep').textContent = (_tourIdx + 1) + ' de ' + _tourPassos.length;
+    document.getElementById('tourNextBtn').textContent = _tourIdx === _tourPassos.length - 1 ? 'Bora treinar' : 'Próximo';
+    const tipW = Math.min(320, window.innerWidth - 28);
+    // Alvo fora da tela mesmo depois do scroll (navegador que bloqueia scroll programático):
+    // sem spotlight, dica centralizada — o tour segue legível em qualquer aparelho.
+    const foraDaTela = r.bottom < 0 || r.top > window.innerHeight - 40;
+    if (foraDaTela) {
+      hole.style.width = '0px'; hole.style.height = '0px';
+      hole.style.left = '50%'; hole.style.top = '46%';
+      tip.style.left = Math.max(14, (window.innerWidth - tipW) / 2) + 'px';
+      tip.style.top = '42%';
+      tip.style.transform = 'none';
+      return;
+    }
+    hole.style.left = (r.left - pad) + 'px';
+    hole.style.top = (r.top - pad) + 'px';
+    hole.style.width = (r.width + pad * 2) + 'px';
+    hole.style.height = (r.height + pad * 2) + 'px';
+    let left = Math.max(14, Math.min(r.left, window.innerWidth - tipW - 14));
+    tip.style.left = left + 'px';
+    // tip embaixo do alvo se o alvo tá na metade de cima, senão em cima
+    tip.style.transform = 'none';
+    if (r.top + r.height / 2 < window.innerHeight / 2) {
+      tip.style.top = Math.min(r.bottom + pad + 12, window.innerHeight - 190) + 'px';
+    } else {
+      tip.style.top = Math.max(14, r.top - pad - 12) + 'px';
+      tip.style.transform = 'translateY(-100%)';
+    }
+  }, 240);
+}
+function tourEnd() {
+  _tourAtivo = false;
+  try { localStorage.setItem(_TOUR_KEY, '1'); } catch (_) {}
+  document.getElementById('tourOverlay').classList.remove('show');
+}
 function updateTimerDisplay() {
   const d = document.getElementById('timerDisplay');
   d.textContent = _timerLeft;
@@ -7775,6 +8103,9 @@ function openFocusMode(di) {
   const start = exs.findIndex((ex, ei) => !isDone(di, ei));
   _focusIdx = start === -1 ? 0 : start;
   _focusOpenedAt = Date.now();
+  // Entrou no modo treino = treino começou: liga o cronômetro da sessão junto
+  // (no-op se já tem sessão viva) — é ele que habilita o descanso automático.
+  try { if (typeof wtStart === 'function') wtStart(); } catch (_) {}
   document.getElementById('focusOverlay').classList.add('show');
   document.body.style.overflow = 'hidden';
   _focusRender();
@@ -8035,11 +8366,12 @@ function _focusRender() {
 })();
 
 // ══ Histórico de cargas ══
-function showHistory(di, ei) {
+// Núcleo compartilhado: monta o gráfico e a leitura de tendência de UM exercício.
+// Usado pelo modal (showHistory) e pelo gráfico grande da tela Meu Progresso.
+function _histChartData(di, ei) {
   const ex = WORKOUT[di] && WORKOUT[di].exercises[ei];
-  if (!ex) return;
+  if (!ex) return null;
   const _hnm = (!ex.biset && typeof _exAtivo === 'function') ? _exAtivo(di, ei).name : (ex.name || (ex.a || {}).name || '');
-  document.getElementById('historyTitle').textContent = '📈 ' + _hnm;
   const values = [];
   for (let w = 1; w <= TOTAL_WEEKS; w++) {
     const c = parseFloat(loadCarga(di, ei, w)) || 0;
@@ -8086,29 +8418,37 @@ function showHistory(di, ei) {
       <span class="hist-chip pr">PR <b>${fmt(val(pr))}</b> · S${pr.w}</span>
     </div>`;
   }
-  document.getElementById('historyBars').innerHTML = html;
-  // Trend
-  const trend = document.getElementById('historyTrend');
-  trend.classList.remove('up', 'down');
+  let trendText = '', trendCls = '';
   if (filled.length === 0) {
-    trend.textContent = 'Sem dados ainda, anota a carga semana a semana pra acompanhar a evolução.';
+    trendText = 'Sem dados ainda, anota a carga semana a semana pra acompanhar a evolução.';
   } else if (filled.length === 1) {
-    trend.textContent = `Primeira carga registrada: ${fmt(val(filled[0]))} na semana ${filled[0].w}. Continua progredindo!`;
+    trendText = `Primeira carga registrada: ${fmt(val(filled[0]))} na semana ${filled[0].w}. Continua progredindo!`;
   } else {
     const first = filled[0], last = filled[filled.length-1];
     const diffKg = val(last) - val(first);
     const pct = ((diffKg/val(first))*100).toFixed(0);
     const diffDisp = (anyKg && unit === 'lb') ? (Math.round(diffKg * LB_PER_KG * 10) / 10) : (Math.round(diffKg * 10) / 10);
     if (diffKg > 0) {
-      trend.textContent = `📈 Evoluiu +${diffDisp}${unit} (+${pct}%) da semana ${first.w} pra ${last.w}`;
-      trend.classList.add('up');
+      trendText = `📈 Evoluiu +${diffDisp}${unit} (+${pct}%) da semana ${first.w} pra ${last.w}`;
+      trendCls = 'up';
     } else if (diffKg < 0) {
-      trend.textContent = `⚠ Reduziu ${Math.abs(diffDisp)}${unit} da semana ${first.w} pra ${last.w}, checa se foi descanso/lesão`;
-      trend.classList.add('down');
+      trendText = `⚠ Reduziu ${Math.abs(diffDisp)}${unit} da semana ${first.w} pra ${last.w}, checa se foi descanso/lesão`;
+      trendCls = 'down';
     } else {
-      trend.textContent = `⏸ Mesma carga ${fmt(val(first))} em ${filled.length} semanas, hora de tentar progredir`;
+      trendText = `⏸ Mesma carga ${fmt(val(first))} em ${filled.length} semanas, hora de tentar progredir`;
     }
   }
+  return { name: _hnm, html, trendText, trendCls, hasData: filled.length > 0 };
+}
+function showHistory(di, ei) {
+  const d = _histChartData(di, ei);
+  if (!d) return;
+  document.getElementById('historyTitle').textContent = '📈 ' + d.name;
+  document.getElementById('historyBars').innerHTML = d.html;
+  const trend = document.getElementById('historyTrend');
+  trend.classList.remove('up', 'down');
+  if (d.trendCls) trend.classList.add(d.trendCls);
+  trend.textContent = d.trendText;
   document.getElementById('historyModal').classList.add('show');
 }
 function closeHistoryModal() { document.getElementById('historyModal').classList.remove('show'); }
@@ -8572,6 +8912,12 @@ async function loadFromSheets(injectedText) {
     document.getElementById('infoFreq').textContent = studentFreq;
     document.getElementById('infoObj').textContent = studentObj;
     document.getElementById('infoDur').textContent = studentDur;
+    // Chip vazio some da tela (o elemento fica no DOM: infoFreq é fonte de dado pra
+    // cardio/meta da semana, que leem o textContent — só a moldura visual esconde)
+    [['infoFreq', studentFreq], ['infoObj', studentObj], ['infoDur', studentDur]].forEach(([id, v]) => {
+      const f = document.getElementById(id)?.closest('.field');
+      if (f) f.style.display = String(v || '').trim() ? '' : 'none';
+    });
 
     // A DIETA carrega ANTES do TREINO (loadDietFromSheets().then(loadFromSheets)). Pra aluno SEM
     // prescrição numérica de cardio, cardioTarget cai no fallback = freq de treino — que só existe
@@ -8653,6 +8999,7 @@ async function loadFromSheets(injectedText) {
     loadLaudoDestaque();   // antes-e-depois do reajuste em destaque na página principal (fora do modal)
     renderWtCard();        // cronômetro do treino (retoma sessão viva se o app foi fechado no meio)
     loadTempoTreino();     // durações registradas → badges nos dias
+    _tourMaybeStart();     // 1º acesso: tour de boas-vindas (o _showNav da dieta roda cedo demais, sem WORKOUT)
 
   } catch (err) {
     document.getElementById('loadingScreen').style.display = 'none';
@@ -8661,12 +9008,12 @@ async function loadFromSheets(injectedText) {
     // de pé best-effort. Caso Vitor 2026-08-10: aparelho com lixo local caía aqui todo dia e a
     // aba TREINO "sumia" só naquele device, com planilha e rede perfeitas.
     if (typeof WORKOUT !== 'undefined' && Array.isArray(WORKOUT) && WORKOUT.length) {
-      document.getElementById('mainNav').style.display = 'flex';
+      _showNav();
       var _ntOk = document.getElementById('navTreino'); if (_ntOk) _ntOk.style.display = '';
       try { renderExercises(); } catch (_re) {}
     } else if (dietLoaded) {
       // Socorro "só dieta" fica reservado pra quando o DADO do treino realmente não veio.
-      document.getElementById('mainNav').style.display = 'flex';
+      _showNav();
       var _nt = document.getElementById('navTreino'); if (_nt) _nt.style.display = 'none';
       switchView('dieta');
     } else {
@@ -8832,11 +9179,11 @@ function renderExercises() {
             <button type="button" class="set-add" onclick="addSet(${di},'${ei}')">+ série</button>
             <span class="carga-saved" id="sv-${di}-${ei}">&#10003; salvo</span>
             <div class="ex-actions">
-              <button class="ex-action-btn save-btn" onclick="saveSetsManual(${di}, '${ei}', this)" title="Salvar séries agora"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></button>
-              <button class="ex-action-btn" onclick="openPacer(${di}, ${ei})" title="Treinar no ritmo (coach de cadência)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></button>
-              <button class="ex-action-btn" onclick="startTimer('${safeName}', parseIntervalSeconds('${safeRest}'))" title="Cronômetro de descanso (${ex.rest || 'auto'})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></button>
-              <button class="ex-action-btn" onclick="showHistory(${di}, ${ei})" title="Histórico de cargas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></button>
-              <button class="ex-action-btn sub-btn ${act.sub ? 'sub-on' : ''}" onclick="${subAlts ? `openSubPicker(${di}, ${ei})` : `openSubFallback(${di}, ${ei})`}" title="Trocar exercício"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></button>
+              <button class="ex-action-btn save-btn" onclick="saveSetsManual(${di}, '${ei}', this)" title="Salvar séries agora"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span class="ex-action-lbl">salvar</span></button>
+              <button class="ex-action-btn" onclick="openPacer(${di}, ${ei})" title="Treinar no ritmo (coach de cadência)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="ex-action-lbl">ritmo</span></button>
+              <button class="ex-action-btn" onclick="startTimer('${safeName}', parseIntervalSeconds('${safeRest}'))" title="Cronômetro de descanso (${ex.rest || 'auto'})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="ex-action-lbl">descanso</span></button>
+              <button class="ex-action-btn" onclick="showHistory(${di}, ${ei})" title="Histórico de cargas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg><span class="ex-action-lbl">histórico</span></button>
+              <button class="ex-action-btn sub-btn ${act.sub ? 'sub-on' : ''}" onclick="${subAlts ? `openSubPicker(${di}, ${ei})` : `openSubFallback(${di}, ${ei})`}" title="Trocar exercício"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg><span class="ex-action-lbl">trocar</span></button>
             </div>
             </div>
           </div>
@@ -8942,10 +9289,11 @@ function _buildDietaPrintHTML() {
   const d = DIET_DATA;
   let html = _pdfHeader('PROTOCOLO ALIMENTAR');
 
-  // Info card (kcal, objetivo, metas)
+  // Info card (kcal, objetivo, metas) — mesma regra do renderDiet: kcal sem número é objetivo
   let info = '';
-  if (d.info && d.info.kcal) info += `<tr><td><strong>Calorias</strong></td><td>${esc(d.info.kcal)}</td></tr>`;
-  if (d.info && d.info.objetivo) info += `<tr><td><strong>Objetivo</strong></td><td>${esc(d.info.objetivo)}</td></tr>`;
+  const pdfKcalNum = /\d/.test(String((d.info && d.info.kcal) || ''));
+  if (d.info && d.info.kcal) info += `<tr><td><strong>${pdfKcalNum ? 'Calorias' : 'Objetivo'}</strong></td><td>${esc(d.info.kcal)}</td></tr>`;
+  if (d.info && d.info.objetivo && (pdfKcalNum || String(d.info.objetivo).trim().toLowerCase() !== String(d.info.kcal || '').trim().toLowerCase())) info += `<tr><td><strong>Objetivo</strong></td><td>${esc(d.info.objetivo)}</td></tr>`;
   (d.metas || []).forEach(m => {
     info += `<tr><td><strong>${esc(m.campo)}</strong></td><td>${esc(m.valor)}${m.detalhe ? ' · ' + esc(m.detalhe) : ''}</td></tr>`;
   });
@@ -9065,11 +9413,13 @@ function downloadPDF() {
 
 // Atualiza label do botão pra refletir a view atual
 function updatePdfButtonLabel() {
-  const el = document.getElementById('pdfBtnLabel');
-  if (!el) return;
-  el.textContent = document.body.classList.contains('view-dieta')
+  const txt = document.body.classList.contains('view-dieta')
     ? 'Baixar dieta em PDF'
     : 'Baixar treino em PDF';
+  ['pdfBtnLabel', 'pdfBtnLabelMais'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = txt;
+  });
 }
 
 function selectDay(i) {
@@ -10356,11 +10706,13 @@ function _supSetEnabled(on) {
   const tab = document.getElementById('chatModeSuporte');
   if (tab) tab.style.display = _supEnabled ? '' : 'none';
   // rótulo do menu acompanha: só fala em "suporte" quando a aba existe de verdade
-  const lbl = document.getElementById('floatChatLabel');
-  if (lbl) lbl.textContent = _supEnabled ? 'Dúvida, ajuste ou suporte' : 'Tirar dúvida ou pedir ajuste';
+  ['floatChatLabel', 'maisChatLabel'].forEach(id => {
+    const l = document.getElementById(id);
+    if (l) l.textContent = _supEnabled ? 'Dúvida, ajuste ou suporte' : 'Tirar dúvida ou pedir ajuste';
+  });
   if (!_supEnabled) {
     _supPollStop();
-    ['supDotTab', 'supDotOpt', 'supDotFab'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('on'); });
+    ['supDotTab', 'supDotOpt', 'supDotFab', 'supDotMais'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('on'); });
     if (_chatMode === 'suporte') setChatMode('duvida');
   } else {
     try { _supFetch(); } catch (_) {}   // ligou: já confere se tem resposta esperando
@@ -10384,7 +10736,7 @@ function _supMarkSeen() {
 }
 function _supBadgeUpdate() {
   const on = _supHasUnread();
-  ['supDotTab', 'supDotOpt', 'supDotFab'].forEach(id => {
+  ['supDotTab', 'supDotOpt', 'supDotFab', 'supDotMais'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.toggle('on', on);
   });
@@ -11858,6 +12210,34 @@ function _metaSemanaInfo() {
     return { feitos: dates.size, alvo: alvo };
   } catch (e) { return { feitos: 0, alvo: 0 }; }
 }
+// Bolinhas de constância seg→dom no hero (GH 2026-08-13). Mesmas chaves _concl da meta:
+// bolinha cheia = dia com treino concluído; anel = hoje. Sem linguagem de prêmio, só constância.
+function _constDotsRender() {
+  const el = document.getElementById('constDots');
+  if (!el) return;
+  try {
+    const pref = `gh_logsent_${SHEET_ID}_`;
+    const feitos = new Set();
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k || k.indexOf(pref) !== 0) continue;
+      const m = k.slice(pref.length).match(/^(\d{4}-\d{2}-\d{2})_d\d+_concl$/);
+      if (m) feitos.add(m[1]);
+    }
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    const seg = new Date(hoje); seg.setDate(hoje.getDate() - ((hoje.getDay() + 6) % 7));
+    const rot = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
+    let html = '';
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(seg); d.setDate(seg.getDate() + i);
+      const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      const cls = ['const-dot', feitos.has(key) ? 'feito' : '', d.getTime() === hoje.getTime() ? 'hoje' : ''].filter(Boolean).join(' ');
+      html += `<div class="${cls}"><span>${rot[i]}</span><i>✓</i></div>`;
+    }
+    el.innerHTML = html + '<span class="cd-lbl">constância da semana</span>';
+    el.style.display = 'flex';
+  } catch (_) { el.style.display = 'none'; }
+}
 
 function _progDiasNoMes() {
   // Datas únicas de treino concluído no mês corrente (keys gh_logsent_<SID>_<data>_dN_concl)
@@ -11879,20 +12259,81 @@ function _progOpenHistory(di, ei) {
   teHide('progressoModal');
   showHistory(di, ei);
 }
-function openProgressoModal() {
-  const fo = document.getElementById('floatOptions'); fo && fo.classList.remove('show');
-  const fb = document.getElementById('floatBtn'); fb && fb.classList.remove('open');
-  teShow('progressoModal');
+// Meu Progresso virou TELA (GH 2026-08-13) — o modal antigo redireciona pra ela.
+function openProgressoModal() { switchView('progresso'); }
+// Gráfico grande: seletor de exercício + curva completa (reusa o núcleo do histórico)
+let _pgItems = [];
+function _pgBigDraw() {
+  const sel = document.getElementById('pgExSel');
+  const box = document.getElementById('pgBigChart');
+  if (!sel || !box) return;
+  const it = _pgItems[parseInt(sel.value, 10)];
+  if (!it || it.plainEi === null) { box.innerHTML = ''; return; }
+  const d = _histChartData(it.di, it.plainEi);
+  if (!d) { box.innerHTML = ''; return; }
+  box.innerHTML = d.html + (d.trendText ? `<div class="pg-trendline ${d.trendCls}">${d.trendText}</div>` : '');
+}
+// Exemplo estático (dados fictícios) pra quem ainda não anotou nada ver o que ganha
+function _pgExemploSvg() {
+  const pts = [[14, 108], [62, 96], [110, 99], [158, 82], [206, 72], [254, 58], [302, 40]];
+  const line = pts.map((p, i) => (i ? 'L' : 'M') + p[0] + ' ' + p[1]).join(' ');
+  const dots = pts.map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="#8a8579"/>`).join('');
+  return `<svg viewBox="0 0 320 148" width="100%" style="opacity:.55;" aria-hidden="true">
+    <line x1="10" y1="124" x2="310" y2="124" stroke="rgba(255,255,255,.12)"/>
+    <path d="${line} L302 124 L14 124 Z" fill="rgba(255,255,255,.05)"/>
+    <path d="${line}" fill="none" stroke="#8a8579" stroke-width="2.5" stroke-linecap="round"/>${dots}
+    <text x="14" y="140" fill="#6f6a60" font-size="9.5" text-anchor="middle">S1</text>
+    <text x="302" y="140" fill="#6f6a60" font-size="9.5" text-anchor="middle">S8</text>
+    <text x="160" y="24" fill="#8a8579" font-size="11" font-weight="700" text-anchor="middle" letter-spacing="2">EXEMPLO</text>
+  </svg>`;
+}
+function renderProgressoScreen() {
+  const host = document.getElementById('progressoView');
+  if (!host) return;
   const unit = getUnit();
   const fmt = kg => kgToDisplay(kg) + unit;
   const items = _progCollect();
-  const body = document.getElementById('progressoBody');
+  let html = '<div class="prog-screen">';
   if (!items.length) {
-    // sem cargas ainda: as medidas das anamneses aparecem mesmo assim
-    body.innerHTML = '<p style="color:#888;text-align:center;padding:34px 16px;font-size:13px;line-height:1.6;">Ainda sem cargas anotadas.<br>Registra o peso que tu usa em cada exercício<br>e tua evolução aparece aqui. 💪</p><div id="medidasSec"></div>';
+    html += `<div class="pg-card">
+      <div class="pg-sec-t">EVOLUÇÃO DE CARGA</div>
+      ${_pgExemploSvg()}
+      <p style="color:#9a9389;text-align:center;font-size:12.5px;line-height:1.6;margin:10px 4px 6px;">Esse gráfico é um exemplo. Anota o peso que tu usa em cada exercício do treino e a TUA curva aparece aqui, semana a semana. 💪</p>
+      <button type="button" class="te-btn" style="width:100%;margin-top:8px;" onclick="switchView('treino')">Ir pro treino de hoje</button>
+    </div>
+    <div id="medidasSec"></div>
+    ${_pgFotosCard()}`;
+    host.innerHTML = html + '</div>';
     renderMedidas();
     return;
   }
+  _pgItems = items;
+  const comCurva = items.map((it, i) => ({ it, i })).filter(x => x.it.plainEi !== null && (x.it.vals || []).filter(v => v > 0).length >= 1);
+  if (comCurva.length) {
+    const def = comCurva.slice().sort((a, b) => ((b.it.vals || []).filter(v => v > 0).length - (a.it.vals || []).filter(v => v > 0).length) || (b.it.pct - a.it.pct))[0];
+    const opts = comCurva.slice().sort((a, b) => a.it.name.localeCompare(b.it.name))
+      .map(x => `<option value="${x.i}" ${x.i === def.i ? 'selected' : ''}>${x.it.name.replace(/</g, '&lt;')}</option>`).join('');
+    html += `<div class="pg-card">
+      <div class="pg-sec-t">EVOLUÇÃO DE CARGA</div>
+      <select id="pgExSel" class="pg-sel" onchange="_pgBigDraw()">${opts}</select>
+      <div id="pgBigChart" style="margin-top:10px;"></div>
+    </div>`;
+  }
+  html += _progBodyHtml(items, fmt);
+  html += _pgFotosCard();
+  host.innerHTML = html + '</div>';
+  _pgBigDraw();
+  renderMedidas();
+}
+function _pgFotosCard() {
+  return `<div class="pg-card" style="margin-top:14px;">
+    <div class="pg-sec-t">MINHAS FOTOS</div>
+    <p style="color:#9a9389;font-size:12px;line-height:1.55;margin:2px 2px 10px;">Tuas fotos de anamnese e reajuste, lado a lado, pra enxergar a mudança no espelho.</p>
+    <button type="button" class="te-btn ghost" style="width:100%;" onclick="openFotosModal()">Ver minhas fotos</button>
+  </div>`;
+}
+function _progBodyHtml(items, fmt) {
+  const unit = getUnit();
   const streak = getStreak();
   const dias = _progDiasNoMes();
   const newPRs = items.filter(i => i.isNewPR);
@@ -11964,8 +12405,7 @@ function openProgressoModal() {
   </div>`;
 
   html += '<div id="medidasSec"></div>';
-  body.innerHTML = html;
-  renderMedidas();
+  return html;
 }
 // pré-preenche o peso com a carga registrada do exercício escolhido
 function _calc1rmPick(sel) {
@@ -12211,7 +12651,7 @@ var dietFetchFailed = false;   // A15: falha REAL de rede/HTTP/parse (≠ aluno 
 // A15: mostra o estado de erro da dieta (com botão de tentar de novo) na própria aba Dieta.
 function _showDietFetchError() {
   try {
-    const mn = document.getElementById('mainNav'); if (mn) mn.style.display = 'flex';   // garante o acesso à aba Dieta
+    _showNav();   // garante o acesso à aba Dieta
     const loading = document.getElementById('dietLoading'); if (loading) loading.style.display = 'none';
     const content = document.getElementById('dietContent'); if (content) content.style.display = 'none';
     const box = document.getElementById('dietError');
@@ -12301,7 +12741,7 @@ async function loadDietFromSheets(injectedText) {
     // Único gate por refeição que fica é o banner do diário alimentar (abaixo).
     dietLoaded = true;
     dietFetchFailed = false;
-    document.getElementById('mainNav').style.display = 'flex';
+    _showNav();
     document.getElementById('accompToggle').style.display = 'flex';
     document.getElementById('glossarioToggle').style.display = 'flex';
     document.getElementById('suplementosToggle').style.display = 'flex';
@@ -12909,8 +13349,11 @@ function renderDiet() {
 
   // Info card
   html += `<div class="diet-info-card">`;
-  if (d.info.kcal) html += `<div class="diet-info-row"><span class="diet-info-label">Calorias:</span><span class="diet-info-value">${d.info.kcal}</span></div>`;
-  if (d.info.objetivo) html += `<div class="diet-info-row"><span class="diet-info-label">Objetivo:</span><span class="diet-info-value">${d.info.objetivo}</span></div>`;
+  // Célula de kcal sem número = o montador escreveu o objetivo ali ("hipertrofia e
+  // saúde mental"); rotular de "Calorias" parece bug pro aluno. Vira Objetivo.
+  const kcalEhNumero = /\d/.test(String(d.info.kcal || ''));
+  if (d.info.kcal) html += `<div class="diet-info-row"><span class="diet-info-label">${kcalEhNumero ? 'Calorias:' : 'Objetivo:'}</span><span class="diet-info-value">${d.info.kcal}</span></div>`;
+  if (d.info.objetivo && (kcalEhNumero || String(d.info.objetivo).trim().toLowerCase() !== String(d.info.kcal || '').trim().toLowerCase())) html += `<div class="diet-info-row"><span class="diet-info-label">Objetivo:</span><span class="diet-info-value">${d.info.objetivo}</span></div>`;
   d.metas.forEach(m => {
     html += `<div class="diet-info-row"><span class="diet-info-label">${m.campo}:</span><span class="diet-info-value">${m.valor}${m.detalhe ? ' · ' + m.detalhe : ''}</span></div>`;
   });
@@ -13168,17 +13611,46 @@ function toggleInstallGuide(show) {
 function switchView(view) {
   document.body.classList.toggle('view-dieta', view === 'dieta');
   document.body.classList.toggle('view-ghflix', view === 'ghflix');
+  document.body.classList.toggle('view-progresso', view === 'progresso');
   // A15: se já falhou de verdade, NÃO re-tenta sozinho a cada toque (o aviso na aba tem botão "Tentar de novo");
   // se ainda não carregou e não falhou, carrega.
   if (view === 'dieta' && !dietLoaded) { if (dietFetchFailed) _showDietFetchError(); else loadDietFromSheets(); }
   if (view === 'ghflix') ensureGhflixFrame();
+  if (view === 'progresso' && typeof renderProgressoScreen === 'function') renderProgressoScreen();
   document.getElementById('navTreino').classList.toggle('active', view === 'treino');
   document.getElementById('navDieta').classList.toggle('active', view === 'dieta');
   var ng = document.getElementById('navGhflix'); if (ng) ng.classList.toggle('active', view === 'ghflix');
-  var titles = { dieta: 'PROTOCOLO ALIMENTAR', ghflix: 'GHFLIX', treino: 'PROTOCOLO DE TREINO' };
+  // barra inferior acompanha
+  [['bnTreino', 'treino'], ['bnDieta', 'dieta'], ['bnProgresso', 'progresso'], ['bnGhflix', 'ghflix']].forEach(function (par) {
+    var b = document.getElementById(par[0]);
+    if (b) b.classList.toggle('active', view === par[1]);
+  });
+  var titles = { dieta: 'PROTOCOLO ALIMENTAR', ghflix: 'GHFLIX', progresso: 'MEU PROGRESSO', treino: 'PROTOCOLO DE TREINO' };
   document.getElementById('headerTitle').textContent = titles[view] || titles.treino;
   if (typeof updatePdfButtonLabel === 'function') updatePdfButtonLabel();
   window.scrollTo(0, 0);
+}
+// Barra inferior + esconde a nav de cima (a visibilidade das duas anda junto:
+// só aparecem quando um protocolo de aluno carregou de verdade)
+function _showNav() {
+  var mn = document.getElementById('mainNav');
+  if (mn) mn.style.display = 'flex';
+  document.body.classList.add('has-bnav');
+  if (typeof _tourMaybeStart === 'function') _tourMaybeStart();
+}
+function openMaisSheet() {
+  var ov = document.getElementById('maisSheetOverlay');
+  if (ov) ov.classList.add('show');
+  var bm = document.getElementById('bnMais');
+  if (bm) bm.classList.add('active');
+  if (typeof updateUnitToggleLabel === 'function') updateUnitToggleLabel();
+  if (typeof updatePdfButtonLabel === 'function') updatePdfButtonLabel();
+}
+function closeMaisSheet() {
+  var ov = document.getElementById('maisSheetOverlay');
+  if (ov) ov.classList.remove('show');
+  var bm = document.getElementById('bnMais');
+  if (bm) bm.classList.remove('active');
 }
 
 function ensureGhflixFrame() {
@@ -13558,8 +14030,12 @@ function _planGateDecision(j, GRACE, PRE_DIAS, hojeMs) {
     fetch(ep + '?action=ghflixAccess&id=' + encodeURIComponent(SHEET_ID))
       .then(function (r) { return r.json(); })
       .then(function (j) {
-        var btn = document.getElementById('navGhflix');
-        if (btn && !(j && j.liberado)) btn.classList.add('locked');
+        if (!(j && j.liberado)) {
+          var btn = document.getElementById('navGhflix');
+          if (btn) btn.classList.add('locked');
+          var bn = document.getElementById('bnGhflix');
+          if (bn) bn.classList.add('locked');
+        }
       }).catch(function () {});
   } catch (e) {}
 })();
