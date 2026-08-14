@@ -1,4 +1,4 @@
-const CACHE_NAME = 'metodo-gh-v351';
+const CACHE_NAME = 'metodo-gh-v352';
 const ASSETS = [
   './',
   './index.html',
@@ -18,8 +18,10 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', e => {
+  // cache: 'reload' fura o cache HTTP do Pages (max-age=600) — sem isso o SW novo
+  // instalava carregando o index VELHO e a "atualização" vinha com shell antigo.
   e.waitUntil(
-    caches.open(CACHE_NAME).then(c => c.addAll(ASSETS))
+    caches.open(CACHE_NAME).then(c => c.addAll(ASSETS.map(u => new Request(u, { cache: 'reload' }))))
   );
   self.skipWaiting();
 });
@@ -74,7 +76,9 @@ self.addEventListener('fetch', e => {
   if (e.request.url.includes('index.html') || e.request.url.includes('editor-data.js') || e.request.url.includes('substitutos.js') || e.request.mode === 'navigate') {
     e.respondWith(
       caches.match(e.request, { ignoreSearch: true }).then(cached => {
-        const net = fetch(e.request).then(resp => {
+        // no-cache: revalida com a origem (ETag) em vez de confiar no cache HTTP de
+        // 10min do Pages — a atualização em background pegava shell requentado.
+        const net = fetch(e.request, { cache: 'no-cache' }).then(resp => {
           if (resp && resp.ok && e.request.method === 'GET') {
             const clone = resp.clone();
             caches.open(CACHE_NAME).then(c => c.put(e.request, clone)).catch(() => {});
@@ -93,6 +97,14 @@ self.addEventListener('fetch', e => {
   e.respondWith(
     caches.match(e.request, { ignoreSearch: true }).then(r => r || fetch(e.request))
   );
+});
+
+// ── Aperto de mão de versão: a página pergunta qual versão este SW é. Se o shell
+// rodando for mais velho que o SW ativo, a página se recarrega sozinha (auto-update). ──
+self.addEventListener('message', event => {
+  if (event.data === 'gh_versao' && event.ports && event.ports[0]) {
+    event.ports[0].postMessage(CACHE_NAME);
+  }
 });
 
 // ── Web Push: lembrete de água (e outros futuros pushes do servidor) ──

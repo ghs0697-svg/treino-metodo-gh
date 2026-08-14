@@ -15103,9 +15103,65 @@ async function painelGateSubmit() {
   document.head.appendChild(link);
 })();
 
-// Registrar Service Worker (PWA)
+// Registrar Service Worker (PWA) + AUTO-UPDATE do shell (GH 14/08: "ainda não atualizou
+// no meu iphone"). Antes precisava abrir 2x, e no iOS nem isso valia: o PWA congelado
+// retoma sem navegação (o SW nem é consultado). Agora:
+//  1. Voltou pro app (visibilitychange) → força reg.update() → SW novo baixa na hora.
+//  2. SW novo assumiu (controllerchange) logo depois de abrir → recarrega SOZINHO uma
+//     vez e o aluno já vê a versão nova na MESMA abertura. Só recarrega na janela de
+//     8s e sem campo focado — nunca no meio de treino digitado.
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+  (function () {
+    // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
+    var APP_SHELL_V = 'metodo-gh-v352';
+    var carregouEm = Date.now();
+    var jaRecarregou = false;
+    function tentaRecarregar() {
+      if (jaRecarregou) return;
+      var a = document.activeElement;
+      var digitando = a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
+      if (digitando) return;   // não queima a trava: a próxima consulta tenta de novo
+      // visível e já passou 1min de uso: deixa quieto, atualiza na próxima abertura
+      if (document.visibilityState === 'visible' && Date.now() - carregouEm > 60000) return;
+      // 1 tentativa por versão de shell por sessão — mata qualquer chance de loop
+      try { if (sessionStorage.getItem('gh_upd_' + APP_SHELL_V) === '1') return; sessionStorage.setItem('gh_upd_' + APP_SHELL_V, '1'); } catch (_) {}
+      jaRecarregou = true;
+      location.reload();
+    }
+    // Aperto de mão: pergunta ao SW ATIVO qual versão ele é. Shell mais velho que o SW
+    // = tem app novo já baixado esperando → recarrega 1x e o aluno vê na MESMA abertura.
+    // É consulta de estado, não evento: zero corrida (o listener de evento perdia o
+    // update quando o SW instalava rápido demais).
+    function conferirVersao() {
+      try {
+        var ctrl = navigator.serviceWorker.controller;
+        if (!ctrl) return;
+        var mc = new MessageChannel();
+        mc.port1.onmessage = function (ev) {
+          if (ev.data && ev.data !== APP_SHELL_V) tentaRecarregar();
+        };
+        ctrl.postMessage('gh_versao', [mc.port2]);
+      } catch (_) {}
+    }
+    navigator.serviceWorker.register('sw.js').catch(function () {});
+    // Vigia de 60s: consulta a cada 3s enquanto o update pode estar baixando/instalando
+    // (timeout fixo perdia SW que terminava depois dele). Barato: é 1 postMessage.
+    var vezes = 0;
+    var vigia = setInterval(function () {
+      vezes++;
+      conferirVersao();
+      if (vezes >= 20 || jaRecarregou) clearInterval(vigia);
+    }, 3000);
+    // claim tardio (rede lenta) → consulta na hora; e PWA voltando do congelamento do
+    // iOS → força checagem de update + consulta
+    navigator.serviceWorker.addEventListener('controllerchange', function () { setTimeout(conferirVersao, 300); });
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState !== 'visible') return;
+      try { navigator.serviceWorker.getRegistration().then(function (r) { if (r) r.update(); }); } catch (_) {}
+      setTimeout(conferirVersao, 2000);
+      setTimeout(conferirVersao, 6000);
+    });
+  })();
 }
 
 // ══════════════════════════════════════════════════════════════
