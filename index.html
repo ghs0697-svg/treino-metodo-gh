@@ -1418,21 +1418,21 @@
   .prog-screen .prog-row:active { background: rgba(255, 255, 255, .03); }
 
   /* ── BARRA DE NAVEGAÇÃO INFERIOR (GH 2026-08-13: menu ⚡ tinha virado gaveta de 13 itens) ── */
-  #bottomNav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 8900; display: none; background: rgba(15, 14, 12, .97); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-top: 1px solid rgba(212, 175, 106, .16); padding: 7px 2px calc(7px + env(safe-area-inset-bottom, 0px)); }
+  #bottomNav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 8900; display: none; background: rgba(15, 14, 12, .97); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-top: 1px solid rgba(212, 175, 106, .16); padding: 7px 2px; padding-bottom: max(calc(7px + env(safe-area-inset-bottom, 0px)), 22px); }
   body.has-bnav #bottomNav { display: flex; }
   #bottomNav .bn-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: none; color: #86807a; font-size: 9.5px; font-weight: 600; letter-spacing: .3px; cursor: pointer; padding: 3px 0 1px; font-family: inherit; position: relative; transition: color .15s; }
   #bottomNav .bn-item svg { width: 21px; height: 21px; }
   #bottomNav .bn-item.active { color: var(--gold); }
   #bottomNav .bn-item.locked { opacity: 0.45; }
   body.has-bnav .main-nav { display: none !important; }
-  body.has-bnav { padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px)); }
-  body.has-bnav #floatMenu { bottom: calc(82px + env(safe-area-inset-bottom, 0px)); }
-  body.has-bnav #timerPill { bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
+  body.has-bnav { padding-bottom: max(calc(66px + env(safe-area-inset-bottom, 0px)), 81px); }
+  body.has-bnav #floatMenu { bottom: max(calc(82px + env(safe-area-inset-bottom, 0px)), 97px); }
+  body.has-bnav #timerPill { bottom: max(calc(150px + env(safe-area-inset-bottom, 0px)), 165px); }
 
   /* ── Aba "Mais" (folha que sobe da barra) ── */
   #maisSheetOverlay { position: fixed; inset: 0; z-index: 9600; background: rgba(0, 0, 0, .62); display: none; }
   #maisSheetOverlay.show { display: block; }
-  #maisSheet { position: absolute; bottom: 0; left: 0; right: 0; background: #16140f; border-top: 1px solid rgba(212, 175, 106, .3); border-radius: 18px 18px 0 0; padding: 10px 14px calc(18px + env(safe-area-inset-bottom, 0px)); max-height: 78vh; overflow: auto; animation: maisUp .22s ease; }
+  #maisSheet { position: absolute; bottom: 0; left: 0; right: 0; background: #16140f; border-top: 1px solid rgba(212, 175, 106, .3); border-radius: 18px 18px 0 0; padding: 10px 14px; padding-bottom: max(calc(18px + env(safe-area-inset-bottom, 0px)), 30px); max-height: 78vh; overflow: auto; animation: maisUp .22s ease; }
   @keyframes maisUp { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
   #maisSheet .mais-grab { width: 40px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, .18); margin: 2px auto 12px; }
   .mais-opt { display: flex; align-items: center; gap: 11px; width: 100%; background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .09); color: #eaeaea; border-radius: 12px; padding: 12px 14px; font-size: 13.5px; font-weight: 600; margin-bottom: 8px; cursor: pointer; font-family: inherit; text-align: left; text-decoration: none; position: relative; }
@@ -7854,13 +7854,38 @@ function _tourSteps() {
     { sel: '#floatBtn', t: 'Fala comigo', p: 'Dúvida ou quer pedir um ajuste no protocolo? Me chama por esse botão.' }
   ];
 }
+// Rastro de uso REAL do app neste aparelho (carga salva, esforço, dia concluído,
+// cronômetro): quem tem isso é veterano e NUNCA ganha tour retroativo.
+function _tourVeterano_() {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i) || '';
+      if (k.indexOf('gh_') !== 0) continue;
+      if (/^gh_logsent_/.test(k)) return true;                    // treino concluído
+      if (/^gh_(sets|placas|blk|esf)_/.test(k)) return true;      // série/carga/esforço salvos
+      if (/^gh_wt_/.test(k)) return true;                         // sessão do cronômetro
+      if (/_d\d+_e\d+_w\d+$/.test(k)) return true;                // carga legada gh_<id>_dN_eN_wN
+    }
+  } catch (_) {}
+  return false;
+}
 function _tourMaybeStart() {
   try {
     if (localStorage.getItem(_TOUR_KEY) === '1') return;
     if (_tourAtivo) return;
     if (typeof params !== 'undefined' && params.get('edit')) return;              // treinador não vê tour
     if (typeof WORKOUT === 'undefined' || !Array.isArray(WORKOUT) || !WORKOUT.length) return;
-    setTimeout(() => { if (!_tourAtivo && localStorage.getItem(_TOUR_KEY) !== '1') tourStart(); }, 1600);
+    // SÓ aluno novo de primeira viagem (GH 14/08): veterano no aparelho de sempre não vê
+    if (_tourVeterano_()) { localStorage.setItem(_TOUR_KEY, '1'); return; }
+    setTimeout(() => {
+      if (_tourAtivo || localStorage.getItem(_TOUR_KEY) === '1') return;
+      // Protocolo v2+ = aluno antigo (já reajustou), mesmo estreando um celular novo: sem tour
+      let v = '';
+      try { v = sessionStorage.getItem('gh_version_' + SHEET_ID) || ''; } catch (_) {}
+      if (v && !/^1\./.test(String(v).trim())) { localStorage.setItem(_TOUR_KEY, '1'); return; }
+      if (_tourVeterano_()) { localStorage.setItem(_TOUR_KEY, '1'); return; }
+      tourStart();
+    }, 1600);
   } catch (_) {}
 }
 function reverTutorial() {
