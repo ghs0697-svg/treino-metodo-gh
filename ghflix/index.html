@@ -198,6 +198,9 @@
   .lockplay .cta:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(255,167,38,.4)}
   .lockplay .ent{color:var(--gold);font-size:12.5px;text-decoration:underline;cursor:pointer}
 
+  /* prateleira fora da tela nem e renderizada (corta o custo de scroll no celular) */
+  .shelf{content-visibility:auto;contain-intrinsic-size:auto 380px}
+
   /* ---------- skeleton ---------- */
   .skel .thumb{background:linear-gradient(110deg,#191919 8%,#222 18%,#191919 33%);background-size:200% 100%;animation:sh 1.4s linear infinite;border:0}
   @keyframes sh{to{background-position-x:-200%}}
@@ -342,11 +345,16 @@ const fmtViews=v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1000?(v/1000).toFixed(v>=1000
 const fmtDur=s=>s?Math.round(s)+'s':'';
 const poster=(ref,big)=>{
   const v=(typeof IDX!=='undefined'&&IDX&&IDX.videos&&IDX.videos[ref.id])||ref;
-  if(v.lt) return `thumbs/${v.drive_id}.jpg`;            // miniatura local (Drive nao gerou)
-  return v.drive_id
-    ? `https://drive.google.com/thumbnail?id=${v.drive_id}&sz=w${big?1200:420}`
-    : `_sheets/${v.id}.jpg`;
+  // local SEMPRE primeiro (mesmo dominio, sem o estrangulamento do Drive que
+  // deixava card preto no celular); onerror do <img> cai pro thumbnail do Drive
+  if(v.drive_id) return `thumbs/${v.drive_id}.jpg`;
+  return `_sheets/${v.id}.jpg`;
 };
+/* fallback em cadeia: thumbs/ local -> thumbnail do Drive -> contact-sheet */
+function trocaPoster(img,did,cid){
+  if(did&&!img.dataset.fb){ img.dataset.fb='1'; img.src=`https://drive.google.com/thumbnail?id=${did}&sz=w420`; return; }
+  img.onerror=null; img.classList.add('sheet'); img.src=`_sheets/${cid}.jpg`;
+}
 const isSheet=ref=>!ref.drive_id;
 
 function watchList(){ try{return JSON.parse(localStorage.getItem('ghflix_watch')||'[]')}catch(e){return[]} }
@@ -375,7 +383,7 @@ function cardHTML(ref){
   const novo=!!ref.data&&ref.data>=NOVO_DESDE;
   return `<div class="card" onclick="openModal('${ref.id}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter')openModal('${ref.id}')">
     <div class="thumb">
-      <img class="pimg ${isSheet(ref)?'sheet':''}" loading="lazy" src="${poster(ref)}" alt="" onerror="this.onerror=null;this.classList.add('sheet');this.src='_sheets/${ref.id}.jpg'">
+      <img class="pimg ${isSheet(ref)?'sheet':''}" loading="lazy" src="${poster(ref)}" alt="" onerror="trocaPoster(this,'${((IDX&&IDX.videos[ref.id])||ref).drive_id||''}','${ref.id}')">
       <div class="grad"></div>
       <div class="badge ${exec?'exec':''}">${badge}</div>
       ${gratis?'<div class="freebadge">GRÁTIS</div>':''}
@@ -572,8 +580,17 @@ function lockedPlayerHTML(v){
       <span class="ent" onclick="closeModal();showLogin()">Já assino, entrar com meu email</span>
     </div>`;
 }
-function openModal(id){
+async function openModal(id){
   const v=IDX.videos[id]; if(!v)return;
+  // corrida do cadeado: se a checagem de acesso ainda esta no ar, mostra
+  // "verificando" e ESPERA, em vez de decidir bloqueado com dado velho
+  if(!ACESSO.pronto&&typeof ACCESS_PROMISE!=='undefined'){
+    document.getElementById('box').innerHTML=`<div class="pwrap" style="display:flex;align-items:center;justify-content:center;color:#bbb;font-size:14px">Verificando teu acesso...</div><div class="meta"><h3>${v.nome||''}</h3></div>`;
+    document.getElementById('modal').classList.add('open');
+    document.body.style.overflow='hidden';
+    try{ await ACCESS_PROMISE; }catch(e){}
+    if(!document.getElementById('modal').classList.contains('open'))return; /* fechou enquanto esperava */
+  }
   const bloqueado=!ACESSO.liberado&&!FREE.has(id);
   if(!bloqueado)pushWatch(id);
   nudgeAposGratis=!bloqueado&&!ACESSO.liberado;
@@ -728,10 +745,22 @@ function loadCatalog(){
    resolve em paralelo e so define se o play destrava ou mostra o cadeado. */
 skeleton();
 loadCatalog();
-checkAccess().then(acc=>{
+/* CACHE DE ACESSO (6h): o Apps Script leva 2-3s pra responder e quem clicava
+   num video nesse meio tempo via o cadeado indevido (aluno liberado com cara
+   de bloqueado). Com o cache, as proximas aberturas ja nascem liberadas. */
+const ACC_KEY='ghflix_acc_'+(ALUNO_ID||emailSalvo()||'anon');
+try{
+  const c=JSON.parse(localStorage.getItem(ACC_KEY)||'null');
+  if(c&&c.lib&&(Date.now()-c.ts)<6*3600e3){ ACESSO.liberado=true; ACESSO.pronto=true; mintToken(); syncAuthUI(); }
+}catch(e){}
+const ACCESS_PROMISE=checkAccess().then(acc=>{
   ACESSO.liberado=!!(acc&&acc.liberado)||IS_LOCAL||IS_PREVIEW;
   ACESSO.pronto=true;
   if(ACESSO.liberado)mintToken(); /* carimbo de reproducao do /api/v */
+  try{
+    if(ACESSO.liberado)localStorage.setItem(ACC_KEY,JSON.stringify({lib:1,ts:Date.now()}));
+    else localStorage.removeItem(ACC_KEY);
+  }catch(e){}
   syncAuthUI();
   if(IDX)render(); /* re-render pra badges GRÁTIS/cadeado refletirem o estado */
 });
