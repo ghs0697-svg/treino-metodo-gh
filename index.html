@@ -4477,12 +4477,12 @@
   <div class="te-modal-box" style="max-width:360px;">
     <h3 style="margin:0 0 2px;">🕐 Horário da refeição</h3>
     <p id="rhTitulo" style="color:var(--gold);font-size:12.5px;font-weight:700;margin:0 0 14px;"></p>
-    <input type="time" id="rhTime" class="rh-time">
+    <input type="time" id="rhTime" class="rh-time" step="600">
     <div class="rh-toggle-row">
       <span>Me lembrar nesse horário</span>
       <button type="button" class="rh-switch" id="rhToggle" onclick="rhToggleLembrete()" aria-label="Ativar lembrete"></button>
     </div>
-    <p style="color:#8d8579;font-size:11px;line-height:1.5;margin:10px 2px 14px;">Tu define, eu memorizo. Com o lembrete ligado, o aviso chega todo dia a partir desse horário (nunca antes, e às vezes uns minutinhos depois).</p>
+    <p style="color:#8d8579;font-size:11px;line-height:1.5;margin:10px 2px 14px;">Tu define, eu memorizo. Com o lembrete ligado, te aviso nesse horário todo dia. Os lembretes saem de 10 em 10 minutos, então eu encaixo teu horário no mais perto (12:07 vira 12:10).</p>
     <button class="te-btn" style="width:100%;" onclick="salvarRefHora()">Salvar</button>
     <button class="te-btn ghost" id="rhRemover" style="width:100%;margin-top:8px;color:#ff9800;" onclick="removerRefHora()">Remover horário</button>
     <button class="te-btn ghost" style="width:100%;margin-top:8px;" onclick="teHide('refHoraModal')">Fechar</button>
@@ -13656,11 +13656,23 @@ function openRefHora(ri) {
   document.getElementById('rhRemover').style.display = r.h ? '' : 'none';
   teShow('refHoraModal');
 }
+function _refArredonda10(hm) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(hm || ''));
+  if (!m) return hm;
+  let total = Math.round((parseInt(m[1], 10) * 60 + parseInt(m[2], 10)) / 10) * 10;
+  total = ((total % 1440) + 1440) % 1440;                       // 23:57 arredonda pra 00:00
+  return String(Math.floor(total / 60)).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');
+}
 function rhToggleLembrete() { document.getElementById('rhToggle').classList.toggle('on'); }
 async function salvarRefHora() {
   if (_refHoraRi === null) { teHide('refHoraModal'); return; }
-  const h = document.getElementById('rhTime').value;
-  if (!/^\d{1,2}:\d{2}$/.test(h)) { alert('Escolhe o horário primeiro.'); return; }
+  const hBruto = document.getElementById('rhTime').value;
+  if (!/^\d{1,2}:\d{2}$/.test(hBruto)) { alert('Escolhe o horário primeiro.'); return; }
+  // O relógio dos lembretes bate de 10 em 10 minutos: encaixa a escolha no tique mais
+  // próximo pra não prometer 12:07 e entregar 12:10 (GH 14/08: "não vende nada enganoso").
+  const h = _refArredonda10(hBruto);
+  const ajustou = (h !== hBruto);
+  document.getElementById('rhTime').value = h;
   const querLembrete = document.getElementById('rhToggle').classList.contains('on');
   const map = _refHoras();
   map[_refHoraRi] = { h: h, on: querLembrete };
@@ -13680,14 +13692,14 @@ async function salvarRefHora() {
     let push = { ok: false, reason: 'no-permission' };
     if (nativeOk) push = await registerPushSubscription();
     if (push.ok) {
-      _refToast('Lembrete ativado', 'Te aviso a partir das ' + h + ', mesmo com o app fechado. 🤝');
+      _refToast('Lembrete ativado', (ajustou ? 'Encaixei em ' + h + ' (o lembrete sai de 10 em 10 min). ' : '') + 'Te aviso nesse horário, mesmo com o app fechado. 🤝');
     } else if (push.reason === 'ios-not-installed') {
       alert('⚠️ Pro lembrete chegar com o app fechado no iPhone, instala o app primeiro:\n\n1. Toca em Compartilhar no Safari\n2. Adicionar à Tela de Início\n3. Abre pelo ícone e ativa o lembrete de novo\n\nPor enquanto, te aviso quando o app estiver aberto.');
     } else {
-      _refToast('Horário salvo', 'Te aviso a partir das ' + h + ' quando o app estiver aberto.');
+      _refToast('Horário salvo', (ajustou ? 'Encaixei em ' + h + '. ' : '') + 'Te aviso nesse horário quando o app estiver aberto.');
     }
   } else {
-    _refToast('Horário salvo', _refNome(_refHoraRi) + ' às ' + h + '.');
+    _refToast('Horário salvo', _refNome(_refHoraRi) + ' às ' + h + '.' + (ajustou ? ' (encaixei no tique de 10 em 10 min)' : ''));
   }
 }
 function removerRefHora() {
@@ -15721,7 +15733,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v358';
+    var APP_SHELL_V = 'metodo-gh-v359';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
