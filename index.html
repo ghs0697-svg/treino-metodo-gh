@@ -4482,7 +4482,7 @@
       <span>Me lembrar nesse horário</span>
       <button type="button" class="rh-switch" id="rhToggle" onclick="rhToggleLembrete()" aria-label="Ativar lembrete"></button>
     </div>
-    <p style="color:#8d8579;font-size:11px;line-height:1.5;margin:10px 2px 14px;">Tu define, eu memorizo. Com o lembrete ligado, te aviso na hora certa todo dia.</p>
+    <p style="color:#8d8579;font-size:11px;line-height:1.5;margin:10px 2px 14px;">Tu define, eu memorizo. Com o lembrete ligado, o aviso chega todo dia a partir desse horário (nunca antes, e às vezes uns minutinhos depois).</p>
     <button class="te-btn" style="width:100%;" onclick="salvarRefHora()">Salvar</button>
     <button class="te-btn ghost" id="rhRemover" style="width:100%;margin-top:8px;color:#ff9800;" onclick="removerRefHora()">Remover horário</button>
     <button class="te-btn ghost" style="width:100%;margin-top:8px;" onclick="teHide('refHoraModal')">Fechar</button>
@@ -13680,11 +13680,11 @@ async function salvarRefHora() {
     let push = { ok: false, reason: 'no-permission' };
     if (nativeOk) push = await registerPushSubscription();
     if (push.ok) {
-      _refToast('Lembrete ativado', 'Te aviso às ' + h + ', mesmo com o app fechado. 🤝');
+      _refToast('Lembrete ativado', 'Te aviso a partir das ' + h + ', mesmo com o app fechado. 🤝');
     } else if (push.reason === 'ios-not-installed') {
       alert('⚠️ Pro lembrete chegar com o app fechado no iPhone, instala o app primeiro:\n\n1. Toca em Compartilhar no Safari\n2. Adicionar à Tela de Início\n3. Abre pelo ícone e ativa o lembrete de novo\n\nPor enquanto, te aviso quando o app estiver aberto.');
     } else {
-      _refToast('Horário salvo', 'Te aviso às ' + h + ' quando o app estiver aberto.');
+      _refToast('Horário salvo', 'Te aviso a partir das ' + h + ' quando o app estiver aberto.');
     }
   } else {
     _refToast('Horário salvo', _refNome(_refHoraRi) + ' às ' + h + '.');
@@ -15721,7 +15721,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v357';
+    var APP_SHELL_V = 'metodo-gh-v358';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
