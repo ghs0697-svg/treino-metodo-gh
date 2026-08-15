@@ -787,6 +787,20 @@ const ACCESS_PROMISE=checkAccess().then(acc=>{
   syncAuthUI();
   if(IDX)render(); /* re-render pra badges GRÁTIS/cadeado refletirem o estado */
 });
+
+/* O app manda o aluno pra ca quando ele toca numa aula dentro do exercicio do
+   treino. Dois caminhos: ?abrir=<id> na URL (iframe recem-montado) ou aviso por
+   mensagem (iframe que ja estava aberto). Espera o catalogo antes de abrir. */
+async function abrirAulaVinda(id){
+  if(!id)return false;
+  for(let i=0;i<100&&!IDX;i++)await new Promise(r=>setTimeout(r,100));
+  if(!IDX||!IDX.videos[id])return false;
+  openModal(id);
+  try{ parent.postMessage({ghflixAbriu:id},'*'); }catch(e){}
+  return true;
+}
+addEventListener('message',ev=>{ if(ev.data&&ev.data.ghflixAbrir)abrirAulaVinda(ev.data.ghflixAbrir); });
+abrirAulaVinda(PARAMS.get('abrir'));
 </script>
 </body>
 </html>
