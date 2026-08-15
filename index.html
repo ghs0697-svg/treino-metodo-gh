@@ -1533,6 +1533,38 @@
   .proto-detail-row:last-child { border-bottom: none; }
   .proto-detail-label { color: var(--muted); font-weight: 600; }
   .proto-detail-value { color: var(--gray); text-align: right; max-width: 65%; }
+
+  /* ── CALCULADORA DE DOSE (GH 14/08: prescrição vem em mg, aluno trava na seringa) ── */
+  .proto-calc-btn {
+    display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%;
+    margin-top: 11px; background: rgba(212, 175, 106, .09); border: 1px solid rgba(212, 175, 106, .4);
+    color: var(--gold); font-size: 12.5px; font-weight: 700; letter-spacing: .02em;
+    padding: 9px; border-radius: 9px; cursor: pointer; font-family: inherit;
+  }
+  .proto-calc-btn:active { background: var(--gold-dim); }
+  .proto-calc-btn svg { width: 14px; height: 14px; }
+  .dc-lead { color: #9a9389; font-size: 12px; line-height: 1.55; margin: 0 0 14px; }
+  .dc-lead b { color: var(--gold); }
+  .dc-label { color: #8d8579; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; margin: 14px 2px 6px; }
+  .dc-seg { display: flex; gap: 6px; background: rgba(255, 255, 255, .04); border-radius: 10px; padding: 4px; }
+  .dc-seg button { flex: 1; background: transparent; border: none; color: #9a9389; font-size: 12px; font-weight: 700; padding: 8px 6px; border-radius: 8px; cursor: pointer; font-family: inherit; }
+  .dc-seg button.on { background: var(--gold); color: #15100a; }
+  .dc-in { width: 100%; background: #26262c; border: 1px solid #36363e; color: #fff; padding: 11px 12px; border-radius: 9px; font-size: 16px; font-family: inherit; font-variant-numeric: tabular-nums; }
+  .dc-row { display: flex; gap: 8px; }
+  .dc-row > div { flex: 1; }
+  .dc-hint { color: #6f6a60; font-size: 10.5px; line-height: 1.45; margin: 6px 2px 0; }
+  .dc-out { background: linear-gradient(165deg, rgba(212, 175, 106, .12), rgba(255, 255, 255, .02)); border: 1px solid rgba(212, 175, 106, .32); border-radius: 12px; padding: 15px; margin-top: 16px; text-align: center; }
+  .dc-out-k { color: #9a9389; font-size: 10.5px; font-weight: 700; letter-spacing: .07em; }
+  .dc-out-v { color: var(--gold); font-family: var(--font-display); font-size: 34px; font-weight: 700; line-height: 1.1; margin: 4px 0 2px; font-variant-numeric: tabular-nums; }
+  .dc-out-sub { color: #d9d4cb; font-size: 13px; font-weight: 600; }
+  .dc-out-extra { color: #8d8579; font-size: 11.5px; line-height: 1.5; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, .08); }
+  .dc-warn { background: rgba(255, 152, 0, .1); border: 1px solid rgba(255, 152, 0, .35); color: #ffb74d; font-size: 11.5px; line-height: 1.5; border-radius: 10px; padding: 11px 12px; margin-top: 14px; }
+  /* régua da seringa de insulina: mostra visualmente até onde puxar */
+  .dc-syr { margin-top: 14px; }
+  .dc-syr-bar { position: relative; height: 26px; background: #1b1a17; border: 1px solid rgba(255, 255, 255, .14); border-radius: 6px; overflow: hidden; }
+  .dc-syr-fill { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, rgba(212, 175, 106, .85), rgba(212, 175, 106, .45)); }
+  .dc-syr-tick { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(255, 255, 255, .16); }
+  .dc-syr-scale { display: flex; justify-content: space-between; color: #6f6a60; font-size: 9.5px; font-weight: 700; margin-top: 4px; }
   .proto-obs {
     background: #1f1a10;
     border-left: 3px solid var(--gold-dim);
@@ -4391,6 +4423,52 @@
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></span><span>Atualizar o app agora</span>
     </button>
     <div id="maisVersao" style="text-align:center;color:#6f6a60;font-size:10.5px;font-weight:600;letter-spacing:.5px;margin-top:10px;"></div>
+  </div>
+</div>
+
+<!-- ══ CALCULADORA DE DOSE (só existe pra quem tem bloco Protocolo) ══ -->
+<div class="te-modal-overlay" id="doseCalcModal" onclick="if(event.target.id==='doseCalcModal')teHide('doseCalcModal')">
+  <div class="te-modal-box" style="max-width:400px;max-height:90vh;overflow:auto;">
+    <h3 style="margin:0 0 2px;">🧮 Calculadora de dose</h3>
+    <p id="dcItem" style="color:var(--gold);font-size:13px;font-weight:700;margin:0 0 10px;"></p>
+    <p class="dc-lead" id="dcLead"></p>
+
+    <div class="dc-label">O QUE VEM ESCRITO NO TEU FRASCO</div>
+    <div class="dc-seg" id="dcSeg">
+      <button type="button" class="on" id="dcSegPronto" onclick="dcSetTipo('pronto')">Já vem líquido</button>
+      <button type="button" id="dcSegPo" onclick="dcSetTipo('po')">É pó, eu diluo</button>
+    </div>
+
+    <div id="dcCampoPronto">
+      <div class="dc-label">CONCENTRAÇÃO DO FRASCO</div>
+      <div class="dc-row">
+        <div><input type="number" inputmode="decimal" class="dc-in" id="dcConc" placeholder="250" oninput="dcCalc()"></div>
+        <div><select class="dc-in" id="dcConcUn" onchange="dcCalc()"><option value="mg">mg/ml</option><option value="mcg">mcg/ml</option><option value="ui">UI/ml</option></select></div>
+      </div>
+      <p class="dc-hint">Está escrito no rótulo, tipo “250mg/ml”. Se o rótulo disser o total e o volume (ex: 250mg em 1ml), põe o número por ml aqui.</p>
+    </div>
+
+    <div id="dcCampoPo" style="display:none;">
+      <div class="dc-label">QUANTO VEM NO FRASCO</div>
+      <div class="dc-row">
+        <div><input type="number" inputmode="decimal" class="dc-in" id="dcTotal" placeholder="5" oninput="dcCalc()"></div>
+        <div><select class="dc-in" id="dcTotalUn" onchange="dcCalc()"><option value="mg">mg</option><option value="mcg">mcg</option><option value="ui">UI</option></select></div>
+      </div>
+      <div class="dc-label">ÁGUA QUE TU COLOCOU (ML)</div>
+      <input type="number" inputmode="decimal" class="dc-in" id="dcAgua" placeholder="2" oninput="dcCalc()">
+      <p class="dc-hint">A água de diluição não muda a dose, muda só o volume que tu puxa. Mais água = número maior na seringa, mesma dose.</p>
+    </div>
+
+    <div class="dc-label">DOSE DE CADA APLICAÇÃO</div>
+    <div class="dc-row">
+      <div><input type="number" inputmode="decimal" class="dc-in" id="dcDose" oninput="dcCalc()"></div>
+      <div><select class="dc-in" id="dcDoseUn" onchange="dcCalc()"><option value="mg">mg</option><option value="mcg">mcg</option><option value="ui">UI</option></select></div>
+    </div>
+    <p class="dc-hint" id="dcDoseHint"></p>
+
+    <div id="dcResultado"></div>
+
+    <button class="te-btn ghost" style="width:100%;margin-top:14px;" onclick="teHide('doseCalcModal')">Fechar</button>
   </div>
 </div>
 
@@ -13396,6 +13474,151 @@ function notifyCardioCompletion(shared) {
 // individualizar a dieta no reajuste, sem o aluno precisar confessar nada).
 function _mealNaoKey(ri) { return `gh_mealnao_${STUDENT_ID}_${todayKey()}_r${ri}`; }
 function _mealNaoMotivo(ri) { try { return localStorage.getItem(_mealNaoKey(ri)) || ''; } catch (_) { return ''; } }
+// ══ CALCULADORA DE DOSE (GH 14/08) ══
+// Entregas/Reajustes prescrevem em mg (+ fragmentação) e muito aluno não sabe quanto
+// aquilo dá na seringa. Isto NÃO prescreve nada: só converte a dose que JÁ está no
+// protocolo dele pro volume, usando o frasco que ELE tem na mão.
+let _dcTipo = 'pronto', _dcCtx = { nome: '', doseTxt: '' };
+// Itens de via oral no vocabulário do GH: comprimido/cápsula não tem "quanto puxar".
+// Fora da lista, a via aparece escrita na dose/observação (comprimido, cápsula, oral).
+const _DC_ORAIS = /(hemogenin|oximetolona|oxandrolona|anavar|dianabol|clomid|clomifeno|tamoxifeno|anastrozol|letrozol|exemestano|cabergolina|mk[ -]?677|ibutamoren|clembuterol|glifage|metformina|ostarine|ligandrol|sibutramina|\bt3\b|\bt4\b)/i;
+function _dcEhOral(nome, obs) {
+  const s = String(nome || '') + ' ' + String(obs || '');
+  return _DC_ORAIS.test(s) || /(comprimido|c[áa]psula|\bcaps\b|\bcp\b|via oral|\boral\b|sublingual|gotas)/i.test(s);
+}
+// mcg é a base de massa (1mg = 1000mcg). UI é base própria: não se converte em massa.
+function _dcBase(v, un) {
+  if (un === 'mg') return { v: v * 1000, fam: 'massa' };
+  if (un === 'mcg') return { v: v, fam: 'massa' };
+  return { v: v, fam: 'ui' };
+}
+function _dcNum(id) {
+  const el = document.getElementById(id);
+  const n = parseFloat(String((el && el.value) || '').replace(',', '.'));
+  return isNaN(n) ? null : n;
+}
+function _dcFmt(n, casas) {
+  const c = casas === undefined ? 2 : casas;
+  return String(Math.round(n * Math.pow(10, c)) / Math.pow(10, c)).replace('.', ',');
+}
+// Lê a dose escrita no protocolo: primeiro "número + unidade" do texto + a fragmentação.
+function _dcParseDose(txt) {
+  const s = String(txt || '').toLowerCase();
+  const m = s.match(/(\d+(?:[.,]\d+)?)\s*(mcg|mg|ui|u\.i\.|g\b)/);
+  let valor = null, un = 'mg';
+  if (m) {
+    valor = parseFloat(m[1].replace(',', '.'));
+    const u = m[2].replace(/\./g, '');
+    un = (u === 'mcg') ? 'mcg' : (u === 'ui' ? 'ui' : 'mg');
+    if (u === 'g') valor = valor * 1000;                 // grama vira mg
+  }
+  const fr = s.match(/(\d+)\s*x\s*(?:\/|\s|por)?\s*(semana|sem\b|dia|d\b|mes|mês)/);
+  let vezes = null, periodo = null;
+  if (fr) { vezes = parseInt(fr[1], 10); periodo = /dia|d\b/.test(fr[2]) ? 'dia' : (/mes|mês/.test(fr[2]) ? 'mês' : 'semana'); }
+  else if (/(\/|\bpor\s*)dia|ao dia|diari/.test(s)) { vezes = 1; periodo = 'dia'; }
+  else if (/(\/|\bpor\s*)sem|na semana|semanal/.test(s)) { vezes = 1; periodo = 'semana'; }
+  return { valor: valor, un: un, vezes: vezes, periodo: periodo };
+}
+function openDoseCalc(nome, doseTxt) {
+  _dcCtx = { nome: String(nome || ''), doseTxt: String(doseTxt || '') };
+  document.getElementById('dcItem').textContent = _dcCtx.nome;
+  document.getElementById('dcLead').innerHTML = 'Isto <b>não muda tua prescrição</b>: só transforma a dose que já está aí em cima no tanto que tu puxa na seringa, usando o frasco que tu comprou.';
+  const p = _dcParseDose(_dcCtx.doseTxt);
+  const dose = document.getElementById('dcDose'), doseUn = document.getElementById('dcDoseUn');
+  if (p.valor) { dose.value = p.valor; doseUn.value = p.un; } else { dose.value = ''; doseUn.value = 'mg'; }
+  document.getElementById('dcDoseHint').textContent = _dcCtx.doseTxt
+    ? ('Teu protocolo diz: "' + _dcCtx.doseTxt + '". Se esse número for o total da semana, divide pelas aplicações e põe aqui o de CADA vez.')
+    : 'Põe aqui a dose de cada aplicação, do jeito que está no teu protocolo.';
+  // preserva o frasco já informado antes (mesmo aluno, mesmo frasco na semana)
+  try {
+    const salvo = JSON.parse(localStorage.getItem('gh_dcfrasco_' + SHEET_ID + '_' + _dcCtx.nome) || 'null');
+    if (salvo) {
+      _dcTipo = salvo.tipo || 'pronto';
+      if (salvo.conc) { document.getElementById('dcConc').value = salvo.conc; document.getElementById('dcConcUn').value = salvo.concUn || 'mg'; }
+      if (salvo.total) { document.getElementById('dcTotal').value = salvo.total; document.getElementById('dcTotalUn').value = salvo.totalUn || 'mg'; }
+      if (salvo.agua) document.getElementById('dcAgua').value = salvo.agua;
+    }
+  } catch (_) {}
+  dcSetTipo(_dcTipo);
+  teShow('doseCalcModal');
+}
+function dcSetTipo(t) {
+  _dcTipo = t;
+  document.getElementById('dcSegPronto').classList.toggle('on', t === 'pronto');
+  document.getElementById('dcSegPo').classList.toggle('on', t === 'po');
+  document.getElementById('dcCampoPronto').style.display = t === 'pronto' ? '' : 'none';
+  document.getElementById('dcCampoPo').style.display = t === 'po' ? '' : 'none';
+  dcCalc();
+}
+function _dcSalvaFrasco() {
+  try {
+    localStorage.setItem('gh_dcfrasco_' + SHEET_ID + '_' + _dcCtx.nome, JSON.stringify({
+      tipo: _dcTipo,
+      conc: document.getElementById('dcConc').value, concUn: document.getElementById('dcConcUn').value,
+      total: document.getElementById('dcTotal').value, totalUn: document.getElementById('dcTotalUn').value,
+      agua: document.getElementById('dcAgua').value
+    }));
+  } catch (_) {}
+}
+function dcCalc() {
+  const out = document.getElementById('dcResultado');
+  if (!out) return;
+  _dcSalvaFrasco();
+  const dose = _dcNum('dcDose');
+  const doseUn = document.getElementById('dcDoseUn').value;
+  // concentração por ml, conforme o tipo de frasco
+  let concV = null, concUn = null, totalFrasco = null;
+  if (_dcTipo === 'pronto') {
+    concV = _dcNum('dcConc'); concUn = document.getElementById('dcConcUn').value;
+  } else {
+    const tot = _dcNum('dcTotal'), agua = _dcNum('dcAgua');
+    totalFrasco = tot;
+    if (tot != null && agua) { concV = tot / agua; concUn = document.getElementById('dcTotalUn').value; }
+  }
+  if (dose == null || dose <= 0 || concV == null || concV <= 0) { out.innerHTML = ''; return; }
+  const bd = _dcBase(dose, doseUn), bc = _dcBase(concV, concUn);
+  if (bd.fam !== bc.fam) {
+    out.innerHTML = '<div class="dc-warn">A unidade da dose e a do frasco não conversam (uma está em UI e a outra em peso). Confere o rótulo e o teu protocolo, e se seguir confuso me chama que eu resolvo contigo.</div>';
+    return;
+  }
+  const ml = bd.v / bc.v;
+  const ui = ml * 100;                       // seringa de insulina: 1ml = 100 marcas
+  const pct = Math.max(2, Math.min(100, ui));
+  let ticks = '';
+  for (let i = 1; i < 10; i++) ticks += '<div class="dc-syr-tick" style="left:' + (i * 10) + '%"></div>';
+  const porMl = bc.fam === 'ui' ? (_dcFmt(bc.v, 1) + ' UI') : (bc.v >= 1000 ? _dcFmt(bc.v / 1000, 2) + 'mg' : _dcFmt(bc.v, 1) + 'mcg');
+  let html = `<div class="dc-out">
+    <div class="dc-out-k">TU PUXA ATÉ A MARCA</div>
+    <div class="dc-out-v">${_dcFmt(ui, Math.abs(ui - Math.round(ui)) < 0.05 ? 0 : 1)}</div>
+    <div class="dc-out-sub">na seringa de insulina</div>
+    <div class="dc-out-extra">São <b style="color:#d9d4cb;">${_dcFmt(ml, 3)} ml</b> do teu frasco${_dcTipo === 'po' ? ', que ficou com ' + porMl + ' por ml' : ''}.</div>
+  </div>
+  <div class="dc-syr">
+    <div class="dc-syr-bar"><div class="dc-syr-fill" style="width:${pct}%"></div>${ticks}</div>
+    <div class="dc-syr-scale"><span>0</span><span>50</span><span>100</span></div>
+  </div>`;
+  // rendimento do frasco
+  const aplic = _dcTipo === 'po'
+    ? (totalFrasco != null ? _dcBase(totalFrasco, document.getElementById('dcTotalUn').value).v / bd.v : null)
+    : (bc.v / bd.v);
+  if (aplic && isFinite(aplic) && aplic >= 2) {
+    const n = Math.floor(aplic);
+    const p = _dcParseDose(_dcCtx.doseTxt);
+    let dura = '';
+    if (p.vezes && p.periodo === 'semana') {
+      const sem = Math.floor(n / p.vezes);
+      if (sem >= 1) dura = ' Nesse ritmo, dá pra cerca de ' + sem + ' semana' + (sem > 1 ? 's' : '') + '.';
+    } else if (p.vezes && p.periodo === 'dia') {
+      const dias = Math.floor(n / p.vezes);
+      if (dias >= 1) dura = ' Nesse ritmo, dá pra cerca de ' + dias + ' dia' + (dias > 1 ? 's' : '') + '.';
+    }
+    html += '<p class="dc-hint" style="margin-top:10px;">' + (_dcTipo === 'po' ? 'O frasco todo' : 'Cada 1ml') + ' rende cerca de <b style="color:#9a9389;">' + n + ' aplicaç' + (n > 1 ? 'ões' : 'ão') + '</b> nessa dose.' + dura + '</p>';
+  }
+  if (ui < 5) html += '<div class="dc-warn">Deu um volume bem pequeno na seringa. Confere a concentração no rótulo, e se o número seguir esquisito me chama antes de aplicar.</div>';
+  else if (ml > 1) html += '<div class="dc-warn">Passa de uma seringa de insulina cheia (marca 100). Confere o rótulo do frasco, e me chama se ficar em dúvida.</div>';
+  out.innerHTML = html;
+}
+
 // ══ HORÁRIO DA REFEIÇÃO + LEMBRETE (GH 14/08: o ALUNO define, o app só salva,
 // memoriza e notifica; ninguém monta horário por ele) ══
 // Storage local por índice de refeição (ri, estável entre ciclos). Sync pro servidor
@@ -13952,6 +14175,13 @@ function renderDiet() {
       html += `</div>`;
       if (p.dose) html += `<div class="proto-detail-row"><span class="proto-detail-label">Dose</span><span class="proto-detail-value">${p.dose}</span></div>`;
       if (p.obs) html += `<div class="proto-obs">${p.obs}</div>`;
+      // Calculadora de dose (GH 14/08): só onde faz sentido puxar seringa — item de
+      // via oral (comprimido/cápsula) não ganha botão, senão vira ruído no card.
+      if (p.dose && !_dcEhOral(p.nome, p.obs)) {
+        const _nm = String(p.nome || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        const _ds = String(p.dose || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        html += `<button type="button" class="proto-calc-btn" onclick="openDoseCalc('${_nm}','${_ds}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="8" y2="11"/><line x1="12" y1="11" x2="12" y2="11"/><line x1="16" y1="11" x2="16" y2="11"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="12" y1="16" x2="12" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg> Quanto dá na seringa?</button>`;
+      }
       html += `</div>`;
     });
 
@@ -15491,7 +15721,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v356';
+    var APP_SHELL_V = 'metodo-gh-v357';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
