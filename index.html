@@ -1416,12 +1416,36 @@
   body.view-progresso #progressoView { display: block !important; }
   .prog-screen { padding: 14px 14px 26px; max-width: 620px; margin: 0 auto; }
   .pg-card { background: var(--card); border: 1px solid rgba(212, 175, 106, .16); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
-  .pg-sec-t { color: var(--gold); font-size: 11px; font-weight: 700; letter-spacing: .06em; margin: 0 0 10px; }
+  /* títulos de seção na serif da marca (elegância 14/08: mesma família do TREINO DE HOJE) */
+  .pg-sec-t { color: var(--gold); font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: .12em; margin: 0 0 10px; }
   .pg-sel { width: 100%; background: #26262c; border: 1px solid #36363e; color: #fff; padding: 10px 11px; border-radius: 9px; font-size: 13.5px; font-family: inherit; }
   .pg-trendline { font-size: 11.5px; color: #9a9aa0; margin-top: 8px; line-height: 1.5; }
   .pg-trendline.up { color: #4caf50; }
   .pg-trendline.down { color: #ff9800; }
   .prog-screen .prog-row:active { background: rgba(255, 255, 255, .03); }
+  /* linha do gráfico se DESENHA ao abrir (pathLength=1 normaliza o traço) */
+  .gh-line-anim { stroke-dasharray: 1; stroke-dashoffset: 1; animation: ghDraw 1.1s cubic-bezier(.4, 0, .2, 1) .15s forwards; }
+  @keyframes ghDraw { to { stroke-dashoffset: 0; } }
+  /* shimmer de carregamento (medidas, fotos) */
+  .gh-skel { background: linear-gradient(90deg, #1d1c19 25%, #2a2822 37%, #1d1c19 63%); background-size: 400% 100%; animation: ghSkel 1.3s ease infinite; border-radius: 8px; height: 14px; margin: 8px 0; }
+  @keyframes ghSkel { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+  /* cartões de estatística com ícone e respiro */
+  .pg-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+  .pg-stat { background: linear-gradient(165deg, rgba(212, 175, 106, .07), rgba(255, 255, 255, .02)); border: 1px solid rgba(212, 175, 106, .13); border-radius: 12px; padding: 12px 6px 10px; text-align: center; }
+  .pg-stat svg { width: 15px; height: 15px; color: rgba(212, 175, 106, .75); margin-bottom: 5px; }
+  .pg-stat .v { color: var(--gold); font-size: 20px; font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; }
+  .pg-stat .l { color: #8d8579; font-size: 9px; font-weight: 600; letter-spacing: .04em; margin-top: 4px; line-height: 1.25; }
+  /* fotos antes e depois lado a lado */
+  .pg-fotos-par { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .pg-fotos-par figure { margin: 0; }
+  .pg-fotos-par img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 10px; border: 1px solid rgba(212, 175, 106, .22); background: #1d1c19; display: block; }
+  .pg-fotos-par figcaption { text-align: center; color: #9a9389; font-size: 10.5px; font-weight: 700; letter-spacing: .04em; margin-top: 6px; }
+  /* delta de medida com seta */
+  .med-chip { display: inline-block; color: var(--gold); font-weight: 800; white-space: nowrap; }
+  .med-eq { color: #6f6a60; }
+  /* transição suave ao trocar de aba (re-dispara quando a view volta a aparecer) */
+  @keyframes ghViewIn { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+  #dietaView, #ghflixView, #progressoView, #dayHero, #exerciseContainer { animation: ghViewIn .26s ease; }
 
   /* ── BARRA DE NAVEGAÇÃO INFERIOR (GH 2026-08-13: menu ⚡ tinha virado gaveta de 13 itens) ── */
   #bottomNav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 8900; display: none; background: rgba(15, 14, 12, .97); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-top: 1px solid rgba(212, 175, 106, .16); padding: 7px 2px; padding-bottom: max(calc(7px + env(safe-area-inset-bottom, 0px)), 34px); }
@@ -8600,19 +8624,26 @@ function _histChartData(di, ei) {
     const lineD = pts.map((p, i) => (i ? 'L' : 'M') + p.px.toFixed(1) + ' ' + p.py.toFixed(1)).join(' ');
     const areaD = lineD + ` L${pts[pts.length-1].px.toFixed(1)} ${H - padB} L${pts[0].px.toFixed(1)} ${H - padB} Z`;
     let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Evolução da carga por semana">`;
+    svg += `<defs><linearGradient id="ghGradCarga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(212,175,106,.30)"/><stop offset="1" stop-color="rgba(212,175,106,0)"/></linearGradient></defs>`;
     svg += `<line x1="${padL}" y1="${H - padB}" x2="${W - padR}" y2="${H - padB}" stroke="rgba(255,255,255,.12)" stroke-width="1"/>`;
     values.forEach(v => { svg += `<line x1="${x(v.w).toFixed(1)}" y1="${H - padB}" x2="${x(v.w).toFixed(1)}" y2="${H - padB + 3}" stroke="rgba(255,255,255,.2)" stroke-width="1"/>`; });
     svg += `<text x="${x(1).toFixed(1)}" y="${H - 8}" fill="#8a8579" font-size="9.5" text-anchor="middle">S1</text>`;
     svg += `<text x="${x(TOTAL_WEEKS).toFixed(1)}" y="${H - 8}" fill="#8a8579" font-size="9.5" text-anchor="middle">S${TOTAL_WEEKS}</text>`;
-    if (pts.length > 1) svg += `<path d="${areaD}" fill="rgba(212,175,106,.12)"/>`;
+    if (pts.length > 1) svg += `<path d="${areaD}" fill="url(#ghGradCarga)"/>`;
     // 1 ponto só: linha-guia tracejada pra curva não parecer gráfico quebrado
     if (pts.length === 1) svg += `<line x1="${padL}" y1="${pts[0].py.toFixed(1)}" x2="${W - padR}" y2="${pts[0].py.toFixed(1)}" stroke="rgba(212,175,106,.28)" stroke-width="1.5" stroke-dasharray="4 5"/>`;
-    svg += `<path d="${lineD}" fill="none" stroke="#D4AF6A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
-    pts.forEach(p => {
+    // pathLength=1 + classe: a linha se desenha ao abrir (CSS ghDraw)
+    svg += `<path d="${lineD}" pathLength="1" class="gh-line-anim" fill="none" stroke="#D4AF6A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+    const clampX = px => Math.max(padL + 16, Math.min(px, W - padR - 4));
+    pts.forEach((p, pi) => {
       const isPr = p.v.w === pr.w && val(p.v) === val(pr);
       svg += `<circle cx="${p.px.toFixed(1)}" cy="${p.py.toFixed(1)}" r="${isPr ? 5 : 3.5}" fill="${isPr ? '#E6CF9C' : '#D4AF6A'}" stroke="#14110c" stroke-width="1.5"/>`;
       // âncora do rótulo clampada pra dentro do quadro (na S1 o "PR 4kg" saía cortado: "R 4kg")
       if (isPr) { const prx = Math.max(padL + 24, Math.min(p.px, W - padR - 20)); svg += `<text x="${prx.toFixed(1)}" y="${(p.py - 9).toFixed(1)}" fill="#E6CF9C" font-size="10" font-weight="800" text-anchor="middle">PR ${fmt(val(p.v))}</text>`; }
+      // valores de início e fim marcados nas pontas (sem duplicar o rótulo do PR)
+      else if (pts.length > 1 && (pi === 0 || pi === pts.length - 1)) {
+        svg += `<text x="${clampX(p.px).toFixed(1)}" y="${(p.py - 9).toFixed(1)}" fill="#9a9389" font-size="9.5" font-weight="700" text-anchor="middle">${fmt(val(p.v))}</text>`;
+      }
     });
     svg += `</svg>`;
     const first = filled[0], last = filled[filled.length - 1];
@@ -12509,6 +12540,7 @@ function renderProgressoScreen() {
     ${_pgFotosCard()}`;
     host.innerHTML = html + '</div>';
     renderMedidas();
+    _pgFotosLoad();
     return;
   }
   _pgItems = items;
@@ -12528,13 +12560,42 @@ function renderProgressoScreen() {
   host.innerHTML = html + '</div>';
   _pgBigDraw();
   renderMedidas();
+  _pgFotosLoad();
 }
 function _pgFotosCard() {
-  return `<div class="pg-card" style="margin-top:14px;">
+  return `<div class="pg-card" style="margin-top:14px;" id="pgFotosCard">
     <div class="pg-sec-t">MINHAS FOTOS</div>
-    <p style="color:#9a9389;font-size:12px;line-height:1.55;margin:2px 2px 10px;">Tuas fotos de anamnese e reajuste, lado a lado, pra enxergar a mudança no espelho.</p>
-    <button type="button" class="te-btn ghost" style="width:100%;" onclick="openFotosModal()">Ver minhas fotos</button>
+    <div id="pgFotosBody"><div class="gh-skel" style="height:110px;border-radius:10px;"></div></div>
   </div>`;
+}
+function _pgFotosFallbackHtml() {
+  return `<p style="color:#9a9389;font-size:12px;line-height:1.55;margin:2px 2px 10px;">Tuas fotos de anamnese e reajuste, lado a lado, pra enxergar a mudança no espelho.</p>
+    <button type="button" class="te-btn ghost" style="width:100%;" onclick="openFotosModal()">Ver minhas fotos</button>`;
+}
+// Antes e depois DIRETO na tela (elegância 14/08): primeira rodada × última, SEMPRE no
+// mesmo ângulo (frente com frente); sem ângulo comum identificado, não inventa par.
+async function _pgFotosLoad() {
+  const body = document.getElementById('pgFotosBody');
+  if (!body) return;
+  try {
+    if (typeof SHEET_ID === 'undefined' || !SHEET_ID) { body.innerHTML = _pgFotosFallbackHtml(); return; }
+    const resp = await fetch(`${LOG_ENDPOINT}?action=fotos_list&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`, { cache: 'no-store' });
+    const j = await resp.json();
+    const rounds = (j && j.ok && Array.isArray(j.rounds)) ? j.rounds : [];
+    if (rounds.length < 2) { const b = document.getElementById('pgFotosBody'); if (b) b.innerHTML = _pgFotosFallbackHtml(); return; }
+    const first = rounds[0], last = rounds[rounds.length - 1];
+    const role = ['frente', 'costas', 'direito', 'esquerdo'].find(rl => first.roles && first.roles[rl] && last.roles && last.roles[rl]);
+    if (!role) { const b = document.getElementById('pgFotosBody'); if (b) b.innerHTML = _pgFotosFallbackHtml(); return; }
+    const b2 = document.getElementById('pgFotosBody');
+    if (!b2) return;
+    b2.innerHTML = `<div class="pg-fotos-par">
+      <figure><img id="pgFotoAntes" alt="Primeira foto"><figcaption>${escapeFotosTxt(first.date || 'Início')}</figcaption></figure>
+      <figure><img id="pgFotoDepois" alt="Foto mais recente"><figcaption>${escapeFotosTxt(last.date || 'Agora')}</figcaption></figure>
+    </div>
+    <button type="button" class="te-btn ghost" style="width:100%;margin-top:10px;" onclick="openFotosModal()">Ver e comparar todas</button>`;
+    _cmpLoadImg(first.roles[role].fid, 'pgFotoAntes');
+    _cmpLoadImg(last.roles[role].fid, 'pgFotoDepois');
+  } catch (_) { const b = document.getElementById('pgFotosBody'); if (b) b.innerHTML = _pgFotosFallbackHtml(); }
 }
 function _progBodyHtml(items, fmt) {
   const unit = getUnit();
@@ -12545,18 +12606,21 @@ function _progBodyHtml(items, fmt) {
   const prs = items.slice().sort((a, b) => b.max - a.max).slice(0, 5);
   const bestPct = movers.length ? movers[0].pct : 0;
 
-  const stat = (val, label) => `<div style="background:#1c1c21;border-radius:10px;padding:10px 8px;text-align:center;">
-    <div style="color:var(--gold);font-size:19px;font-weight:800;line-height:1.1;">${val}</div>
-    <div style="color:#9a9aa0;font-size:10px;margin-top:3px;">${label}</div>
-  </div>`;
-  let html = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:14px;">
-    ${stat(dias, 'treinos no mês')}
-    ${stat(streak.current || 0, 'sequência')}
-    ${stat(newPRs.length, newPRs.length === 1 ? 'recorde novo' : 'recordes novos')}
-    ${stat((bestPct > 0 ? '+' : '') + bestPct + '%', 'melhor evolução')}
+  const IC = {
+    cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+    fogo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>',
+    tro: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>',
+    up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>'
+  };
+  const stat = (ic, val, label) => `<div class="pg-stat">${IC[ic]}<div class="v">${val}</div><div class="l">${label}</div></div>`;
+  let html = `<div class="pg-stats">
+    ${stat('cal', dias, 'treinos no mês')}
+    ${stat('fogo', streak.current || 0, 'sequência')}
+    ${stat('tro', newPRs.length, newPRs.length === 1 ? 'recorde novo' : 'recordes novos')}
+    ${stat('up', (bestPct > 0 ? '+' : '') + bestPct + '%', 'melhor evolução')}
   </div>`;
 
-  html += `<div style="color:var(--gold);font-size:11px;font-weight:700;letter-spacing:0.06em;margin:4px 0 8px;">MAIORES CARGAS</div>`;
+  html += `<div class="pg-sec-t" style="margin:4px 0 8px;">MAIORES CARGAS</div>`;
   prs.forEach(it => {
     html += `<div style="display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid #26262c;">
       <div style="flex:1;min-width:0;">
@@ -12569,7 +12633,7 @@ function _progBodyHtml(items, fmt) {
   });
 
   if (movers.length) {
-    html += `<div style="color:var(--gold);font-size:11px;font-weight:700;letter-spacing:0.06em;margin:16px 0 8px;">EVOLUÇÃO POR EXERCÍCIO</div>`;
+    html += `<div class="pg-sec-t" style="margin:16px 0 8px;">EVOLUÇÃO POR EXERCÍCIO</div>`;
     movers.forEach(it => {
       const up = it.delta > 0, flat = it.delta === 0;
       const cor = up ? '#4caf50' : flat ? '#9a9aa0' : '#ff9800';
@@ -12595,7 +12659,7 @@ function _progBodyHtml(items, fmt) {
     const lat = (it.vals || []).filter(v => v > 0).pop() || it.max || 0;
     return `<option value="${kgToDisplay(lat)}">${it.name.replace(/</g, '&lt;')}</option>`;
   }).join('');
-  html += `<div style="color:var(--gold);font-size:11px;font-weight:700;letter-spacing:0.06em;margin:18px 0 8px;">CALCULADORA DE FORÇA (1RM ESTIMADO)</div>`;
+  html += `<div class="pg-sec-t" style="margin:18px 0 8px;">CALCULADORA DE FORÇA (1RM)</div>`;
   html += `<div style="background:#1c1c21;border-radius:10px;padding:12px;">
     <select id="c1rmEx" onchange="_calc1rmPick(this)" style="width:100%;background:#26262c;border:1px solid #36363e;color:#fff;padding:9px 10px;border-radius:8px;font-size:13px;">
       <option value="">Escolha o exercício (puxa tua carga)…</option>${opts}
@@ -12643,7 +12707,8 @@ async function renderMedidas() {
   const sec = document.getElementById('medidasSec');
   if (!sec || typeof SHEET_ID === 'undefined' || !SHEET_ID) return;
   if (_medTL === null) {
-    sec.innerHTML = '<div style="color:#7a7a82;font-size:11px;margin:14px 2px 4px;">carregando tuas medidas…</div>';
+    sec.innerHTML = '<div class="pg-sec-t" style="margin:18px 0 8px;">📏 MINHAS MEDIDAS</div>'
+      + '<div class="gh-skel" style="width:88%;"></div><div class="gh-skel" style="width:72%;"></div><div class="gh-skel" style="width:80%;"></div>';
     try {
       const r = await fetch(LOG_ENDPOINT + '?action=medidas&id=' + encodeURIComponent(SHEET_ID), { redirect: 'follow' });
       const j = await r.json().catch(() => ({}));
@@ -12654,7 +12719,7 @@ async function renderMedidas() {
   const sec2 = document.getElementById('medidasSec');   // o modal pode ter re-renderizado no meio
   if (!sec2) return;
   const anams = _medTL.filter(p => p && (p.fonte === 'inicial' || p.fonte === 'reajuste') && _MED_DEFS.some(d => p[d[0]] != null));
-  let html = '<div style="color:var(--gold);font-size:11px;font-weight:700;letter-spacing:0.06em;margin:18px 0 8px;">📏 MINHAS MEDIDAS</div>';
+  let html = '<div class="pg-sec-t" style="margin:18px 0 8px;">📏 MINHAS MEDIDAS</div>';
   if (!anams.length) {
     sec2.innerHTML = html + '<p style="color:#7a7a82;font-size:11px;line-height:1.5;margin:0 2px;">Tuas medidas vão aparecer aqui a cada anamnese: a primeira veio com teu protocolo inicial e as próximas entram nos reajustes.</p>';
     return;
@@ -12675,7 +12740,10 @@ async function renderMedidas() {
     let delta = '';
     if (nn.length >= 2) {
       const df = Math.round((nn[nn.length - 1] - nn[0]) * 10) / 10;
-      delta = df === 0 ? '=' : (df > 0 ? '+' : '') + String(df).replace('.', ',');
+      // seta de variação (elegância 14/08): direção sem juízo de valor — subir braço e
+      // descer cintura são vitórias diferentes, quem interpreta é o aluno com o GH
+      delta = df === 0 ? '<span class="med-eq">=</span>'
+        : '<span class="med-chip">' + (df > 0 ? '↑ +' : '↓ −') + String(Math.abs(df)).replace('.', ',') + '</span>';
     }
     return '<tr><td>' + d[1] + ' <span style="color:#6e6e76;font-size:10px;">' + d[2] + '</span></td>'
       + vals.map(v => '<td>' + _medFmt(v) + '</td>').join('')
@@ -15423,7 +15491,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v355';
+    var APP_SHELL_V = 'metodo-gh-v356';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
