@@ -13632,6 +13632,81 @@ function _refHorasSave(map) {
   clearTimeout(window._refSyncT);
   window._refSyncT = setTimeout(_refHorasSync, 1500);
 }
+// Identidade da refeição: a POSIÇÃO sozinha não serve (um reajuste pode remover ou
+// reordenar refeições e o horário do almoço acabaria colado no lanche). Guardamos o
+// NOME junto e, ao abrir a dieta, re-encaixamos cada horário na refeição certa.
+function _refNorm(s) {
+  return String(s || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Z0-9]+/g, ' ').trim();
+}
+function _refNomesAtuais() {
+  try {
+    const cy = DIET_DATA && DIET_DATA.ciclos && DIET_DATA.ciclos[0];
+    return ((cy && cy.refeicoes) || []).map(r => String(r.nome || '').trim());
+  } catch (_) { return []; }
+}
+// Re-encaixa os horários salvos nos índices atuais da dieta, casando pelo nome.
+// Refeição que sumiu de vez perde o horário (melhor que apontar pro prato errado).
+function _refReindexa(map) {
+  const nomes = _refNomesAtuais();
+  if (!nomes.length) return { map: map, mudou: false };
+  const novo = {}; const usados = new Set(); let mudou = false;
+  Object.keys(map || {}).forEach(k => {
+    const r = map[k];
+    if (!r || !r.h) return;
+    const idxOrig = parseInt(k, 10);
+    let idx = idxOrig;
+    if (r.nome) {
+      const nn = _refNorm(r.nome);
+      // Regra conservadora: se a posição de sempre AINDA é a mesma refeição, não mexe.
+      // (dieta com nomes repetidos — 2 blocos de "1ª REFEIÇÃO" — senão o horário do
+      // segundo bloco migraria pro primeiro sem necessidade.)
+      if (nomes[idxOrig] && _refNorm(nomes[idxOrig]) === nn && !usados.has(idxOrig)) {
+        idx = idxOrig;
+      } else {
+        const alvo = nomes.findIndex((n, i) => !usados.has(i) && _refNorm(n) === nn);
+        if (alvo >= 0) idx = alvo;
+        else if (nomes[idxOrig] && _refNorm(nomes[idxOrig]) !== nn) { mudou = true; return; }  // refeição saiu da dieta
+      }
+    }
+    if (idx >= nomes.length || usados.has(idx)) { mudou = true; return; }
+    usados.add(idx);
+    if (idx !== idxOrig || !r.nome || _refNorm(r.nome) !== _refNorm(nomes[idx])) mudou = true;
+    novo[idx] = { h: r.h, on: !!r.on, nome: nomes[idx] || r.nome || '' };
+  });
+  return { map: novo, mudou: mudou };
+}
+// Abriu a dieta: alinha os horários com a dieta ATUAL e, se este aparelho estiver zerado,
+// resgata do servidor o que o aluno já tinha definido (celular novo não perde nada).
+async function _refHorasBoot() {
+  try {
+    if (typeof SHEET_ID === 'undefined' || !SHEET_ID) return;
+    let map = _refHoras();
+    const temLocal = Object.keys(map).length > 0;
+    if (!temLocal) {
+      const resp = await fetch(PUSH_API_BASE + '/meal-times?studentId=' + encodeURIComponent(SHEET_ID) + '&_=' + Date.now(), { cache: 'no-store' });
+      const j = await resp.json().catch(() => null);
+      const times = (j && j.ok && Array.isArray(j.times)) ? j.times : [];
+      if (!times.length) return;
+      const nomes = _refNomesAtuais();
+      map = {};
+      times.forEach(t => {
+        let idx = parseInt(t.uid, 10);
+        if (t.titulo) {
+          const alvo = nomes.findIndex(n => _refNorm(n) === _refNorm(t.titulo));
+          if (alvo >= 0) idx = alvo;
+        }
+        if (!isNaN(idx) && idx >= 0 && idx < Math.max(nomes.length, 20)) map[idx] = { h: t.h, on: t.on !== false, nome: t.titulo || (nomes[idx] || '') };
+      });
+      try { localStorage.setItem(_refHorasKey(), JSON.stringify(map)); } catch (_) {}
+    }
+    const rx = _refReindexa(map);
+    if (rx.mudou) {
+      try { localStorage.setItem(_refHorasKey(), JSON.stringify(rx.map)); } catch (_) {}
+      _refHorasSync();                    // servidor passa a ver a refeição certa e o nome novo
+    }
+    Object.keys(rx.map).forEach(ri => _refHoraChipRefresh(parseInt(ri, 10)));
+  } catch (_) {}
+}
 function _refNome(ri) {
   try {
     const cy = DIET_DATA && DIET_DATA.ciclos && DIET_DATA.ciclos[0];
@@ -13675,7 +13750,7 @@ async function salvarRefHora() {
   document.getElementById('rhTime').value = h;
   const querLembrete = document.getElementById('rhToggle').classList.contains('on');
   const map = _refHoras();
-  map[_refHoraRi] = { h: h, on: querLembrete };
+  map[_refHoraRi] = { h: h, on: querLembrete, nome: _refNome(_refHoraRi) };   // nome = âncora contra reajuste que reordena
   _refHorasSave(map);
   _refHoraChipRefresh(_refHoraRi);
   teHide('refHoraModal');
@@ -13724,7 +13799,7 @@ function _refHorasSync() {
     if (typeof PUSH_API_BASE === 'undefined' || typeof SHEET_ID === 'undefined' || !SHEET_ID) return;
     const map = _refHoras();
     const times = Object.keys(map).filter(ri => map[ri] && map[ri].h).map(ri => ({
-      uid: String(ri), h: map[ri].h, titulo: _refNome(parseInt(ri, 10)), on: map[ri].on !== false && !!map[ri].on
+      uid: String(ri), h: map[ri].h, titulo: _refNome(parseInt(ri, 10)) || map[ri].nome || '', on: !!map[ri].on
     }));
     const studentName = (document.getElementById('infoNome')?.textContent || '').trim();
     fetch(PUSH_API_BASE + '/meal-times', {
@@ -14208,6 +14283,7 @@ function renderDiet() {
   const _dl = document.getElementById('dietLoading'); if (_dl) _dl.style.display = 'none';
   updateDietProgress(); // sincroniza a barra de refeições do dia com o que já tá marcado
   updateCardioProgress(); // sincroniza a barra de cardio da semana
+  if (typeof _refHorasBoot === 'function') _refHorasBoot();   // horários: alinha com a dieta atual + resgata do servidor em aparelho novo
 }
 
 function renderFoodItem(a) {
@@ -15733,7 +15809,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v359';
+    var APP_SHELL_V = 'metodo-gh-v360';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
