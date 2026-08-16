@@ -13590,10 +13590,20 @@ let _dcTipo = 'pronto', _dcCtx = { nome: '', doseTxt: '' };
 // Itens de via oral no vocabulário do GH: comprimido/cápsula não tem "quanto puxar".
 // Fora da lista, a via aparece escrita na dose/observação (comprimido, cápsula, oral).
 const _DC_ORAIS = /(hemogenin|oximetolona|oxandrolona|anavar|dianabol|clomid|clomifeno|tamoxifeno|anastrozol|letrozol|exemestano|cabergolina|mk[ -]?677|ibutamoren|clembuterol|glifage|metformina|ostarine|ligandrol|sibutramina|\bt3\b|\bt4\b)/i;
+// Suplemento de vidro/pote (16/08: o Ômega 3 do João Márcio apareceu com botão de seringa
+// porque a observação dele não dizia a via). Ninguém puxa ômega em seringa.
+const _DC_SUPL = /([oô]mega|vitamina|\bvit\b|creatina|whey|multivitamin|magn[ée]sio|zinco|sel[eê]nio|natto|coenzima|curcuma|c[uú]rcuma|resveratrol|berberina|ashwagandha|melatonina|col[áa]geno|glutamina|cafe[íi]na|ioimbina|taurina|arginina|citrulina|beta ?alanina|psyllium|probi[óo]tico|enzimas|pic?olinato|inositol|espirulina|cloreto de magn|epa e dha)/i;
 function _dcEhOral(nome, obs) {
   const s = String(nome || '') + ' ' + String(obs || '');
-  return _DC_ORAIS.test(s) || /(comprimido|c[áa]psula|\bcaps\b|\bcp\b|via oral|\boral\b|sublingual|gotas)/i.test(s);
+  // Sinal POSITIVO de aplicação vence tudo: quando a observação diz a via (o GH escreve),
+  // é injetável mesmo que o nome pareça suplemento.
+  if (/(intramuscular|subcut[âa]n|\bIM\b|\bSC\b|seringa|aplica[çc]|aplicar|gl[úu]teo|deltoid|barriga|abd[óo]men)/i.test(s)) return false;
+  if (_DC_ORAIS.test(s) || _DC_SUPL.test(s)) return true;
+  if (/(comprimido|c[áa]psula|\bcaps\b|\bcp\b|via oral|\boral\b|sublingual|gotas|sachê|sache|p[óo] solúvel)/i.test(s)) return true;
+  return false;   // dose em gramas é tratada por _dcDoseEhGrama, no gate do botão
 }
+// grama = suplemento de pote, não vai pra seringa
+function _dcDoseEhGrama(dose) { return /\d+(?:[.,]\d+)?\s*g\b/i.test(String(dose || '')) && !/\bmg\b|\bmcg\b/i.test(String(dose || '')); }
 // mcg é a base de massa (1mg = 1000mcg). UI é base própria: não se converte em massa.
 function _dcBase(v, un) {
   if (un === 'mg') return { v: v * 1000, fam: 'massa' };
@@ -14372,7 +14382,7 @@ function renderDiet() {
       if (p.obs) html += `<div class="proto-obs">${p.obs}</div>`;
       // Calculadora de dose (GH 14/08): só onde faz sentido puxar seringa — item de
       // via oral (comprimido/cápsula) não ganha botão, senão vira ruído no card.
-      if (p.dose && !_dcEhOral(p.nome, p.obs)) {
+      if (p.dose && !_dcEhOral(p.nome, p.obs) && !_dcDoseEhGrama(p.dose)) {
         const _nm = String(p.nome || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
         const _ds = String(p.dose || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
         html += `<button type="button" class="proto-calc-btn" onclick="openDoseCalc('${_nm}','${_ds}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="8" y2="11"/><line x1="12" y1="11" x2="12" y2="11"/><line x1="16" y1="11" x2="16" y2="11"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="12" y1="16" x2="12" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg> Quanto dá na seringa?</button>`;
@@ -15920,7 +15930,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v362';
+    var APP_SHELL_V = 'metodo-gh-v363';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
