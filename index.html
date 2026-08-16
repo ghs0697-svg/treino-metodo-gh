@@ -963,6 +963,10 @@
   .sub-opt-name { flex: 1; }
   .sub-opt-tag { font-size: 10px; font-weight: 700; color: #8a8a92; border: 1px solid #3a3a42; border-radius: 5px; padding: 1px 6px; }
   .sub-opt-check { color: var(--gold); font-weight: 900; }
+  /* substituto que já está no treino do dia: visível, mas sem clique */
+  .sub-opt-nodia { opacity: .5; cursor: default; }
+  .sub-opt-nodia .sub-opt-name { text-decoration: line-through; }
+  .sub-aviso { background: rgba(212,175,106,.10); border: 1px solid rgba(212,175,106,.32); color: #d9d4cb; font-size: 12.5px; line-height: 1.5; border-radius: 11px; padding: 12px 13px; margin-bottom: 10px; }
   .sub-picker-close { width: 100%; margin-top: 6px; background: transparent; border: 1px solid #3a3a42; color: #b8b8c0; padding: 12px; border-radius: 11px; font-size: 14px; font-weight: 600; cursor: pointer; }
 
   /* ── Timer overlay ── */
@@ -5483,7 +5487,10 @@ function _alternativasNoDia(di, ei) {
   grp.forEach(x => {
     const v = _bankVideo(x.name);
     if (!v) return;                                  // sem vídeo: não entra
-    if (x.norm === orig || !ativoOutros[x.norm]) out.push({ name: x.name, norm: x.norm, atual: x.norm === ativoAqui });
+    // Substituto que JÁ está em outro exercício do dia não some da lista (GH 16/08:
+    // "não tem troca" era mentira). Ele aparece marcado como ocupado, e o aluno
+    // entende por que não dá pra escolher em vez de achar que o app não tem opção.
+    out.push({ name: x.name, norm: x.norm, atual: x.norm === ativoAqui, noDia: !!ativoOutros[x.norm] && x.norm !== ativoAqui });
   });
   return out.length >= 2 ? out : null;
 }
@@ -5560,12 +5567,27 @@ function openSubPicker(di, ei) {
   const escAttr = s => String(s).replace(/'/g, "\\'");
   const escHtml = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
   orig.textContent = 'Prescrito: ' + ex.name;
-  list.innerHTML = alts.map(a =>
-    `<button class="sub-opt ${a.atual ? 'sub-opt-on' : ''}" onclick="escolherSub(${di}, ${ei}, '${escAttr(a.norm)}')">` +
-      `<span class="sub-opt-name">${escHtml(a.name)}</span>` +
-      (a.norm === _normEx(ex.name) ? '<span class="sub-opt-tag">original</span>' : '') +
-      (a.atual ? '<span class="sub-opt-check">&#10003;</span>' : '') +
-    `</button>`).join('');
+  const livres = alts.filter(a => !a.noDia && !a.atual).length;
+  const ocupadas = alts.filter(a => a.noDia).length;
+  let aviso = '';
+  if (!livres && ocupadas) {
+    aviso = ocupadas === 1
+      ? '<div class="sub-aviso">A única troca desse exercício já está no teu treino de hoje. Se quiser trocar mesmo assim, me chama que eu resolvo direto no teu protocolo.</div>'
+      : '<div class="sub-aviso">As trocas desse exercício já estão no teu treino de hoje. Se quiser trocar mesmo assim, me chama que eu resolvo direto no teu protocolo.</div>';
+  }
+  list.innerHTML = aviso + alts.map(a =>
+    a.noDia
+      ? `<div class="sub-opt sub-opt-nodia" aria-disabled="true">` +
+          `<span class="sub-opt-name">${escHtml(a.name)}</span>` +
+          `<span class="sub-opt-tag">já no treino de hoje</span>` +
+        `</div>`
+      : `<button class="sub-opt ${a.atual ? 'sub-opt-on' : ''}" onclick="escolherSub(${di}, ${ei}, '${escAttr(a.norm)}')">` +
+          `<span class="sub-opt-name">${escHtml(a.name)}</span>` +
+          (a.norm === _normEx(ex.name) ? '<span class="sub-opt-tag">original</span>' : '') +
+          (a.atual ? '<span class="sub-opt-check">&#10003;</span>' : '') +
+        `</button>`).join('');
+  // sem nenhuma opção livre: oferece o caminho de falar comigo, dentro do próprio modal
+  if (!livres) list.innerHTML += `<button class="sub-opt" style="justify-content:center;color:var(--gold);border-color:rgba(212,175,106,.45);" onclick="teHide('subPickerOverlay'); openSubFallback(${di}, ${ei});">🔧 Pedir a troca pro Gabriel</button>`;
   ov.classList.add('show');
 }
 function closeSubPicker() {
@@ -15898,7 +15920,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v361';
+    var APP_SHELL_V = 'metodo-gh-v362';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
