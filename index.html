@@ -1803,6 +1803,11 @@
   .dm-hora.set { color: var(--gold); border-color: rgba(201, 162, 75, .55); }
   /* modal do horário */
   .rh-time { width: 100%; background: #26262c; border: 1px solid #36363e; color: #fff; padding: 12px; border-radius: 10px; font-size: 22px; font-family: inherit; text-align: center; font-variant-numeric: tabular-nums; }
+  /* hora e minuto separados: o iPhone ignora o passo de 10 no seletor de hora nativo,
+     então a lista de minutos só oferece 00/10/20/30/40/50 (GH 16/08) */
+  .rh-hm { display: flex; align-items: center; gap: 8px; }
+  .rh-hm .rh-time { flex: 1; text-align-last: center; -webkit-appearance: none; appearance: none; }
+  .rh-sep { color: var(--gold); font-size: 22px; font-weight: 800; }
   .rh-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .09); border-radius: 12px; padding: 12px 14px; margin-top: 12px; }
   .rh-toggle-row span { color: #eaeaea; font-size: 13px; font-weight: 600; }
   .rh-switch { position: relative; width: 44px; height: 24px; border-radius: 12px; background: rgba(255, 255, 255, .15); border: none; cursor: pointer; transition: background .2s; flex: none; }
@@ -4490,7 +4495,11 @@
   <div class="te-modal-box" style="max-width:360px;">
     <h3 style="margin:0 0 2px;">🕐 Horário da refeição</h3>
     <p id="rhTitulo" style="color:var(--gold);font-size:12.5px;font-weight:700;margin:0 0 14px;"></p>
-    <input type="time" id="rhTime" class="rh-time" step="600">
+    <div class="rh-hm">
+      <select id="rhHora" class="rh-time" aria-label="Hora"></select>
+      <span class="rh-sep">:</span>
+      <select id="rhMin" class="rh-time" aria-label="Minutos"></select>
+    </div>
     <div class="rh-toggle-row">
       <span>Me lembrar nesse horário</span>
       <button type="button" class="rh-switch" id="rhToggle" onclick="rhToggleLembrete()" aria-label="Ativar lembrete"></button>
@@ -13845,7 +13854,7 @@ function openRefHora(ri) {
   _refHoraRi = ri;
   const r = _refHoras()[ri] || {};
   document.getElementById('rhTitulo').textContent = _refNome(ri);
-  document.getElementById('rhTime').value = r.h || '';
+  _rhMontaSeletores(r.h || '');
   document.getElementById('rhToggle').classList.toggle('on', !!(r.h && r.on));
   document.getElementById('rhRemover').style.display = r.h ? '' : 'none';
   teShow('refHoraModal');
@@ -13857,16 +13866,28 @@ function _refArredonda10(hm) {
   total = ((total % 1440) + 1440) % 1440;                       // 23:57 arredonda pra 00:00
   return String(Math.floor(total / 60)).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');
 }
+// Monta hora (00-23) e minuto (de 10 em 10). Horário legado fora do bloco (ex: 08:15,
+// salvo antes desta versão) aparece encaixado no mais próximo — o que o app vai cumprir.
+function _rhMontaSeletores(hAtual) {
+  const alvo = hAtual ? _refArredonda10(hAtual) : '';
+  const selH = document.getElementById('rhHora'), selM = document.getElementById('rhMin');
+  if (!selH || !selM) return;
+  const agora = new Date();
+  const hDef = alvo ? alvo.split(':')[0] : String(agora.getHours()).padStart(2, '0');
+  const mDef = alvo ? alvo.split(':')[1] : String(Math.round(agora.getMinutes() / 10) * 10 % 60).padStart(2, '0');
+  let oh = '';
+  for (let i = 0; i < 24; i++) { const v = String(i).padStart(2, '0'); oh += `<option value="${v}" ${v === hDef ? 'selected' : ''}>${v}</option>`; }
+  let om = '';
+  for (let i = 0; i < 60; i += 10) { const v = String(i).padStart(2, '0'); om += `<option value="${v}" ${v === mDef ? 'selected' : ''}>${v}</option>`; }
+  selH.innerHTML = oh; selM.innerHTML = om;
+}
 function rhToggleLembrete() { document.getElementById('rhToggle').classList.toggle('on'); }
 async function salvarRefHora() {
   if (_refHoraRi === null) { teHide('refHoraModal'); return; }
-  const hBruto = document.getElementById('rhTime').value;
-  if (!/^\d{1,2}:\d{2}$/.test(hBruto)) { alert('Escolhe o horário primeiro.'); return; }
-  // O relógio dos lembretes bate de 10 em 10 minutos: encaixa a escolha no tique mais
-  // próximo pra não prometer 12:07 e entregar 12:10 (GH 14/08: "não vende nada enganoso").
-  const h = _refArredonda10(hBruto);
-  const ajustou = (h !== hBruto);
-  document.getElementById('rhTime').value = h;
+  const hh = document.getElementById('rhHora').value, mm = document.getElementById('rhMin').value;
+  if (!hh || !mm) { alert('Escolhe o horário primeiro.'); return; }
+  const h = hh + ':' + mm;                 // já nasce em bloco de 10: nada a arredondar
+  const ajustou = false;
   const querLembrete = document.getElementById('rhToggle').classList.contains('on');
   const map = _refHoras();
   map[_refHoraRi] = { h: h, on: querLembrete, nome: _refNome(_refHoraRi) };   // nome = âncora contra reajuste que reordena
@@ -15938,7 +15959,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v364';
+    var APP_SHELL_V = 'metodo-gh-v365';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
