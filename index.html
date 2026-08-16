@@ -13813,7 +13813,6 @@ async function _refHorasBoot() {
     if (!temLocal) {
       const resp = await fetch(PUSH_API_BASE + '/meal-times?studentId=' + encodeURIComponent(SHEET_ID) + '&_=' + Date.now(), { cache: 'no-store' });
       const j = await resp.json().catch(() => null);
-      if (j && typeof j.fase === 'number') _rhFaseSet(j.fase);
       const times = (j && j.ok && Array.isArray(j.times)) ? j.times : [];
       if (!times.length) return;
       const nomes = _refNomesAtuais();
@@ -13856,17 +13855,7 @@ function openRefHora(ri) {
   const r = _refHoras()[ri] || {};
   document.getElementById('rhTitulo').textContent = _refNome(ri);
   _rhMontaSeletores(r.h || '');
-  // confere a fase do relógio com o servidor e remonta a lista se mudou
-  try {
-    fetch(PUSH_API_BASE + '/meal-times?studentId=' + encodeURIComponent(SHEET_ID) + '&_=' + Date.now(), { cache: 'no-store' })
-      .then(x => x.json()).then(j => {
-        if (j && typeof j.fase === 'number' && j.fase !== _rhFaseGet()) {
-          _rhFaseSet(j.fase);
-          const atual = document.getElementById('rhHora').value + ':' + document.getElementById('rhMin').value;
-          _rhMontaSeletores(atual);
-        }
-      }).catch(() => {});
-  } catch (_) {}
+
   document.getElementById('rhToggle').classList.toggle('on', !!(r.h && r.on));
   document.getElementById('rhRemover').style.display = r.h ? '' : 'none';
   teShow('refHoraModal');
@@ -13874,28 +13863,12 @@ function openRefHora(ri) {
 function _refArredonda10(hm) {
   const m = /^(\d{1,2}):(\d{2})$/.exec(String(hm || ''));
   if (!m) return hm;
-  const fase = _rhFaseGet();
-  const bruto = parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
-  let total = Math.round((bruto - fase) / 10) * 10 + fase;
+  let total = Math.round((parseInt(m[1], 10) * 60 + parseInt(m[2], 10)) / 10) * 10;
   total = ((total % 1440) + 1440) % 1440;                       // 23:57 arredonda pra 00:00
   return String(Math.floor(total / 60)).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');
 }
 // Monta hora (00-23) e minuto (de 10 em 10). Horário legado fora do bloco (ex: 08:15,
 // salvo antes desta versão) aparece encaixado no mais próximo — o que o app vai cumprir.
-// Fase do relógio dos lembretes (minuto em que o acionador bate: :05, :15, :25...).
-// O Google escolhe essa fase; o servidor observa e conta pro app, pra lista de minutos
-// bater com a realidade (antes o app oferecia :00/:10 e o aviso saía 5 min depois).
-let _rhFase = null;
-function _rhFaseGet() {
-  if (_rhFase !== null) return _rhFase;
-  try { const v = localStorage.getItem('gh_tickfase'); if (v !== null && v !== '') { _rhFase = parseInt(v, 10); return _rhFase; } } catch (_) {}
-  return 5;                     // padrão observado hoje; some assim que o servidor responder
-}
-function _rhFaseSet(f) {
-  if (f === null || f === undefined || isNaN(f)) return;
-  _rhFase = ((f % 10) + 10) % 10;
-  try { localStorage.setItem('gh_tickfase', String(_rhFase)); } catch (_) {}
-}
 function _rhMontaSeletores(hAtual) {
   const alvo = hAtual ? _refArredonda10(hAtual) : '';
   const selH = document.getElementById('rhHora'), selM = document.getElementById('rhMin');
@@ -13906,8 +13879,7 @@ function _rhMontaSeletores(hAtual) {
   let oh = '';
   for (let i = 0; i < 24; i++) { const v = String(i).padStart(2, '0'); oh += `<option value="${v}" ${v === hDef ? 'selected' : ''}>${v}</option>`; }
   let om = '';
-  const fase = _rhFaseGet();
-  for (let i = 0; i < 60; i += 10) { const v = String((i + fase) % 60).padStart(2, '0'); om += `<option value="${v}" ${v === mDef ? 'selected' : ''}>${v}</option>`; }
+  for (let i = 0; i < 60; i += 10) { const v = String(i).padStart(2, '0'); om += `<option value="${v}" ${v === mDef ? 'selected' : ''}>${v}</option>`; }
   selH.innerHTML = oh; selM.innerHTML = om;
 }
 function rhToggleLembrete() { document.getElementById('rhToggle').classList.toggle('on'); }
@@ -15988,7 +15960,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v367';
+    var APP_SHELL_V = 'metodo-gh-v368';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
