@@ -4501,7 +4501,7 @@
       <select id="rhMin" class="rh-time" aria-label="Minutos"></select>
     </div>
     <div class="rh-toggle-row">
-      <span>Me lembrar nesse horário</span>
+      <span>Me lembrar nesse horário<br><small style="color:#8d8579;font-weight:500;font-size:10.5px;">desligado, o horário fica só anotado aqui</small></span>
       <button type="button" class="rh-switch" id="rhToggle" onclick="rhToggleLembrete()" aria-label="Ativar lembrete"></button>
     </div>
     <p style="color:#8d8579;font-size:11px;line-height:1.5;margin:10px 2px 14px;">Tu define, eu memorizo. Com o lembrete ligado, te aviso nesse horário todo dia.</p>
@@ -13856,7 +13856,7 @@ function openRefHora(ri) {
   document.getElementById('rhTitulo').textContent = _refNome(ri);
   _rhMontaSeletores(r.h || '');
 
-  document.getElementById('rhToggle').classList.toggle('on', !!(r.h && r.on));
+  document.getElementById('rhToggle').classList.toggle('on', r.h ? !!r.on : true);
   document.getElementById('rhRemover').style.display = r.h ? '' : 'none';
   teShow('refHoraModal');
 }
@@ -15960,7 +15960,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v368';
+    var APP_SHELL_V = 'metodo-gh-v369';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
