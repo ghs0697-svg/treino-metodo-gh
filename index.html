@@ -1534,6 +1534,7 @@
     border-bottom: 1px solid #222;
     font-size: 13px;
   }
+  .proto-nota { color: #b9b3a9; font-size: 12.5px; line-height: 1.6; margin: 10px 14px; padding: 11px 14px; background: rgba(255,255,255,.03); border-left: 2px solid var(--gold-dim); border-radius: 0 9px 9px 0; }
   .proto-detail-row:last-child { border-bottom: none; }
   .proto-detail-label { color: var(--muted); font-weight: 600; }
   .proto-detail-value { color: var(--gray); text-align: right; max-width: 65%; }
@@ -14373,6 +14374,13 @@ function renderDiet() {
         if (nameLower.includes(key)) { icon = emoji; break; }
       }
 
+      // Orientação do protocolo (frase longa sem dose) não é substância: sai como nota,
+      // sem ícone de pílula nem nome em destaque (16/08: "Aferir a pressão 2x na semana..."
+      // virava card de remédio no app do João Márcio).
+      if (!p.dose && !p.obs && String(p.nome || '').length > 45) {
+        html += `<div class="proto-nota">${p.nome}</div>`;
+        return;
+      }
       html += `<div class="proto-card">`;
       html += `<div class="proto-card-header">`;
       html += `<div class="proto-icon">${icon}</div>`;
@@ -15930,7 +15938,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v363';
+    var APP_SHELL_V = 'metodo-gh-v364';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
