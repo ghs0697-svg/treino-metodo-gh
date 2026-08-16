@@ -13604,15 +13604,19 @@ const _DC_ORAIS = /(hemogenin|oximetolona|oxandrolona|anavar|dianabol|clomid|clo
 // porque a observação dele não dizia a via). Ninguém puxa ômega em seringa.
 const _DC_SUPL = /([oô]mega|vitamina|\bvit\b|creatina|whey|multivitamin|magn[ée]sio|zinco|sel[eê]nio|natto|coenzima|curcuma|c[uú]rcuma|resveratrol|berberina|ashwagandha|melatonina|col[áa]geno|glutamina|cafe[íi]na|ioimbina|taurina|arginina|citrulina|beta ?alanina|psyllium|probi[óo]tico|enzimas|pic?olinato|inositol|espirulina|cloreto de magn|epa e dha)/i;
 function _dcEhOral(nome, obs) {
-  const s = String(nome || '') + ' ' + String(obs || '');
+  // A Entregas escreve a FINALIDADE entre parênteses ("GHK-Cu (colágeno, pele e cabelo)").
+  // Isso é o efeito, não a composição: sem tirar, o GHK-Cu virava "suplemento de colágeno"
+  // e perdia a calculadora (16/08). As listas olham só o nome real.
+  const nomeBase = String(nome || '').replace(/\([^)]*\)/g, ' ');
+  const tudo = nomeBase + ' ' + String(obs || '');
   // 1º) comprimido por natureza vence tudo: o GH escreve "via oral, junto da aplicação"
-  // e a palavra "aplicação" fazia o anastrozol ganhar calculadora de seringa (16/08).
-  if (_DC_ORAIS.test(s)) return true;
-  if (/(comprimido|c[áa]psula|\bcaps\b|\bcp\b|via oral|sublingual|gotas|sachê|sache)/i.test(s)) return true;
+  // e a palavra "aplicação" fazia o anastrozol ganhar calculadora de seringa.
+  if (_DC_ORAIS.test(nomeBase)) return true;
+  if (/(comprimido|c[áa]psula|\bcaps\b|\bcp\b|via oral|sublingual|gotas|sachê|sache)/i.test(tudo)) return true;
   // 2º) via de aplicação declarada = injetável (cobre suplemento injetável, tipo vit. B12)
-  if (/(intramuscular|subcut[âa]n|\bIM\b|\bSC\b|seringa|gl[úu]teo|deltoid)/i.test(s)) return false;
-  // 3º) suplemento de pote
-  if (_DC_SUPL.test(s)) return true;
+  if (/(intramuscular|subcut[âa]n|\bIM\b|\bSC\b|seringa|gl[úu]teo|deltoid)/i.test(tudo)) return false;
+  // 3º) suplemento de pote (também pelo nome real, não pela finalidade)
+  if (_DC_SUPL.test(nomeBase)) return true;
   return false;   // dose em gramas é tratada por _dcDoseEhGrama, no gate do botão
 }
 // Calculadora só faz sentido com dose de verdade: número + unidade. Sem isso a linha é
@@ -15967,7 +15971,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v370';
+    var APP_SHELL_V = 'metodo-gh-v371';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
