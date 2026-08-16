@@ -5019,7 +5019,7 @@
   </div>
 </div>
 
-<script src="editor-data.js?v=137"></script>
+<script src="editor-data.js?v=138"></script>
 <script src="substitutos.js?v=5"></script>
 <script>
 // ══════════════════════════════════════════════════════════════
@@ -5225,7 +5225,12 @@ const EX_VIDEO_BANK = {
   "VOADOR":"https://youtube.com/shorts/OOEOxr_q45I?feature=share"
 };
 function _normEx(s){return String(s||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\u00b0/g,'\u00ba').replace(/\s+/g,' ').trim();}   // ° (grau) vira º (ordinal): 'Leg Press 45°' casa com 'Leg Press 45º' (grupos + banco de vídeo)
-function _bankVideo(name){const k=_normEx(name);return k&&EX_VIDEO_BANK[k]?EX_VIDEO_BANK[k]:'';}
+// Chave própria do banco (não usa o _normEx global: se alguém redeclarar aquela função
+// noutro ponto do arquivo, o banco continua funcionando). Índice montado em runtime, com a
+// MESMA função dos dois lados, então caixa/acento do nome buscado ou da chave não importam.
+function _bankKey(s){return String(s||'').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/°/g,'º').replace(/[^A-Z0-9º]+/g,' ').trim();}
+const _BANK_IDX = (function(){var m={};for(var k in EX_VIDEO_BANK)m[_bankKey(k)]=EX_VIDEO_BANK[k];return m;})();
+function _bankVideo(name){const k=_bankKey(name);return k&&_BANK_IDX[k]?_BANK_IDX[k]:'';}
 
 // \u2500\u2500 M\u00fasculo-alvo por exerc\u00edcio (educativo, tag compacta no card) \u2500\u2500
 // p = PRIM\u00c1RIO(s) (dourado) \u00b7 s = secund\u00e1rio(s) que importam (cinza). Completo, mas sem
@@ -9970,7 +9975,9 @@ function openVideo(name, url) {
    Só ACRESCENTA: o Short do YouTube acima continua igual. Se o exercício não
    tiver aula (ou o mapa falhar), a seção some e nada muda pro aluno.        */
 let _mapaAulas = null, _mapaAulasErro = false;
-function _normEx(s){
+// (renomeada em 16/08: chamava-se _normEx e sobrescrevia a _normEx original — declaração
+// de função duplicada, a última vence — derrubando o banco de vídeos e as trocas do app)
+function _normAula(s){
   return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
     .replace(/[^a-z0-9]+/g,' ').trim();
 }
@@ -9985,12 +9992,12 @@ async function mostraAulasGhflix(nomeExercicio) {
       const r = await fetch('ghflix/aulas-exercicio.json?v=' + Date.now(), { cache: 'no-store' });
       const bruto = await r.json();
       _mapaAulas = {};
-      for (const k of Object.keys(bruto)) _mapaAulas[_normEx(k)] = bruto[k];
+      for (const k of Object.keys(bruto)) _mapaAulas[_normAula(k)] = bruto[k];
       const ri = await fetch('ghflix/indice.json?v=' + Date.now(), { cache: 'no-store' });
       _mapaAulas.__idx = (await ri.json()).videos || {};
     }
   } catch (e) { _mapaAulasErro = true; return; }
-  const ids = _mapaAulas[_normEx(nomeExercicio)];
+  const ids = _mapaAulas[_normAula(nomeExercicio)];
   if (!ids || !ids.length) return;
   const idx = _mapaAulas.__idx || {};
   const html = ids.map(id => {
@@ -15891,7 +15898,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v360';
+    var APP_SHELL_V = 'metodo-gh-v361';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
