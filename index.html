@@ -1052,6 +1052,13 @@
   .esf-apchips { flex-wrap: wrap; gap: 6px; margin-top: 6px; }
   .esf-apchip { background: #101013; border: 1px solid #2c2c33; color: #cfcfd6; font-size: 11.5px; padding: 7px 9px; border-radius: 8px; cursor: pointer; }
   .esf-apchip.sel { background: #5a3b1a; color: #ffd9a0; border-color: #c98a3a; }
+  /* Anotação livre do aluno (ideia de aluno, 17/08): mesmo padrão discreto do toggle de aparelho */
+  .esf-nototoggle { margin-top: 9px; background: transparent; border: none; color: #9a9aa0; font-size: 12px; cursor: pointer; padding: 4px 0; display: block; text-align: left; }
+  .esf-nototoggle.has { color: var(--gold); }
+  .esf-notabox { margin-top: 6px; }
+  .esf-nota-in { width: 100%; box-sizing: border-box; background: #101013; border: 1px solid #2c2c33; color: #e8e8ee; font-size: 13px; font-family: inherit; line-height: 1.45; padding: 9px 10px; border-radius: 8px; resize: vertical; min-height: 46px; }
+  .esf-nota-in:focus { outline: none; border-color: #c98a3a; }
+  .esf-nota-hint { color: #7d7d86; font-size: 10.5px; margin-top: 4px; line-height: 1.35; }
   /* Painel ESFORÇO (treinador) */
   .esf-panel { padding: 6px 2px 20px; }
   .esf-summary { background: rgba(212,175,106,.07); border: 1px solid rgba(212,175,106,.18); border-radius: 10px; padding: 11px 13px; margin: 4px 0 14px; color: #cfcfd6; font-size: 13px; }
@@ -2422,6 +2429,11 @@
   .prog-chip { margin:8px 0 0; padding:8px 11px; border-radius:9px; font-size:12px; line-height:1.5; }
   .prog-chip.up { background:rgba(212,175,55,.10); border-left:3px solid var(--gold); color:#e8d9ac; }
   .prog-chip.down { background:rgba(255,255,255,.04); border-left:3px solid #6a6a70; color:#a9a49b; }
+  /* Força estimada (1RM) no card, do que o aluno já registrou. Referência, nunca meta. */
+  .forca-chip { margin:8px 0 0; padding:7px 11px; border-radius:9px; background:rgba(255,255,255,.035); border-left:3px solid #4a4a52; display:flex; align-items:baseline; gap:7px; flex-wrap:wrap; }
+  .forca-lb { color:#8a8a92; font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; }
+  .forca-vl { color:#cfc7b4; font-size:14px; font-weight:700; }
+  .forca-nota { color:#6f6f77; font-size:10px; }
   .prog-now { margin:9px 2px 0; font-size:12px; color:#c9bf9f; line-height:1.5; }
   /* Modo pouco tempo */
   .short-skip { opacity:.38; }
@@ -5936,6 +5948,8 @@ function saveSets(d, e, w, arr) {
   syncCargaToServer_(d, e, w, s1.kg || '', s1.pl || '', JSON.stringify(clean));
   // recorde armazenado nunca fica acima do que existe de verdade (corrigiu 255→25,5 = PR desce)
   if (typeof _prReconcilia === 'function') _prReconcilia(d, e);
+  // força estimada acompanha o que acabou de ser digitado (só o chip, não repinta a grade)
+  if (typeof _atualizaForcaChip === 'function' && w === currentWeek) _atualizaForcaChip(d, e);
 }
 // Grade da sessão anterior (semana < w, mais recente) pro lembrete "anterior" por série.
 function getPrevSets(d, e, w) {
@@ -6019,8 +6033,25 @@ function _readSetsFromDom(di, ei) {
 function _reRenderSetsGrid(di, ei) {
   const grid = _gridEl(di, ei);
   if (!grid) return;
+  const card = grid.closest('.exercise-card');
   const label = grid.querySelector('.carga-label');
   grid.outerHTML = _setsGridHtml(di, ei, label ? label.textContent : '', grid.dataset.noadd === '1');
+  _atualizaForcaChip(di, ei, card);
+}
+// Mantém a força estimada em dia sem repintar o card inteiro (repintar aqui apagaria o
+// que o aluno está digitando). Cria o chip se ele ainda não existe, some se ficou sem base.
+function _atualizaForcaChip(di, ei, card) {
+  try {
+    const host = card || _gridEl(di, ei)?.closest('.exercise-card');
+    if (!host) return;
+    const html = _forcaChipHtml(di, ei);
+    const atual = host.querySelector(':scope > .forca-chip');
+    if (!html) { if (atual) atual.remove(); return; }
+    if (atual) { atual.outerHTML = html; return; }
+    const antes = host.querySelector(':scope > .prog-chip') || host.querySelector(':scope > .focus-esforco');
+    if (antes) antes.insertAdjacentHTML('beforebegin', html);
+    else host.insertAdjacentHTML('beforeend', html);
+  } catch (_) {}
 }
 // ══ Série FEITA (Vitor 14/08: "marcar a série igual marca o exercício") ══
 // Toque no número da série alterna feita (linha apaga, número vira ✓). Storage próprio
@@ -6125,6 +6156,20 @@ function saveEsf(d, e, w, esf, apf) {
   syncEsforcoToServer_(d, e, w, esf, apf);
 }
 
+// ── Anotação livre do aluno sobre o exercício (ideia de aluno via Vitor, 17/08) ──
+// Por EXERCÍCIO, não por série: ninguém digita texto 4x no meio do treino, e um campo por
+// série encheria a tela de caixa vazia. Sobe pro servidor (aba NOTAS_SERIE) porque o valor
+// está na Entregas/Reajustes lerem na hora de montar renovação e reajuste.
+function notaKey(d, e, w) { return `gh_nota_${STUDENT_ID}_d${d}_e${e}_w${w}`; }
+function loadNota(d, e, w) { return localStorage.getItem(notaKey(d, e, w)) || ""; }
+function saveNota(d, e, w, txt) {
+  const t = String(txt == null ? '' : txt).trim().substring(0, 500);
+  if (t) localStorage.setItem(notaKey(d, e, w), t);
+  else localStorage.removeItem(notaKey(d, e, w));
+  syncNotaToServer_(d, e, w, t);
+  return t;
+}
+
 // ══ Backup servidor pra cargas/placas (anti "não tá salvando") ══
 // Toda escrita local também sobe pro Apps Script → aba CARGAS no mestre.
 // Permite auditoria + restore cross-device.
@@ -6167,7 +6212,7 @@ async function flushSyncQueues() {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
   _syncFlushRunning = true;
   try {
-    for (const kind of ['carga', 'done', 'esforco']) {
+    for (const kind of ['carga', 'done', 'esforco', 'nota_serie']) {
       const q = _syncQueueGet(kind);
       if (!q.length) continue;
       const remaining = [];
@@ -6257,6 +6302,33 @@ function syncEsforcoToServer_(di, ei, w, esforco, aparelho) {
     ts: new Date().toISOString()
   };
   const enfileira = () => _syncQueuePush('esforco', payload, p => `${p.di}|${p.ei}|${p.w}`);
+  try {
+    fetch(LOG_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+      keepalive: true,
+      redirect: 'follow'
+    }).then(resp => { if (!resp || !resp.ok) enfileira(); }).catch(enfileira);
+  } catch (_) { enfileira(); }
+}
+
+// Espelha o syncEsforcoToServer_. Fire-and-forget + fila offline: o aluno anota na academia
+// sem sinal e a nota sobe sozinha depois (a academia é justamente onde o 4G falha).
+function syncNotaToServer_(di, ei, w, nota) {
+  if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
+  let nomeEx = '';
+  try { nomeEx = (_exAtivo(di, parseInt(ei, 10)) || {}).name || ''; } catch (_) {}
+  const payload = {
+    type: 'nota_serie',
+    sheetId: SHEET_ID,
+    studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+    di: di, ei: ei, w: w,
+    exercicio: nomeEx,
+    nota: nota || '',
+    ts: new Date().toISOString()
+  };
+  const enfileira = () => _syncQueuePush('nota_serie', payload, p => `${p.di}|${p.ei}|${p.w}`);
   try {
     fetch(LOG_ENDPOINT, {
       method: 'POST',
@@ -8553,6 +8625,37 @@ function _progSugestao(nomeEx, base, esf) {
   if (esf === 'falha_antes') return { tipo: 'segura' };
   return null;   // sobrou1/2 e falha_ult: carga certa, sem chip (falha_ult É o alvo do método)
 }
+// ── Força estimada (1RM) no próprio card, ao lado das séries (ideia do Hugo via Vitor, 17/08) ──
+// A calculadora do "Meu progresso" continua lá pra quem quiser simular; aqui o número aparece
+// sozinho, do que o aluno JÁ registrou, sem ele fazer nada. Mesma fórmula (Epley) pra não haver
+// dois números diferentes pro mesmo exercício no app.
+// REGRA DE TREINADOR (GH): é REFERÊNCIA, nunca meta. Nada de "meta a bater" nem linguagem de
+// premiação — 1RM lido como desafio faz iniciante testar carga máxima sozinho, que é lesão.
+// Só com peso em kg (placa não tem carga absoluta comparável) e até 12 reps (acima disso a
+// estimativa vira chute, o mesmo limite que a calculadora já avisa).
+function _forcaEstimadaDoSets(sets) {
+  if (!Array.isArray(sets)) return null;
+  let melhor = null;
+  for (const s of sets) {
+    const kg = parseFloat(String((s || {}).kg || '').replace(',', '.'));
+    const reps = parseInt(String((s || {}).reps || '').replace(/[^0-9]/g, ''), 10);
+    if (!kg || kg <= 0 || !reps || reps <= 0 || reps > 12) continue;
+    const rm = reps === 1 ? kg : kg * (1 + reps / 30);
+    if (!melhor || rm > melhor.rm) melhor = { rm, kg, reps };
+  }
+  if (!melhor) return null;
+  return { val: Math.round(melhor.rm * 10) / 10, kg: melhor.kg, reps: melhor.reps };
+}
+function _forcaChipHtml(di, ei) {
+  let f = null;
+  try { f = _forcaEstimadaDoSets(loadSets(di, String(ei), currentWeek)); } catch (_) { return ''; }
+  if (!f) return '';
+  const u = (typeof getUnit === 'function' ? getUnit() : 'kg');
+  const v = String(f.val).replace('.', ',');
+  return `<div class="forca-chip" title="Estimativa a partir de ${String(f.kg).replace('.', ',')}${u} x ${f.reps} reps">`
+       + `<span class="forca-lb">Força estimada</span><span class="forca-vl">${v} ${u}</span>`
+       + `<span class="forca-nota">referência, não é pra testar</span></div>`;
+}
 // Chip no card do exercício: só aparece quando há algo ÚTIL a dizer (sobe ou segura).
 function _progChipHtml(di, ei, nomeEx) {
   const reg = _progUltReg(di, ei);
@@ -8570,11 +8673,19 @@ function _focusEsforcoBlock(di, key, compact) {
   const chips = _ESF_OPTS.map(([v, l]) => `<button class="esf-chip${curE === v ? ' sel' : ''}" onclick="onEsforco(${di},'${key}',this,'${v}')">${l}</button>`).join('');
   const apChips = _ESF_AP.map(([v, l]) => `<button class="esf-apchip${curA.includes(v) ? ' sel' : ''}" data-v="${v}" onclick="onEsforcoAp(${di},'${key}',this)">${l}</button>`).join('');
   const apOpen = curA.length > 0;
+  const curN = loadNota(di, key, currentWeek);
   const inner = `
     <div class="focus-carga-label">Na ÚLTIMA SÉRIE, quantas repetições ainda dava pra fazer?</div>
     <div class="esf-chips">${chips}</div>
     <button class="esf-aptoggle${apOpen ? ' open' : ''}" onclick="esfToggleAp(this)">⚠️ Problema no aparelho?</button>
-    <div class="esf-apchips" style="display:${apOpen ? 'flex' : 'none'};">${apChips}</div>`;
+    <div class="esf-apchips" style="display:${apOpen ? 'flex' : 'none'};">${apChips}</div>
+    <button class="esf-nototoggle${curN ? ' has' : ''}" onclick="notaToggle(this)">📝 ${curN ? 'Ver a tua anotação' : 'Quer anotar como foi?'}</button>
+    <div class="esf-notabox" style="display:${curN ? 'block' : 'none'};">
+      <textarea class="esf-nota-in" id="nota-${di}-${key}" maxlength="500" rows="2"
+        placeholder="Ex: ombro incomodou na última série, ou fiz pegada neutra porque a barra estava ocupada"
+        oninput="notaInput(${di},'${key}',this)" onblur="notaSalva(${di},'${key}',this)">${_chatEsc(curN)}</textarea>
+      <div class="esf-nota-hint"><span id="notast-${di}-${key}">O Gabriel lê isso quando for montar teu próximo protocolo.</span></div>
+    </div>`;
   if (!compact) return `<div class="focus-esforco">${inner}</div>`;
   // Card da lista (GH 2026-07-06): colapsado numa linha pra não poluir; expande no
   // toque, auto-abre ao marcar feito sem resposta, e mostra a resposta escolhida.
@@ -8592,6 +8703,35 @@ function esfToggleWrap(di, key, force) {
   const show = force === true ? true : b.style.display === 'none';
   b.style.display = show ? 'block' : 'none';
   w.classList.toggle('open', show);
+}
+// ── Anotação livre: abre/fecha, salva sozinha (debounce) e avisa quando salvou ──
+function notaToggle(btn) {
+  const box = btn.parentElement.querySelector('.esf-notabox');
+  if (!box) return;
+  const show = box.style.display === 'none';
+  box.style.display = show ? 'block' : 'none';
+  if (show) { const t = box.querySelector('.esf-nota-in'); if (t) t.focus(); }
+}
+const _notaTimers = {};
+function notaInput(di, key, el) {
+  // salva sozinho 900ms depois da última tecla: aluno não precisa apertar botão nenhum
+  clearTimeout(_notaTimers[`${di}-${key}`]);
+  _notaTimers[`${di}-${key}`] = setTimeout(() => notaSalva(di, key, el), 900);
+}
+function notaSalva(di, key, el) {
+  clearTimeout(_notaTimers[`${di}-${key}`]);
+  const txt = saveNota(di, key, currentWeek, el.value);
+  const st = document.getElementById(`notast-${di}-${key}`);
+  if (st) {
+    st.textContent = txt ? '✓ Anotado. O Gabriel lê isso quando for montar teu próximo protocolo.'
+                         : 'O Gabriel lê isso quando for montar teu próximo protocolo.';
+  }
+  // o botão passa a indicar que existe anotação (sem precisar abrir pra descobrir)
+  const tg = el.closest('.esf-notabox')?.parentElement?.querySelector('.esf-nototoggle');
+  if (tg) {
+    tg.classList.toggle('has', !!txt);
+    tg.textContent = txt ? '📝 Ver a tua anotação' : '📝 Quer anotar como foi?';
+  }
 }
 function esfToggleAp(btn) {
   const wrap = btn.parentElement.querySelector('.esf-apchips');
@@ -9545,6 +9685,7 @@ function renderExercises() {
             </div>
             </div>
           </div>
+          ${_forcaChipHtml(di, ei)}
           ${_progChipHtml(di, ei, act.name)}
           ${_focusEsforcoBlock(di, ei, true)}` : ''}
         </div>`;
@@ -15971,7 +16112,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v371';
+    var APP_SHELL_V = 'metodo-gh-v372';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
