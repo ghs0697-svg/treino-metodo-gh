@@ -14735,9 +14735,33 @@ var RENOV_WA = 'https://wa.me/555520131470?text=';
 var _renovOrigem = 'menu';
 function openRenovModal(origem) {
   _renovOrigem = origem || 'menu';
+  _renovLogOpen(_renovOrigem);
   var fo = document.getElementById('floatOptions'); if (fo) fo.classList.remove('show');
   var fb = document.getElementById('floatBtn'); if (fb) fb.classList.remove('open');
   teShow('renovModal');
+}
+// Abertura do modal. Ate 18/08 so o clique NO PLANO era registrado, entao o funil tinha um
+// degrau cego bem no meio: nao dava pra saber se o aluno nao renovava porque desistia no
+// checkout ou porque nem chegava a abrir o convite. Vai pela MESMA rota 'click' que ja
+// existe (CLICKS_AFILIADOS), com Produto 'Abriu modal' pra separar na hora de contar, e a
+// origem (menu / banner_prevenc / banner_carencia / bloqueio) na coluna Tag.
+function _renovLogOpen(origem) {
+  try {
+    if (typeof LOG_ENDPOINT === 'undefined') return;
+    fetch(LOG_ENDPOINT, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        type: 'click',
+        sheetId: (typeof SHEET_ID !== 'undefined' && SHEET_ID) ? SHEET_ID : '',
+        studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+        partner: 'GREENN',
+        productName: 'Abriu modal',
+        tag: origem || 'menu',
+        url: ''
+      }),
+      keepalive: true, redirect: 'follow'
+    }).catch(function () {});
+  } catch (_) {}
 }
 function _renovLogClick(plano) {
   try {
@@ -15059,7 +15083,10 @@ function _planGateDecision(j, GRACE, PRE_DIAS, hojeMs) {
     if (CORTESIA_SHEETS.indexOf(SHEET_ID) !== -1) return; // cortesia: nunca bloqueia nem avisa
     if (typeof LOG_ENDPOINT === 'undefined') return;
     var GRACE = 3;     // dias de carência depois do vencimento
-    var PRE_DIAS = 15; // banner de aviso começa 15 dias antes de vencer
+    // 25 e nao 15 (analise de agosto/2026): quem nao renovou ja estava mudo ha 23 dias
+    // (mediana) quando o plano venceu, ou seja a decisao acontece ~3 semanas antes. Com 15
+    // o primeiro aviso do app chegava DEPOIS da decisao ja tomada.
+    var PRE_DIAS = 25; // banner de aviso começa 25 dias antes de vencer
     fetch(LOG_ENDPOINT + '?action=planstatus&sheet=' + encodeURIComponent(SHEET_ID) + '&_=' + Date.now())
       .then(function (r) { return r.json(); })
       .then(function (j) {
@@ -16114,7 +16141,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v373';
+    var APP_SHELL_V = 'metodo-gh-v374';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
