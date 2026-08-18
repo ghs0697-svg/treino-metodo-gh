@@ -1041,6 +1041,17 @@
   .focus-carga { background: #17171b; border-radius: 10px; padding: 12px; margin-bottom: 10px; }
   .focus-carga-label { color: #9a9aa0; font-size: 11px; margin-bottom: 7px; }
   .focus-carga input { background: #101013; border: 1px solid #2c2c33; color: #fff; font-size: 18px; font-weight: 700; padding: 10px 6px; border-radius: 8px; width: 92px; text-align: center; }
+  /* Evolução das últimas 3 sessões (Vitor, 18/08): mostra DIREÇÃO, não só o último peso.
+     Uma linha discreta em cima do grid, pra não competir com os campos de digitar. */
+  .evo-chip { display:flex; align-items:baseline; gap:6px; flex-wrap:wrap;
+    font-size:10.5px; padding:4px 8px; margin-bottom:6px; border-radius:7px;
+    background:#1b1b20; border:1px solid #2a2a31; }
+  .evo-chip .evo-seta { font-size:12px; font-weight:800; line-height:1; }
+  .evo-chip .evo-nums { font-weight:700; letter-spacing:.2px; color:#e8e8ea; }
+  .evo-chip .evo-lbl  { color:#8a8a90; font-size:9.5px; }
+  .evo-sobe  { border-color:#2f4a33; } .evo-sobe  .evo-seta { color:#5fbf6a; }
+  .evo-igual { border-color:#3a3a42; } .evo-igual .evo-seta { color:#9a9aa0; }
+  .evo-desce { border-color:#4a3a2f; } .evo-desce .evo-seta { color:#c9a227; }
   .focus-esforco { background: #17171b; border-radius: 10px; padding: 12px; margin-bottom: 10px; }
   .focus-esf-alvo { background: rgba(212,175,106,.1); border: 1px solid rgba(212,175,106,.25); border-radius: 7px; padding: 7px 10px; margin: 7px 0 9px; font-size: 12px; color: #e0c184; line-height: 1.4; }
   .focus-esf-alvo b { color: var(--gold, #D4AF6A); }
@@ -5952,6 +5963,49 @@ function saveSets(d, e, w, arr) {
   if (typeof _atualizaForcaChip === 'function' && w === currentWeek) _atualizaForcaChip(d, e);
 }
 // Grade da sessão anterior (semana < w, mais recente) pro lembrete "anterior" por série.
+// ── Últimas 3 sessões do exercício (ideia do Vitor, 18/08): o "ant:" por série já mostrava
+// a sessão anterior, mas um número sozinho não diz DIREÇÃO. Com três, o aluno vê se está
+// subindo, parado ou caindo, e tem em que se superar. Pega a carga REPRESENTATIVA de cada
+// sessão (a maior série, que é o topo do dia) e devolve da mais antiga pra mais nova.
+function _ultimas3Sessoes(d, e, w) {
+  const sf = _cargaSlotSuffix(d, e);
+  const readW = ww => {
+    let raw = sf ? localStorage.getItem(setsKey(d, e, ww) + sf)
+                 : (_cargaValida(d, e, ww) ? localStorage.getItem(setsKey(d, e, ww)) : null);
+    if (!raw) return null;
+    try { const a = JSON.parse(raw); if (!Array.isArray(a) || !a.length) return null;
+      // topo do dia: maior peso lançado; se o aluno usa placas, cai pra placas
+      let kg = 0, pl = 0;
+      a.forEach(x => { const k = parseFloat(String(x && x.kg || '').replace(',', '.'));
+        if (!isNaN(k) && k > kg) kg = k;
+        const q = parseFloat(String(x && x.pl || '').replace(',', '.'));
+        if (!isNaN(q) && q > pl) pl = q; });
+      if (!kg && !pl) return null;
+      return { semana: ww, kg: kg || null, pl: kg ? null : (pl || null) };
+    } catch (_) { return null; }
+  };
+  const out = [];
+  for (let ww = w - 1; ww >= 1 && out.length < 3; ww--) { const v = readW(ww); if (v) out.push(v); }
+  return out.reverse();   // mais antiga → mais nova, que é como se lê progressão
+}
+// Chip compacto da evolução. Uma linha só, de propósito: o GH já vetou poluir o card.
+function _evolucaoChipHtml(di, ei) {
+  const h = _ultimas3Sessoes(di, ei, currentWeek);
+  if (h.length < 2) return '';                      // com 1 ponto não existe tendência
+  const usaPl = h.every(x => x.pl && !x.kg);
+  const val = x => usaPl ? x.pl : x.kg;
+  // vírgula, não ponto: 42,5 é como o aluno escreve e como o resto do app mostra
+  const fmt = v => String(v).replace('.', ',');
+  const txt = h.map(x => (usaPl ? fmt(val(x)) + 'pl' : fmt(kgToDisplay(String(val(x)))) )).join(' · ');
+  const un = usaPl ? '' : ' ' + getUnit();
+  const ini = val(h[0]), fim = val(h[h.length - 1]);
+  let cls = 'evo-igual', seta = '→', frase = 'mantendo';
+  if (fim > ini) { cls = 'evo-sobe'; seta = '↑'; frase = 'subindo'; }
+  else if (fim < ini) { cls = 'evo-desce'; seta = '↓'; frase = 'caiu'; }
+  return `<div class="evo-chip ${cls}"><span class="evo-seta">${seta}</span>`
+       + `<span class="evo-nums">${txt}${un}</span>`
+       + `<span class="evo-lbl">últimos ${h.length} treinos · ${frase}</span></div>`;
+}
 function getPrevSets(d, e, w) {
   const sf = _cargaSlotSuffix(d, e);
   const read = ww => {
@@ -5984,6 +6038,7 @@ function _setsGridHtml(di, ei, label, noAdd) {
     ? _parseAlvoRange(STUDENT_ESFORCO_ALVO.valor) : null;
   const rsPh = alvoR ? (alvoR[0] === alvoR[1] ? String(alvoR[0]) : alvoR[0] + '-' + alvoR[1]) : '?';
   const okSet = loadSetOk(di, eiS, w);
+  const evo = _evolucaoChipHtml(di, ei);   // linha de evolução das últimas 3 sessões
   const rows = sets.map((s, si) => {
     const p = prev && prev[si];
     const prevTxt = (p && (p.kg || p.pl || p.reps))
@@ -6002,6 +6057,7 @@ function _setsGridHtml(di, ei, label, noAdd) {
   }).join('');
   return `<div class="sets-grid" id="sets-${di}-${eiS}" data-di="${di}" data-ei="${eiS}" data-noadd="${noAdd ? '1' : ''}">
       ${label ? `<div class="carga-label" style="font-size:10px;margin-bottom:2px;">${label}</div>` : ''}
+      ${evo}
       <div class="set-head"><span class="set-num"></span><span class="sh-kg">${getUnit()}</span><span class="sh-pl">placa</span><span class="sh-reps">reps</span><span class="sh-rs" title="Quantas repetições sobraram">sobrou</span><button type="button" class="rs-info-btn" onclick="openSobrouInfo()" aria-label="O que é o sobrou?">i</button><span style="flex:1"></span></div>
       ${rows}
       ${noAdd ? '' : `<button type="button" class="set-add" onclick="addSet(${di},'${eiS}')">+ série</button>`}
@@ -16149,7 +16205,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v375';
+    var APP_SHELL_V = 'metodo-gh-v376';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
