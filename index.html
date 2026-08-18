@@ -7886,7 +7886,12 @@ function confirmWeekReset() {
 function _mmGroupFromLabel(lab) {
   const k = String(lab || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   if (k.includes('ombro')) return 'ombro';
-  if (k.includes('dorsal') || k.includes('lombar') || k.includes('trapezio') || k.includes('costas')) return 'costas';
+  // LOMBAR É LOMBAR, NÃO É COSTAS (GH 2026-08-14, textual: "ta dizendo que no D4 do Wesley
+  // tem costas, mas nao tem, ajeita isso, e lombar... Lombar e lombar, nao e costas").
+  // Vinha junto de dorsal/trapézio e fazia dia de lombar anunciar COSTAS no título.
+  // Tem que vir ANTES da linha de costas, senão 'lombar' cai lá de novo.
+  if (k.includes('lombar') || k.includes('paravertebr')) return 'lombar';
+  if (k.includes('dorsal') || k.includes('trapezio') || k.includes('costas')) return 'costas';
   if (k.startsWith('gluteo') || k.startsWith('adutor')) return 'gluteo';
   if (k.startsWith('posterior')) return 'posterior';
   if (k.startsWith('quadri')) return 'quadriceps';
@@ -7968,7 +7973,10 @@ function renderMuscleMap() {
       center += `<line x1="-6" y1="90" x2="6" y2="90" stroke="${MSTK}" stroke-width="0.8"/>`;
       center += B('M-11 98 L11 98 L0 112 Z');
     } else {
-      center += P('M-5 63 L5 63 Q6 86 3 96 L-3 96 Q-6 86 -5 63 Z', 'costas');
+      // Coluna dividida: em cima dorsal (costas), embaixo LOMBAR, logo acima do glúteo
+      // (que começa em y=97). Sem isso o grupo novo não tinha onde acender no boneco.
+      center += P('M-5 63 L5 63 Q6 82 4.4 86 L-4.4 86 Q-6 82 -5 63 Z', 'costas');
+      center += P('M-4.4 86 L4.4 86 Q5 92 3 96 L-3 96 Q-5 92 -4.4 86 Z', 'lombar');
       center += `<line x1="0" y1="64" x2="0" y2="95" stroke="${MSTK}" stroke-width="0.8"/>`;
     }
     let s = `<g transform="translate(${ox},6)">`;
@@ -7978,8 +7986,8 @@ function renderMuscleMap() {
     s += `</g>`;
     return s;
   };
-  const ordem = ['peito','costas','quadriceps','posterior','gluteo','ombro','biceps','triceps','antebraco','panturrilha','abdomen'];
-  const CHIP_LBL = Object.assign({ antebraco: 'ANTEBRAÇO' }, (typeof MUSCLE_LABELS !== 'undefined' ? MUSCLE_LABELS : {}));
+  const ordem = ['peito','costas','lombar','quadriceps','posterior','gluteo','ombro','biceps','triceps','antebraco','panturrilha','abdomen'];
+  const CHIP_LBL = Object.assign({ antebraco: 'ANTEBRAÇO', lombar: 'LOMBAR' }, (typeof MUSCLE_LABELS !== 'undefined' ? MUSCLE_LABELS : {}));
   // Título do hero do dia: grupos primários ("COSTAS + BÍCEPS"); fallback "DIA N"
   const _dhT = document.getElementById('dhTitle'), _dhS = document.getElementById('dhSub');
   if (_dhT) {
@@ -16141,7 +16149,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v374';
+    var APP_SHELL_V = 'metodo-gh-v375';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
