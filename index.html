@@ -3178,6 +3178,7 @@
   <div class="pacer-reps">Reps: <b id="pacerReps">0</b></div>
   <div class="timer-actions">
     <button class="timer-btn" onclick="closePacer()">Fechar</button>
+    <button class="timer-btn" id="pacerSomBtn" onclick="pacerMudoToggle()" title="Bip a cada troca de fase">🔊 Som on</button>
     <button class="timer-btn" id="pacerPauseBtn" onclick="pacerPause()">Pausar</button>
     <button class="timer-btn primary" onclick="pacerToRest()">Descansar</button>
   </div>
@@ -8498,6 +8499,47 @@ function beep() {
 // Anel + vibração no ritmo da repetição do exercício. parseCadencia lê a OBS:
 // padrão ouro 1/0,5/2 ou customizada do método (ex: excêntrica 5 seg).
 let _pacInt = null, _pacPh = 0, _pacT = 0, _pacReps = 0, _pacPhases = [], _pacPaused = false, _pacLast = 0, _pacBase = null;
+// ══ BIP DO COACH DE CADÊNCIA (pedido do GH 18/08, ideia pro aluno de fone) ══
+// O pacer já vibrava a cada troca de fase, MAS iPhone não suporta navigator.vibrate:
+// na prática o aluno de iOS não recebia sinal nenhum sem olhar a tela. Com fone, o som
+// resolve, e é melhor que vibração porque não exige o celular no bolso.
+// Cada fase tem um tom PRÓPRIO pra ele reconhecer sem olhar: sobe agudo, segura médio,
+// desce grave. Fim da repetição = dois bips curtos.
+let _pacAC = null, _pacMudo = (localStorage.getItem('gh_pacer_mudo') === '1');
+function _pacAudioInit() {
+  // iOS só libera áudio dentro de um gesto do usuário: chamo isto no toque que abre o pacer.
+  try {
+    if (!_pacAC) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) _pacAC = new AC(); }
+    if (_pacAC && _pacAC.state === 'suspended') _pacAC.resume();
+  } catch (_) {}
+}
+function _pacBeep(freq, dur, vol) {
+  if (_pacMudo || !_pacAC) return;
+  try {
+    const t = _pacAC.currentTime;
+    const osc = _pacAC.createOscillator(), g = _pacAC.createGain();
+    osc.type = 'sine'; osc.frequency.setValueAtTime(freq, t);
+    // envelope curto: sem isto o som "estala" no começo e no fim
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || 0.25, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + (dur || 0.09));
+    osc.connect(g); g.connect(_pacAC.destination);
+    osc.start(t); osc.stop(t + (dur || 0.09) + 0.02);
+  } catch (_) {}
+}
+// tom por fase: o aluno aprende o padrão e para de olhar a tela
+function _pacBeepFase(lab) {
+  if (lab === 'SOBE') _pacBeep(880, 0.09);
+  else if (lab === 'SEGURA') _pacBeep(660, 0.07, 0.2);
+  else _pacBeep(440, 0.11);
+}
+function pacerMudoToggle() {
+  _pacMudo = !_pacMudo;
+  try { localStorage.setItem('gh_pacer_mudo', _pacMudo ? '1' : '0'); } catch (_) {}
+  const b = document.getElementById('pacerSomBtn');
+  if (b) { b.textContent = _pacMudo ? '🔇 Som off' : '🔊 Som on'; b.classList.toggle('off', _pacMudo); }
+  if (!_pacMudo) { _pacAudioInit(); _pacBeep(880, 0.09); }   // devolve um bip de confirmação
+}
 function openPacer(di, ei) {
   const ex = WORKOUT[di] && WORKOUT[di].exercises[ei];
   if (!ex) return;
@@ -8518,7 +8560,11 @@ function openPacer(di, ei) {
   document.getElementById('pacerOverlay').classList.add('show');
   document.body.style.overflow = 'hidden';
   _timerLockOn();
+  _pacAudioInit();                       // gesto do usuário: é aqui que o iOS libera o som
+  const _sb = document.getElementById('pacerSomBtn');
+  if (_sb) { _sb.textContent = _pacMudo ? '🔇 Som off' : '🔊 Som on'; _sb.classList.toggle('off', _pacMudo); }
   _pacApplyPhase();
+  _pacBeepFase(_pacPhases[0].lab);       // marca o início da 1ª fase
   _pacLast = performance.now();
   if (_pacInt) clearInterval(_pacInt);
   _pacInt = setInterval(_pacTick, 50);
@@ -8545,8 +8591,10 @@ function _pacTick() {
       _pacReps++;
       document.getElementById('pacerReps').textContent = String(_pacReps);
       if (navigator.vibrate) navigator.vibrate([60, 40, 60]);
+      _pacBeep(990, 0.07); setTimeout(() => _pacBeep(990, 0.07), 110);   // rep fechada: 2 bips
     } else if (navigator.vibrate) navigator.vibrate(30);
     p = _pacPhases[_pacPh];
+    if (_pacPh !== 0) _pacBeepFase(p.lab);   // fase 0 já bipou no fecha-rep acima
     _pacApplyPhase();
   }
   // O anel enche na SOBE, fica cheio na SEGURA e esvazia na DESCE.
@@ -16205,7 +16253,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v376';
+    var APP_SHELL_V = 'metodo-gh-v377';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
