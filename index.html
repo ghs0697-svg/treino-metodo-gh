@@ -1486,7 +1486,20 @@
   .mt-row.ok .mt-val { color: var(--gold); }
   .mt-solto { flex: 1; text-align: right; color: #b8b8bc; font-weight: 700; }
   .mt-def { background: none; border: 1px solid #36363e; color: #9a9aa0; font-size: 9.5px; border-radius: 7px; padding: 2px 7px; margin-left: 4px; }
-  .mt-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0 4px 28px; }
+  .mt-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0 4px 0; }
+  /* Anéis da semana (v381) */
+  .mt-aneis { display: flex; justify-content: space-around; align-items: flex-start; gap: 4px; margin: 8px 0 4px; }
+  .mt-anel { text-align: center; min-width: 58px; }
+  .mt-anel .tr { fill: none; stroke: #26262c; stroke-width: 4.5; }
+  .mt-anel .arc { fill: none; stroke: #D4AF37; stroke-width: 4.5; stroke-linecap: round; transition: stroke-dashoffset .5s; }
+  .mt-anel.ok .arc { stroke: #F0D48A; filter: drop-shadow(0 0 4px rgba(212,175,55,.6)); }
+  .mt-anel .num { fill: #e8e8ea; font-size: 10.5px; font-weight: 800; text-anchor: middle; font-variant-numeric: tabular-nums; }
+  .mt-anel.ok .num { fill: #F0D48A; }
+  .mt-anel .lbl { color: #9a9aa0; font-size: 9.5px; margin-top: 2px; }
+  .mt-anel .mt-def { margin: 3px 0 0; display: inline-block; }
+  .mt-streak { color: #d8d8da; font-size: 12px; background: #1f1d16; border: 1px solid #3a3320; border-radius: 8px; padding: 7px 10px; margin: 8px 0 0; }
+  .mt-streak b { color: var(--gold); }
+  .mt-passada { color: #8a8a90; font-size: 11px; margin: 6px 2px 0; }
   .mt-chip { background: #26262c; border: 1px solid #36363e; color: #d8d8da; font-size: 11.5px; border-radius: 8px; padding: 5px 10px; }
   .mt-chip.off { color: #9a9aa0; }
   .pg-sec-t { color: var(--gold); font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: .12em; margin: 0 0 10px; }
@@ -13182,6 +13195,51 @@ function _mtRow(ico, nome, feito, alvo, extra) {
     '<span class="mt-barra"><span class="mt-fill" style="width:' + pct + '%"></span></span>' +
     '<span class="mt-val">' + (ok ? '&#10003; ' : '') + feito + '/' + alvo + '</span>' + (extra || '') + '</div>';
 }
+// Anel de meta (v381): círculo que fecha conforme o progresso, número no centro.
+// Muito mais "quero fechar isso" do que barra, sem virar premiação: fechou = dourado, só.
+function _mtAnel(emoji, nome, feito, alvo, extra) {
+  const C = 125.66;   // circunferência do r=20
+  let miolo, arco = '';
+  if (alvo) {
+    const pct = Math.max(0, Math.min(1, feito / alvo));
+    arco = '<circle class="arc" cx="24" cy="24" r="20" transform="rotate(-90 24 24)" stroke-dasharray="' + C + '" stroke-dashoffset="' + (C * (1 - pct)).toFixed(1) + '"/>';
+    miolo = feito + '/' + alvo;
+  } else miolo = String(feito);
+  const ok = alvo && feito >= alvo;
+  return '<div class="mt-anel' + (ok ? ' ok' : '') + '">' +
+    '<svg viewBox="0 0 48 48" width="54" height="54" aria-hidden="true">' +
+    '<circle class="tr" cx="24" cy="24" r="20"/>' + arco +
+    '<text x="24" y="27" class="num">' + miolo + '</text></svg>' +
+    '<div class="lbl">' + emoji + ' ' + nome + '</div>' + (extra || '') + '</div>';
+}
+// Sequência de semanas com treino em dia (constância, a mecânica que segura aluno).
+// Conta semanas FECHADAS consecutivas com dias >= frequência; a semana atual soma
+// quando já bateu (e não quebra a conta enquanto está em andamento).
+function _mtStreakSemanas(freq) {
+  if (!freq) return 0;
+  try {
+    const pref = 'gh_logsent_' + SHEET_ID + '_';
+    const re = /^(\d{4})-(\d{2})-(\d{2})_d\d+_concl$/;
+    const dias = new Set();
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k || k.indexOf(pref) !== 0) continue;
+      const m = k.slice(pref.length).match(re);
+      if (m) dias.add(m[1] + '-' + m[2] + '-' + m[3]);
+    }
+    const dk = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    const segAtual = new Date(hoje); segAtual.setDate(hoje.getDate() - ((hoje.getDay() + 6) % 7));
+    const diasDaSemana = ini => { let n = 0; for (let i = 0; i < 7; i++) { const d = new Date(ini); d.setDate(ini.getDate() + i); if (dias.has(dk(d))) n++; } return n; };
+    let streak = 0;
+    for (let k = 1; k <= 52; k++) {
+      const ini = new Date(segAtual); ini.setDate(segAtual.getDate() - 7 * k);
+      if (diasDaSemana(ini) >= freq) streak++; else break;
+    }
+    if (diasDaSemana(segAtual) >= freq) streak++;   // atual já fechada soma; em andamento não quebra
+    return streak;
+  } catch (_) { return 0; }
+}
 function _metasCardHtml() {
   try {
     if (typeof SHEET_ID === 'undefined' || !SHEET_ID) return '';
@@ -13210,15 +13268,27 @@ function _metasCardHtml() {
     const caM = _mtDias('gh_cardioreg_' + SHEET_ID + '_', RC, jm[0], jm[1]);
     const agS = _mtDias('gh_water_' + wid + '_', RC, js[0], js[1], 10);
     const agM = _mtDias('gh_water_' + wid + '_', RC, jm[0], jm[1], 10);
-    const cardioExtra = '<button type="button" class="mt-def" onclick="metasCardioUi(event)">' + (metaCardio ? 'meta: ' + metaCardio + 'd &middot; mudar' : 'definir meta') + '</button>';
+    const cardioExtra = '<button type="button" class="mt-def" onclick="metasCardioUi(event)">' + (metaCardio ? metaCardio + 'd &middot; mudar' : 'definir meta') + '</button>';
+    // semana PASSADA (seg-7 até dom-7): contexto de narrativa, "de onde eu vim"
+    const segPrev = new Date(js[0]); segPrev.setDate(js[0].getDate() - 7);
+    const domPrev = new Date(js[0]); domPrev.setDate(js[0].getDate() - 1);
+    const trP = _mtDias('gh_logsent_' + SHEET_ID + '_', RT, segPrev, domPrev);
+    const diP = _mtDias('gh_meallog_' + SHEET_ID + '_', RD, segPrev, domPrev);
+    const caP = _mtDias('gh_cardioreg_' + SHEET_ID + '_', RC, segPrev, domPrev);
+    const teveSemanaPassada = (trP + diP + caP) > 0;
+    const streak = _mtStreakSemanas(freq);
     let h = '<div class="pg-card" id="metasCard"><div class="pg-sec-t">METAS</div>' +
       '<div class="mt-nota">Conta sozinho pelo que tu marca no app. O cardio, tu define a tua meta.</div>' +
       '<div class="mt-sub">ESTA SEMANA</div>' +
-      _mtRow('&#127947;', 'Treinos', trS, freq) +
-      (temDieta ? _mtRow('&#127869;', 'Dieta', diS, 7) : '') +
-      _mtRow('&#128167;', '&Aacute;gua', agS, 7) +
-      _mtRow('&#127939;', 'Cardio', caS, metaCardio || 0, cardioExtra) +
+      '<div class="mt-aneis">' +
+      _mtAnel('&#127947;', 'Treino', trS, freq) +
+      (temDieta ? _mtAnel('&#127869;', 'Dieta', diS, 7) : '') +
+      _mtAnel('&#128167;', '&Aacute;gua', agS, 7) +
+      _mtAnel('&#127939;', 'Cardio', caS, metaCardio || 0, cardioExtra) +
+      '</div>' +
       '<div id="mtCardioChips" style="display:none;"></div>' +
+      (streak >= 2 ? '<div class="mt-streak"><b>' + streak + ' semanas seguidas</b> com o treino em dia. N&atilde;o quebra agora.</div>' : '') +
+      (teveSemanaPassada ? '<div class="mt-passada">Semana passada: ' + trP + (freq ? '/' + freq : '') + ' treinos' + (temDieta ? ' &middot; dieta ' + diP + '/7' : '') + (caP ? ' &middot; cardio ' + caP : '') + '</div>' : '') +
       '<div class="mt-sub" style="margin-top:12px;">ESTE M&Ecirc;S <span class="mt-dim">&middot; dia ' + diasCorridos + ' de ' + diasMesTotal + '</span></div>' +
       _mtRow('&#127947;', 'Treinos', trM, alvoTrMes) +
       (temDieta ? _mtRow('&#127869;', 'Dieta', diM, diasMesTotal) : '') +
@@ -16528,7 +16598,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v380';
+    var APP_SHELL_V = 'metodo-gh-v381';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
