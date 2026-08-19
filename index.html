@@ -1472,6 +1472,23 @@
   .prog-screen { padding: 14px 14px 26px; max-width: 620px; margin: 0 auto; }
   .pg-card { background: var(--card); border: 1px solid rgba(212, 175, 106, .16); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
   /* títulos de seção na serif da marca (elegância 14/08: mesma família do TREINO DE HOJE) */
+  /* Metas da semana/mês */
+  .mt-nota { color: #8a8a90; font-size: 10.5px; margin: -2px 0 8px; }
+  .mt-sub { color: #9a9389; font-size: 10px; font-weight: 700; letter-spacing: .14em; margin: 8px 0 4px; }
+  .mt-dim { color: #6a6a70; font-weight: 600; letter-spacing: 0; }
+  .mt-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 12.5px; }
+  .mt-ico { width: 20px; text-align: center; font-size: 13px; }
+  .mt-nome { width: 56px; color: #b8b8bc; }
+  .mt-barra { flex: 1; height: 7px; background: #26262c; border-radius: 4px; overflow: hidden; }
+  .mt-fill { display: block; height: 100%; background: linear-gradient(90deg, #8a6f2f, #D4AF37); border-radius: 4px; transition: width .4s; }
+  .mt-row.ok .mt-fill { background: linear-gradient(90deg, #D4AF37, #F0D48A); }
+  .mt-val { min-width: 46px; text-align: right; font-weight: 700; color: #e8e8ea; font-variant-numeric: tabular-nums; }
+  .mt-row.ok .mt-val { color: var(--gold); }
+  .mt-solto { flex: 1; text-align: right; color: #b8b8bc; font-weight: 700; }
+  .mt-def { background: none; border: 1px solid #36363e; color: #9a9aa0; font-size: 9.5px; border-radius: 7px; padding: 2px 7px; margin-left: 4px; }
+  .mt-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0 4px 28px; }
+  .mt-chip { background: #26262c; border: 1px solid #36363e; color: #d8d8da; font-size: 11.5px; border-radius: 8px; padding: 5px 10px; }
+  .mt-chip.off { color: #9a9aa0; }
   .pg-sec-t { color: var(--gold); font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: .12em; margin: 0 0 10px; }
   .pg-sel { width: 100%; background: #26262c; border: 1px solid #36363e; color: #fff; padding: 10px 11px; border-radius: 9px; font-size: 13.5px; font-family: inherit; }
   .pg-trendline { font-size: 11.5px; color: #9a9aa0; margin-top: 8px; line-height: 1.5; }
@@ -13124,13 +13141,118 @@ function _pgExemploSvg() {
     <text x="160" y="24" fill="#8a8579" font-size="11" font-weight="700" text-anchor="middle" letter-spacing="2">EXEMPLO</text>
   </svg>`;
 }
+// ══ METAS DA SEMANA E DO MÊS (GH 18/08: "precisamos trabalhar com metas semanais e mensais") ══
+// Tudo derivado do que o aluno JÁ marca no app, nada de campo novo pra preencher:
+// treino concluído (gh_logsent), diário alimentar (gh_meallog), cardio (gh_cardioreg)
+// e água (gh_water; dia em dia = 10+ copos, a meta diária que o card de água já usa).
+// Alvos: treino = frequência do protocolo; dieta e água = todo dia; CARDIO é o aluno
+// que define (mesma filosofia dos horários de refeição: a gente não inventa, ele escolhe).
+// Sem linguagem de premiação (regra do app): meta batida ganha ✓ e barra cheia, só.
+function _mtJanela(tipo) {
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  let ini;
+  if (tipo === 'sem') { ini = new Date(hoje); ini.setDate(hoje.getDate() - ((hoje.getDay() + 6) % 7)); }
+  else ini = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  return [ini, hoje];
+}
+function _mtDias(prefix, re, ini, fim, valMin) {
+  const dias = new Set();
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k || k.indexOf(prefix) !== 0) continue;
+      const m = k.slice(prefix.length).match(re);
+      if (!m) continue;
+      const d = new Date(+m[1], +m[2] - 1, +m[3]); d.setHours(0, 0, 0, 0);
+      if (d < ini || d > fim) continue;
+      if (valMin != null) { const v = parseInt(localStorage.getItem(k), 10); if (!(v >= valMin)) continue; }
+      dias.add(m[1] + m[2] + m[3]);
+    }
+  } catch (_) {}
+  return dias.size;
+}
+function _mtRow(ico, nome, feito, alvo, extra) {
+  if (!alvo) {
+    return '<div class="mt-row"><span class="mt-ico">' + ico + '</span><span class="mt-nome">' + nome + '</span>' +
+      '<span class="mt-solto">' + feito + (feito === 1 ? ' dia' : ' dias') + '</span>' + (extra || '') + '</div>';
+  }
+  const pct = Math.min(100, Math.round(feito / alvo * 100));
+  const ok = feito >= alvo;
+  return '<div class="mt-row' + (ok ? ' ok' : '') + '"><span class="mt-ico">' + ico + '</span><span class="mt-nome">' + nome + '</span>' +
+    '<span class="mt-barra"><span class="mt-fill" style="width:' + pct + '%"></span></span>' +
+    '<span class="mt-val">' + (ok ? '&#10003; ' : '') + feito + '/' + alvo + '</span>' + (extra || '') + '</div>';
+}
+function _metasCardHtml() {
+  try {
+    if (typeof SHEET_ID === 'undefined' || !SHEET_ID) return '';
+    const freq = (typeof WORKOUT !== 'undefined' && Array.isArray(WORKOUT) && WORKOUT.length) ? Math.min(7, WORKOUT.length) : 0;
+    const js = _mtJanela('sem'), jm = _mtJanela('mes');
+    const hoje = jm[1];
+    const diasCorridos = hoje.getDate();
+    const diasMesTotal = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
+    const alvoTrMes = freq ? Math.round(freq * diasMesTotal / 7) : 0;
+    const metaCardio = parseInt(localStorage.getItem('gh_metacardio_' + SHEET_ID) || '', 10) || 0;
+    const RT = /^(\d{4})-(\d{2})-(\d{2})_d\d+_concl$/;
+    const RD = /^(\d{4})-(\d{2})-(\d{2})_r\d+$/;
+    const RC = /^(\d{4})-(\d{2})-(\d{2})$/;
+    const wid = (typeof STUDENT_ID !== 'undefined' && STUDENT_ID) ? STUDENT_ID : SHEET_ID;
+    // aluno treino-only não tem refeição pra marcar: some a linha de dieta em vez de cobrar 0/7.
+    // Detector = as refeições REAIS da dieta carregada (_refNomesAtuais lê DIET_DATA), não os
+    // horários salvos (o primeiro detector usava _refHoras e escondia dieta de quem nunca
+    // marcou horário, que é quase todo mundo).
+    let temDieta = true;
+    try { temDieta = (typeof _refNomesAtuais === 'function') ? (_refNomesAtuais().length > 0) : true; } catch (_) {}
+    const trS = _mtDias('gh_logsent_' + SHEET_ID + '_', RT, js[0], js[1]);
+    const trM = _mtDias('gh_logsent_' + SHEET_ID + '_', RT, jm[0], jm[1]);
+    const diS = _mtDias('gh_meallog_' + SHEET_ID + '_', RD, js[0], js[1]);
+    const diM = _mtDias('gh_meallog_' + SHEET_ID + '_', RD, jm[0], jm[1]);
+    const caS = _mtDias('gh_cardioreg_' + SHEET_ID + '_', RC, js[0], js[1]);
+    const caM = _mtDias('gh_cardioreg_' + SHEET_ID + '_', RC, jm[0], jm[1]);
+    const agS = _mtDias('gh_water_' + wid + '_', RC, js[0], js[1], 10);
+    const agM = _mtDias('gh_water_' + wid + '_', RC, jm[0], jm[1], 10);
+    const cardioExtra = '<button type="button" class="mt-def" onclick="metasCardioUi(event)">' + (metaCardio ? 'meta: ' + metaCardio + 'd &middot; mudar' : 'definir meta') + '</button>';
+    let h = '<div class="pg-card" id="metasCard"><div class="pg-sec-t">METAS</div>' +
+      '<div class="mt-nota">Conta sozinho pelo que tu marca no app. O cardio, tu define a tua meta.</div>' +
+      '<div class="mt-sub">ESTA SEMANA</div>' +
+      _mtRow('&#127947;', 'Treinos', trS, freq) +
+      (temDieta ? _mtRow('&#127869;', 'Dieta', diS, 7) : '') +
+      _mtRow('&#128167;', '&Aacute;gua', agS, 7) +
+      _mtRow('&#127939;', 'Cardio', caS, metaCardio || 0, cardioExtra) +
+      '<div id="mtCardioChips" style="display:none;"></div>' +
+      '<div class="mt-sub" style="margin-top:12px;">ESTE M&Ecirc;S <span class="mt-dim">&middot; dia ' + diasCorridos + ' de ' + diasMesTotal + '</span></div>' +
+      _mtRow('&#127947;', 'Treinos', trM, alvoTrMes) +
+      (temDieta ? _mtRow('&#127869;', 'Dieta', diM, diasMesTotal) : '') +
+      _mtRow('&#128167;', '&Aacute;gua', agM, diasMesTotal) +
+      _mtRow('&#127939;', 'Cardio', caM, metaCardio ? Math.round(metaCardio * diasMesTotal / 7) : 0) +
+      '</div>';
+    return h;
+  } catch (e) { return ''; }
+}
+// seletor da meta de cardio: o aluno escolhe 1..7 dias por semana (ou tira a meta)
+function metasCardioUi(ev) {
+  try { if (ev) ev.stopPropagation(); } catch (_) {}
+  const box = document.getElementById('mtCardioChips');
+  if (!box) return;
+  if (box.style.display !== 'none') { box.style.display = 'none'; return; }
+  let h = '<div class="mt-chips">';
+  for (let n = 1; n <= 7; n++) h += '<button type="button" class="mt-chip" onclick="metasCardioSet(' + n + ')">' + n + 'd</button>';
+  h += '<button type="button" class="mt-chip off" onclick="metasCardioSet(0)">sem meta</button></div>';
+  box.innerHTML = h; box.style.display = 'block';
+}
+function metasCardioSet(n) {
+  try {
+    if (n) localStorage.setItem('gh_metacardio_' + SHEET_ID, String(n));
+    else localStorage.removeItem('gh_metacardio_' + SHEET_ID);
+  } catch (_) {}
+  renderProgressoScreen();
+}
 function renderProgressoScreen() {
   const host = document.getElementById('progressoView');
   if (!host) return;
   const unit = getUnit();
   const fmt = kg => kgToDisplay(kg) + unit;
   const items = _progCollect();
-  let html = '<div class="prog-screen">';
+  let html = '<div class="prog-screen">' + _metasCardHtml();
   if (!items.length) {
     html += `<div class="pg-card">
       <div class="pg-sec-t">EVOLUÇÃO DE CARGA</div>
@@ -16406,7 +16528,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v379';
+    var APP_SHELL_V = 'metodo-gh-v380';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
