@@ -1473,6 +1473,10 @@
   .pg-card { background: var(--card); border: 1px solid rgba(212, 175, 106, .16); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
   /* títulos de seção na serif da marca (elegância 14/08: mesma família do TREINO DE HOJE) */
   /* Metas da semana/mês */
+  /* Dicionário do treino */
+  .gloss-it { padding: 9px 0; border-bottom: 1px solid #26262c; color: #c9c9cd; font-size: 12.5px; line-height: 1.55; }
+  .gloss-it:last-child { border-bottom: none; }
+  .gloss-it b { display: block; color: var(--gold); font-size: 12.5px; margin-bottom: 2px; }
   .mt-nota { color: #8a8a90; font-size: 10.5px; margin: -2px 0 8px; }
   .mt-sub { color: #9a9389; font-size: 10px; font-weight: 700; letter-spacing: .14em; margin: 8px 0 4px; }
   .mt-dim { color: #6a6a70; font-weight: 600; letter-spacing: 0; }
@@ -4377,7 +4381,33 @@
   </div>
 </div>
 
-<!-- ══ MODAL DE RENOVAÇÃO (self-service: checkout Greenn; hormonal/peptídeos são
+<!-- ══ DICIONÁRIO DO TREINO (GH 19/08: termo técnico da ficha explicado no app) ══ -->
+<div class="te-modal-overlay" id="glossModal" onclick="if(event.target.id==='glossModal')teHide('glossModal')">
+  <div class="te-modal-box" style="max-width:460px;max-height:78vh;overflow-y:auto;">
+    <h3 style="margin:0 0 4px;">📖 Dicionário do treino</h3>
+    <p style="color:#aaa;font-size:11.5px;margin:0 0 12px;line-height:1.5;">Os termos que aparecem na tua ficha, explicados direto. Ficou dúvida em como aplicar no TEU exercício? Usa o "Dúvida ou ajuste".</p>
+    <div class="gloss-list">
+      <div class="gloss-it"><b>Drop set</b>Terminou a série, tira parte do peso e segue sem descanso até não sair mais repetição boa.</div>
+      <div class="gloss-it"><b>Bi-set</b>Dois exercícios em sequência, sem descanso entre eles. Descansa depois do segundo.</div>
+      <div class="gloss-it"><b>Rest-pause</b>Chegou perto da falha, respira 10 a 15 segundos parado e completa mais repetições com o mesmo peso.</div>
+      <div class="gloss-it"><b>Cluster</b>Série quebrada em blocos pequenos com pausas curtíssimas dentro da própria série.</div>
+      <div class="gloss-it"><b>Pirâmide</b>O peso sobe a cada série e as repetições descem.</div>
+      <div class="gloss-it"><b>Cadência (Pos · Iso · Neg)</b>A velocidade de cada fase do movimento. Pos = subir. Iso = segurar parado. Neg = descer controlando. "Neg 3s" = descer em 3 segundos. O botão "ritmo" marca isso pra ti com som e bolinha.</div>
+      <div class="gloss-it"><b>Concêntrica (positiva)</b>A fase de vencer o peso, subindo.</div>
+      <div class="gloss-it"><b>Excêntrica (negativa)</b>A fase de descer segurando o peso. É onde mais se constrói músculo, por isso a ficha tanto pede controle aqui.</div>
+      <div class="gloss-it"><b>Isometria</b>Segurar parado, normalmente no ponto de máxima contração.</div>
+      <div class="gloss-it"><b>Sobrou (a caixinha do app)</b>Quantas repetições tu ainda aguentaria na última série. É como o Gabriel enxerga se a tua carga está certa.</div>
+      <div class="gloss-it"><b>Falha</b>O ponto em que não sai nem mais uma repetição com execução boa.</div>
+      <div class="gloss-it"><b>Unilateral</b>Um lado de cada vez. Completa os dois lados pra fechar a série. Como aplicar o descanso varia por exercício: na dúvida, pergunta no "Dúvida ou ajuste".</div>
+      <div class="gloss-it"><b>Amplitude máxima</b>Usar o percurso inteiro do movimento: alonga tudo, contrai tudo.</div>
+      <div class="gloss-it"><b>Retroversão pélvica</b>Encaixar o quadril, girando o bumbum pra baixo e pra frente, tirando o arco exagerado da lombar.</div>
+      <div class="gloss-it"><b>Intervalo (o I da etiqueta)</b>O descanso entre as séries. O botão "descanso" do exercício cronometra sozinho.</div>
+    </div>
+    <button type="button" class="te-btn" style="width:100%;margin-top:12px;" onclick="teHide('glossModal')">Fechar</button>
+  </div>
+</div>
+
+<!-- ══ MODAL DE RENOVAÇÃO<!-- ══ MODAL DE RENOVAÇÃO (self-service: checkout Greenn; hormonal/peptídeos são
      order bumps DENTRO do checkout, decisão GH 2026-08-04). z-index acima do
      planBlockOverlay (99999) pra funcionar também na tela de plano vencido. ══ -->
 <div class="te-modal-overlay" id="renovModal" style="z-index:100002;" onclick="if(event.target.id==='renovModal')teHide('renovModal')">
@@ -4536,6 +4566,10 @@
     </button>
     <button type="button" class="mais-opt" onclick="closeMaisSheet(); downloadPDF()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span><span id="pdfBtnLabelMais">Baixar treino em PDF</span>
+    </button>
+    <button type="button" class="mais-opt" onclick="closeMaisSheet(); openGlossario()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
+      Dicionário do treino
     </button>
     <div class="mais-sep">AJUSTES</div>
     <button type="button" class="mais-opt" onclick="toggleUnit()">
@@ -15190,6 +15224,7 @@ var RENOV_WA = 'https://wa.me/555520131470?text=';
 // O clique é logado na CLICKS_AFILIADOS (type 'click' que já existe) com o sheetId,
 // pra CRM reconciliar caso o aluno pague com email/telefone diferente da mestre.
 var _renovOrigem = 'menu';
+function openGlossario() { teShow('glossModal'); }
 function openRenovModal(origem) {
   _renovOrigem = origem || 'menu';
   _renovLogOpen(_renovOrigem);
@@ -16598,7 +16633,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v381';
+    var APP_SHELL_V = 'metodo-gh-v382';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
