@@ -37,6 +37,7 @@ Meio Terra / Hiperextensão de Lombar / Hiperextensor de Lombar na Máquina com 
 Elevação Pélvica 2D ou Livre / Elevação Pélvica na Máquina
 Extensão de Glúteo na Máquina / Extensão de Glúteo na Polia / Extensão de Glúteo com Caneleira
 Supino Reto na Máquina / Supino Reto na Máquina Sentado
+Supino Declinado na Máquina / Supino Declinado com Barra / Supino Declinado com Halteres
 Crucifixo Inclinado / Crucifixo Inclinado no Cross / Crossover Polia Média
 Pulldown / Pulldown na Máquina
 Puxada Alta Pronada / Puxada Alta na Máquina Articulada
