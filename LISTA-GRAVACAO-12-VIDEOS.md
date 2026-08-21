@@ -1,4 +1,4 @@
-# Lista definitiva de gravação: 12 vídeos (curadoria das trocas, 30/07/2026)
+# Lista definitiva de gravação: 14 vídeos (curadoria das trocas, 30/07/2026)
 
 Origem: CARTILHA-TROCAS-CHECKLIST.md preenchida pelo GH + cruzamento com o banco de vídeos (v330).
 Conforme o GH gravar, mandar os links pro Site ligar os grupos de troca no app (vídeos só do canal GH).
@@ -15,6 +15,8 @@ Conforme o GH gravar, mandar os links pro Site ligar os grupos de troca no app (
 10. ✅ GRAVADO 13/08 — Supino Declinado com Barra (no banco de vídeos, v346) — youtube.com/shorts/vtCzrCUo1Lo
 11. Step-Up (vira troca do Coice com Caneleira)
 12. Rosca Bayesian
+13. Supino Reto com Barra (pedido GH 21/08: uso secundário, como substituto)
+14. Supino Inclinado com Barra (pedido GH 21/08: uso secundário, como substituto)
 
 BÔNUS gravado 13/08 (fora da lista): Supino Declinado com Halteres — youtube.com/shorts/Q3Ww5YmkwiY (no banco de vídeos, v346)
 
