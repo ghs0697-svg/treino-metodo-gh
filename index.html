@@ -9736,6 +9736,17 @@ async function loadFromSheets(injectedText) {
     // não fica perdido em qual treino fazer. Override do default acima; se tudo completo,
     // _primeiroDiaIncompleto devolve o 1º dia visível (igual a antes).
     currentDay = _primeiroDiaIncompleto();
+    // Volta pra onde o aluno ESTAVA (semana e dia), se o protocolo for o mesmo.
+    // Em protocolo multi-bloco só restaura a semana (o dia depende do bloco ativo).
+    try {
+      const _pos = JSON.parse(localStorage.getItem(_posKey()) || 'null');
+      if (_pos && _pos.sig === TOTAL_WEEKS + 'x' + WORKOUT.length) {
+        if (_pos.w >= 1 && _pos.w <= TOTAL_WEEKS) currentWeek = _pos.w;
+        if (BLOCOS.length < 2 && Number.isInteger(_pos.di) && _pos.di >= 0 && _pos.di < WORKOUT.length) currentDay = _pos.di;
+        const _wl = document.getElementById('weekLabel');
+        if (_wl) _wl.textContent = 'Semana ' + currentWeek;
+      }
+    } catch (_) {}
 
     // Update UI
     document.getElementById('infoNome').textContent = studentName;
@@ -10253,6 +10264,22 @@ function updatePdfButtonLabel() {
   });
 }
 
+// ── POSIÇÃO SOBREVIVE (feedback de aluno, 21/08): o iOS mata o PWA em segundo plano e
+// o app voltava pra semana 1/dia 1 no MEIO do treino. Peso nenhum se perdia (carga é
+// guardada por semana), mas parecia perda total e assustava. Agora a semana e o dia
+// escolhidos ficam salvos no aparelho e voltam sozinhos na reabertura. Protocolo novo
+// (estrutura diferente: nº de semanas ou de dias mudou) ignora a posição antiga e abre
+// na semana 1, que é o comportamento certo pós-reajuste.
+function _posKey() { return 'gh_pos_' + (typeof SHEET_ID !== 'undefined' ? SHEET_ID : 'x'); }
+function _posSave() {
+  try {
+    localStorage.setItem(_posKey(), JSON.stringify({
+      w: currentWeek, di: currentDay,
+      sig: (typeof TOTAL_WEEKS !== 'undefined' ? TOTAL_WEEKS : 0) + 'x' + (typeof WORKOUT !== 'undefined' && WORKOUT ? WORKOUT.length : 0),
+      ts: Date.now()
+    }));
+  } catch (_) {}
+}
 function selectDay(i) {
   currentDay = i;
   renderTabs();
@@ -10263,12 +10290,14 @@ function selectDay(i) {
   });
   updateDayProgress();
   renderWtCard();   // linha "este treino na semana N" acompanha o dia selecionado
+  _posSave();
 }
 
 function changeWeek(d) {
   const n = currentWeek + d;
   if (n < 1 || n > TOTAL_WEEKS) return;
   currentWeek = n;
+  _posSave();
   document.getElementById("weekLabel").textContent = `Semana ${currentWeek}`;
   renderExercises();
   renderTabs();        // badges de tempo por dia dependem da semana
@@ -16636,7 +16665,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v387';
+    var APP_SHELL_V = 'metodo-gh-v388';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
