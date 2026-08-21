@@ -16633,7 +16633,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v383';
+    var APP_SHELL_V = 'metodo-gh-v384';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -16970,7 +16970,29 @@ async function recadoSend() {
       throw new Error((j && j.error) || 'falhou');
     }
   } catch (e) {
-    document.getElementById('recadoStatus').textContent = '❌ Não consegui enviar: ' + e.message + '. Tenta de novo.';
+    // UPLOAD GRANDE (21/08, casos Éderson e André): o Apps Script SALVA o recado, mas a
+    // resposta de confirmação se perde no caminho e a tela acusava "falhou". O GH regravou
+    // e retentou à toa. Antes de acusar, CONFERE no servidor se o áudio desta gravação
+    // chegou: mesmo tamanho (±10%) e mesmo prazo = chegou, e a falha era só do aviso.
+    const st = document.getElementById('recadoStatus');
+    st.textContent = '⏳ A confirmação falhou. Conferindo no servidor se o áudio chegou...';
+    let chegou = false;
+    try {
+      await new Promise(r => setTimeout(r, 2500));
+      const q = await fetch(TRAINER_APPS_SCRIPT + '?action=recado&id=' + encodeURIComponent(trainerSheetId) + '&_=' + Date.now(), { redirect: 'follow' });
+      const rj = await q.json().catch(() => ({}));
+      const esperado = _recadoBlob ? _recadoBlob.size : 0;
+      const la = (rj && rj.ok && rj.b64) ? Math.round(rj.b64.length * 3 / 4) : 0;
+      if (esperado && la && Math.abs(la - esperado) / esperado < 0.1 && (!!rj.permanente === !!_recadoPerm)) chegou = true;
+    } catch (_) {}
+    if (chegou) {
+      const prazoTxt = _recadoPerm ? 'fica permanente' : 'some em 2 dias';
+      st.textContent = '✅ Chegou sim! A confirmação é que demorou. O aluno já vê no topo do protocolo (' + prazoTxt + ').';
+      sendBtn.style.display = 'none';
+      _recadoLoadStatus();
+    } else {
+      st.textContent = '❌ Não consegui enviar: ' + e.message + '. Tenta de novo.';
+    }
   } finally {
     sendBtn.disabled = false; sendBtn.textContent = 'Enviar recado';
   }
