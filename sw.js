@@ -1,4 +1,4 @@
-const CACHE_NAME = 'metodo-gh-v389';
+const CACHE_NAME = 'metodo-gh-v390';
 const ASSETS = [
   './',
   './index.html',
@@ -29,7 +29,9 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      // gh-videos-v1 = vídeos de execução baixados pelo ALUNO pro offline. NUNCA entra na
+      // limpeza de versão: sem esta exceção, cada atualização do app apagaria os downloads.
+      Promise.all(keys.filter(k => k !== CACHE_NAME && k !== 'gh-videos-v1').map(k => caches.delete(k)))
     )
   );
   self.clients.claim();

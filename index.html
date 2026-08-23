@@ -3171,6 +3171,7 @@
   <button type="button" class="week-reset" id="weekResetBtn" onclick="openWeekReset()" style="display:none;">↺ Recomeçar semana do zero</button>
   <button type="button" class="focus-entry" onclick="openFocusMode(currentDay)">▶&nbsp; Modo treino: um exercício por vez</button>
   <button type="button" class="focus-entry" id="shortModeBtn" onclick="openShortMode()">⏱&nbsp; Pouco tempo hoje?</button>
+  <button type="button" class="focus-entry" id="vidOffBtn" onclick="baixarVideosDoDia()" style="display:none;">⬇&nbsp; Baixar vídeos deste treino</button>
 </div>
 
 <!-- ══ CONFIRMA RECOMEÇAR SEMANA ══ -->
@@ -3311,6 +3312,7 @@
     <button class="video-close" onclick="closeVideo()">&#10005;</button>
   </div>
   <div class="video-frame-container">
+    <video id="videoNative" controls playsinline style="display:none;width:100%;max-height:70vh;background:#000;border-radius:12px;"></video>
     <iframe id="videoFrame" src="" allow="accelerometer; autoplay; encrypted-media; gyroscope" allowfullscreen></iframe>
   </div>
   <div style="text-align:center;padding:10px 12px 16px;">
@@ -4469,6 +4471,10 @@
       <button type="button" class="float-opt" onclick="event.stopPropagation(); apagarPesosMarcados()">
         <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span><span>Apagar pesos marcados</span>
       </button>
+    <button type="button" class="mais-opt" onclick="apagarVideosBaixados()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>
+      Apagar vídeos baixados
+    </button>
     </div>
     <button type="button" class="float-opt" id="floatMoreToggle" onclick="event.stopPropagation(); toggleFloatMore()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></span><span id="floatMoreLabel">Mais opções</span>
@@ -10043,6 +10049,7 @@ function renderExercises() {
     c.appendChild(div);
   });
   updateDayProgress();
+  if (typeof _vidBtnRefresh === "function") _vidBtnRefresh();
 }
 
 // ══ Baixar PDF (via print-to-PDF do navegador) ══
@@ -10298,6 +10305,7 @@ function selectDay(i) {
   updateDayProgress();
   renderWtCard();   // linha "este treino na semana N" acompanha o dia selecionado
   _posSave();
+  _vidBtnRefresh();
 }
 
 function changeWeek(d) {
@@ -10483,10 +10491,97 @@ function _attachYTListener() {
   });
 }
 
+// ══ VÍDEOS OFFLINE (GH 21/08: "baixarem os vídeos de execução pra olhar offline") ══
+// Servidos do VPS (chat.metodogh.com.br/videos/<ytid>.mp4, HTTPS + CORS + range).
+// O aluno baixa POR TREINO; fica no cache gh-videos-v1, que o sw.js NUNCA limpa em
+// atualização. Assistir online continua no YouTube (mantém as views do canal);
+// o arquivo local só assume quando EXISTE download. Espaço é escolha do aluno:
+// o botão mostra a estimativa antes (~8MB por vídeo) e o Mais tem o apagar.
+const VID_OFF_BASE = 'https://chat.metodogh.com.br/videos/';
+const VID_CACHE = 'gh-videos-v1';
+let _vidObjUrl = null;
+function _ytidDe(url) { const m = String(url || '').match(/(?:shorts\/|watch\?v=|youtu\.be\/|embed\/)([\w-]{6,})/); return m ? m[1] : ''; }
+function _vidOffUrl(url) { const id = _ytidDe(url); return id ? VID_OFF_BASE + id + '.mp4' : ''; }
+async function _vidCacheTem(url) {
+  try { const c = await caches.open(VID_CACHE); return !!(await c.match(_vidOffUrl(url))); } catch (_) { return false; }
+}
+// vídeos ATIVOS do dia (substituto escolhido conta; biset conta as duas metades), sem repetir
+function _vidsDoDia(di) {
+  const out = new Map();
+  (WORKOUT[di] && WORKOUT[di].exercises || []).forEach((ex, ei) => {
+    if (ex.biset) { [ex.a, ex.b].forEach(m => { const id = _ytidDe(m && m.video); if (id) out.set(id, m.name); }); return; }
+    const act = (typeof _exAtivo === 'function') ? _exAtivo(di, ei) : ex;
+    const id = _ytidDe(act && act.video);
+    if (id) out.set(id, act.name);
+  });
+  return out;
+}
+async function _vidBtnRefresh() {
+  const b = document.getElementById('vidOffBtn');
+  if (!b) return;
+  const vids = _vidsDoDia(currentDay);
+  if (!vids.size) { b.style.display = 'none'; return; }
+  b.style.display = '';
+  let tem = 0;
+  try { const c = await caches.open(VID_CACHE);
+    for (const id of vids.keys()) if (await c.match(VID_OFF_BASE + id + '.mp4')) tem++;
+  } catch (_) {}
+  if (tem >= vids.size) { b.innerHTML = '✓&nbsp; Vídeos deste treino baixados (' + vids.size + ')'; b.disabled = true; }
+  else { b.innerHTML = '⬇&nbsp; Baixar vídeos deste treino (' + vids.size + ' · ~' + (vids.size * 8) + 'MB)'; b.disabled = false; }
+}
+async function baixarVideosDoDia() {
+  const b = document.getElementById('vidOffBtn');
+  const vids = _vidsDoDia(currentDay);
+  if (!vids.size) return;
+  if (!navigator.onLine) { alert('Precisa de internet pra baixar. Depois de baixado, toca sem.'); return; }
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (_) {}
+  b.disabled = true;
+  let feitos = 0, falhas = 0;
+  const c = await caches.open(VID_CACHE);
+  for (const [id] of vids) {
+    const u = VID_OFF_BASE + id + '.mp4';
+    try {
+      if (!(await c.match(u))) {
+        const r = await fetch(u, { cache: 'no-store' });
+        if (!r.ok) throw new Error('http ' + r.status);
+        await c.put(u, r);
+      }
+      feitos++;
+    } catch (_) { falhas++; }
+    b.innerHTML = '⬇&nbsp; Baixando… ' + (feitos + falhas) + '/' + vids.size;
+  }
+  if (falhas) b.innerHTML = '⚠️&nbsp; ' + feitos + ' baixados, ' + falhas + ' falharam · toca pra tentar de novo';
+  else b.innerHTML = '✓&nbsp; Vídeos deste treino baixados (' + feitos + ')';
+  b.disabled = !falhas;
+}
+async function apagarVideosBaixados() {
+  try { await caches.delete(VID_CACHE); } catch (_) {}
+  alert('Vídeos baixados apagados. O espaço foi liberado; baixa de novo quando quiser.');
+  _vidBtnRefresh();
+}
 function openVideo(name, url) {
   _attachYTListener();
   document.getElementById("videoTitle").textContent = name;
   const iframe = document.getElementById("videoFrame");
+  const nat = document.getElementById('videoNative');
+  // offline primeiro: se o aluno baixou este vídeo, toca o arquivo local (funciona sem
+  // internet); senão segue o YouTube de sempre (mantém as views no canal do GH).
+  if (nat) {
+    nat.style.display = 'none'; nat.removeAttribute('src');
+    if (_vidObjUrl) { try { URL.revokeObjectURL(_vidObjUrl); } catch (_) {} _vidObjUrl = null; }
+    _vidCacheTem(url).then(async tem => {
+      if (!tem) return;
+      try {
+        const c = await caches.open(VID_CACHE);
+        const resp = await c.match(_vidOffUrl(url));
+        const blob = await resp.blob();
+        _vidObjUrl = URL.createObjectURL(blob);
+        nat.src = _vidObjUrl; nat.style.display = 'block';
+        iframe.style.display = 'none'; iframe.src = 'about:blank';
+      } catch (_) {}
+    });
+  }
+  if (iframe) iframe.style.display = '';
   iframe.src = youtubeEmbed(url);
   // Quando o iframe carrega, manda comando "listening" pra IFrame API
   // habilitar os eventos onStateChange via postMessage
@@ -10582,6 +10677,12 @@ function abreAulaGhflix(id) {
 }
 
 function closeVideo() {
+  // para e limpa o player offline (senão o áudio continua e o blob vaza memória)
+  try {
+    const nat = document.getElementById('videoNative');
+    if (nat) { nat.pause(); nat.removeAttribute('src'); nat.style.display = 'none'; }
+    if (_vidObjUrl) { URL.revokeObjectURL(_vidObjUrl); _vidObjUrl = null; }
+  } catch (_) {}
   const iframe = document.getElementById("videoFrame");
   if (iframe) { iframe.onload = null; iframe.src = ""; }
   document.getElementById("videoOverlay").classList.remove("show");
@@ -16672,7 +16773,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v389';
+    var APP_SHELL_V = 'metodo-gh-v390';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
