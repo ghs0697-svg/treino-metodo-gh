@@ -1479,6 +1479,10 @@
   .gterm { border-bottom: 1px dashed rgba(212,175,55,.55); cursor: pointer; }
   .gloss-it.gloss-hl { animation: glossFlash 1.8s ease; }
   @keyframes glossFlash { 0% { background: rgba(212,175,55,.26); } 100% { background: transparent; } }
+  /* alerta de estagnação */
+  .estag-chip { margin: 6px 12px 2px; padding: 7px 10px; border-radius: 8px; background: rgba(212,140,55,.10); border: 1px solid rgba(212,140,55,.35); color: #d8a35e; font-size: 11px; font-weight: 700; cursor: pointer; }
+  .estag-item { padding: 7px 0; border-bottom: 1px solid #26262c; cursor: pointer; }
+  .estag-item b { color: #d8a35e; font-weight: 700; }
   /* lembrete "hoje tem treino" */
   .tlem-chip { display: block; margin: 10px auto 0; background: none; border: 1px dashed #3a372f; color: #b6ae9e; font-size: 11.5px; font-weight: 700; padding: 7px 14px; border-radius: 999px; cursor: pointer; }
   .tlem-sec { font-size: 10px; font-weight: 800; letter-spacing: 1px; color: #8d8579; margin: 12px 0 6px; }
@@ -3905,6 +3909,12 @@
     <div id="recordesBody" style="color:#888;font-size:12px;line-height:1.45;">Carregando...</div>
     <p style="color:#666;font-size:10px;margin:8px 0 0;line-height:1.4;font-style:italic;">Registro pessoal do teu progresso de carga, calculado do que tu anota nos exercícios.</p>
   </div>
+
+  <div class="accomp-card" id="estagCard" style="display:none;">
+    <h4>⚠ Pontos de atenção</h4>
+    <div id="estagBody" style="color:#b6ae9e;font-size:12px;line-height:1.5;"></div>
+    <p style="color:#666;font-size:10px;margin:8px 0 0;line-height:1.4;font-style:italic;">Exercícios com 3 semanas de registro sem a carga subir. Toca num deles pra ver o que fazer.</p>
+  </div>
 </div>
 
 <!-- ══ GLOSSÁRIO ══ -->
@@ -4431,6 +4441,22 @@
       <div class="gloss-it" data-g="intervalo"><b>Intervalo (o I da etiqueta)</b>O descanso entre as séries. O botão "descanso" do exercício cronometra sozinho.</div>
     </div>
     <button type="button" class="te-btn" style="width:100%;margin-top:12px;" onclick="teHide('glossModal')">Fechar</button>
+  </div>
+</div>
+
+<!-- ══ ESTAGNAÇÃO: o que fazer quando a carga trava ══ -->
+<div class="te-modal-overlay" id="estagModal" onclick="if(event.target.id==='estagModal')teHide('estagModal')">
+  <div class="te-modal-box" style="max-width:440px;max-height:84vh;overflow-y:auto;">
+    <h3 style="margin:0 0 4px;">⚠ Travou aqui?</h3>
+    <p style="color:#aaa;font-size:11.5px;margin:0 0 12px;line-height:1.5;">3 semanas registrando e a carga não subiu. Acontece com todo mundo, e tem caminho:</p>
+    <div class="gloss-list">
+      <div class="gloss-it"><b>1. Confere a execução</b>Toca no nome do exercício e revê o vídeo. Repetição mais limpa e amplitude completa valem mais que peso novo.</div>
+      <div class="gloss-it"><b>2. Respeita o descanso da etiqueta</b>Descanso curto demais rouba força da série seguinte. O botão "descanso" cronometra pra ti.</div>
+      <div class="gloss-it"><b>3. Caça UMA repetição a mais</b>Na última série, tenta uma repetição além da semana passada com a mesma carga. Fechou o topo das repetições em todas as séries? Sobe o peso na próxima.</div>
+      <div class="gloss-it"><b>4. Olha o contexto</b>Sono ruim, semana corrida e dieta fora do lugar travam carga também. Não é fraqueza, é contexto.</div>
+      <div class="gloss-it"><b>5. Seguiu travado?</b>Se passar mais uma semana assim, me manda no "Dúvida ou ajuste" ali no topo do app que eu mexo no teu plano.</div>
+    </div>
+    <button type="button" class="te-btn" style="width:100%;margin-top:12px;" onclick="teHide('estagModal')">Fechar</button>
   </div>
 </div>
 
@@ -9596,6 +9622,58 @@ function evoRender(nome) {
   }
 }
 
+// ══ Alerta de estagnação (GH 23/08): 3 semanas com registro no MESMO exercício e o
+// melhor peso (ou placa) não subiu, nem as repetições no melhor peso. Método do GH é
+// progressão dupla: fechou o topo das reps, sobe o peso; então reps subindo NÃO é
+// estagnação. Só aviso pro aluno; a equipe vê o mesmo nos dados de carga no reajuste.
+function _estagBest(d, e, w) {
+  const sets = loadSets(d, String(e), w);
+  if (!sets || !sets.length) return null;
+  const num = v => parseFloat(String(v == null ? '' : v).replace(',', '.')) || 0;
+  let kg = 0, pl = 0;
+  sets.forEach(s => { kg = Math.max(kg, num(s.kg)); pl = Math.max(pl, num(s.pl)); });
+  if (kg > 600) return null;                                   // digitação colada ("45 35" → 4535)
+  const v = kg > 0 ? kg : pl;
+  if (!v) return null;
+  const t = kg > 0 ? 'kg' : 'pl';
+  let r = 0;
+  sets.forEach(s => { if (num(t === 'kg' ? s.kg : s.pl) === v) r = Math.max(r, parseInt(s.reps, 10) || 0); });
+  return { v, t, r };
+}
+function _estagInfo(di, ei) {
+  try {
+    const ex = (WORKOUT[di] || {}).exercises ? WORKOUT[di].exercises[ei] : null;
+    if (!ex || ex.warmup || ex.biset) return null;
+    const pts = [];
+    for (let w = 1; w <= TOTAL_WEEKS; w++) { const b = _estagBest(di, ei, w); if (b) pts.push({ w: w, v: b.v, t: b.t, r: b.r }); }
+    if (pts.length < 3) return null;
+    const tres = pts.slice(-3);
+    const a = tres[0], z = tres[2];
+    if (a.t !== z.t) return null;                              // trocou kg↔placa no meio, não compara
+    const progrediu = z.v > a.v || (z.v === a.v && z.r > a.r);
+    return progrediu ? null : { semanas: z.w - a.w + 1 };
+  } catch (_) { return null; }
+}
+function _estagChipHtml(di, ei) {
+  const s = _estagInfo(di, ei);
+  if (!s) return '';
+  return `<div class="estag-chip" onclick="event.stopPropagation();openEstag()">⚠ ${s.semanas} semanas sem a carga subir aqui · toca pra ver o que fazer</div>`;
+}
+function openEstag() { teShow('estagModal'); }
+function renderEstagnacao() {
+  const card = document.getElementById('estagCard'), box = document.getElementById('estagBody');
+  if (!card || !box || typeof WORKOUT === 'undefined' || !WORKOUT.length) return;
+  const items = [];
+  WORKOUT.forEach((day, di) => (day.exercises || []).forEach((ex, ei) => {
+    const s = _estagInfo(di, ei);
+    if (!s) return;
+    const nome = (typeof _exAtivo === 'function' ? _exAtivo(di, ei).name : ex.name) || '';
+    items.push(`<div class="estag-item" onclick="openEstag()"><b>${nome}</b> · ${s.semanas} semanas sem a carga subir</div>`);
+  }));
+  card.style.display = items.length ? '' : 'none';
+  box.innerHTML = items.join('');
+}
+
 function renderRecordes() {
   const box = document.getElementById('recordesBody');
   if (!box) return;
@@ -10220,6 +10298,7 @@ function renderExercises() {
             </div>
           </div>
           ${_forcaChipHtml(di, ei)}
+          ${_estagChipHtml(di, ei)}
           ${_progChipHtml(di, ei, act.name)}
           ${_focusEsforcoBlock(di, ei, true)}` : ''}
         </div>`;
@@ -10906,6 +10985,7 @@ function toggleAccomp() {
   a.classList.toggle('open', c.classList.contains('show'));
   if (c.classList.contains('show')) {
     renderRecordes();
+    renderEstagnacao();
     renderWater();
     renderStreakPanel();
     renderPeso();
@@ -16962,7 +17042,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v392';
+    var APP_SHELL_V = 'metodo-gh-v393';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
