@@ -4697,6 +4697,9 @@
     <button type="button" class="mais-opt" onclick="toggleUnit()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></span><span id="unitToggleLabelMais">Unidade: kg (trocar pra lb)</span>
     </button>
+    <button type="button" class="mais-opt" onclick="toggleLang()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span><span id="langToggleLabel">🌐 Language: English</span>
+    </button>
     <button type="button" class="mais-opt" onclick="closeMaisSheet(); reverTutorial()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><span>Rever o tour do app</span>
     </button>
@@ -5510,13 +5513,275 @@ const EX_VIDEO_BANK = {
   "TRICEPS TESTA NO BANCO INCLINADO":"https://youtube.com/shorts/wO4a6MmVruw?feature=share",
   "VOADOR":"https://youtube.com/shorts/OOEOxr_q45I?feature=share"
 };
-function _normEx(s){return String(s||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\u00b0/g,'\u00ba').replace(/\s+/g,' ').trim();}   // ° (grau) vira º (ordinal): 'Leg Press 45°' casa com 'Leg Press 45º' (grupos + banco de vídeo)
+// FRENTE EN (GH 24/08): nome de exercicio em INGLES na planilha resolve pro canonico PT via
+// EX_EN_ALIAS (chaves e valores JA normalizados) -> video, substitutos e mapa de musculos
+// funcionam igual em protocolo montado em ingles. Alias nao muda nada pra protocolo PT.
+function _normEx(s){
+  const n = String(s||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\u00b0/g,'\u00ba').replace(/\s+/g,' ').trim();   // \u00b0 (grau) vira \u00ba (ordinal)
+  return (typeof EX_EN_ALIAS !== 'undefined' && EX_EN_ALIAS[n]) ? EX_EN_ALIAS[n] : n;
+}
+const EX_EN_ALIAS = {
+  'BENCH PRESS': 'SUPINO RETO', 'BARBELL BENCH PRESS': 'SUPINO RETO', 'FLAT BENCH PRESS': 'SUPINO RETO',
+  'INCLINE BENCH PRESS': 'SUPINO INCLINADO', 'DECLINE BENCH PRESS': 'SUPINO DECLINADO',
+  'DUMBBELL BENCH PRESS': 'SUPINO RETO COM HALTERES', 'INCLINE DUMBBELL PRESS': 'SUPINO INCLINADO COM HALTERES',
+  'DECLINE DUMBBELL PRESS': 'SUPINO DECLINADO COM HALTERES', 'MACHINE CHEST PRESS': 'SUPINO RETO NA MAQUINA',
+  'CHEST FLY': 'CRUCIFIXO RETO', 'DUMBBELL FLY': 'CRUCIFIXO RETO', 'INCLINE DUMBBELL FLY': 'CRUCIFIXO INCLINADO',
+  'DECLINE DUMBBELL FLY': 'CRUCIFIXO DECLINADO', 'CABLE INCLINE FLY': 'CRUCIFIXO INCLINADO NO CROSS',
+  'PEC DECK': 'VOADOR', 'MACHINE FLY': 'VOADOR', 'CABLE CROSSOVER': 'CROSSOVER', 'PUSH-UP': 'FLEXAO DE BRACO', 'PUSH UP': 'FLEXAO DE BRACO',
+  'SQUAT': 'AGACHAMENTO LIVRE', 'BARBELL SQUAT': 'AGACHAMENTO LIVRE', 'BACK SQUAT': 'AGACHAMENTO LIVRE',
+  'SMITH MACHINE SQUAT': 'AGACHAMENTO SMITH', 'HACK SQUAT': 'AGACHAMENTO HACK',
+  'SUMO SQUAT': 'AGACHAMENTO SUMO', 'SMITH SUMO SQUAT': 'AGACHAMENTO SUMO SMITH',
+  'BULGARIAN SPLIT SQUAT': 'AGACHAMENTO BULGARO', 'GOBLET SQUAT': 'AGACHAMENTO GOBLET',
+  'LEG PRESS': 'LEG PRESS 45º', '45 DEGREE LEG PRESS': 'LEG PRESS 45º',
+  'LEG EXTENSION': 'CADEIRA EXTENSORA', 'LYING LEG CURL': 'MESA FLEXORA', 'SEATED LEG CURL': 'CADEIRA FLEXORA',
+  'HIP ABDUCTION MACHINE': 'CADEIRA ABDUTORA', 'HIP ADDUCTION MACHINE': 'CADEIRA ADUTORA',
+  'ROMANIAN DEADLIFT': 'STIFF', 'RDL': 'STIFF', 'STIFF LEG DEADLIFT': 'STIFF',
+  'DEADLIFT': 'TERRA', 'RACK PULL': 'MEIO TERRA', 'HIP THRUST': 'ELEVACAO PELVICA', 'GLUTE BRIDGE': 'ELEVACAO PELVICA',
+  'STANDING CALF RAISE': 'PANTURRILHA EM PE', 'CALF RAISE': 'PANTURRILHA EM PE', 'SEATED CALF RAISE': 'PANTURRILHA SENTADO',
+  'LUNGE': 'AFUNDO', 'WALKING LUNGE': 'PASSADA',
+  'BARBELL ROW': 'REMADA CURVADA', 'BENT OVER ROW': 'REMADA CURVADA', 'OVERHAND BARBELL ROW': 'REMADA CURVADA PRONADA',
+  'T-BAR ROW': 'REMADA CAVALINHO', 'T BAR ROW': 'REMADA CAVALINHO', 'SEATED CABLE ROW': 'REMADA BAIXA', 'MACHINE ROW': 'REMADA PRONADA NA MAQUINA',
+  'ONE ARM MACHINE ROW': 'REMADA UNILATERAL NA MAQUINA', 'ONE ARM DUMBBELL ROW': 'SERROTE COM HALTER', 'DUMBBELL ROW': 'SERROTE COM HALTER',
+  'LAT PULLDOWN': 'PUXADA FRONTAL', 'WIDE GRIP PULLDOWN': 'PUXADA ALTA PRONADA', 'UNDERHAND PULLDOWN': 'PUXADA ALTA SUPINADA',
+  'STRAIGHT ARM PULLDOWN': 'PULLDOWN', 'ROPE PULLDOWN': 'PULLDOWN COM CORDA', 'PULL-UP': 'BARRA FIXA', 'PULL UP': 'BARRA FIXA', 'CHIN-UP': 'BARRA FIXA SUPINADA', 'CHIN UP': 'BARRA FIXA SUPINADA',
+  'REVERSE FLY': 'CRUCIFIXO INVERSO', 'REVERSE PEC DECK': 'CRUCIFIXO INVERSO NO VOADOR', 'DUMBBELL REVERSE FLY': 'CRUCIFIXO INVERSO COM HALTERES',
+  'OVERHEAD PRESS': 'DESENVOLVIMENTO', 'SHOULDER PRESS': 'DESENVOLVIMENTO', 'DUMBBELL SHOULDER PRESS': 'DESENVOLVIMENTO COM HALTERES', 'MILITARY PRESS': 'DESENVOLVIMENTO MILITAR',
+  'LATERAL RAISE': 'ELEVACAO LATERAL', 'DUMBBELL LATERAL RAISE': 'ELEVACAO LATERAL', 'CABLE LATERAL RAISE': 'ELEVACAO LATERAL NO CROSS', 'PARTIAL CABLE LATERAL RAISE': 'ELEVACAO LATERAL PARCIAL NO CROSS',
+  'FRONT RAISE': 'ELEVACAO FRONTAL', 'SHRUG': 'ENCOLHIMENTO', 'DUMBBELL SHRUG': 'ENCOLHIMENTO COM HALTERES',
+  'BARBELL CURL': 'ROSCA DIRETA', 'BICEP CURL': 'ROSCA DIRETA', 'ALTERNATING DUMBBELL CURL': 'ROSCA ALTERNADA', 'DUMBBELL CURL': 'ROSCA ALTERNADA',
+  'HAMMER CURL': 'ROSCA MARTELO', 'PREACHER CURL': 'ROSCA SCOTT', 'CONCENTRATION CURL': 'ROSCA CONCENTRADA', 'CABLE CURL': 'ROSCA NO CROSS',
+  'TRICEP PUSHDOWN': 'TRICEPS PULLEY', 'TRICEPS PUSHDOWN': 'TRICEPS PULLEY', 'ROPE PUSHDOWN': 'TRICEPS CORDA',
+  'SKULL CRUSHER': 'TRICEPS TESTA', 'FRENCH PRESS': 'TRICEPS FRANCES', 'OVERHEAD TRICEP EXTENSION': 'TRICEPS FRANCES',
+  'TRICEP KICKBACK': 'TRICEPS COICE', 'DIP': 'MERGULHO', 'DIPS': 'MERGULHO', 'BENCH DIP': 'MERGULHO NO BANCO',
+  'CRUNCH': 'ABDOMINAL SUPRA', 'DECLINE BENCH CRUNCH': 'ABDOMINAL NO BANCO DECLINADO', 'LEG RAISE': 'ABDOMINAL INFRA',
+  'HANGING LEG RAISE': 'ELEVACAO DE PERNAS NA BARRA', 'PLANK': 'PRANCHA', 'BACK EXTENSION': 'LOMBAR', 'HYPEREXTENSION': 'HIPEREXTENSOR',
+  'BAND HIP ABDUCTION': 'ABDUCAO DEITADA COM MINI BAND', 'LYING HIP ABDUCTION': 'ABDUCAO DEITADA'
+};
+
+// ══ IDIOMA DO APP (frente EN, GH 24/08) ══════════════════════════════════════════════
+// Estratégia: o app segue escrito em PT (fonte única); com gh_lang=en um tradutor de DOM
+// converte os textos da interface (dicionário exato + regras com número). Liga SÓ em EN,
+// então pra aluno BR nada muda em nada. Conteúdo do protocolo (planilha) não é tocado:
+// protocolo de gringo é montado em inglês pela equipe e passa direto.
+function _lang() { try { return localStorage.getItem('gh_lang') === 'en' ? 'en' : 'pt'; } catch (_) { return 'pt'; } }
+const I18N_EN = {
+  'Treino': 'Workout', 'Dieta': 'Diet', 'Progresso': 'Progress', 'Mais': 'More',
+  'PROTOCOLO DE TREINO': 'TRAINING PROTOCOL', 'MÚSCULOS DE HOJE': "TODAY'S MUSCLES",
+  'Músculos de hoje': "Today's muscles", 'TOCA PRA GIRAR': 'TAP TO ROTATE', 'Toca pra girar': 'Tap to rotate', 'toca pra girar': 'tap to rotate', 'frente': 'front', 'costas': 'back',
+  'FRENTE': 'FRONT', 'Frente': 'Front', 'COSTAS': 'BACK',
+  'Peito': 'Chest', 'PEITO': 'CHEST', 'Ombro': 'Shoulders', 'OMBRO': 'SHOULDERS', 'Ombros': 'Shoulders',
+  'Tríceps': 'Triceps', 'TRÍCEPS': 'TRICEPS', 'Bíceps': 'Biceps', 'BÍCEPS': 'BICEPS',
+  'Costas': 'Back', 'Dorsal': 'Lats', 'DORSAL': 'LATS', 'Trapézio': 'Traps', 'TRAPÉZIO': 'TRAPS',
+  'Lombar': 'Lower back', 'LOMBAR': 'LOWER BACK', 'Quadríceps': 'Quads', 'QUADRÍCEPS': 'QUADS',
+  'Posterior': 'Hamstrings', 'POSTERIOR': 'HAMSTRINGS', 'Glúteo': 'Glutes', 'GLÚTEO': 'GLUTES', 'Glúteos': 'Glutes',
+  'Panturrilha': 'Calves', 'PANTURRILHA': 'CALVES', 'Abdômen': 'Abs', 'ABDÔMEN': 'ABS',
+  'Antebraço': 'Forearms', 'ANTEBRAÇO': 'FOREARMS', 'Adutores': 'Adductors', 'Abdutores': 'Abductors',
+  'constância da semana': 'weekly consistency', 'Iniciar treino': 'Start workout', 'Pausar': 'Pause',
+  'Cronômetro do treino': 'Workout timer', 'Recomeçar semana do zero': 'Restart the week',
+  'Modo treino: um exercício por vez': 'Focus mode: one exercise at a time',
+  'Pouco tempo hoje?': 'Short on time?', 'SEMANA': 'WEEK', 'Semana': 'Week',
+  '✈️ Viagem/Livre': '✈️ Travel/Free', '✈️ Viagem/Livre ligado': '✈️ Travel/Free ON',
+  '✓ Vídeos baixados': '✓ Videos downloaded', 'Apagar vídeos baixados': 'Delete downloaded videos',
+  'salvar': 'save', 'ritmo': 'tempo', 'descanso': 'rest', 'histórico': 'history', 'trocar': 'swap',
+  '+ série': '+ set', 'PLACA': 'PLATE', 'SOBROU': 'LEFT', '✓ salvo': '✓ saved',
+  'SUBST.': 'SWAPPED', '✈ LIVRE': '✈ FREE', '⏳ se sobrar tempo': '⏳ if time allows',
+  'FORÇA ESTIMADA': 'ESTIMATED STRENGTH', 'referência, não é pra testar': 'reference, not a test target',
+  'Última série: como foi?': 'Last set: how did it go?',
+  'Na ÚLTIMA SÉRIE, quantas repetições ainda dava pra fazer?': 'On your LAST SET, how many reps were left in the tank?',
+  'Fácil, ainda dava 3 ou mais': 'Easy, 3 or more left', 'Dava mais 2 repetições': '2 more reps left',
+  'Dava mais 1 repetição': '1 more rep left', 'Fiz todas, mas não dava nem mais 1': 'Did them all, nothing left',
+  'Pesado demais, travei antes de terminar': 'Too heavy, failed before finishing',
+  '⚠️ Problema no aparelho?': '⚠️ Machine problem?', 'Máquina ruim': 'Bad machine',
+  'Não sinto o músculo': "Can't feel the muscle", 'Carga estranha': 'Weight feels off',
+  '🩹 Sentindo dor?': '🩹 Feeling pain?', '📝 Quer anotar como foi?': '📝 Add a note?',
+  '📝 Ver a tua anotação': '📝 View your note',
+  'O Gabriel lê isso quando for montar teu próximo protocolo.': 'Gabriel reads this when building your next protocol.',
+  '↓ SEM DESCANSO ↓': '↓ NO REST ↓', 'BI-SET: sem descanso entre A e B': 'BI-SET: no rest between A and B',
+  'AQUECIMENTO': 'WARM-UP', 'Marcar como feito': 'Mark as done', 'Marcar bi-set como feito': 'Mark bi-set as done',
+  'Histórico de cargas': 'Load history', 'Trocar exercício': 'Swap exercise', '🔄 Trocar exercício': '🔄 Swap exercise',
+  '▶ Ver vídeo de execução': '▶ Watch form video', 'Treinar no ritmo': 'Train with tempo',
+  '⚠ Travou aqui?': '⚠ Stuck here?', '⚠ Pontos de atenção': '⚠ Attention points',
+  '3 semanas registrando e a carga não subiu. Acontece com todo mundo, e tem caminho:': "3 logged weeks without adding load. Happens to everyone, and there's a way through:",
+  '1. Confere a execução': '1. Check your form',
+  'Toca no nome do exercício e revê o vídeo. Repetição mais limpa e amplitude completa valem mais que peso novo.': 'Tap the exercise name and rewatch the video. Cleaner reps and full range beat new weight.',
+  '2. Respeita o descanso da etiqueta': '2. Respect the rest on the tag',
+  'Descanso curto demais rouba força da série seguinte. O botão "descanso" cronometra pra ti.': 'Cutting rest short steals strength from the next set. The "rest" button times it for you.',
+  '3. Caça UMA repetição a mais': '3. Chase ONE more rep',
+  'Na última série, tenta uma repetição além da semana passada com a mesma carga. Fechou o topo das repetições em todas as séries? Sobe o peso na próxima.': "On the last set, try one rep beyond last week at the same load. Hit the top of the rep range on every set? Raise the weight next time.",
+  '4. Olha o contexto': '4. Look at the context',
+  'Sono ruim, semana corrida e dieta fora do lugar travam carga também. Não é fraqueza, é contexto.': "Bad sleep, a hectic week and diet off track stall your lifts too. It's not weakness, it's context.",
+  '5. Seguiu travado?': '5. Still stuck?',
+  'Se passar mais uma semana assim, me manda no "Dúvida ou ajuste" ali no topo do app que eu mexo no teu plano.': 'If another week goes like this, send it through "Question or adjustment" at the top of the app and I\'ll adjust your plan.',
+  'Exercícios com 3 semanas de registro sem a carga subir. Toca num deles pra ver o que fazer.': 'Exercises with 3 logged weeks without adding load. Tap one to see what to do.',
+  '🔔 Lembrete de treino': '🔔 Workout reminder', '🔕 Lembrete de treino desligado': '🔕 Workout reminder off',
+  'Escolhe teus dias e o horário. No dia certo, o app te avisa: "Hoje tem treino".': 'Pick your days and time. On the right day the app reminds you: "It\'s training day".',
+  'DIAS DA SEMANA': 'DAYS OF THE WEEK', 'HORÁRIO DO LEMBRETE': 'REMINDER TIME',
+  'Salvar lembrete': 'Save reminder', '🔔 Lembrete LIGADO · toca pra desligar': '🔔 Reminder ON · tap to turn off',
+  '🔕 Lembrete DESLIGADO · toca pra ligar': '🔕 Reminder OFF · tap to turn on',
+  '📤 Compartilhar no story': '📤 Share to story', 'treinos': 'workouts',
+  'recorde': 'record', 'recordes': 'records', 'semana seguida': 'week streak', 'semanas seguidas': 'weeks streak',
+  'Responde essas 4 e eu já recebo tudo organizado pra mexer no que precisar.': "Answer these 4 and I'll get it all organized to adjust what's needed.",
+  'ONDE DÓI': 'WHERE DOES IT HURT', 'DESDE QUANDO': 'SINCE WHEN', 'INTENSIDADE': 'INTENSITY', 'QUANDO DÓI': 'WHEN DOES IT HURT',
+  'ombro': 'shoulder', 'cotovelo': 'elbow', 'punho': 'wrist', 'lombar': 'lower back', 'quadril': 'hip',
+  'joelho': 'knee', 'tornozelo': 'ankle', 'pescoço': 'neck', 'outro': 'other',
+  'hoje': 'today', 'alguns dias': 'a few days', 'mais de 1 semana': 'over a week', 'mais de 1 mês': 'over a month',
+  'leve': 'mild', 'média': 'moderate', 'forte': 'strong',
+  'só neste exercício': 'only in this exercise', 'em vários exercícios': 'in several exercises', 'também fora do treino': 'also outside training',
+  'Enviar pra equipe': 'Send to the team', 'Enviando...': 'Sending...',
+  '✓ Chegou. Eu olho e mexo no que precisar no teu protocolo.': "✓ Got it. I'll review and adjust your protocol where needed.",
+  'Se a dor for forte, repentina ou piorar, não força: procura uma avaliação presencial.': "If the pain is strong, sudden or getting worse, don't push through: get an in-person evaluation.",
+  '📖 Dicionário do treino': '📖 Training dictionary', 'Dicionário do treino': 'Training dictionary',
+  'Os termos que aparecem na tua ficha, explicados direto. Ficou dúvida em como aplicar no TEU exercício? Usa o "Dúvida ou ajuste".': 'The terms on your plan, explained straight. Unsure how to apply it to YOUR exercise? Use "Question or adjustment".',
+  'Progressão de carga': 'Progressive overload', 'Aclimatização': 'Acclimation sets', 'Pirâmide': 'Pyramid',
+  'Cadência (Pos · Iso · Neg)': 'Tempo (Pos · Iso · Neg)', 'Concêntrica (positiva)': 'Concentric (positive)',
+  'Excêntrica (negativa)': 'Eccentric (negative)', 'Isometria': 'Isometric hold', 'Máxima contração': 'Peak contraction',
+  'Amplitude máxima': 'Full range of motion', 'Parciais': 'Partials', 'Sobrou (a caixinha do app)': 'Left (the app box)',
+  'Falha': 'Failure', 'Roubadas': 'Cheat reps', 'Pêndulo': 'Body swing', 'Retroversão pélvica': 'Posterior pelvic tilt',
+  'Pegada neutra': 'Neutral grip', 'Intervalo (o I da etiqueta)': 'Rest interval (the I tag)',
+  'A ordem mais importante da ficha: fechou todas as séries no topo das repetições com execução limpa, sobe o peso na próxima. A caixinha SOBROU te ajuda a saber a hora certa.': 'The most important rule of the plan: hit the top of the rep range on every set with clean form, raise the weight next time. The LEFT box helps you know when.',
+  'Primeiras séries com peso mais leve, pro corpo pegar o jeito do movimento antes das séries pesadas valendo.': 'First sets with lighter weight so the body grooves the movement before the heavy working sets.',
+  'Terminou a série, tira parte do peso (a ficha diz quanto) e segue sem descanso até não sair mais repetição boa.': 'Finish the set, strip part of the weight (the plan says how much) and keep going with no rest until no clean rep is left.',
+  'Dois exercícios em sequência, sem descanso entre eles. Descansa depois do segundo.': 'Two exercises back to back, no rest in between. Rest after the second one.',
+  'Chegou perto da falha, respira 10 a 15 segundos parado e completa mais repetições com o mesmo peso.': 'Near failure, breathe 10 to 15 seconds standing still, then squeeze out more reps with the same weight.',
+  'Série quebrada em blocos pequenos com pausas curtíssimas dentro da própria série.': 'A set broken into small blocks with very short pauses inside the set itself.',
+  'O peso sobe a cada série e as repetições descem.': 'Weight goes up each set, reps go down.',
+  'A velocidade de cada fase do movimento. Pos = subir. Iso = segurar parado. Neg = descer controlando. "Neg 3s" = descer em 3 segundos. O botão "ritmo" marca isso pra ti com som e bolinha.': 'The speed of each phase. Pos = lift. Iso = hold. Neg = lower under control. "Neg 3s" = lower in 3 seconds. The "tempo" button beats it out for you with sound and a moving dot.',
+  'A fase de vencer o peso, subindo.': 'The phase where you beat the weight, lifting it.',
+  'A fase de descer segurando o peso. É onde mais se constrói músculo, por isso a ficha tanto pede controle aqui.': "The lowering phase, resisting the weight. It's where most muscle is built, which is why the plan keeps asking for control here.",
+  'Segurar parado, normalmente no ponto de máxima contração.': 'Holding still, usually at the point of peak contraction.',
+  'No ponto final do movimento, aperta o músculo com força total por um instante, como se estivesse posando pra foto. Não é só chegar lá: é contrair.': "At the end of the movement, squeeze the muscle hard for an instant, like posing for a photo. It's not just getting there: it's squeezing.",
+  'Usar o percurso inteiro do movimento: alonga tudo, contrai tudo.': 'Use the full path of the movement: full stretch, full squeeze.',
+  'Repetições de propósito mais curtas, só no pedaço do movimento que ainda sai. Quando a ficha pede "parciais no final", é depois que as completas acabaram.': 'Deliberately shortened reps, only in the part of the movement you can still perform. When the plan asks for "partials at the end", it means after full reps are done.',
+  'Quantas repetições tu ainda aguentaria na última série. É como o Gabriel enxerga se a tua carga está certa.': 'How many reps you had left on your last set. It\'s how Gabriel sees if your load is right.',
+  'O ponto em que não sai nem mais uma repetição com execução boa.': 'The point where not even one more clean rep comes out.',
+  'Repetições depois da falha usando um impulso proposital pra completar o movimento. Só onde a ficha pede, e sempre freando a descida.': 'Reps after failure using deliberate momentum to complete the movement. Only where the plan asks, and always braking the way down.',
+  'Um lado de cada vez: faz um lado, emenda o outro, e os dois juntos contam como UMA série. O descanso escrito na ficha vale DEPOIS de fazer os dois lados.': 'One side at a time: do one side, go straight to the other, and both together count as ONE set. The rest on the plan applies AFTER both sides.',
+  'Nas puxadas: o tronco inclina um pouco pra trás junto com a puxada e volta, num balanço curto e controlado. É técnica pra pegar mais costas, não pressa.': "On pulldowns: the torso leans slightly back with the pull and returns, in a short controlled swing. It's technique to hit more back, not rushing.",
+  'Encaixar o quadril, girando o bumbum pra baixo e pra frente, tirando o arco exagerado da lombar.': 'Tuck the hips, rotating the glutes down and forward, removing the exaggerated lower-back arch.',
+  'Pés bem afastados e pontas dos pés pra fora. Joga o foco pra parte interna da coxa e pro glúteo.': 'Feet wide, toes pointing out. Shifts the focus to the inner thigh and glutes.',
+  'Palmas das mãos viradas uma pra outra.': 'Palms facing each other.',
+  'O descanso entre as séries. O botão "descanso" do exercício cronometra sozinho.': 'The rest between sets. The exercise\'s "rest" button times it for you.',
+  'Fechar': 'Close', 'AJUSTES': 'SETTINGS', 'Mais opções': 'More options',
+  'Unidade: kg (trocar pra lb)': 'Units: kg (switch to lb)', 'Unidade: lb (trocar pra kg)': 'Units: lb (switch to kg)',
+  'Rever o tour do app': 'Replay the app tour', 'Recarregar do servidor': 'Reload from server',
+  'Apagar pesos marcados': 'Clear saved weights', 'Atualizar o app agora': 'Update the app now',
+  'METAS': 'GOALS', 'ESTA SEMANA': 'THIS WEEK', 'Água': 'Water',
+  'Conta sozinho pelo que tu marca no app. O cardio, tu define a tua meta.': 'Counts by itself from what you log in the app. Cardio goal is set by you.',
+  'definir meta': 'set goal', 'MAIORES CARGAS': 'TOP LIFTS', '📈 Recordes pessoais': '📈 Personal records',
+  'Registro pessoal do teu progresso de carga, calculado do que tu anota nos exercícios.': 'Your personal record of load progress, calculated from what you log on each exercise.',
+  '💬 Tirar dúvida': '💬 Ask a question', '🔧 Pedir ajuste': '🔧 Request a change', 'Enviar': 'Send',
+  'Dúvida ou ajuste': 'Question or adjustment', 'Pergunta ou pede mudança no protocolo': 'Ask something or request a protocol change'
+};
+const I18N_RX = [
+  [/^Dia (\d+) de (\d+) · Semana (\d+)$/, 'Day $1 of $2 · Week $3'],
+  [/^▶\s*Iniciar treino$/, '▶ Start workout'],
+  [/^⏸\s*Pausar$/, '⏸ Pause'],
+  [/^▶\s*Modo treino: um exercício por vez$/, '▶ Focus mode: one exercise at a time'],
+  [/^⏱\s*Pouco tempo hoje\?$/, '⏱ Short on time?'],
+  [/^⏱\s*Modo (\d+)min ativo · toca pra ajustar$/, '⏱ $1min mode on · tap to adjust'],
+  [/^↺\s*Recomeçar semana do zero$/, '↺ Restart the week'],
+  [/^DIA (\d+)$/, 'DAY $1'],
+  [/^Dia (\d+) de (\d+)(.*)$/, 'Day $1 of $2$3'],
+  [/^Hoje: (\d+)\/(\d+) exercícios(.*)$/, 'Today: $1/$2 exercises$3'],
+  [/^Este treino na semana (\d+): (.+)$/, 'This workout in week $1: $2'],
+  [/^🔥 (\d+) dias?$/, '🔥 $1 days'],
+  [/^⬇ Vídeos \((\d+) · (\d+)MB\)$/, '⬇ Videos ($1 · $2MB)'],
+  [/^⬇ Baixando (\d+)\/(\d+)…$/, '⬇ Downloading $1/$2…'],
+  [/^⚠ (\d+) falharam · tentar de novo$/, '⚠ $1 failed · try again'],
+  [/^⚠ (\d+) semanas sem a carga subir aqui · toca pra ver o que fazer$/, "⚠ $1 weeks without adding load · tap for what to do"],
+  [/^(\d+) semanas sem a carga subir$/, '$1 weeks without adding load'],
+  [/^🔔 Lembrete: (.+) às (.+)$/, '🔔 Reminder: $1 at $2'],
+  [/^FECHAMENTO DA SEMANA · (.+)$/, 'WEEK WRAP · $1'],
+  [/^(\d+) semanas seguidas$/, '$1-week streak'],
+  [/^Semana passada: (.+)$/, 'Last week: $1'],
+  [/^FORÇA ESTIMADA · (.+)$/, 'ESTIMATED STRENGTH · $1'],
+  [/^Protocolo v(.+) · Atualizado em (.+)$/, 'Protocol v$1 · Updated on $2'],
+  [/^🎯 Teu alvo atual: (.+)$/, '🎯 Your current target: $1']
+];
+function _i18nTxt(t) {
+  const k = String(t == null ? '' : t).trim();
+  if (!k) return null;
+  const hit = I18N_EN[k];
+  if (hit !== undefined) return t.replace(k, hit);
+  for (let i = 0; i < I18N_RX.length; i++) {
+    if (I18N_RX[i][0].test(k)) return t.replace(k, k.replace(I18N_RX[i][0], I18N_RX[i][1]));
+  }
+  return null;
+}
+function _i18nEl(root) {
+  try {
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+    const lote = [];
+    while (w.nextNode()) lote.push(w.currentNode);
+    for (const n of lote) {
+      const p = n.parentNode && n.parentNode.nodeName;
+      if (p === 'SCRIPT' || p === 'STYLE') continue;
+      const tr = _i18nTxt(n.nodeValue);
+      if (tr !== null && tr !== n.nodeValue) n.nodeValue = tr;
+    }
+    const els = [];
+    if (root.nodeType === 1) { els.push(root); root.querySelectorAll('[placeholder],[title],[aria-label]').forEach(e => els.push(e)); }
+    for (const el of els) {
+      for (const at of ['placeholder', 'title', 'aria-label']) {
+        const v = el.getAttribute && el.getAttribute(at);
+        if (!v) continue;
+        const tr = _i18nTxt(v);
+        if (tr !== null && tr !== v) el.setAttribute(at, tr);
+      }
+    }
+  } catch (_) {}
+}
+function _i18nBoot() {
+  if (_lang() !== 'en') return;
+  try { document.documentElement.lang = 'en'; } catch (_) {}
+  _i18nEl(document.body);
+  const obs = new MutationObserver(muts => {
+    for (const m of muts) {
+      if (m.type === 'characterData') {
+        const tr = _i18nTxt(m.target.nodeValue);
+        if (tr !== null && tr !== m.target.nodeValue) m.target.nodeValue = tr;
+      } else {
+        m.addedNodes.forEach(node => {
+          if (node.nodeType === 3) {
+            const tr = _i18nTxt(node.nodeValue);
+            if (tr !== null && tr !== node.nodeValue) node.nodeValue = tr;
+          } else if (node.nodeType === 1) _i18nEl(node);
+        });
+      }
+    }
+  });
+  obs.observe(document.body, { childList: true, subtree: true, characterData: true });
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _i18nBoot);
+else _i18nBoot();
+// dias da semana curtos, cientes do idioma (bolinhas, fechamento, lembrete)
+function _diasRot() { return _lang() === 'en' ? ['M', 'T', 'W', 'T', 'F', 'S', 'S'] : ['S', 'T', 'Q', 'Q', 'S', 'S', 'D']; }
+function _tlemDias() { return _lang() === 'en' ? ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] : ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom']; }
+function toggleLang() {
+  const novo = _lang() === 'en' ? 'pt' : 'en';
+  try { localStorage.setItem('gh_lang', novo); } catch (_) {}
+  try {
+    if (typeof SHEET_ID !== 'undefined' && SHEET_ID && typeof LOG_ENDPOINT !== 'undefined') {
+      fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ type: 'app_pref', sheetId: SHEET_ID, lang: novo, ts: new Date().toISOString() }), keepalive: true, redirect: 'follow' });
+    }
+  } catch (_) {}
+  setTimeout(() => location.reload(), 250);
+}
+function _langBtnRefresh() {
+  const el = document.getElementById('langToggleLabel');
+  if (el) el.textContent = _lang() === 'en' ? '🌐 Idioma: Português' : '🌐 Language: English';
+}
 // Chave própria do banco (não usa o _normEx global: se alguém redeclarar aquela função
 // noutro ponto do arquivo, o banco continua funcionando). Índice montado em runtime, com a
 // MESMA função dos dois lados, então caixa/acento do nome buscado ou da chave não importam.
 function _bankKey(s){return String(s||'').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/°/g,'º').replace(/[^A-Z0-9º]+/g,' ').trim();}
 const _BANK_IDX = (function(){var m={};for(var k in EX_VIDEO_BANK)m[_bankKey(k)]=EX_VIDEO_BANK[k];return m;})();
-function _bankVideo(name){const k=_bankKey(name);return k&&_BANK_IDX[k]?_BANK_IDX[k]:'';}
+function _bankVideo(name){
+  let k=_bankKey(name);
+  // frente EN: nome em ingles resolve pro canonico PT antes de buscar no banco
+  if(k && !_BANK_IDX[k] && typeof EX_EN_ALIAS!=='undefined' && EX_EN_ALIAS[k]) k=_bankKey(EX_EN_ALIAS[k]);
+  return k&&_BANK_IDX[k]?_BANK_IDX[k]:'';
+}
 
 // \u2500\u2500 M\u00fasculo-alvo por exerc\u00edcio (educativo, tag compacta no card) \u2500\u2500
 // p = PRIM\u00c1RIO(s) (dourado) \u00b7 s = secund\u00e1rio(s) que importam (cinza). Completo, mas sem
@@ -6706,9 +6971,9 @@ function _tlemChipRefresh() {
   const chip = document.getElementById('tlemChip');
   if (!chip || !SHEET_ID) return;
   const p = _tlemLoad();
-  if (!p || !p.d || !p.d.length || !p.h) chip.textContent = '🔔 Lembrete de treino';
-  else if (!p.on) chip.textContent = '🔕 Lembrete de treino desligado';
-  else chip.textContent = '🔔 Lembrete: ' + p.d.map(n => TLEM_DIAS[n - 1]).join(' · ') + ' às ' + p.h;
+  if (!p || !p.d || !p.d.length || !p.h) chip.textContent = _lang() === 'en' ? '🔔 Workout reminder' : '🔔 Lembrete de treino';
+  else if (!p.on) chip.textContent = _lang() === 'en' ? '🔕 Workout reminder off' : '🔕 Lembrete de treino desligado';
+  else chip.textContent = (_lang() === 'en' ? '🔔 Reminder: ' : '🔔 Lembrete: ') + p.d.map(n => _tlemDias()[n - 1]).join(' · ') + (_lang() === 'en' ? ' at ' : ' às ') + p.h;
   chip.style.display = '';
 }
 function openTlem() {
@@ -6719,7 +6984,7 @@ function openTlem() {
     mm: p.h ? p.h.slice(3) : '00',
     on: p.on !== false
   };
-  document.getElementById('tlemDays').innerHTML = TLEM_DIAS.map((n, i) =>
+  document.getElementById('tlemDays').innerHTML = _tlemDias().map((n, i) =>
     `<button type="button" class="tlem-day${_tlemSel.d.includes(i + 1) ? ' on' : ''}" onclick="_tlemDay(${i + 1}, this)">${n}</button>`).join('');
   document.getElementById('tlemHoras').innerHTML = Array.from({ length: 19 }, (_, i) => i + 5).map(h =>
     `<button type="button" class="tlem-h${h === _tlemSel.hh ? ' on' : ''}" onclick="_tlemHora(${h}, this)">${String(h).padStart(2, '0')}h</button>`).join('');
@@ -8365,6 +8630,7 @@ function updateDayProgress() {
   if (!window._tlemHydratou) { window._tlemHydratou = true; try { _tlemHydrate(); } catch (_) {} }
   try { _semCardRender(); } catch (_) {}
   try { _viagemBtnRefresh(); } catch (_) {}
+  try { _langBtnRefresh(); } catch (_) {}
   renderMuscleMap();
   // Botão "Recomeçar semana": só aparece quando há marca de feito na semana atual
   const wr = document.getElementById('weekResetBtn');
@@ -9908,11 +10174,12 @@ function parseCadencia(obs) {
     const m = s.match(re);
     return m ? parseFloat(m[1].replace(',', '.')) : null;
   }
-  let v = readSec(/(?:exc[êe]ntrica|negativa)\s+(\d+(?:[.,]\d+)?)\s*(?:seg|s\b)/);
+  // termos EN aceitos junto (frente gringa): eccentric/negative, isometric/hold, concentric/positive, sec
+  let v = readSec(/(?:exc[êe]ntrica|negativa|eccentric|negative)\s+(\d+(?:[.,]\d+)?)\s*(?:seg|sec|s\b)/);
   if (v !== null) { exc = v; custom = true; }
-  v = readSec(/isometria\s+(\d+(?:[.,]\d+)?)\s*(?:seg|s\b)/);
+  v = readSec(/(?:isometria|isometric|hold)\s+(\d+(?:[.,]\d+)?)\s*(?:seg|sec|s\b)/);
   if (v !== null) { iso = v; custom = true; }
-  v = readSec(/(?:conc[êe]ntrica|positiva)\s+(\d+(?:[.,]\d+)?)\s*(?:seg|s\b)/);
+  v = readSec(/(?:conc[êe]ntrica|positiva|concentric|positive)\s+(\d+(?:[.,]\d+)?)\s*(?:seg|sec|s\b)/);
   if (v !== null) { conc = v; custom = true; }
   return { conc, iso, exc, custom };
 }
@@ -13715,7 +13982,7 @@ function _semCardRender() {
   if (dow !== 0 && dow !== 1) { el.style.display = 'none'; return; }
   const r = _semanaResumo(dow === 1 ? 1 : 0);
   if (!r.treinos && !r.recordes) { el.style.display = 'none'; return; }
-  const rot = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
+  const rot = _diasRot();
   el.innerHTML = `
     <div class="sem-t">FECHAMENTO DA SEMANA · ${r.faixa}</div>
     <div class="sem-stats">
@@ -13756,7 +14023,7 @@ async function compartilharSemana() {
     g.fillStyle = '#9a9184'; g.font = '700 40px -apple-system, Arial';
     g.fillText(s[1], 540, y + 72);
   });
-  const rot = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
+  const rot = _diasRot();
   r.dias.forEach((f, i) => {
     const x = 540 + (i - 3) * 112, y = 1710;
     g.beginPath(); g.arc(x, y, 37, 0, Math.PI * 2);
@@ -13812,7 +14079,7 @@ function _constDotsRender() {
     }
     const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
     const seg = new Date(hoje); seg.setDate(hoje.getDate() - ((hoje.getDay() + 6) % 7));
-    const rot = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
+    const rot = _diasRot();
     let html = '';
     for (let i = 0; i < 7; i++) {
       const d = new Date(seg); d.setDate(seg.getDate() + i);
@@ -17329,7 +17596,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v397';
+    var APP_SHELL_V = 'metodo-gh-v398';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
