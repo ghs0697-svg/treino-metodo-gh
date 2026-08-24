@@ -1483,6 +1483,17 @@
   .estag-chip { margin: 6px 12px 2px; padding: 7px 10px; border-radius: 8px; background: rgba(212,140,55,.10); border: 1px solid rgba(212,140,55,.35); color: #d8a35e; font-size: 11px; font-weight: 700; cursor: pointer; }
   .estag-item { padding: 7px 0; border-bottom: 1px solid #26262c; cursor: pointer; }
   .estag-item b { color: #d8a35e; font-weight: 700; }
+  /* fechamento da semana */
+  .sem-card { margin: 12px 0 4px; padding: 14px; border-radius: 14px; background: linear-gradient(160deg, #1a1712, #12100c); border: 1px solid rgba(212,175,106,.3); }
+  .sem-t { font-size: 10px; font-weight: 800; letter-spacing: 1.2px; color: #D4AF6A; margin-bottom: 10px; }
+  .sem-stats { display: flex; gap: 8px; }
+  .sem-stat { flex: 1; text-align: center; }
+  .sem-stat b { display: block; font-size: 26px; color: #e8e2d6; font-weight: 800; }
+  .sem-stat span { font-size: 10px; color: #8d8579; font-weight: 700; letter-spacing: .5px; }
+  .sem-dots { display: flex; justify-content: center; gap: 8px; margin: 12px 0; }
+  .sem-dots span { width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,.06); color: #6b655b; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+  .sem-dots span.on { background: var(--gold); color: #141310; }
+  .sem-share { width: 100%; padding: 11px; border-radius: 10px; border: none; background: var(--gold); color: #141310; font-weight: 800; font-size: 12.5px; cursor: pointer; }
   /* lembrete "hoje tem treino" */
   .tlem-chip { display: block; margin: 10px auto 0; background: none; border: 1px dashed #3a372f; color: #b6ae9e; font-size: 11.5px; font-weight: 700; padding: 7px 14px; border-radius: 999px; cursor: pointer; }
   .tlem-sec { font-size: 10px; font-weight: 800; letter-spacing: 1px; color: #8d8579; margin: 12px 0 6px; }
@@ -3181,6 +3192,7 @@
   </div>
   <div class="const-dots" id="constDots" style="display:none;"></div>
   <button type="button" class="tlem-chip" id="tlemChip" onclick="openTlem()" style="display:none;">🔔 Lembrete de treino</button>
+  <div class="sem-card" id="semCard" style="display:none;"></div>
   <div class="wt-card" id="wtCard">
     <div>
       <div class="wt-time" id="wtTime">00:00</div>
@@ -7101,6 +7113,7 @@ function achDesfazerPR() {
   try {
     if (_achData && _achData.type === 'pr' && _achData.prDi !== undefined) {
       localStorage.setItem(prKey(_achData.prDi, _achData.prEi), String(_achData.oldKg || 0));
+      _prLogRemove(_achData.prDi, _achData.prEi, _achData.newKg);   // recorde desfeito sai da conta da semana
     }
   } catch (_) {}
   achClose();
@@ -7737,6 +7750,7 @@ function checkPR(di, ei, newKg) {
           prDi: di,   // pro "Digitei errado, desfazer" saber qual chave restaurar
           prEi: ei
         });
+        _prLogAdd(di, ei, newKg);   // fechamento da semana conta os recordes daqui
       }
     }
     localStorage.setItem(k, String(newKg));
@@ -8193,6 +8207,7 @@ function updateDayProgress() {
   _constDotsRender();
   try { _tlemChipRefresh(); } catch (_) {}
   if (!window._tlemHydratou) { window._tlemHydratou = true; try { _tlemHydrate(); } catch (_) {} }
+  try { _semCardRender(); } catch (_) {}
   renderMuscleMap();
   // Botão "Recomeçar semana": só aparece quando há marca de feito na semana atual
   const wr = document.getElementById('weekResetBtn');
@@ -13490,6 +13505,120 @@ function _progSpark(vals, color) {
 // Meta da semana: dias ÚNICOS de treino concluído na semana corrente (segunda a domingo),
 // contra a frequência que o aluno escolheu (= quantidade de dias do protocolo dele).
 // Mesmas chaves do streak/mês: gh_logsent_<SID>_<data>_dN_concl. Zera toda segunda sozinha.
+// ══ Fechamento da semana (GH 23/08): card domingo/segunda + imagem pro story ══
+// Domingo mostra a semana que fecha hoje; segunda, a que acabou de fechar. Semana
+// sem nenhuma marca não vira card (resumo, não cobrança). Recordes contam do
+// _prLogAdd (registrado no momento do PR real; desfazer tira da conta).
+function _prLogKey() { return 'gh_prlog_' + SHEET_ID; }
+function _prLogAdd(di, ei, kg) {
+  try {
+    const arr = JSON.parse(localStorage.getItem(_prLogKey()) || '[]');
+    const d = new Date();
+    const dk = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    arr.push({ d: dk, di: di, ei: ei, kg: kg });
+    localStorage.setItem(_prLogKey(), JSON.stringify(arr.slice(-120)));
+  } catch (_) {}
+}
+function _prLogRemove(di, ei, kg) {
+  try {
+    const arr = JSON.parse(localStorage.getItem(_prLogKey()) || '[]');
+    for (let i = arr.length - 1; i >= 0; i--) {
+      if (arr[i].di === di && arr[i].ei === ei && arr[i].kg === kg) { arr.splice(i, 1); break; }
+    }
+    localStorage.setItem(_prLogKey(), JSON.stringify(arr));
+  } catch (_) {}
+}
+function _semanaResumo(off) {
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  const seg = new Date(hoje); seg.setDate(hoje.getDate() - ((hoje.getDay() + 6) % 7) - (off || 0) * 7);
+  const dom = new Date(seg); dom.setDate(seg.getDate() + 6);
+  const dk = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const pref = 'gh_logsent_' + SHEET_ID + '_';
+  const re = /^(\d{4}-\d{2}-\d{2})_d\d+_concl$/;
+  const feitos = new Set();
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k || k.indexOf(pref) !== 0) continue;
+    const m = k.slice(pref.length).match(re);
+    if (m && m[1] >= dk(seg) && m[1] <= dk(dom)) feitos.add(m[1]);
+  }
+  const dias = [];
+  for (let i = 0; i < 7; i++) { const d = new Date(seg); d.setDate(seg.getDate() + i); dias.push(feitos.has(dk(d))); }
+  let recordes = 0;
+  try { recordes = JSON.parse(localStorage.getItem(_prLogKey()) || '[]').filter(p => p.d >= dk(seg) && p.d <= dk(dom)).length; } catch (_) {}
+  const freq = (typeof WORKOUT !== 'undefined' && Array.isArray(WORKOUT) && WORKOUT.length) ? Math.min(7, WORKOUT.length) : 0;
+  const fx = d => String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
+  return { treinos: feitos.size, alvo: freq, dias: dias, recordes: recordes, streak: _mtStreakSemanas(freq), faixa: fx(seg) + ' a ' + fx(dom) };
+}
+function _semCardRender() {
+  const el = document.getElementById('semCard');
+  if (!el || typeof SHEET_ID === 'undefined' || !SHEET_ID) return;
+  const dow = new Date().getDay();                       // 0=domingo, 1=segunda
+  if (dow !== 0 && dow !== 1) { el.style.display = 'none'; return; }
+  const r = _semanaResumo(dow === 1 ? 1 : 0);
+  if (!r.treinos && !r.recordes) { el.style.display = 'none'; return; }
+  const rot = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
+  el.innerHTML = `
+    <div class="sem-t">FECHAMENTO DA SEMANA · ${r.faixa}</div>
+    <div class="sem-stats">
+      <div class="sem-stat"><b>${r.treinos}${r.alvo ? '/' + r.alvo : ''}</b><span>treinos</span></div>
+      <div class="sem-stat"><b>${r.recordes}</b><span>recorde${r.recordes === 1 ? '' : 's'}</span></div>
+      <div class="sem-stat"><b>${r.streak}</b><span>semana${r.streak === 1 ? '' : 's'} seguida${r.streak === 1 ? '' : 's'}</span></div>
+    </div>
+    <div class="sem-dots">${r.dias.map((f, i) => `<span class="${f ? 'on' : ''}">${rot[i]}</span>`).join('')}</div>
+    <button type="button" class="sem-share" onclick="compartilharSemana()">📤 Compartilhar no story</button>`;
+  el.style.display = '';
+}
+async function compartilharSemana() {
+  const dow = new Date().getDay();
+  const r = _semanaResumo(dow === 1 ? 1 : 0);
+  const cv = document.createElement('canvas'); cv.width = 1080; cv.height = 1920;
+  const g = cv.getContext('2d');
+  const grad = g.createLinearGradient(0, 0, 0, 1920);
+  grad.addColorStop(0, '#15130f'); grad.addColorStop(1, '#0b0a08');
+  g.fillStyle = grad; g.fillRect(0, 0, 1080, 1920);
+  g.strokeStyle = 'rgba(212,175,106,.5)'; g.lineWidth = 3; g.strokeRect(48, 48, 984, 1824);
+  g.textAlign = 'center';
+  g.fillStyle = '#D4AF6A'; g.font = '700 46px -apple-system, Arial';
+  g.fillText('M É T O D O   G H', 540, 220);
+  g.fillStyle = '#7d766a'; g.font = '600 34px -apple-system, Arial';
+  g.fillText('FECHAMENTO DA SEMANA', 540, 300);
+  g.fillText(r.faixa, 540, 352);
+  const nome = ((document.getElementById('infoNome') || {}).textContent || '').trim().split(' ')[0];
+  if (nome) { g.fillStyle = '#e8e2d6'; g.font = '800 58px -apple-system, Arial'; g.fillText(nome.toUpperCase(), 540, 470); }
+  // na imagem só entra número que vale a pena mostrar: zero não se posta
+  const stats = [[String(r.treinos) + (r.alvo ? '/' + r.alvo : ''), 'TREINOS']];
+  if (r.recordes >= 1) stats.push([String(r.recordes), r.recordes === 1 ? 'RECORDE PESSOAL' : 'RECORDES PESSOAIS']);
+  if (r.streak >= 1) stats.push([String(r.streak), r.streak === 1 ? 'SEMANA SEGUIDA' : 'SEMANAS SEGUIDAS']);
+  const yBase = stats.length === 1 ? 1050 : (stats.length === 2 ? 880 : 730);
+  stats.forEach((s, i) => {
+    const y = yBase + i * 310;
+    g.fillStyle = '#D4AF6A'; g.font = '800 150px -apple-system, Arial';
+    g.fillText(s[0], 540, y);
+    g.fillStyle = '#9a9184'; g.font = '700 40px -apple-system, Arial';
+    g.fillText(s[1], 540, y + 72);
+  });
+  const rot = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
+  r.dias.forEach((f, i) => {
+    const x = 540 + (i - 3) * 112, y = 1710;
+    g.beginPath(); g.arc(x, y, 37, 0, Math.PI * 2);
+    g.fillStyle = f ? '#D4AF6A' : 'rgba(255,255,255,.07)'; g.fill();
+    g.fillStyle = f ? '#141310' : '#6b655b'; g.font = '800 30px -apple-system, Arial';
+    g.fillText(rot[i], x, y + 11);
+  });
+  g.fillStyle = '#7d766a'; g.font = '600 30px -apple-system, Arial';
+  g.fillText('app.metodogh.com.br', 540, 1836);
+  const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
+  const file = new File([blob], 'minha-semana-metodogh.png', { type: 'image/png' });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file] }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'minha-semana-metodogh.png';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => { try { URL.revokeObjectURL(a.href); } catch (_) {} }, 4000);
+}
+
 function _metaSemanaInfo() {
   try {
     const pref = `gh_logsent_${SHEET_ID}_`;
@@ -17042,7 +17171,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v393';
+    var APP_SHELL_V = 'metodo-gh-v394';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
