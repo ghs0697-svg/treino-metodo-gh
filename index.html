@@ -1483,6 +1483,10 @@
   .estag-chip { margin: 6px 12px 2px; padding: 7px 10px; border-radius: 8px; background: rgba(212,140,55,.10); border: 1px solid rgba(212,140,55,.35); color: #d8a35e; font-size: 11px; font-weight: 700; cursor: pointer; }
   .estag-item { padding: 7px 0; border-bottom: 1px solid #26262c; cursor: pointer; }
   .estag-item b { color: #d8a35e; font-weight: 700; }
+  /* triagem de dor */
+  .dor-btn { border-color: rgba(200,90,90,.4) !important; color: #d08585 !important; }
+  .dor-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .dor-chips .tlem-h { flex: 0 0 auto; padding: 8px 12px; }
   /* fechamento da semana */
   .sem-card { margin: 12px 0 4px; padding: 14px; border-radius: 14px; background: linear-gradient(160deg, #1a1712, #12100c); border: 1px solid rgba(212,175,106,.3); }
   .sem-t { font-size: 10px; font-weight: 800; letter-spacing: 1.2px; color: #D4AF6A; margin-bottom: 10px; }
@@ -4456,6 +4460,31 @@
   </div>
 </div>
 
+<!-- ══ DOR: triagem guiada (vira pedido estruturado na fila da equipe) ══ -->
+<div class="te-modal-overlay" id="dorModal" onclick="if(event.target.id==='dorModal')teHide('dorModal')">
+  <div class="te-modal-box" style="max-width:440px;max-height:88vh;overflow-y:auto;">
+    <h3 style="margin:0 0 2px;">🩹 Sentindo dor?</h3>
+    <p id="dorExLabel" style="color:var(--gold);font-size:12px;font-weight:700;margin:0 0 8px;"></p>
+    <p style="color:#aaa;font-size:11.5px;margin:0 0 10px;line-height:1.5;">Responde essas 4 e eu já recebo tudo organizado pra mexer no que precisar.</p>
+    <div id="dorForm">
+      <div class="tlem-sec">ONDE DÓI</div>
+      <div class="dor-chips" data-g="onde"></div>
+      <div class="tlem-sec">DESDE QUANDO</div>
+      <div class="dor-chips" data-g="desde"></div>
+      <div class="tlem-sec">INTENSIDADE</div>
+      <div class="dor-chips" data-g="intensidade"></div>
+      <div class="tlem-sec">QUANDO DÓI</div>
+      <div class="dor-chips" data-g="quando"></div>
+      <textarea id="dorObs" class="esf-nota-in" maxlength="400" rows="2" style="margin-top:10px;" placeholder="Quer detalhar? (opcional)"></textarea>
+      <button type="button" class="te-btn" id="dorEnviarBtn" style="width:100%;margin-top:10px;" onclick="enviarDor()">Enviar pra equipe</button>
+    </div>
+    <div id="dorOk" style="display:none;color:#7ec98f;font-size:12.5px;line-height:1.6;padding:8px 0;">
+      ✓ Chegou. Eu olho e mexo no que precisar no teu protocolo.<br>
+      <span style="color:#aaa;font-size:11px;">Se a dor for forte, repentina ou piorar, não força: procura uma avaliação presencial.</span>
+    </div>
+  </div>
+</div>
+
 <!-- ══ ESTAGNAÇÃO: o que fazer quando a carga trava ══ -->
 <div class="te-modal-overlay" id="estagModal" onclick="if(event.target.id==='estagModal')teHide('estagModal')">
   <div class="te-modal-box" style="max-width:440px;max-height:84vh;overflow-y:auto;">
@@ -6697,6 +6726,82 @@ function syncTreinoLembreteToServer_() {
     }).then(resp => { if (!resp || !resp.ok) enfileira(); }).catch(enfileira);
   } catch (_) { enfileira(); }
 }
+// ══ Triagem de dor (GH 23/08): 4 perguntas + texto livre viram pedido ESTRUTURADO
+// no mesmo canal do "Dúvida ou ajuste" (type ajuste_request), então cai na fila que
+// a equipe já atende. Não é protocolo de dor: é organizar a informação pra decisão.
+const _DOR_OPTS = {
+  onde: ['ombro', 'cotovelo', 'punho', 'lombar', 'quadril', 'joelho', 'tornozelo', 'pescoço', 'outro'],
+  desde: ['hoje', 'alguns dias', 'mais de 1 semana', 'mais de 1 mês'],
+  intensidade: ['leve', 'média', 'forte'],
+  quando: ['só neste exercício', 'em vários exercícios', 'também fora do treino']
+};
+let _dorCtx = null;
+function openDor(di, key) {
+  let nome = '';
+  try {
+    const ei = parseInt(key, 10);
+    const ex = WORKOUT[di].exercises[ei];
+    if (ex && ex.biset) nome = (String(key).endsWith('b') ? ex.b : ex.a).name;
+    else nome = (typeof _exAtivo === 'function' ? _exAtivo(di, ei).name : ex.name);
+  } catch (_) {}
+  _dorCtx = { di: di, key: key, nome: nome, sel: {} };
+  document.getElementById('dorExLabel').textContent = nome ? nome + ' · Dia ' + (di + 1) : '';
+  document.querySelectorAll('#dorModal .dor-chips').forEach(box => {
+    const g = box.getAttribute('data-g');
+    box.innerHTML = _DOR_OPTS[g].map(o => `<button type="button" class="tlem-h" onclick="_dorPick('${g}', '${o}', this)">${o}</button>`).join('');
+  });
+  document.getElementById('dorObs').value = '';
+  document.getElementById('dorForm').style.display = '';
+  document.getElementById('dorOk').style.display = 'none';
+  const b = document.getElementById('dorEnviarBtn');
+  b.disabled = false; b.textContent = 'Enviar pra equipe';
+  teShow('dorModal');
+}
+function _dorPick(g, v, el) {
+  _dorCtx.sel[g] = v;
+  el.parentElement.querySelectorAll('.on').forEach(x => x.classList.remove('on'));
+  el.classList.add('on');
+}
+async function enviarDor() {
+  const s = _dorCtx ? _dorCtx.sel : {};
+  if (!s.onde) { alert('Marca ONDE dói.'); return; }
+  if (!s.intensidade) { alert('Marca a intensidade.'); return; }
+  const b = document.getElementById('dorEnviarBtn');
+  b.disabled = true; b.textContent = 'Enviando...';
+  const obs = (document.getElementById('dorObs').value || '').trim();
+  const pedido = 'DOR REPORTADA PELO APP\n' +
+    'Exercício: ' + (_dorCtx.nome || '(não identificado)') + ' (Dia ' + (_dorCtx.di + 1) + ')\n' +
+    'Onde: ' + s.onde + '\n' +
+    'Desde: ' + (s.desde || 'não informado') + '\n' +
+    'Intensidade: ' + s.intensidade + '\n' +
+    'Quando dói: ' + (s.quando || 'não informado') +
+    (obs ? '\nObs do aluno: ' + obs : '');
+  try {
+    const resp = await fetch(LOG_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        type: 'ajuste_request',
+        sheetId: SHEET_ID,
+        studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+        contexto: 'DOR · ' + (_dorCtx.nome || 'treino'),
+        pedido: pedido,
+        fotos: [],
+        reqId: ''
+      }),
+      redirect: 'follow'
+    });
+    const j = await resp.json().catch(() => ({}));
+    if (!j || !j.success) throw new Error((j && j.error) || 'erro');
+    document.getElementById('dorForm').style.display = 'none';
+    document.getElementById('dorOk').style.display = '';
+    setTimeout(() => teHide('dorModal'), 3500);
+  } catch (e) {
+    alert('Não consegui enviar agora. Confere a internet e tenta de novo.');
+    b.disabled = false; b.textContent = 'Enviar pra equipe';
+  }
+}
+
 // troca de aparelho: local vazio → busca a preferência salva no servidor
 async function _tlemHydrate() {
   try {
@@ -9203,6 +9308,7 @@ function _focusEsforcoBlock(di, key, compact) {
     <div class="esf-chips">${chips}</div>
     <button class="esf-aptoggle${apOpen ? ' open' : ''}" onclick="esfToggleAp(this)">⚠️ Problema no aparelho?</button>
     <div class="esf-apchips" style="display:${apOpen ? 'flex' : 'none'};">${apChips}</div>
+    <button class="esf-aptoggle dor-btn" onclick="event.stopPropagation();openDor(${di},'${key}')">🩹 Sentindo dor?</button>
     <button class="esf-nototoggle${curN ? ' has' : ''}" onclick="notaToggle(this)">📝 ${curN ? 'Ver a tua anotação' : 'Quer anotar como foi?'}</button>
     <div class="esf-notabox" style="display:${curN ? 'block' : 'none'};">
       <textarea class="esf-nota-in" id="nota-${di}-${key}" maxlength="500" rows="2"
@@ -17171,7 +17277,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v394';
+    var APP_SHELL_V = 'metodo-gh-v395';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
