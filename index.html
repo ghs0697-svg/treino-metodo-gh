@@ -1474,7 +1474,11 @@
   /* títulos de seção na serif da marca (elegância 14/08: mesma família do TREINO DE HOJE) */
   /* Metas da semana/mês */
   /* Dicionário do treino */
-  .gloss-it { padding: 9px 0; border-bottom: 1px solid #26262c; color: #c9c9cd; font-size: 12.5px; line-height: 1.55; }
+  .gloss-it { padding: 9px 0; border-bottom: 1px solid #26262c; color: #c9c9cd; font-size: 12.5px; line-height: 1.55; scroll-margin: 20px; }
+  /* termo técnico tocável na obs do exercício */
+  .gterm { border-bottom: 1px dashed rgba(212,175,55,.55); cursor: pointer; }
+  .gloss-it.gloss-hl { animation: glossFlash 1.8s ease; }
+  @keyframes glossFlash { 0% { background: rgba(212,175,55,.26); } 100% { background: transparent; } }
   .gloss-it:last-child { border-bottom: none; }
   .gloss-it b { display: block; color: var(--gold); font-size: 12.5px; margin-bottom: 2px; }
   .mt-nota { color: #8a8a90; font-size: 10.5px; margin: -2px 0 8px; }
@@ -4389,21 +4393,29 @@
     <h3 style="margin:0 0 4px;">📖 Dicionário do treino</h3>
     <p style="color:#aaa;font-size:11.5px;margin:0 0 12px;line-height:1.5;">Os termos que aparecem na tua ficha, explicados direto. Ficou dúvida em como aplicar no TEU exercício? Usa o "Dúvida ou ajuste".</p>
     <div class="gloss-list">
-      <div class="gloss-it"><b>Drop set</b>Terminou a série, tira parte do peso e segue sem descanso até não sair mais repetição boa.</div>
-      <div class="gloss-it"><b>Bi-set</b>Dois exercícios em sequência, sem descanso entre eles. Descansa depois do segundo.</div>
-      <div class="gloss-it"><b>Rest-pause</b>Chegou perto da falha, respira 10 a 15 segundos parado e completa mais repetições com o mesmo peso.</div>
-      <div class="gloss-it"><b>Cluster</b>Série quebrada em blocos pequenos com pausas curtíssimas dentro da própria série.</div>
-      <div class="gloss-it"><b>Pirâmide</b>O peso sobe a cada série e as repetições descem.</div>
-      <div class="gloss-it"><b>Cadência (Pos · Iso · Neg)</b>A velocidade de cada fase do movimento. Pos = subir. Iso = segurar parado. Neg = descer controlando. "Neg 3s" = descer em 3 segundos. O botão "ritmo" marca isso pra ti com som e bolinha.</div>
-      <div class="gloss-it"><b>Concêntrica (positiva)</b>A fase de vencer o peso, subindo.</div>
-      <div class="gloss-it"><b>Excêntrica (negativa)</b>A fase de descer segurando o peso. É onde mais se constrói músculo, por isso a ficha tanto pede controle aqui.</div>
-      <div class="gloss-it"><b>Isometria</b>Segurar parado, normalmente no ponto de máxima contração.</div>
-      <div class="gloss-it"><b>Sobrou (a caixinha do app)</b>Quantas repetições tu ainda aguentaria na última série. É como o Gabriel enxerga se a tua carga está certa.</div>
-      <div class="gloss-it"><b>Falha</b>O ponto em que não sai nem mais uma repetição com execução boa.</div>
-      <div class="gloss-it"><b>Unilateral</b>Um lado de cada vez: faz um lado, emenda o outro, e os dois juntos contam como UMA série. O descanso escrito na ficha vale DEPOIS de fazer os dois lados.</div>
-      <div class="gloss-it"><b>Amplitude máxima</b>Usar o percurso inteiro do movimento: alonga tudo, contrai tudo.</div>
-      <div class="gloss-it"><b>Retroversão pélvica</b>Encaixar o quadril, girando o bumbum pra baixo e pra frente, tirando o arco exagerado da lombar.</div>
-      <div class="gloss-it"><b>Intervalo (o I da etiqueta)</b>O descanso entre as séries. O botão "descanso" do exercício cronometra sozinho.</div>
+      <div class="gloss-it" data-g="prog"><b>Progressão de carga</b>A ordem mais importante da ficha: fechou todas as séries no topo das repetições com execução limpa, sobe o peso na próxima. A caixinha SOBROU te ajuda a saber a hora certa.</div>
+      <div class="gloss-it" data-g="aclimatizacao"><b>Aclimatização</b>Primeiras séries com peso mais leve, pro corpo pegar o jeito do movimento antes das séries pesadas valendo.</div>
+      <div class="gloss-it" data-g="drop"><b>Drop set</b>Terminou a série, tira parte do peso (a ficha diz quanto) e segue sem descanso até não sair mais repetição boa.</div>
+      <div class="gloss-it" data-g="biset"><b>Bi-set</b>Dois exercícios em sequência, sem descanso entre eles. Descansa depois do segundo.</div>
+      <div class="gloss-it" data-g="restpause"><b>Rest-pause</b>Chegou perto da falha, respira 10 a 15 segundos parado e completa mais repetições com o mesmo peso.</div>
+      <div class="gloss-it" data-g="cluster"><b>Cluster</b>Série quebrada em blocos pequenos com pausas curtíssimas dentro da própria série.</div>
+      <div class="gloss-it" data-g="piramide"><b>Pirâmide</b>O peso sobe a cada série e as repetições descem.</div>
+      <div class="gloss-it" data-g="cadencia"><b>Cadência (Pos · Iso · Neg)</b>A velocidade de cada fase do movimento. Pos = subir. Iso = segurar parado. Neg = descer controlando. "Neg 3s" = descer em 3 segundos. O botão "ritmo" marca isso pra ti com som e bolinha.</div>
+      <div class="gloss-it" data-g="concentrica"><b>Concêntrica (positiva)</b>A fase de vencer o peso, subindo.</div>
+      <div class="gloss-it" data-g="excentrica"><b>Excêntrica (negativa)</b>A fase de descer segurando o peso. É onde mais se constrói músculo, por isso a ficha tanto pede controle aqui.</div>
+      <div class="gloss-it" data-g="isometria"><b>Isometria</b>Segurar parado, normalmente no ponto de máxima contração.</div>
+      <div class="gloss-it" data-g="contracao"><b>Máxima contração</b>No ponto final do movimento, aperta o músculo com força total por um instante, como se estivesse posando pra foto. Não é só chegar lá: é contrair.</div>
+      <div class="gloss-it" data-g="amplitude"><b>Amplitude máxima</b>Usar o percurso inteiro do movimento: alonga tudo, contrai tudo.</div>
+      <div class="gloss-it" data-g="parciais"><b>Parciais</b>Repetições de propósito mais curtas, só no pedaço do movimento que ainda sai. Quando a ficha pede "parciais no final", é depois que as completas acabaram.</div>
+      <div class="gloss-it" data-g="sobrou"><b>Sobrou (a caixinha do app)</b>Quantas repetições tu ainda aguentaria na última série. É como o Gabriel enxerga se a tua carga está certa.</div>
+      <div class="gloss-it" data-g="falha"><b>Falha</b>O ponto em que não sai nem mais uma repetição com execução boa.</div>
+      <div class="gloss-it" data-g="roubadas"><b>Roubadas</b>Repetições depois da falha usando um impulso proposital pra completar o movimento. Só onde a ficha pede, e sempre freando a descida.</div>
+      <div class="gloss-it" data-g="unilateral"><b>Unilateral</b>Um lado de cada vez: faz um lado, emenda o outro, e os dois juntos contam como UMA série. O descanso escrito na ficha vale DEPOIS de fazer os dois lados.</div>
+      <div class="gloss-it" data-g="pendulo"><b>Pêndulo</b>Nas puxadas: o tronco inclina um pouco pra trás junto com a puxada e volta, num balanço curto e controlado. É técnica pra pegar mais costas, não pressa.</div>
+      <div class="gloss-it" data-g="retroversao"><b>Retroversão pélvica</b>Encaixar o quadril, girando o bumbum pra baixo e pra frente, tirando o arco exagerado da lombar.</div>
+      <div class="gloss-it" data-g="sumo"><b>Sumo</b>Pés bem afastados e pontas dos pés pra fora. Joga o foco pra parte interna da coxa e pro glúteo.</div>
+      <div class="gloss-it" data-g="pegneutra"><b>Pegada neutra</b>Palmas das mãos viradas uma pra outra.</div>
+      <div class="gloss-it" data-g="intervalo"><b>Intervalo (o I da etiqueta)</b>O descanso entre as séries. O botão "descanso" do exercício cronometra sozinho.</div>
     </div>
     <button type="button" class="te-btn" style="width:100%;margin-top:12px;" onclick="teHide('glossModal')">Fechar</button>
   </div>
@@ -9151,12 +9163,12 @@ function _focusRender() {
   if (ex.biset) {
     html += `<span class="focus-badge">BI-SET: sem descanso entre A e B</span>`;
     html += `<div class="focus-name">${ex.a.name}</div>${vidBtn(ex.a)}<div class="focus-tags">${tags(ex.a)}</div>`;
-    if (ex.a.obs) html += `<div class="focus-obs">${ex.a.obs}</div>`;
+    if (ex.a.obs) html += `<div class="focus-obs">${_glossWrap(ex.a.obs)}</div>`;
     html += `<button class="focus-sub-btn" onclick="openPacer(_focusDi, _focusIdx)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Treinar no ritmo</button>`;
     html += _focusCargaBlock(_focusDi, `${_focusIdx}a`, 'Carga A');
     html += `<div style="text-align:center;color:var(--gold);font-size:11px;font-weight:700;margin:10px 0;">↓ SEM DESCANSO ↓</div>`;
     html += `<div class="focus-name" style="font-size:20px;">${ex.b.name}</div>${vidBtn(ex.b)}`;
-    if (ex.b.obs) html += `<div class="focus-obs">${ex.b.obs}</div>`;
+    if (ex.b.obs) html += `<div class="focus-obs">${_glossWrap(ex.b.obs)}</div>`;
     html += _focusCargaBlock(_focusDi, `${_focusIdx}b`, 'Carga B');
     html += _focusEsforcoBlock(_focusDi, String(_focusIdx));
   } else {
@@ -9167,7 +9179,7 @@ function _focusRender() {
     html += `<div class="focus-name">${_fact.name}${_fact.sub ? ' <span class="ex-sub-badge">SUBST.</span>' : ''}</div>${vidBtn(_fact)}`;
     if (_falts) html += `<button class="focus-sub-btn" onclick="openSubPicker(${_focusDi}, ${_focusIdx})">🔄 Trocar exercício</button>`;
     html += `<div class="focus-tags">${tags(ex)}</div>`;
-    if (ex.obs) html += `<div class="focus-obs">${ex.obs}</div>`;
+    if (ex.obs) html += `<div class="focus-obs">${_glossWrap(ex.obs)}</div>`;
     html += `<button class="focus-sub-btn" onclick="openPacer(_focusDi, _focusIdx)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Treinar no ritmo</button>`;
     if (!ex.warmup) html += _focusCargaBlock(_focusDi, String(_focusIdx), 'Carga de hoje');
     if (!ex.warmup) html += _focusEsforcoBlock(_focusDi, String(_focusIdx));
@@ -9530,7 +9542,47 @@ function parseCadencia(obs) {
 function fmtSec(n) { return Number.isInteger(n) ? String(n) : n.toFixed(1).replace(/\.0$/, ''); }
 function cadenciaTag(obs) {
   const c = parseCadencia(obs);
-  return `<span class="exercise-tag${c.custom ? ' tag-custom' : ''}" title="Positiva (subida) · Isometria (pausa no topo) · Negativa (descida), em segundos">Pos ${fmtSec(c.conc)}s · Iso ${fmtSec(c.iso)}s · Neg ${fmtSec(c.exc)}s</span>`;
+  return `<span class="exercise-tag${c.custom ? ' tag-custom' : ''}" onclick="event.stopPropagation();openGlossario('cadencia')" title="Positiva (subida) · Isometria (pausa no topo) · Negativa (descida), em segundos">Pos ${fmtSec(c.conc)}s · Iso ${fmtSec(c.iso)}s · Neg ${fmtSec(c.exc)}s</span>`;
+}
+
+// ══ Glossário nas obs da ficha ══
+// Termo técnico que aparece na observação do exercício vira tocável e abre o
+// Dicionário do treino já focado nele. Ordem das regex: específico antes do
+// genérico (o combinado testa alternativas em ordem). \b não pega acento em JS,
+// por isso as variantes explícitas.
+const GLOSS_RX = [
+  [/progress[ãa]o de carga/i, 'prog'],
+  [/rest[\s-]?pause/i, 'restpause'],
+  [/drop[\s-]?sets?|\bdrops?\b/i, 'drop'],
+  [/bi[\s-]?sets?/i, 'biset'],
+  [/clusters?/i, 'cluster'],
+  [/pir[âa]mide/i, 'piramide'],
+  [/m[áa]xima contra[çc][ãa]o|contra[çc][ãa]o m[áa]xima/i, 'contracao'],
+  [/m[áa]xima amplitude|amplitude m[áa]xima|amplitude/i, 'amplitude'],
+  [/retrovers[ãa]o(?: p[ée]lvica)?/i, 'retroversao'],
+  [/aclimatiza[çc][ãa]o/i, 'aclimatizacao'],
+  [/p[êe]ndulo/i, 'pendulo'],
+  [/parcia(?:is|l)/i, 'parciais'],
+  [/roubadas?/i, 'roubadas'],
+  [/pegada neutra/i, 'pegneutra'],
+  [/conc[êe]ntrica/i, 'concentrica'],
+  [/exc[êe]ntrica|negativas?/i, 'excentrica'],
+  [/isometria/i, 'isometria'],
+  [/unilateral/i, 'unilateral'],
+  [/\bsumo\b/i, 'sumo'],
+  [/falha(?:r|ndo)?\b/i, 'falha'],
+];
+const _GLOSS_ALL = new RegExp(GLOSS_RX.map(p => '(?:' + p[0].source + ')').join('|'), 'gi');
+function _glossKeyDe(trecho) {
+  for (const [rx, key] of GLOSS_RX) if (rx.test(trecho)) return key;
+  return null;
+}
+function _glossWrap(txt) {
+  if (!txt) return txt;
+  return String(txt).replace(_GLOSS_ALL, m => {
+    const key = _glossKeyDe(m);
+    return key ? `<span class="gterm" onclick="event.stopPropagation();openGlossario('${key}')">${m}</span>` : m;
+  });
 }
 
 // ══ YouTube URL → embed URL ══
@@ -9946,14 +9998,14 @@ function renderExercises() {
         const tagsA = [];
         if (a.series) tagsA.push(`<span class="exercise-tag"><span class="tl">S</span>${a.series}</span>`);
         if (a.reps)   tagsA.push(`<span class="exercise-tag"><span class="tl">R</span>${a.reps}</span>`);
-        if (a.rest)   tagsA.push(`<span class="exercise-tag"><span class="tl">I</span>${a.rest}</span>`);
+        if (a.rest)   tagsA.push(`<span class="exercise-tag" onclick="event.stopPropagation();openGlossario('intervalo')"><span class="tl">I</span>${a.rest}</span>`);
         tagsA.push(cadenciaTag(a.obs));
         const sameParams = (a.series === b.series && a.reps === b.reps && a.rest === b.rest);
         const tagsB = [];
         if (!sameParams) {
           if (b.series) tagsB.push(`<span class="exercise-tag"><span class="tl">S</span>${b.series}</span>`);
           if (b.reps)   tagsB.push(`<span class="exercise-tag"><span class="tl">R</span>${b.reps}</span>`);
-          if (b.rest)   tagsB.push(`<span class="exercise-tag"><span class="tl">I</span>${b.rest}</span>`);
+          if (b.rest)   tagsB.push(`<span class="exercise-tag" onclick="event.stopPropagation();openGlossario('intervalo')"><span class="tl">I</span>${b.rest}</span>`);
         }
         // Cadência B: mostra sempre se for diferente da A (ex: A normal, B com excêntrica 5s)
         const cadA = parseCadencia(a.obs), cadB = parseCadencia(b.obs);
@@ -9972,7 +10024,7 @@ function renderExercises() {
               <div class="exercise-info">
                 <div class="exercise-name">${a.name}${hasA ? ' <span class="video-icon">&#9654;</span>' : ''}</div>
                 <div class="exercise-details">${tagsA.join('')}</div>
-                ${a.obs ? `<div class="exercise-obs">${a.obs}</div>` : ''}
+                ${a.obs ? `<div class="exercise-obs">${_glossWrap(a.obs)}</div>` : ''}
               </div>
             </div>
             <div class="biset-connector">&#8595; SEM DESCANSO &#8595;</div>
@@ -9980,7 +10032,7 @@ function renderExercises() {
               <div class="exercise-info">
                 <div class="exercise-name">${b.name}${hasB ? ' <span class="video-icon">&#9654;</span>' : ''}</div>
                 ${tagsB.length ? `<div class="exercise-details">${tagsB.join('')}</div>` : ''}
-                ${b.obs ? `<div class="exercise-obs">${b.obs}</div>` : ''}
+                ${b.obs ? `<div class="exercise-obs">${_glossWrap(b.obs)}</div>` : ''}
               </div>
             </div>
             <div class="carga-section" style="flex-direction:column;align-items:stretch;gap:10px;">
@@ -9999,7 +10051,7 @@ function renderExercises() {
       const tags = [];
       if (ex.series) tags.push(`<span class="exercise-tag"><span class="tl">S</span>${ex.series}</span>`);
       if (ex.reps) tags.push(`<span class="exercise-tag"><span class="tl">R</span>${ex.reps}</span>`);
-      if (ex.rest) tags.push(`<span class="exercise-tag"><span class="tl">I</span>${ex.rest}</span>`);
+      if (ex.rest) tags.push(`<span class="exercise-tag" onclick="event.stopPropagation();openGlossario('intervalo')"><span class="tl">I</span>${ex.rest}</span>`);
       if (!isWarmup) tags.push(cadenciaTag(ex.obs));
 
       // Escape single quotes — usa o exercício ATIVO (substituto ou original) pra vídeo+label.
@@ -10023,7 +10075,7 @@ function renderExercises() {
               </div>
               <div class="exercise-details">${tags.join("")}</div>
               ${!isWarmup ? _muscTag(act.name) : ''}
-              ${ex.obs ? `<div class="exercise-obs">${ex.obs}</div>` : ''}
+              ${ex.obs ? `<div class="exercise-obs">${_glossWrap(ex.obs)}</div>` : ''}
             </div>
           </div>
           ${!isWarmup ? `
@@ -15364,7 +15416,18 @@ var RENOV_WA = 'https://wa.me/555520131470?text=';
 // O clique é logado na CLICKS_AFILIADOS (type 'click' que já existe) com o sheetId,
 // pra CRM reconciliar caso o aluno pague com email/telefone diferente da mestre.
 var _renovOrigem = 'menu';
-function openGlossario() { teShow('glossModal'); }
+function openGlossario(key) {
+  teShow('glossModal');
+  // abriu de um termo da ficha: rola até a entrada e dá um flash pra situar
+  if (key) setTimeout(() => {
+    const it = document.querySelector(`#glossModal .gloss-it[data-g="${key}"]`);
+    if (!it) return;
+    document.querySelectorAll('#glossModal .gloss-hl').forEach(e => e.classList.remove('gloss-hl'));
+    it.scrollIntoView({ block: 'center' });
+    void it.offsetWidth;
+    it.classList.add('gloss-hl');
+  }, 80);
+}
 function openRenovModal(origem) {
   _renovOrigem = origem || 'menu';
   _renovLogOpen(_renovOrigem);
@@ -16773,7 +16836,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v390';
+    var APP_SHELL_V = 'metodo-gh-v391';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
