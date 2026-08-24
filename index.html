@@ -1479,6 +1479,18 @@
   .gterm { border-bottom: 1px dashed rgba(212,175,55,.55); cursor: pointer; }
   .gloss-it.gloss-hl { animation: glossFlash 1.8s ease; }
   @keyframes glossFlash { 0% { background: rgba(212,175,55,.26); } 100% { background: transparent; } }
+  /* lembrete "hoje tem treino" */
+  .tlem-chip { display: block; margin: 10px auto 0; background: none; border: 1px dashed #3a372f; color: #b6ae9e; font-size: 11.5px; font-weight: 700; padding: 7px 14px; border-radius: 999px; cursor: pointer; }
+  .tlem-sec { font-size: 10px; font-weight: 800; letter-spacing: 1px; color: #8d8579; margin: 12px 0 6px; }
+  .tlem-days { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tlem-day { flex: 1; min-width: 38px; padding: 9px 0; border-radius: 10px; border: 1px solid #33302a; background: #171613; color: #b6ae9e; font-weight: 800; font-size: 12px; cursor: pointer; }
+  .tlem-day.on { background: var(--gold); border-color: var(--gold); color: #141310; }
+  .tlem-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .tlem-min { grid-template-columns: repeat(6, 1fr); margin-top: 6px; }
+  .tlem-h { padding: 8px 0; border-radius: 8px; border: 1px solid #33302a; background: #171613; color: #b6ae9e; font-weight: 700; font-size: 11.5px; cursor: pointer; }
+  .tlem-h.on { background: var(--gold); border-color: var(--gold); color: #141310; }
+  .tlem-onoff { width: 100%; margin-top: 14px; padding: 10px; border-radius: 10px; border: 1px solid #2c4a33; background: #12211a; color: #7ec98f; font-weight: 800; font-size: 12px; cursor: pointer; }
+  .tlem-onoff.off { border-color: #4a2c2c; background: #211212; color: #c97e7e; }
   .gloss-it:last-child { border-bottom: none; }
   .gloss-it b { display: block; color: var(--gold); font-size: 12.5px; margin-bottom: 2px; }
   .mt-nota { color: #8a8a90; font-size: 10.5px; margin: -2px 0 8px; }
@@ -3164,6 +3176,7 @@
     <div class="pg-bar"><div class="pg-fill" id="pgFill" style="width:0%"></div></div>
   </div>
   <div class="const-dots" id="constDots" style="display:none;"></div>
+  <button type="button" class="tlem-chip" id="tlemChip" onclick="openTlem()" style="display:none;">🔔 Lembrete de treino</button>
   <div class="wt-card" id="wtCard">
     <div>
       <div class="wt-time" id="wtTime">00:00</div>
@@ -4418,6 +4431,21 @@
       <div class="gloss-it" data-g="intervalo"><b>Intervalo (o I da etiqueta)</b>O descanso entre as séries. O botão "descanso" do exercício cronometra sozinho.</div>
     </div>
     <button type="button" class="te-btn" style="width:100%;margin-top:12px;" onclick="teHide('glossModal')">Fechar</button>
+  </div>
+</div>
+
+<!-- ══ LEMBRETE "HOJE TEM TREINO" (o aluno escolhe os dias e o horário) ══ -->
+<div class="te-modal-overlay" id="tlemModal" onclick="if(event.target.id==='tlemModal')teHide('tlemModal')">
+  <div class="te-modal-box" style="max-width:420px;max-height:88vh;overflow-y:auto;">
+    <h3 style="margin:0 0 4px;">🔔 Lembrete de treino</h3>
+    <p style="color:#aaa;font-size:11.5px;margin:0 0 10px;line-height:1.5;">Escolhe teus dias e o horário. No dia certo, o app te avisa: "Hoje tem treino".</p>
+    <div class="tlem-sec">DIAS DA SEMANA</div>
+    <div class="tlem-days" id="tlemDays"></div>
+    <div class="tlem-sec">HORÁRIO DO LEMBRETE</div>
+    <div class="tlem-grid" id="tlemHoras"></div>
+    <div class="tlem-grid tlem-min" id="tlemMins"></div>
+    <button type="button" class="tlem-onoff" id="tlemOnoff" onclick="_tlemToggleOn()"></button>
+    <button type="button" class="te-btn" style="width:100%;margin-top:10px;" onclick="salvarTlem()">Salvar lembrete</button>
   </div>
 </div>
 
@@ -6420,7 +6448,7 @@ async function flushSyncQueues() {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
   _syncFlushRunning = true;
   try {
-    for (const kind of ['carga', 'done', 'esforco', 'nota_serie']) {
+    for (const kind of ['carga', 'done', 'esforco', 'nota_serie', 'treino_lembrete']) {
       const q = _syncQueueGet(kind);
       if (!q.length) continue;
       const remaining = [];
@@ -6546,6 +6574,102 @@ function syncNotaToServer_(di, ei, w, nota) {
       redirect: 'follow'
     }).then(resp => { if (!resp || !resp.ok) enfileira(); }).catch(enfileira);
   } catch (_) { enfileira(); }
+}
+
+// ══ Lembrete "hoje tem treino" (GH 23/08): dias da semana + horário escolhidos
+// pelo ALUNO. Preferência local + servidor (aba TREINO_LEMBRETE); o push sai do
+// relógio do .gs pelo canal de notify de sempre, com 1 aviso por dia no máximo.
+function _tlemKey() { return 'gh_treinolem_' + SHEET_ID; }
+function _tlemLoad() { try { return JSON.parse(localStorage.getItem(_tlemKey()) || 'null'); } catch (_) { return null; } }
+function _tlemStore(p) { try { localStorage.setItem(_tlemKey(), JSON.stringify(p)); } catch (_) {} }
+const TLEM_DIAS = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'];   // ISO: 1=seg ... 7=dom
+let _tlemSel = null;
+function _tlemChipRefresh() {
+  const chip = document.getElementById('tlemChip');
+  if (!chip || !SHEET_ID) return;
+  const p = _tlemLoad();
+  if (!p || !p.d || !p.d.length || !p.h) chip.textContent = '🔔 Lembrete de treino';
+  else if (!p.on) chip.textContent = '🔕 Lembrete de treino desligado';
+  else chip.textContent = '🔔 Lembrete: ' + p.d.map(n => TLEM_DIAS[n - 1]).join(' · ') + ' às ' + p.h;
+  chip.style.display = '';
+}
+function openTlem() {
+  const p = _tlemLoad() || {};
+  _tlemSel = {
+    d: (p.d || []).slice(),
+    hh: p.h ? parseInt(p.h.slice(0, 2), 10) : null,
+    mm: p.h ? p.h.slice(3) : '00',
+    on: p.on !== false
+  };
+  document.getElementById('tlemDays').innerHTML = TLEM_DIAS.map((n, i) =>
+    `<button type="button" class="tlem-day${_tlemSel.d.includes(i + 1) ? ' on' : ''}" onclick="_tlemDay(${i + 1}, this)">${n}</button>`).join('');
+  document.getElementById('tlemHoras').innerHTML = Array.from({ length: 19 }, (_, i) => i + 5).map(h =>
+    `<button type="button" class="tlem-h${h === _tlemSel.hh ? ' on' : ''}" onclick="_tlemHora(${h}, this)">${String(h).padStart(2, '0')}h</button>`).join('');
+  document.getElementById('tlemMins').innerHTML = ['00', '10', '20', '30', '40', '50'].map(m =>
+    `<button type="button" class="tlem-h${m === _tlemSel.mm ? ' on' : ''}" onclick="_tlemMin('${m}', this)">:${m}</button>`).join('');
+  _tlemOnoffRefresh();
+  teShow('tlemModal');
+}
+function _tlemDay(n, el) { const i = _tlemSel.d.indexOf(n); if (i >= 0) _tlemSel.d.splice(i, 1); else _tlemSel.d.push(n); el.classList.toggle('on'); }
+function _tlemHora(h, el) { _tlemSel.hh = h; document.querySelectorAll('#tlemHoras .on').forEach(b => b.classList.remove('on')); el.classList.add('on'); }
+function _tlemMin(m, el) { _tlemSel.mm = m; document.querySelectorAll('#tlemMins .on').forEach(b => b.classList.remove('on')); el.classList.add('on'); }
+function _tlemToggleOn() { _tlemSel.on = !_tlemSel.on; _tlemOnoffRefresh(); }
+function _tlemOnoffRefresh() {
+  const b = document.getElementById('tlemOnoff');
+  b.textContent = _tlemSel.on ? '🔔 Lembrete LIGADO · toca pra desligar' : '🔕 Lembrete DESLIGADO · toca pra ligar';
+  b.classList.toggle('off', !_tlemSel.on);
+}
+async function salvarTlem() {
+  if (!_tlemSel.d.length) { alert('Escolhe pelo menos um dia da semana.'); return; }
+  if (_tlemSel.hh == null) { alert('Escolhe o horário do lembrete.'); return; }
+  _tlemSel.d.sort((a, b) => a - b);
+  const pref = { d: _tlemSel.d, h: String(_tlemSel.hh).padStart(2, '0') + ':' + _tlemSel.mm, on: _tlemSel.on };
+  _tlemStore(pref);
+  if (pref.on) {
+    // mesmo caminho de permissão da água/refeições; registrar de novo é inofensivo
+    try {
+      if ('Notification' in window) {
+        let perm = Notification.permission;
+        if (perm === 'default') perm = await Notification.requestPermission();
+        if (perm === 'granted' && typeof registerPushSubscription === 'function') await registerPushSubscription();
+      }
+    } catch (_) {}
+  }
+  syncTreinoLembreteToServer_();
+  teHide('tlemModal');
+  _tlemChipRefresh();
+}
+function syncTreinoLembreteToServer_() {
+  if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
+  const p = _tlemLoad(); if (!p) return;
+  const payload = {
+    type: 'treino_lembrete', sheetId: SHEET_ID,
+    studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+    dias: (p.d || []).join(','), hora: p.h || '', ligado: !!p.on,
+    ts: new Date().toISOString()
+  };
+  const enfileira = () => _syncQueuePush('treino_lembrete', payload, () => 'pref');
+  try {
+    fetch(LOG_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+      keepalive: true,
+      redirect: 'follow'
+    }).then(resp => { if (!resp || !resp.ok) enfileira(); }).catch(enfileira);
+  } catch (_) { enfileira(); }
+}
+// troca de aparelho: local vazio → busca a preferência salva no servidor
+async function _tlemHydrate() {
+  try {
+    if (_tlemLoad() || !SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
+    const r = await fetch(LOG_ENDPOINT + '?action=treino_lembrete&id=' + encodeURIComponent(SHEET_ID), { redirect: 'follow' });
+    const j = await r.json();
+    if (j && j.pref && j.pref.hora) {
+      _tlemStore({ d: String(j.pref.dias || '').split(',').filter(Boolean).map(Number), h: j.pref.hora, on: !!j.pref.ligado });
+      _tlemChipRefresh();
+    }
+  } catch (_) {}
 }
 
 // On load: SEMPRE busca do servidor e faz merge — preenche local apenas
@@ -8041,6 +8165,8 @@ function updateDayProgress() {
     wEl.textContent = mw.alvo > 0 ? ((bateu ? '✓ ' : '') + mw.feitos + ' de ' + mw.alvo + ' na semana') : '';
   }
   _constDotsRender();
+  try { _tlemChipRefresh(); } catch (_) {}
+  if (!window._tlemHydratou) { window._tlemHydratou = true; try { _tlemHydrate(); } catch (_) {} }
   renderMuscleMap();
   // Botão "Recomeçar semana": só aparece quando há marca de feito na semana atual
   const wr = document.getElementById('weekResetBtn');
@@ -16836,7 +16962,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v391';
+    var APP_SHELL_V = 'metodo-gh-v392';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
