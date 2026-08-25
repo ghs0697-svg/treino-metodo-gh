@@ -1409,6 +1409,7 @@
   body.view-dieta #dayTabs,
   body.view-dieta #weekSelector,
   body.view-dieta #exerciseContainer,
+  body.view-dieta #cardioTreino,
   body.view-dieta #instrToggle,
   body.view-dieta #instructionsContent,
   body.view-dieta #hipoToggle,
@@ -1428,6 +1429,7 @@
   body.view-ghflix #dayTabs,
   body.view-ghflix #weekSelector,
   body.view-ghflix #exerciseContainer,
+  body.view-ghflix #cardioTreino,
   body.view-ghflix #instrToggle,
   body.view-ghflix #instructionsContent,
   body.view-ghflix #hipoToggle,
@@ -3233,6 +3235,10 @@
 </div>
 
 <div id="exerciseContainer"></div>
+<!-- Cardio prescrito (GH 26/08: cardio é treino, saiu da aba Dieta). O dado segue vindo
+     da linha cardio da planilha de DIETA; só o LUGAR de exibição mudou. Montado pelo
+     _cardioTreinoMount quando a dieta carrega. -->
+<div id="cardioTreino"></div>
 
 <!-- ══ ABERTURA CINEMATOGRÁFICA ══ -->
 <div class="intro-splash" id="introSplash" aria-hidden="true">
@@ -5669,6 +5675,7 @@ const I18N_EN = {
   'Conta sozinho pelo que tu marca no app. O cardio, tu define a tua meta.': 'Counts by itself from what you log in the app. Cardio goal is set by you.',
   'definir meta': 'set goal', 'MAIORES CARGAS': 'TOP LIFTS', '📈 Recordes pessoais': '📈 Personal records',
   'Registro pessoal do teu progresso de carga, calculado do que tu anota nos exercícios.': 'Your personal record of load progress, calculated from what you log on each exercise.',
+  'Cardio da semana': 'Weekly cardio', 'Fiz o cardio hoje': 'Did my cardio today', '✓ Cardio feito hoje': '✓ Cardio done today', 'Aeróbico': 'Cardio',
   '💬 Tirar dúvida': '💬 Ask a question', '🔧 Pedir ajuste': '🔧 Request a change', 'Enviar': 'Send',
   'Dúvida ou ajuste': 'Question or adjustment', 'Pergunta ou pede mudança no protocolo': 'Ask something or request a protocol change'
 };
@@ -10830,10 +10837,23 @@ function _buildTreinoPrintHTML() {
       </div>`;
   });
 
+  // Cardio no PDF do TREINO (GH 26/08: cardio é treino) — mesmo dado da dieta carregada
+  let cardioHtml = '';
+  try {
+    if (typeof DIET_DATA !== 'undefined' && DIET_DATA) {
+      const d2 = DIET_DATA;
+      const isCard = c => /a[eé]r[oó]bic|cardio/i.test(String(c || ''));
+      const doOrient = (d2.orientacoes || []).filter(o => isCard(o.categoria));
+      let rows2 = '';
+      (d2.aerobicos || []).forEach(a => { rows2 += `<tr><td class="pa-ex">Aeróbico</td><td>${esc(a.freq || '')} · ${esc(a.duracao || '')}${a.obs ? ' · ' + esc(a.obs) : ''}</td></tr>`; });
+      doOrient.forEach(o => { rows2 += `<tr><td class="pa-ex">${esc(o.categoria)}</td><td>${esc(o.texto)}</td></tr>`; });
+      if (rows2) cardioHtml = `<div class="pa-day"><h2 class="pa-day-title">Cardio</h2><table>${rows2}</table></div>`;
+    }
+  } catch (_) {}
   return _pdfHeader('PROTOCOLO DE TREINO').replace(
     '<div><strong>Emitido:</strong>',
     `<div><strong>Semana:</strong> ${currentWeek}</div><div><strong>Emitido:</strong>`
-  ) + daysHtml + `<div class="pa-foot">Gerado pelo app MÉTODO GH · app.metodogh.com.br</div>`;
+  ) + daysHtml + cardioHtml + `<div class="pa-foot">Gerado pelo app MÉTODO GH · app.metodogh.com.br</div>`;
 }
 
 function _buildDietaPrintHTML() {
@@ -10905,19 +10925,8 @@ function _buildDietaPrintHTML() {
     if (rows) html += `<div class="pa-day"><h2 class="pa-day-title">Suplementação</h2><table>${rows}</table></div>`;
   }
 
-  // Cardio
+  // Cardio saiu do PDF da DIETA (GH 26/08: cardio é treino) — agora vai no PDF do treino.
   const isCardioCat = c => /a[eé]r[oó]bic|cardio/i.test(String(c || ''));
-  const cardioFromOrient = (d.orientacoes || []).filter(o => isCardioCat(o.categoria));
-  if ((d.aerobicos && d.aerobicos.length) || cardioFromOrient.length) {
-    let rows = '';
-    (d.aerobicos || []).forEach(a => {
-      rows += `<tr><td class="pa-ex">Aeróbico</td><td>${esc(a.freq || '')} · ${esc(a.duracao || '')}${a.obs ? ' · ' + esc(a.obs) : ''}</td></tr>`;
-    });
-    cardioFromOrient.forEach(o => {
-      rows += `<tr><td class="pa-ex">${esc(o.categoria)}</td><td>${esc(o.texto)}</td></tr>`;
-    });
-    html += `<div class="pa-day"><h2 class="pa-day-title">Cardio</h2><table>${rows}</table></div>`;
-  }
 
   // Receitas (§8.B.6) — seção própria, espelha o app
   if (d.receitas && d.receitas.length) {
@@ -15116,6 +15125,27 @@ function cardioWeekCount() {
   }
   return c;
 }
+// Monta o bloco de cardio DENTRO da aba Treino (GH 26/08). Chamado pelo render da dieta
+// (que é quem tem o dado). Sem cardio prescrito, o contêiner fica vazio (treino-only).
+function _cardioTreinoMount(d, cardioFromOrient, temCardio) {
+  const box = document.getElementById('cardioTreino');
+  if (!box) return;
+  if (!temCardio) { box.innerHTML = ''; return; }
+  let html = `<div class="cardio-week" id="cardioWeekCard"><div class="cw-row"><span class="cw-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="5" r="1.6"/><path d="M5 21l3-5 3 1 2-3"/><path d="M13 14l4 1 2 4"/><path d="M9 9l3-2 3 2 2-1"/></svg> Cardio da semana</span><span class="cw-count" id="cwCount">0/${cardioTarget()}</span></div><div class="cw-bar"><div class="cw-fill" id="cwFill"></div></div><button type="button" class="cw-btn" id="cwBtn" onclick="onCardioDone()">Fiz o cardio hoje</button></div>`;
+  html += `<div class="diet-section-toggle" onclick="toggleDietSection('cardio')"><span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span><span class="tog-label">Cardio</span><span class="tog-chev" id="cardioArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></div>`;
+  html += `<div class="diet-section-content" id="cardioContent">`;
+  if (d.aerobicos && d.aerobicos.length > 0) {
+    d.aerobicos.forEach(function (a) {
+      html += `<div class="diet-orient"><span class="diet-orient-cat">Aeróbico</span><span class="diet-orient-text">${a.freq} · ${a.duracao}${a.obs ? ' · ' + a.obs : ''}</span></div>`;
+    });
+  }
+  (cardioFromOrient || []).forEach(o => {
+    html += `<div class="diet-orient"><span class="diet-orient-cat">${o.categoria}</span><span class="diet-orient-text">${o.texto}</span></div>`;
+  });
+  html += `</div>`;
+  box.innerHTML = html;
+  updateCardioProgress();
+}
 function updateCardioProgress() {
   const target = cardioTarget(), done = cardioWeekCount();
   const cnt = document.getElementById('cwCount'), fill = document.getElementById('cwFill'), btn = document.getElementById('cwBtn');
@@ -15923,23 +15953,12 @@ function renderDiet() {
   const orientacoesReais = (d.orientacoes || []).filter(o => !isCardioCat(o.categoria));
   const temCardio = (d.aerobicos && d.aerobicos.length > 0) || cardioFromOrient.length > 0;
 
-  // Cardio — seção própria (separada das Orientações). O card "Cardio da semana" + botão vão
-  // LOGO ACIMA da aba (GH 2026-06-23): meta = cardio prescrito (cardioTarget lê a DIETA), marca
-  // 1x/dia, reseta toda semana, conta no ranking. Só aparece quando há prescrição de cardio.
-  if (temCardio) {
-    html += `<div class="cardio-week" id="cardioWeekCard"><div class="cw-row"><span class="cw-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="5" r="1.6"/><path d="M5 21l3-5 3 1 2-3"/><path d="M13 14l4 1 2 4"/><path d="M9 9l3-2 3 2 2-1"/></svg> Cardio da semana</span><span class="cw-count" id="cwCount">0/${cardioTarget()}</span></div><div class="cw-bar"><div class="cw-fill" id="cwFill"></div></div><button type="button" class="cw-btn" id="cwBtn" onclick="onCardioDone()">Fiz o cardio hoje</button></div>`;
-    html += `<div class="diet-section-toggle" onclick="toggleDietSection('cardio')"><span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span><span class="tog-label">Cardio</span><span class="tog-chev" id="cardioArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></div>`;
-    html += `<div class="diet-section-content" id="cardioContent">`;
-    if (d.aerobicos && d.aerobicos.length > 0) {
-      d.aerobicos.forEach(function(a) {
-        html += `<div class="diet-orient"><span class="diet-orient-cat">Aeróbico</span><span class="diet-orient-text">${a.freq} · ${a.duracao}${a.obs ? ' · ' + a.obs : ''}</span></div>`;
-      });
-    }
-    cardioFromOrient.forEach(o => {
-      html += `<div class="diet-orient"><span class="diet-orient-cat">${o.categoria}</span><span class="diet-orient-text">${o.texto}</span></div>`;
-    });
-    html += `</div>`;
-  }
+  // Cardio (GH 26/08: "cardio é treino, não faz sentido na dieta") — o card "Cardio da
+  // semana" + a seção de prescrição agora MONTAM NA ABA TREINO (#cardioTreino), no fim da
+  // lista de exercícios. O dado continua vindo desta carga da DIETA; só o lugar mudou.
+  // Mesmos ids (cwCount/cwFill/cwBtn/cardioContent), então marcar, ranking e backup
+  // (updateCardioProgress/onCardioDone) seguem intactos.
+  _cardioTreinoMount(d, cardioFromOrient, temCardio);
 
   // Receitas (§8.B.6) — seção própria com destaque (GH 2026-07-05): antes viviam
   // dentro de Orientações e o GH não as achava revisando. Toggle dourado + contador.
@@ -17596,7 +17615,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v401';
+    var APP_SHELL_V = 'metodo-gh-v402';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
