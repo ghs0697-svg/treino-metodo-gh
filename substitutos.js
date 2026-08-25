@@ -133,12 +133,10 @@ PEITO
   Crossover
   Crossover Polia Média
   Crucifixo Declinado
-  Crucifixo Declinado com Halteres
   Crucifixo Inclinado
   Crucifixo Inclinado no Cross
-  Crucifixo Reto com Halteres
+  Crucifixo Reto
   Supino Declinado
-  Supino Declinado com Barra
   Supino Declinado com Halteres
   Supino Declinado na Máquina
   Supino Inclinado com Halteres
