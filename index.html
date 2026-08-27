@@ -7089,6 +7089,9 @@ async function enviarDor() {
   const s = _dorCtx ? _dorCtx.sel : {};
   if (!s.onde) { alert('Marca ONDE dói.'); return; }
   if (!s.intensidade) { alert('Marca a intensidade.'); return; }
+  // "Quando dói" é o divisor da triagem da equipe (só no exercício = troca na hora;
+  // fora do treino = sobe pro GH). Obrigatório desde v403 (pedido da equipe, Sala #1489).
+  if (!s.quando) { alert('Marca QUANDO dói: só neste exercício, em vários, ou também fora do treino.'); return; }
   const b = document.getElementById('dorEnviarBtn');
   b.disabled = true; b.textContent = 'Enviando...';
   const obs = (document.getElementById('dorObs').value || '').trim();
@@ -17615,7 +17618,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v402';
+    var APP_SHELL_V = 'metodo-gh-v403';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
