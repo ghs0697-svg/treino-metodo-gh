@@ -4706,6 +4706,9 @@
     <button type="button" class="mais-opt" onclick="toggleLang()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span><span id="langToggleLabel">🌐 Language: English</span>
     </button>
+    <button type="button" class="mais-opt" onclick="toggleCeleb()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg></span><span id="celebToggleLabel">🎉 Comemorações: ligadas (desligar)</span>
+    </button>
     <button type="button" class="mais-opt" onclick="closeMaisSheet(); reverTutorial()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><span>Rever o tour do app</span>
     </button>
@@ -5777,6 +5780,23 @@ function toggleLang() {
 function _langBtnRefresh() {
   const el = document.getElementById('langToggleLabel');
   if (el) el.textContent = _lang() === 'en' ? '🌐 Idioma: Português' : '🌐 Language: English';
+}
+// ══ Comemorações (recorde + treino concluído) — desligável (pedido de aluno, 28/08:
+// "tem alguma opção pra desativar isso?"). Desliga SÓ os cards de celebração; pontos,
+// streak, ranking e contagem de recordes do fechamento semanal seguem intactos, porque
+// disparam ANTES do card. Preferência por aparelho (localStorage).
+function _celebOff() { try { return localStorage.getItem('gh_celeb_off') === '1'; } catch (_) { return false; } }
+function toggleCeleb() {
+  try { localStorage.setItem('gh_celeb_off', _celebOff() ? '0' : '1'); } catch (_) {}
+  _celebBtnRefresh();
+}
+function _celebBtnRefresh() {
+  const el = document.getElementById('celebToggleLabel');
+  if (!el) return;
+  const en = _lang() === 'en';
+  el.textContent = _celebOff()
+    ? (en ? '🎉 Celebrations: off (turn on)' : '🎉 Comemorações: desligadas (religar)')
+    : (en ? '🎉 Celebrations: on (turn off)' : '🎉 Comemorações: ligadas (desligar)');
 }
 // Chave própria do banco (não usa o _normEx global: se alguém redeclarar aquela função
 // noutro ponto do arquivo, o banco continua funcionando). Índice montado em runtime, com a
@@ -7450,8 +7470,8 @@ function onCheckExercise(di, ei) {
     // gera outro log que vale 10. Assim quem treina pontua mesmo
     // sem compartilhar — e quem compartilha ganha o dobro.
     notifyDayCompletion(di, false);
-    // ✨ Card shareable
-    setTimeout(() => showCompletionCard(di), 250);
+    // ✨ Card shareable (pontos/streak já contaram acima; card desligável pelo aluno)
+    if (!_celebOff()) setTimeout(() => showCompletionCard(di), 250);
   }
   // Re-render só esse card e a barra
   renderExercises();
@@ -8174,14 +8194,14 @@ function checkPR(di, ei, newKg) {
       // Real PR (já tinha registro anterior)
       const ex = WORKOUT[di] && WORKOUT[di].exercises[ei];
       if (ex && !ex.warmup) {
-        showAchievementCard('pr', {
+        if (!_celebOff()) showAchievementCard('pr', {
           exerciseName: ex.name,
           oldKg: stored,
           newKg: newKg,
           prDi: di,   // pro "Digitei errado, desfazer" saber qual chave restaurar
           prEi: ei
         });
-        _prLogAdd(di, ei, newKg);   // fechamento da semana conta os recordes daqui
+        _prLogAdd(di, ei, newKg);   // fechamento da semana conta os recordes daqui (mesmo com card desligado)
       }
     }
     localStorage.setItem(k, String(newKg));
@@ -8641,6 +8661,7 @@ function updateDayProgress() {
   try { _semCardRender(); } catch (_) {}
   try { _viagemBtnRefresh(); } catch (_) {}
   try { _langBtnRefresh(); } catch (_) {}
+  try { _celebBtnRefresh(); } catch (_) {}
   renderMuscleMap();
   // Botão "Recomeçar semana": só aparece quando há marca de feito na semana atual
   const wr = document.getElementById('weekResetBtn');
@@ -17618,7 +17639,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v403';
+    var APP_SHELL_V = 'metodo-gh-v404';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
