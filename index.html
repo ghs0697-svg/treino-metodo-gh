@@ -7191,6 +7191,29 @@ async function _tlemHydrate() {
 // ganhar do velho: processa primeiro as entradas que JÁ estão na posição certa (original == realinhada =
 // a verdade daquela posição); as MOVIDAS (peso de posição velha migrando) só preenchem posição ainda não
 // reivindicada nesta passada (set `seen`). ifEmpty=true respeita peso local existente (não sobrescreve).
+// Carga que voltou do servidor CORROMPIDA em data (Site 29/08/2026): "9.07" numa planilha
+// pt-BR vira 9 de julho, e a col G da aba CARGAS guardou "Thu Jul 09 2026...". Sem esta
+// defesa o app escrevia esse lixo no campo de peso do aluno. Ordem de recuperação:
+// 1) a própria carga, se for número; 2) o 1º kg/placa do JSON de séries (que veio íntegro);
+// 3) desiste e NÃO escreve nada — melhor campo vazio que peso mentiroso.
+function _cargaSegura(carga, setsJson) {
+  const num = v => {
+    const t = String(v == null ? '' : v).trim().replace(',', '.');
+    if (!t || !/^\d+(\.\d+)?$/.test(t)) return null;
+    const f = parseFloat(t);
+    return (isFinite(f) && f > 0 && f < 2000) ? t : null;
+  };
+  const direto = num(carga);
+  if (direto) return direto;
+  try {
+    const arr = JSON.parse(setsJson || '[]');
+    for (const s of (Array.isArray(arr) ? arr : [])) {
+      const v = num(s && (s.kg || s.pl));
+      if (v) return v;
+    }
+  } catch (_) {}
+  return null;
+}
 function _restoreCargasRealign(cargas, ifEmpty) {
   let n = 0;
   const _isSub = v => v === true || v === 1 || v === 'TRUE' || v === 'true' || v === 'sim';
@@ -7223,8 +7246,9 @@ function _restoreCargasRealign(cargas, ifEmpty) {
       if (!sub && c.exercicio) localStorage.setItem(exnKey(di, ei, c.w), String(c.exercicio));
       seen.add(kS); wrote = true;
     }
-    if (c.carga != null && c.carga !== '' && !seen.has(kC) && (!ifEmpty || !localStorage.getItem(kC))) {
-      localStorage.setItem(kC, String(c.carga));
+    const cargaOk = _cargaSegura(c.carga, c.sets);
+    if (cargaOk != null && !seen.has(kC) && (!ifEmpty || !localStorage.getItem(kC))) {
+      localStorage.setItem(kC, cargaOk);
       if (!sub && c.exercicio) localStorage.setItem(exnKey(di, ei, c.w), String(c.exercicio));   // exn so pro slot original
       seen.add(kC); n++; wrote = true;
     }
@@ -17658,7 +17682,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v405';
+    var APP_SHELL_V = 'metodo-gh-v406';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
