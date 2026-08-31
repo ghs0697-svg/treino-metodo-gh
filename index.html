@@ -5803,6 +5803,24 @@ function _celebBtnRefresh() {
 // MESMA função dos dois lados, então caixa/acento do nome buscado ou da chave não importam.
 function _bankKey(s){return String(s||'').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/°/g,'º').replace(/[^A-Z0-9º]+/g,' ').trim();}
 const _BANK_IDX = (function(){var m={};for(var k in EX_VIDEO_BANK)m[_bankKey(k)]=EX_VIDEO_BANK[k];return m;})();
+// ══ Guard do flag AQUECIMENTO (col H) — Bianca Fernandes, 29/08/2026 ══
+// A col H='sim' ESCONDE a grade de carga. Só pode valer pra linha que realmente não tem
+// peso a registrar (alongamento, mobilidade, prancha, isometria, trabalho por tempo).
+// Por que o guard existe: a skill de montagem manda marcar 'sim' em exercícios que
+// "abrem o dia aquecendo a articulação" (panturrilha sentada, adutora, elevação pélvica).
+// Esses TÊM carga, e o 'sim' cegava o aluno: sem grade, sem registrar peso, sem recorde
+// e sem contar na progressão. A Bianca ficou com 9 exercícios assim e não conseguia
+// marcar nada. Corrigi a planilha dela, mas artefato corrigido volta atrás no próximo
+// rebuild, então o app passa a se defender sozinho: 'sim' em linha com série de trabalho
+// é ignorado. O caminho de carga é sagrado — na dúvida, MOSTRA a grade.
+function _ehAquecReal(flag, nome, reps, series) {
+  if (String(flag || '').trim().toLowerCase() !== 'sim') return false;
+  const n = String(nome || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (/alongamento|mobilidade|prancha|isometri|aquecimento|respiracao|hipopressiv|liberacao|foam|rolo/.test(n)) return true;
+  // trabalho por TEMPO (15 seg, 10 min) não tem grade de carga mesmo
+  if (/\b(seg|segundo|min|minuto)/i.test(String(reps || '') + ' ' + String(series || ''))) return true;
+  return false;   // 'sim' num exercício com carga: ignora o flag e mostra a grade
+}
 function _bankVideo(name){
   let k=_bankKey(name);
   // frente EN: nome em ingles resolve pro canonico PT antes de buscar no banco
@@ -10403,6 +10421,7 @@ async function loadFromSheets(injectedText) {
         continue;
       }
 
+      // (guard de aquecimento definido fora, ver _ehAquecReal)
       // Hipopressivo row: col A is "hipo"
       if (r[0].toLowerCase() === 'hipo') {
         hipoData = { nivel: r[1] || '', series: r[2] || '', tempo: r[3] || '', freq: r[4] || '', obs: r[5] || '' };
@@ -10418,7 +10437,7 @@ async function loadFromSheets(injectedText) {
       if (currentBloco === null) currentBloco = '';
       const bloco = _ensureBloco(currentBloco);
       if (!bloco.days[dayNum]) bloco.days[dayNum] = [];
-      const isWarmup = (r[7] || '').toLowerCase() === 'sim';
+      const isWarmup = _ehAquecReal(r[7], r[1], r[3], r[2]);
       bloco.days[dayNum].push({
         name: r[1] || '',
         series: r[2] || '',
@@ -17639,7 +17658,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v404';
+    var APP_SHELL_V = 'metodo-gh-v405';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
