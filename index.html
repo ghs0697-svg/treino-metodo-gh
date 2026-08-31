@@ -6901,7 +6901,7 @@ async function flushSyncQueues() {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
   _syncFlushRunning = true;
   try {
-    for (const kind of ['carga', 'done', 'esforco', 'nota_serie', 'nota_aluno', 'treino_lembrete']) {
+    for (const kind of ['carga', 'done', 'esforco', 'nota_serie', 'nota_aluno', 'nota_aluno_del', 'treino_lembrete']) {
       const q = _syncQueueGet(kind);
       if (!q.length) continue;
       const remaining = [];
@@ -7131,22 +7131,63 @@ function openCaderno() {
 function _cadernoKey() { return `gh_caderno_${STUDENT_ID}`; }
 function _cadernoLocal() { try { return JSON.parse(localStorage.getItem(_cadernoKey()) || '[]'); } catch (_) { return []; } }
 function _cadernoSalvaLocal(arr) { try { localStorage.setItem(_cadernoKey(), JSON.stringify(arr.slice(0, 60))); } catch (_) {} }
+function _cadernoGrupo(ts) {
+  if (!ts) return 'Antigas';
+  const dias = (Date.now() - ts) / 86400000;
+  if (dias <= 7) return 'Últimos 7 dias';
+  if (dias <= 30) return 'Últimos 30 dias';
+  const d = new Date(ts);
+  const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const mes = meses[d.getMonth()];
+  return d.getFullYear() === new Date().getFullYear() ? mes : mes + ' de ' + d.getFullYear();
+}
+// Lista no formato do app de Notas (pedido do GH 31/08, com print do iOS): cada anotação é um
+// CARTÃO separado, agrupado por período, com título (1ª linha) e prévia. Toca pra abrir inteira,
+// e só aberta aparece o botão de apagar, pra ninguém apagar sem querer no meio da lista.
+let _cadernoAberta = null;
 function _cadernoRender(notas) {
   const alvo = document.getElementById('cadernoLista');
   if (!alvo) return;
   if (!notas || !notas.length) {
-    alvo.innerHTML = '<p style="color:#777;font-size:11.5px;text-align:center;padding:10px 0;">Nada anotado ainda.</p>';
+    alvo.innerHTML = '<p style="color:#777;font-size:11.5px;text-align:center;padding:14px 0;">Nenhuma anotação ainda.</p>';
     return;
   }
-  alvo.innerHTML = '<div class="tlem-sec">JÁ ANOTADO</div>' + notas.map(n => {
+  const souEquipe = !!(localStorage.getItem('gh_trainer_token') || '');
+  const esc = t => String(t || '').replace(/[<>]/g, c => c === '<' ? '&lt;' : '&gt;');
+  let html = '', grupoAtual = null;
+  notas.forEach(n => {
+    const g = _cadernoGrupo(n.ts);
+    if (g !== grupoAtual) { grupoAtual = g; html += `<div class="tlem-sec" style="margin-top:14px;">${g}</div>`; }
     const eq = String(n.autor || '') === 'equipe';
     const quem = eq ? 'GH' : 'Você';
     const cor = eq ? 'var(--gold)' : '#8ab4f8';
-    const txt = String(n.texto || '').replace(/[<>]/g, c => c === '<' ? '&lt;' : '&gt;');
-    return `<div style="border-left:2px solid ${cor};padding:6px 0 6px 10px;margin-bottom:10px;">
-      <div style="font-size:10.5px;font-weight:800;letter-spacing:.4px;color:${cor};margin-bottom:3px;">${quem} · ${n.data || ''}</div>
-      <div style="font-size:12.5px;color:#ddd;line-height:1.5;white-space:pre-wrap;">${txt}</div></div>`;
-  }).join('');
+    const linhas = String(n.texto || '').split('\n');
+    const titulo = esc(linhas[0].slice(0, 42) + (linhas[0].length > 42 ? '...' : ''));
+    const resto = esc(linhas.slice(1).join(' ').trim() || linhas[0].slice(42).trim());
+    const aberta = _cadernoAberta === n.ts;
+    const podeApagar = n.ts && (souEquipe || !eq);
+    html += `<div onclick="_cadernoToggle(${n.ts || 0})" style="background:#1a1a1a;border:1px solid #262626;border-radius:12px;padding:11px 13px;margin-bottom:8px;cursor:pointer;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <span style="font-size:13.5px;font-weight:700;color:#eee;">${titulo}</span>
+        <span style="font-size:10px;font-weight:800;letter-spacing:.4px;color:${cor};white-space:nowrap;">${quem}</span>
+      </div>
+      ${aberta
+        ? `<div style="font-size:12.5px;color:#ccc;line-height:1.55;white-space:pre-wrap;margin-top:7px;">${esc(n.texto)}</div>
+           <div style="display:flex;align-items:center;justify-content:space-between;margin-top:9px;">
+             <span style="font-size:11px;color:#777;">${n.data || ''}</span>
+             ${podeApagar ? `<button type="button" onclick="event.stopPropagation();apagarNotaCaderno(${n.ts})" style="background:none;border:1px solid #444;border-radius:7px;color:#c96;font-size:11px;font-weight:700;padding:4px 10px;cursor:pointer;">Apagar</button>` : ''}
+           </div>`
+        : `<div style="display:flex;gap:7px;margin-top:3px;">
+             <span style="font-size:11px;color:#777;white-space:nowrap;">${n.data || ''}</span>
+             <span style="font-size:11px;color:#8a8a8a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${resto}</span>
+           </div>`}
+    </div>`;
+  });
+  alvo.innerHTML = html;
+}
+function _cadernoToggle(ts) {
+  _cadernoAberta = (_cadernoAberta === ts) ? null : ts;
+  _cadernoRender(_cadernoLocal());
 }
 async function _cadernoFetch() {
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
@@ -7155,6 +7196,27 @@ async function _cadernoFetch() {
     const j = await r.json();
     if (j && j.ok && Array.isArray(j.notas)) { _cadernoSalvaLocal(j.notas); _cadernoRender(j.notas); _cadernoCarregado = true; }
   } catch (_) { /* offline: fica o que já está no aparelho */ }
+}
+async function apagarNotaCaderno(ts) {
+  if (!confirm('Apagar esta anotação?')) return;
+  const tok = localStorage.getItem('gh_trainer_token') || '';
+  // tira da tela na hora; se o servidor recusar, o _cadernoFetch devolve ela
+  const restante = _cadernoLocal().filter(n => String(n.ts) !== String(ts));
+  _cadernoSalvaLocal(restante); _cadernoRender(restante);
+  const payload = { type: 'nota_aluno_del', sheetId: SHEET_ID, ts: ts, token: tok };
+  try {
+    const r = await fetch(LOG_ENDPOINT, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload), redirect: 'follow'
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!j || !j.success) {
+      alert((j && j.error) || 'Não consegui apagar agora. Tenta de novo.');
+    }
+  } catch (_) {
+    _syncQueuePush('nota_aluno_del', payload, p => 'del' + p.ts);   // offline: apaga quando voltar
+  }
+  _cadernoFetch();
 }
 async function salvarCaderno() {
   const el = document.getElementById('cadernoTexto');
@@ -17782,7 +17844,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v408';
+    var APP_SHELL_V = 'metodo-gh-v409';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
