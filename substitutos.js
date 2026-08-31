@@ -48,7 +48,7 @@ Rosca Direta Alternada / Rosca Direta com Halteres / Rosca Scott Fechada
 Rosca Direta com Barra W / Rosca Direta no Cross
 Tríceps Pulley com Barra / Tríceps Pulley com Corda / Tríceps Pulley na Máquina / Tríceps Pulley Unilateral
 Tríceps Testa em Pé / Tríceps Testa no Banco Inclinado
-Abdominal Elevação de Pernas com Halter ou Caneleira / Abdominal Elevação de Pernas na Paralela / Abdominal na Barra Fixa / Abdominal Elevação de Pernas com Halter/Caneleira / Abdominal Elevação de Pernas com Halter
+Abdominal Elevação de Pernas com Halter ou Caneleira / Abdominal Elevação de Pernas na Paralela / Abdominal na Barra Fixa
 Abdominal na Máquina / Abdominal na Remada Baixa ou Cross / Abdominal no Banco Declinado
 # Curadoria GH 30/07/2026 (checklist das trocas — uso real dos alunos)
 Cadeira Flexora / Flexor Nórdico na Máquina
@@ -63,15 +63,15 @@ Tríceps Supinado / Tríceps na Paralela
 # ("se serve pra um serve pros outros"). Os grupos antigos que tinham exercício em comum
 # foram ABSORVIDOS aqui em vez de duplicados: crucifixo inverso, face pull, pulldown,
 # búlgaro/coice, supino inclinado e supino reto.
-Tríceps Francês com Halter / Tríceps Francês na Máquina / Tríceps Francês no Cross
+Tríceps Francês com Halter / Tríceps Francês no Cross
 Puxada Alta Supinada na Máquina / Puxada Alta Supinada
 Remada Cavalinho Aberta / Crucifixo Inverso com Halteres / Crucifixo Inverso no Cross / Crucifixo Inverso no Voador / Face Pull / Facepull com Corda no Cross / Remada Alta na Polia
 Pullover na Máquina / Pullover com Halter / Pulldown / Pulldown na Máquina
 Rosca Spider / Rosca Direta na Puxada Alta
-Step Up / Step Up no Cross / Búlgaro / Búlgaro na Máquina / Coice no Cross com Polia Alta / Coice na Máquina
-Rosca Bayesian / Rosca Direta com Halteres no Banco Inclinado
+Step Up / Step Up no Cross / Búlgaro / Búlgaro na Máquina / Coice na Máquina / Coice com Caneleira / Coice no Cross com Polia Alta
+Rosca Bayesian / Rosca Direta com Halter no Banco Inclinado
 Supino Inclinado / Supino Inclinado na Máquina / Supino Inclinado com Halteres
-Supino Reto / Supino Reto na Máquina / Supino Reto na Máquina Sentado / Supino Reto com Halteres
+Supino Reto / Supino Reto na Máquina / Supino Reto na Máquina Sentado
 `;
 
 // ════════════════════════════════════════════════════════════════════════
