@@ -5816,8 +5816,11 @@ const _BANK_IDX = (function(){var m={};for(var k in EX_VIDEO_BANK)m[_bankKey(k)]
 function _ehAquecReal(flag, nome, reps, series) {
   if (String(flag || '').trim().toLowerCase() !== 'sim') return false;
   const n = String(nome || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  if (/alongamento|mobilidade|prancha|isometri|aquecimento|respiracao|hipopressiv|liberacao|foam|rolo/.test(n)) return true;
-  // trabalho por TEMPO (15 seg, 10 min) não tem grade de carga mesmo
+  // GH 29/08: "colocar TODOS exercicios pra marcar carga e repeticoes; se nao marcar e pq e
+  // alongamento". Então a lista do que NÃO tem grade é curta e literal: família alongamento.
+  if (/alongamento|mobilidade|descompressao|liberacao|respiracao|hipopressiv|foam|rolo/.test(n)) return true;
+  // isometria pura por TEMPO (prancha 30 seg, esteira 10 min): não há peso a digitar.
+  // "Aquecimento Manguito 2X 15" tem REPETIÇÃO, então ganha grade (costuma ter halter leve).
   if (/\b(seg|segundo|min|minuto)/i.test(String(reps || '') + ' ' + String(series || ''))) return true;
   return false;   // 'sim' num exercício com carga: ignora o flag e mostra a grade
 }
@@ -17682,7 +17685,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v406';
+    var APP_SHELL_V = 'metodo-gh-v407';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
