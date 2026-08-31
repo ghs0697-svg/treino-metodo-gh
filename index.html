@@ -5559,7 +5559,7 @@ const EX_VIDEO_BANK = {
 // EX_EN_ALIAS (chaves e valores JA normalizados) -> video, substitutos e mapa de musculos
 // funcionam igual em protocolo montado em ingles. Alias nao muda nada pra protocolo PT.
 function _normEx(s){
-  const n = String(s||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\u00b0/g,'\u00ba').replace(/\s+/g,' ').trim();   // \u00b0 (grau) vira \u00ba (ordinal)
+  const n = String(s||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\u00b0/g,'\u00ba').replace(/[-\u2013\u2014]/g,' ').replace(/\s+/g,' ').trim();   // \u00b0 (grau) vira \u00ba (ordinal); hifen vira espaco ("Step-up" = "Step Up")
   return (typeof EX_EN_ALIAS !== 'undefined' && EX_EN_ALIAS[n]) ? EX_EN_ALIAS[n] : n;
 }
 const EX_EN_ALIAS = {
@@ -6061,12 +6061,19 @@ function _grupoDe(name) { return _SUB_GRUPO_BY_NORM[_normEx(name)] || null; }
 // A6 (GH 2026-06-24): chave por DIA+POSIÇÃO+NOME → desambigua o MESMO exercício 2x no mesmo dia
 // (antes era só dia+nome → trocar um pulava pra ocorrência errada).
 function _subKey(di, ei, name) { return `gh_sub_${STUDENT_ID}_d${di}_e${ei}_${_normEx(name)}`; }
+// chave de troca de ANTES da normalização de hífen (só leitura, pra ninguém perder a escolha)
+function _subKeyHifenLegado(di, ei, name) {
+  const n = String(name||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\u00b0/g,'\u00ba').replace(/\s+/g,' ').trim();
+  return `gh_sub_${STUDENT_ID}_d${di}_e${ei}_${n}`;
+}
 function _subKeyLegacy(di, name) { return `gh_sub_${STUDENT_ID}_d${di}_${_normEx(name)}`; }   // chave antiga (dia+nome): só leitura, p/ não quebrar swaps já feitos
 // {name, video} do substituto ESCOLHIDO e válido (no grupo do exercício + com vídeo no banco +
 // diferente do original); senão null (mostra o original). NÃO checa colisão de dia (isso é no resolve).
 function _subEscolhidoValido(ex, di, ei) {
   if (!ex || ex.biset || ex.warmup) return null;
-  const chosen = localStorage.getItem(_subKey(di, ei, ex.name)) || localStorage.getItem(_subKeyLegacy(di, ex.name));
+  const chosen = localStorage.getItem(_subKey(di, ei, ex.name))
+    || localStorage.getItem(_subKeyHifenLegado(di, ei, ex.name))   // escolha salva antes do hífen virar espaço
+    || localStorage.getItem(_subKeyLegacy(di, ex.name));
   if (!chosen) return null;
   const grp = _grupoDe(ex.name);
   if (!grp) return null;
@@ -17855,7 +17862,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v412';
+    var APP_SHELL_V = 'metodo-gh-v413';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
