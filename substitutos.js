@@ -28,26 +28,20 @@ const GRUPOS_SUBSTITUTOS = `
 Agachamento Hack / Agachamento Smith / Agachamento Livre
 Leg Press 45º / Leg Press 45º Unilateral / Afundo no Chão / Afundo Smith / Afundo Smith com Step
 Mesa Flexora / Flexora Unilateral em Pé / Mesa Flexora Livre com Halter
-Supino Inclinado na Máquina / Supino Inclinado com Halteres
-Búlgaro / Búlgaro na Máquina / Coice no Cross com Polia Alta / Coice na Máquina
 Levantamento Terra / Levantamento Terra na Máquina
 Stiff / Stiff na Máquina / Stiff no Hiperextensor / Stiff com Halteres
 Agachamento Sumo Smith / Terra Sumô
 Meio Terra / Hiperextensão de Lombar / Hiperextensor de Lombar na Máquina com Carga
 Elevação Pélvica 2D ou Livre / Elevação Pélvica na Máquina
 Extensão de Glúteo na Máquina / Extensão de Glúteo na Polia / Extensão de Glúteo com Caneleira
-Supino Reto na Máquina / Supino Reto na Máquina Sentado
 Supino Declinado / Supino Declinado na Máquina / Supino Declinado com Halteres
 Crucifixo Inclinado / Crucifixo Inclinado no Cross / Crossover Polia Média
-Pulldown / Pulldown na Máquina
 Puxada Alta Pronada / Puxada Alta na Máquina Articulada
 Remada Curvada Pronada / Remada Curvada Sentado / Remada Curvada na Máquina Guiada / Remada Pronada na Máquina
 Remada Neutra no Cross / Remada Baixa com Triângulo
 Remada Unilateral na Máquina / Serrote com Halter / Serrote Pêndulo com Halter
-Crucifixo Inverso com Halteres / Crucifixo Inverso no Cross / Crucifixo Inverso no Voador
 Desenvolvimento com Halteres / Desenvolvimento na Máquina / Desenvolvimento na Máquina Inclinado / Desenvolvimento na Máquina Sentado
 Elevação Lateral / Elevação Lateral na Máquina / Elevação Lateral no Cross / Elevação Lateral Sentado / Elevação Lateral no Banco Inclinado
-Face Pull / Facepull com Corda no Cross / Remada Alta na Polia
 Elevação Frontal com Anilha / Elevação Frontal com Halteres em Isometria / Elevação Frontal Neutra com Halteres / Elevação Frontal no Cross / Elevação Frontal Corda no Cross
 Rosca Concentrada com Halter / Rosca Unilateral no Cross / Rosca Scott Unilateral
 Rosca Direta Alternada / Rosca Direta com Halteres / Rosca Scott Fechada
@@ -65,6 +59,19 @@ Cadeira Abdutora / Cadeira Abdutora 45° em Pé / Abdução no Cross / Abdução
 Panturrilha em Pé / Panturrilha no Leg 45º
 Rosca Martelo com Halteres / Rosca Martelo no Cross
 Tríceps Supinado / Tríceps na Paralela
+# Curadoria GH 31/08/2026: os 11 vídeos novos, com a transitividade que ele autorizou
+# ("se serve pra um serve pros outros"). Os grupos antigos que tinham exercício em comum
+# foram ABSORVIDOS aqui em vez de duplicados: crucifixo inverso, face pull, pulldown,
+# búlgaro/coice, supino inclinado e supino reto.
+Tríceps Francês com Halter / Tríceps Francês na Máquina / Tríceps Francês no Cross
+Puxada Alta Supinada na Máquina / Puxada Alta Supinada
+Remada Cavalinho Aberta / Crucifixo Inverso com Halteres / Crucifixo Inverso no Cross / Crucifixo Inverso no Voador / Face Pull / Facepull com Corda no Cross / Remada Alta na Polia
+Pullover na Máquina / Pullover com Halter / Pulldown / Pulldown na Máquina
+Rosca Spider / Rosca Direta na Puxada Alta
+Step Up / Step Up no Cross / Búlgaro / Búlgaro na Máquina / Coice no Cross com Polia Alta / Coice na Máquina
+Rosca Bayesian / Rosca Direta com Halteres no Banco Inclinado
+Supino Inclinado / Supino Inclinado na Máquina / Supino Inclinado com Halteres
+Supino Reto / Supino Reto na Máquina / Supino Reto na Máquina Sentado / Supino Reto com Halteres
 `;
 
 // ════════════════════════════════════════════════════════════════════════
