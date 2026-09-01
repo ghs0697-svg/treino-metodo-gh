@@ -16420,7 +16420,11 @@ async function forcarAtualizacaoApp() {
     }
     if (window.caches && caches.keys) {
       var ks = await caches.keys();
-      for (var j = 0; j < ks.length; j++) { try { await caches.delete(ks[j]); } catch (_) {} }
+      // gh-videos-v1 = vídeos de execução que o ALUNO baixou pro offline. O sw.js já
+      // protege esse cache em toda atualização de versão; aqui ele estava sendo apagado
+      // junto, então quem usava "Atualizar o app agora" perdia os downloads e tinha que
+      // baixar tudo de novo (dezenas de MB). Mesma exceção dos dois lados.
+      for (var j = 0; j < ks.length; j++) { if (ks[j] === 'gh-videos-v1') continue; try { await caches.delete(ks[j]); } catch (_) {} }
     }
   } catch (_) {}
   var u = new URL(location.href);
@@ -17884,7 +17888,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v414';
+    var APP_SHELL_V = 'metodo-gh-v415';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
