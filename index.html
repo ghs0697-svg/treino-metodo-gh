@@ -16678,8 +16678,16 @@ function toggleFloatMore() {
 // descartada e ele preencheria TUDO de novo (caso Matheus Prasinos/Wilton).
 // _vencServidoISO chega do planstatus (col Vencimento-protocolo, fallback J).
 var _vencServidoISO = '';
+// RENOVAÇÃO JÁ COMPRADA e ainda sem protocolo montado (col X=RENOVACAO + col E vazia no
+// mestre). Caso Emmanuelle (GH 01/09): ela renovou em 25/08 faltando 23 dias pro
+// vencimento, então o gate por DATA abaixo não pegou, o banner de reajuste continuou no
+// ar, ela respondeu a anamnese de REAJUSTE, e a Entregas ficou pra montar a renovação por
+// cima de um protocolo de uma semana. Quem comprou renovação não é cutucado pra reajuste:
+// a régua de renovação assume, igual já vale pra quem está perto de vencer.
+var _renovPendenteServidor = false;
 var REAJ_VENC_GATE_DIAS = 15;   // vence em ≤15d (ou já venceu) → suprime reajuste
 function _reajSuprimidoPorVenc() {
+  if (_renovPendenteServidor) return true;            // renovação comprada: reajuste sai de cena
   if (!_vencServidoISO) return false;                 // sem dado ainda: não suprime
   var v = new Date(_vencServidoISO + 'T00:00:00');
   if (isNaN(v.getTime())) return false;
@@ -16845,6 +16853,7 @@ function _planGateDecision(j, GRACE, PRE_DIAS, hojeMs) {
         // Vencimento servido alimenta o gate do banner de reajuste (regra: quem
         // está a ≤15d de vencer não é cutucado pra reajuste — renovação assume).
         _vencServidoISO = (j && j.found && j.vencimento) || '';
+        _renovPendenteServidor = !!(j && j.found && j.renovacaoPendente);
         reajusteBannerCheck();
       })
       .catch(function () { /* fail open */ });
@@ -17888,7 +17897,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v415';
+    var APP_SHELL_V = 'metodo-gh-v416';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
