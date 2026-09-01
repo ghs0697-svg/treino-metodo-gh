@@ -7573,6 +7573,18 @@ async function syncDoneFromServer_() {
         const k = localStorage.key(i);
         if (k && k.startsWith(pref)) { localStorage.removeItem(k); wiped++; }
       }
+      // BUG DO SERGIO VALOES (GH 01/09): a POSIÇÃO salva (semana/dia) sobrevivia ao reajuste.
+      // O guard dela era só a assinatura "nº de semanas x nº de dias", e reajuste que mantém
+      // a mesma estrutura (o caso comum) passa batido. Resultado: protocolo novo, aluno
+      // continuava na semana 7/8 do ciclo VELHO, com todas as anteriores parecendo feitas,
+      // e nunca recomeçava na semana 1. Some com a posição junto com as marcas.
+      try { localStorage.removeItem(_posKey()); } catch (_) {}
+      if (typeof currentWeek !== 'undefined' && currentWeek !== 1) {
+        currentWeek = 1;
+        const _wl = document.getElementById('weekLabel');
+        if (_wl) _wl.textContent = 'Semana 1';
+        try { if (typeof renderWeekPicker === 'function') renderWeekPicker(); } catch (_) {}
+      }
     }
     if (atualMs) localStorage.setItem(epochKey, String(atualMs));
     const cutoff = Math.max(atualMs, Date.now() - DONE_KEEP_MS);
@@ -10703,8 +10715,18 @@ async function loadFromSheets(injectedText) {
     // Em protocolo multi-bloco só restaura a semana (o dia depende do bloco ativo).
     try {
       const _pos = JSON.parse(localStorage.getItem(_posKey()) || 'null');
-      if (_pos && _pos.sig === TOTAL_WEEKS + 'x' + WORKOUT.length) {
-        if (_pos.w >= 1 && _pos.w <= TOTAL_WEEKS) currentWeek = _pos.w;
+      const _sigAtual = TOTAL_WEEKS + 'x' + WORKOUT.length + 'x' + (localStorage.getItem(`gh_done_atual_${STUDENT_ID}`) || '0');
+      // Teto pelo CALENDÁRIO: semanas possíveis desde o início do protocolo atual. Protocolo
+      // de 26/08 aberto em 01/09 não pode estar na semana 8 (caso Sergio Valões, 01/09).
+      let _tetoW = TOTAL_WEEKS;
+      try {
+        const _ini = Number(localStorage.getItem(`gh_done_atual_${STUDENT_ID}`)) || 0;
+        if (_ini > 0 && _ini <= Date.now()) {
+          _tetoW = Math.max(1, Math.min(TOTAL_WEEKS, Math.ceil((Date.now() - _ini) / 604800000) || 1));
+        }
+      } catch (_) {}
+      if (_pos && (_pos.sig === _sigAtual || _pos.sig === TOTAL_WEEKS + 'x' + WORKOUT.length)) {
+        if (_pos.w >= 1 && _pos.w <= TOTAL_WEEKS) currentWeek = Math.min(_pos.w, _tetoW);
         if (BLOCOS.length < 2 && Number.isInteger(_pos.di) && _pos.di >= 0 && _pos.di < WORKOUT.length) currentDay = _pos.di;
         const _wl = document.getElementById('weekLabel');
         if (_wl) _wl.textContent = 'Semana ' + currentWeek;
@@ -11242,7 +11264,7 @@ function _posSave() {
   try {
     localStorage.setItem(_posKey(), JSON.stringify({
       w: currentWeek, di: currentDay,
-      sig: (typeof TOTAL_WEEKS !== 'undefined' ? TOTAL_WEEKS : 0) + 'x' + (typeof WORKOUT !== 'undefined' && WORKOUT ? WORKOUT.length : 0),
+      sig: (typeof TOTAL_WEEKS !== 'undefined' ? TOTAL_WEEKS : 0) + 'x' + (typeof WORKOUT !== 'undefined' && WORKOUT ? WORKOUT.length : 0) + 'x' + (localStorage.getItem(`gh_done_atual_${STUDENT_ID}`) || '0'),
       ts: Date.now()
     }));
   } catch (_) {}
@@ -17862,7 +17884,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v413';
+    var APP_SHELL_V = 'metodo-gh-v414';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
