@@ -10565,8 +10565,14 @@ async function loadFromSheets(injectedText) {
     if (fromInject) {
       text = injectedText;
     } else {
-      const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=TREINO&headers=0`;
-      const res = await fetch(url);
+      // CACHE-BUSTER (caso Sergio Valões, 01/09): sem isto o navegador (e o PWA do iPhone
+      // em standalone) servia o CSV ANTIGO do TREINO, então o aluno via o protocolo VELHO
+      // mesmo depois do reajuste e mesmo depois de atualizar o app. Sintoma que confunde:
+      // "continua tudo preenchido", porque as marcas batem com os exercícios velhos que
+      // ele ainda está vendo. A DIETA já tinha essa proteção (comentário do Safari iOS
+      // logo abaixo); o TREINO tinha ficado de fora.
+      const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=TREINO&headers=0&_=${Date.now()}`;
+      const res = await fetch(url, { cache: 'no-store' });
 
       if (!res.ok) throw new Error('Não foi possível acessar a planilha. Verifique se ela está compartilhada (qualquer pessoa com link = leitor).');
 
@@ -17356,9 +17362,11 @@ async function loadTreinoTemplate(name) {
 async function loadTreinoFromSheet() {
   const sheetId = document.getElementById('adminSheetId').value.trim();
   if (!sheetId) { alert('Preencha o ID da planilha do aluno primeiro.'); return; }
-  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=TREINO&headers=0`;
+  // cache-buster igual o do aluno: o editor LÊ pra depois SALVAR por cima. Ler versão
+  // cacheada aqui significaria regravar o treino ANTIGO em cima do novo (perda de dado).
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=TREINO&headers=0&_=${Date.now()}`;
   try {
-    const resp = await fetch(url);
+    const resp = await fetch(url, { cache: 'no-store' });
     if (!resp.ok) throw new Error('Planilha nao encontrada');
     const text = await resp.text();
     editorTreinoData = parseCSV(text).map(r => {
@@ -17897,7 +17905,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v416';
+    var APP_SHELL_V = 'metodo-gh-v417';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
