@@ -7600,6 +7600,14 @@ async function syncDoneFromServer_() {
         if (localStorage.getItem(key)) { localStorage.removeItem(key); cleared++; }
         return;
       }
+      // DESMARCADO no servidor (dentro da janela) → limpa no local também. Sem isto,
+      // desmarcar num aparelho não chegava nos outros, e uma correção feita pela equipe
+      // no servidor não conseguia limpar o app do aluno (caso Sergio Valões, 01/09: marcas
+      // do ciclo anterior que eu tinha realocado ficaram presas no aparelho dele).
+      if (d.feito === false) {
+        if (localStorage.getItem(key)) { localStorage.removeItem(key); cleared++; }
+        return;
+      }
       // dentro da janela e marcada → restaura onde o local está vazio (merge).
       if (d.feito && !localStorage.getItem(key)) {
         localStorage.setItem(key, '1');
@@ -17905,7 +17913,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v417';
+    var APP_SHELL_V = 'metodo-gh-v418';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
