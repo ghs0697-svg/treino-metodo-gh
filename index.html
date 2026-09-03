@@ -367,7 +367,21 @@
   /* série preenchida "acende": número dourado + campos com borda viva (progressive enhancement via :has) */
   .set-in:not(:placeholder-shown) { border-color: rgba(212,175,55,.55); background: #26221a; }
   .set-row:has(.set-in:not(:placeholder-shown)) .set-num { color: var(--gold); }
-  .set-prev { font-size: 10px; color: var(--muted); white-space: nowrap; margin-left: 2px; flex: 1; }
+  .set-prev { font-size: 10px; color: var(--muted); white-space: nowrap; margin-left: 2px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  /* TELA ESTREITA (Vitor 02/09, alunos reclamando): a linha da serie somava ~350px e o card
+     tem overflow:hidden, entao a coluna "ant:" (a ultima) sumia pela direita em celular de
+     360-375px. Encolhe campos/gaps/padding so aqui embaixo de 430px; acima nada muda. */
+  @media (max-width: 430px) {
+    .set-head, .set-row { gap: 4px; }
+    .set-head .sh-kg, .set-in.set-kg { width: 50px; }
+    .set-head .sh-pl, .set-in.set-pl { width: 38px; }
+    .set-head .sh-reps, .set-in.set-reps { width: 44px; }
+    .set-head .sh-rs, .set-in.set-rs { width: 40px; }
+    .set-in { font-size: 13px; padding: 6px 2px; }
+    .set-prev { font-size: 9.5px; margin-left: 0; }
+    .set-prev .sp-lb { display: none; }   /* "ant:" vira so o numero: "12kg x10" */
+    .focus-carga { padding: 10px 8px; }
+  }
   .set-del {
     width: 20px; min-width: 20px; height: 24px; border: none; background: transparent;
     color: #35353a; font-size: 15px; line-height: 1; cursor: pointer; border-radius: 5px; padding: 0;
@@ -6693,7 +6707,7 @@ function _setsGridHtml(di, ei, label, noAdd) {
   const rows = sets.map((s, si) => {
     const p = prev && prev[si];
     const prevTxt = (p && (p.kg || p.pl || p.reps))
-      ? `<span class="set-prev">ant: ${p.kg ? kgToDisplay(p.kg) + getUnit() : (p.pl ? p.pl + 'pl' : '&mdash;')}${p.reps ? ' &times;' + p.reps : ''}</span>`
+      ? `<span class="set-prev" title="Última vez"><span class="sp-lb">ant: </span>${p.kg ? kgToDisplay(p.kg) + getUnit() : (p.pl ? p.pl + 'pl' : '&mdash;')}${p.reps ? ' &times;' + p.reps : ''}</span>`
       : '<span class="set-prev"></span>';
     const feita = okSet.has(si);
     return `<div class="set-row ${feita ? 'feita' : ''}" data-si="${si}">
@@ -17913,7 +17927,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v418';
+    var APP_SHELL_V = 'metodo-gh-v419';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
