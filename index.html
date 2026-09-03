@@ -11668,9 +11668,21 @@ async function mostraAulasGhflix(nomeExercicio) {
       const r = await fetch('ghflix/aulas-exercicio.json?v=' + Date.now(), { cache: 'no-store' });
       const bruto = await r.json();
       _mapaAulas = {};
-      for (const k of Object.keys(bruto)) _mapaAulas[_normAula(k)] = bruto[k];
-      const ri = await fetch('ghflix/indice.json?v=' + Date.now(), { cache: 'no-store' });
-      _mapaAulas.__idx = (await ri.json()).videos || {};
+      const todosIds = new Set();
+      for (const k of Object.keys(bruto)) { _mapaAulas[_normAula(k)] = bruto[k]; (bruto[k] || []).forEach(id => todosIds.add(String(id))); }
+      // v422: índice ENXUTO (só os vídeos que o mapa usa, uns KB) em vez do indice.json inteiro
+      // (1,4 MB por sessão). Se o enxuto estiver faltando ou desatualizado (id do mapa que ele
+      // não tem), cai no índice completo como antes: nunca some aula por causa do atalho.
+      let idx = null;
+      try {
+        const rs = await fetch('ghflix/aulas-indice.json?v=' + Date.now(), { cache: 'no-store' });
+        if (rs.ok) { const sj = await rs.json(); const slim = sj.videos || {}; const sabe = new Set(sj.ausentes || []); let ok = true; for (const id of todosIds) { if (!slim[id] && !sabe.has(id)) { ok = false; break; } } if (ok) idx = slim; }
+      } catch (_) { idx = null; }
+      if (!idx) {
+        const ri = await fetch('ghflix/indice.json?v=' + Date.now(), { cache: 'no-store' });
+        idx = (await ri.json()).videos || {};
+      }
+      _mapaAulas.__idx = idx;
     }
   } catch (e) { _mapaAulasErro = true; return; }
   const ids = _mapaAulas[_normAula(nomeExercicio)];
@@ -17964,7 +17976,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v421';
+    var APP_SHELL_V = 'metodo-gh-v422';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
