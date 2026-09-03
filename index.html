@@ -2926,6 +2926,29 @@
     .te-ex-name { font-size: 11px; }
     .te-drag-handle { font-size: 16px; }
   }
+
+  /* ══ v423 (03/09/2026): pente fino de layout em 360/375 px ══
+     Alvos de toque pequenos, fontes abaixo de 10 px, objetivo cortado com reticências,
+     FAB do chat cobrindo a grade enquanto o aluno digita, botão do caderno sem estilo. */
+  .field .value#infoObj { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; line-height: 1.25; }
+  .field:has(#infoObj) { align-items: flex-start; height: auto; }
+  .field .label { font-size: 10px; }
+  .mm-hint { font-size: 10px; }
+  .day-tab .wt-badge { font-size: 10px; }
+  .dh-kicker { font-size: 10.5px; }
+  #esforcoAlvoTexto { font-size: 11.5px !important; }
+  .proto-progress .pp-dias { font-size: 11.5px; }
+  .rs-info-btn { width: 20px; height: 20px; font-size: 11px; }
+  .set-row button.set-num, .set-head .set-num { width: 30px; min-width: 30px; }
+  .set-row button.set-num { height: 30px; font-size: 13px; }
+  .set-del { width: 28px; min-width: 28px; height: 32px; font-size: 17px; }
+  #chatBanner button[title="Fechar"] { padding: 6px 9px !important; font-size: 17px !important; line-height: 1 !important; top: 1px !important; right: 3px !important; }
+  #chatBanner > div:last-child { font-size: 11.5px !important; }
+  .float-btn { width: 52px; height: 52px; }
+  body.typing #floatBtn { opacity: 0; pointer-events: none; transition: opacity .15s; }
+  #cadernoSalvarBtn { background: var(--gold); color: #15100a; border: none; border-radius: 12px; padding: 12px; font-weight: 800; font-size: 14px; font-family: inherit; cursor: pointer; }
+  #cadernoSalvarBtn:disabled { opacity: .6; cursor: default; }
+  #maisSheetOverlay { background: rgba(0, 0, 0, .78); }
 </style>
 </head>
 <body>
@@ -17976,7 +17999,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v422';
+    var APP_SHELL_V = 'metodo-gh-v423';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -19904,6 +19927,10 @@ window.addEventListener('resize', hideFoodSuggest);
 // de aluno digitar offline e o sync inicial falhar.
 window.addEventListener('online', () => { try { flushSyncQueues(); } catch (_) {} });
 setInterval(() => { try { flushSyncQueues(); } catch (_) {} }, 30000);
+// v423: o botão flutuante do chat cobria a coluna da direita da grade (× de apagar série, "sobrou")
+// enquanto o aluno digitava. Some com o foco num campo da grade e volta quando ele sai.
+document.addEventListener('focusin', function (e) { if (e.target && e.target.matches && e.target.matches('.set-in')) document.body.classList.add('typing'); });
+document.addEventListener('focusout', function (e) { if (e.target && e.target.matches && e.target.matches('.set-in')) setTimeout(function () { var a = document.activeElement; if (!a || !a.matches || !a.matches('.set-in')) document.body.classList.remove('typing'); }, 150); });
 
 function dietaSetObs(idx, val) {
   // OBS na sheet de dieta vai no col[3] (obs/detalhe)
