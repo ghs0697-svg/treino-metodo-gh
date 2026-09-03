@@ -2949,6 +2949,19 @@
   #cadernoSalvarBtn { background: var(--gold); color: #15100a; border: none; border-radius: 12px; padding: 12px; font-weight: 800; font-size: 14px; font-family: inherit; cursor: pointer; }
   #cadernoSalvarBtn:disabled { opacity: .6; cursor: default; }
   #maisSheetOverlay { background: rgba(0, 0, 0, .78); }
+
+  /* ══ v424 (03/09/2026): melhorias de design pedidas pelo GH ══
+     1) cabeçalho: versão/data/anamnese/esforço só onde fazem sentido (Treino tudo; Dieta sem
+        esforço; Progresso e GHFlix limpos). 2) botão flutuante do chat sai: o card do topo e o
+        Mais já fazem isso. 3) chips do exercício com palavra (Séries / Reps / Interv) no lugar de S/R/I. */
+  body.view-dieta #esforcoAlvoBadge { display: none !important; }
+  body.view-progresso #lastModBadge, body.view-progresso #proxReajusteBadge, body.view-progresso #esforcoAlvoBadge,
+  body.view-ghflix #lastModBadge, body.view-ghflix #proxReajusteBadge, body.view-ghflix #esforcoAlvoBadge { display: none !important; }
+  #floatMenu, #floatMenu.show { display: none !important; }
+  .exercise-tag .tl { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; opacity: .85; margin-right: 4px; }
+  .focus-tag b { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+  #bnMais { position: relative; }
+  #supDotBn { top: 6px; right: 14px; }
 </style>
 </head>
 <body>
@@ -4723,6 +4736,7 @@
     <span>GHFlix</span>
   </button>
   <button type="button" class="bn-item" id="bnMais" onclick="openMaisSheet()">
+    <span class="sup-dot" id="supDotBn"></span>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
     <span>Mais</span>
   </button>
@@ -9375,7 +9389,7 @@ function _tourSteps() {
     { sel: '.ex-action-btn.sub-btn', t: 'Sem o aparelho? Troca.', p: 'Toca em "trocar" que eu te mostro as opções equivalentes pro mesmo músculo, com vídeo.' },
     { sel: '.focus-entry', t: 'Modo treino', p: 'Um exercício por vez, em tela cheia. Anotou a série com o treino rodando, o descanso cronometra sozinho.' },
     { sel: '#bottomNav', t: 'Tua navegação', p: 'Dieta, teu progresso com gráficos e o resto do app moram aqui embaixo.' },
-    { sel: '#floatBtn', t: 'Fala comigo', p: 'Dúvida ou quer pedir um ajuste no protocolo? Me chama por esse botão.' }
+    { sel: '#bnMais', t: 'Fala comigo', p: 'Dúvida ou quer pedir um ajuste no protocolo? Toca no card do topo ou aqui em Mais.' }
   ];
 }
 // Rastro de uso REAL do app neste aparelho (carga salva, esforço, dia concluído,
@@ -10088,9 +10102,9 @@ function _focusRender() {
 
   const tags = (o) => {
     const t = [];
-    if (o.series) t.push(`<span class="focus-tag"><b>S</b>${o.series}</span>`);
-    if (o.reps) t.push(`<span class="focus-tag"><b>R</b>${o.reps}</span>`);
-    if (o.rest) t.push(`<span class="focus-tag"><b>I</b>${o.rest}</span>`);
+    if (o.series) t.push(`<span class="focus-tag"><b>Séries</b>${o.series}</span>`);
+    if (o.reps) t.push(`<span class="focus-tag"><b>Reps</b>${o.reps}</span>`);
+    if (o.rest) t.push(`<span class="focus-tag"><b>Interv</b>${o.rest}</span>`);
     return t.join('');
   };
   const vidBtn = (o) => (o.video && o.video.length)
@@ -11003,16 +11017,16 @@ function renderExercises() {
         const hasB = b.video && b.video.length > 0;
         // Série/reps/intervalo compartilhados (usa do A; se B tiver diferente, mostra como badge)
         const tagsA = [];
-        if (a.series) tagsA.push(`<span class="exercise-tag"><span class="tl">S</span>${a.series}</span>`);
-        if (a.reps)   tagsA.push(`<span class="exercise-tag"><span class="tl">R</span>${a.reps}</span>`);
-        if (a.rest)   tagsA.push(`<span class="exercise-tag" onclick="event.stopPropagation();openGlossario('intervalo')"><span class="tl">I</span>${a.rest}</span>`);
+        if (a.series) tagsA.push(`<span class="exercise-tag"><span class="tl">Séries</span>${a.series}</span>`);
+        if (a.reps)   tagsA.push(`<span class="exercise-tag"><span class="tl">Reps</span>${a.reps}</span>`);
+        if (a.rest)   tagsA.push(`<span class="exercise-tag" onclick="event.stopPropagation();openGlossario('intervalo')"><span class="tl">Interv</span>${a.rest}</span>`);
         tagsA.push(cadenciaTag(a.obs));
         const sameParams = (a.series === b.series && a.reps === b.reps && a.rest === b.rest);
         const tagsB = [];
         if (!sameParams) {
-          if (b.series) tagsB.push(`<span class="exercise-tag"><span class="tl">S</span>${b.series}</span>`);
-          if (b.reps)   tagsB.push(`<span class="exercise-tag"><span class="tl">R</span>${b.reps}</span>`);
-          if (b.rest)   tagsB.push(`<span class="exercise-tag" onclick="event.stopPropagation();openGlossario('intervalo')"><span class="tl">I</span>${b.rest}</span>`);
+          if (b.series) tagsB.push(`<span class="exercise-tag"><span class="tl">Séries</span>${b.series}</span>`);
+          if (b.reps)   tagsB.push(`<span class="exercise-tag"><span class="tl">Reps</span>${b.reps}</span>`);
+          if (b.rest)   tagsB.push(`<span class="exercise-tag" onclick="event.stopPropagation();openGlossario('intervalo')"><span class="tl">Interv</span>${b.rest}</span>`);
         }
         // Cadência B: mostra sempre se for diferente da A (ex: A normal, B com excêntrica 5s)
         const cadA = parseCadencia(a.obs), cadB = parseCadencia(b.obs);
@@ -11056,9 +11070,9 @@ function renderExercises() {
       const subAlts = _alternativasNoDia(di, ei);          // alternativas oferecíveis neste dia (2+) OU null
       const hasVid = act.video && act.video.length > 0;
       const tags = [];
-      if (ex.series) tags.push(`<span class="exercise-tag"><span class="tl">S</span>${ex.series}</span>`);
-      if (ex.reps) tags.push(`<span class="exercise-tag"><span class="tl">R</span>${ex.reps}</span>`);
-      if (ex.rest) tags.push(`<span class="exercise-tag" onclick="event.stopPropagation();openGlossario('intervalo')"><span class="tl">I</span>${ex.rest}</span>`);
+      if (ex.series) tags.push(`<span class="exercise-tag"><span class="tl">Séries</span>${ex.series}</span>`);
+      if (ex.reps) tags.push(`<span class="exercise-tag"><span class="tl">Reps</span>${ex.reps}</span>`);
+      if (ex.rest) tags.push(`<span class="exercise-tag" onclick="event.stopPropagation();openGlossario('intervalo')"><span class="tl">Interv</span>${ex.rest}</span>`);
       if (!isWarmup) tags.push(cadenciaTag(ex.obs));
 
       // Escape single quotes — usa o exercício ATIVO (substituto ou original) pra vídeo+label.
@@ -12829,7 +12843,7 @@ function _supSetEnabled(on) {
   });
   if (!_supEnabled) {
     _supPollStop();
-    ['supDotTab', 'supDotOpt', 'supDotFab', 'supDotMais'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('on'); });
+    ['supDotTab', 'supDotOpt', 'supDotFab', 'supDotMais', 'supDotBn'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('on'); });
     if (_chatMode === 'suporte') setChatMode('duvida');
   } else {
     try { _supFetch(); } catch (_) {}   // ligou: já confere se tem resposta esperando
@@ -12853,7 +12867,7 @@ function _supMarkSeen() {
 }
 function _supBadgeUpdate() {
   const on = _supHasUnread();
-  ['supDotTab', 'supDotOpt', 'supDotFab', 'supDotMais'].forEach(id => {
+  ['supDotTab', 'supDotOpt', 'supDotFab', 'supDotMais', 'supDotBn'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.toggle('on', on);
   });
@@ -17999,7 +18013,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v423';
+    var APP_SHELL_V = 'metodo-gh-v424';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
