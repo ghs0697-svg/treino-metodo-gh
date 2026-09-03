@@ -6866,6 +6866,7 @@ function saveSetsManual(di, ei, btn) {
   clearTimeout(_setTimers[`s-${di}-${ei}`]);
   const arr = _readSetsFromDom(di, ei);
   if (arr) saveSets(di, ei, currentWeek, arr);
+  _cargaSyncFlushAll_();   // 💾 explícito = manda pro servidor agora, sem esperar o silêncio
   const el = document.getElementById(`sv-${di}-${_setSvKey(ei)}`);
   if (el) { el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 1500); }
   if (btn) {
@@ -6994,8 +6995,33 @@ function syncCargaToServer_(di, ei, w, carga, placas, sets) {
     sets: sets !== null && sets !== undefined ? String(sets) : '',   // JSON [{kg,pl,reps}] das séries (novo)
     ts: new Date().toISOString()
   };
+  // v421: não manda na hora. Agenda e manda só o ÚLTIMO estado do exercício depois de um
+  // silêncio (ver _cargaSyncEnvia_). O local (localStorage) já foi salvo pelo saveSets.
+  const k = _cargaSyncKey_(payload);
+  _cargaSyncPend[k] = { payload, setBadge };
+  clearTimeout(_cargaSyncTimers[k]);
+  _cargaSyncTimers[k] = setTimeout(() => _cargaSyncEnvia_(k), CARGA_SYNC_QUIET_MS);
+}
+// ── Coalescência do envio de carga (v421, 03/09/2026) ────────────────────────────────────
+// A grade de séries salvava local com 400 ms de debounce e mandava CADA salvamento pro servidor:
+// uma linha na CARGAS por tecla digitada (38 linhas pro mesmo exercício em 3 min; 12 mil linhas
+// por dia, e a mestre chegou a 96% do teto de células). Agora o envio espera CARGA_SYNC_QUIET_MS
+// de silêncio por exercício e manda só o último estado; estado igual ao último enviado nem sai.
+// Se o aluno fecha o app ou troca de aba antes do prazo, o pendente vai na hora (keepalive).
+const CARGA_SYNC_QUIET_MS = 6000;
+const _cargaSyncPend = {};
+const _cargaSyncTimers = {};
+const _cargaSyncUltimo = {};
+function _cargaSyncKey_(p) { return `${p.di}|${p.ei}|${p.w}|${p.exercicio || ''}`; }   // dedup por exercicio: original e substituto na mesma posicao nao se sobrescrevem
+function _cargaSyncEnvia_(k) {
+  const item = _cargaSyncPend[k]; if (!item) return;
+  delete _cargaSyncPend[k]; clearTimeout(_cargaSyncTimers[k]); delete _cargaSyncTimers[k];
+  const { payload, setBadge } = item;
+  const sig = `${payload.carga}|${payload.placas}|${payload.sets}`;
+  if (_cargaSyncUltimo[k] === sig) { setBadge('☁ salvo na nuvem', 'cloud-ok'); return; }   // nada mudou desde o último envio
+  payload.ts = new Date().toISOString();
   const enfileira = () => {
-    _syncQueuePush('carga', payload, p => `${p.di}|${p.ei}|${p.w}|${p.exercicio || ''}`);   // dedup por exercicio: original e substituto na mesma posicao nao se sobrescrevem
+    _syncQueuePush('carga', payload, _cargaSyncKey_);
     setBadge('☁ pendente, vai reenviar', 'cloud-fail');
   };
   try {
@@ -7007,7 +7033,7 @@ function syncCargaToServer_(di, ei, w, carga, placas, sets) {
       redirect: 'follow'
     })
       .then(resp => {
-        if (resp && resp.ok) setBadge('☁ salvo na nuvem', 'cloud-ok');
+        if (resp && resp.ok) { _cargaSyncUltimo[k] = sig; setBadge('☁ salvo na nuvem', 'cloud-ok'); }
         else enfileira();
       })
       .catch(() => enfileira());
@@ -7015,6 +7041,9 @@ function syncCargaToServer_(di, ei, w, carga, placas, sets) {
     enfileira();
   }
 }
+function _cargaSyncFlushAll_() { Object.keys(_cargaSyncPend).forEach(_cargaSyncEnvia_); }
+window.addEventListener('pagehide', _cargaSyncFlushAll_);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') _cargaSyncFlushAll_(); });
 
 // Esforço (RIR) + flag de aparelho → aba ESFORCO no mestre. Fire-and-forget,
 // com fila de retry (mesma do carga). Pro painel do treinador calibrar carga.
@@ -11477,6 +11506,7 @@ function flushCargaPendente_(di, ei) {
   clearTimeout(_setTimers[kS]);
   const arr = _readSetsFromDom(di, ei);
   if (arr) saveSets(di, ei, currentWeek, arr);   // grava no slot vigente ANTES do sufixo mudar
+  _cargaSyncFlushAll_();                          // e manda já, com o nome do exercício vigente
 }
 
 // ══ Video overlay ══
@@ -17934,7 +17964,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v420';
+    var APP_SHELL_V = 'metodo-gh-v421';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
