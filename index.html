@@ -381,6 +381,13 @@
     .set-prev { font-size: 9.5px; margin-left: 0; }
     .set-prev .sp-lb { display: none; }   /* "ant:" vira so o numero: "12kg x10" */
     .focus-carga { padding: 10px 8px; }
+    /* fileira "+ serie | salvar ritmo descanso historico trocar": em 360px o ultimo botao
+       (TROCAR, o de substituir exercicio) terminava em x=370 e ficava escondido pelo
+       overflow do card. Deixa a fileira QUEBRAR de linha em vez de cortar: todo botao
+       continua alcancavel, sem depender de scroll lateral que ninguem descobre. */
+    .sets-footer { flex-wrap: wrap; row-gap: 6px; }
+    .ex-actions { margin-left: 0; flex-wrap: wrap; }
+    .ex-action-btn { padding: 5px 6px 4px; font-size: 12px; }
   }
   .set-del {
     width: 20px; min-width: 20px; height: 24px; border: none; background: transparent;
@@ -17927,7 +17934,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v419';
+    var APP_SHELL_V = 'metodo-gh-v420';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
