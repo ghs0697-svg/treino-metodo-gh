@@ -620,7 +620,10 @@ async function openModal(id){
   // transcodificação do Drive). Fallback pro preview do Drive se o proxy falhar.
   // Amostra grátis de visitante: player do Drive direto (sem token, sem proxy).
   const player=v.drive_id
-    ? ((!ACESSO.liberado)||(ehIOS&&!v.lt)
+    ? ((!ACESSO.liberado)
+        /* 03/09/2026: iPhone tocava pelo iframe de preview do Drive (player do Google, tela escura/
+           travando pra aluno, caso Gabriel Hamsmann). O proxy /api/v suporta Range e os mp4 são faststart,
+           então o iOS toca nativo igual ao desktop; o iframe do Drive fica só de fallback no onerror. */
         ? `<iframe src="https://drive.google.com/file/d/${v.drive_id}/preview" allow="autoplay; fullscreen" allowfullscreen></iframe>`
         : `<video controls autoplay playsinline preload="metadata" style="position:absolute;inset:0;width:100%;height:100%;background:#000" src="https://ghflix.metodogh.com.br/api/v?id=${v.drive_id}${TOKEN?'&t='+encodeURIComponent(TOKEN):''}" onerror="this.outerHTML='&lt;iframe src=\\'https://drive.google.com/file/d/${v.drive_id}/preview\\' allow=\\'autoplay; fullscreen\\' allowfullscreen&gt;&lt;/iframe&gt;'"></video>`)
     : `<video controls autoplay style="position:absolute;inset:0;width:100%;height:100%" src="${(v.pasta_rel+'/'+v.arquivo).split('/').map(encodeURIComponent).join('/')}"></video>`;
