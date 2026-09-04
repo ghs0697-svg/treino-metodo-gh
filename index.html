@@ -2962,6 +2962,25 @@
   .focus-tag b { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
   #bnMais { position: relative; }
   #supDotBn { top: 6px; right: 14px; }
+
+  /* ══ v426 (03/09/2026): micro-interações (pacote aprovado pelo GH). Regra: movimento só responde
+     a uma ação, 150 a 300 ms, uma curva, respeita "reduzir movimento". ══ */
+  @keyframes setPop { 0% { transform: scale(.88); } 55% { transform: scale(1.16); } 100% { transform: scale(1); } }
+  .set-row button.set-num.pop { animation: setPop .2s cubic-bezier(.2, .8, .3, 1.15); }
+  @keyframes exIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  #exerciseContainer.ex-enter .day-content.active { animation: exIn .2s cubic-bezier(.22, .61, .36, 1) both; }
+  @keyframes fillIn { from { width: 0; } }
+  .mt-barra .mt-fill { animation: fillIn .6s cubic-bezier(.22, .61, .36, 1); transition: width .55s cubic-bezier(.22, .61, .36, 1); }
+  #pgFill, #ddpFill, #focusBarFill, .proto-progress .pp-fill { transition: width .5s cubic-bezier(.22, .61, .36, 1); }
+  @keyframes arcIn { from { stroke-dashoffset: 125.7; } }
+  .mt-anel .arc { animation: arcIn .7s cubic-bezier(.22, .61, .36, 1); }
+  .bn-item:active, .day-tab:active, .sub-opt:active, .mais-opt:active, .ex-action-btn:active, .cmp-share-btn:active,
+  #cadernoSalvarBtn:active, .float-opt:active, .esf-chip:active, .diet-option-tab:active, .diet-cycle-tab:active,
+  .set-del:active, .rs-info-btn:active, .te-btn:active, .chat-mode-tab:active, .week-nav:active, .exercise-tag[onclick]:active { transform: scale(.96); transition: transform .08s ease; }
+  @media (prefers-reduced-motion: reduce) {
+    .set-row button.set-num.pop, #exerciseContainer.ex-enter .day-content.active, .mt-barra .mt-fill, .mt-anel .arc { animation: none; }
+    #pgFill, #ddpFill, #focusBarFill, .proto-progress .pp-fill, .mt-barra .mt-fill, .mt-anel .arc { transition: none; }
+  }
 </style>
 </head>
 <body>
@@ -6822,10 +6841,33 @@ function _atualizaForcaChip(di, ei, card) {
     const html = _forcaChipHtml(di, ei);
     const atual = host.querySelector(':scope > .forca-chip');
     if (!html) { if (atual) atual.remove(); return; }
-    if (atual) { atual.outerHTML = html; return; }
+    if (atual) {
+      const de = parseFloat(String((atual.querySelector('.forca-vl') || {}).textContent || '').replace(',', '.'));
+      atual.outerHTML = html;
+      const novo = host.querySelector(':scope > .forca-chip .forca-vl');
+      if (novo && isFinite(de)) _countUpEl(novo, de);   // v426: sobe contando em vez de trocar seco
+      return;
+    }
     const antes = host.querySelector(':scope > .prog-chip') || host.querySelector(':scope > .focus-esforco');
     if (antes) antes.insertAdjacentHTML('beforebegin', html);
     else host.insertAdjacentHTML('beforeend', html);
+  } catch (_) {}
+}
+// v426: anima o número de um chip "N,N unidade" do valor antigo pro novo (350 ms, desacelerando).
+function _countUpEl(el, de) {
+  try {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const txt = String(el.textContent || '');
+    const m = txt.match(/^\s*([\d.,]+)\s*(.*)$/); if (!m) return;
+    const para = parseFloat(m[1].replace(',', '.')); if (!isFinite(para) || para === de) return;
+    const unidade = m[2] || '', dec = /[.,]\d/.test(m[1]) ? 1 : 0, t0 = performance.now(), dur = 350;
+    const passo = (t) => {
+      const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+      const v = de + (para - de) * e;
+      el.textContent = v.toFixed(dec).replace('.', ',') + (unidade ? ' ' + unidade : '');
+      if (k < 1) requestAnimationFrame(passo); else el.textContent = txt;
+    };
+    requestAnimationFrame(passo);
   } catch (_) {}
 }
 // ══ Série FEITA (Vitor 14/08: "marcar a série igual marca o exercício") ══
@@ -6849,7 +6891,7 @@ function toggleSetFeita(di, ei, si) {
     if (!row) return;
     row.classList.toggle('feita', marcando);
     const n = row.querySelector('.set-num');
-    if (n) n.textContent = marcando ? '✓' : String(si + 1);
+    if (n) { n.textContent = marcando ? '✓' : String(si + 1); if (marcando) { n.classList.remove('pop'); void n.offsetWidth; n.classList.add('pop'); setTimeout(() => n.classList.remove('pop'), 260); } }
   });
   if (!marcando) return;
   if (navigator.vibrate) navigator.vibrate(15);
@@ -11392,6 +11434,15 @@ function selectDay(i) {
   renderWtCard();   // linha "este treino na semana N" acompanha o dia selecionado
   _posSave();
   _vidBtnRefresh();
+  _exEnterAnim();
+}
+// v426: a lista do dia entra com fade + deslize curto quando o aluno troca de dia ou semana
+function _exEnterAnim() {
+  try {
+    const c = document.getElementById('exerciseContainer'); if (!c) return;
+    c.classList.remove('ex-enter'); void c.offsetWidth; c.classList.add('ex-enter');
+    setTimeout(() => c.classList.remove('ex-enter'), 280);
+  } catch (_) {}
 }
 
 function changeWeek(d) {
@@ -11403,6 +11454,7 @@ function changeWeek(d) {
   renderExercises();
   renderTabs();        // badges de tempo por dia dependem da semana
   renderWtCard();      // linha "este treino na semana N"
+  _exEnterAnim();
 }
 
 // ══ CRONÔMETRO DO TREINO (GH 2026-07-26) ═══════════════════════════════════
@@ -18023,7 +18075,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v425';
+    var APP_SHELL_V = 'metodo-gh-v426';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
