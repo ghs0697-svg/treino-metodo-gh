@@ -6234,7 +6234,17 @@ function _alternativasNoDia(di, ei) {
     // entende por que não dá pra escolher em vez de achar que o app não tem opção.
     out.push({ name: x.name, norm: x.norm, atual: x.norm === ativoAqui, noDia: !!ativoOutros[x.norm] && x.norm !== ativoAqui });
   });
-  return out.length >= 2 ? out : null;
+  // v425 (03/09/2026): nome que divide o VÍDEO com o prescrito é o MESMO exercício (regra de
+  // nomenclatura do GH: "Face Pull" ≡ "Facepull com Corda no Cross", 7 pares no banco), então não
+  // é troca e não aparece. E dois candidatos com o mesmo vídeo viram um só (fica o ativo/original,
+  // senão o primeiro). Caso Glaucio (Entregas): o par entrou como 2 exercícios.
+  const vidOf = n => { const v = String(_bankVideo(n) || ''); const m = v.match(/(?:shorts\/|v=|youtu\.be\/)([A-Za-z0-9_-]{6,})/); return m ? m[1] : v; };
+  const vidOrig = vidOf(ex.name);
+  const semAlias = out.filter(a => a.norm === orig || !vidOrig || vidOf(a.name) !== vidOrig);
+  const porVid = {};
+  semAlias.forEach(a => { const v = vidOf(a.name); if (!porVid[v] || a.atual || a.norm === orig) porVid[v] = a; });
+  const lista = semAlias.filter(a => porVid[vidOf(a.name)] === a);
+  return lista.length >= 2 ? lista : null;
 }
 // Aplica a escolha (chamado pelo seletor). chosenNorm === original → volta ao original.
 // Motivo da troca (GH 2026-07-29): fica registrado na mestre (aba TROCAS) atrelado ao aluno.
@@ -18013,7 +18023,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v424';
+    var APP_SHELL_V = 'metodo-gh-v425';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
