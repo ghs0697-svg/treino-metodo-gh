@@ -15159,6 +15159,20 @@ var DIET_DATA = null;
 var dietLoaded = false;
 var dietFetchFailed = false;   // A15: falha REAL de rede/HTTP/parse (≠ aluno sem dieta) → mostra aviso + retry
 
+// v428 (05/09/2026): aluno SÓ TREINO (aba DIETA vazia: cortesia, ou escolheu sem dieta na anamnese)
+// via a aba Dieta muda, com título e acordeões e nenhuma linha sobre a dieta. Agora um card diz
+// que o protocolo é só de treino e aponta o caminho pra pedir a dieta. Só render local, zero rede.
+function _renderDietaVazia() {
+  try {
+    const loading = document.getElementById('dietLoading'); if (loading) loading.style.display = 'none';
+    const content = document.getElementById('dietContent'); if (!content) return;
+    content.style.display = 'block';
+    content.innerHTML = '<div class="gh-top-card" style="margin:0 14px 14px;">'
+      + '<div class="gh-top-card-title">\ud83c\udf7d\ufe0f S\u00f3 treino nesse protocolo</div>'
+      + '<div style="color:#bbb;font-size:13px;line-height:1.6;margin-top:6px;">Teu protocolo atual \u00e9 s\u00f3 de treino, sem dieta. Se quiser incluir a alimenta\u00e7\u00e3o, me chama no <b>D\u00favida ou ajuste</b> aqui em cima que eu monto pra ti.</div>'
+      + '</div>';
+  } catch (_) {}
+}
 // A15: mostra o estado de erro da dieta (com botão de tentar de novo) na própria aba Dieta.
 function _showDietFetchError() {
   try {
@@ -15219,7 +15233,7 @@ async function loadDietFromSheets(injectedText) {
   // CSV injetado (cache/prefetch): mesma semântica do fetch, sem rede
   if (injectedText != null) {
     const r = parseCSV(injectedText);
-    if (r.length < 3) { dietLoaded = false; dietFetchFailed = false; return; }
+    if (r.length < 3) { dietLoaded = false; dietFetchFailed = false; _renderDietaVazia(); return; }
     rows = r;
   }
   if (!rows) try {
@@ -15227,7 +15241,7 @@ async function loadDietFromSheets(injectedText) {
   } catch (e1) {
     // aba VAZIA (rows<3) é determinístico: fetch OK, sem conteúdo (aluno só treino).
     // Re-tentar não muda nada; sai silencioso sem 2ª request nem warn (higiene de log/rede).
-    if (/rows<3/.test(String((e1 && e1.message) || ''))) { dietLoaded = false; dietFetchFailed = false; return; }
+    if (/rows<3/.test(String((e1 && e1.message) || ''))) { dietLoaded = false; dietFetchFailed = false; _renderDietaVazia(); return; }
     try {
       rows = await tryFetch(true);
     } catch (e2) {
@@ -18080,7 +18094,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v427';
+    var APP_SHELL_V = 'metodo-gh-v428';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
