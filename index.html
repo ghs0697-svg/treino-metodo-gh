@@ -10960,6 +10960,11 @@ async function loadFromSheets(injectedText) {
     loadAndShowLastModified();
     updateUnitToggleLabel();
     renderExercises();   // render IMEDIATO dos exercicios (do local) — NAO espera rede. Senao um flush numa rede ruim segurava os cards do dia em branco.
+    // v427 (05/09/2026, caso Andres Oliveira): a navegação (barra de baixo + menu) só era ligada
+    // quando a DIETA carregava; aba DIETA VAZIA (aluno novo sem dieta publicada, ou só treino)
+    // saía calada e o app ficava sem barra nenhuma, com o treino inteiro na tela. Treino
+    // renderizado = navegação ligada, a dieta não manda mais nisso.
+    _showNav();
     // Dispara o restore do servidor JA (assincrono, nao-awaited): em device NOVO (local vazio) os pesos
     // do servidor aparecem assim que o fetch volta, sem esperar o flush — evita o flash de carga em branco.
     // Seguro: restore e IF-EMPTY (nunca sobrescreve peso local), entao a ordem vs flush nao afeta o dado.
@@ -18075,7 +18080,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v426';
+    var APP_SHELL_V = 'metodo-gh-v427';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
