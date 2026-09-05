@@ -9446,25 +9446,50 @@ function _tourSteps() {
 }
 // Rastro de uso REAL do app neste aparelho (carga salva, esforço, dia concluído,
 // cronômetro): quem tem isso é veterano e NUNCA ganha tour retroativo.
+// v429 (05/09/2026, Sala #1822, lane Cortesia): veterano = atividade RECENTE no aparelho (90 dias),
+// não "qualquer dado de sempre". Ex-aluno que volta meses depois no mesmo celular tinha carga velha
+// no localStorage e nunca via o tutorial. Evidência com data: gh_blk_* (carimbo Date.now() de cada
+// salvamento), gh_wt_* (cronômetro, JSON com timestamps) e gh_logsent_* (treino concluído). Chave
+// sem data (gh_sets_/gh_placas_/gh_esf_/carga legada) não prova recência sozinha: quem salvou
+// série nos últimos meses tem gh_blk_ junto.
+const TOUR_VETERANO_DIAS = 90;
+function _tourTsDe_(v) {
+  try {
+    if (v == null) return 0;
+    const s = String(v).trim();
+    if (/^\d{12,14}$/.test(s)) return parseInt(s, 10);
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) { const t = Date.parse(s); return isNaN(t) ? 0 : t; }
+    if (s[0] === '{' || s[0] === '[') {
+      let max = 0;
+      JSON.stringify(JSON.parse(s), (k, val) => { if (typeof val === 'number' && val > 1e12 && val < 4e12 && val > max) max = val; return val; });
+      return max;
+    }
+  } catch (_) {}
+  return 0;
+}
 function _tourVeterano_() {
   try {
+    const limite = Date.now() - TOUR_VETERANO_DIAS * 86400000;
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i) || '';
       if (k.indexOf('gh_') !== 0) continue;
-      if (/^gh_logsent_/.test(k)) return true;                    // treino concluído
-      if (/^gh_(sets|placas|blk|esf)_/.test(k)) return true;      // série/carga/esforço salvos
-      if (/^gh_wt_/.test(k)) return true;                         // sessão do cronômetro
-      if (/_d\d+_e\d+_w\d+$/.test(k)) return true;                // carga legada gh_<id>_dN_eN_wN
+      if (!/^gh_(blk|wt|logsent)_/.test(k)) continue;
+      if (_tourTsDe_(localStorage.getItem(k)) >= limite) return true;
     }
   } catch (_) {}
   return false;
 }
 function _tourMaybeStart() {
   try {
-    if (localStorage.getItem(_TOUR_KEY) === '1') return;
     if (_tourAtivo) return;
     if (typeof params !== 'undefined' && params.get('edit')) return;              // treinador não vê tour
     if (typeof WORKOUT === 'undefined' || !Array.isArray(WORKOUT) || !WORKOUT.length) return;
+    // v429: &tour=1 no link força o tutorial (a lane de entrega manda no link quando quiser garantir)
+    const forcado = (typeof params !== 'undefined' && params.get('tour') === '1');
+    if (forcado) { try { localStorage.removeItem(_TOUR_KEY); } catch (_) {} setTimeout(() => { if (!_tourAtivo) tourStart(); }, 1600); return; }
+    // v429: a marca "já viu" (global do aparelho) só vale com atividade recente junto; sem atividade
+    // recente ela é de outra época (ex-aluno voltando) e cai, pro tutorial aparecer de novo.
+    if (localStorage.getItem(_TOUR_KEY) === '1') { if (_tourVeterano_()) return; try { localStorage.removeItem(_TOUR_KEY); } catch (_) {} }
     // SÓ aluno novo de primeira viagem (GH 14/08): veterano no aparelho de sempre não vê
     if (_tourVeterano_()) { localStorage.setItem(_TOUR_KEY, '1'); return; }
     setTimeout(() => {
@@ -18094,7 +18119,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v428';
+    var APP_SHELL_V = 'metodo-gh-v429';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
