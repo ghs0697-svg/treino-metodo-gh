@@ -5524,9 +5524,8 @@ const EX_VIDEO_BANK = {
   "DESCOMPRESSAO ESCAPULAS":"https://youtube.com/shorts/Pu5TMSdqd2w?feature=share",
   "DESCOMPRESSAO LOMBAR":"https://youtube.com/shorts/RKC6J4cIwA0?feature=share",
   "DESENVOLVIMENTO COM HALTERES":"https://youtube.com/shorts/e1o-hdUnlug?feature=share",
-  "DESENVOLVIMENTO NA MAQUINA":"https://youtube.com/shorts/CB2ILB5Cxt8?feature=share",
+  "DESENVOLVIMENTO NA MAQUINA":"https://youtube.com/shorts/aSGSMPmpSrU?feature=share",
   "DESENVOLVIMENTO NA MAQUINA INCLINADO":"https://youtube.com/shorts/UqjTH5SCsHM?feature=share",
-  "DESENVOLVIMENTO NA MAQUINA SENTADO":"https://youtube.com/shorts/aSGSMPmpSrU?feature=share",
   "ELEVACAO FRONTAL COM ANILHA":"https://youtube.com/shorts/zfxQW7noTXY?feature=share",
   "ELEVACAO FRONTAL COM HALTERES EM ISOMETRIA":"https://youtube.com/shorts/JshVDGvkQL8?feature=share",
   "ELEVACAO FRONTAL NEUTRA COM HALTERES":"https://youtube.com/shorts/cmElKUj4VuY?feature=share",
@@ -5640,6 +5639,10 @@ function _normEx(s){
   return (typeof EX_EN_ALIAS !== 'undefined' && EX_EN_ALIAS[n]) ? EX_EN_ALIAS[n] : n;
 }
 const EX_EN_ALIAS = {
+  // ── Apelidos em PT de nomes APOSENTADOS (mesma tabela: o app já aplica isto em _normEx e _bankVideo).
+  // Nome aposentado continua funcionando em protocolo/histórico antigo: vídeo, troca e carga resolvem
+  // pro titular. Nunca apagar nome que tem carga registrada; aposentar = apelidar aqui.
+  'DESENVOLVIMENTO NA MAQUINA SENTADO': 'DESENVOLVIMENTO NA MAQUINA',   // GH 06/09/2026: era o mesmo exercício
   'BENCH PRESS': 'SUPINO RETO', 'BARBELL BENCH PRESS': 'SUPINO RETO', 'FLAT BENCH PRESS': 'SUPINO RETO',
   'INCLINE BENCH PRESS': 'SUPINO INCLINADO', 'DECLINE BENCH PRESS': 'SUPINO DECLINADO',
   'DUMBBELL BENCH PRESS': 'SUPINO RETO COM HALTERES', 'INCLINE DUMBBELL PRESS': 'SUPINO INCLINADO COM HALTERES',
@@ -11814,7 +11817,7 @@ async function mostraAulasGhflix(nomeExercicio) {
       _mapaAulas.__idx = idx;
     }
   } catch (e) { _mapaAulasErro = true; return; }
-  const ids = _mapaAulas[_normAula(nomeExercicio)];
+  const ids = _mapaAulas[_normAula(nomeExercicio)] || _mapaAulas[_normAula(_normEx(nomeExercicio))];   // nome aposentado cai no titular
   if (!ids || !ids.length) return;
   const idx = _mapaAulas.__idx || {};
   const html = ids.map(id => {
@@ -18119,7 +18122,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v433';
+    var APP_SHELL_V = 'metodo-gh-v434';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;

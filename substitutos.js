@@ -40,7 +40,7 @@ Puxada Alta Pronada / Puxada Alta na Máquina Articulada
 Remada Curvada Pronada / Remada Curvada Sentado / Remada Curvada na Máquina Guiada / Remada Pronada na Máquina
 Remada Neutra no Cross / Remada Baixa com Triângulo
 Remada Unilateral na Máquina / Serrote com Halter / Serrote Pêndulo com Halter
-Desenvolvimento com Halteres / Desenvolvimento na Máquina / Desenvolvimento na Máquina Inclinado / Desenvolvimento na Máquina Sentado
+Desenvolvimento com Halteres / Desenvolvimento na Máquina / Desenvolvimento na Máquina Inclinado
 Elevação Lateral / Elevação Lateral na Máquina / Elevação Lateral no Cross / Elevação Lateral Sentado / Elevação Lateral no Banco Inclinado
 Elevação Frontal com Anilha / Elevação Frontal com Halteres em Isometria / Elevação Frontal Neutra com Halteres / Elevação Frontal no Cross / Elevação Frontal Corda no Cross
 Rosca Concentrada com Halter / Rosca Unilateral no Cross / Rosca Scott Unilateral
@@ -181,7 +181,6 @@ OMBRO
   Desenvolvimento com Halteres
   Desenvolvimento na Máquina
   Desenvolvimento na Máquina Inclinado
-  Desenvolvimento na Máquina Sentado
   Elevação Frontal com Anilha
   Elevação Frontal com Halteres em Isometria
   Elevação Frontal Neutra com Halteres
