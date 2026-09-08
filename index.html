@@ -9478,6 +9478,13 @@ function _tourSteps() {
 // sem data (gh_sets_/gh_placas_/gh_esf_/carga legada) não prova recência sozinha: quem salvou
 // série nos últimos meses tem gh_blk_ junto.
 const TOUR_VETERANO_DIAS = 90;
+// v439 (caso Frederico, 08/09): a marca "já viu" ganha DATA. Marca datada dentro de TOUR_VETERANO_DIAS vale
+// sozinha (aluno novo que pulou o tour e ainda não treinou não vê de novo a cada abertura). Só a marca
+// antiga sem data continua dependendo de atividade recente (v429). &tour=1 força UMA vez: quem já viu nos
+// últimos TOUR_FORCA_REPETE_DIAS dias não vê de novo, mesmo abrindo sempre pelo mesmo link.
+const TOUR_FORCA_REPETE_DIAS = 7;
+function _tourMarcaVisto() { try { localStorage.setItem(_TOUR_KEY, '1'); localStorage.setItem('gh_tour_done_ts', String(Date.now())); } catch (_) {} }
+function _tourDoneTs_() { try { return Number(localStorage.getItem('gh_tour_done_ts') || 0) || 0; } catch (_) { return 0; } }
 function _tourTsDe_(v) {
   try {
     if (v == null) return 0;
@@ -9511,19 +9518,29 @@ function _tourMaybeStart() {
     if (typeof WORKOUT === 'undefined' || !Array.isArray(WORKOUT) || !WORKOUT.length) return;
     // v429: &tour=1 no link força o tutorial (a lane de entrega manda no link quando quiser garantir)
     const forcado = (typeof params !== 'undefined' && params.get('tour') === '1');
-    if (forcado) { try { localStorage.removeItem(_TOUR_KEY); } catch (_) {} setTimeout(() => { if (!_tourAtivo) tourStart(); }, 1600); return; }
-    // v429: a marca "já viu" (global do aparelho) só vale com atividade recente junto; sem atividade
+    const doneTs = _tourDoneTs_();
+    if (forcado) {
+      // v439: força só se o aluno não viu o tour nos últimos dias (abrir sempre pelo mesmo link não repete)
+      if (!(doneTs && Date.now() - doneTs < TOUR_FORCA_REPETE_DIAS * 86400000)) {
+        try { localStorage.removeItem(_TOUR_KEY); } catch (_) {}
+        setTimeout(() => { if (!_tourAtivo) tourStart(); }, 1600);
+        return;
+      }
+    }
+    // v439: marca DATADA recente vale sozinha (não depende de atividade)
+    if (doneTs && Date.now() - doneTs < TOUR_VETERANO_DIAS * 86400000) return;
+    // v429: a marca antiga SEM data (global do aparelho) só vale com atividade recente junto; sem atividade
     // recente ela é de outra época (ex-aluno voltando) e cai, pro tutorial aparecer de novo.
-    if (localStorage.getItem(_TOUR_KEY) === '1') { if (_tourVeterano_()) return; try { localStorage.removeItem(_TOUR_KEY); } catch (_) {} }
+    if (localStorage.getItem(_TOUR_KEY) === '1') { if (_tourVeterano_()) { _tourMarcaVisto(); return; } try { localStorage.removeItem(_TOUR_KEY); } catch (_) {} }
     // SÓ aluno novo de primeira viagem (GH 14/08): veterano no aparelho de sempre não vê
-    if (_tourVeterano_()) { localStorage.setItem(_TOUR_KEY, '1'); return; }
+    if (_tourVeterano_()) { _tourMarcaVisto(); return; }
     setTimeout(() => {
       if (_tourAtivo || localStorage.getItem(_TOUR_KEY) === '1') return;
       // Protocolo v2+ = aluno antigo (já reajustou), mesmo estreando um celular novo: sem tour
       let v = '';
       try { v = sessionStorage.getItem('gh_version_' + SHEET_ID) || ''; } catch (_) {}
-      if (v && !/^1\./.test(String(v).trim())) { localStorage.setItem(_TOUR_KEY, '1'); return; }
-      if (_tourVeterano_()) { localStorage.setItem(_TOUR_KEY, '1'); return; }
+      if (v && !/^1\./.test(String(v).trim())) { _tourMarcaVisto(); return; }
+      if (_tourVeterano_()) { _tourMarcaVisto(); return; }
       tourStart();
     }, 1600);
   } catch (_) {}
@@ -9538,7 +9555,7 @@ function tourStart() {
     const el = document.querySelector(s.sel);
     return el && (el.offsetParent !== null || getComputedStyle(el).position === 'fixed');
   });
-  if (passos.length < 2) { try { localStorage.setItem(_TOUR_KEY, '1'); } catch (_) {} return; }
+  if (passos.length < 2) { _tourMarcaVisto(); return; }
   _tourPassos = passos;
   _tourIdx = -1;
   _tourAtivo = true;
@@ -9615,7 +9632,7 @@ function _tourDesenha(el, s, r) {
 }
 function tourEnd() {
   _tourAtivo = false;
-  try { localStorage.setItem(_TOUR_KEY, '1'); } catch (_) {}
+  _tourMarcaVisto();
   document.getElementById('tourOverlay').classList.remove('show');
 }
 function updateTimerDisplay() {
@@ -18306,7 +18323,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v438';
+    var APP_SHELL_V = 'metodo-gh-v439';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
