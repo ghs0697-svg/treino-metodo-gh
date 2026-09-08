@@ -2538,6 +2538,22 @@
   .laudo-full { position:fixed; inset:0; background:rgba(0,0,0,.95); z-index:10002; display:none; align-items:center; justify-content:center; padding:12px; }
   .laudo-full.on { display:flex; }
   .laudo-full img { max-width:100%; max-height:100%; object-fit:contain; border-radius:8px; }
+  /* Marcações no laudo (GH 08/09/2026): círculos numerados da equipe + legenda embaixo */
+  .laudo-imgwrap { position:relative; }
+  .laudo-marcas { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+  .laudo-marcas.edit { pointer-events:auto; cursor:crosshair; }
+  .laudo-legenda { margin:8px 0 0; padding:0; list-style:none; display:flex; flex-direction:column; gap:4px; }
+  .laudo-legenda li { display:flex; gap:8px; align-items:flex-start; color:#e7e2d8; font-size:12.5px; line-height:1.45; }
+  .laudo-legenda li.sel span:last-child { color:var(--gold); }
+  .laudo-legenda .n { flex:0 0 20px; height:20px; border-radius:50%; background:var(--gold); color:#0c0c0d; font-weight:800; font-size:11px; display:flex; align-items:center; justify-content:center; }
+  .laudo-mk-tools { margin-top:9px; display:flex; flex-wrap:wrap; gap:6px; }
+  .laudo-mk-tools button { background:#1b1b1e; border:1px solid #2a2a2f; color:#e7e2d8; font-size:12px; font-weight:700; padding:7px 11px; border-radius:9px; cursor:pointer; }
+  .laudo-mk-tools button.gold { background:var(--gold); color:#0c0c0d; border-color:var(--gold); }
+  .laudo-mk-form { margin-top:8px; background:#141416; border:1px solid #2a2a2f; border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:8px; }
+  .laudo-mk-form input[type=text] { width:100%; box-sizing:border-box; background:#0c0c0d; border:1px solid #2a2a2f; color:#fff; border-radius:8px; padding:8px 10px; font-size:14px; }
+  .laudo-mk-form label { color:#8d8579; font-size:11px; display:flex; align-items:center; gap:8px; }
+  .laudo-mk-form input[type=range] { flex:1; accent-color:var(--gold); }
+  .laudo-mk-hint { color:#8d8579; font-size:11.5px; line-height:1.5; }
   /* Registro semanal de fotos (auto-acompanhamento) */
   .rs-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
   .rs-slot { position:relative; aspect-ratio:3/4; background:#1b1b1e; border:1px dashed #3a3a40; border-radius:9px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; overflow:hidden; gap:4px; }
@@ -13918,8 +13934,9 @@ function _laudoBaixarPDF(imgId, versao) {
   const img = document.getElementById(imgId);
   if (!img || !img.src || !img.src.startsWith('data:')) return;
   try {
-    const jpeg = _jpegBytesDe(img.src);
-    const w = img.naturalWidth || 1080, h = img.naturalHeight || 1400;
+    const R = _laudoRasterComMarcas(img);   // com marcações da equipe, o PDF leva círculos + legendas
+    const jpeg = _jpegBytesDe(R ? R.dataUrl : img.src);
+    const w = R ? R.w : (img.naturalWidth || 1080), h = R ? R.h : (img.naturalHeight || 1400);
     const url = URL.createObjectURL(_laudoPdfBlob(jpeg, w, h));
     const a = document.createElement('a');
     a.href = url; a.download = `Evolucao_MetodoGH${versao ? '_V' + versao : ''}.pdf`;
@@ -13935,6 +13952,7 @@ async function loadLaudos() {
     const j = await (await fetch(`${LOG_ENDPOINT}?action=comparacoes_list&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`, { cache: 'no-store' })).json();
     _laudosLoaded = true;
     const laudos = (j && j.laudos) || [];
+    _laudosCache = laudos;
     // Sem laudo o aluno via uma tela VAZIA e ninguem cobrava a foto dele (achado da Reajustes:
     // quem nao manda foto some do laudo e a calibragem do protocolo fica no escuro). Agora
     // convida, explicando pra que serve, e leva pra aba de enviar com 1 toque.
@@ -13950,7 +13968,7 @@ async function loadLaudos() {
       return;
     }
     // TTL: só as comparações dos últimos LAUDO_TTL_DIAS dias. Passou disso, saiu do ar.
-    const recentes = laudos.filter(l => _laudoRecente(l.date));
+    const recentes = _atToken_() ? laudos : laudos.filter(l => _laudoRecente(l.date));   // equipe enxerga todos (pra marcar)
     if (!recentes.length) {
       area.innerHTML = `<div class="laudo-card"><div class="laudo-h">📊 Tua evolução</div>
         <div style="color:#bbb;font-size:12.5px;line-height:1.6;margin-top:6px;">Tua última comparação ficou disponível por ${LAUDO_TTL_DIAS} dias e já saiu do ar. A próxima aparece aqui quando sair teu próximo ajuste.</div></div>`;
@@ -13972,7 +13990,7 @@ async function showLaudo(fid, chipEl) {
   img.style.display = 'none'; if (ld) { ld.style.display = 'block'; ld.textContent = 'Carregando…'; }
   try {
     const j = await (await fetch(`${LOG_ENDPOINT}?action=comparacao_img&fid=${encodeURIComponent(fid)}&_=${Date.now()}`, { cache: 'no-store' })).json();
-    if (j && j.ok) { img.src = `data:${j.mime};base64,${j.b64}`; img.style.display = 'block'; if (ld) ld.style.display = 'none'; }
+    if (j && j.ok) { img.onload = () => _laudoMarcasAplica('laudoImg', fid); img.src = `data:${j.mime};base64,${j.b64}`; img.style.display = 'block'; if (ld) ld.style.display = 'none'; }
     else if (ld) ld.textContent = 'Não consegui carregar o laudo.';
   } catch (_) { if (ld) ld.textContent = 'Não consegui carregar o laudo.'; }
 }
@@ -13983,7 +14001,166 @@ function _laudoOpenFull(src) {
   ov.querySelector('img').src = src;
   ov.classList.add('on');
 }
-function laudoFull() { _laudoOpenFull(document.getElementById('laudoImg')?.src); }
+function laudoFull() { _laudoOpenFull(_laudoSrcComMarcas('laudoImg')); }
+
+// ── Marcações no laudo (GH 08/09/2026): a equipe (modo treinador) desenha círculos numerados sobre a
+//    foto e escreve a legenda ("melhorou deltoide lateral"); o aluno vê o círculo na foto, a legenda
+//    embaixo, e leva as marcas no zoom e no PDF. Salvo pelo .gs (type laudo_marcas) como
+//    Evolucao_V<n>.marcas.json ao lado do laudo; volta em comparacoes_list como laudos[i].marcas.
+let _laudosCache = [];
+const _laudoMk = { imgId: '', fid: '', marcas: [], sel: -1, edit: false };
+const _laudoEsc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function _laudoMarcasDe(fid) { const L = _laudosCache.find(l => l.fid === fid); return (L && Array.isArray(L.marcas)) ? L.marcas.map(m => Object.assign({}, m)) : []; }
+function _laudoWrapDe(img) { return img ? img.closest('.laudo-imgwrap') : null; }
+function _laudoUiDe(img) {
+  const wrap = _laudoWrapDe(img); if (!wrap) return null;
+  let ui = wrap.nextElementSibling;
+  if (!ui || !ui.classList.contains('laudo-mk-ui')) { ui = document.createElement('div'); ui.className = 'laudo-mk-ui'; wrap.insertAdjacentElement('afterend', ui); }
+  return ui;
+}
+function _laudoSvgDe(img) {
+  const wrap = _laudoWrapDe(img); if (!wrap) return null;
+  let svg = wrap.querySelector('svg.laudo-marcas');
+  if (!svg) { svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('class', 'laudo-marcas'); wrap.appendChild(svg); }
+  return svg;
+}
+function _laudoDesenha(img, marcas, sel) {
+  const svg = _laudoSvgDe(img); if (!svg) return;
+  const W = img.naturalWidth || 1000, H = img.naturalHeight || 1000;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  const sw = Math.max(2, W * 0.006), rb = Math.max(9, W * 0.024), fs = rb * 1.25;
+  svg.innerHTML = (marcas || []).map((m, i) => {
+    const cx = m.x * W, cy = m.y * H, r = Math.max(4, m.r * W), on = i === sel;
+    const bx = cx + r * 0.72, by = cy - r * 0.72;
+    return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#000" stroke-opacity=".55" stroke-width="${sw * 2.2}"/>`
+      + `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${on ? 'rgba(243,210,122,.16)' : 'none'}" stroke="${on ? '#fff' : '#f3d27a'}" stroke-width="${sw}"/>`
+      + `<circle cx="${bx}" cy="${by}" r="${rb}" fill="#f3d27a" stroke="#0c0c0d" stroke-width="${sw * 0.6}"/>`
+      + `<text x="${bx}" y="${by}" fill="#0c0c0d" font-size="${fs}" font-weight="800" font-family="system-ui,sans-serif" text-anchor="middle" dominant-baseline="central">${i + 1}</text>`;
+  }).join('');
+  svg.style.display = (marcas && marcas.length) ? 'block' : 'none';
+}
+function _laudoLegenda(img, marcas, sel) {
+  const ui = _laudoUiDe(img); if (!ui) return;
+  let ol = ui.querySelector('.laudo-legenda');
+  if (!marcas || !marcas.length) { if (ol) ol.remove(); return; }
+  if (!ol) { ol = document.createElement('ol'); ol.className = 'laudo-legenda'; ui.prepend(ol); }
+  ol.innerHTML = marcas.map((m, i) => `<li class="${i === sel ? 'sel' : ''}" onclick="_laudoMkSel(${i})"><span class="n">${i + 1}</span><span>${_laudoEsc(m.t || '') || '<i style="color:#8d8579">sem legenda</i>'}</span></li>`).join('');
+}
+// Aplica as marcas salvas numa imagem de laudo já carregada (aluno vê; equipe ganha o botão de marcar).
+function _laudoMarcasAplica(imgId, fid) {
+  const img = document.getElementById(imgId); if (!img) return;
+  img.dataset.fid = fid || '';
+  const marcas = _laudoMarcasDe(fid);
+  _laudoDesenha(img, marcas, -1); _laudoLegenda(img, marcas, -1);
+  const ui = _laudoUiDe(img); if (!ui) return;
+  ui.querySelectorAll('.laudo-mk-tools, .laudo-mk-form').forEach(el => el.remove());
+  if (_atToken_()) {
+    const tools = document.createElement('div'); tools.className = 'laudo-mk-tools';
+    tools.innerHTML = `<button onclick="_laudoMkInicia('${imgId}')">✏️ ${marcas.length ? 'Editar marcações' : 'Marcar melhoras'}</button>`;
+    ui.appendChild(tools);
+  }
+}
+function _laudoMkInicia(imgId) {
+  const img = document.getElementById(imgId); if (!img) return;
+  const fid = img.dataset.fid || '';
+  _laudoMk.imgId = imgId; _laudoMk.fid = fid; _laudoMk.marcas = _laudoMarcasDe(fid); _laudoMk.sel = -1; _laudoMk.edit = true;
+  const svg = _laudoSvgDe(img); if (svg) { svg.classList.add('edit'); svg.style.display = 'block'; svg.onclick = _laudoMkClique; }
+  _laudoMkRender();
+}
+function _laudoMkRender() {
+  const img = document.getElementById(_laudoMk.imgId); if (!img) return;
+  _laudoDesenha(img, _laudoMk.marcas, _laudoMk.sel); _laudoLegenda(img, _laudoMk.marcas, _laudoMk.sel);
+  const svg = _laudoSvgDe(img); if (svg) svg.style.display = 'block';
+  const ui = _laudoUiDe(img);
+  let tools = ui.querySelector('.laudo-mk-tools'); if (!tools) { tools = document.createElement('div'); tools.className = 'laudo-mk-tools'; ui.appendChild(tools); }
+  let form = ui.querySelector('.laudo-mk-form'); if (!form) { form = document.createElement('div'); form.className = 'laudo-mk-form'; ui.insertBefore(form, tools); }
+  const m = _laudoMk.marcas[_laudoMk.sel];
+  form.innerHTML = m
+    ? `<div style="color:var(--gold);font-size:12px;font-weight:700;">Marca ${_laudoMk.sel + 1}</div>
+       <input type="text" maxlength="120" placeholder="Ex.: melhorou deltoide lateral" value="${_laudoEsc(m.t || '')}" oninput="_laudoMkTexto(this.value)">
+       <label>Tamanho <input type="range" min="2" max="25" value="${Math.round(m.r * 100)}" oninput="_laudoMkRaio(this.value)"></label>
+       <div class="laudo-mk-tools" style="margin:0"><button onclick="_laudoMkApaga()">🗑️ Apagar esta</button><button onclick="_laudoMkSel(-1)">OK</button></div>`
+    : `<div class="laudo-mk-hint">Toca na foto onde melhorou: nasce um círculo numerado. Toca num círculo pra escrever a legenda, mudar o tamanho ou apagar.</div>`;
+  tools.innerHTML = `<button class="gold" onclick="_laudoMkSalva()">💾 Salvar marcações</button><button onclick="_laudoMkCancela()">Cancelar</button>${_laudoMk.marcas.length ? '<button onclick="_laudoMkLimpa()">Limpar todas</button>' : ''}`;
+}
+function _laudoMkClique(ev) {
+  if (!_laudoMk.edit) return;
+  const img = document.getElementById(_laudoMk.imgId); const svg = _laudoSvgDe(img); if (!img || !svg) return;
+  const b = svg.getBoundingClientRect(); if (!b.width || !b.height) return;
+  const x = (ev.clientX - b.left) / b.width, y = (ev.clientY - b.top) / b.height;
+  if (x < 0 || x > 1 || y < 0 || y > 1) return;
+  const W = img.naturalWidth || 1000, H = img.naturalHeight || 1000;
+  let hit = -1;
+  _laudoMk.marcas.forEach((m, i) => { const dx = (m.x - x) * W, dy = (m.y - y) * H; if (Math.sqrt(dx * dx + dy * dy) <= Math.max(m.r * W, W * 0.03) * 1.15) hit = i; });
+  if (hit >= 0) { _laudoMk.sel = hit; _laudoMkRender(); return; }
+  if (_laudoMk.marcas.length >= 30) return;
+  _laudoMk.marcas.push({ x: +x.toFixed(4), y: +y.toFixed(4), r: 0.06, t: '' });
+  _laudoMk.sel = _laudoMk.marcas.length - 1; _laudoMkRender();
+  const inp = _laudoUiDe(img).querySelector('.laudo-mk-form input[type=text]'); if (inp) setTimeout(() => inp.focus(), 60);
+}
+function _laudoMkSel(i) { if (!_laudoMk.edit) return; _laudoMk.sel = i; _laudoMkRender(); }
+function _laudoMkTexto(v) { const m = _laudoMk.marcas[_laudoMk.sel]; if (!m) return; m.t = String(v).slice(0, 120); _laudoLegenda(document.getElementById(_laudoMk.imgId), _laudoMk.marcas, _laudoMk.sel); }
+function _laudoMkRaio(v) { const m = _laudoMk.marcas[_laudoMk.sel]; if (!m) return; m.r = Math.max(0.02, Math.min(0.25, Number(v) / 100)); _laudoDesenha(document.getElementById(_laudoMk.imgId), _laudoMk.marcas, _laudoMk.sel); }
+function _laudoMkApaga() { if (_laudoMk.sel < 0) return; _laudoMk.marcas.splice(_laudoMk.sel, 1); _laudoMk.sel = -1; _laudoMkRender(); }
+function _laudoMkLimpa() { if (!confirm('Apagar todas as marcações deste laudo?')) return; _laudoMk.marcas = []; _laudoMk.sel = -1; _laudoMkRender(); }
+function _laudoMkFim() {
+  const img = document.getElementById(_laudoMk.imgId); const svg = img && _laudoSvgDe(img);
+  if (svg) { svg.classList.remove('edit'); svg.onclick = null; }
+  _laudoMk.edit = false; _laudoMk.sel = -1;
+}
+function _laudoMkCancela() { const fid = _laudoMk.fid, imgId = _laudoMk.imgId; _laudoMkFim(); _laudoMarcasAplica(imgId, fid); }
+async function _laudoMkSalva() {
+  const img = document.getElementById(_laudoMk.imgId); if (!img) return;
+  const marcas = _laudoMk.marcas.map(m => ({ x: m.x, y: m.y, r: m.r, t: String(m.t || '').trim() }));
+  const tools = _laudoUiDe(img).querySelector('.laudo-mk-tools'); if (tools) tools.innerHTML = '<span style="color:#8d8579;font-size:12px;">Salvando…</span>';
+  try {
+    const r = await fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ type: 'laudo_marcas', token: _atToken_(), fid: _laudoMk.fid, sheetId: SHEET_ID, autor: 'equipe', marcas }) });
+    const j = await r.json();
+    if (!j || !j.ok) throw new Error((j && j.error) || 'falhou');
+    const L = _laudosCache.find(l => l.fid === _laudoMk.fid); if (L) L.marcas = marcas;
+    _laudosLoaded = false;   // próxima abertura do modal relê do servidor
+    const fid = _laudoMk.fid, imgId = _laudoMk.imgId; _laudoMkFim(); _laudoMarcasAplica(imgId, fid);
+    ['laudoImg', 'laudoDestImg'].forEach(id => { if (id !== imgId) { const o = document.getElementById(id); if (o && o.dataset.fid === fid && o.src) _laudoMarcasAplica(id, fid); } });
+  } catch (e) {
+    alert('Não consegui salvar as marcações: ' + (e && e.message || e));
+    _laudoMkRender();
+  }
+}
+// Foto + círculos + faixa de legendas num JPEG só (zoom em tela cheia e PDF levam as marcas junto).
+function _laudoRasterComMarcas(img) {
+  const fid = img && img.dataset ? img.dataset.fid : ''; const marcas = fid ? _laudoMarcasDe(fid) : [];
+  if (!img || !marcas.length || !img.naturalWidth) return null;
+  try {
+    const W = img.naturalWidth, H = img.naturalHeight;
+    const fs = Math.max(18, Math.round(W * 0.028)), lh = Math.round(fs * 1.5), pad = Math.round(fs * 0.8);
+    const band = pad * 2 + lh * marcas.length;
+    const c = document.createElement('canvas'); c.width = W; c.height = H + band; const g = c.getContext('2d');
+    g.drawImage(img, 0, 0, W, H);
+    const sw = Math.max(2, W * 0.006), rb = Math.max(9, W * 0.024);
+    marcas.forEach((m, i) => {
+      const cx = m.x * W, cy = m.y * H, r = Math.max(4, m.r * W);
+      g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.strokeStyle = 'rgba(0,0,0,.55)'; g.lineWidth = sw * 2.2; g.stroke();
+      g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.strokeStyle = '#f3d27a'; g.lineWidth = sw; g.stroke();
+      const bx = cx + r * 0.72, by = cy - r * 0.72;
+      g.beginPath(); g.arc(bx, by, rb, 0, Math.PI * 2); g.fillStyle = '#f3d27a'; g.fill(); g.strokeStyle = '#0c0c0d'; g.lineWidth = sw * 0.6; g.stroke();
+      g.fillStyle = '#0c0c0d'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `800 ${rb * 1.25}px system-ui, sans-serif`; g.fillText(String(i + 1), bx, by);
+    });
+    g.fillStyle = '#0c0c0d'; g.fillRect(0, H, W, band);
+    marcas.forEach((m, i) => {
+      const y = H + pad + lh * i + lh / 2;
+      g.beginPath(); g.arc(pad + rb, y, rb, 0, Math.PI * 2); g.fillStyle = '#f3d27a'; g.fill();
+      g.fillStyle = '#0c0c0d'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `800 ${rb * 1.25}px system-ui, sans-serif`; g.fillText(String(i + 1), pad + rb, y);
+      g.textAlign = 'left'; g.fillStyle = '#e7e2d8'; g.font = `600 ${fs}px system-ui, sans-serif`;
+      const full = String(m.t || ''); let t = full; const maxW = W - pad * 3 - rb * 2;
+      while (t && g.measureText(t).width > maxW) t = t.slice(0, -1);
+      if (t !== full) t = t.slice(0, -1) + '…';
+      g.fillText(t, pad * 2 + rb * 2, y);
+    });
+    return { dataUrl: c.toDataURL('image/jpeg', 0.92), w: W, h: H + band };
+  } catch (_) { return null; }
+}
+function _laudoSrcComMarcas(imgId) { const img = document.getElementById(imgId); const R = _laudoRasterComMarcas(img); return R ? R.dataUrl : (img ? img.src : ''); }
 
 // Destaque do laudo na PÁGINA PRINCIPAL (fora do modal). Mostra o laudo mais recente; toque abre
 // em tela cheia. Silencioso se o aluno ainda não tem laudo (não polui quem nunca reajustou).
@@ -13994,19 +14171,20 @@ async function loadLaudoDestaque() {
   try {
     const j = await (await fetch(`${LOG_ENDPOINT}?action=comparacoes_list&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`, { cache: 'no-store' })).json();
     const laudos = (j && j.laudos) || [];
+    _laudosCache = laudos;
     if (!laudos.length) { slot.innerHTML = ''; return; }
     const L = laudos[0]; // o mais recente
     // TTL: fora da janela de LAUDO_TTL_DIAS dias, não destaca mais na página principal.
-    if (!_laudoRecente(L.date)) { slot.innerHTML = ''; return; }
+    if (!_laudoRecente(L.date) && !_atToken_()) { slot.innerHTML = ''; return; }   // equipe enxerga sempre (pra marcar)
     slot.innerHTML = `<div class="gh-top-card">
       <div class="gh-top-card-title">📊 Tua evolução <span style="color:#8d8579;font-weight:400;font-size:11.5px;">· teu antes e depois, medido</span></div>
-      <div class="laudo-imgwrap" style="margin-top:8px;"><div class="laudo-loading" id="laudoDestLoad">Carregando…</div><img id="laudoDestImg" class="laudo-img" style="display:none;" onclick="_laudoOpenFull(this.src)" alt="Tua evolução"></div>
+      <div class="laudo-imgwrap" style="margin-top:8px;"><div class="laudo-loading" id="laudoDestLoad">Carregando…</div><img id="laudoDestImg" class="laudo-img" style="display:none;" onclick="_laudoOpenFull(_laudoSrcComMarcas('laudoDestImg'))" alt="Tua evolução"></div>
       <button class="cmp-share-btn" style="margin-top:9px;" onclick="_laudoBaixarPDF('laudoDestImg', ${L.versao || 0})">⬇️ Baixar em PDF</button>
       <div style="color:#8d8579;font-size:11px;margin-top:6px;text-align:center;">Fica disponível por ${LAUDO_TTL_DIAS} dias. Baixa em PDF se quiser guardar.</div>
     </div>`;
     const ij = await (await fetch(`${LOG_ENDPOINT}?action=comparacao_img&fid=${encodeURIComponent(L.fid)}&_=${Date.now()}`, { cache: 'no-store' })).json();
     const img = document.getElementById('laudoDestImg'), ld = document.getElementById('laudoDestLoad');
-    if (ij && ij.ok && img) { img.src = `data:${ij.mime};base64,${ij.b64}`; img.style.display = 'block'; if (ld) ld.style.display = 'none'; }
+    if (ij && ij.ok && img) { img.onload = () => _laudoMarcasAplica('laudoDestImg', L.fid); img.src = `data:${ij.mime};base64,${ij.b64}`; img.style.display = 'block'; if (ld) ld.style.display = 'none'; }
     else { slot.innerHTML = ''; }   // não deixa card vazio se a imagem não veio
   } catch (e) { slot.innerHTML = ''; }
 }
@@ -18128,7 +18306,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v437';
+    var APP_SHELL_V = 'metodo-gh-v438';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
