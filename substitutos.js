@@ -64,7 +64,7 @@ Tríceps Supinado / Tríceps na Paralela
 # foram ABSORVIDOS aqui em vez de duplicados: crucifixo inverso, face pull, pulldown,
 # búlgaro/coice, supino inclinado e supino reto.
 Tríceps Francês com Halter / Tríceps Francês no Cross
-Puxada Alta Supinada na Máquina / Puxada Alta Supinada
+Puxada Alta Supinada na Máquina / Puxada Alta Supinada / Puxada Alta Unilateral Supinada
 Remada Cavalinho Aberta / Crucifixo Inverso com Halteres / Crucifixo Inverso no Cross / Crucifixo Inverso no Voador / Face Pull / Facepull com Corda no Cross / Remada Alta na Polia
 Pullover na Máquina / Pullover com Halter / Pulldown / Pulldown na Máquina
 Rosca Spider / Rosca Direta na Puxada Alta
@@ -76,7 +76,7 @@ Extensão de Punho com Barra / Extensão de Punho no Cross
 `;
 
 // ════════════════════════════════════════════════════════════════════════
-//  LISTA DE REFERÊNCIA — os 152 exercícios do banco oficial (com vídeo).
+//  LISTA DE REFERÊNCIA — os 153 exercícios do banco oficial (com vídeo).
 //  Copie os nomes DAQUI pra não errar. (Só pra consulta; não mexe em nada.)
 // ════════════════════════════════════════════════════════════════════════
 /*
@@ -162,6 +162,7 @@ COSTAS
   Puxada Alta na Máquina Articulada
   Puxada Alta Pronada
   Puxada Alta Supinada
+  Puxada Alta Unilateral Supinada
   Remada Alta na Polia
   Remada Baixa Aberta
   Remada Baixa com Triângulo
