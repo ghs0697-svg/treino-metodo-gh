@@ -41,7 +41,7 @@ Remada Curvada Pronada / Remada Curvada Sentado / Remada Curvada na Máquina Gui
 Remada Neutra no Cross / Remada Baixa com Triângulo
 Remada Unilateral na Máquina / Serrote com Halter / Serrote Pêndulo com Halter
 Desenvolvimento com Halteres / Desenvolvimento na Máquina / Desenvolvimento na Máquina Inclinado
-Elevação Lateral / Elevação Lateral na Máquina / Elevação Lateral no Cross / Elevação Lateral Sentado / Elevação Lateral no Banco Inclinado
+Elevação Lateral / Elevação Lateral na Máquina / Elevação Lateral no Cross / Elevação Lateral Sentado / Elevação Lateral no Banco Inclinado / Elevação Lateral na Máquina Sentado
 Elevação Frontal com Anilha / Elevação Frontal com Halteres em Isometria / Elevação Frontal Neutra com Halteres / Elevação Frontal no Cross / Elevação Frontal Corda no Cross
 Rosca Concentrada com Halter / Rosca Unilateral no Cross / Rosca Scott Unilateral
 Rosca Direta Alternada / Rosca Direta com Halteres / Rosca Scott Fechada
@@ -71,11 +71,12 @@ Rosca Spider / Rosca Direta na Puxada Alta
 Step Up / Step Up no Cross / Búlgaro / Búlgaro na Máquina / Coice na Máquina / Coice com Caneleira / Coice no Cross com Polia Alta
 Rosca Bayesian / Rosca Direta com Halter no Banco Inclinado
 Supino Inclinado / Supino Inclinado na Máquina / Supino Inclinado com Halteres
-Supino Reto / Supino Reto na Máquina / Supino Reto na Máquina Sentado
+Supino Reto / Supino Reto na Máquina / Supino Reto na Máquina Sentado / Supino Reto com Halteres
+Extensão de Punho com Barra / Extensão de Punho no Cross
 `;
 
 // ════════════════════════════════════════════════════════════════════════
-//  LISTA DE REFERÊNCIA — os 143 exercícios do banco oficial (com vídeo).
+//  LISTA DE REFERÊNCIA — os 152 exercícios do banco oficial (com vídeo).
 //  Copie os nomes DAQUI pra não errar. (Só pra consulta; não mexe em nada.)
 // ════════════════════════════════════════════════════════════════════════
 /*
@@ -148,6 +149,7 @@ PEITO
   Supino Declinado na Máquina
   Supino Inclinado com Halteres
   Supino Inclinado na Máquina
+  Supino Reto com Halteres
   Supino Reto na Máquina
   Supino Reto na Máquina Sentado
   Voador
@@ -187,6 +189,7 @@ OMBRO
   Elevação Frontal no Cross
   Elevação Lateral
   Elevação Lateral na Máquina
+  Elevação Lateral na Máquina Sentado
   Elevação Lateral no Banco Inclinado
   Elevação Lateral no Cross
   Elevação Lateral Parcial no Cross
@@ -218,6 +221,11 @@ TRÍCEPS
   Tríceps Supinado
   Tríceps Testa em Pé
   Tríceps Testa no Banco Inclinado
+
+ANTEBRAÇO
+  Extensão de Punho com Barra
+  Extensão de Punho no Cross
+  Flexão de Punho com Barra
 
 ABDÔMEN / CORE / LOMBAR
   Abdominal Arnold
