@@ -4129,10 +4129,16 @@
 
 <!-- ══ SUPLEMENTOS ══ -->
 <div class="instructions-toggle" id="suplementosToggle" onclick="toggleSuplementos()" style="display:none;">
-  <span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span><span class="tog-label">Onde Comprar Suplementos</span><span class="tog-chev" id="suplementosArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span>
+  <span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span><span class="tog-label">Onde comprar (lojas indicadas)</span><span class="tog-chev" id="suplementosArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span>
 </div>
 <div class="instructions-content" id="suplementosContent">
-  <p style="color:var(--gray);font-size:12px;margin:0 0 14px;">Suplementos confiáveis com desconto. Marca FTW (linha que o GH usa), links Shopee.</p>
+  <!-- GH 09/09/2026: aluno confundia esta lista de LOJAS com a suplementação DELE (que a Entregas/Reajustes monta na Dieta). -->
+  <div style="border:1px solid var(--gold);border-left:4px solid var(--gold);border-radius:10px;padding:10px 12px;margin:0 0 12px;background:rgba(201,162,75,.08);">
+    <div style="color:var(--gold);font-weight:800;font-size:12.5px;letter-spacing:.03em;margin-bottom:4px;">⚠️ Isto NÃO é a tua suplementação</div>
+    <div style="color:#e7e2d8;font-size:12.5px;line-height:1.5;">O que tu toma, a dose e o horário estão no <b>teu protocolo</b>, na aba <b>Dieta</b>, em <b>Suplementação</b>. Aqui é só uma <b>sugestão de onde comprar</b>, com desconto de aluno, se tu quiser. Compra só o que está no teu protocolo.</div>
+    <button class="cmp-share-btn" style="margin-top:9px;" onclick="_irParaMinhaSuplementacao()">💊 Ver a minha suplementação</button>
+  </div>
+  <p style="color:var(--gray);font-size:12px;margin:0 0 14px;">Lojas e marcas que o GH indica, com desconto de aluno. Marca FTW (linha que o GH usa), links Shopee.</p>
 
   <h3 style="color:var(--gold);margin:14px 0 8px;font-size:13px;">💪 Básicos do treino</h3>
 
@@ -15351,6 +15357,15 @@ document.addEventListener('click', e => {
   }
 });
 
+function _irParaMinhaSuplementacao() {
+  try { switchView('dieta'); } catch (_) {}
+  setTimeout(() => {
+    const c = document.getElementById('suplsContent');
+    if (c && c.offsetParent === null) { try { toggleDietSection('supls'); } catch (_) {} }
+    const t = document.querySelector('[onclick="toggleDietSection(\'supls\')"]');
+    if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 450);
+}
 function toggleSuplementos() {
   const c = document.getElementById('suplementosContent');
   const a = document.getElementById('suplementosArrow');
@@ -16564,6 +16579,7 @@ function renderDiet() {
   if (suplTimings.length > 0) {
     html += `<div class="diet-section-toggle" onclick="toggleDietSection('supls')"><span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 20.5 3.5 13.5a5 5 0 0 1 7-7l7 7a5 5 0 0 1-7 7z"/><line x1="8.5" y1="8.5" x2="15.5" y2="15.5"/></svg></span><span class="tog-label">Suplementação</span><span class="tog-chev" id="suplsArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></div>`;
     html += `<div class="diet-section-content" id="suplsContent">`;
+    html += `<div style="color:#8d8579;font-size:11.5px;line-height:1.5;margin:0 0 10px;">Esta é a <b style="color:#e7e2d8">tua</b> suplementação: o que tomar, dose e horário. Onde comprar com desconto fica na seção <b style="color:#e7e2d8">Onde comprar (lojas indicadas)</b>, e comprar por lá é opcional.</div>`;
     suplTimings.forEach(timing => {
       const items = d.supls[timing] || [];
       if (!items.length) return; // section vazia (separator sem suplementos depois)
@@ -18323,7 +18339,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v440';
+    var APP_SHELL_V = 'metodo-gh-v441';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
