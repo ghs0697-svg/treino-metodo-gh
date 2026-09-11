@@ -7063,6 +7063,18 @@ function _syncQueueGet(kind) {
   try { return JSON.parse(localStorage.getItem(_syncQueueKey(kind)) || '[]'); }
   catch (_) { return []; }
 }
+// v447: remove da fila de retry o item que fala do mesmo alvo (mesma chave de dedup) que acabou de subir.
+function _syncQueueDrop(kind, payload, dedupKeyFn) {
+  try {
+    if (typeof dedupKeyFn !== 'function') return;
+    const k = dedupKeyFn(payload);
+    const q = _syncQueueGet(kind);
+    const next = q.filter(p => dedupKeyFn(p) !== k);
+    if (next.length === q.length) return;
+    if (next.length) localStorage.setItem(_syncQueueKey(kind), JSON.stringify(next));
+    else _syncQueueClear(kind);
+  } catch (_) {}
+}
 function _syncQueuePush(kind, payload, dedupKeyFn) {
   try {
     const q = _syncQueueGet(kind);
@@ -7181,7 +7193,13 @@ function _cargaSyncEnvia_(k) {
       redirect: 'follow'
     })
       .then(resp => {
-        if (resp && resp.ok) { _cargaSyncUltimo[k] = sig; setBadge('☁ salvo na nuvem', 'cloud-ok'); }
+        if (resp && resp.ok) {
+          _cargaSyncUltimo[k] = sig; setBadge('☁ salvo na nuvem', 'cloud-ok');
+          // v447: um envio anterior deste MESMO exercício pode ter falhado e estar na fila de retry.
+          // Sem tirar de lá, o flush de 30 s reenviava o peso VELHO depois do novo, e o servidor passa a
+          // considerar o velho como o mais recente (a leitura pega a última linha da aba).
+          try { _syncQueueDrop('carga', payload, _cargaSyncKey_); } catch (_) {}
+        }
         else enfileira();
       })
       .catch(() => enfileira());
@@ -7190,8 +7208,13 @@ function _cargaSyncEnvia_(k) {
   }
 }
 function _cargaSyncFlushAll_() { Object.keys(_cargaSyncPend).forEach(_cargaSyncEnvia_); }
-window.addEventListener('pagehide', _cargaSyncFlushAll_);
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') _cargaSyncFlushAll_(); });
+// v447: sair do app precisa salvar TAMBÉM o que está nos 400 ms do debounce, não só a fila de 6 s do sync.
+// No iPhone o PWA é morto em segundo plano: sem isto o último peso digitado morria com ele.
+window.addEventListener('pagehide', () => { try { _flushSetsPendentes_(true); } catch (_) { _cargaSyncFlushAll_(); } });
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'hidden') return;
+  try { _flushSetsPendentes_(true); } catch (_) { _cargaSyncFlushAll_(); }
+});
 
 // Esforço (RIR) + flag de aparelho → aba ESFORCO no mestre. Fire-and-forget,
 // com fila de retry (mesma do carga). Pro painel do treinador calibrar carga.
@@ -9837,7 +9860,8 @@ function openPacer(di, ei) {
   document.getElementById('pacerPauseBtn').textContent = 'Pausar';
   document.getElementById('pacerOverlay').classList.add('show');
   document.body.style.overflow = 'hidden';
-  _timerLockOn();
+  _pacLockOn();                          // v447: lock PRÓPRIO; antes usava o do descanso e fechar o pacer
+                                         // soltava a trava de tela no meio de um descanso em andamento
   _pacAudioInit();                       // gesto do usuário: é aqui que o iOS libera o som
   const _sb = document.getElementById('pacerSomBtn');
   if (_sb) { _sb.textContent = _pacMudo ? '🔇 Som off' : '🔊 Som on'; _sb.classList.toggle('off', _pacMudo); }
@@ -9947,11 +9971,26 @@ function _pacApplyPhase() {
   document.getElementById('pacerRingFill').setAttribute('class', p.cls);
   if (_pacSegs.length) _pacWaveFase();
 }
+let _pacWakeLock = null;
+async function _pacLockOn() {
+  try { if (_pacWakeLock) { await _pacWakeLock.release(); _pacWakeLock = null; } } catch (_) {}
+  try { if ('wakeLock' in navigator) _pacWakeLock = await navigator.wakeLock.request('screen'); } catch (_) {}
+}
+function _pacLockOff() {
+  try { _pacWakeLock && _pacWakeLock.release(); } catch (_) {}
+  _pacWakeLock = null;
+}
 function _pacTick() {
   if (_pacPaused) { _pacLast = performance.now(); return; }
   const now = performance.now();
-  _pacT += (now - _pacLast) / 1000;
+  const dt = (now - _pacLast) / 1000;
   _pacLast = now;
+  // v447: o app fora da tela congela o tick; ao voltar, o delta acumulado executava TODAS as fases perdidas
+  // de uma vez e o contador somava repetições que o aluno não fez (2 min fora = ~34 reps fantasma), com
+  // vibração e bipe em rajada. Buraco maior que uma fase = o aluno não estava executando: retoma do zero.
+  const _pFase = _pacPhases[_pacPh];
+  if (dt > (_pFase ? _pFase.dur : 3) + 1) { _pacT = 0; _pacLast = now; _pacApplyPhase(); return; }
+  _pacT += dt;
   let p = _pacPhases[_pacPh];
   while (_pacT >= p.dur) {
     _pacT -= p.dur;
@@ -9983,7 +10022,7 @@ function closePacer() {
   if (_pacInt) { clearInterval(_pacInt); _pacInt = null; }
   document.getElementById('pacerOverlay').classList.remove('show');
   document.body.style.overflow = '';
-  _timerLockOff();
+  _pacLockOff();
 }
 function pacerToRest() {
   const base = _pacBase;
@@ -11182,6 +11221,7 @@ function renderTabs() {
 }
 
 function renderExercises() {
+  try { _flushSetsPendentes_(false); } catch (_) {}   // v447: salva série digitada antes de trocar a grade
   const c = document.getElementById("exerciseContainer");
   c.innerHTML = "";
   WORKOUT.forEach((day, di) => {
@@ -11580,6 +11620,7 @@ function _exEnterAnim() {
 function changeWeek(d) {
   const n = currentWeek + d;
   if (n < 1 || n > TOTAL_WEEKS) return;
+  try { _flushSetsPendentes_(false); } catch (_) {}   // v447: grava na semana VIGENTE antes de virar a semana
   currentWeek = n;
   _posSave();
   document.getElementById("weekLabel").textContent = `Semana ${currentWeek}`;
@@ -11731,6 +11772,24 @@ async function loadTempoTreino() {
 // Flush do debounce pendente da grade de séries de (di,ei): grava o que está digitado AGORA, no slot ATUAL.
 // Chamado antes de trocar o substituto (escolherSub) — senao a troca muda o _cargaSlotSuffix e o save
 // debounced (400ms) cairia no slot do exercicio ERRADO. Caminho de carga e sagrado, entao salva no slot certo.
+// v447: o que o aluno digita fica 400 ms num debounce (_setTimers) antes de ir pro storage. Quem repinta a
+// grade nesse meio tempo (marcar "feito", trocar de semana, restore do boot) apagava o valor digitado: o
+// callback acordava depois e lia a grade NOVA, vazia. O modo foco já se protegia com _flushFocoPendente;
+// a lista, não. Agora todo repinte salva o pendente antes. NÃO força envio ao servidor (o debounce de 6 s
+// do sync cuida disso), exceto quando o app está saindo do ar.
+function _flushSetsPendentes_(enviarJa) {
+  const ks = Object.keys(_setTimers || {});
+  if (!ks.length) { if (enviarJa) _cargaSyncFlushAll_(); return; }
+  ks.forEach(k => {
+    const m = String(k).match(/^s-(\d+)-(.+)$/); if (!m) return;
+    try {
+      clearTimeout(_setTimers[k]); delete _setTimers[k];
+      const arr = _readSetsFromDom(parseInt(m[1], 10), m[2]);
+      if (arr) saveSets(parseInt(m[1], 10), m[2], currentWeek, arr);
+    } catch (_) {}
+  });
+  if (enviarJa) _cargaSyncFlushAll_();
+}
 function flushCargaPendente_(di, ei) {
   const kS = `s-${di}-${ei}`;
   if (!_setTimers[kS]) return;
@@ -18398,7 +18457,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v446';
+    var APP_SHELL_V = 'metodo-gh-v447';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
