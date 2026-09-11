@@ -1,4 +1,4 @@
-const CACHE_NAME = 'metodo-gh-v447';
+const CACHE_NAME = 'metodo-gh-v448';
 const ASSETS = [
   './',
   './index.html',
@@ -60,6 +60,24 @@ function _semNull_(p, req) {
   });
 }
 
+// v448 (pente fino 11/09/2026): medido em producao, o front door do Google as vezes entrega a chamada ao
+// Apps Script SEM a query (o script cai na rota padrao e responde "sem action"). Sao ~1.000 por dia, cerca de
+// uma por abertura de app: a chamada daquele momento falha (a carga anterior nao aparece, o status do plano
+// nao carrega) e o aluno nunca fica sabendo por que. Como TODA chamada ao servidor passa por aqui, este e o
+// ponto unico pra consertar: se a resposta vier "sem action", refaz UMA vez. So GET, nunca POST: repetir um
+// POST duplicaria gravacao de carga.
+async function _gasFetch(req) {
+  const r = await fetch(req, { cache: 'no-store' });
+  if (req.method !== 'GET') return r;
+  try {
+    const txt = await r.clone().text();
+    if (txt && txt.indexOf('sem action') !== -1) {
+      return await fetch(req.url, { cache: 'no-store', credentials: 'omit' });
+    }
+  } catch (_) {}
+  return r;
+}
+
 self.addEventListener('fetch', e => {
   // FONTES (Google Fonts): imutáveis — cache-first, senão caíam na regra 'Google = rede
   // sempre' abaixo e eram baixadas em TODA abertura, bloqueando a primeira pintura.
@@ -76,7 +94,7 @@ self.addEventListener('fetch', e => {
   // Se falhar, propaga erro pro app — melhor que servir resposta cacheada/parcial
   // que estava bugando o reload do PWA standalone no iOS (DIETA sumindo).
   if (e.request.url.includes('docs.google.com') || e.request.url.includes('script.google.com') || e.request.url.includes('googleapis.com')) {
-    e.respondWith(fetch(e.request, { cache: 'no-store' }));
+    e.respondWith(_gasFetch(e.request));
     return;
   }
   // GHFlix (aba): catálogo + index mudam toda semana (curadoria/renovação).
