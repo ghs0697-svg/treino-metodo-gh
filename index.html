@@ -9410,8 +9410,22 @@ function parseIntervalSeconds(text) {
 let _timerInt = null;
 let _timerLeft = 0;
 let _timerTotal = 0;
+let _timerEndAt = 0;           // v446: instante do FIM (relógio), fonte da verdade do descanso
 let _timerWakeLock = null;
 const _TIMER_CIRC = 439.8; // 2πr do anel (r=70)
+// v446 (feedback de aluno, 11/09/2026): o descanso contava de 1 em 1 tick do setInterval. Fora da tela
+// (aluno abre o WhatsApp) o navegador ESTRANGULA o intervalo, então o contador andava mais devagar que o
+// relógio e o descanso esticava sem ninguém ver. Agora conta pela diferença até _timerEndAt: sair da tela
+// não muda nada, e ao voltar o número já está certo (ou o descanso já acabou).
+const _TIMER_ATRASO_MUDO = 120000;   // voltou mais de 2 min depois do fim: encerra sem beep/vibração
+function _timerRestante() { return Math.max(0, Math.ceil((_timerEndAt - Date.now()) / 1000)); }
+function _timerSync() {
+  if (!_timerInt) return;
+  const faltaMs = _timerEndAt - Date.now();
+  _timerLeft = Math.max(0, Math.ceil(faltaMs / 1000));
+  updateTimerDisplay();
+  if (faltaMs <= 0) timerDone(-faltaMs);
+}
 async function _timerLockOn() {
   // Mantém a tela acesa enquanto o descanso roda (se o navegador suportar)
   try { if ('wakeLock' in navigator) _timerWakeLock = await navigator.wakeLock.request('screen'); } catch (_) {}
@@ -9420,22 +9434,27 @@ function _timerLockOff() {
   try { _timerWakeLock && _timerWakeLock.release(); } catch (_) {}
   _timerWakeLock = null;
 }
+// v446: o sistema SOLTA o wake lock sozinho quando a tela sai de foco, e ele não volta por conta própria.
+// Sem isto, bastava o aluno sair e voltar uma vez pro celular apagar no meio do descanso seguinte
+// (descanso de 120 s com trava de tela de 90 s era exatamente o caso relatado).
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible' || !_timerInt) return;
+  _timerSync();
+  if (_timerInt && !_timerWakeLock) _timerLockOn();
+});
 function startTimer(name, seconds) {
   // modo pouco tempo: descanso encurtado (30s isolados / 50s compostos — números do GH)
   if (typeof _shortMin === 'function' && _shortMin() && seconds > 0) seconds = Math.min(seconds, _shortRestCap(name));
   _timerLeft = seconds;
   _timerTotal = seconds;
+  _timerEndAt = Date.now() + seconds * 1000;
   document.getElementById('timerName').textContent = name;
   document.getElementById('timerOverlay').classList.add('show');
   document.getElementById('timerPill').classList.remove('show', 'done');
   document.body.style.overflow = 'hidden';
   updateTimerDisplay();
   if (_timerInt) clearInterval(_timerInt);
-  _timerInt = setInterval(() => {
-    _timerLeft--;
-    updateTimerDisplay();
-    if (_timerLeft <= 0) timerDone();
-  }, 1000);
+  _timerInt = setInterval(_timerSync, 250);   // 250 ms: ao voltar pra tela o número corrige na hora
   _timerLockOn();
 }
 // ── Descanso AUTOMÁTICO (GH 2026-08-13) ──
@@ -9446,6 +9465,7 @@ function startTimerAuto(name, seconds) {
   if (typeof _shortMin === 'function' && _shortMin() && seconds > 0) seconds = Math.min(seconds, _shortRestCap(name));
   _timerLeft = seconds;
   _timerTotal = seconds;
+  _timerEndAt = Date.now() + seconds * 1000;
   document.getElementById('timerName').textContent = name;
   document.getElementById('timerOverlay').classList.remove('show');
   const pill = document.getElementById('timerPill');
@@ -9453,11 +9473,7 @@ function startTimerAuto(name, seconds) {
   pill.classList.add('show');
   updateTimerDisplay();
   if (_timerInt) clearInterval(_timerInt);
-  _timerInt = setInterval(() => {
-    _timerLeft--;
-    updateTimerDisplay();
-    if (_timerLeft <= 0) timerDone();
-  }, 1000);
+  _timerInt = setInterval(_timerSync, 250);
   _timerLockOn();
   if (navigator.vibrate) navigator.vibrate(20);
 }
@@ -9699,21 +9715,29 @@ function timerReopen() {
 }
 function timerCancel() {
   if (_timerInt) { clearInterval(_timerInt); _timerInt = null; }
+  _timerEndAt = 0;
   document.getElementById('timerOverlay').classList.remove('show');
   document.getElementById('timerPill').classList.remove('show', 'done');
   document.body.style.overflow = '';
   _timerLockOff();
 }
 function timerAdd(secs) {
-  _timerLeft += secs;
+  _timerEndAt += secs * 1000;                 // v446: o +30s empurra o FIM, não um contador solto
+  _timerLeft = _timerRestante();
   if (_timerLeft > _timerTotal) _timerTotal = _timerLeft;
   updateTimerDisplay();
 }
-function timerDone() {
+function timerDone(atrasoMs) {
   if (_timerInt) { clearInterval(_timerInt); _timerInt = null; }
+  _timerEndAt = 0;
   _timerLockOff();
-  beep();
-  if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
+  // v446: se o descanso venceu enquanto o app estava fora da tela e o aluno só voltou muito depois,
+  // encerra calado — apitar por um descanso que acabou há 5 min só assusta.
+  const mudo = Number(atrasoMs || 0) > _TIMER_ATRASO_MUDO;
+  if (!mudo) {
+    beep();
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
+  }
   const pill = document.getElementById('timerPill');
   const minimized = pill.classList.contains('show');
   if (minimized) {
@@ -18374,7 +18398,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v445';
+    var APP_SHELL_V = 'metodo-gh-v446';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
