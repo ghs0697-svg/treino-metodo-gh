@@ -960,6 +960,14 @@
   .ex-check:hover { border-color: var(--gold); }
   .ex-check.done { background: var(--gold); border-color: var(--gold); }
   .ex-check.done::after { content: '✓'; color: var(--dark); font-weight: 800; font-size: 14px; }
+  /* v449: "não consegui fazer" */
+  .ex-check.skip { border-style: dashed; border-color: rgba(255,255,255,.35); }
+  .ex-check.skip::after { content: '–'; color: rgba(255,255,255,.55); font-weight: 800; font-size: 14px; }
+  .exercise-card.skipped { opacity: .58; }
+  .exercise-card.skipped .exercise-name { text-decoration: line-through; text-decoration-color: rgba(255,255,255,.35); }
+  .ex-skip-btn { display: inline-flex; align-items: center; min-height: 28px; margin-top: 6px; padding: 4px 10px; background: transparent; border: 1px solid rgba(255,255,255,.14); border-radius: 999px; color: #9a9389; font-size: 11px; font-weight: 600; cursor: pointer; }
+  .ex-skip-btn.on { border-color: rgba(201,162,75,.5); color: var(--gold); }
+  .ex-skip-btn:active { transform: scale(.97); }
   .exercise-card.done { opacity: 0.55; }
   .exercise-card.done .exercise-name { text-decoration: line-through; }
 
@@ -6988,6 +6996,16 @@ function onSetField(di, ei) {
     _autoRestMaybe(di, ei, arr, _repsAntes);   // reps nova + treino rolando = descanso dispara sozinho (pill)
   }, 400);
 }
+// v449: marca/desmarca "não consegui fazer". Pular um exercício que estava feito desmarca o feito.
+function onSkipExercise(di, ei) {
+  try { _flushSetsPendentes_(false); } catch (_) {}
+  const vaiPular = !isSkipped(di, ei);
+  if (vaiPular && isDone(di, ei)) setDone(di, ei, false);
+  setSkipped(di, ei, vaiPular);
+  if (vaiPular && allDoneOfDay(di)) _diaConcluidoDispara(di);
+  renderExercises();
+  if (vaiPular && navigator.vibrate) navigator.vibrate(15);
+}
 // biset salva sob "2a"/"2b" mas o badge "salvo" é do card (sv-di-2) → normaliza pro badge
 function _setSvKey(ei) { const m = String(ei).match(/^(\d+)[ab]$/); return m ? m[1] : ei; }
 function addSet(di, ei) {
@@ -7695,6 +7713,15 @@ function todayKey() {
 // reseta natural ao mudar de semana (que é treino novo).
 function doneKey(di, ei) { return `gh_done_${STUDENT_ID}_w${currentWeek}_d${di}_e${ei}`; }
 function isDone(di, ei) { return localStorage.getItem(doneKey(di, ei)) === '1'; }
+// v449 (sugestao do aluno Paulo Lages, 14/09/2026): "Não consegui fazer". Antes, exercício que o aluno
+// não fez por falta de tempo ficava desmarcado e o TREINO INTEIRO não fechava (sem sequência, sem pontos,
+// sem conclusão). Pulado é um estado próprio, separado de feito: fecha o dia, mas não finge que treinou.
+// Fica no aparelho; a conclusão do dia leva quantos foram feitos e quantos pulados pro servidor.
+function skipKey(di, ei) { return `gh_skip_${STUDENT_ID}_w${currentWeek}_d${di}_e${ei}`; }
+function isSkipped(di, ei) { return localStorage.getItem(skipKey(di, ei)) === '1'; }
+function setSkipped(di, ei, val) {
+  try { if (val) localStorage.setItem(skipKey(di, ei), '1'); else localStorage.removeItem(skipKey(di, ei)); } catch (_) {}
+}
 // Marcas feitas NESTA sessão — a varredura de legado NUNCA as apaga (podem estar
 // em voo pro servidor, ainda não confirmadas no PROGRESSO). Junto com a fila de
 // sync, isto separa "recém-feita" de "legado local-only de verdade".
@@ -7924,18 +7951,20 @@ function migrateLegacyDoneKeys_() {
   toRemove.forEach(k => localStorage.removeItem(k));
   localStorage.setItem(flagKey, '1');
 }
+function _diaConcluidoDispara(di) {
+  updateStreakOnComplete();
+  // Loga a CONCLUSÃO do treino (vale 5 pts). Compartilhar depois
+  // gera outro log que vale 10. Assim quem treina pontua mesmo
+  // sem compartilhar — e quem compartilha ganha o dobro.
+  notifyDayCompletion(di, false);
+  // ✨ Card shareable (pontos/streak já contaram acima; card desligável pelo aluno)
+  if (!_celebOff()) setTimeout(() => showCompletionCard(di), 250);
+}
 function onCheckExercise(di, ei) {
   const newVal = !isDone(di, ei);
+  if (newVal && isSkipped(di, ei)) setSkipped(di, ei, false);   // v449: fez de verdade, deixa de ser pulado
   setDone(di, ei, newVal);
-  if (newVal && allDoneOfDay(di)) {
-    updateStreakOnComplete();
-    // Loga a CONCLUSÃO do treino (vale 5 pts). Compartilhar depois
-    // gera outro log que vale 10. Assim quem treina pontua mesmo
-    // sem compartilhar — e quem compartilha ganha o dobro.
-    notifyDayCompletion(di, false);
-    // ✨ Card shareable (pontos/streak já contaram acima; card desligável pelo aluno)
-    if (!_celebOff()) setTimeout(() => showCompletionCard(di), 250);
-  }
+  if (newVal && allDoneOfDay(di)) _diaConcluidoDispara(di);
   // Re-render só esse card e a barra
   renderExercises();
   // Burst dourado no card recém-concluído (some sozinho ao fim da animação)
@@ -8971,6 +9000,9 @@ function notifyDayCompletion(di, shared) {
     date: todayKey(),
     day: di + 1,
     totalEx: total,
+    // v449: quantos o aluno fez e quantos marcou "não consegui fazer" (o .gs grava se tiver coluna; se não, ignora)
+    feitos: day ? day.exercises.reduce((a, ex, ei) => a + (!ex.warmup && isDone(di, ei) ? 1 : 0), 0) : 0,
+    pulados: day ? day.exercises.reduce((a, ex, ei) => a + (!ex.warmup && isSkipped(di, ei) ? 1 : 0), 0) : 0,
     streakCurrent: streak.current || 0,
     streakLongest: streak.longest || 0,
     totalDaysDone: streak.totalDaysDone || 0,
@@ -9073,7 +9105,9 @@ function allDoneOfDay(di) {
   const keep = _shortKeepSet(di);
   const real = WORKOUT[di].exercises.map((ex, ei) => ({ ex, ei })).filter(o => !o.ex.warmup && (!keep || keep.has(o.ei)));
   if (!real.length) return false;
-  return real.every(o => isDone(di, o.ei));
+  // v449: pulado conta pra fechar o dia, mas o dia só fecha se o aluno FEZ pelo menos um exercício
+  // (senão pular tudo daria sequência e pontos sem treino nenhum).
+  return real.every(o => isDone(di, o.ei) || isSkipped(di, o.ei)) && real.some(o => isDone(di, o.ei));
 }
 // Primeiro dia VISÍVEL (do bloco ativo) ainda NÃO concluído 100% na semana atual.
 // Abre direto nele ao carregar — ajuda o iniciante a saber qual treino fazer. Se todos
@@ -9094,14 +9128,15 @@ function updateDayProgress() {
   if (!day || !bar) return;
   // modo curto: barra e contador refletem só o ESSENCIAL mantido (senão o dia curto nunca "fecha" visualmente)
   const keepDP = _shortKeepSet(currentDay);
-  let total = 0, done = 0;
+  let total = 0, done = 0, pulados = 0;
   day.exercises.forEach((ex, ei) => {
     if (keepDP && !keepDP.has(ei)) return;
     total++;
     if (isDone(currentDay, ei)) done++;
+    else if (isSkipped(currentDay, ei)) pulados++;
   });
-  const pct = total ? (done/total)*100 : 0;
-  document.getElementById('pgLabel').textContent = `Hoje: ${done}/${total} exercícios` + (keepDP ? ' · ⏱ modo ' + _shortMin() + 'min' : '');
+  const pct = total ? ((done + pulados)/total)*100 : 0;
+  document.getElementById('pgLabel').textContent = `Hoje: ${done}/${total} exercícios` + (pulados ? ` · ${pulados} pulado${pulados === 1 ? '' : 's'}` : '') + (keepDP ? ' · ⏱ modo ' + _shortMin() + 'min' : '');
   _shortBtnSync();
   document.getElementById('pgFill').style.width = pct + '%';
   bar.style.display = total > 0 ? 'block' : 'none';
@@ -9154,6 +9189,7 @@ function closeWeekReset() { document.getElementById('weekResetModal').classList.
 function confirmWeekReset() {
   (WORKOUT || []).forEach((d, di) => (d.exercises || []).forEach((ex, ei) => {
     if (isDone(di, ei)) setDone(di, ei, false);
+    if (isSkipped(di, ei)) setSkipped(di, ei, false);   // v449
   }));
   // séries marcadas como feitas da semana zeram junto (é marca de conclusão, não carga)
   try {
@@ -10043,7 +10079,7 @@ function openFocusMode(di) {
   _focusDi = di;
   const exs = (WORKOUT[di] && WORKOUT[di].exercises) || [];
   if (!exs.length) return;
-  const start = exs.findIndex((ex, ei) => !isDone(di, ei));
+  const start = exs.findIndex((ex, ei) => !isDone(di, ei) && !isSkipped(di, ei));
   _focusIdx = start === -1 ? 0 : start;
   _focusOpenedAt = Date.now();
   // Entrou no modo treino = treino começou: liga o cronômetro da sessão junto
@@ -10089,7 +10125,7 @@ function focusToggleDone() {
   if (isDone(_focusDi, _focusIdx) && _focusIdx < exs.length - 1) {
     // Concluiu → avança sozinho pro próximo não feito
     let n = _focusIdx + 1;
-    while (n < exs.length && isDone(_focusDi, n)) n++;
+    while (n < exs.length && (isDone(_focusDi, n) || isSkipped(_focusDi, n))) n++;
     if (n < exs.length) _focusIdx = n;
   }
   _focusRender();
@@ -11259,11 +11295,13 @@ function renderExercises() {
         }
         // Bi-set compartilha 1 índice no array — marca/desmarca o par inteiro
         const bisetDone = isDone(di, ei);
+        const bisetSkip = !bisetDone && isSkipped(di, ei);
         return `
-          <div class="exercise-card biset ${bisetDone ? 'done' : ''}">
+          <div class="exercise-card biset ${bisetDone ? 'done' : ''} ${bisetSkip ? 'skipped' : ''}">
             <div style="padding:10px 12px 4px;display:flex;align-items:center;gap:10px;">
-              <div class="ex-check ${bisetDone ? 'done' : ''}" onclick="event.stopPropagation(); onCheckExercise(${di}, ${ei})" title="Marcar bi-set como feito"></div>
+              <div class="ex-check ${bisetDone ? 'done' : ''} ${bisetSkip ? 'skip' : ''}" onclick="event.stopPropagation(); onCheckExercise(${di}, ${ei})" title="Marcar bi-set como feito"></div>
               <span class="biset-badge">&#9889; BI-SET</span>
+              ${!bisetDone ? `<button type="button" class="ex-skip-btn ${bisetSkip ? 'on' : ''}" style="margin:0 0 0 auto" onclick="event.stopPropagation(); onSkipExercise(${di}, ${ei})">${bisetSkip ? '⤼ Pulado · desfazer' : 'Não consegui fazer'}</button>` : ''}
             </div>
             <div class="biset-sub ${hasA ? 'has-video' : ''}" ${hasA ? `onclick="openVideo('${aName}', '${aVid}')"` : ''}>
               <div class="exercise-info">
@@ -11305,12 +11343,13 @@ function renderExercises() {
       const safeVideo = (act.video || '').replace(/'/g, "\\'");
 
       const exDone = isDone(di, ei);
+      const exSkip = !exDone && !isWarmup && isSkipped(di, ei);
       const safeRest = (ex.rest || '').replace(/'/g, "\\'");
 
       return `
-        <div class="exercise-card ${isWarmup ? 'warmup' : ''} ${hasVid ? 'has-video' : ''} ${exDone ? 'done' : ''} ${_shortSkip(di, ei) ? 'short-skip' : ''}">
+        <div class="exercise-card ${isWarmup ? 'warmup' : ''} ${hasVid ? 'has-video' : ''} ${exDone ? 'done' : ''} ${exSkip ? 'skipped' : ''} ${_shortSkip(di, ei) ? 'short-skip' : ''}">
           <div class="exercise-main" ${hasVid ? `onclick="openVideo('${safeName}', '${safeVideo}')"` : ''}>
-            <div class="ex-check ${exDone ? 'done' : ''}" onclick="event.stopPropagation(); onCheckExercise(${di}, ${ei})" title="Marcar como feito"></div>
+            <div class="ex-check ${exDone ? 'done' : ''} ${exSkip ? 'skip' : ''}" onclick="event.stopPropagation(); onCheckExercise(${di}, ${ei})" title="Marcar como feito"></div>
             <div class="exercise-info">
               <div class="exercise-name">
                 ${act.name}
@@ -11320,6 +11359,7 @@ function renderExercises() {
               </div>
               <div class="exercise-details">${tags.join("")}</div>
               ${!isWarmup ? _muscTag(act.name) : ''}
+              ${!isWarmup && !exDone ? `<button type="button" class="ex-skip-btn ${exSkip ? 'on' : ''}" onclick="event.stopPropagation(); onSkipExercise(${di}, ${ei})">${exSkip ? '⤼ Pulado hoje · desfazer' : 'Não consegui fazer'}</button>` : ''}
               ${ex.obs ? `<div class="exercise-obs">${_glossWrap(ex.obs)}</div>` : ''}
             </div>
           </div>
@@ -18457,7 +18497,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v453';
+    var APP_SHELL_V = 'metodo-gh-v454';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
