@@ -1476,7 +1476,15 @@
   body.view-ghflix #loadingScreen,
   body.view-ghflix #videoOverlay,
   body.view-ghflix #adminPanel,
-  body.view-ghflix #dietaView { display: none !important; }
+  body.view-ghflix #dietaView,
+  body.view-ghflix #protoAviso,
+  body.view-ghflix #fotosBanner,
+  body.view-ghflix #recadoSlot,
+  body.view-ghflix #laudoSlot,
+  body.view-ghflix #acaoRapida { display: none !important; }
+  /* v458 (GH 14/09, "me mandou pras fotos do aluno"): laudo em destaque, recado, aviso de reajuste, banner de fotos e
+     o tile de duvida ficavam VISIVEIS na aba GHFlix e empurravam o player (100dvh) pra baixo da dobra. Quem tinha
+     laudo/recado abria uma aula e via o laudo no lugar da aula. */
   #ghflixView { display: none; }
   body.view-ghflix #ghflixView { display: block !important; height: calc(100dvh - 96px); background: #0e0e0e; }
   #ghflixView iframe { width: 100%; height: 100%; border: 0; display: block; }
@@ -3071,7 +3079,7 @@
 <div id="laudoSlot" style="margin:0 14px 12px;"></div>
 
 <!-- ══ AÇÃO RÁPIDA (assistente: dúvida ou ajuste) — tile compacto ══ -->
-<div style="display:flex;gap:10px;margin:0 14px 12px;align-items:stretch;">
+<div id="acaoRapida" style="display:flex;gap:10px;margin:0 14px 12px;align-items:stretch;">
   <div id="chatBanner" onclick="openChatModal()" style="display:none;flex:1;min-width:0;background:var(--card);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:12px 14px 11px;cursor:pointer;position:relative;">
     <button type="button" onclick="event.stopPropagation();dismissChatBanner()" title="Fechar" style="position:absolute;top:5px;right:9px;background:none;border:none;color:#54504a;font-size:15px;cursor:pointer;line-height:1;padding:2px;">×</button>
     <div style="width:30px;height:30px;border-radius:9px;background:var(--gold-soft);display:flex;align-items:center;justify-content:center;margin-bottom:8px;">
@@ -3511,6 +3519,9 @@
               font-size:13px;padding:10px 18px;border-radius:6px;text-decoration:none;">
       ▶ Abrir vídeo no YouTube
     </a>
+    <!-- v458: plano B do video (YouTube barrado no aparelho do aluno): MP4 do nosso servidor no player nativo -->
+    <div id="videoFallbackHint" style="display:none;color:#b8b2a7;font-size:12px;line-height:1.45;margin:10px auto 0;max-width:420px;"></div>
+    <button type="button" id="videoFallbackBtn" onclick="_videoFallbackNativo('manual')" style="display:block;margin:10px auto 0;background:none;border:none;color:#8d8579;font:inherit;font-size:12px;text-decoration:underline;cursor:pointer;padding:6px 10px;">O vídeo não abriu? Toca aqui pra assistir direto</button>
   </div>
   <!-- aulas do GHFlix sobre ESTE exercício (acréscimo: o vídeo acima não muda) -->
   <div id="aulasGhflix" style="display:none;padding:0 12px 22px;max-width:640px;margin:0 auto;width:100%">
@@ -11928,10 +11939,16 @@ function _attachYTListener() {
     if (e.origin.indexOf('youtube') === -1) return;
     try {
       const msg = JSON.parse(e.data);
+      if (msg.id && msg.id !== 'videoFrame') return;   // so o player do exercicio (o id volta do "listening")
       // YT.PlayerState.ENDED === 0
       if (msg.event === 'onStateChange' && msg.info === 0) {
         closeVideo();
       }
+      // v458: o YouTube avisou que NAO vai tocar (150/101 = embed barrado, 153 = sem referer, 5 = player, 100/2 = video
+      // sumiu) ou entregou o video como nao-tocavel (isPlayable=false, ex. exigencia de login): cai pro MP4 do nosso
+      // servidor no player nativo. Aluno 14/09: "os videos nao estao sendo executados, manda abrir apenas pelo youtube".
+      if (msg.event === 'onError') _videoFallbackNativo('yt' + msg.info);
+      else if (msg.event === 'initialDelivery' && msg.info && msg.info.videoData && msg.info.videoData.isPlayable === false) _videoFallbackNativo('np' + (msg.info.videoData.errorCode || ''));
     } catch (_) {}
   });
 }
@@ -12006,6 +12023,12 @@ async function apagarVideosBaixados() {
 }
 function openVideo(name, url) {
   _attachYTListener();
+  _vidUrlAtual = url; _vidFallbackFeito = false;   // v458: plano B pronto pra este video
+  try {
+    const h = document.getElementById('videoFallbackHint'); if (h) { h.style.display = 'none'; h.textContent = ''; }
+    const mb = document.getElementById('videoFallbackBtn'); if (mb) mb.style.display = '';
+    const nv = document.getElementById('videoNative'); if (nv) { nv.onerror = null; nv.onloadedmetadata = null; }
+  } catch (_) {}
   document.getElementById("videoTitle").textContent = name;
   const iframe = document.getElementById("videoFrame");
   const nat = document.getElementById('videoNative');
@@ -12023,6 +12046,8 @@ function openVideo(name, url) {
         _vidObjUrl = URL.createObjectURL(blob);
         nat.src = _vidObjUrl; nat.style.display = 'block';
         iframe.style.display = 'none'; iframe.src = 'about:blank';
+        _vidFallbackFeito = true;   // v458: ja esta no player nativo (offline), plano B nao se aplica
+        try { const mb = document.getElementById('videoFallbackBtn'); if (mb) mb.style.display = 'none'; } catch (_) {}
       } catch (_) {}
     });
   }
@@ -12133,11 +12158,37 @@ function abreAulaGhflix(id) {
   }
 }
 
+// v458: PLANO B do video de execucao. O YouTube nao tocou (erro do player, video nao-tocavel) ou o aluno tocou em
+// "nao abriu?": toca o MESMO video do nosso servidor (chat.metodogh.com.br/videos/<id>.mp4, o espelho do modo
+// offline) no player nativo. Se o MP4 tambem falhar, mostra o aviso com o codigo e sobra o botao do YouTube.
+// Nunca troca sozinho um video que esta tocando: so reage a erro do YouTube ou ao toque do aluno.
+let _vidUrlAtual = '', _vidFallbackFeito = false;
+function _videoFallbackNativo(motivo) {
+  try {
+    if (_vidFallbackFeito) return;
+    _vidFallbackFeito = true;
+    const ov = document.getElementById('videoOverlay');
+    if (!ov || !ov.classList.contains('show')) return;
+    const nat = document.getElementById('videoNative'), iframe = document.getElementById('videoFrame');
+    const hint = document.getElementById('videoFallbackHint'), mb = document.getElementById('videoFallbackBtn');
+    const src = _vidOffUrl(_vidUrlAtual);
+    const avisa = function (t) { if (hint) { hint.textContent = t; hint.style.display = 'block'; } };
+    const falhou = 'Esse v\u00eddeo n\u00e3o abriu aqui dentro (' + String(motivo || '') + '). Toca em "Abrir v\u00eddeo no YouTube".';
+    if (mb) mb.style.display = 'none';
+    if (!nat || !src) { avisa(falhou); return; }
+    if (iframe) { iframe.onload = null; iframe.src = 'about:blank'; iframe.style.display = 'none'; }
+    nat.onerror = function () { nat.style.display = 'none'; avisa(falhou); };
+    nat.onloadedmetadata = function () { avisa('O YouTube n\u00e3o abriu no teu aparelho. Tocando direto do servidor do M\u00e9todo GH.'); };
+    nat.src = src; nat.style.display = 'block';
+    const p = nat.play(); if (p && p.catch) p.catch(function () {});
+  } catch (_) {}
+}
 function closeVideo() {
   // para e limpa o player offline (senão o áudio continua e o blob vaza memória)
   try {
     const nat = document.getElementById('videoNative');
-    if (nat) { nat.pause(); nat.removeAttribute('src'); nat.style.display = 'none'; }
+    if (nat) { nat.onerror = null; nat.onloadedmetadata = null; nat.pause(); nat.removeAttribute('src'); nat.style.display = 'none'; }
+    const h = document.getElementById('videoFallbackHint'); if (h) { h.style.display = 'none'; h.textContent = ''; }
     if (_vidObjUrl) { URL.revokeObjectURL(_vidObjUrl); _vidObjUrl = null; }
   } catch (_) {}
   const iframe = document.getElementById("videoFrame");
@@ -18573,7 +18624,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v457';
+    var APP_SHELL_V = 'metodo-gh-v458';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
