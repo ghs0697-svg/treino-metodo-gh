@@ -3287,6 +3287,23 @@
   </div>
 </div>
 
+<!-- AVISO UNICO DA LIVE DE QUARTA (GH 14/09/2026): aparece UMA vez por aluno no aparelho e expira -->
+<div class="evo-overlay" id="liveAvisoModal" onclick="if(event.target.id==='liveAvisoModal')liveAvisoFecha()">
+  <div class="evo-box" role="dialog" aria-modal="true" aria-labelledby="liveAvisoTit">
+    <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px;">
+      <span aria-hidden="true" style="width:9px;height:9px;border-radius:50%;background:#e53935;box-shadow:0 0 0 4px rgba(229,57,53,.2);flex:none;"></span>
+      <h4 id="liveAvisoTit" style="margin:0;font-size:15px;">Live toda quarta, às 20h</h4>
+    </div>
+    <div style="color:#ccc;font-size:13px;line-height:1.65;">
+      <p style="margin:0 0 10px;">Toda <b style="color:var(--gold);">quarta-feira, às 20h</b>, tem live pros alunos.</p>
+      <p style="margin:0 0 10px;">O link de cada live é enviado no <b>grupo dos alunos</b> no WhatsApp.</p>
+      <p style="margin:0;">Ainda não tá no grupo? Entra por aqui pra não perder nenhuma:</p>
+    </div>
+    <a id="liveAvisoGrupo" href="https://chat.whatsapp.com/FC84Vk5fC1Q4J42EIDJgaG" target="_blank" rel="noopener" onclick="liveAvisoFecha()" style="display:block;margin-top:14px;background:var(--gold);color:#0c0c0d;font-weight:800;font-size:14px;text-align:center;text-decoration:none;border-radius:10px;padding:12px;">Entrar no grupo dos alunos</a>
+    <button type="button" class="evo-close" onclick="liveAvisoFecha()">Fechar</button>
+  </div>
+</div>
+
 <!-- ══ MODAL DE EVOLUÇÃO POR EXERCÍCIO ══ -->
 <div class="evo-overlay" id="evoModal" onclick="if(event.target.id==='evoModal')evoClose()">
   <div class="evo-box">
@@ -9002,10 +9019,14 @@ function injectAffiliateUTM() {
 function notifyDayCompletion(di, shared) {
   const kind = shared ? 'share' : 'concl';
   const dedupKey = `gh_logsent_${SHEET_ID}_${todayKey()}_d${di}_${kind}`;
-  if (localStorage.getItem(dedupKey) === '1') return;
-  localStorage.setItem(dedupKey, '1');
-
   const day = WORKOUT[di];
+  const _pulAgora = day ? day.exercises.reduce((a, ex, ei) => a + (!ex.warmup && isSkipped(di, ei) ? 1 : 0), 0) : 0;
+  // v456: 'p' = este dia ja foi com exercicio pulado (o servidor grava treino_pulado e o ranking nao pontua).
+  // Se o aluno desfez o pulado e fechou o dia completo, manda de novo UMA vez pro dia contar. '1' nunca repete.
+  const _jaFoi = localStorage.getItem(dedupKey);
+  if (_jaFoi === '1' || (_jaFoi === 'p' && _pulAgora > 0)) return;
+  localStorage.setItem(dedupKey, _pulAgora > 0 ? 'p' : '1');
+
   const total = day ? day.exercises.filter(ex => !ex.warmup).length : 0;
   const studentName = (document.getElementById('infoNome')?.textContent || '').trim();
   const streak = getStreak();
@@ -9016,9 +9037,9 @@ function notifyDayCompletion(di, shared) {
     date: todayKey(),
     day: di + 1,
     totalEx: total,
-    // v449: quantos o aluno fez e quantos marcou "não consegui fazer" (o .gs grava se tiver coluna; se não, ignora)
+    // v449: quantos o aluno fez e quantos marcou "não consegui fazer" (.gs 14b: pulados > 0 grava treino_pulado, fora do ranking)
     feitos: day ? day.exercises.reduce((a, ex, ei) => a + (!ex.warmup && isDone(di, ei) ? 1 : 0), 0) : 0,
-    pulados: day ? day.exercises.reduce((a, ex, ei) => a + (!ex.warmup && isSkipped(di, ei) ? 1 : 0), 0) : 0,
+    pulados: _pulAgora,
     // v455: quais foram (o ranking do servidor NAO pontua dia com pulado; o dia segue registrado pro "sumido" nao disparar)
     puladosNomes: day ? day.exercises.map((ex, ei) => (!ex.warmup && isSkipped(di, ei)) ? ex.name : null).filter(Boolean).join(' | ') : '',
     streakCurrent: streak.current || 0,
@@ -9686,6 +9707,7 @@ function tourStart() {
   _tourPassos = passos;
   _tourIdx = -1;
   _tourAtivo = true;
+  try { const _lv = document.getElementById('liveAvisoModal'); if (_lv && _lv.classList.contains('show')) { _lv.classList.remove('show'); localStorage.removeItem(_LIVE_AVISO_KEY + STUDENT_ID); } } catch (_) {}
   document.getElementById('tourOverlay').classList.add('show');
   tourNext();
 }
@@ -9761,7 +9783,39 @@ function tourEnd() {
   _tourAtivo = false;
   _tourMarcaVisto();
   document.getElementById('tourOverlay').classList.remove('show');
+  _liveAvisoTalvez(700);   // v456: aluno novo ve o aviso da live logo depois do tour
 }
+// ══ AVISO UNICO DA LIVE DE QUARTA (v456, GH 14/09/2026) ══
+// "aviso de uma vez so, abriu e expirou, sem abrir de novo". A marca de visto entra NO MOMENTO em que o
+// aviso aparece: fechar o app com ele aberto nao faz ele voltar. Uma vez por aluno neste aparelho.
+// So aluno: equipe (?edit=1 / ?editor / ?admin), demo e plano bloqueado nao veem. Nunca por cima do tour
+// (o tourEnd chama de novo) nem de outro modal (tenta de novo em 5 s, ate 20 vezes nesta abertura).
+const _LIVE_AVISO_KEY = 'gh_aviso_live_quarta_v1_';
+let _liveAvisoTentativas = 0;
+function _liveAvisoVisto_() { try { return localStorage.getItem(_LIVE_AVISO_KEY + STUDENT_ID) === '1'; } catch (_) { return true; } }
+function _liveAvisoTalvez(delay) {
+  setTimeout(function () {
+    try {
+      if (_liveAvisoVisto_()) return;
+      if (typeof SHEET_ID === 'undefined' || !SHEET_ID || SHEET_ID === 'demo') return;
+      const q = new URLSearchParams(location.search);
+      if (q.has('editor') || q.has('admin') || q.get('edit') === '1') return;
+      if (_tourAtivo) return;
+      const temTreino = typeof WORKOUT !== 'undefined' && Array.isArray(WORKOUT) && WORKOUT.length > 0;
+      if (temTreino && localStorage.getItem(_TOUR_KEY) !== '1') return;        // tour de 1o acesso ainda vai rodar
+      if (document.querySelector('.plan-block-overlay.show')) return;          // plano vencido: sem aviso
+      if (document.querySelector('#tourOverlay.show, .evo-overlay.show, .te-modal-overlay.show, .ach-overlay.show, .focus-overlay.show, .video-overlay.show, .history-modal-overlay.show, .sub-picker-overlay.show, .timer-overlay.show')) {
+        if (++_liveAvisoTentativas <= 20) _liveAvisoTalvez(5000);
+        return;
+      }
+      const m = document.getElementById('liveAvisoModal');
+      if (!m) return;
+      try { localStorage.setItem(_LIVE_AVISO_KEY + STUDENT_ID, '1'); localStorage.setItem('gh_aviso_live_quarta_ts', String(Date.now())); } catch (_) { return; }
+      m.classList.add('show');
+    } catch (_) {}
+  }, delay || 0);
+}
+function liveAvisoFecha() { try { document.getElementById('liveAvisoModal').classList.remove('show'); } catch (_) {} }
 function updateTimerDisplay() {
   const d = document.getElementById('timerDisplay');
   d.textContent = _timerLeft;
@@ -17014,6 +17068,7 @@ function _showNav() {
   if (mn) mn.style.display = 'flex';
   document.body.classList.add('has-bnav');
   if (typeof _tourMaybeStart === 'function') _tourMaybeStart();
+  if (typeof _liveAvisoTalvez === 'function') _liveAvisoTalvez(3200);   // v456: aviso unico da live de quarta
 }
 function openMaisSheet() {
   var ov = document.getElementById('maisSheetOverlay');
@@ -18515,7 +18570,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v455';
+    var APP_SHELL_V = 'metodo-gh-v456';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
