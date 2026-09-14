@@ -7002,9 +7002,25 @@ function onSkipExercise(di, ei) {
   const vaiPular = !isSkipped(di, ei);
   if (vaiPular && isDone(di, ei)) setDone(di, ei, false);
   setSkipped(di, ei, vaiPular);
+  _puladoEnvia(di, ei, vaiPular ? 'pulou' : 'desfez');   // v455: monitoramento (GH: "quanto mais monitorarmos melhor")
   if (vaiPular && allDoneOfDay(di)) _diaConcluidoDispara(di);
   renderExercises();
   if (vaiPular && navigator.vibrate) navigator.vibrate(15);
+}
+// v455: registra no servidor QUAL exercício o aluno não conseguiu fazer. Fire-and-forget, nunca trava a tela.
+function _puladoEnvia(di, ei, acao) {
+  try {
+    if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
+    const ex = (WORKOUT[di] && WORKOUT[di].exercises && WORKOUT[di].exercises[ei]) || {};
+    let nome = ex.name || '';
+    // grava o exercicio que o aluno ESTAVA fazendo (substituto, se trocou) e o prescrito, se forem diferentes
+    try { const act = (!ex.biset && typeof _exAtivo === 'function') ? _exAtivo(di, ei) : null; if (act && act.name && act.name !== ex.name) nome = act.name + ' (no lugar de ' + ex.name + ')'; } catch (_) {}
+    fetch(LOG_ENDPOINT, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true, redirect: 'follow',
+      body: JSON.stringify({ type: 'pulado', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+        date: todayKey(), semana: currentWeek, dia: di + 1, exIdx: ei, exercicio: nome, acao, ts: new Date().toISOString() })
+    }).catch(() => {});
+  } catch (_) {}
 }
 // biset salva sob "2a"/"2b" mas o badge "salvo" é do card (sv-di-2) → normaliza pro badge
 function _setSvKey(ei) { const m = String(ei).match(/^(\d+)[ab]$/); return m ? m[1] : ei; }
@@ -9003,6 +9019,8 @@ function notifyDayCompletion(di, shared) {
     // v449: quantos o aluno fez e quantos marcou "não consegui fazer" (o .gs grava se tiver coluna; se não, ignora)
     feitos: day ? day.exercises.reduce((a, ex, ei) => a + (!ex.warmup && isDone(di, ei) ? 1 : 0), 0) : 0,
     pulados: day ? day.exercises.reduce((a, ex, ei) => a + (!ex.warmup && isSkipped(di, ei) ? 1 : 0), 0) : 0,
+    // v455: quais foram (o ranking do servidor NAO pontua dia com pulado; o dia segue registrado pro "sumido" nao disparar)
+    puladosNomes: day ? day.exercises.map((ex, ei) => (!ex.warmup && isSkipped(di, ei)) ? ex.name : null).filter(Boolean).join(' | ') : '',
     streakCurrent: streak.current || 0,
     streakLongest: streak.longest || 0,
     totalDaysDone: streak.totalDaysDone || 0,
@@ -18497,7 +18515,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v454';
+    var APP_SHELL_V = 'metodo-gh-v455';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
