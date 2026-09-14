@@ -9800,6 +9800,9 @@ function _liveAvisoTalvez(delay) {
       if (typeof SHEET_ID === 'undefined' || !SHEET_ID || SHEET_ID === 'demo') return;
       const q = new URLSearchParams(location.search);
       if (q.has('editor') || q.has('admin') || q.get('edit') === '1') return;
+      // v457: aparelho da equipe (logou no painel) abre protocolo de aluno o dia inteiro pra corrigir: nao ve o aviso.
+      // A marca e so do aparelho, entao a equipe abrir o link NUNCA gastava o aviso do aluno; isto so tira o incomodo.
+      if (localStorage.getItem('gh_trainer_token')) return;
       if (_tourAtivo) return;
       const temTreino = typeof WORKOUT !== 'undefined' && Array.isArray(WORKOUT) && WORKOUT.length > 0;
       if (temTreino && localStorage.getItem(_TOUR_KEY) !== '1') return;        // tour de 1o acesso ainda vai rodar
@@ -18570,7 +18573,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v456';
+    var APP_SHELL_V = 'metodo-gh-v457';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
