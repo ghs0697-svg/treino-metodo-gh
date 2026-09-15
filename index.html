@@ -8863,6 +8863,7 @@ async function loadAndShowLastModified() {
         }
         pBadge.style.display = 'block';
       }
+      _cicloDiasAluno = Number(data.cicloDias) || 0;   // v461: ciclo por aluno (M - E); 0 = usa o padrao de 50
       _proxReajusteBR = data.proxReajusteBR;
       reajusteBannerCheck(); // empurrão proativo quando o reajuste tá perto/vencido
       protoProgressUpdate(); // barra "Protocolo X · dia N de 50" no topo
@@ -17450,6 +17451,11 @@ function reajusteBannerCheck() {
 // só aparece no fim dele). Mesma fonte do banner: _proxReajusteBR (col M, já ciente de
 // renovação) + versão do sync. Some junto com o banner quando a renovação está próxima.
 var PROTO_CICLO_DIAS = 50;
+// v461 (Reajustes #2151, Ramon Rocha a cada 30 dias): o ciclo e POR ALUNO. O .gs manda cicloDias = col M - col E
+// no lastmod; sem o campo (ou fora de 7..120) fica o 50 de sempre. Barra, "dia N de X" e a validade do card
+// "O que ajustei agora" usam a mesma funcao, entao nunca divergem.
+var _cicloDiasAluno = 0;
+function _cicloDias() { return (_cicloDiasAluno >= 7 && _cicloDiasAluno <= 120) ? _cicloDiasAluno : PROTO_CICLO_DIAS; }
 function protoProgressUpdate() {
   try {
     var box = document.getElementById('protoProgress');
@@ -17459,7 +17465,8 @@ function protoProgressUpdate() {
     var reaj = new Date(p[2], p[1] - 1, p[0]); reaj.setHours(0, 0, 0, 0);
     var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
     var faltam = Math.round((reaj.getTime() - hoje.getTime()) / 86400000);
-    var dia = Math.min(PROTO_CICLO_DIAS, _protoDiaDoCiclo() || 1);   // mesma fonte do card, sem divergir
+    var ciclo = _cicloDias();
+    var dia = Math.min(ciclo, _protoDiaDoCiclo() || 1);   // mesma fonte do card, sem divergir
     var v = '';
     try { v = sessionStorage.getItem('gh_version_' + SHEET_ID) || ''; } catch (_e) {}
     var nome = 'Protocolo' + (v ? ' ' + v : '');
@@ -17471,13 +17478,13 @@ function protoProgressUpdate() {
       fill.style.width = '100%';
       box.classList.add('done');
     } else if (faltam < 0) {
-      lbl.textContent = nome + ' · ciclo de 50 dias completo';
+      lbl.textContent = nome + ' · ciclo de ' + ciclo + ' dias completo';
       dEl.textContent = 'hora de atualizar';
       fill.style.width = '100%';
     } else {
-      lbl.textContent = nome + ' · dia ' + dia + ' de ' + PROTO_CICLO_DIAS;
+      lbl.textContent = nome + ' · dia ' + dia + ' de ' + ciclo;
       dEl.textContent = faltam === 0 ? 'reajuste hoje' : ('reajuste em ' + faltam + (faltam === 1 ? ' dia' : ' dias'));
-      fill.style.width = Math.round(dia / PROTO_CICLO_DIAS * 100) + '%';
+      fill.style.width = Math.round(dia / ciclo * 100) + '%';
     }
     box.style.display = 'block';
   } catch (e) {}
@@ -17494,7 +17501,7 @@ function _protoDiaDoCiclo() {
   var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
   var faltam = Math.round((reaj.getTime() - hoje.getTime()) / 86400000);
   // +1 porque o DIA DA ENTREGA é o dia 1, não o dia 0 (faltam=50 → dia 1, faltam=49 → dia 2).
-  return Math.max(1, PROTO_CICLO_DIAS + 1 - faltam);
+  return Math.max(1, _cicloDias() + 1 - faltam);
 }
 // Só esconde quando SABE que passou do prazo. Sem a data, mostra (nunca some por engano).
 function _obsCardExpirado() {
@@ -18632,7 +18639,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v460';
+    var APP_SHELL_V = 'metodo-gh-v461';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
