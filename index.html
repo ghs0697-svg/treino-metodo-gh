@@ -4631,7 +4631,7 @@
     </div>
     <div style="color:#bbb;font-size:12px;line-height:1.6;margin:0 0 12px;">
       <div style="margin-bottom:4px;"><b style="color:#eee;">1.</b> Manda teu link pro amigo.</div>
-      <div style="margin-bottom:4px;"><b style="color:#eee;">2.</b> Ele chega no meu WhatsApp já dizendo que veio por ti.</div>
+      <div style="margin-bottom:4px;"><b style="color:#eee;">2.</b> Ele faz o teste rápido no site e chega no meu WhatsApp já dizendo que veio por ti.</div>
       <div><b style="color:#eee;">3.</b> Fechou, os pontos entram depois dos 7 dias de garantia e eu te chamo pra escolher: Pix ou dias.</div>
     </div>
     <div id="indicacaoLinkBox" style="background:#0f0f10;border:1px solid #2a2a2e;border-radius:9px;padding:9px 11px;margin:0 0 10px;color:#9a9a9a;font-size:11px;line-height:1.5;word-break:break-all;"></div>
@@ -18674,7 +18674,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v464';
+    var APP_SHELL_V = 'metodo-gh-v465';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -18805,7 +18805,9 @@ if (new URLSearchParams(location.search).get('edit') === '1') {
 // Um link IGUAL pra todo aluno (o WhatsApp comercial), com a mensagem do wa.me personalizada com o nome de quem
 // indicou: e o amigo quem manda "vim por indicacao de Fulano". O uso do botao vai pra CLICKS_AFILIADOS (rota
 // 'click' que ja existe), pra medir quantos alunos indicam. Pontos/resgate ficam com a equipe (CRM), nao aqui.
-var INDICACAO_WA = '555520130783';   // COMERCIAL (ManyChat/quiz), nao o suporte (GH 16/09): o amigo vira lead no funil
+// v465 (GH 16/09, LandingPage #2172): o link vai pro QUIZ, nao mais direto pro WhatsApp. O quiz guarda o ref, poe
+// 'Vim por indicacao de <Nome>.' na frente da mensagem montada e registra a indicacao no Log Quiz na abertura.
+var INDICACAO_QUIZ = 'https://www.metodogh.com.br/quiz/';
 // v463: o detector da Agentes (gh-observer) aceita no maximo 4 palavras depois de "de" e so letras. 89 dos 581 ativos
 // tem nome com 5+ palavras na mestre. Aqui o nome vai sem conectivos (da/de/do/dos/das/e), sem parenteses e com no
 // maximo 4 palavras; o casamento da CRM e por prefixo de cada pedaco, entao "Alexandre Rodrigues Tavares Souza" acha
@@ -18821,11 +18823,10 @@ function _indicacaoNome() {
 }
 function indicacaoLink() {
   var nome = _indicacaoNome();
-  var msg = nome ? ('Oi, vim por indica\u00e7\u00e3o de ' + nome + '. Quero saber mais sobre a consultoria.') : 'Oi, vim por indica\u00e7\u00e3o de um aluno. Quero saber mais sobre a consultoria.';
-  return 'https://wa.me/' + INDICACAO_WA + '?text=' + encodeURIComponent(msg);
+  return INDICACAO_QUIZ + '?' + (nome ? 'ref=' + encodeURIComponent(nome) + '&' : '') + 'utm_source=indicacao&utm_medium=app&utm_campaign=consultoria';
 }
 function _indicacaoTexto() {
-  return 'T\u00f4 na consultoria do GH e recomendo. Se quiser conhecer, fala com ele por aqui (j\u00e1 vai com a minha indica\u00e7\u00e3o): ' + indicacaoLink();
+  return 'T\u00f4 na consultoria do GH e recomendo. Se quiser conhecer, faz o teste por aqui (j\u00e1 vai com a minha indica\u00e7\u00e3o): ' + indicacaoLink();
 }
 function _indicacaoRegistra(acao) {
   try {
