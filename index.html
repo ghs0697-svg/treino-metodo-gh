@@ -2644,6 +2644,7 @@
   .wt-card.running .wt-time { color:#e7c977; }
   .wt-card.paused .wt-time { color:#8d8579; }
   .wt-last { font-size:11px; color:#8d8579; margin-top:6px; }
+  .wt-edit { background:none; border:1px solid rgba(201,162,75,.35); color:var(--gold, #c9a24b); border-radius:7px; padding:3px 8px; font-size:11px; font-weight:700; cursor:pointer; margin-left:6px; min-height:24px; }   /* v466 */
   .day-tab .wt-badge { display:block; font-size:9px; color:#9a8f7c; font-weight:500; margin-top:2px; letter-spacing:.2px; }
   .cmp-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .cmp-col { display:flex; flex-direction:column; }
@@ -4639,6 +4640,24 @@
     <button type="button" class="te-btn ghost" style="width:100%;margin-top:8px;" onclick="indicacaoCopiar()">Copiar link</button>
     <div id="indicacaoAviso" style="display:none;color:#4CAF50;font-size:11.5px;text-align:center;margin-top:8px;font-weight:700;"></div>
     <button type="button" class="te-btn ghost" style="width:100%;margin-top:10px;" onclick="teHide('indicacaoModal')">Fechar</button>
+  </div>
+</div>
+
+<!-- TEMPO DO TREINO: conferir/corrigir (v466, Paulo Lages via GH 16/09/2026: esqueceu de finalizar, lembrou 3h depois) -->
+<div class="te-modal-overlay" id="wtEditModal" onclick="if(event.target.id==='wtEditModal')teHide('wtEditModal')">
+  <div class="te-modal-box" style="max-width:380px;">
+    <h3 style="margin:0 0 4px;">⏱ Tempo do treino</h3>
+    <p id="wtEditTxt" style="color:#aaa;font-size:12px;margin:0 0 12px;line-height:1.55;"></p>
+    <label style="display:block;color:#8d8579;font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;">Quanto tempo durou, em minutos</label>
+    <input id="wtEditMin" type="number" inputmode="numeric" min="1" max="360" step="1" style="width:100%;box-sizing:border-box;background:#0f0f10;border:1px solid #2a2a2e;border-radius:9px;color:#eee;font-size:22px;font-weight:700;padding:10px 12px;text-align:center;">
+    <div style="display:flex;gap:6px;margin-top:8px;">
+      <button type="button" class="te-btn ghost" style="flex:1;" onclick="wtEditPreset(45)">45</button>
+      <button type="button" class="te-btn ghost" style="flex:1;" onclick="wtEditPreset(60)">60</button>
+      <button type="button" class="te-btn ghost" style="flex:1;" onclick="wtEditPreset(75)">75</button>
+      <button type="button" class="te-btn ghost" style="flex:1;" onclick="wtEditPreset(90)">90</button>
+    </div>
+    <button type="button" class="te-btn" style="width:100%;margin-top:12px;" onclick="wtEditSalvar()">Salvar</button>
+    <button type="button" class="te-btn ghost" style="width:100%;margin-top:8px;" onclick="teHide('wtEditModal')">Cancelar</button>
   </div>
 </div>
 
@@ -11846,7 +11865,8 @@ function renderWtCard() {
     b.innerHTML = '<button type="button" class="wt-btn start" onclick="wtStart()">▶ Iniciar treino</button>';
   } else {
     t.textContent = _wtFmt(Math.floor(_wtElapsedMs(s) / 1000));
-    l.textContent = (s.status === 'paused' ? 'Pausado · ' : '') + 'Dia ' + (Number(s.di) + 1) + ' · Semana ' + s.w;
+    l.textContent = (s.status === 'paused' ? 'Pausado · ' : '') + 'Dia ' + (Number(s.di) + 1) + ' · Semana ' + s.w
+      + (_wtElapsedMs(s) > _WT_SUSPEITO_SECS * 1000 ? ' · esqueceu de finalizar? Ajusta ao finalizar' : '');   // v466
     b.innerHTML = (s.status === 'running'
       ? '<button type="button" class="wt-btn" onclick="wtPause()">⏸ Pausar</button>'
       : '<button type="button" class="wt-btn start" onclick="wtResume()">▶ Continuar</button>')
@@ -11855,7 +11875,7 @@ function renderWtCard() {
   const last = document.getElementById('wtLast');
   if (last) {
     const rec = _wtServer[currentDay + '|' + currentWeek];
-    if (rec && !s) { last.style.display = 'block'; last.textContent = '⏱ Este treino na semana ' + currentWeek + ': ' + rec.duracao; }
+    if (rec && !s) { last.style.display = 'block'; last.innerHTML = '⏱ Este treino na semana ' + currentWeek + ': ' + rec.duracao + ' <button type="button" class="wt-edit" onclick="wtCorrigir()">corrigir</button>'; }   // v466: corrigir tempo ja salvo
     else last.style.display = 'none';
   }
   if (s && s.status === 'running') {
@@ -11882,30 +11902,69 @@ function wtResume() {
   s.startMs = Date.now(); s.status = 'running';
   _wtSave(s); renderWtCard();
 }
+// v466 (Paulo Lages via GH, 16/09/2026: "treinou mas esqueceu de finalizar, so lembrou 3 horas depois"):
+// tempo acima de _WT_SUSPEITO_SECS abre a conferencia antes de gravar, com o tempo real em minutos; e todo tempo
+// ja salvo tem "corrigir". A correcao grava outra linha na TEMPO_TREINO pro mesmo dia|semana: o servidor le a
+// mais nova, entao o badge e o registro passam a ser o corrigido.
+const _WT_SUSPEITO_SECS = 2 * 3600;
+let _wtEdit = null;   // { di, w, secs, pausas, modo: 'finalizar' | 'corrigir' }
 function wtFinish() {
   const s = _wtLoad(); if (!s) return;
   const secs = Math.min(_WT_CAP_SECS, Math.max(1, Math.floor(_wtElapsedMs(s) / 1000)));
+  if (secs > _WT_SUSPEITO_SECS) { _wtEditOpen({ di: s.di, w: s.w, secs: secs, pausas: s.pausas || 0, modo: 'finalizar' }); return; }
+  _wtCommit(s.di, s.w, secs, s.pausas || 0, false);
+}
+function _wtCommit(di, w, secs, pausas, corrigido) {
+  secs = Math.min(_WT_CAP_SECS, Math.max(1, Math.floor(secs)));
   const dur = _wtDurTxt(secs);
   // registra no servidor (fire-and-forget: rede caindo não trava o aluno; o cache local segura o badge)
   try {
     const studentName = (document.getElementById('infoNome')?.textContent || '').trim();
     fetch(LOG_ENDPOINT, {
       method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ type: 'tempo_treino', sheetId: SHEET_ID, studentName, di: s.di, w: s.w, segundos: secs, pausas: s.pausas || 0 })
+      body: JSON.stringify({ type: 'tempo_treino', sheetId: SHEET_ID, studentName, di: di, w: w, segundos: secs, pausas: pausas || 0, corrigido: !!corrigido })
     }).catch(() => {});
   } catch (_) {}
   // cache local pro badge aparecer na hora (e sobreviver até o servidor ter o dado)
-  const k = s.di + '|' + s.w;
+  const k = di + '|' + w;
   _wtServer[k] = { segundos: secs, duracao: dur };
   try {
     const hist = JSON.parse(localStorage.getItem(_wtHistKey()) || '{}');
     hist[k] = { segundos: secs, duracao: dur, ts: Date.now() };   // ts: pro filtro de republicação
     localStorage.setItem(_wtHistKey(), JSON.stringify(hist));
   } catch (_) {}
-  localStorage.removeItem(_wtKey());
+  if (!corrigido) localStorage.removeItem(_wtKey());   // finalizar encerra a sessao; corrigir nao tem sessao
   renderWtCard(); renderTabs();
   const last = document.getElementById('wtLast');
-  if (last) { last.style.display = 'block'; last.textContent = '✅ Treino finalizado em ' + dur + '. Registrado!'; }
+  if (last) { last.style.display = 'block'; last.innerHTML = (corrigido ? '✅ Tempo corrigido pra ' : '✅ Treino finalizado em ') + dur + '. Registrado! <button type="button" class="wt-edit" onclick="wtCorrigir()">corrigir</button>'; }
+}
+function _wtEditOpen(cfg) {
+  _wtEdit = cfg;
+  const txt = document.getElementById('wtEditTxt'), inp = document.getElementById('wtEditMin');
+  if (txt) txt.textContent = cfg.modo === 'finalizar'
+    ? 'O cronômetro marcou ' + _wtDurTxt(cfg.secs) + '. Se tu esqueceu de finalizar, coloca aqui quanto o treino durou de verdade.'
+    : 'Registrado ' + _wtDurTxt(cfg.secs) + ' neste treino. Coloca o tempo certo e salva.';
+  if (inp) inp.value = String(Math.max(1, Math.min(360, Math.round(cfg.secs / 60))));
+  teShow('wtEditModal');
+  try { setTimeout(() => { inp && inp.focus(); inp && inp.select(); }, 120); } catch (_) {}
+}
+function wtEditPreset(min) { const inp = document.getElementById('wtEditMin'); if (inp) inp.value = String(min); }
+function wtEditSalvar() {
+  if (!_wtEdit) { teHide('wtEditModal'); return; }
+  const inp = document.getElementById('wtEditMin');
+  const min = parseInt(inp && inp.value, 10);
+  if (!(min >= 1 && min <= 360)) { if (inp) { inp.style.borderColor = '#e53935'; setTimeout(() => { inp.style.borderColor = '#2a2a2e'; }, 900); } return; }
+  const cfg = _wtEdit; _wtEdit = null;
+  teHide('wtEditModal');
+  _wtCommit(cfg.di, cfg.w, min * 60, cfg.pausas || 0, cfg.modo === 'corrigir' || min * 60 !== cfg.secs);
+  if (cfg.modo === 'finalizar') { try { localStorage.removeItem(_wtKey()); } catch (_) {} renderWtCard(); }
+}
+// "corrigir" no tempo ja salvo do dia/semana aberto (badge e linha vem do mesmo registro)
+function wtCorrigir() {
+  const k = currentDay + '|' + currentWeek;
+  const rec = _wtServer[k];
+  if (!rec) return;
+  _wtEditOpen({ di: currentDay, w: currentWeek, secs: rec.segundos || 60, pausas: 0, modo: 'corrigir' });
 }
 
 // Busca no servidor a duração mais recente de cada (dia, semana) e mescla com o cache local.
@@ -18674,7 +18733,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v465';
+    var APP_SHELL_V = 'metodo-gh-v466';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
