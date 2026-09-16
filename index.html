@@ -12041,6 +12041,7 @@ function _attachYTListener() {
     try {
       const msg = JSON.parse(e.data);
       if (msg.id && msg.id !== 'videoFrame') return;   // so o player do exercicio (o id volta do "listening")
+      _vidYtVivo = true;   // v467: o player falou, entao carregou (o vigia nao troca pro MP4)
       // YT.PlayerState.ENDED === 0
       if (msg.event === 'onStateChange' && msg.info === 0) {
         closeVideo();
@@ -12154,6 +12155,7 @@ function openVideo(name, url) {
   }
   if (iframe) iframe.style.display = '';
   iframe.src = youtubeEmbed(url);
+  _vidWatchdogStart(url);   // v467: sem sinal do YouTube em 10 s, vai pro MP4 sozinho
   // Quando o iframe carrega, manda comando "listening" pra IFrame API
   // habilitar os eventos onStateChange via postMessage
   iframe.onload = () => {
@@ -12266,12 +12268,42 @@ function abreAulaGhflix(id) {
 // offline) no player nativo. Se o MP4 tambem falhar, mostra o aviso com o codigo e sobra o botao do YouTube.
 // Nunca troca sozinho um video que esta tocando: so reage a erro do YouTube ou ao toque do aluno.
 let _vidUrlAtual = '', _vidFallbackFeito = false;
+// v467 (Danilo Osman via GH, 16/09/2026: "nao aparece o preview dos videos, quase todos os exercicios"): VIGIA. Se o
+// player do YouTube nao der sinal de vida em _VID_MUDO_MS depois de carregar o embed (bloqueador de conteudo, rede
+// que barra o YouTube, WebView sem o player), o app troca sozinho pro MP4 do nosso servidor, sem o aluno ter que
+// achar o "toca aqui". Player que carregou manda onReady/infoDelivery em 1 a 3 s; 10 s cobre rede lenta.
+// Cada troca (vigia, erro do YouTube, MP4 que tambem falhou) vai pra CLICKS_AFILIADOS como Parceiro=video_debug
+// com o aparelho, pra gente saber onde e quanto acontece.
+const _VID_MUDO_MS = 10000;
+let _vidYtVivo = false, _vidWatchTimer = null;
+function _vidWatchdogStop() { if (_vidWatchTimer) { clearTimeout(_vidWatchTimer); _vidWatchTimer = null; } }
+function _vidWatchdogStart(url) {
+  _vidWatchdogStop(); _vidYtVivo = false;
+  _vidWatchTimer = setTimeout(function () {
+    _vidWatchTimer = null;
+    try {
+      const ov = document.getElementById('videoOverlay');
+      if (!ov || !ov.classList.contains('show') || _vidYtVivo || _vidFallbackFeito || _vidUrlAtual !== url) return;
+      _videoFallbackNativo('mudo10s');
+    } catch (_) {}
+  }, _VID_MUDO_MS);
+}
+function _vidDebug(tag, url) {
+  try {
+    if (typeof SHEET_ID === 'undefined' || !SHEET_ID || SHEET_ID === 'demo' || typeof LOG_ENDPOINT === 'undefined') return;
+    const ua = String(navigator.userAgent || '').slice(0, 140) + (window.matchMedia && matchMedia('(display-mode: standalone)').matches ? ' [pwa]' : '');
+    fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true, redirect: 'follow',
+      body: JSON.stringify({ type: 'click', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(), partner: 'video_debug', productName: ua, tag: String(tag || ''), url: String(url || '') }) }).catch(function () {});
+  } catch (_) {}
+}
 function _videoFallbackNativo(motivo) {
   try {
     if (_vidFallbackFeito) return;
     _vidFallbackFeito = true;
+    _vidWatchdogStop();
     const ov = document.getElementById('videoOverlay');
     if (!ov || !ov.classList.contains('show')) return;
+    _vidDebug('fallback_' + String(motivo || ''), _vidUrlAtual);
     const nat = document.getElementById('videoNative'), iframe = document.getElementById('videoFrame');
     const hint = document.getElementById('videoFallbackHint'), mb = document.getElementById('videoFallbackBtn');
     const src = _vidOffUrl(_vidUrlAtual);
@@ -12280,13 +12312,14 @@ function _videoFallbackNativo(motivo) {
     if (mb) mb.style.display = 'none';
     if (!nat || !src) { avisa(falhou); return; }
     if (iframe) { iframe.onload = null; iframe.src = 'about:blank'; iframe.style.display = 'none'; }
-    nat.onerror = function () { nat.style.display = 'none'; avisa(falhou); };
+    nat.onerror = function () { nat.style.display = 'none'; avisa(falhou); _vidDebug('mp4_falhou_' + String(motivo || ''), src); };
     nat.onloadedmetadata = function () { avisa('O YouTube n\u00e3o abriu no teu aparelho. Tocando direto do servidor do M\u00e9todo GH.'); };
     nat.src = src; nat.style.display = 'block';
     const p = nat.play(); if (p && p.catch) p.catch(function () {});
   } catch (_) {}
 }
 function closeVideo() {
+  _vidWatchdogStop();   // v467
   // para e limpa o player offline (senão o áudio continua e o blob vaza memória)
   try {
     const nat = document.getElementById('videoNative');
@@ -18733,7 +18766,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v466';
+    var APP_SHELL_V = 'metodo-gh-v467';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
