@@ -18674,7 +18674,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v462';
+    var APP_SHELL_V = 'metodo-gh-v463';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -18806,7 +18806,19 @@ if (new URLSearchParams(location.search).get('edit') === '1') {
 // indicou: e o amigo quem manda "vim por indicacao de Fulano". O uso do botao vai pra CLICKS_AFILIADOS (rota
 // 'click' que ja existe), pra medir quantos alunos indicam. Pontos/resgate ficam com a equipe (CRM), nao aqui.
 var INDICACAO_WA = '555520131470';
-function _indicacaoNome() { try { return (document.getElementById('infoNome') || {}).textContent.trim().replace(/^-$/, ''); } catch (_) { return ''; } }
+// v463: o detector da Agentes (gh-observer) aceita no maximo 4 palavras depois de "de" e so letras. 89 dos 581 ativos
+// tem nome com 5+ palavras na mestre. Aqui o nome vai sem conectivos (da/de/do/dos/das/e), sem parenteses e com no
+// maximo 4 palavras; o casamento da CRM e por prefixo de cada pedaco, entao "Alexandre Rodrigues Tavares Souza" acha
+// "Alexandre Rodrigues Tavares de Souza".
+function _indicacaoNome() {
+  try {
+    var bruto = String((document.getElementById('infoNome') || {}).textContent || '').replace(/\([^)]*\)/g, ' ').replace(/\./g, '').trim();   // sem parenteses nem ponto de abreviacao ('Luis F.')
+    if (!bruto || bruto === '-') return '';
+    var con = { da: 1, de: 1, do: 1, das: 1, dos: 1, e: 1, di: 1, del: 1, van: 1, von: 1 };
+    var partes = bruto.split(/\s+/).filter(function (p) { return p && !con[p.toLowerCase()] && /[A-Za-z\u00C0-\u017F]/.test(p); });
+    return partes.slice(0, 4).join(' ');
+  } catch (_) { return ''; }
+}
 function indicacaoLink() {
   var nome = _indicacaoNome();
   var msg = nome ? ('Oi, vim por indica\u00e7\u00e3o de ' + nome + '. Quero saber mais sobre a consultoria.') : 'Oi, vim por indica\u00e7\u00e3o de um aluno. Quero saber mais sobre a consultoria.';
