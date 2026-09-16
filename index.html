@@ -4610,6 +4610,38 @@
 </div>
 
 <!-- ══ DICIONÁRIO DO TREINO (GH 19/08: termo técnico da ficha explicado no app) ══ -->
+<!-- INDICACAO (GH 15/09/2026): link igual pra todo aluno, mensagem do wa.me com o nome dele. Pontos por plano do amigo:
+     1 ponto = R$ 1 no Pix ou 1 dia de consultoria (tu escolhe no resgate). Sem escada por enquanto. -->
+<div class="te-modal-overlay" id="indicacaoModal" onclick="if(event.target.id==='indicacaoModal')teHide('indicacaoModal')">
+  <div class="te-modal-box" style="max-width:460px;max-height:82vh;overflow-y:auto;">
+    <h3 style="margin:0 0 4px;">🎁 Indica um amigo e ganha</h3>
+    <p style="color:#aaa;font-size:12px;margin:0 0 12px;line-height:1.55;">Teu amigo fechou a consultoria por tua indicação? Tu ganha pontos. <b style="color:#eee;">1 ponto = R$ 1 no Pix ou 1 dia de consultoria</b>, e tu escolhe na hora de resgatar.</p>
+    <div style="overflow-x:auto;margin:0 0 10px;">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead><tr style="color:var(--gold);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;"><th style="text-align:left;padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.12);">Plano do amigo</th><th style="text-align:center;padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.12);">Pontos</th><th style="text-align:center;padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.12);">Pix</th><th style="text-align:center;padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.12);">Consultoria</th></tr></thead>
+        <tbody style="color:#ddd;">
+          <tr><td style="padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.06);">Trimestral<br><span style="color:#888;font-size:10.5px;">R$ 597</span></td><td style="text-align:center;padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.06);font-weight:700;">60</td><td style="text-align:center;padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.06);">R$ 60</td><td style="text-align:center;padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.06);color:var(--gold);font-weight:700;">+60 dias<br><span style="color:#8d8579;font-size:10.5px;font-weight:400;">vale até R$ 398</span></td></tr>
+          <tr><td style="padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.06);">Semestral<br><span style="color:#888;font-size:10.5px;">R$ 997</span></td><td style="text-align:center;padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.06);font-weight:700;">100</td><td style="text-align:center;padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.06);">R$ 100</td><td style="text-align:center;padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.06);color:var(--gold);font-weight:700;">+100 dias<br><span style="color:#8d8579;font-size:10.5px;font-weight:400;">2 ciclos, vale até R$ 663</span></td></tr>
+          <tr><td style="padding:8px 4px;">Anual<br><span style="color:#888;font-size:10.5px;">R$ 1.397</span></td><td style="text-align:center;padding:8px 4px;font-weight:700;">140</td><td style="text-align:center;padding:8px 4px;">R$ 140</td><td style="text-align:center;padding:8px 4px;color:var(--gold);font-weight:700;">+140 dias<br><span style="color:#8d8579;font-size:10.5px;font-weight:400;">vale até R$ 928</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="background:rgba(212,175,106,.08);border:1px solid rgba(212,175,106,.25);border-radius:10px;padding:10px 12px;margin:0 0 12px;color:#ddd;font-size:12px;line-height:1.55;">
+      <b style="color:var(--gold);">Quanto vale 1 dia de consultoria?</b> Na tabela, de R$ 3,83 (anual) a R$ 6,63 (trimestral). Ou seja: em consultoria, teus pontos valem de 4 a 6 vezes mais do que no Pix.
+    </div>
+    <div style="color:#bbb;font-size:12px;line-height:1.6;margin:0 0 12px;">
+      <div style="margin-bottom:4px;"><b style="color:#eee;">1.</b> Manda teu link pro amigo.</div>
+      <div style="margin-bottom:4px;"><b style="color:#eee;">2.</b> Ele chega no meu WhatsApp já dizendo que veio por ti.</div>
+      <div><b style="color:#eee;">3.</b> Fechou, os pontos entram depois dos 7 dias de garantia e eu te chamo pra escolher: Pix ou dias.</div>
+    </div>
+    <div id="indicacaoLinkBox" style="background:#0f0f10;border:1px solid #2a2a2e;border-radius:9px;padding:9px 11px;margin:0 0 10px;color:#9a9a9a;font-size:11px;line-height:1.5;word-break:break-all;"></div>
+    <button type="button" class="te-btn" style="width:100%;" onclick="indicacaoCompartilhar()">Mandar meu link pra um amigo</button>
+    <button type="button" class="te-btn ghost" style="width:100%;margin-top:8px;" onclick="indicacaoCopiar()">Copiar link</button>
+    <div id="indicacaoAviso" style="display:none;color:#4CAF50;font-size:11.5px;text-align:center;margin-top:8px;font-weight:700;"></div>
+    <button type="button" class="te-btn ghost" style="width:100%;margin-top:10px;" onclick="teHide('indicacaoModal')">Fechar</button>
+  </div>
+</div>
+
 <div class="te-modal-overlay" id="glossModal" onclick="if(event.target.id==='glossModal')teHide('glossModal')">
   <div class="te-modal-box" style="max-width:460px;max-height:78vh;overflow-y:auto;">
     <h3 style="margin:0 0 4px;">📖 Dicionário do treino</h3>
@@ -4868,6 +4900,9 @@
     </a>
     <button type="button" class="mais-opt" onclick="closeMaisSheet(); openRenovModal('menu')">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span><span>Renovar meu plano</span>
+    </button>
+    <button type="button" class="mais-opt" onclick="closeMaisSheet(); openIndicacao()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></span><span>Indicação: indica um amigo e ganha</span>
     </button>
     <div class="mais-sep">FERRAMENTAS</div>
     <button type="button" class="mais-opt" onclick="closeMaisSheet(); openRankingModal()">
@@ -18639,7 +18674,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v461';
+    var APP_SHELL_V = 'metodo-gh-v462';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -18766,6 +18801,46 @@ if (new URLSearchParams(location.search).get('edit') === '1') {
   }
 }
 
+// ══ INDICACAO (v462, GH 15/09/2026) ══
+// Um link IGUAL pra todo aluno (o WhatsApp comercial), com a mensagem do wa.me personalizada com o nome de quem
+// indicou: e o amigo quem manda "vim por indicacao de Fulano". O uso do botao vai pra CLICKS_AFILIADOS (rota
+// 'click' que ja existe), pra medir quantos alunos indicam. Pontos/resgate ficam com a equipe (CRM), nao aqui.
+var INDICACAO_WA = '555520131470';
+function _indicacaoNome() { try { return (document.getElementById('infoNome') || {}).textContent.trim().replace(/^-$/, ''); } catch (_) { return ''; } }
+function indicacaoLink() {
+  var nome = _indicacaoNome();
+  var msg = nome ? ('Oi, vim por indica\u00e7\u00e3o de ' + nome + '. Quero saber mais sobre a consultoria.') : 'Oi, vim por indica\u00e7\u00e3o de um aluno. Quero saber mais sobre a consultoria.';
+  return 'https://wa.me/' + INDICACAO_WA + '?text=' + encodeURIComponent(msg);
+}
+function _indicacaoTexto() {
+  return 'T\u00f4 na consultoria do GH e recomendo. Se quiser conhecer, fala com ele por aqui (j\u00e1 vai com a minha indica\u00e7\u00e3o): ' + indicacaoLink();
+}
+function _indicacaoRegistra(acao) {
+  try {
+    if (typeof SHEET_ID === 'undefined' || !SHEET_ID || SHEET_ID === 'demo' || typeof LOG_ENDPOINT === 'undefined') return;
+    fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true, redirect: 'follow',
+      body: JSON.stringify({ type: 'click', sheetId: SHEET_ID, studentName: _indicacaoNome(), partner: 'indicacao', productName: 'Indica um amigo', tag: acao, url: indicacaoLink() }) }).catch(function () {});
+  } catch (_) {}
+}
+function openIndicacao() {
+  try { var b = document.getElementById('indicacaoLinkBox'); if (b) b.textContent = indicacaoLink(); var av = document.getElementById('indicacaoAviso'); if (av) av.style.display = 'none'; } catch (_) {}
+  teShow('indicacaoModal');
+  _indicacaoRegistra('abriu');
+}
+function _indicacaoAvisa(t) { try { var av = document.getElementById('indicacaoAviso'); if (av) { av.textContent = t; av.style.display = 'block'; } } catch (_) {} }
+async function indicacaoCopiar() {
+  var ok = false;
+  try { await navigator.clipboard.writeText(_indicacaoTexto()); ok = true; } catch (_) {}
+  if (!ok) { try { var ta = document.createElement('textarea'); ta.value = _indicacaoTexto(); document.body.appendChild(ta); ta.select(); ok = document.execCommand('copy'); document.body.removeChild(ta); } catch (_) {} }
+  _indicacaoAvisa(ok ? '\u2705 Copiado! Cola no WhatsApp do teu amigo.' : 'N\u00e3o consegui copiar. Segura no link acima e copia.');
+  _indicacaoRegistra('copiou');
+}
+async function indicacaoCompartilhar() {
+  if (navigator.share) {
+    try { await navigator.share({ title: 'Consultoria do GH', text: _indicacaoTexto() }); _indicacaoRegistra('compartilhou'); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  indicacaoCopiar();
+}
 function teShow(id) { document.getElementById(id).classList.add('show'); }
 function teHide(id) { document.getElementById(id).classList.remove('show'); }
 
