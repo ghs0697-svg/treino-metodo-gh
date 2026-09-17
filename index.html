@@ -865,6 +865,11 @@
   /* ── Modal de evolução por exercício ── */
   .evo-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.78); z-index: 99990; align-items: center; justify-content: center; padding: 18px; }
   .evo-overlay.show { display: flex; }
+  /* v470: aviso "tu ja concluiu este treino nesta semana" no topo do dia */
+  .sem-aviso { background: rgba(212,175,106,.08); border: 1px solid rgba(212,175,106,.3); border-radius: 12px; padding: 12px 14px; margin: 0 0 12px; }
+  .sem-aviso-t { color: var(--gold); font-weight: 700; font-size: 13px; line-height: 1.4; }
+  .sem-aviso-p { color: #bbb; font-size: 12px; line-height: 1.55; margin-top: 4px; }
+  .sem-aviso-btn { margin-top: 10px; width: 100%; background: var(--gold); color: #0c0c0d; font-weight: 800; font-size: 13.5px; border: none; border-radius: 10px; padding: 11px; cursor: pointer; font-family: inherit; }
   .evo-box { background: #161617; border: 1px solid #2a2a2e; border-radius: 14px; max-width: 420px; width: 100%; padding: 16px; }
   .evo-box h4 { margin: 0 0 2px; color: var(--gold); font-size: 14px; }
   .evo-sub { color: #888; font-size: 11px; margin-bottom: 10px; }
@@ -3281,6 +3286,18 @@
 </div>
 
 <!-- ══ MODAL "O QUE É O SOBROU?" (ⓘ da grade de séries) ══ -->
+<!-- v470: o aluno tocou pra "marcar" um exercicio de um treino que ja estava fechado de outra data (a semana do app nao
+     avanca sozinha). Em vez de desmarcar calado, explica e oferece a proxima semana. -->
+<div class="evo-overlay" id="semanaModal" onclick="if(event.target.id==='semanaModal')semanaModalFecha()">
+  <div class="evo-box">
+    <h4 id="semanaModalTit">Esse treino já foi concluído</h4>
+    <div id="semanaModalTxt" style="color:#ccc;font-size:13px;line-height:1.65;margin-top:6px;"></div>
+    <button type="button" id="semanaModalPrim" class="sem-aviso-btn" onclick="semanaModalPrimario()"></button>
+    <button type="button" class="evo-close" onclick="semanaSoDesmarcar()">Só desmarcar este exercício</button>
+    <button type="button" class="evo-close" style="margin-top:8px;" onclick="semanaModalFecha()">Cancelar</button>
+  </div>
+</div>
+
 <div class="evo-overlay" id="placaModal" onclick="if(event.target.id==='placaModal')placaInfoClose()">
   <div class="evo-box">
     <h4>O que é "placa"?</h4>
@@ -8092,8 +8109,84 @@ function _diaConcluidoDispara(di) {
   // ✨ Card shareable (pontos/streak já contaram acima; card desligável pelo aluno)
   if (!_celebOff()) setTimeout(() => showCompletionCard(di), 250);
 }
+// ══ v470 (Rafael Paiva Ferraz via GH, 17/09/2026: "os treinos nao marcam como feito, mesmo marcando cada exercicio") ══
+// A semana do app e MANUAL (seletor Semana N). Quem nao avanca a semana encontra, na 2a passada do mesmo treino, tudo
+// ja marcado da vez anterior: o toque pra "marcar" DESMARCA, o dia nunca fecha e nada e registrado. Medido em
+// 17/09: 76 de 380 alunos so usaram a Semana 1 em 21 dias e 35 remarcaram o mesmo exercicio da mesma semana com 5+
+// dias de diferenca. Agora: dia 100% fechado nesta semana cuja conclusao foi em OUTRA data ganha um aviso no topo com
+// um toque pra ir pra proxima semana (ou recomecar, se for a ultima); e tocar num exercicio feito desse dia abre a
+// mesma explicacao em vez de desmarcar calado. Nada muda sozinho: o aluno escolhe.
+function _diaUltimaConclusao(di) {   // 'AAAA-MM-DD' da ultima conclusao deste dia neste aparelho (chaves gh_logsent)
+  let ult = '';
+  try {
+    const pref = 'gh_logsent_' + SHEET_ID + '_';
+    const re = new RegExp('^(\\d{4}-\\d{2}-\\d{2})_d' + di + '_concl$');
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k || k.indexOf(pref) !== 0) continue;
+      const m = k.slice(pref.length).match(re);
+      if (m && m[1] > ult) ult = m[1];
+    }
+  } catch (_) {}
+  return ult;
+}
+function _diaFechadoEmOutraData(di) {
+  try {
+    if (typeof params !== 'undefined' && params.get('edit')) return '';
+    if (!allDoneOfDay(di)) return '';
+    const u = _diaUltimaConclusao(di);
+    return (u && u < todayKey()) ? u : '';
+  } catch (_) { return ''; }
+}
+function _semanaEhUltima() { return currentWeek >= TOTAL_WEEKS; }
+function _semanaAvisoHtml(di) {
+  const u = _diaFechadoEmOutraData(di);
+  if (!u) return '';
+  const dBR = u.slice(8, 10) + '/' + u.slice(5, 7);
+  const ult = _semanaEhUltima();
+  return '<div class="sem-aviso"><div class="sem-aviso-t">\u2705 Tu j\u00e1 concluiu este treino na Semana ' + currentWeek + ' (' + dBR + ').</div>'
+    + '<div class="sem-aviso-p">Vai treinar ele de novo? ' + (ult
+      ? 'Recome\u00e7a a semana pra os exerc\u00edcios voltarem desmarcados.'
+      : 'Passa pra Semana ' + (currentWeek + 1) + ': os exerc\u00edcios voltam desmarcados e tuas cargas ficam de refer\u00eancia.') + '</div>'
+    + '<button type="button" class="sem-aviso-btn" onclick="' + (ult ? 'openWeekReset()' : 'semanaProxima()') + '">' + (ult ? '\u21ba Recome\u00e7ar a semana' : 'Ir pra Semana ' + (currentWeek + 1) + ' \u2192') + '</button></div>';
+}
+function _semanaLog(tag) {
+  try {
+    if (typeof SHEET_ID === 'undefined' || !SHEET_ID || SHEET_ID === 'demo' || typeof LOG_ENDPOINT === 'undefined') return;
+    fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true, redirect: 'follow',
+      body: JSON.stringify({ type: 'click', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(), partner: 'semana_aviso', productName: 'Semana ' + currentWeek + ' de ' + TOTAL_WEEKS, tag: String(tag || ''), url: '' }) }).catch(function () {});
+  } catch (_) {}
+}
+function semanaProxima() {
+  if (_semanaEhUltima()) { openWeekReset(); return; }
+  _semanaLog('proxima');
+  changeWeek(1);
+  try { const t = document.getElementById('dayTabs'); if (t) window.scrollTo({ top: Math.max(0, t.getBoundingClientRect().top + window.scrollY - 12), behavior: 'smooth' }); } catch (_) {}
+}
+let _semanaCtx = null, _semanaSoDesmarca = false;
+function _semanaPromptAbrir(di, ei, u) {
+  _semanaCtx = { di: di, ei: ei };
+  const dBR = u.slice(8, 10) + '/' + u.slice(5, 7), ult = _semanaEhUltima();
+  const txt = document.getElementById('semanaModalTxt'), prim = document.getElementById('semanaModalPrim');
+  if (txt) txt.innerHTML = 'Tu fechou este treino na <b style="color:var(--gold);">Semana ' + currentWeek + '</b> em ' + dBR + ', ent\u00e3o os exerc\u00edcios j\u00e1 aparecem marcados e o toque <b>desmarca</b>.<br><br>'
+    + (ult ? 'Se vai treinar ele de novo, recome\u00e7a a semana: tudo volta desmarcado e o treino de hoje \u00e9 registrado.'
+           : 'Se vai treinar ele de novo, passa pra <b>Semana ' + (currentWeek + 1) + '</b>: tudo volta desmarcado, tuas cargas ficam de refer\u00eancia e o treino de hoje \u00e9 registrado.');
+  if (prim) prim.textContent = ult ? '\u21ba Recome\u00e7ar a semana' : 'Ir pra Semana ' + (currentWeek + 1) + ' \u2192';
+  document.getElementById('semanaModal').classList.add('show');
+  _semanaLog('abriu_modal');
+}
+function semanaModalFecha() { try { document.getElementById('semanaModal').classList.remove('show'); } catch (_) {} _semanaCtx = null; }
+function semanaModalPrimario() { semanaModalFecha(); if (_semanaEhUltima()) openWeekReset(); else semanaProxima(); }
+function semanaSoDesmarcar() {
+  const c = _semanaCtx; semanaModalFecha();
+  if (!c) return;
+  _semanaLog('so_desmarcar');
+  _semanaSoDesmarca = true;
+  try { onCheckExercise(c.di, c.ei); } finally { _semanaSoDesmarca = false; }
+}
 function onCheckExercise(di, ei) {
   const newVal = !isDone(di, ei);
+  if (!newVal && !_semanaSoDesmarca) { const _u = _diaFechadoEmOutraData(di); if (_u) { _semanaPromptAbrir(di, ei, _u); return; } }   // v470
   if (newVal && isSkipped(di, ei)) setSkipped(di, ei, false);   // v449: fez de verdade, deixa de ser pulado
   setDone(di, ei, newVal);
   if (newVal && allDoneOfDay(di)) _diaConcluidoDispara(di);
@@ -11559,6 +11652,7 @@ function renderExercises() {
           ${_focusEsforcoBlock(di, ei, true)}` : ''}
         </div>`;
     }).join("");
+    try { const _sa = _semanaAvisoHtml(di); if (_sa) div.insertAdjacentHTML('afterbegin', _sa); } catch (_) {}   // v470
     c.appendChild(div);
   });
   updateDayProgress();
@@ -18795,7 +18889,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v469';
+    var APP_SHELL_V = 'metodo-gh-v470';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
