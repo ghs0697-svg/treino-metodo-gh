@@ -869,6 +869,36 @@
   .sem-aviso { background: rgba(212,175,106,.08); border: 1px solid rgba(212,175,106,.3); border-radius: 12px; padding: 12px 14px; margin: 0 0 12px; }
   .sem-aviso-t { color: var(--gold); font-weight: 700; font-size: 13px; line-height: 1.4; }
   .sem-aviso-p { color: #bbb; font-size: 12px; line-height: 1.55; margin-top: 4px; }
+  /* v472: tela de Indicacao. Botao de mandar o link e o heroi (23 abriram a tela e so 4 mandaram: o botao ficava no fim
+     de uma rolagem longa), painel de progresso e regulamento. */
+  .ind-hero { display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; background: #25D366; color: #06240f; font-weight: 800; font-size: clamp(13.5px, 4.1vw, 15.5px); border: none; border-radius: 13px; padding: 15px 12px; cursor: pointer; font-family: inherit; box-shadow: 0 6px 18px rgba(37,211,102,.22); }
+  .ind-hero:active { transform: scale(.985); }
+  .ind-sec { display: flex; gap: 8px; margin-top: 8px; }
+  .ind-sec .te-btn { flex: 1; min-width: 0; margin: 0; padding: 10px 8px; font-size: 12.5px; }
+  .ind-chamada { color: #fff; font-size: 15.5px; font-weight: 800; line-height: 1.35; margin: 0 0 6px; }
+  .ind-conta { background: rgba(212,175,106,.10); border: 1px solid rgba(212,175,106,.32); border-radius: 10px; padding: 9px 12px; margin: 0 0 12px; color: var(--gold); font-size: 12.5px; font-weight: 700; line-height: 1.45; text-align: center; }
+  .ind-painel { background: #121214; border: 1px solid #2a2a2e; border-radius: 12px; padding: 12px; margin: 14px 0 0; }
+  .ind-painel-t { color: var(--gold); font-size: 10.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 9px; }
+  .ind-tiles { display: flex; gap: 7px; }
+  .ind-tile { flex: 1; min-width: 0; background: #19191c; border-radius: 9px; padding: 9px 4px; text-align: center; }
+  .ind-tile b { display: block; color: #fff; font-size: 19px; line-height: 1.1; }
+  .ind-tile span { display: block; color: #8f8f95; font-size: 10px; margin-top: 3px; line-height: 1.25; }
+  .ind-linha { color: #cfcfd4; font-size: 12px; line-height: 1.55; margin-top: 9px; }
+  .ind-linha b { color: #fff; }
+  .ind-amigo { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 7px 0; border-top: 1px solid #232327; color: #cfcfd4; font-size: 12px; line-height: 1.4; }
+  .ind-amigo .s { color: #8f8f95; font-size: 11px; }
+  .ind-amigo .p { color: var(--gold); font-weight: 700; white-space: nowrap; }
+  .ind-regras { margin: 0 0 12px; border: 1px solid #2a2a2e; border-radius: 10px; background: #101012; }
+  .ind-regras summary { cursor: pointer; padding: 11px 12px; color: #ddd; font-size: 12.5px; font-weight: 700; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+  .ind-regras summary::-webkit-details-marker { display: none; }
+  .ind-regras summary::after { content: '\25BE'; color: var(--gold); font-size: 13px; }
+  .ind-regras[open] summary::after { content: '\25B4'; }
+  .ind-regras .ir { padding: 0 12px 12px; color: #bbb; font-size: 12px; line-height: 1.6; }
+  .ind-regras .ir h5 { color: var(--gold); font-size: 11px; letter-spacing: .07em; text-transform: uppercase; margin: 13px 0 5px; }
+  .ind-regras .ir ul, .ind-regras .ir ol { margin: 0; padding-left: 17px; }
+  .ind-regras .ir li { margin-bottom: 5px; }
+  .ind-regras .ir b { color: #eee; }
+  .ind-regras .ir p { margin: 0 0 6px; }
   .sem-aviso-btn { margin-top: 10px; width: 100%; background: var(--gold); color: #0c0c0d; font-weight: 800; font-size: 13.5px; border: none; border-radius: 10px; padding: 11px; cursor: pointer; font-family: inherit; }
   .evo-box { background: #161617; border: 1px solid #2a2a2e; border-radius: 14px; max-width: 420px; width: 100%; padding: 16px; }
   .evo-box h4 { margin: 0 0 2px; color: var(--gold); font-size: 14px; }
@@ -4655,13 +4685,30 @@
 
 <!-- ══ DICIONÁRIO DO TREINO (GH 19/08: termo técnico da ficha explicado no app) ══ -->
 <!-- INDICACAO (GH 15/09/2026): link igual pra todo aluno, mensagem do wa.me com o nome dele. Pontos por plano do amigo:
-     1 ponto = R$ 1 no Pix ou 1 dia de consultoria (tu escolhe no resgate). Sem escada por enquanto. -->
+     1 ponto = R$ 1 no Pix ou 1 dia de consultoria (tu escolhe no resgate). Sem escada por enquanto.
+     v472 (CRM Sala #2197, GH 17/09 "pode roubar o resto"): botao de mandar o link no TOPO e de novo no fim, chamada
+     forte, painel de progresso (#indicPainel, rota indicacao_saldo do .gs) e o regulamento inteiro em "Ver regras
+     completas" (fonte: 08-referencias/institucional/programa-indicacao-regulamento.md, dona CRM; mudou la, muda aqui).
+     A secao "Onde acompanhar" so aparece quando o painel respondeu. -->
 <div class="te-modal-overlay" id="indicacaoModal" onclick="if(event.target.id==='indicacaoModal')teHide('indicacaoModal')">
-  <div class="te-modal-box" style="max-width:460px;max-height:82vh;overflow-y:auto;">
-    <h3 style="margin:0 0 4px;">🎁 Indica um amigo e ganha</h3>
-    <p style="color:#aaa;font-size:12px;margin:0 0 8px;line-height:1.55;">Teu amigo fechou a consultoria por tua indicação? Tu ganha pontos. <b style="color:#eee;">1 ponto = 1 dia de consultoria ou R$ 1 no Pix.</b></p>
-    <p style="color:#aaa;font-size:12px;margin:0 0 12px;line-height:1.55;"><b style="color:var(--gold);">Regra do Pix:</b> só a partir da <b style="color:#eee;">segunda indicação que fechar</b>, dentro de 60 dias. Com uma só, os pontos viram dias na consultoria.</p>
-    <div style="overflow-x:auto;margin:0 0 10px;">
+  <div class="te-modal-box" id="indicacaoBox" style="max-width:460px;max-height:86vh;overflow-y:auto;">
+    <h3 style="margin:0 0 8px;">🎁 Indica um amigo e ganha</h3>
+    <p class="ind-chamada">Cada amigo que fechar a consultoria pela tua indicação te dá de 60 a 140 pontos.</p>
+    <p style="color:#aaa;font-size:12px;margin:0 0 10px;line-height:1.55;"><b style="color:#eee;">1 ponto = 1 dia a mais na tua consultoria ou R$ 1 no Pix.</b> Não tem limite de indicações.</p>
+    <div class="ind-conta">10 amigos no plano anual = 1.400 pontos = um plano anual inteiro no Pix</div>
+
+    <button type="button" class="ind-hero" onclick="indicacaoWhats()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg><span>Mandar meu link no WhatsApp</span></button>
+    <div style="color:#8f8f95;font-size:11px;text-align:center;margin-top:6px;line-height:1.4;">A mensagem já vai pronta, com o teu nome no link. É só escolher o amigo.</div>
+    <div id="indicacaoLinkBox" style="background:#0f0f10;border:1px solid #2a2a2e;border-radius:9px;padding:9px 11px;margin:10px 0 0;color:#9a9a9a;font-size:11px;line-height:1.5;word-break:break-all;"></div>
+    <div class="ind-sec">
+      <button type="button" class="te-btn ghost" onclick="indicacaoCopiar()">Copiar link</button>
+      <button type="button" class="te-btn ghost" id="indicacaoOutrasBtn" onclick="indicacaoCompartilhar()">Outras opções</button>
+    </div>
+    <div id="indicacaoAviso" style="display:none;color:#4CAF50;font-size:11.5px;text-align:center;margin-top:8px;font-weight:700;"></div>
+
+    <div class="ind-painel" id="indicPainel" style="display:none;"></div>
+
+    <div style="overflow-x:auto;margin:14px 0 10px;">
       <table style="width:100%;border-collapse:collapse;font-size:12px;">
         <thead><tr style="color:var(--gold);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;"><th style="text-align:left;padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.12);">Plano do amigo</th><th style="text-align:center;padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.12);">Pontos</th><th style="text-align:center;padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.12);">Pix</th><th style="text-align:center;padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.12);">Consultoria</th></tr></thead>
         <tbody style="color:#ddd;">
@@ -4674,16 +4721,56 @@
     <div style="background:rgba(212,175,106,.08);border:1px solid rgba(212,175,106,.25);border-radius:10px;padding:10px 12px;margin:0 0 12px;color:#ddd;font-size:12px;line-height:1.55;">
       <b style="color:var(--gold);">Quanto vale 1 dia de consultoria?</b> Na tabela, de R$ 3,83 (anual) a R$ 6,63 (trimestral). Ou seja: em consultoria, teus pontos valem de 4 a 6 vezes mais do que no Pix.
     </div>
-    <div style="color:#bbb;font-size:12px;line-height:1.6;margin:0 0 12px;">
+    <div style="color:#bbb;font-size:12px;line-height:1.6;margin:0 0 10px;">
       <div style="margin-bottom:4px;"><b style="color:#eee;">1.</b> Manda teu link pro amigo.</div>
       <div style="margin-bottom:4px;"><b style="color:#eee;">2.</b> Ele faz o teste rápido no site e chega no meu WhatsApp já dizendo que veio por ti.</div>
-      <div><b style="color:#eee;">3.</b> Fechou, os pontos entram depois dos 7 dias de garantia e eu te aviso. Com duas indicações fechadas em 60 dias tu escolhe Pix ou dias; com uma, viram dias.</div>
+      <div><b style="color:#eee;">3.</b> Fechou, os pontos entram depois dos 7 dias de garantia e eu te aviso no WhatsApp. A cada indicação que valer tu me responde PIX ou DIAS.</div>
     </div>
-    <div id="indicacaoLinkBox" style="background:#0f0f10;border:1px solid #2a2a2e;border-radius:9px;padding:9px 11px;margin:0 0 10px;color:#9a9a9a;font-size:11px;line-height:1.5;word-break:break-all;"></div>
-    <button type="button" class="te-btn" style="width:100%;" onclick="indicacaoCompartilhar()">Mandar meu link pra um amigo</button>
-    <button type="button" class="te-btn ghost" style="width:100%;margin-top:8px;" onclick="indicacaoCopiar()">Copiar link</button>
-    <div id="indicacaoAviso" style="display:none;color:#4CAF50;font-size:11.5px;text-align:center;margin-top:8px;font-weight:700;"></div>
-    <button type="button" class="te-btn ghost" style="width:100%;margin-top:10px;" onclick="teHide('indicacaoModal')">Fechar</button>
+    <p style="color:#aaa;font-size:12px;margin:0 0 12px;line-height:1.55;"><b style="color:var(--gold);">Regra do Pix:</b> libera a partir da <b style="color:#eee;">segunda indicação que fechar</b>, com as duas compras a no máximo 60 dias uma da outra. Liberou uma vez, fica liberado. Com uma só, os pontos viram dias na tua consultoria.</p>
+
+    <details class="ind-regras" id="indicRegras">
+      <summary>Ver regras completas</summary>
+      <div class="ir">
+        <p>Indica um amigo, ele fecha a consultoria, tu ganha. Aqui está tudo que vale, sem letra miúda.</p>
+        <h5>Como funciona</h5>
+        <ol>
+          <li>No app, em Mais, Indicação, tu pega o teu link e manda pro teu amigo.</li>
+          <li>Ele abre o link, faz o teste e chega no meu WhatsApp já com o teu nome.</li>
+          <li>Se ele fechar a consultoria, tu ganha pontos conforme o plano que ele escolher: trimestral 60 pontos, semestral 100 pontos, anual 140 pontos.</li>
+        </ol>
+        <p style="margin-top:6px;"><b>1 ponto = 1 dia a mais na tua consultoria ou R$ 1 no Pix.</b> Não tem limite de indicações.</p>
+        <h5>Quando a indicação vale</h5>
+        <ul>
+          <li>A indicação vale quando o amigo <b>compra e passam os 7 dias de garantia</b>. Aí os pontos entram e eu te aviso no WhatsApp.</li>
+          <li>Se ele cancelar dentro dos 7 dias, a indicação não gera ponto.</li>
+          <li>O amigo precisa ser <b>aluno novo</b> da consultoria. Não vale pra quem já é ou já foi aluno, pra renovação, nem pra cortesia.</li>
+          <li>O amigo precisa <b>chegar pelo teu link</b>, é assim que eu sei que foi tu que indicou. Se ele comprou sem passar pelo link, me avisa no suporte em até 7 dias da compra dele que eu confiro e registro.</li>
+        </ul>
+        <h5>Pix ou dias</h5>
+        <ul>
+          <li><b>Dias</b> valem desde a primeira indicação: os pontos viram dias somados no teu plano.</li>
+          <li><b>Pix</b> libera a partir da <b>segunda indicação fechada</b>, com as duas compras a no máximo <b>60 dias</b> uma da outra. É o jeito de o Pix ir pra quem indica de verdade.</li>
+          <li>Com uma indicação só, tu pode pedir os dias na hora ou esperar a segunda. Se a segunda não fechar em 60 dias, os dias entram sozinhos no teu plano e eu te aviso.</li>
+          <li>Fechou a segunda no prazo, o Pix fica <b>liberado de vez</b>, sem contar prazo de novo.</li>
+          <li>A escolha é <b>a cada indicação</b>: toda vez que entrarem pontos eu te chamo no WhatsApp e tu me responde PIX ou DIAS. Nada fica automático só porque tu escolheu Pix uma vez.</li>
+        </ul>
+        <h5>O que não vale</h5>
+        <ul>
+          <li>Indicar a si mesmo, usar nome ou dados de outra pessoa, cadastro repetido, ou combinar compra e cancelamento pra pontuar.</li>
+          <li>Se acontecer, os pontos daquela indicação são cancelados. Se repetir, o aluno sai do programa.</li>
+          <li>Pontos são pessoais: não passam pra outro aluno.</li>
+        </ul>
+        <div id="indicRegras5" style="display:none;">
+          <h5>Onde acompanhar</h5>
+          <p>No app, em Mais, Indicação, tu vê quantos amigos chegaram pelo teu link, quantos estão nos 7 dias de garantia, quantos já valeram, os teus pontos e se o teu Pix já liberou.</p>
+        </div>
+        <h5>Mudanças no programa</h5>
+        <p>Posso ajustar as regras daqui pra frente. O que tu já ganhou até o dia da mudança fica garantido.</p>
+      </div>
+    </details>
+
+    <button type="button" class="ind-hero" onclick="indicacaoWhats()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg><span>Mandar meu link no WhatsApp</span></button>
+    <button type="button" class="te-btn ghost" style="width:100%;margin:10px 0 0;" onclick="teHide('indicacaoModal')">Fechar</button>
   </div>
 </div>
 
@@ -9019,6 +9106,7 @@ async function loadAndShowLastModified() {
     if (!res.ok) return;
     const data = await res.json();
     if (!data || !data.lastModifiedBR) return;
+    try { if (data.gs) sessionStorage.setItem('gh_gs_build', String(data.gs)); } catch (_) {}   // v472: build do servidor, pro app so chamar rota que ja existe la
     const el = document.getElementById('lastModValue');
     const badge = document.getElementById('lastModBadge');
     if (el && badge) {
@@ -18912,7 +19000,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v471';
+    var APP_SHELL_V = 'metodo-gh-v472';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -19073,7 +19161,7 @@ function _indicacaoEhEquipe() {   // v471: aparelho da equipe (ou modo edicao) a
     return !!localStorage.getItem('gh_trainer_token');
   } catch (_) { return false; }
 }
-function _indicacaoRegistra(acao, parceiro) {
+function _indicacaoRegistra(acao, parceiro, produto) {
   try {
     if (typeof SHEET_ID === 'undefined' || !SHEET_ID || SHEET_ID === 'demo' || typeof LOG_ENDPOINT === 'undefined') return;
     if (_indicacaoEhEquipe()) return;
@@ -19083,12 +19171,15 @@ function _indicacaoRegistra(acao, parceiro) {
       return;
     }
     fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true, redirect: 'follow',
-      body: JSON.stringify({ type: 'click', sheetId: SHEET_ID, studentName: _indicacaoNome(), partner: 'indicacao', productName: 'Indica um amigo', tag: acao, url: indicacaoLink() }) }).catch(function () {});
+      body: JSON.stringify({ type: 'click', sheetId: SHEET_ID, studentName: _indicacaoNome(), partner: 'indicacao', productName: produto || 'Indica um amigo', tag: acao, url: indicacaoLink() }) }).catch(function () {});
   } catch (_) {}
 }
 function openIndicacao() {
   try { var b = document.getElementById('indicacaoLinkBox'); if (b) b.textContent = indicacaoLink(); var av = document.getElementById('indicacaoAviso'); if (av) av.style.display = 'none'; } catch (_) {}
+  try { var ob = document.getElementById('indicacaoOutrasBtn'); if (ob) ob.style.display = navigator.share ? '' : 'none'; } catch (_) {}   // v472: sem Web Share, sobra so o Copiar
   teShow('indicacaoModal');
+  try { document.getElementById('indicacaoBox').scrollTop = 0; } catch (_) {}
+  _indicSaldoTent = 0; _indicSaldoCarrega();   // v472: painel de progresso
   _indicacaoRegistra('abriu');
   _indicMarcaAbriu();   // v471: abriu a tela uma vez, o banner some pra ele
 }
@@ -19162,6 +19253,93 @@ async function indicacaoCopiar() {
   if (!ok) { try { var ta = document.createElement('textarea'); ta.value = _indicacaoTexto(); document.body.appendChild(ta); ta.select(); ok = document.execCommand('copy'); document.body.removeChild(ta); } catch (_) {} }
   _indicacaoAvisa(ok ? '\u2705 Copiado! Cola no WhatsApp do teu amigo.' : 'N\u00e3o consegui copiar. Segura no link acima e copia.');
   _indicacaoRegistra('copiou');
+}
+// v472: o heroi da tela. wa.me sem numero abre o WhatsApp no seletor de contato com a mensagem pronta (mesmo caminho dos
+// links de suporte do app, que ja funcionam no PWA). Sai como 'compartilhou' porque e essa a Tag que a CRM conta em
+// "mandaram o link"; o canal vai no Produto. Nao ha retorno do WhatsApp, entao conta o toque, nao o envio.
+function indicacaoWhats() {
+  _indicacaoRegistra('compartilhou', null, 'Indica um amigo (whatsapp)');
+  try {
+    var a = document.createElement('a');
+    a.href = 'https://wa.me/?text=' + encodeURIComponent(_indicacaoTexto());
+    a.target = '_blank'; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  } catch (_) { indicacaoCopiar(); }
+}
+// ══ PAINEL DE PROGRESSO DA INDICACAO (v472, CRM Sala #2197 item 4) ══
+// A regra mora na CRM, que publica o saldo de cada aluno na aba INDICACOES_SALDO; o .gs (rota indicacao_saldo, build
+// 2026-09-17a) devolve so a linha do proprio aluno, sem CPF nem telefone. O app so mostra, nao recalcula nada.
+// So chama quando o aluno ABRE a tela (nunca em toda abertura do app) e guarda 5 min na sessao. O build do servidor vem
+// de graca no lastmod (campo gs): enquanto o .gs novo nao estiver colado, o app nem bate na rota (nada de "sem rota").
+var _indicSaldoTent = 0;
+function _indicSaldoPode() { try { return String(sessionStorage.getItem('gh_gs_build') || '') >= '2026-09-17a'; } catch (_) { return false; } }
+function _indicEsc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function _indicBR(iso, curto) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); return m ? (m[3] + '/' + m[2] + (curto ? '' : '/' + m[1])) : ''; }
+function _indicSaldoCarrega() {
+  try {
+    var box = document.getElementById('indicPainel'); if (!box) return;
+    if (typeof SHEET_ID === 'undefined' || !SHEET_ID || SHEET_ID === 'demo' || typeof LOG_ENDPOINT === 'undefined') return;
+    if (!_indicSaldoPode()) {   // o lastmod ainda nao voltou, ou o servidor ainda nao tem a rota: tenta mais 1x se a tela seguir aberta
+      if (_indicSaldoTent++ < 1) setTimeout(function () { try { if (document.getElementById('indicacaoModal').classList.contains('show')) _indicSaldoCarrega(); } catch (_) {} }, 4000);
+      return;
+    }
+    var ck = 'gh_indic_saldo_' + SHEET_ID, c = null;
+    try { c = JSON.parse(sessionStorage.getItem(ck) || 'null'); } catch (_) {}
+    if (c && c.d) _indicSaldoRender(c.d);
+    if (c && Date.now() - (c.ts || 0) < 5 * 60 * 1000) return;
+    fetch(LOG_ENDPOINT + '?action=indicacao_saldo&id=' + encodeURIComponent(SHEET_ID), { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j || j.ok !== true) return;
+        try { sessionStorage.setItem(ck, JSON.stringify({ ts: Date.now(), d: j })); } catch (_) {}
+        _indicSaldoRender(j);
+      }).catch(function () {});
+  } catch (_) {}
+}
+function _indicSaldoRender(j) {
+  try {
+    var box = document.getElementById('indicPainel'); if (!box || !j) return;
+    var n = function (v) { v = parseInt(v, 10); return isFinite(v) && v > 0 ? v : 0; };
+    var h = '<div class="ind-painel-t">Tuas indica\u00e7\u00f5es</div>';
+    if (!j.tem) {
+      h += '<div class="ind-linha" style="margin-top:0;">Nenhum amigo chegou pelo teu link ainda. Manda o link a\u00ed em cima e acompanha por aqui quem chegou, quem est\u00e1 nos 7 dias de garantia e quantos pontos tu j\u00e1 tem.</div>';
+    } else {
+      h += '<div class="ind-tiles">'
+        + '<div class="ind-tile"><b>' + n(j.chegaram) + '</b><span>chegaram pelo teu link</span></div>'
+        + '<div class="ind-tile"><b>' + n(j.em_validacao) + '</b><span>nos 7 dias de garantia</span></div>'
+        + '<div class="ind-tile"><b>' + n(j.validas) + '</b><span>j\u00e1 valeram</span></div></div>';
+      h += '<div class="ind-linha">Pontos pra usar: <b>' + n(j.pontos_disponiveis) + '</b>'
+        + (n(j.pontos_em_validacao) ? ' \u00b7 <b>+' + n(j.pontos_em_validacao) + '</b> em valida\u00e7\u00e3o (entram depois dos 7 dias)' : '') + '</div>';
+      var resg = [];
+      if (n(j.pontos_pix_pagos)) resg.push('R$ ' + n(j.pontos_pix_pagos) + ' no Pix');
+      if (n(j.pontos_em_dias)) resg.push(n(j.pontos_em_dias) + ' dias no teu plano');
+      if (resg.length) h += '<div class="ind-linha" style="margin-top:3px;">J\u00e1 resgatados: <b>' + resg.join('</b> e <b>') + '</b></div>';
+      var prazo = _indicBR(j.prazo_pix);
+      if (j.pix_liberado === true) h += '<div class="ind-linha"><b style="color:var(--gold);">Pix liberado.</b> A cada indica\u00e7\u00e3o que valer eu te chamo no WhatsApp e tu escolhe Pix ou dias.</div>';
+      else if (prazo) h += '<div class="ind-linha"><b style="color:var(--gold);">Pix travado por enquanto.</b> Se mais um amigo fechar at\u00e9 <b>' + prazo + '</b>, tu escolhe entre Pix e dias somando os pontos dos dois. Se n\u00e3o fechar at\u00e9 l\u00e1, os pontos viram dias no teu plano.</div>';
+      else h += '<div class="ind-linha">O Pix libera a partir da segunda indica\u00e7\u00e3o fechada, com as duas compras a no m\u00e1ximo 60 dias uma da outra. Dias valem desde a primeira.</div>';
+      var am = Array.isArray(j.amigos) ? j.amigos : [];
+      if (am.length) {
+        h += '<div style="margin-top:10px;">';
+        am.slice(0, 12).forEach(function (a) {
+          var p = n(a.pontos), s = '', v = '';
+          if (a.situacao === 'chegou') s = 'chegou pelo teu link' + (_indicBR(a.chegou_em, true) ? ' em ' + _indicBR(a.chegou_em, true) : '');
+          else if (a.situacao === 'em_validacao') { s = 'comprou, est\u00e1 nos 7 dias de garantia' + (_indicBR(a.vale_em, true) ? ' (vale em ' + _indicBR(a.vale_em, true) + ')' : ''); v = p ? '+' + p : ''; }
+          else if (a.situacao === 'valida') { s = 'valeu'; v = p ? '+' + p + ' pts' : ''; }
+          else if (a.situacao === 'resgatada_pix') { s = 'resgatada no Pix'; v = p ? 'R$ ' + p : ''; }
+          else if (a.situacao === 'resgatada_dias') { s = 'virou dias no teu plano'; v = p ? '+' + p + ' dias' : ''; }
+          else return;
+          h += '<div class="ind-amigo"><div>' + _indicEsc(a.nome || 'Amigo') + '<div class="s">' + s + '</div></div><div class="p">' + v + '</div></div>';
+        });
+        if (am.length > 12) h += '<div class="ind-amigo"><div class="s">e mais ' + (am.length - 12) + '</div><div></div></div>';
+        h += '</div>';
+      }
+    }
+    var at = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})/.exec(String(j.atualizado_em || ''));
+    h += '<div class="ind-linha" style="color:#6f6f76;font-size:10.5px;">' + (at ? 'Atualizado em ' + _indicBR(at[1], true) + ' \u00e0s ' + at[2] + '. ' : '') + 'A lista atualiza 1 vez por dia e sempre que a equipe registra algo.</div>';
+    box.innerHTML = h; box.style.display = 'block';
+    var r5 = document.getElementById('indicRegras5'); if (r5) r5.style.display = 'block';
+  } catch (_) {}
 }
 async function indicacaoCompartilhar() {
   if (navigator.share) {
