@@ -1485,6 +1485,7 @@
   body.view-ghflix #dietaView,
   body.view-ghflix #protoAviso,
   body.view-ghflix #fotosBanner,
+  body.view-ghflix #indicBanner,
   body.view-ghflix #recadoSlot,
   body.view-ghflix #laudoSlot,
   body.view-ghflix #acaoRapida,
@@ -3080,6 +3081,24 @@
       <div style="display:flex;gap:6px;margin-top:9px;flex-wrap:wrap;">
         <button class="te-btn primary" type="button" onclick="openFotosModal()" style="padding:7px 12px;font-size:12px;">Enviar agora</button>
         <button class="te-btn ghost" type="button" onclick="dismissFotosBanner()" style="padding:7px 12px;font-size:12px;">Já enviei na anamnese</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ BANNER DO PROGRAMA DE INDICACAO (v471, GH 17/09/2026, pedido via CRM Sala #2199) ══
+     Texto do GH, palavra por palavra. So pra quem ainda NAO abriu a tela de Indicacao: abriu uma vez, some.
+     Datado: "ontem" so e verdade em 17/09 (depois vira "na call de quarta") e o banner sai do ar depois de 22/09. -->
+<div id="indicBanner" style="display:none;margin:0 14px 12px;padding:12px 14px;background:var(--card);border:1px solid rgba(212,175,106,0.35);border-radius:14px;position:relative;">
+  <button type="button" onclick="indicBannerFecha()" title="Fechar" aria-label="Fechar aviso" style="position:absolute;top:5px;right:8px;background:none;border:none;color:#6b665e;font-size:18px;cursor:pointer;line-height:1;padding:4px;">&times;</button>
+  <div style="display:flex;align-items:flex-start;gap:10px;">
+    <div style="width:30px;height:30px;border-radius:9px;background:var(--gold-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--gold);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></div>
+    <div style="flex:1;min-width:0;">
+      <div style="color:var(--gold);font-weight:700;font-size:13px;margin-bottom:3px;padding-right:22px;">Indica um amigo e ganha</div>
+      <div style="color:#ccc;font-size:12px;line-height:1.5;" id="indicBannerMsg"></div>
+      <div style="display:flex;gap:8px;margin-top:9px;flex-wrap:wrap;align-items:center;">
+        <button class="te-btn primary" type="button" onclick="indicBannerAbre()" style="padding:7px 12px;font-size:12px;">Ver como funciona</button>
+        <span style="color:#777;font-size:10.5px;line-height:1.3;">Fica em Mais, Indicação</span>
       </div>
     </div>
   </div>
@@ -9977,6 +9996,7 @@ function tourEnd() {
   _tourMarcaVisto();
   document.getElementById('tourOverlay').classList.remove('show');
   _liveAvisoTalvez(700);   // v456: aluno novo ve o aviso da live logo depois do tour
+  if (typeof _indicBannerTalvez === 'function') _indicBannerTalvez(true);   // v471
 }
 // ══ AVISO UNICO DA LIVE DE QUARTA (v456, GH 14/09/2026) ══
 // "aviso de uma vez so, abriu e expirou, sem abrir de novo". A marca de visto entra NO MOMENTO em que o
@@ -17381,6 +17401,9 @@ function _showNav() {
   document.body.classList.add('has-bnav');
   if (typeof _tourMaybeStart === 'function') _tourMaybeStart();
   if (typeof _liveAvisoTalvez === 'function') _liveAvisoTalvez(3200);   // v456: aviso unico da live de quarta
+  // v471: banner da indicacao. Veterano (marca do tour no aparelho) ve NA HORA, sem empurrar a tela depois que ja esta
+  // tocando; a chamada tardia pega quem ganhou a marca no meio do caminho e o aluno so de dieta. A funcao e idempotente.
+  if (typeof _indicBannerTalvez === 'function') { _indicBannerTalvez(false); setTimeout(function () { _indicBannerTalvez(true); }, 2600); }
 }
 function openMaisSheet() {
   var ov = document.getElementById('maisSheetOverlay');
@@ -18889,7 +18912,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v470';
+    var APP_SHELL_V = 'metodo-gh-v471';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -19043,9 +19066,22 @@ function indicacaoLink() {
 function _indicacaoTexto() {
   return 'T\u00f4 na consultoria do GH e recomendo. Se quiser conhecer, faz o teste por aqui (j\u00e1 vai com a minha indica\u00e7\u00e3o): ' + indicacaoLink();
 }
-function _indicacaoRegistra(acao) {
+function _indicacaoEhEquipe() {   // v471: aparelho da equipe (ou modo edicao) abrindo o protocolo do aluno nao conta como o aluno
+  try {
+    var q = new URLSearchParams(location.search);
+    if (q.has('editor') || q.has('admin') || q.get('edit') === '1') return true;
+    return !!localStorage.getItem('gh_trainer_token');
+  } catch (_) { return false; }
+}
+function _indicacaoRegistra(acao, parceiro) {
   try {
     if (typeof SHEET_ID === 'undefined' || !SHEET_ID || SHEET_ID === 'demo' || typeof LOG_ENDPOINT === 'undefined') return;
+    if (_indicacaoEhEquipe()) return;
+    if (parceiro) {
+      fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true, redirect: 'follow',
+        body: JSON.stringify({ type: 'click', sheetId: SHEET_ID, studentName: _indicacaoNome(), partner: parceiro, productName: 'Banner da indicacao', tag: acao, url: '' }) }).catch(function () {});
+      return;
+    }
     fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true, redirect: 'follow',
       body: JSON.stringify({ type: 'click', sheetId: SHEET_ID, studentName: _indicacaoNome(), partner: 'indicacao', productName: 'Indica um amigo', tag: acao, url: indicacaoLink() }) }).catch(function () {});
   } catch (_) {}
@@ -19054,6 +19090,70 @@ function openIndicacao() {
   try { var b = document.getElementById('indicacaoLinkBox'); if (b) b.textContent = indicacaoLink(); var av = document.getElementById('indicacaoAviso'); if (av) av.style.display = 'none'; } catch (_) {}
   teShow('indicacaoModal');
   _indicacaoRegistra('abriu');
+  _indicMarcaAbriu();   // v471: abriu a tela uma vez, o banner some pra ele
+}
+
+// ══ BANNER DO PROGRAMA DE INDICACAO (v471, GH 17/09/2026, pedido via CRM Sala #2199) ══
+// "Avisa o Site pra colocar um banner de aviso sobre essa indicacao, pros alunos saberem que existe, so nao precisa pros
+// 23 que ja abriram". Regra viva: quem ja abriu a tela de Indicacao nao ve. Dois jeitos de saber: a marca local
+// (gh_indic_abriu_<sheet>, gravada daqui pra frente em toda abertura) e, pros que abriram ANTES desta versao, a lista
+// abaixo, tirada da CLICKS_AFILIADOS (Parceiro=indicacao) em 17/09. A lista guarda so um hash de 53 bits do SheetId:
+// o index.html e publico e o SheetId abre o protocolo do aluno, entao o id em claro nunca entra aqui.
+// O texto e do GH, palavra por palavra. Ele e datado: "ontem" so e verdade em 17/09 (a call foi quarta, 16/09), depois
+// vira "na call de quarta"; "proxima quarta-feira" e 23/09, entao o banner sai do ar depois de 22/09.
+// Medicao (CRM acompanha): Parceiro=indicacao_banner, Tag viu (1x por aparelho) | tocou | fechou. O toque abre a tela
+// e gera o 'abriu' de sempre no Parceiro=indicacao.
+// Config dentro de funcao de proposito: o _showNav pode rodar (abertura instantanea do cache) ANTES de a execucao chegar
+// nesta linha do script; declaracao de funcao sobe, atribuicao de var nao.
+function _indicBannerCfg() { return { ate: '2026-09-22', ontem: '2026-09-17', jaAbriu: ["26fxr0iz8ah","1nyobivyoni","1usq05o64wo","17t1s2ctf8t","v7idknavdd","1ss010ke01q","16lgjvjyfq0","1rfifklxxuk","2aqkjvb33nv","l42ukkwv95","414wkrwsud","jbpamk77ko","1dn81eqsi34","1p9uf0ldyzz","15agcjwdav2","3crxumyg5b","na2r9ss3r7","1jj3g3p4bgs","152lfi0afpk","l9matzncl1","lr4ztzu6at","1xgo666qj01","1h5qff9x38r"] }; }
+function _indicHash(str) {   // cyrb53
+  var h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for (var i = 0, ch; i < str.length; i++) { ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507); h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507); h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+}
+function _indicJaAbriu() {
+  try { if (localStorage.getItem('gh_indic_abriu_' + SHEET_ID) === '1') return true; } catch (_) {}
+  try { return _indicBannerCfg().jaAbriu.indexOf(_indicHash('indic:' + SHEET_ID).toString(36)) >= 0; } catch (_) { return false; }
+}
+function _indicMarcaAbriu() {
+  try { if (!_indicacaoEhEquipe()) localStorage.setItem('gh_indic_abriu_' + SHEET_ID, '1'); } catch (_) {}
+  try { var b = document.getElementById('indicBanner'); if (b) b.style.display = 'none'; } catch (_) {}
+}
+function _indicBannerTalvez(tardio) {
+  try {
+    var b = document.getElementById('indicBanner');
+    if (!b || b.style.display !== 'none') return;
+    if (typeof SHEET_ID === 'undefined' || !SHEET_ID || SHEET_ID === 'demo') return;
+    var hoje = todayKey(), cfg = _indicBannerCfg();
+    if (hoje > cfg.ate) return;
+    if (_indicacaoEhEquipe()) return;
+    if (localStorage.getItem('gh_indic_banner_off_' + SHEET_ID) === '1') return;
+    if (_indicJaAbriu()) return;
+    if (_tourAtivo) return;
+    if (localStorage.getItem(_TOUR_KEY) !== '1') {
+      // Sem a marca do tour: ou e aluno de 1o acesso (o tour vai rodar e o tourEnd chama de novo), ou o treino nem
+      // carregou ainda (o _showNav da DIETA roda antes do WORKOUT). Na hora nao da pra saber, entao so a chamada
+      // tardia decide, e so libera pra quem nao tem treino (aluno so de dieta nunca ve tour).
+      if (!tardio) return;
+      if (typeof WORKOUT !== 'undefined' && Array.isArray(WORKOUT) && WORKOUT.length > 0) return;
+    }
+    if (document.querySelector('.plan-block-overlay.show')) return;
+    var quando = (hoje <= cfg.ontem) ? 'ontem na call com os alunos' : 'na call de quarta com os alunos';
+    document.getElementById('indicBannerMsg').textContent = 'Salve pessoal, ' + quando + ' expliquei que como forma de agradecimento pelas indica\u00e7\u00f5es que sempre fazem, vou presentear voc\u00eas com um retorno por isso, confiram l\u00e1! Desde j\u00e1, obrigado pela parceria de sempre e conto com voc\u00eas na pr\u00f3xima quarta-feira!';
+    b.style.display = 'block';
+    if (localStorage.getItem('gh_indic_banner_viu_' + SHEET_ID) !== '1') {
+      localStorage.setItem('gh_indic_banner_viu_' + SHEET_ID, '1');
+      _indicacaoRegistra('viu', 'indicacao_banner');
+    }
+  } catch (_) {}
+}
+function indicBannerAbre() { _indicacaoRegistra('tocou', 'indicacao_banner'); openIndicacao(); }
+function indicBannerFecha() {
+  try { localStorage.setItem('gh_indic_banner_off_' + SHEET_ID, '1'); } catch (_) {}
+  try { document.getElementById('indicBanner').style.display = 'none'; } catch (_) {}
+  _indicacaoRegistra('fechou', 'indicacao_banner');
 }
 function _indicacaoAvisa(t) { try { var av = document.getElementById('indicacaoAviso'); if (av) { av.textContent = t; av.style.display = 'block'; } } catch (_) {} }
 async function indicacaoCopiar() {
