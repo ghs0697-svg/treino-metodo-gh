@@ -1019,6 +1019,20 @@
   /* rótulo embaixo do ícone (GH 2026-08-13: "ícone sem nome é adivinhação") */
   .ex-action-lbl { font-size: 8px; font-weight: 600; letter-spacing: .2px; color: #9a9389; line-height: 1; white-space: nowrap; }
   .ex-action-btn.sub-btn.sub-on .ex-action-lbl { color: #0c0c0d; }
+  /* v478 (GH 18/09: "opcao de trocar exercicio ta muito escondida"): o botao de troca sai da fileira de icones
+     miudos do rodape e vira um pill dourado logo abaixo do nome, ao lado de "Nao consegui fazer", com o numero de
+     opcoes. Trocado = preenchido. */
+  .ex-sub-pill { display: inline-flex; align-items: center; gap: 5px; min-height: 28px; margin: 6px 6px 0 0; padding: 4px 11px; background: rgba(212,175,106,.10); border: 1px solid rgba(212,175,106,.6); border-radius: 999px; color: var(--gold); font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .ex-sub-pill svg { width: 13px; height: 13px; flex-shrink: 0; }
+  .ex-sub-pill .n { color: #b9a26f; font-weight: 600; }
+  .ex-sub-pill.on { background: var(--gold); color: #0c0c0d; border-color: var(--gold); }
+  .ex-sub-pill.on .n { color: #3a2e14; }
+  .ex-sub-pill:active { transform: scale(.97); }
+  .ex-sub-pill { max-width: 100%; }
+  body.fonte-gg .ex-sub-pill .n { display: none; }   /* letra maior: o card tem ~190px uteis, o contador nao cabe */
+  .ex-dica-troca { display: flex; align-items: center; gap: 10px; background: rgba(212,175,106,.08); border: 1px solid rgba(212,175,106,.3); border-radius: 12px; padding: 10px 12px; margin: 0 0 12px; color: #d9d4cb; font-size: 12px; line-height: 1.5; }
+  .ex-dica-troca b { color: var(--gold); }
+  .ex-dica-troca .x { margin-left: auto; background: none; border: none; color: #6b665e; font-size: 18px; cursor: pointer; line-height: 1; padding: 2px 4px; }
   /* botão de substituto ATIVO (aluno trocou) — preenchido dourado */
   .ex-action-btn.sub-btn.sub-on { background: var(--gold); color: #0c0c0d; border-color: var(--gold); }
   /* selo "SUBST." ao lado do nome quando o aluno está no substituto */
@@ -6754,8 +6768,35 @@ function escolherSub(di, ei, chosenNorm) {
     if (fo && fo.classList.contains('show') && typeof _focusRender === 'function') _focusRender();
   } catch (_) {}
 }
+// ══ v478 (GH 18/09/2026: "opcao de trocar exercicio ta muito escondida, precisamos deixar mais visivel que da pra
+// escolher substituto") ══ Medido em 18/09: 228 de 556 alunos ativos (41%) trocaram algo nos ultimos 30 dias, mas o
+// botao era o 5o icone miudo do rodape do card (40x36 px, rotulo de 8 px). Agora e um pill dourado logo abaixo do
+// nome, ao lado de "Nao consegui fazer", que diz quantas opcoes tem ("Trocar exercicio · 3 opcoes"); trocado, fica
+// preenchido ("Trocado · ver opcoes"). Sem troca no banco, o pill leva pro pedido ao GH. E uma dica unica por
+// aparelho no topo do dia, que some ao tocar no x ou ao abrir o seletor pela primeira vez.
+function _subPillHtml(di, ei, act, subAlts) {
+  try {
+    const livres = subAlts ? subAlts.filter(a => !a.noDia && !a.atual).length : 0;
+    const acao = subAlts ? ('openSubPicker(' + di + ', ' + ei + ')') : ('openSubFallback(' + di + ', ' + ei + ')');
+    const rot = act.sub ? '<span>Trocado</span><span class="n">&nbsp;\u00b7 ver op\u00e7\u00f5es</span>'
+      : ('<span>Trocar exerc\u00edcio</span>' + (livres ? '<span class="n">&nbsp;\u00b7 ' + livres + (livres === 1 ? ' op\u00e7\u00e3o' : ' op\u00e7\u00f5es') + '</span>' : ''));
+    return '<button type="button" class="ex-sub-pill ' + (act.sub ? 'on' : '') + '" onclick="event.stopPropagation(); ' + acao + '" title="Trocar exercício"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>' + rot + '</button>';
+  } catch (_) { return ''; }
+}
+function _dicaTrocaKey() { return 'gh_dica_troca_v1'; }
+function _dicaTrocaHtml(di) {
+  try {
+    if (localStorage.getItem(_dicaTrocaKey()) === '1') return '';
+    if (typeof params !== 'undefined' && params.get('edit')) return '';
+    const dia = WORKOUT[di];
+    if (!dia || !(dia.exercises || []).some((e, ei) => !e.warmup && !e.biset && _alternativasNoDia(di, ei))) return '';
+    return '<div class="ex-dica-troca" id="dicaTroca"><span>Sem o aparelho, fila ou desconforto? Toca em <b>Trocar exerc\u00edcio</b> no card e escolhe outro do mesmo grupo, com v\u00eddeo. A carga do original fica guardada.</span><button type="button" class="x" onclick="dicaTrocaFecha()" aria-label="Fechar">&times;</button></div>';
+  } catch (_) { return ''; }
+}
+function dicaTrocaFecha() { try { localStorage.setItem(_dicaTrocaKey(), '1'); } catch (_) {} try { document.querySelectorAll('.ex-dica-troca').forEach(d => d.remove()); } catch (_) {} }   // todos os dias (o render poe uma por dia)
 // Exercício SEM troca no banco: em vez de silêncio, dá o caminho (pedir ajuste pro GH).
 function openSubFallback(di, ei) {
+  dicaTrocaFecha();   // v478: usou a troca, a dica ja cumpriu o papel
   const ex = WORKOUT[di] && WORKOUT[di].exercises && WORKOUT[di].exercises[ei];
   if (!ex) return;
   let m = document.getElementById('subFallbackMenu');
@@ -6774,6 +6815,7 @@ function openSubFallback(di, ei) {
 function openSubPicker(di, ei) {
   const alts = _alternativasNoDia(di, ei);
   if (!alts) { openSubFallback(di, ei); return; }
+  dicaTrocaFecha();   // v478
   _subMotivo = '';
   document.querySelectorAll('#subMotivoChips .esf-chip').forEach(b => b.classList.remove('sel'));
   const ex = WORKOUT[di].exercises[ei];
@@ -10064,7 +10106,7 @@ function _tourSteps() {
   return [
     { sel: '#dayTabs', t: 'Teu treino da semana', p: 'Cada botão é um dia de treino. O app já abre no treino certo de hoje, é só seguir.' },
     { sel: '.sets-grid', t: 'Anota tuas cargas aqui', p: 'Peso e repetições de cada série. É com isso que eu acompanho tua evolução e ajusto teu protocolo. Salva sozinho.' },
-    { sel: '.ex-action-btn.sub-btn', t: 'Sem o aparelho? Troca.', p: 'Toca em "trocar" que eu te mostro as opções equivalentes pro mesmo músculo, com vídeo.' },
+    { sel: '.ex-sub-pill', t: 'Sem o aparelho? Troca.', p: 'Toca em "Trocar exercício" que eu te mostro as opções equivalentes pro mesmo músculo, com vídeo. A carga do original fica guardada.' },
     { sel: '.focus-entry', t: 'Modo treino', p: 'Um exercício por vez, em tela cheia. Anotou a série com o treino rodando, o descanso cronometra sozinho.' },
     { sel: '#bottomNav', t: 'Tua navegação', p: 'Dieta, teu progresso com gráficos e o resto do app moram aqui embaixo.' },
     { sel: '#bnMais', t: 'Fala comigo', p: 'Dúvida ou quer pedir um ajuste no protocolo? Toca no card do topo ou aqui em Mais.' }
@@ -11889,6 +11931,7 @@ function renderExercises() {
               </div>
               <div class="exercise-details">${tags.join("")}</div>
               ${!isWarmup ? _muscTag(act.name) : ''}
+              ${!isWarmup && !exDone ? _subPillHtml(di, ei, act, subAlts) : ''}
               ${!isWarmup && !exDone ? `<button type="button" class="ex-skip-btn ${exSkip ? 'on' : ''}" onclick="event.stopPropagation(); onSkipExercise(${di}, ${ei})">${exSkip ? '⤼ Pulado hoje · desfazer' : 'Não consegui fazer'}</button>` : ''}
               ${ex.obs ? `<div class="exercise-obs">${_glossWrap(ex.obs)}</div>` : ''}
             </div>
@@ -11904,7 +11947,6 @@ function renderExercises() {
               <button class="ex-action-btn" onclick="openPacer(${di}, ${ei})" title="Treinar no ritmo (coach de cadência)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="ex-action-lbl">ritmo</span></button>
               <button class="ex-action-btn" onclick="startTimer('${safeName}', parseIntervalSeconds('${safeRest}'))" title="Cronômetro de descanso (${ex.rest || 'auto'})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="ex-action-lbl">descanso</span></button>
               <button class="ex-action-btn" onclick="showHistory(${di}, ${ei})" title="Histórico de cargas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg><span class="ex-action-lbl">histórico</span></button>
-              <button class="ex-action-btn sub-btn ${act.sub ? 'sub-on' : ''}" onclick="${subAlts ? `openSubPicker(${di}, ${ei})` : `openSubFallback(${di}, ${ei})`}" title="Trocar exercício"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg><span class="ex-action-lbl">trocar</span></button>
             </div>
             </div>
           </div>
@@ -11915,6 +11957,7 @@ function renderExercises() {
         </div>`;
     }).join("");
     try { const _sa = _semanaAvisoHtml(di); if (_sa) div.insertAdjacentHTML('afterbegin', _sa); } catch (_) {}   // v470
+    try { const _dt = _dicaTrocaHtml(di); if (_dt) div.insertAdjacentHTML('afterbegin', _dt); } catch (_) {}     // v478
     c.appendChild(div);
   });
   updateDayProgress();
@@ -19181,7 +19224,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v477';
+    var APP_SHELL_V = 'metodo-gh-v478';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
