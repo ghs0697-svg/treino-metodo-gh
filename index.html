@@ -877,7 +877,7 @@
   .ind-sec .te-btn { flex: 1; min-width: 0; margin: 0; padding: 10px 8px; font-size: 12.5px; }
   .ind-chamada { color: #fff; font-size: 15.5px; font-weight: 800; line-height: 1.35; margin: 0 0 6px; }
   .ind-conta { background: rgba(212,175,106,.10); border: 1px solid rgba(212,175,106,.32); border-radius: 10px; padding: 9px 12px; margin: 0 0 12px; color: var(--gold); font-size: 12.5px; font-weight: 700; line-height: 1.45; text-align: center; }
-  /* v473: "um amigo por mes e a tua consultoria sai de graca" (GH 17/09 via CRM #2215) */
+  /* v473/v474: a conta da indicacao (GH 17/09 via CRM #2215 e #2218: "60 pontos pagam metade da parcela do mes") */
   .ind-copy { background: linear-gradient(180deg, rgba(212,175,106,.13), rgba(212,175,106,.05)); border: 1px solid rgba(212,175,106,.35); border-radius: 12px; padding: 13px 14px; margin: 14px 0 0; }
   .ind-copy-t { color: #fff; font-size: 15px; font-weight: 800; line-height: 1.3; margin: 0 0 7px; }
   .ind-copy p { color: #d6d6da; font-size: 12.5px; line-height: 1.6; margin: 0 0 7px; }
@@ -4699,9 +4699,9 @@
 <div class="te-modal-overlay" id="indicacaoModal" onclick="if(event.target.id==='indicacaoModal')teHide('indicacaoModal')">
   <div class="te-modal-box" id="indicacaoBox" style="max-width:460px;max-height:86vh;overflow-y:auto;">
     <h3 style="margin:0 0 8px;">🎁 Indica um amigo e ganha</h3>
-    <p class="ind-chamada">Um amigo por mês e a tua consultoria sai de graça.</p>
-    <p style="color:#aaa;font-size:12px;margin:0 0 10px;line-height:1.55;">Cada amigo que fecha te dá de 60 a 140 pontos, e <b style="color:#eee;">1 ponto = 1 dia a mais na tua consultoria ou R$ 1 no Pix</b>. Não tem limite de indicações.</p>
-    <div class="ind-conta">Cada amigo vale no mínimo 60 dias, e o mês tem 30.</div>
+    <p class="ind-chamada">Cada amigo que fecha paga metade da tua parcela do mês.</p>
+    <p style="color:#aaa;font-size:12px;margin:0 0 10px;line-height:1.55;">De 60 a 140 pontos por amigo, e <b style="color:#eee;">1 ponto vale R$ 1 no Pix ou 1 dia a mais na tua consultoria</b>. Não tem limite de indicações.</p>
+    <div class="ind-conta">Em dias, 60 pontos são 2 meses a mais de consultoria.</div>
 
     <button type="button" class="ind-hero" onclick="indicacaoWhats()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg><span>Mandar meu link no WhatsApp</span></button>
     <div style="color:#8f8f95;font-size:11px;text-align:center;margin-top:6px;line-height:1.4;">A mensagem já vai pronta, com o teu nome no link. É só escolher o amigo.</div>
@@ -4712,13 +4712,17 @@
     </div>
     <div id="indicacaoAviso" style="display:none;color:#4CAF50;font-size:11.5px;text-align:center;margin-top:8px;font-weight:700;"></div>
 
-    <!-- v473: a conta do "um amigo por mes" (GH 17/09, texto da CRM #2215 na voz dele). A promessa "sai de graca" e em
-         DIAS; o Pix entra como alternativa (em Pix a conta nao paga a consultoria, so no anual com amigos anuais). -->
+    <!-- v474 (GH 17/09 21h30 via CRM #2218, angulo dele: "com 60 pontos voce paga metade da parcela do mes da consultoria").
+         Texto da CRM na voz dele, verbatim. "Parcela do mes" = valor em 12x no cartao (fator 1,2338 da Greenn): anual
+         R$ 1.397 = 12x R$ 144 (com desconto 12x R$ 123), semestral 12x R$ 102, trimestral 12x R$ 61. 60 pontos = metade
+         da parcela do anual (a maioria); 60 dias = 2 parcelas (R$ 246 a 288). Copy generica de proposito: o app nao le
+         plano nem valor pago, e quem pagou a vista nao tem "parcela". -->
     <div class="ind-copy" id="indicCopy">
       <div class="ind-copy-t">A conta é simples</div>
-      <p>Cada amigo que fecha te dá no mínimo 60 pontos, e 1 ponto é 1 dia a mais na tua consultoria. Um amigo por mês são <b>60 dias por mês</b>. O mês tem 30.</p>
-      <p>Ou seja: as indicações pagam a tua consultoria inteira e ainda sobra <b>um mês de crédito a cada amigo</b>. Em um ano, 12 amigos são de 720 a 1.680 dias: <b>de 2 a mais de 4 anos de consultoria sem pagar</b>.</p>
-      <p>Prefere dinheiro? A partir da segunda indicação tu pode escolher Pix: um amigo por mês dá <b>de R$ 720 a R$ 1.680 por ano</b>.</p>
+      <p>Cada amigo que fecha a consultoria pela tua indicação te dá de 60 a 140 pontos, e 1 ponto vale R$ 1 no Pix ou 1 dia a mais na tua consultoria.</p>
+      <p>Em Pix, <b>60 pontos são metade da parcela do mês</b>; 140 são a parcela inteira, e ainda sobra.</p>
+      <p>Em dias, <b>60 pontos são 2 meses a mais de consultoria</b>, quase R$ 300 em parcelas; 140 são quase 5 meses.</p>
+      <p><b>Um amigo por mês e a tua consultoria sai de graça</b>, com crédito sobrando.</p>
     </div>
 
     <div class="ind-painel" id="indicPainel" style="display:none;"></div>
@@ -19015,7 +19019,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v473';
+    var APP_SHELL_V = 'metodo-gh-v474';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
