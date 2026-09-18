@@ -1625,6 +1625,23 @@
   .nov-like svg { width: 15px; height: 15px; }
   .nov-like.on { color: #ff6b6b; border-color: rgba(255,107,107,.45); }
   .nov-like.on svg { fill: #ff6b6b; }
+  /* v477: resultado da semana (antes | depois) e o formulario de envio */
+  .nov-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; background: #111; }
+  .nov-duo div { position: relative; }
+  .nov-duo img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; background: #111; }
+  .nov-duo span { position: absolute; left: 8px; top: 8px; background: rgba(0,0,0,.62); color: #fff; font-size: 10px; font-weight: 800; letter-spacing: .12em; padding: 3px 7px; border-radius: 6px; }
+  .nov-txt.cita { font-style: italic; color: #e6e6ea; font-size: 13.5px; }
+  .nov-cta { background: linear-gradient(180deg, rgba(212,175,106,.13), rgba(212,175,106,.05)); border: 1px solid rgba(212,175,106,.35); border-radius: 14px; padding: 13px 14px; margin-bottom: 14px; }
+  .nov-cta-t { color: #fff; font-size: 14.5px; font-weight: 800; line-height: 1.3; }
+  .nov-cta-p { color: #cfcfd4; font-size: 12.5px; line-height: 1.55; margin-top: 5px; }
+  .res-slots { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+  .res-slot { position: relative; aspect-ratio: 3 / 4; border: 1px dashed rgba(212,175,106,.45); border-radius: 12px; background: #141416; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #9a9aa0; font-size: 12px; font-weight: 700; cursor: pointer; overflow: hidden; }
+  .res-slot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .res-slot .res-rot { position: relative; z-index: 1; background: rgba(0,0,0,.55); padding: 3px 8px; border-radius: 6px; color: #fff; letter-spacing: .1em; font-size: 10.5px; }
+  .res-slot .res-dica { position: relative; z-index: 1; font-size: 11px; color: #8f8f95; font-weight: 400; }
+  .res-slot.filled .res-dica { display: none; }
+  .res-consent { display: flex; align-items: flex-start; gap: 9px; color: #cfcfd4; font-size: 12px; line-height: 1.5; margin: 10px 0 4px; cursor: pointer; }
+  .res-consent input { margin-top: 3px; width: 17px; height: 17px; flex-shrink: 0; accent-color: var(--gold); }
   .nov-vazio { color: #8f8f95; font-size: 13px; text-align: center; padding: 30px 10px; line-height: 1.6; }
   .app-header .hdr-bell { display: none; position: absolute; top: 14px; right: 12px; z-index: 3; width: 36px; height: 36px; border-radius: 50%; background: rgba(0,0,0,.45); border: 1px solid rgba(212,175,106,.35); color: var(--gold); align-items: center; justify-content: center; cursor: pointer; }
   .hdr-bell svg { width: 18px; height: 18px; }
@@ -4871,6 +4888,25 @@
 
     <button type="button" class="ind-hero" onclick="indicacaoWhats()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg><span>Mandar meu link no WhatsApp</span></button>
     <button type="button" class="te-btn ghost" style="width:100%;margin:10px 0 0;" onclick="teHide('indicacaoModal')">Fechar</button>
+  </div>
+</div>
+
+<!-- v477: RESULTADO DA SEMANA. O aluno manda depoimento + antes/depois autorizando a publicacao. Nada vai ao ar sozinho:
+     o GH recebe no WhatsApp e aprova por link; aprovado, vira card nas Novidades so com o primeiro nome. -->
+<div class="te-modal-overlay" id="resultadoModal" onclick="if(event.target.id==='resultadoModal')teHide('resultadoModal')">
+  <div class="te-modal-box" style="max-width:460px;max-height:88vh;overflow-y:auto;">
+    <h3 style="margin:0 0 4px;">📸 Manda o teu resultado</h3>
+    <p style="color:#aaa;font-size:12px;margin:0 0 10px;line-height:1.55;">Conta em poucas linhas o que mudou e junta uma foto de antes e uma de agora. Eu olho antes de publicar, e só o teu primeiro nome aparece.</p>
+    <textarea id="resTexto" maxlength="600" rows="4" placeholder="Ex.: Perdi 8 kg em 2 meses, voltei a dormir bem e a roupa que não fechava hoje sobra." style="width:100%;box-sizing:border-box;background:#0f0f10;border:1px solid #2a2a2e;border-radius:10px;color:#eee;font-size:13px;line-height:1.5;padding:10px;font-family:inherit;resize:vertical;" oninput="resContador()"></textarea>
+    <div id="resContador" style="text-align:right;color:#6f6f76;font-size:10.5px;margin-top:3px;">0/600</div>
+    <div class="res-slots">
+      <div class="res-slot" id="resSlotAntes" onclick="resEscolher('antes')"><span class="res-rot">ANTES</span><span class="res-dica">toca pra escolher</span></div>
+      <div class="res-slot" id="resSlotDepois" onclick="resEscolher('depois')"><span class="res-rot">AGORA</span><span class="res-dica">toca pra escolher</span></div>
+    </div>
+    <label class="res-consent"><input type="checkbox" id="resAutoriza"><span>Autorizo o GH a publicar meu depoimento e minhas fotos nas Novidades do app, que os outros alunos veem. Só o meu primeiro nome aparece, e eu posso pedir pra tirar quando quiser.</span></label>
+    <div id="resFeedback" style="display:none;font-size:12px;line-height:1.5;margin:8px 0 0;padding:9px 11px;border-radius:9px;"></div>
+    <button type="button" class="te-btn" id="resEnviarBtn" style="width:100%;margin-top:10px;" onclick="resultadoEnviar()">Enviar pro GH</button>
+    <button type="button" class="te-btn ghost" style="width:100%;margin-top:8px;" onclick="teHide('resultadoModal')">Fechar</button>
   </div>
 </div>
 
@@ -18953,6 +18989,7 @@ async function loadAvisoGlobal() {
   if (cache && typeof cache.texto === 'string') {
     _avisoRender_(cache.texto);
     _supSetEnabled(cache.suporte === 'on');
+    _novResultadosOn = cache.resultados === 'on';   // v477
     if (typeof novidadesSet === 'function') novidadesSet(cache.novidades || []);   // v476
     if (Date.now() - (cache.ts || 0) < 10 * 60 * 1000) return;   // fresco: nem chama o servidor
   }
@@ -18962,9 +18999,11 @@ async function loadAvisoGlobal() {
     const txt = (j && j.texto) ? String(j.texto).trim() : '';
     const sup = (j && j.suporte === 'on') ? 'on' : 'off';   // .gs antigo sem o campo = off
     var nov = Array.isArray(j.novidades) ? j.novidades.slice(0, 40) : [];   // v476: feed vem na mesma chamada
-    try { localStorage.setItem('gh_aviso_cache', JSON.stringify({ ts: Date.now(), texto: txt, suporte: sup, novidades: nov })); } catch (_) {}
+    var resOn = (j.resultados === 'on') ? 'on' : 'off';   // v477: AVISOS!D2 liga o "Mandar meu resultado"
+    try { localStorage.setItem('gh_aviso_cache', JSON.stringify({ ts: Date.now(), texto: txt, suporte: sup, novidades: nov, resultados: resOn })); } catch (_) {}
     _avisoRender_(txt);
     _supSetEnabled(sup === 'on');
+    _novResultadosOn = resOn === 'on';
     if (typeof novidadesSet === 'function') novidadesSet(nov);
   } catch (_) {}
 }
@@ -19142,7 +19181,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v476';
+    var APP_SHELL_V = 'metodo-gh-v477';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -19566,6 +19605,7 @@ function _novRender() {
     h += '<div class="nov-vazio">Nenhuma novidade por enquanto. Quando tiver, aparece aqui e o sino acende.</div></div>';
     host.innerHTML = h; return;
   }
+  var ctaFeito = false;
   _novLista.forEach(function (x, i) {
     var titulo = _novTexto(x.titulo), texto = _novTexto(x.texto), quando = _novQuando(x.data);
     if (x.fixado) {
@@ -19580,17 +19620,89 @@ function _novRender() {
         + _novBotaoHtml(x) + _novLikeHtml(x) + '</div></div>';
       return;
     }
+    if (!ctaFeito) { h += _novCtaHtml(); ctaFeito = true; }   // v477: o convite entra antes do primeiro card comum
     var longo = texto.length > 340 || (texto.match(/\n/g) || []).length > 5;
-    h += '<div class="nov-card">'
-      + (x.imagem ? '<img class="nov-img" src="' + _indicEsc(x.imagem) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">' : '')
+    var imgs = String(x.imagem || '').split(' | ').map(function (u) { return u.trim(); }).filter(Boolean);
+    var imgHtml = '';
+    if (imgs.length >= 2) imgHtml = '<div class="nov-duo"><div><img src="' + _indicEsc(imgs[0]) + '" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'"><span>ANTES</span></div><div><img src="' + _indicEsc(imgs[1]) + '" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'"><span>AGORA</span></div></div>';
+    else if (imgs.length === 1) imgHtml = '<img class="nov-img" src="' + _indicEsc(imgs[0]) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">';
+    var cita = /^["\u201c]/.test(texto);
+    h += '<div class="nov-card">' + imgHtml
       + '<div class="nov-body"><div class="nov-t">' + _indicEsc(titulo) + '</div>'
       + (quando ? '<div class="nov-quando">' + quando + '</div>' : '')
-      + (texto ? '<div class="nov-txt' + (longo ? ' clamp' : '') + '" id="novTxt_' + _indicEsc(x.id) + '">' + _indicEsc(texto) + '</div>' : '')
+      + (texto ? '<div class="nov-txt' + (longo ? ' clamp' : '') + (cita ? ' cita' : '') + '" id="novTxt_' + _indicEsc(x.id) + '">' + _indicEsc(texto) + '</div>' : '')
       + (longo ? '<button type="button" class="nov-mais" onclick="novidadeVerMais(\'' + _indicEsc(x.id) + '\', this)">Ver mais</button>' : '')
       + _novBotaoHtml(x) + _novLikeHtml(x) + '</div></div>';
   });
+  if (!ctaFeito) h += _novCtaHtml();
   h += '<div style="color:#5f5f66;font-size:10.5px;text-align:center;padding:6px 0 0;">Toca no sino l\u00e1 em cima sempre que ele acender.</div></div>';
   host.innerHTML = h;
+}
+// ══ RESULTADO DA SEMANA (v477, GH 18/09/2026: "gostei bastante" da comunidade curada) ══
+// O aluno manda depoimento + antes/depois marcando que autoriza. Vai pro servidor (aba RESULTADOS + pasta do aluno),
+// o GH recebe no WhatsApp e aprova por link; aprovado, vira card nas Novidades so com o primeiro nome. O convite so
+// aparece com AVISOS!D2 = 'on' (chega no aviso_global como resultados:'on'); ligar e desligar sem versao nova.
+var _novResultadosOn = !!_novResultadosOn;
+var _resFotos = {};
+function _resEnviadoRecente() { try { var t = Number(localStorage.getItem('gh_res_enviado_' + SHEET_ID) || 0); return t && (Date.now() - t) < 7 * 86400000; } catch (_) { return false; } }
+function _novCtaHtml() {
+  if (!_novResultadosOn) return '';
+  if (typeof SHEET_ID === 'undefined' || !SHEET_ID || SHEET_ID === 'demo') return '';
+  if (_resEnviadoRecente()) return '<div class="nov-cta"><div class="nov-cta-t">Recebi o teu resultado \ud83d\udc4a</div><div class="nov-cta-p">Vou olhar com calma. Se entrar nas Novidades, aparece aqui, s\u00f3 com o teu primeiro nome.</div></div>';
+  return '<div class="nov-cta"><div class="nov-cta-t">Teu resultado pode inspirar outro aluno</div><div class="nov-cta-p">Manda uma foto de antes, uma de agora e conta em poucas linhas o que mudou. Eu escolho os que entram aqui, e s\u00f3 o primeiro nome aparece.</div><button type="button" class="nov-btn" onclick="resultadoAbrir()">Mandar meu resultado</button></div>';
+}
+function resultadoAbrir() {
+  _resFotos = {};
+  try {
+    ['Antes', 'Depois'].forEach(function (r) { var sl = document.getElementById('resSlot' + r); if (sl) { sl.classList.remove('filled'); var im = sl.querySelector('img'); if (im) im.remove(); } });
+    document.getElementById('resTexto').value = ''; resContador();
+    document.getElementById('resAutoriza').checked = false;
+    var fb = document.getElementById('resFeedback'); fb.style.display = 'none';
+    var b = document.getElementById('resEnviarBtn'); b.disabled = false; b.textContent = 'Enviar pro GH';
+  } catch (_) {}
+  teShow('resultadoModal');
+  _novRegistra('', 'resultado_abriu');
+}
+function resContador() { try { var t = document.getElementById('resTexto'); document.getElementById('resContador').textContent = t.value.length + '/600'; } catch (_) {} }
+function resEscolher(role) {
+  var inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*'; inp.style.display = 'none';
+  inp.onchange = function () {
+    var f = inp.files && inp.files[0];
+    if (f) {
+      _resFotos[role] = f;
+      var sl = document.getElementById(role === 'antes' ? 'resSlotAntes' : 'resSlotDepois');
+      if (sl) { sl.classList.add('filled'); var im = sl.querySelector('img'); if (!im) { im = document.createElement('img'); sl.insertBefore(im, sl.firstChild); } im.src = URL.createObjectURL(f); }
+    }
+    if (inp.parentNode) inp.parentNode.removeChild(inp);
+  };
+  document.body.appendChild(inp); inp.click();
+}
+function _resFala(txt, ok) { try { var fb = document.getElementById('resFeedback'); fb.textContent = txt; fb.style.display = 'block'; fb.style.background = ok ? 'rgba(76,175,80,.12)' : 'rgba(192,57,43,.12)'; fb.style.color = ok ? '#a5d6a7' : '#f1a9a0'; } catch (_) {} }
+async function resultadoEnviar() {
+  var btn = document.getElementById('resEnviarBtn');
+  try {
+    var texto = String(document.getElementById('resTexto').value || '').trim();
+    if (texto.length < 10) { _resFala('Conta um pouco mais: pelo menos uma frase.', false); return; }
+    if (!_resFotos.antes && !_resFotos.depois) { _resFala('Junta pelo menos uma foto (antes ou agora).', false); return; }
+    if (!document.getElementById('resAutoriza').checked) { _resFala('Falta marcar a autoriza\u00e7\u00e3o pra publicar.', false); return; }
+    if (typeof SHEET_ID === 'undefined' || !SHEET_ID || SHEET_ID === 'demo' || typeof LOG_ENDPOINT === 'undefined') { _resFala('Aluno n\u00e3o identificado.', false); return; }
+    btn.disabled = true; btn.textContent = 'Preparando as fotos\u2026';
+    var fotos = [];
+    for (var k in _resFotos) { if (_resFotos[k]) fotos.push({ role: k, base64: await _compressFoto(_resFotos[k], 1280, 0.85) }); }
+    btn.textContent = 'Enviando\u2026';
+    var resp = await fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, redirect: 'follow',
+      body: JSON.stringify({ type: 'resultado', sheetId: SHEET_ID, studentName: ((document.getElementById('infoNome') || {}).textContent || '').trim(), texto: texto, autoriza: true, fotos: fotos }) });
+    var j = await resp.json();
+    if (!j || !j.ok) throw new Error((j && j.error) || 'falha');
+    try { localStorage.setItem('gh_res_enviado_' + SHEET_ID, String(Date.now())); } catch (_) {}
+    _resFala('\u2705 Recebi! Vou olhar com calma. Se entrar nas Novidades, tu v\u00ea aqui.', true);
+    btn.textContent = 'Enviado';
+    setTimeout(function () { try { teHide('resultadoModal'); _novRender(); } catch (_) {} }, 1800);
+  } catch (e) {
+    _resFala('N\u00e3o consegui enviar (' + (e && e.message ? e.message : 'rede') + '). Tenta de novo.', false);
+    btn.disabled = false; btn.textContent = 'Enviar pro GH';
+  }
 }
 function novidadesAbrir() { _novRender(); _novMarcaVistas(); _novRegistra('', 'abriu'); try { var b = document.getElementById('novidadeBanner'); if (b) b.style.display = 'none'; } catch (_) {} }
 function novidadeVerMais(id, btn) { try { var t = document.getElementById('novTxt_' + id); if (!t) return; var aberto = !t.classList.contains('clamp'); t.classList.toggle('clamp', aberto); if (btn) btn.textContent = aberto ? 'Ver mais' : 'Ver menos'; } catch (_) {} }
