@@ -3097,6 +3097,11 @@
   <button onclick="dismissAvisoGlobal()" aria-label="Fechar" style="position:absolute;top:8px;right:10px;background:none;border:none;color:#8d8579;font-size:20px;cursor:pointer;line-height:1;">&times;</button>
 </div>
 
+<!-- v475: equipe (senha do painel salva no aparelho) abrindo o link do aluno com plano vencido, cancelado ou pausado:
+     em vez da tela de bloqueio, uma faixa dizendo o que o aluno ve. GH 18/09/2026: "nao corrijo pelo painel do editor,
+     tem que ser pelo link que o aluno recebe, mas nesse que ele recebe consta como vencido". -->
+<div id="equipeVencidoBanner" style="display:none;background:#2a1f10;border-bottom:1px solid #6b5324;padding:9px 14px;color:#e8d9ac;font-size:12px;line-height:1.5;"></div>
+
 <!-- ══ AVISO DE REAJUSTE / AJUSTE NO PROTOCOLO (substitui o hook do WhatsApp) ══ -->
 <div id="protoAviso" class="proto-aviso" style="display:none;">
   <span class="proto-aviso-ic" id="protoAvisoIc"></span>
@@ -6754,11 +6759,24 @@ function _parseAlvoRange(valor) {
   const lo = parseInt(nums[0], 10), hi = nums[1] != null ? parseInt(nums[1], 10) : lo;
   return [Math.min(lo, hi), Math.max(lo, hi)];
 }
+// v475 (Entregas #2223, 18/09/2026): "2 no tanque, sem falha" e "1 a 2 no tanque, nunca ate a falha" caiam no titulo
+// "ultima serie ate a falha", o contrario do prescrito, porque so se procurava a palavra. Falha = alvo que comeca em 0
+// (RIR 0) OU a palavra "falha" SEM negacao nas 4 palavras anteriores (sem / nao / nunca / jamais / zero / nada de /
+// evita / longe da). Usado no badge do topo, no Modo Focado e no alvo do "sobrou".
+function _esforcoEhFalha(valor) {
+  const v = String(valor || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const r = _parseAlvoRange(valor);
+  if (r && r[0] === 0) return true;
+  const i = v.indexOf('falha');
+  if (i < 0) return false;
+  const antes = v.slice(0, i).split(/[^a-z]+/).filter(Boolean).slice(-4);
+  return !antes.some(p => /^(sem|nao|nunca|jamais|zero|nada|evita|evitar|evite|longe)$/.test(p));
+}
 // Esforço-alvo (RIR) vira frase clara e que PUXA esforço (sem "no tanque", que lia como "segura").
 // 'badge' = resumo curto pro topo; 'focado' = instrução da última série no Modo Focado.
 function _esforcoFrase(valor, modo) {
   const r = _parseAlvoRange(valor);
-  const falha = (r && r[0] === 0) || /falha/i.test(String(valor || ''));
+  const falha = _esforcoEhFalha(valor);   // v475
   if (modo === 'badge') {
     return falha ? 'última série até a falha' : 'puxa a última série até quase travar';
   }
@@ -10993,7 +11011,7 @@ function openSobrouInfo() {
     const texto = document.getElementById('sobrouAlvoTexto');
     const alvo = (typeof STUDENT_ESFORCO_ALVO !== 'undefined' && STUDENT_ESFORCO_ALVO) ? STUDENT_ESFORCO_ALVO : null;
     const r = alvo ? _parseAlvoRange(alvo.valor) : null;
-    const falha = alvo && ((r && r[0] === 0) || /falha/i.test(String(alvo.valor || '')));
+    const falha = !!(alvo && _esforcoEhFalha(alvo.valor));   // v475
     if (alvo && (r || falha)) {
       linha.textContent = falha
         ? '🎯 Teu alvo atual: última série até a falha'
@@ -11509,7 +11527,7 @@ async function loadFromSheets(injectedText) {
         // Frase que puxa esforço + o NÚMERO do alvo (alvos mudam por fase/versão, o aluno
         // precisa ver o dele; achado da Entregas, Sala #806: alvos diferentes = badge igual).
         const rA = _parseAlvoRange(STUDENT_ESFORCO_ALVO.valor);
-        const falhaA = (rA && rA[0] === 0) || /falha/i.test(String(STUDENT_ESFORCO_ALVO.valor || ''));
+        const falhaA = _esforcoEhFalha(STUDENT_ESFORCO_ALVO.valor);   // v475: "sem falha" nao e falha
         let tA = _esforcoFrase(STUDENT_ESFORCO_ALVO.valor, 'badge');
         if (!falhaA && rA) tA += ' · sobrar no máx ' + (rA[0] === rA[1] ? rA[0] : rA[0] + '-' + rA[1]);
         eaV.textContent = tA;
@@ -17951,6 +17969,23 @@ function _planGateDecision(j, GRACE, PRE_DIAS, hojeMs) {
   if (diasToVenc >= 0 && diasToVenc <= PRE_DIAS) return { action: 'prevenc', arg: diasToVenc }; // aviso pré-venc
   return { action: 'none' };
 }
+// v475: aparelho da equipe (senha do painel salva) abre o link do aluno mesmo com plano vencido, cancelado ou pausado.
+// O GH corrige olhando a tela que o aluno recebe, e a tela de bloqueio impedia (caso Bruno Borsatto, cortesia da
+// Entregas, linha velha vencida na mestre). Aluno nunca tem essa senha no aparelho; e o mesmo sinal do v457 (aviso da
+// live) e do banner da indicacao. A faixa no topo diz o que o aluno esta vendo no lugar do protocolo.
+function _equipeNoAparelho_() { try { return !!localStorage.getItem('gh_trainer_token'); } catch (_) { return false; } }
+function _equipeVencidoAviso(motivo, j) {
+  try {
+    var b = document.getElementById('equipeVencidoBanner'); if (!b) return;
+    var venc = '';
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String((j && j.vencimento) || ''));
+    if (m) venc = m[3] + '/' + m[2] + '/' + m[1];
+    var oque = motivo === 'cancelado' ? 'plano cancelado' : (motivo === 'pausado' ? 'plano pausado' : ('plano vencido' + (venc ? ' em ' + venc : '')));
+    var tela = motivo === 'vencido' ? 'a tela de renova\u00e7\u00e3o' : 'a tela de bloqueio';
+    b.textContent = 'Vis\u00e3o da equipe: ' + oque + '. O aluno v\u00ea ' + tela + ' no lugar do protocolo; tu v\u00ea tudo porque a senha do painel est\u00e1 salva neste aparelho.';
+    b.style.display = 'block';
+  } catch (_) {}
+}
 (function planBlockGate() {
   try {
     if (typeof SHEET_ID === 'undefined' || !SHEET_ID) return;
@@ -17967,7 +18002,9 @@ function _planGateDecision(j, GRACE, PRE_DIAS, hojeMs) {
       .then(function (j) {
         var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
         var d = _planGateDecision(j, GRACE, PRE_DIAS, hoje.getTime());
-        if (d.action === 'cancelado' || d.action === 'pausado' || d.action === 'vencido') mostrarPlanBlock(d.action);
+        if (d.action === 'cancelado' || d.action === 'pausado' || d.action === 'vencido') {
+          if (_equipeNoAparelho_()) _equipeVencidoAviso(d.action, j); else mostrarPlanBlock(d.action);   // v475
+        }
         else if (d.action === 'carencia') renovBannerShow('carencia', d.arg);
         else if (d.action === 'prevenc') renovBannerShow('prevenc', d.arg);
         // Vencimento servido alimenta o gate do banner de reajuste (regra: quem
@@ -19019,7 +19056,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v474';
+    var APP_SHELL_V = 'metodo-gh-v475';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
