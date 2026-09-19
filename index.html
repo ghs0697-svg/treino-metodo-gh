@@ -6692,6 +6692,7 @@ const _RX_MAQ = /(m[áa]quina|smith|crossover|\bcross\b|polia|pulley|pulldown|gr
 const _RX_LIVRE = /(halter|\bbarra\b|peso do corpo|livre|caneleira|el[áa]stico|mini\s*band|banco|b[úu]lgar|\bsolo\b|barra fixa|paralela|flex[ãa]o|afundo|passada|stiff|terra|remada curvada|serrote)/i;
 function _ehMaquina(n) { return _RX_MAQ.test(String(n || '')); }
 function toggleViagem() {
+  try { _flushSetsPendentes_(false); } catch (_) {}   // v480: grava o pendente no slot de antes da troca
   const on = !_viagemOn();
   try { localStorage.setItem(_viagemKey(), on ? '1' : '0'); } catch (_) {}
   _viagemBtnRefresh();
@@ -6769,6 +6770,7 @@ function escolherSub(di, ei, chosenNorm) {
   try {
     const ex = WORKOUT[di] && WORKOUT[di].exercises && WORKOUT[di].exercises[ei];
     if (!ex) return;
+    try { _flushSetsPendentes_(false); } catch (_) {}   // v480: todo pendente, no slot de antes da troca
     if (typeof flushCargaPendente_ === 'function') flushCargaPendente_(di, ei);   // salva carga digitada no slot ATUAL antes da troca mudar o sufixo (corrida 400ms)
     const k = _subKey(di, ei, ex.name);
     localStorage.removeItem(_subKeyLegacy(di, ex.name));   // A6: migra — limpa a chave antiga (dia+nome) ao mexer na troca
@@ -7006,6 +7008,7 @@ function displayToKg(displayVal) {
 }
 // Toggle chamado pelo botão flutuante
 function toggleUnit() {
+  try { _flushSetsPendentes_(false); } catch (_) {}   // v480: grava o pendente na unidade em que foi digitado
   const next = getUnit() === 'kg' ? 'lb' : 'kg';
   setUnit(next);
   updateUnitToggleLabel();
@@ -7340,8 +7343,15 @@ function _gridEl(di, ei) {
 function _readSetsFromDom(di, ei) {
   const grid = _gridEl(di, ei);
   if (!grid) return null;
-  return Array.from(grid.querySelectorAll('.set-row')).map(r => ({
-    kg: displayToKg((r.querySelector('.set-kg') || {}).value || ''),
+  let _prev = null;   // v480: em lb, serie nao mexida mantem o kg salvo (reconverter arredondava 25 pra 24,99)
+  try { if (getUnit() === 'lb') _prev = loadSets(di, ei, currentWeek) || null; } catch (_) { _prev = null; }
+  const _kgDe = (r, i) => {
+    const mostrado = String((r.querySelector('.set-kg') || {}).value || '').trim();
+    try { if (_prev && _prev[i] && String(_prev[i].kg || '') !== '' && kgToDisplay(_prev[i].kg) === mostrado) return String(_prev[i].kg); } catch (_) {}
+    return displayToKg(mostrado);
+  };
+  return Array.from(grid.querySelectorAll('.set-row')).map((r, i) => ({
+    kg: _kgDe(r, i),
     pl: ((r.querySelector('.set-pl') || {}).value || '').trim(),
     reps: ((r.querySelector('.set-reps') || {}).value || '').trim(),
     rs: ((r.querySelector('.set-rs') || {}).value || '').trim()
@@ -7438,6 +7448,7 @@ function onSetField(di, ei) {
   const k = `s-${di}-${ei}`;
   clearTimeout(_setTimers[k]);
   _setTimers[k] = setTimeout(() => {
+    delete _setTimers[k];   // v480: disparou = nao esta mais pendente (senao todo flush relia a grade velha e regravava)
     const arr = _readSetsFromDom(di, ei);
     if (!arr) return;
     // reps preenchidas ANTES deste save (fonte: storage) — é contra isso que o
@@ -7447,7 +7458,7 @@ function onSetField(di, ei) {
     saveSets(di, ei, currentWeek, arr);
     const el = document.getElementById(`sv-${di}-${_setSvKey(ei)}`);
     if (el) { el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 1500); }
-    const kg = Math.max(0, ...arr.map(s => parseFloat(displayToKg(s.kg)) || 0));   // PR pela maior carga entre as séries
+    const kg = Math.max(0, ...arr.map(s => parseFloat(s.kg) || 0));   // PR pela maior carga entre as séries (v480: arr ja vem em kg; converter de novo dava kg/2,2 em lb)
     if (kg > 0 && typeof checkPR === 'function') checkPR(di, /^\d+$/.test(String(ei)) ? parseInt(ei) : ei, kg);
     _autoRestMaybe(di, ei, arr, _repsAntes);   // reps nova + treino rolando = descanso dispara sozinho (pill)
   }, 400);
@@ -7501,7 +7512,7 @@ function removeSet(di, ei, si) {
 }
 // Salva imediato (botão 💾) — sem esperar o debounce.
 function saveSetsManual(di, ei, btn) {
-  clearTimeout(_setTimers[`s-${di}-${ei}`]);
+  clearTimeout(_setTimers[`s-${di}-${ei}`]); delete _setTimers[`s-${di}-${ei}`];   // v480
   const arr = _readSetsFromDom(di, ei);
   if (arr) saveSets(di, ei, currentWeek, arr);
   _cargaSyncFlushAll_();   // 💾 explícito = manda pro servidor agora, sem esperar o silêncio
@@ -7565,6 +7576,23 @@ function _syncQueueDrop(kind, payload, dedupKeyFn) {
     else _syncQueueClear(kind);
   } catch (_) {}
 }
+// v480: tira da fila so as entradas do mesmo item com ts ate o do envio confirmado. O _syncQueueDrop tirava por chave
+// e podia levar junto um valor MAIS NOVO do mesmo exercicio que entrou enquanto o envio velho estava no ar.
+function _syncQueueDropAte(kind, payload, dedupKeyFn) {
+  try {
+    const k = dedupKeyFn(payload), t = String(payload.ts || '');
+    const q = _syncQueueGet(kind);
+    const next = q.filter(p => !(dedupKeyFn(p) === k && String(p.ts || '') <= t));
+    if (next.length === q.length) return;
+    if (next.length) localStorage.setItem(_syncQueueKey(kind), JSON.stringify(next)); else _syncQueueClear(kind);
+  } catch (_) {}
+}
+// v480: resposta do Apps Script so conta como gravada com JSON sem success:false (HTTP 200 nao prova: o front door
+// devolve HTML e o .gs 19a devolve success:false quando o Sheets falha)
+async function _gasGravou(resp) {
+  if (!resp || !resp.ok) return false;
+  try { const j = await resp.json(); return !!j && j.success !== false; } catch (_) { return false; }
+}
 function _syncQueuePush(kind, payload, dedupKeyFn) {
   try {
     const q = _syncQueueGet(kind);
@@ -7594,28 +7622,26 @@ async function flushSyncQueues() {
     for (const kind of ['carga', 'done', 'completion', 'esforco', 'nota_serie', 'nota_aluno', 'nota_aluno_del', 'treino_lembrete']) {   // v479: + completion
       const q = _syncQueueGet(kind);
       if (!q.length) continue;
-      const remaining = [];
+      // v480: a fila pode mudar durante os awaits (envio direto que falhou entra, envio direto que deu certo tira o
+      // valor velho). Antes, o fim do flush regravava a FOTO do inicio: apagava o item novo ou ressuscitava o velho.
+      const enviados = new Set();
       for (const payload of q) {
+        const sp = JSON.stringify(payload);
+        if (!_syncQueueGet(kind).some(p => JSON.stringify(p) === sp)) continue;   // saiu da fila no meio: um valor mais novo ja subiu
         try {
           const resp = await fetch(LOG_ENDPOINT, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify(payload),
+            body: sp,
             redirect: 'follow'
           });
-          if (!resp.ok) { remaining.push(payload); continue; }
-          let _jq = null; try { _jq = await resp.json(); } catch (_) { _jq = null; }   // v479: HTML do front door ou success:false = continua na fila
-          if (!_jq || _jq.success === false) remaining.push(payload);
-        } catch (_) {
-          remaining.push(payload);
-        }
+          if (await _gasGravou(resp)) enviados.add(sp);
+        } catch (_) {}
       }
-      if (remaining.length) {
-        try { localStorage.setItem(_syncQueueKey(kind), JSON.stringify(remaining)); } catch (_) {}
-      } else {
-        _syncQueueClear(kind);
-      }
-      const sent = q.length - remaining.length;
+      const _agora = _syncQueueGet(kind).filter(p => !enviados.has(JSON.stringify(p)));
+      if (_agora.length) { try { localStorage.setItem(_syncQueueKey(kind), JSON.stringify(_agora)); } catch (_) {} } else _syncQueueClear(kind);
+      const remaining = _agora;
+      const sent = enviados.size;
       if (sent > 0) console.log(`[gh] Fila ${kind}: ${sent} reenviada${sent > 1 ? 's' : ''}, ${remaining.length} pendente${remaining.length === 1 ? '' : 's'}`);
     }
   } finally {
@@ -7676,6 +7702,7 @@ function _cargaSyncEnvia_(k) {
     _syncQueuePush('carga', payload, _cargaSyncKey_);
     setBadge('☁ pendente, vai reenviar', 'cloud-fail');
   };
+  _syncQueuePush('carga', payload, _cargaSyncKey_);   // v480: entra na fila ANTES; se o iOS matar o app no meio do envio, reenvia na proxima abertura
   try {
     fetch(LOG_ENDPOINT, {
       method: 'POST',
@@ -7693,7 +7720,7 @@ function _cargaSyncEnvia_(k) {
           // v447: um envio anterior deste MESMO exercício pode ter falhado e estar na fila de retry.
           // Sem tirar de lá, o flush de 30 s reenviava o peso VELHO depois do novo, e o servidor passa a
           // considerar o velho como o mais recente (a leitura pega a última linha da aba).
-          try { _syncQueueDrop('carga', payload, _cargaSyncKey_); } catch (_) {}
+          try { _syncQueueDropAte('carga', payload, _cargaSyncKey_); } catch (_) {}   // v480: so ate este envio (um valor mais novo fica)
         }
         else enfileira();
       })
@@ -7732,7 +7759,7 @@ function syncEsforcoToServer_(di, ei, w, esforco, aparelho) {
       body: JSON.stringify(payload),
       keepalive: true,
       redirect: 'follow'
-    }).then(resp => { if (!resp || !resp.ok) enfileira(); }).catch(enfileira);
+    }).then(async resp => { if (!(await _gasGravou(resp))) enfileira(); }).catch(enfileira);   // v480: HTTP 200 nao prova gravacao
   } catch (_) { enfileira(); }
 }
 
@@ -7759,7 +7786,7 @@ function syncNotaToServer_(di, ei, w, nota) {
       body: JSON.stringify(payload),
       keepalive: true,
       redirect: 'follow'
-    }).then(resp => { if (!resp || !resp.ok) enfileira(); }).catch(enfileira);
+    }).then(async resp => { if (!(await _gasGravou(resp))) enfileira(); }).catch(enfileira);   // v480: HTTP 200 nao prova gravacao
   } catch (_) { enfileira(); }
 }
 
@@ -7843,7 +7870,7 @@ function syncTreinoLembreteToServer_() {
       body: JSON.stringify(payload),
       keepalive: true,
       redirect: 'follow'
-    }).then(resp => { if (!resp || !resp.ok) enfileira(); }).catch(enfileira);
+    }).then(async resp => { if (!(await _gasGravou(resp))) enfileira(); }).catch(enfileira);   // v480: HTTP 200 nao prova gravacao
   } catch (_) { enfileira(); }
 }
 // ══ CADERNO DE BORDO (GH 29/08) ══
@@ -8130,7 +8157,11 @@ function _restoreCargasRealign(cargas, ifEmpty) {
     }
     return { c, di, ei, suffix: '', moved: (di !== c.di || ei !== c.ei), sub: false };
   });
-  items.sort((a, b) => (a.moved ? 1 : 0) - (b.moved ? 1 : 0)); // não-movidos (a verdade da posição) primeiro
+  // v480: entre itens do MESMO slot, vencia o primeiro da lista: depois de um ajuste que trocou o exercicio na mesma
+  // posicao, o aparelho novo recebia a carga do exercicio que saiu (e escondia) e perdia a do que entrou.
+  const _tsN = x => { const t = x && x.c && x.c.ts; const v = Number(t); return (isFinite(v) && v > 0) ? v : (Date.parse(t) || 0); };
+  const _casaNome = x => { try { return (!x.sub && x.c.exercicio && _normEx(x.c.exercicio) === _normEx(_exNameAt(x.di, x.ei))) ? 1 : 0; } catch (_) { return 0; } };
+  items.sort((a, b) => ((a.moved ? 1 : 0) - (b.moved ? 1 : 0)) || (_casaNome(b) - _casaNome(a)) || (_tsN(b) - _tsN(a))); // não-movidos primeiro, depois o nome certo, depois o mais novo
   const seen = new Set();
   items.forEach(({ c, di, ei, suffix, sub }) => {
     const kC = storageKey(di, ei, c.w) + suffix, kP = placasKey(di, ei, c.w) + suffix, kB = blkKey(di, ei, c.w) + suffix;
@@ -8222,7 +8253,9 @@ function syncDoneToServer_(di, ei, val) {
     feito: val ? 'sim' : 'nao',
     ts: new Date().toISOString()
   };
-  const enfileira = () => _syncQueuePush('done', payload, p => `${p.w}|${p.di}|${p.ei}`);
+  const _kDone = p => `${p.w}|${p.di}|${p.ei}`;
+  const enfileira = () => _syncQueuePush('done', payload, _kDone);
+  _syncQueuePush('done', payload, _kDone);   // v480: write-ahead
   try {
     fetch(LOG_ENDPOINT, {
       method: 'POST',
@@ -8232,8 +8265,7 @@ function syncDoneToServer_(di, ei, val) {
       redirect: 'follow'
     })
       .then(async resp => {   // v479: HTTP 200 nao prova gravacao (.gs 19a devolve success:false quando o Sheets falha)
-        let j = null; try { j = (resp && resp.ok) ? await resp.json() : null; } catch (_) { j = null; }
-        if (!j || j.success === false) enfileira();
+        if (await _gasGravou(resp)) _syncQueueDropAte('done', payload, _kDone); else enfileira();   // v480
       })
       .catch(() => enfileira());
   } catch (_) {
@@ -8307,7 +8339,10 @@ async function syncDoneFromServer_() {
       // continuava na semana 7/8 do ciclo VELHO, com todas as anteriores parecendo feitas,
       // e nunca recomeçava na semana 1. Some com a posição junto com as marcas.
       try { localStorage.removeItem(_posKey()); } catch (_) {}
+      // v480: o "nao consegui fazer" do ciclo velho tambem sai (a chave e por semana; o ciclo novo abria com exercicio pulado)
+      for (let i = localStorage.length - 1; i >= 0; i--) { const k = localStorage.key(i); if (k && k.startsWith(`gh_skip_${STUDENT_ID}_w`)) localStorage.removeItem(k); }
       if (typeof currentWeek !== 'undefined' && currentWeek !== 1) {
+        try { _flushSetsPendentes_(false); } catch (_) {}   // v480: grava o pendente na semana em que foi digitado
         currentWeek = 1;
         const _wl = document.getElementById('weekLabel');
         if (_wl) _wl.textContent = 'Semana 1';
@@ -8332,6 +8367,7 @@ async function syncDoneFromServer_() {
       // desmarcar num aparelho não chegava nos outros, e uma correção feita pela equipe
       // no servidor não conseguia limpar o app do aluno (caso Sergio Valões, 01/09: marcas
       // do ciclo anterior que eu tinha realocado ficaram presas no aparelho dele).
+      if (_donePendenteLocal_(d.w, d.di, d.ei)) return;   // v480: o servidor ainda nao recebeu a mudanca local (fila ou agora)
       if (d.feito === false) {
         if (localStorage.getItem(key)) { localStorage.removeItem(key); cleared++; }
         return;
@@ -8349,6 +8385,13 @@ async function syncDoneFromServer_() {
       }
     }
   } catch (_) { /* silencioso */ }
+}
+// v480: marca de "feito" que o servidor ainda nao conhece: esta na fila 'done' (mudou e nao confirmou) ou foi feita nesta sessao
+function _donePendenteLocal_(w, di, ei) {
+  try {
+    if (_doneMarkedThisSession.has(`${w}|${di}|${ei}`)) return true;
+    return _syncQueueGet('done').some(p => String(p.w) === String(w) && String(p.di) === String(di) && String(p.ei) === String(ei));
+  } catch (_) { return false; }
 }
 // Alias retrocompatível
 const restoreDoneFromServerIfEmpty_ = syncDoneFromServer_;
@@ -9578,7 +9621,9 @@ function notifyDayCompletion(di, shared) {
   // v479 (pente fino 19/09): era dispara-e-esquece, e a marca de "ja enviado" entra ANTES do envio. Rede caida ou servidor
   // com erro = o dia concluido nunca chegava na LOGS (ranking, sumido, frequencia) e nao tinha reenvio. Agora falha vai
   // pra fila 'completion' (a mesma do flushSyncQueues). Repetir e inofensivo: o ranking conta dia por data.
-  const _enfConcl = () => _syncQueuePush('completion', payload, p => `${p.date}|${p.day}|${p.shared ? 1 : 0}`);
+  const _kConcl = p => `${p.date}|${p.day}|${p.shared ? 1 : 0}`;
+  const _enfConcl = () => _syncQueuePush('completion', payload, _kConcl);
+  _enfConcl();   // v480: write-ahead
   try {
     fetch(LOG_ENDPOINT, {
       method: 'POST',
@@ -9587,8 +9632,7 @@ function notifyDayCompletion(di, shared) {
       keepalive: true,
       redirect: 'follow'
     }).then(async resp => {
-      let j = null; try { j = (resp && resp.ok) ? await resp.json() : null; } catch (_) { j = null; }
-      if (!j || j.success === false) _enfConcl();
+      if (await _gasGravou(resp)) _syncQueueDropAte('completion', payload, _kConcl); else _enfConcl();   // v480
     }).catch(() => _enfConcl());
   } catch (_) { _enfConcl(); }
 }
@@ -10057,7 +10101,13 @@ function _timerSync() {
 }
 async function _timerLockOn() {
   // Mantém a tela acesa enquanto o descanso roda (se o navegador suportar)
-  try { if ('wakeLock' in navigator) _timerWakeLock = await navigator.wakeLock.request('screen'); } catch (_) {}
+  try {
+    if (!('wakeLock' in navigator)) return;
+    if (_timerWakeLock && !_timerWakeLock.released) return;   // v480: ja tem um vivo (antes criava outro e o velho ficava orfao)
+    const s = await navigator.wakeLock.request('screen');
+    _timerWakeLock = s;
+    s.addEventListener('release', () => { if (_timerWakeLock === s) _timerWakeLock = null; });   // v480: o sistema solta ao sair da tela; zera pro re-pedido do v446
+  } catch (_) {}
 }
 function _timerLockOff() {
   try { _timerWakeLock && _timerWakeLock.release(); } catch (_) {}
@@ -10618,8 +10668,12 @@ function _pacApplyPhase() {
 let _pacWakeLock = null;
 async function _pacLockOn() {
   try { if (_pacWakeLock) { await _pacWakeLock.release(); _pacWakeLock = null; } } catch (_) {}
-  try { if ('wakeLock' in navigator) _pacWakeLock = await navigator.wakeLock.request('screen'); } catch (_) {}
+  try { if ('wakeLock' in navigator) { const s = await navigator.wakeLock.request('screen'); _pacWakeLock = s; s.addEventListener('release', () => { if (_pacWakeLock === s) _pacWakeLock = null; }); } } catch (_) {}
 }
+// v480: o ritmo tambem perde a trava quando o aluno sai e volta pro app; pede de novo se o ritmo estiver aberto
+document.addEventListener('visibilitychange', () => {
+  try { const po = document.getElementById('pacerOverlay'); if (document.visibilityState === 'visible' && po && po.classList.contains('show') && !_pacWakeLock) _pacLockOn(); } catch (_) {}
+});
 function _pacLockOff() {
   try { _pacWakeLock && _pacWakeLock.release(); } catch (_) {}
   _pacWakeLock = null;
@@ -11648,6 +11702,7 @@ async function loadFromSheets(injectedText) {
     });
 
     // WORKOUT = array plano, ordem de bloco → dia. Cada entry leva a tag .bloco.
+    try { _flushSetsPendentes_(false); } catch (_) {}   // v480: a 2a carga do boot troca o WORKOUT; grava o digitado no exercicio de antes
     WORKOUT = [];
     blocos.forEach(bloco => {
       const dns = Object.keys(bloco.days).sort((a, b) => +a - +b);
@@ -12483,7 +12538,7 @@ function _flushSetsPendentes_(enviarJa) {
 function flushCargaPendente_(di, ei) {
   const kS = `s-${di}-${ei}`;
   if (!_setTimers[kS]) return;
-  clearTimeout(_setTimers[kS]);
+  clearTimeout(_setTimers[kS]); delete _setTimers[kS];   // v480
   const arr = _readSetsFromDom(di, ei);
   if (arr) saveSets(di, ei, currentWeek, arr);   // grava no slot vigente ANTES do sufixo mudar
   _cargaSyncFlushAll_();                          // e manda já, com o nome do exercício vigente
@@ -12720,9 +12775,9 @@ function abreAulaGhflix(id) {
       try { if (f) f.contentWindow.postMessage({ ghflixAbrir: id }, '*'); } catch (e) {}
       if (++n >= 12) clearInterval(bate);
     }, 300);
-    addEventListener('message', function ok(ev) {
-      if (ev.data && ev.data.ghflixAbriu) { clearInterval(bate); removeEventListener('message', ok); }
-    });
+    const ok = function (ev) { if (ev.data && ev.data.ghflixAbriu) { clearInterval(bate); removeEventListener('message', ok); } };
+    addEventListener('message', ok);
+    setTimeout(() => { try { removeEventListener('message', ok); } catch (_) {} }, 6000);   // v480: sem resposta, nao acumula listener
   }
 }
 
@@ -13399,6 +13454,7 @@ async function apagarPesosMarcados() {
   );
   if (typed === null) return;
   if (String(typed).trim().toUpperCase() !== 'APAGAR') { alert('Não apaguei nada. Pra apagar de verdade, digita APAGAR.'); return; }
+  Object.keys(_setTimers || {}).forEach(k => { clearTimeout(_setTimers[k]); delete _setTimers[k]; });   // v480
   // 1. local: cargas + placas + companheiro nome-do-exercício
   const prefs = [`gh_${STUDENT_ID}_d`, `gh_sets_${STUDENT_ID}_d`, `gh_placas_${STUDENT_ID}_d`, `gh_exn_${STUDENT_ID}_d`];
   const del = [];
@@ -13432,6 +13488,8 @@ async function forceSyncFromServer() {
     'Continuar?'
   );
   if (!ok) return;
+  Object.keys(_setTimers || {}).forEach(k => { clearTimeout(_setTimers[k]); delete _setTimers[k]; });   // v480
+  try { await flushSyncQueues(); } catch (_) {}   // v480: o que estava na fila sobe ANTES de buscar o servidor
 
   let totalCargas = 0, totalDone = 0, falhas = 0;
   try {
@@ -19260,7 +19318,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v479';
+    var APP_SHELL_V = 'metodo-gh-v480';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -19640,7 +19698,7 @@ function _novMarcaVistas() {
   } catch (_) {}
   _novDots();
 }
-var _NOV_DIAS = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+function _novDiasSemana() { return ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']; }   // v480: funcao (o boot le antes de um var chegar a ser atribuido)
 function _novProximo(diaIdx) {   // data (dd/mm) do proximo dia da semana, contando de hoje (hoje conta)
   var d = new Date(); d.setHours(0, 0, 0, 0);
   var delta = (diaIdx - d.getDay() + 7) % 7;
@@ -19649,7 +19707,7 @@ function _novProximo(diaIdx) {   // data (dd/mm) do proximo dia da semana, conta
 }
 function _novTexto(t) {
   return String(t || '').replace(/\{proxima_([a-z]+)\}/gi, function (m, dia) {
-    var i = _NOV_DIAS.indexOf(String(dia).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
+    var i = _novDiasSemana().indexOf(String(dia).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
     return i < 0 ? m : _novProximo(i);
   });
 }
