@@ -1618,6 +1618,7 @@
   #novidadesView { display: none; }
   body.view-novidades #novidadesView { display: block !important; }
   body.view-ghflix #novidadeBanner { display: none !important; }
+  body.view-novidades #lastModBadge, body.view-novidades #proxReajusteBadge, body.view-novidades #esforcoAlvoBadge { display: none !important; }   /* v479: cabecalho da tela Novidades sem os dados do protocolo */
   .nov-screen { padding: 14px 14px 26px; max-width: 620px; margin: 0 auto; }
   .nov-card { background: var(--card); border: 1px solid rgba(212,175,106,.16); border-radius: 14px; overflow: hidden; margin-bottom: 14px; }
   .nov-img { display: block; width: 100%; max-height: 420px; object-fit: cover; background: #111; }
@@ -6235,7 +6236,28 @@ const I18N_EN = {
   '💬 Tirar dúvida': '💬 Ask a question', '🔧 Pedir ajuste': '🔧 Request a change', 'Enviar': 'Send',
   'Dúvida ou ajuste': 'Question or adjustment', 'Pergunta ou pede mudança no protocolo': 'Ask something or request a protocol change'
 };
+// v479: telas novas (aviso da live, semana, timer, indicacao, banner, letra, novidades, resultado, pill de troca)
+Object.assign(I18N_EN, {
+  'NOVIDADES': 'NEWS', 'Novidades': 'News', 'Novidade': 'News', 'Link no grupo dos alunos': 'Link in the students group',
+  'Entrar no grupo dos alunos': 'Join the students group', 'Ver mais': 'See more', 'Ver menos': 'See less', 'hoje': 'today', 'ontem': 'yesterday',
+  'Nenhuma novidade por enquanto. Quando tiver, aparece aqui e o sino acende.': 'No news for now. When there is, it shows up here and the bell lights up.',
+  'Toca no sino lá em cima sempre que ele acender.': 'Tap the bell up top whenever it lights up.',
+  'Teu resultado pode inspirar outro aluno': 'Your result can inspire another student', 'Mandar meu resultado': 'Send my result',
+  'Manda uma foto de antes, uma de agora e conta em poucas linhas o que mudou. Eu escolho os que entram aqui, e só o primeiro nome aparece.': 'Send a before photo, a now photo and tell in a few lines what changed. I pick the ones that get in, and only the first name shows.',
+  'Recebi o teu resultado 👊': 'Got your result 👊', 'Vou olhar com calma. Se entrar nas Novidades, aparece aqui, só com o teu primeiro nome.': "I'll take a good look. If it makes the News, it shows up here, first name only.",
+  '📸 Manda o teu resultado': '📸 Send your result', 'Enviar pro GH': 'Send to GH', 'ANTES': 'BEFORE', 'AGORA': 'NOW', 'toca pra escolher': 'tap to choose',
+  'Conta em poucas linhas o que mudou e junta uma foto de antes e uma de agora. Eu olho antes de publicar, e só o teu primeiro nome aparece.': 'Tell in a few lines what changed and add a before photo and a now photo. I review before publishing, and only your first name shows.',
+  'Autorizo o GH a publicar meu depoimento e minhas fotos nas Novidades do app, que os outros alunos veem. Só o meu primeiro nome aparece, e eu posso pedir pra tirar quando quiser.': 'I allow GH to publish my testimonial and photos in the app News, which other students see. Only my first name shows, and I can ask to remove it anytime.',
+  'Trocado': 'Swapped', '\u00b7 ver opções': '\u00b7 see options', 'Não consegui fazer': "Couldn't do it", '⤼ Pulado hoje · desfazer': '⤼ Skipped today · undo',
+  'Sem o aparelho, fila ou desconforto? Toca em ': 'No machine, a line or discomfort? Tap ', ' no card e escolhe outro do mesmo grupo, com vídeo. A carga do original fica guardada.': ' on the card and pick another from the same group, with video. The original load stays saved.',
+  'Indicação: indica um amigo e ganha': 'Referral: refer a friend and earn', 'Indica um amigo e ganha': 'Refer a friend and earn', 'Ver como funciona': 'See how it works', 'Fica em Mais, Indicação': 'Lives in More, Referral',
+  'Esse treino já foi concluído': 'This workout was already completed', 'Só desmarcar este exercício': 'Just uncheck this exercise', 'Recomeçar a semana': 'Restart the week',
+  'Tamanho da letra': 'Text size', 'corrigir': 'fix', 'Tuas indicações': 'Your referrals',
+  '🔤 Tamanho da letra: normal (tocar pra aumentar)': '🔤 Text size: normal (tap to enlarge)', '🔤 Tamanho da letra: grande (tocar pra aumentar mais)': '🔤 Text size: large (tap to enlarge more)', '🔤 Tamanho da letra: maior (tocar pra voltar ao normal)': '🔤 Text size: larger (tap to go back to normal)'
+});
 const I18N_RX = [
+  [/^\u00b7 (\d+) opções$/, '\u00b7 $1 options'], [/^\u00b7 1 opção$/, '\u00b7 1 option'],
+  [/^Ir pra Semana (\d+) →$/, 'Go to Week $1 →'], [/^🔤 Tamanho da letra: (.+)$/, '🔤 Text size: $1'],
   [/^Dia (\d+) de (\d+) · Semana (\d+)$/, 'Day $1 of $2 · Week $3'],
   [/^▶\s*Iniciar treino$/, '▶ Start workout'],
   [/^⏸\s*Pausar$/, '⏸ Pause'],
@@ -7569,7 +7591,7 @@ async function flushSyncQueues() {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
   _syncFlushRunning = true;
   try {
-    for (const kind of ['carga', 'done', 'esforco', 'nota_serie', 'nota_aluno', 'nota_aluno_del', 'treino_lembrete']) {
+    for (const kind of ['carga', 'done', 'completion', 'esforco', 'nota_serie', 'nota_aluno', 'nota_aluno_del', 'treino_lembrete']) {   // v479: + completion
       const q = _syncQueueGet(kind);
       if (!q.length) continue;
       const remaining = [];
@@ -7581,7 +7603,9 @@ async function flushSyncQueues() {
             body: JSON.stringify(payload),
             redirect: 'follow'
           });
-          if (!resp.ok) remaining.push(payload);
+          if (!resp.ok) { remaining.push(payload); continue; }
+          let _jq = null; try { _jq = await resp.json(); } catch (_) { _jq = null; }   // v479: HTML do front door ou success:false = continua na fila
+          if (!_jq || _jq.success === false) remaining.push(payload);
         } catch (_) {
           remaining.push(payload);
         }
@@ -7660,8 +7684,11 @@ function _cargaSyncEnvia_(k) {
       keepalive: true,
       redirect: 'follow'
     })
-      .then(resp => {
-        if (resp && resp.ok) {
+      .then(async resp => {
+        // v479: so conta como salvo se o servidor respondeu JSON sem success:false (.gs 19a devolve false quando o Sheets
+        // falhou; antes era true fixo, e HTML do front door tambem era 200). Falhou = fica na fila e reenvia.
+        let _jr = null; try { _jr = (resp && resp.ok) ? await resp.json() : null; } catch (_) { _jr = null; }
+        if (_jr && _jr.success !== false) {
           _cargaSyncUltimo[k] = sig; setBadge('☁ salvo na nuvem', 'cloud-ok');
           // v447: um envio anterior deste MESMO exercício pode ter falhado e estar na fila de retry.
           // Sem tirar de lá, o flush de 30 s reenviava o peso VELHO depois do novo, e o servidor passa a
@@ -8204,7 +8231,10 @@ function syncDoneToServer_(di, ei, val) {
       keepalive: true,
       redirect: 'follow'
     })
-      .then(resp => { if (!resp || !resp.ok) enfileira(); })
+      .then(async resp => {   // v479: HTTP 200 nao prova gravacao (.gs 19a devolve success:false quando o Sheets falha)
+        let j = null; try { j = (resp && resp.ok) ? await resp.json() : null; } catch (_) { j = null; }
+        if (!j || j.success === false) enfileira();
+      })
       .catch(() => enfileira());
   } catch (_) {
     enfileira();
@@ -9301,7 +9331,7 @@ async function loadAndShowLastModified() {
     if (!res.ok) return;
     const data = await res.json();
     if (!data || !data.lastModifiedBR) return;
-    try { if (data.gs) sessionStorage.setItem('gh_gs_build', String(data.gs)); } catch (_) {}   // v472: build do servidor, pro app so chamar rota que ja existe la
+    try { if (data.gs) localStorage.setItem('gh_gs_build', String(data.gs)); } catch (_) {}   // v472: build do servidor, pro app so chamar rota que ja existe la (v479: localStorage, sobrevive a sessao)
     const el = document.getElementById('lastModValue');
     const badge = document.getElementById('lastModBadge');
     if (el && badge) {
@@ -9347,7 +9377,7 @@ async function loadAndShowLastModified() {
       _obsCardApplyTTL();    // some com o card de entrega se já passou dos 2 dias
     }
     // Detecta reajuste/ajuste comparando versão + data de modificação com o estado salvo
-    _detectProtoAviso(data.version, data.lastModified);
+    if (data.fallback !== 'mestre') _detectProtoAviso(data.version, data.lastModified);   // v479: com o Drive fora a data vem da mestre; comparar daria "ajuste" falso
     dietBannerCheck(); // aviso da novidade do diário alimentar (só se nenhum banner mais importante)
   } catch (_) { /* silencioso — sem erro pro aluno */ }
 }
@@ -9545,7 +9575,10 @@ function notifyDayCompletion(di, shared) {
     freq: (parseInt(((document.getElementById('infoFreq')?.textContent) || '').match(/\d+/)?.[0] || '', 10) || ''),
     ts: new Date().toISOString()
   };
-  // Fire-and-forget — fail silenciosamente (Apps Script pode não estar atualizado ainda)
+  // v479 (pente fino 19/09): era dispara-e-esquece, e a marca de "ja enviado" entra ANTES do envio. Rede caida ou servidor
+  // com erro = o dia concluido nunca chegava na LOGS (ranking, sumido, frequencia) e nao tinha reenvio. Agora falha vai
+  // pra fila 'completion' (a mesma do flushSyncQueues). Repetir e inofensivo: o ranking conta dia por data.
+  const _enfConcl = () => _syncQueuePush('completion', payload, p => `${p.date}|${p.day}|${p.shared ? 1 : 0}`);
   try {
     fetch(LOG_ENDPOINT, {
       method: 'POST',
@@ -9553,8 +9586,11 @@ function notifyDayCompletion(di, shared) {
       body: JSON.stringify(payload),
       keepalive: true,
       redirect: 'follow'
-    }).catch(() => {});
-  } catch (_) {}
+    }).then(async resp => {
+      let j = null; try { j = (resp && resp.ok) ? await resp.json() : null; } catch (_) { j = null; }
+      if (!j || j.success === false) _enfConcl();
+    }).catch(() => _enfConcl());
+  } catch (_) { _enfConcl(); }
 }
 // ══ MODO POUCO TEMPO (GH 2026-07-29) — corta o treino do dia, NUNCA inventa ══
 // O aluno escolhe 30/45 min e o app mantém os exercícios NA ORDEM do protocolo (que já é
@@ -19224,7 +19260,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v478';
+    var APP_SHELL_V = 'metodo-gh-v479';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -19496,7 +19532,7 @@ function indicacaoWhats() {
 // So chama quando o aluno ABRE a tela (nunca em toda abertura do app) e guarda 5 min na sessao. O build do servidor vem
 // de graca no lastmod (campo gs): enquanto o .gs novo nao estiver colado, o app nem bate na rota (nada de "sem rota").
 var _indicSaldoTent = 0;
-function _indicSaldoPode() { try { return String(sessionStorage.getItem('gh_gs_build') || '') >= '2026-09-17a'; } catch (_) { return false; } }
+function _indicSaldoPode() { try { return String(localStorage.getItem('gh_gs_build') || sessionStorage.getItem('gh_gs_build') || '') >= '2026-09-17a'; } catch (_) { return false; } }
 function _indicEsc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 function _indicBR(iso, curto) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); return m ? (m[3] + '/' + m[2] + (curto ? '' : '/' + m[1])) : ''; }
 function _indicSaldoCarrega() {
@@ -19856,7 +19892,7 @@ async function recadoDelete() {
     const resp = await fetch(TRAINER_APPS_SCRIPT, {
       method: 'POST', redirect: 'follow',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ type: 'recado_delete', sheetId: trainerSheetId })
+      body: JSON.stringify({ type: 'recado_delete', sheetId: trainerSheetId, token: localStorage.getItem('gh_trainer_token') || '' })   // v479: .gs 19a exige
     });
     const j = await resp.json().catch(() => ({}));
     if (j && j.ok) {
@@ -20000,7 +20036,7 @@ async function recadoSend() {
     const resp = await fetch(TRAINER_APPS_SCRIPT, {
       method: 'POST', redirect: 'follow',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ type: 'recado', sheetId: trainerSheetId, base64: b64, mime: _recadoMime, permanente: _recadoPerm })
+      body: JSON.stringify({ type: 'recado', sheetId: trainerSheetId, base64: b64, mime: _recadoMime, permanente: _recadoPerm, token: localStorage.getItem('gh_trainer_token') || '' })   // v479: .gs 19a exige
     });
     const j = await resp.json().catch(() => ({}));
     if (j && j.ok) {
