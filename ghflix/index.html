@@ -316,7 +316,7 @@ async function mintToken(){
   try{
     const qs=new URLSearchParams();
     if(ALUNO_ID)qs.set('id',ALUNO_ID);
-    else{ const em=emailSalvo(); if(em)qs.set('email',em); }
+    else{ const em=emailSalvo(); if(em)qs.set('email',em); else{ const dc=docSalvo(); if(dc){ qs.set('cpf',dc); qs.set('phone',dc); } } }
     if(![...qs.keys()].length)return;
     const r=await fetch(TOKEN_ENDPOINT+'?'+qs.toString());
     const j=await r.json();
@@ -678,6 +678,11 @@ addEventListener('scroll',()=>{ document.getElementById('hdr').classList.toggle(
 /* ================= acesso ================= */
 const EMAIL_KEY='ghflix_email';
 const emailSalvo=()=>{ try{return (localStorage.getItem(EMAIL_KEY)||'').trim().toLowerCase();}catch(e){return '';} };
+// Quem entrou por CPF/WhatsApp fica lembrado pelos proprios digitos. Antes dependia do email
+// que a consulta devolvia, e essa consulta vai parar de devolver nome/email (varrer telefone
+// listava assinante, pente fino do .gs em 19/09/2026).
+const DOC_KEY='ghflix_doc';
+const docSalvo=()=>{ try{return (localStorage.getItem(DOC_KEY)||'').replace(/\D/g,'');}catch(e){return '';} };
 
 async function checkAccess(){
   if(IS_LOCAL||IS_PREVIEW)return{liberado:true};
@@ -691,6 +696,11 @@ async function checkAccess(){
   const em=emailSalvo();
   if(em){
     try{ const r=await fetch(`${ACCESS_ENDPOINT}?action=ghflixAccess&email=${encodeURIComponent(em)}`); return await r.json(); }
+    catch(e){ return{liberado:false,precisaLogin:true}; }
+  }
+  const dc=docSalvo();
+  if(dc){
+    try{ const r=await fetch(`${ACCESS_ENDPOINT}?action=ghflixAccess&cpf=${encodeURIComponent(dc)}&phone=${encodeURIComponent(dc)}`); return await r.json(); }
     catch(e){ return{liberado:false,precisaLogin:true}; }
   }
   return{liberado:false,precisaLogin:true};
@@ -740,6 +750,7 @@ async function recuperarAcesso(){
     const r=await fetch(`${ACCESS_ENDPOINT}?action=ghflixAccess&cpf=${encodeURIComponent(dig)}&phone=${encodeURIComponent(dig)}`);
     const j=await r.json();
     if(j&&j.liberado){
+      try{ localStorage.setItem(DOC_KEY,dig); }catch(_){}
       if(j.email)localStorage.setItem(EMAIL_KEY,j.email);
       ACESSO.liberado=true; mintToken(); hideLogin(); syncAuthUI();
       if(IDX)render(); else loadCatalog();
@@ -774,7 +785,7 @@ loadCatalog();
 /* CACHE DE ACESSO (6h): o Apps Script leva 2-3s pra responder e quem clicava
    num video nesse meio tempo via o cadeado indevido (aluno liberado com cara
    de bloqueado). Com o cache, as proximas aberturas ja nascem liberadas. */
-const ACC_KEY='ghflix_acc_'+(ALUNO_ID||emailSalvo()||'anon');
+const ACC_KEY='ghflix_acc_'+(ALUNO_ID||emailSalvo()||docSalvo()||'anon');
 try{
   const c=JSON.parse(localStorage.getItem(ACC_KEY)||'null');
   if(c&&c.lib&&(Date.now()-c.ts)<6*3600e3){ ACESSO.liberado=true; ACESSO.pronto=true; mintToken(); syncAuthUI(); }
