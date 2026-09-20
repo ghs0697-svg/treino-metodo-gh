@@ -6306,8 +6306,9 @@ const I18N_RX = [
   [/^1 opção, arrasta pro lado$/, '1 option, swipe sideways'],
   [/^Descanso de (.+)$/, (m, a) => 'Rest of ' + a],
   [/^Desfazer "não consegui fazer"$/, 'Undo "couldn’t do it"'],
-  [/^Abri mais uma série: sobrou (\d+) e o teu alvo é (.+)\. Sobe a carga nela\.$/, (m, a, b) => 'I opened one more set: ' + a + ' left in the tank and your target is ' + b + '. Add weight on it.'],
-  [/^Sobrou (\d+) e o teu alvo é (.+)\. Dá pra subir a carga na próxima série\.$/, (m, a, b) => a + ' left in the tank, your target is ' + b + '. You can add weight on the next set.'],
+  [/^Abri mais uma série: fechou (\d+) reps e ainda sobrou (\d+)\. Sobe a carga nela\.$/, (m, a, b) => 'I opened one more set: you closed ' + a + ' reps with ' + b + ' left in the tank. Add weight on it.'],
+  [/^Fechou (\d+) reps e ainda sobrou (\d+), acima do teu alvo de (.+)\. Dá pra subir a carga na próxima série\.$/, (m, a, b, c) => 'You closed ' + a + ' reps with ' + b + ' left in the tank, above your target of ' + c + '. You can add weight on the next set.'],
+  [/^Sobrou (\d+) com (\d+) de (\d+) reps\. Fecha a faixa de reps antes de subir a carga\.$/, (m, a, b, c) => a + ' left in the tank with ' + b + ' of ' + c + ' reps. Close the rep range before adding weight.'],
   [/^⏱\s*Pouco tempo hoje\?$/, '⏱ Short on time?'],
   [/^⏱\s*Modo (\d+)min ativo · toca pra ajustar$/, '⏱ $1min mode on · tap to adjust'],
   [/^↺\s*Recomeçar semana do zero$/, '↺ Restart the week'],
@@ -7027,6 +7028,19 @@ function _alvoTopo() {
 function _sugEl(di, ei) { return document.getElementById('sug-' + di + '-' + ei); }
 function _sugLimpa(di, ei) { const e = _sugEl(di, ei); if (e) { e.style.display = 'none'; e.innerHTML = ''; } }
 function _sugMostra(di, ei, html) { const e = _sugEl(di, ei); if (!e) return; e.innerHTML = html; e.style.display = 'block'; }
+// Alvo de reps DESTA série: "8 a 12" = 12; "20 / 15 / 12 / 12" = o número da série (varia por série);
+// tempo ("20 seg") ou "até a falha" = sem alvo, e aí a série a mais nunca abre.
+function _repsAlvoDaSerie(ex, si) {
+  try {
+    const t = String((ex && ex.reps) || '');
+    if (!t || /seg|min/i.test(t)) return null;
+    const segs = t.split('/').filter(x => /\d/.test(x));
+    const alvo = (segs.length > 1 && segs[si] != null) ? segs[si] : t;
+    const ns = String(alvo).match(/\d+/g);
+    if (!ns || !ns.length) return null;
+    return Math.max.apply(null, ns.map(Number));
+  } catch (_) { return null; }
+}
 function _sobrouSugere(di, ei, arr) {
   try {
     if (!_sugEl(di, ei)) return;
@@ -7035,11 +7049,23 @@ function _sobrouSugere(di, ei, arr) {
     for (let i = 0; i < arr.length; i++) if (String(arr[i].rs || '').trim()) li = i;
     if (li < 0) { _sugLimpa(di, ei); return; }
     const v = parseInt(String(arr[li].rs).replace(/[^0-9]/g, ''), 10);
-    if (!isFinite(v) || v <= alvo.hi) { _sugLimpa(di, ei); return; }
+    if (!isFinite(v) || v <= alvo.hi) { _sugLimpa(di, ei); return; }   // dentro do alvo do protocolo: nada
     const faixa = alvo.lo === alvo.hi ? String(alvo.lo) : (alvo.lo + ' a ' + alvo.hi);
+    const ex = _exObjAt(di, ei);
+    const rmax = _repsAlvoDaSerie(ex, li);
+    const feitas = parseInt(String(arr[li].reps || '').replace(/[^0-9]/g, ''), 10);
+    // GH 20/09: sobrar muito com POUCAS reps é peso leve com série curta, não série a mais. Só abre quando
+    // o aluno FECHOU o topo da faixa prescrita e AINDA sobrou acima do alvo dele.
+    if (!rmax || !isFinite(feitas)) { _sugLimpa(di, ei); return; }
+    if (feitas < rmax) {
+      _sugMostra(di, ei, 'Sobrou ' + v + ' com ' + feitas + ' de ' + rmax + ' reps. Fecha a faixa de reps antes de subir a carga.');
+      return;
+    }
     const k = di + '|' + ei + '|' + currentWeek;
-    if (li < arr.length - 1 || _sugFeita[k]) {
-      _sugMostra(di, ei, 'Sobrou ' + v + ' e o teu alvo é ' + faixa + '. Dá pra subir a carga na próxima série.');
+    const presc = _serieCountPresc(ex);
+    const cabeMais = arr.length < presc + 1;   // teto duro: no máximo UMA série além do prescrito, hoje e sempre
+    if (li < arr.length - 1 || _sugFeita[k] || !cabeMais) {
+      _sugMostra(di, ei, 'Fechou ' + feitas + ' reps e ainda sobrou ' + v + ', acima do teu alvo de ' + faixa + '. Dá pra subir a carga na próxima série.');
       return;
     }
     _sugFeita[k] = 1;
@@ -7049,7 +7075,7 @@ function _sobrouSugere(di, ei, arr) {
       _aberta = true;
       try {
         addSet(di, ei);
-        _sugMostra(di, ei, 'Abri mais uma série: sobrou ' + v + ' e o teu alvo é ' + faixa + '. Sobe a carga nela.'
+        _sugMostra(di, ei, 'Abri mais uma série: fechou ' + feitas + ' reps e ainda sobrou ' + v + '. Sobe a carga nela.'
           + '<br><button type="button" class="und" onclick="_sugDesfaz(' + di + ', \'' + ei + '\')">desfazer</button>');
       } catch (_) {}
     };
@@ -19599,7 +19625,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v482';
+    var APP_SHELL_V = 'metodo-gh-v483';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
