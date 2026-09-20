@@ -1,4 +1,4 @@
-const CACHE_NAME = 'metodo-gh-v487';
+const CACHE_NAME = 'metodo-gh-v488';
 const ASSETS = [
   './',
   './index.html',
@@ -30,14 +30,20 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys =>
-      // gh-videos-v1 = vídeos de execução baixados pelo ALUNO pro offline. NUNCA entra na
-      // limpeza de versão: sem esta exceção, cada atualização do app apagaria os downloads.
-      Promise.all(keys.filter(k => k !== CACHE_NAME && k !== 'gh-videos-v1').map(k => caches.delete(k)))
-    )
-  );
-  self.clients.claim();
+  e.waitUntil((async () => {
+    const keys = await caches.keys();
+    // gh-videos-v1 = vídeos de execução baixados pelo ALUNO pro offline. NUNCA entra na
+    // limpeza de versão: sem esta exceção, cada atualização do app apagaria os downloads.
+    await Promise.all(keys.filter(k => k !== CACHE_NAME && k !== 'gh-videos-v1').map(k => caches.delete(k)));
+    await self.clients.claim();
+    // v488 (GH 20/09, aluno preso na v467): quando o SW novo assume, as janelas que NÃO estão
+    // na frente do aluno recarregam por aqui, sem depender do JS velho que está rodando nelas.
+    // A janela visível fica quieta (pode estar digitando carga); essa o próprio app recarrega.
+    try {
+      const cs = await self.clients.matchAll({ type: 'window' });
+      cs.forEach(c => { try { if (c.visibilityState !== 'visible' && typeof c.navigate === 'function') c.navigate(c.url); } catch (_) {} });
+    } catch (_) {}
+  })());
 });
 
 // v440 (caso Devlin, iPhone/Safari 08/09): "FetchEvent.respondWith received an error: Returned response is null".

@@ -3739,7 +3739,7 @@
   </div>
   <div class="video-frame-container">
     <video id="videoNative" controls playsinline style="display:none;width:100%;max-height:70vh;background:#000;border-radius:12px;"></video>
-    <iframe id="videoFrame" src="" allow="accelerometer; autoplay; encrypted-media; gyroscope" allowfullscreen></iframe>
+    <iframe id="videoFrame" src="" allow="accelerometer; autoplay; encrypted-media; gyroscope; fullscreen; picture-in-picture" allowfullscreen></iframe>
   </div>
   <div style="text-align:center;padding:10px 12px 16px;">
     <a id="videoOpenYT" href="#" target="_blank" rel="noopener"
@@ -19424,7 +19424,8 @@ function _sendAppPing() {
       body: JSON.stringify({
         type: 'ping', sheetId: SHEET_ID,
         studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
-        date: dia, ts: new Date().toISOString()
+        date: dia, ts: new Date().toISOString(),
+        v: (typeof window.GH_APP_V !== 'undefined' ? window.GH_APP_V : '')   // v488: versao do shell na ATIVIDADE
       }),
       keepalive: true, redirect: 'follow'
     }).catch(function () {});
@@ -19644,17 +19645,25 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v487';
+    var APP_SHELL_V = 'metodo-gh-v488';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
+    // v488 (GH 20/09: "queria que tu forçasse a atualização de todos, vi um aluno na 467"): o corte
+    // antigo era o RELÓGIO (1 min de sessão), então quem deixa o app aberto o dia todo nunca recarregava
+    // e ficava preso num shell velho. Agora o corte é o DEDO: só não recarrega se o aluno mexeu nos
+    // últimos 20 s. App parado no bolso atualiza na hora; app em uso espera ele largar.
+    var _ultimoToque = 0;
+    ['pointerdown', 'keydown', 'touchstart'].forEach(function (ev) {
+      document.addEventListener(ev, function () { _ultimoToque = Date.now(); }, { passive: true, capture: true });
+    });
     function tentaRecarregar() {
       if (jaRecarregou) return;
       var a = document.activeElement;
       var digitando = a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
       if (digitando) return;   // não queima a trava: a próxima consulta tenta de novo
-      // visível e já passou 1min de uso: deixa quieto, atualiza na próxima abertura
-      if (document.visibilityState === 'visible' && Date.now() - carregouEm > 60000) return;
+      if (document.visibilityState === 'visible' && Date.now() - _ultimoToque < 20000) return;   // mexendo agora: depois
+      try { if (typeof _flushSetsPendentes_ === 'function') _flushSetsPendentes_(true); } catch (_) {}   // nada digitado se perde no reload
       // 1 tentativa por versão de shell por sessão — mata qualquer chance de loop
       try { if (sessionStorage.getItem('gh_upd_' + APP_SHELL_V) === '1') return; sessionStorage.setItem('gh_upd_' + APP_SHELL_V, '1'); } catch (_) {}
       jaRecarregou = true;
