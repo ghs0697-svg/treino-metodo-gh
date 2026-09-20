@@ -1031,21 +1031,23 @@
   .ex-sub-pill { max-width: 100%; }
   body.fonte-gg .ex-sub-pill .n { display: none; }   /* letra maior: o card tem ~190px uteis, o contador nao cabe */
   /* ── v481 (GH 19/09: "app meio poluído, as opções têm que ficar mais óbvias") ── */
-  .ex-car { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -ms-overflow-style: none; overscroll-behavior-x: contain; }
+  .ex-car { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -ms-overflow-style: none; overscroll-behavior-x: contain; touch-action: pan-x pan-y; cursor: grab; }
   .ex-car::-webkit-scrollbar { display: none; }
-  .ex-car-slide { flex: 0 0 100%; scroll-snap-align: start; padding-right: 8px; box-sizing: border-box; }
+  .ex-car-slide { flex: 0 0 89%; scroll-snap-align: start; padding: 2px 10px 6px 0; box-sizing: border-box; min-height: 52px; }
   .ex-car-tag { font-size: 10.5px; color: var(--muted); margin-top: 3px; }
   .ex-car-tag.sub { color: var(--gold); }
   .ex-car-bar { display: flex; align-items: center; gap: 7px; margin: 6px 0 0; flex-wrap: wrap; }
   .ex-car-dots { display: inline-flex; gap: 4px; }
   .ex-car-dot { width: 6px; height: 6px; border-radius: 50%; background: #413a30; }
   .ex-car-dot.on { background: var(--gold); }
-  .ex-car-hint { font-size: 10.5px; color: var(--muted); }
+  .ex-car-hint { display: inline-flex; align-items: center; gap: 7px; min-height: 34px; font-size: 10.5px; color: var(--muted); background: none; border: none; font-family: inherit; padding: 6px 4px; cursor: pointer; text-align: left; }
+  .ex-car-hint .tx { border-bottom: 1px dotted #5c554a; padding-bottom: 1px; }
+  .ex-car-hint:active { opacity: .6; }
   .ex-car-volta { background: none; border: none; color: var(--gold); font-family: inherit; font-size: 11px; font-weight: 700; text-decoration: underline; padding: 4px 0; cursor: pointer; }
   .ex-presc { font-size: 12px; color: #9a9184; line-height: 1.5; margin-top: 5px; }
   .ex-presc .cad { display: block; color: #7d7568; font-size: 11px; margin-top: 2px; }
   .ex-presc .gl { border-bottom: 1px dotted #5c554a; cursor: pointer; }
-  .ex-mais { min-width: 46px; height: 34px; border: 1px solid rgba(255,255,255,.10); border-radius: 9px; background: rgba(255,255,255,.05); color: var(--gold); font-size: 16px; line-height: 1; cursor: pointer; letter-spacing: 1px; }
+  .ex-action-btn.ex-mais { padding-top: 6px; }
   .ex-mais:active { transform: scale(.97); }
   .ex-motivo { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 0; }
   .ex-motivo .mq { width: 100%; font-size: 11px; color: var(--muted); }
@@ -6176,7 +6178,7 @@ const I18N_EN = {
   'Treinar no ritmo': 'Train to the tempo', 'Histórico de carga': 'Weight history',
   'Remover a última série': 'Remove the last set', 'Fechar': 'Close',
   'prescrito pelo Gabriel': 'prescribed by Gabriel', 'troca do mesmo grupo, com vídeo': 'swap from the same group, with video',
-  'trocado, a carga do original fica guardada': 'swapped, the original weight is kept',
+  'trocado, toca pra ver as opções': 'swapped, tap to see the options',
   'Voltar pro original': 'Back to the original',
   'Pouco tempo hoje?': 'Short on time?', 'SEMANA': 'WEEK', 'Semana': 'Week',
   '✈️ Viagem/Livre': '✈️ Travel/Free', '✈️ Viagem/Livre ligado': '✈️ Travel/Free ON',
@@ -6302,8 +6304,8 @@ const I18N_RX = [
   [/^▶\s*Continuar treino$/, '▶ Back to workout'],
   [/^⏱\s*Pouco tempo$/, '⏱ Short on time'],
   [/^⏱\s*Modo (\d+)min$/, (m, a) => '⏱ ' + a + 'min mode'],
-  [/^(\d+) opções, arrasta pro lado$/, (m, a) => a + ' options, swipe sideways'],
-  [/^1 opção, arrasta pro lado$/, '1 option, swipe sideways'],
+  [/^(\d+) opções: arrasta pro lado ou toca aqui$/, (m, a) => a + ' options: swipe sideways or tap here'],
+  [/^1 opção: arrasta pro lado ou toca aqui$/, '1 option: swipe sideways or tap here'],
   [/^Descanso de (.+)$/, (m, a) => 'Rest of ' + a],
   [/^Desfazer "não consegui fazer"$/, 'Undo "couldn’t do it"'],
   [/^Abri mais uma série: fechou (\d+) reps e ainda sobrou (\d+)\. Sobe a carga nela\.$/, (m, a, b) => 'I opened one more set: you closed ' + a + ' reps with ' + b + ' left in the tank. Add weight on it.'],
@@ -6886,11 +6888,15 @@ function _carHtml(di, ei, act, hasVid) {
   }).join('');
   const dots = sl.map((a, k) => '<span class="ex-car-dot' + (k === idx ? ' on' : '') + '"></span>').join('');
   const livres = sl.length - 1;
-  const hint = idx > 0 ? 'trocado, a carga do original fica guardada'
-    : (livres + (livres === 1 ? ' opção, arrasta pro lado' : ' opções, arrasta pro lado'));
+  // GH 20/09, no iPhone: "tentei rolar pro lado e nao deu pra trocar". A faixa do arrasto e baixa e o dedo
+  // sai dela fácil, entao a propria linha da dica virou botao: toca e abre a lista inteira das trocas.
+  const hint = idx > 0 ? 'trocado, toca pra ver as opções'
+    : (livres + (livres === 1 ? ' opção: arrasta pro lado ou toca aqui' : ' opções: arrasta pro lado ou toca aqui'));
   const volta = idx > 0 ? '<button type="button" class="ex-car-volta" onclick="event.stopPropagation(); escolherSub(' + di + ', ' + ei + ', null, true)">Voltar pro original</button>' : '';
   return '<div class="ex-car" id="car-' + di + '-' + ei + '" data-idx="' + idx + '" onscroll="_carRolou(' + di + ', ' + ei + ', this)">' + slides + '</div>'
-    + '<div class="ex-car-bar"><span class="ex-car-dots">' + dots + '</span><span class="ex-car-hint">' + hint + '</span>' + volta + '</div>';
+    + '<div class="ex-car-bar">'
+    + '<button type="button" class="ex-car-hint" onclick="event.stopPropagation(); openSubPicker(' + di + ', ' + ei + ')">'
+    + '<span class="ex-car-dots">' + dots + '</span><span class="tx">' + hint + '</span></button>' + volta + '</div>';
 }
 // Nome do exercício: carrossel quando há troca; título simples quando não há (aquecimento, feito, sem banco).
 function _nomeBlocoHtml(di, ei, act, exDone, isWarmup, hasVid) {
@@ -6997,9 +7003,6 @@ function exMaisMenu(di, ei) {
     const add = (txt, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt; b.onclick = () => { fecha(); try { fn(); } catch (_) {} }; sheet.appendChild(b); };
     const alts = (!ex.biset && !ex.warmup) ? _alternativasNoDia(di, ei) : null;
     if (!ex.biset && !ex.warmup) add(alts ? 'Ver todas as opções de troca' : 'Pedir a troca pro Gabriel', () => alts ? openSubPicker(di, ei) : openSubFallback(di, ei));
-    add('Treinar no ritmo', () => openPacer(di, ei));
-    add('Histórico de carga', () => showHistory(di, ei));
-    add('Descanso de ' + (base.rest || 'hoje'), () => startTimer(act.name || base.name || 'Descanso', parseIntervalSeconds(base.rest)));
     if (!ex.warmup) {
       const arr = loadSets(di, eiS, currentWeek) || [];
       if (arr.length > 1) add('Remover a última série', () => removeSet(di, eiS, arr.length - 1));
@@ -7117,7 +7120,7 @@ function _dicaTrocaHtml(di) {
     if (typeof params !== 'undefined' && params.get('edit')) return '';
     const dia = WORKOUT[di];
     if (!dia || !(dia.exercises || []).some((e, ei) => !e.warmup && !e.biset && _alternativasNoDia(di, ei))) return '';
-    return '<div class="ex-dica-troca" id="dicaTroca"><span>Sem o aparelho, fila ou desconforto? <b>Arrasta o nome do exercício pro lado</b> e escolhe outro do mesmo grupo, com vídeo. A carga do original fica guardada.</span><button type="button" class="x" onclick="dicaTrocaFecha()" aria-label="Fechar">&times;</button></div>';
+    return '<div class="ex-dica-troca" id="dicaTroca"><span>Sem o aparelho, fila ou desconforto? <b>Arrasta o nome do exercício pro lado</b>, ou toca na linha das opções, e escolhe outro do mesmo grupo, com vídeo. A carga do original fica guardada.</span><button type="button" class="x" onclick="dicaTrocaFecha()" aria-label="Fechar">&times;</button></div>';
   } catch (_) { return ''; }
 }
 function dicaTrocaFecha() { try { localStorage.setItem(_dicaTrocaKey(), '1'); } catch (_) {} try { document.querySelectorAll('.ex-dica-troca').forEach(d => d.remove()); } catch (_) {} }   // todos os dias (o render poe uma por dia)
@@ -10496,7 +10499,7 @@ function _tourSteps() {
   return [
     { sel: '#dayTabs', t: 'Teu treino da semana', p: 'Cada botão é um dia de treino. O app já abre no treino certo de hoje, é só seguir.' },
     { sel: '.sets-grid', t: 'Anota tuas cargas aqui', p: 'Peso e repetições de cada série. É com isso que eu acompanho tua evolução e ajusto teu protocolo. Salva sozinho.' },
-    { sel: '.ex-car-bar', t: 'Sem o aparelho? Troca.', p: 'Arrasta o nome do exercício pro lado e escolhe outro do mesmo músculo, com vídeo. A carga do original fica guardada.' },
+    { sel: '.ex-car-bar', t: 'Sem o aparelho? Troca.', p: 'Arrasta o nome do exercício pro lado, ou toca nesta linha, e escolhe outro do mesmo músculo, com vídeo. A carga do original fica guardada.' },
     { sel: '.dia-start', t: 'Começar treino', p: 'Liga o cronômetro e abre um exercício por vez, em tela cheia. Anotou a série, o descanso cronometra sozinho.' },
     { sel: '#bottomNav', t: 'Tua navegação', p: 'Dieta, teu progresso com gráficos e o resto do app moram aqui embaixo.' },
     { sel: '#bnMais', t: 'Fala comigo', p: 'Dúvida ou quer pedir um ajuste no protocolo? Toca no card do topo ou aqui em Mais.' }
@@ -12340,7 +12343,12 @@ function renderExercises() {
             <div class="sets-footer">
             <button type="button" class="set-add" onclick="addSet(${di},'${ei}')">+ série</button>
             <span class="carga-saved" id="sv-${di}-${ei}">&#10003; salvo</span>
-            <button type="button" class="ex-mais" onclick="event.stopPropagation(); exMaisMenu(${di}, '${ei}')" title="Mais opções" aria-label="Mais opções deste exercício">&#183;&#183;&#183;</button>
+            <div class="ex-actions">
+              <button class="ex-action-btn" onclick="event.stopPropagation(); openPacer(${di}, ${ei})" title="Treinar no ritmo (coach de cadência)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="ex-action-lbl">ritmo</span></button>
+              <button class="ex-action-btn" onclick="event.stopPropagation(); startTimer('${safeName}', parseIntervalSeconds('${safeRest}'))" title="Cronômetro de descanso (${ex.rest || 'auto'})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="ex-action-lbl">descanso</span></button>
+              <button class="ex-action-btn" onclick="event.stopPropagation(); showHistory(${di}, ${ei})" title="Histórico de cargas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg><span class="ex-action-lbl">histórico</span></button>
+              <button class="ex-action-btn ex-mais" onclick="event.stopPropagation(); exMaisMenu(${di}, '${ei}')" title="Mais opções" aria-label="Mais opções deste exercício"><span style="font-size:15px;line-height:14px;letter-spacing:1px;">&#183;&#183;&#183;</span><span class="ex-action-lbl">mais</span></button>
+            </div>
             </div>
             <div class="set-sug" id="sug-${di}-${ei}" style="display:none;"></div>
           </div>
@@ -19625,7 +19633,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v485';
+    var APP_SHELL_V = 'metodo-gh-v486';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
