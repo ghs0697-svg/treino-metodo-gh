@@ -2115,6 +2115,7 @@
   }
   .diet-supl-name { color: var(--gray); }
   .diet-supl-dose { color: var(--white); font-weight: 600; }
+  .diet-supl-dose.conv { color: var(--muted); font-weight: 500; font-style: italic; white-space: nowrap; }   /* v487: suplemento sem dose escrita */
 
   /* ── Diet Meal Card ── */
   .diet-meal-card {
@@ -6170,6 +6171,7 @@ const I18N_EN = {
   'constância da semana': 'weekly consistency', 'Iniciar treino': 'Start workout', 'Pausar': 'Pause',
   'Cronômetro do treino': 'Workout timer', 'Recomeçar semana do zero': 'Restart the week',
   'Modo treino: um exercício por vez': 'Focus mode: one exercise at a time',
+  'dose convencional': 'standard dose',
   'Começar treino': 'Start workout', 'Continuar treino': 'Back to workout',
   'ou ver a lista completa do dia': 'or see the full list for today',
   'Pouco tempo': 'Short on time', 'Por que trocou?': 'Why did you swap?',
@@ -12530,7 +12532,7 @@ function _buildDietaPrintHTML() {
       rows += `<tr><td colspan="2" style="background:#f5f5f5;"><strong>${esc(timing)}</strong></td></tr>`;
       items.forEach(s => {
         const obs = s.obs ? ` · ${esc(s.obs)}` : '';
-        rows += `<tr><td class="pa-ex">${esc(s.nome)}</td><td>${esc(s.dose || '')}${obs}</td></tr>`;
+        rows += `<tr><td class="pa-ex">${esc(s.nome)}</td><td>${esc(_doseOuPadrao(s.dose, s.nome))}${obs}</td></tr>`;
       });
     });
     if (rows) html += `<div class="pa-day"><h2 class="pa-day-title">Suplementação</h2><table>${rows}</table></div>`;
@@ -16972,6 +16974,14 @@ function parseDietData(rows) {
 
 // Emoji visual por horário do bloco de suplementos. Faz match por
 // keyword pra cobrir variações de escrita (pós/pos, desjejum/jejum, etc).
+// v487 (GH 20/09): suplemento sem dose na planilha nao fica com o campo vazio; mostra a frase padrao.
+// Nasceu do protocolo Exemplo, que ele grava em video sem nome e sem dose, mas vale pra qualquer protocolo.
+function _doseEhTitulo(nome) { return /^[\u2014\u2013-]+\s*.+\s*[\u2014\u2013-]+$/.test(String(nome == null ? '' : nome).trim()); }
+function _doseOuPadrao(d, nome) {
+  const t = String(d == null ? '' : d).trim();
+  if (t) return t;
+  return _doseEhTitulo(nome) ? '' : 'dose convencional';
+}
 function _suplTimingIcon(timing) {
   const t = String(timing || '').toLowerCase()
     .normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -17842,7 +17852,8 @@ function renderDiet() {
       html += `<div class="diet-supl-group"><div class="diet-supl-timing">${_suplTimingIcon(timing)}${timing}</div>`;
       items.forEach(s => {
         const obs = s.obs ? `<span class="diet-supl-obs" style="display:block;font-size:11px;opacity:0.7;margin-top:2px;">${s.obs}</span>` : '';
-        html += `<div class="diet-supl-item"><span class="diet-supl-name">${s.nome}${obs}</span><span class="diet-supl-dose">${s.dose}</span></div>`;
+        const _dz = _doseOuPadrao(s.dose, s.nome);
+        html += `<div class="diet-supl-item"><span class="diet-supl-name">${s.nome}${obs}</span><span class="diet-supl-dose${String(s.dose || '').trim() ? '' : ' conv'}">${_dz}</span></div>`;
       });
       html += `</div>`;
     });
@@ -19633,7 +19644,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v486';
+    var APP_SHELL_V = 'metodo-gh-v487';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
