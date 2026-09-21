@@ -4806,13 +4806,20 @@
     </div>
     <input type="file" id="achPhotoInput" accept="image/*" style="display:none;">
     <p id="achPointsHint" style="color:var(--gold);font-size:12px;margin:4px 0 6px;text-align:center;font-weight:700;">📲 Compartilhe teu treino, é o teu desempate no ranking!</p>
+    <div id="achIg" style="display:none;margin:2px 0 8px;padding:10px 11px;border:1px solid rgba(212,175,106,.35);border-radius:11px;background:rgba(212,175,106,.06);">
+      <label for="achIgInput" style="display:block;color:#e8d9ac;font-size:11.5px;line-height:1.5;margin-bottom:7px;">Qual teu <b>@ no Instagram</b>? É por ele que eu vejo o teu story e solto os pontos dobrados.</label>
+      <div style="display:flex;gap:7px;">
+        <input id="achIgInput" type="text" inputmode="text" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="@teuperfil" style="flex:1;min-width:0;background:#0e0d0c;border:1px solid #2b2620;border-radius:9px;color:#E0DCD3;font:inherit;font-size:14px;height:40px;padding:0 11px;">
+        <button type="button" class="ach-btn secondary" style="height:40px;padding:0 15px;" onclick="achIgSalva()">Salvar</button>
+      </div>
+    </div>
     <div class="ach-actions" style="margin-top:6px;">
       <button class="ach-btn primary" onclick="achShare()" id="achShareBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Compartilhar treino</button>
       <button class="ach-btn secondary" onclick="achSave()">Salvar PNG</button>
       <button class="ach-btn ghost" onclick="achClose()">Pular (treino já contou)</button>
       <button class="ach-btn ghost" id="achWrongBtn" onclick="achDesfazerPR()" style="display:none;color:#ff9800;">Digitei errado, desfazer recorde</button>
     </div>
-    <p style="color:#888;font-size:11px;text-align:center;margin:12px 0 0;line-height:1.5;"><strong>Foto do pump</strong> vira o background do card. <strong>Pra Stories:</strong> Compartilhar → role o sheet → Instagram Stories.</p>
+    <p style="color:#888;font-size:11px;text-align:center;margin:12px 0 0;line-height:1.5;"><strong>Foto do pump</strong> vira o background do card. <strong>Pra Stories:</strong> Compartilhar → role o sheet → Instagram Stories → <strong>marca o @gh.scheuermann</strong>, é a marcação que dobra teus pontos.</p>
   </div>
 </div>
 
@@ -6172,7 +6179,9 @@ const I18N_EN = {
   'constância da semana': 'weekly consistency', 'Iniciar treino': 'Start workout', 'Pausar': 'Pause',
   'Cronômetro do treino': 'Workout timer', 'Recomeçar semana do zero': 'Restart the week',
   'Modo treino: um exercício por vez': 'Focus mode: one exercise at a time',
-  'dose convencional': 'standard dose',
+  'dose convencional': 'standard dose', 'Salvar': 'Save',
+  '📲 Compartilha e marca o @gh.scheuermann no story: dia marcado vale dobrado no ranking.': '📲 Share it and tag @gh.scheuermann in your story: a tagged day counts double in the ranking.',
+  '✅ Treino contou! Compartilha marcando o @gh.scheuermann que o dia vale dobrado.': '✅ Workout counted! Share it tagging @gh.scheuermann and the day counts double.',
   'Começar treino': 'Start workout', 'Continuar treino': 'Back to workout',
   'ou ver a lista completa do dia': 'or see the full list for today',
   'Pouco tempo': 'Short on time', 'Por que trocou?': 'Why did you swap?',
@@ -8984,11 +8993,13 @@ function showAchievementCard(type, data) {
       const claimed = di != null && alreadyClaimedToday(di);
       hint.style.display = '';
       hint.textContent = claimed
-        ? '✅ Treino contou! Compartilha pra ganhar o desempate no ranking.'
-        : '📲 Compartilhe teu treino, é o teu desempate no ranking!';
+        ? '✅ Treino contou! Compartilha marcando o @gh.scheuermann que o dia vale dobrado.'
+        : '📲 Compartilha e marca o @gh.scheuermann no story: dia marcado vale dobrado no ranking.';
+      try { _achIgMostra(); } catch (_) {}
       hint.style.color = claimed ? '#4caf50' : 'var(--gold)';
     } else {
       hint.style.display = 'none';
+      const _bi = document.getElementById('achIg'); if (_bi) _bi.style.display = 'none';
     }
   }
   // Mesmo do botão "Pular": só relevante em completion
@@ -9512,6 +9523,37 @@ function drawPRContent(ctx, W, H, p) {
   ctx.fillText('+' + diffDisp + unit, W/2, 1530);
 }
 
+// ══ v491 · @ DO ALUNO (prova do compartilhamento) ══ O dobro do ranking vinha de "a janela de
+// compartilhar abriu e o aluno nao cancelou", que nao prova story nenhum. A partir de 01/10 o dobro so
+// entra com a mencao do story no Instagram do GH, e o @ daqui e o que casa a mencao com o aluno.
+function _igArroba(v) { return String(v == null ? '' : v).trim().toLowerCase().replace(/^@+/, '').replace(/[^a-z0-9._]/g, '').slice(0, 40); }
+function _igSalvo() { try { return localStorage.getItem('gh_ig_handle') || ''; } catch (_) { return ''; } }
+function _achIgMostra() {
+  try {
+    const box = document.getElementById('achIg');
+    if (!box) return;
+    const falta = !_igSalvo() && !!SHEET_ID;
+    box.style.display = falta ? '' : 'none';
+    const inp = document.getElementById('achIgInput');
+    if (inp && falta) inp.value = '';
+  } catch (_) {}
+}
+function achIgSalva() {
+  try {
+    const inp = document.getElementById('achIgInput');
+    const ar = _igArroba(inp && inp.value);
+    if (!ar) { _ghToast('Escreve teu @ do Instagram, tipo @teuperfil.'); return; }
+    try { localStorage.setItem('gh_ig_handle', ar); } catch (_) {}
+    const box = document.getElementById('achIg'); if (box) box.style.display = 'none';
+    _ghToast('Anotado: @' + ar + ' 👊 Marca o @gh.scheuermann no story que os pontos dobram.');
+    if (SHEET_ID && typeof LOG_ENDPOINT !== 'undefined') {
+      fetch(LOG_ENDPOINT, {
+        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true, redirect: 'follow',
+        body: JSON.stringify({ type: 'ig_handle', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(), instagram: ar })
+      }).catch(() => {});
+    }
+  } catch (_) {}
+}
 async function achShare() {
   const c = document.getElementById('achCanvas');
   c.toBlob(async blob => {
@@ -19689,7 +19731,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v490';
+    var APP_SHELL_V = 'metodo-gh-v491';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
