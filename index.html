@@ -6904,13 +6904,11 @@ function _carHtml(di, ei, act, hasVid) {
     + '<span class="ex-car-dots">' + dots + '</span><span class="tx">' + hint + '</span></button>' + volta + '</div>';
 }
 // Nome do exercício: carrossel quando há troca; título simples quando não há (aquecimento, feito, sem banco).
+// v490: o carrossel saiu do card. O arrasto nao pegou no iPhone do GH em duas tentativas (scroll nativo
+// e depois arrasto proprio em pointer events), e gesto que o dono do app nao consegue fazer nao serve
+// pro aluno. Fica o pill "Trocar exercicio", que ele ja tinha aprovado no v478. _carHtml segue no
+// arquivo, desligado, pra quando der pra testar direito num iPhone de verdade.
 function _nomeBlocoHtml(di, ei, act, exDone, isWarmup, hasVid) {
-  try {
-    if (!isWarmup && !exDone) {
-      const c = _carHtml(di, ei, act, hasVid);
-      if (c) return c;
-    }
-  } catch (_) {}
   const esc = v => String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;');
   return '<div class="exercise-name">' + esc(act.name)
     + (act.sub ? (act.viagem ? ' <span class="ex-sub-badge viagem">✈ LIVRE</span>' : ' <span class="ex-sub-badge">SUBST.</span>') : '')
@@ -7167,7 +7165,7 @@ function _dicaTrocaHtml(di) {
     if (typeof params !== 'undefined' && params.get('edit')) return '';
     const dia = WORKOUT[di];
     if (!dia || !(dia.exercises || []).some((e, ei) => !e.warmup && !e.biset && _alternativasNoDia(di, ei))) return '';
-    return '<div class="ex-dica-troca" id="dicaTroca"><span>Sem o aparelho, fila ou desconforto? <b>Arrasta o nome do exercício pro lado</b>, ou toca na linha das opções, e escolhe outro do mesmo grupo, com vídeo. A carga do original fica guardada.</span><button type="button" class="x" onclick="dicaTrocaFecha()" aria-label="Fechar">&times;</button></div>';
+    return '<div class="ex-dica-troca" id="dicaTroca"><span>Sem o aparelho, fila ou desconforto? Toca em <b>Trocar exercício</b> no card e escolhe outro do mesmo grupo, com vídeo. A carga do original fica guardada.</span><button type="button" class="x" onclick="dicaTrocaFecha()" aria-label="Fechar">&times;</button></div>';
   } catch (_) { return ''; }
 }
 function dicaTrocaFecha() { try { localStorage.setItem(_dicaTrocaKey(), '1'); } catch (_) {} try { document.querySelectorAll('.ex-dica-troca').forEach(d => d.remove()); } catch (_) {} }   // todos os dias (o render poe uma por dia)
@@ -10546,7 +10544,7 @@ function _tourSteps() {
   return [
     { sel: '#dayTabs', t: 'Teu treino da semana', p: 'Cada botão é um dia de treino. O app já abre no treino certo de hoje, é só seguir.' },
     { sel: '.sets-grid', t: 'Anota tuas cargas aqui', p: 'Peso e repetições de cada série. É com isso que eu acompanho tua evolução e ajusto teu protocolo. Salva sozinho.' },
-    { sel: '.ex-car-bar', t: 'Sem o aparelho? Troca.', p: 'Arrasta o nome do exercício pro lado, ou toca nesta linha, e escolhe outro do mesmo músculo, com vídeo. A carga do original fica guardada.' },
+    { sel: '.ex-sub-pill', t: 'Sem o aparelho? Troca.', p: 'Toca em "Trocar exercício" que eu te mostro as opções equivalentes pro mesmo músculo, com vídeo. A carga do original fica guardada.' },
     { sel: '.dia-start', t: 'Começar treino', p: 'Liga o cronômetro e abre um exercício por vez, em tela cheia. Anotou a série, o descanso cronometra sozinho.' },
     { sel: '#bottomNav', t: 'Tua navegação', p: 'Dieta, teu progresso com gráficos e o resto do app moram aqui embaixo.' },
     { sel: '#bnMais', t: 'Fala comigo', p: 'Dúvida ou quer pedir um ajuste no protocolo? Toca no card do topo ou aqui em Mais.' }
@@ -12379,6 +12377,7 @@ function renderExercises() {
               ${_nomeBlocoHtml(di, ei, act, exDone, isWarmup, hasVid)}
               <div class="ex-presc">${_prescLinha(ex, isWarmup)}</div>
               ${!isWarmup ? _muscTag(act.name) : ''}
+              ${!isWarmup && !exDone ? _subPillHtml(di, ei, act, subAlts) : ''}
               ${_trocaMotivoHtml(di, ei)}
               ${!isWarmup && exSkip ? `<button type="button" class="ex-skip-btn on" onclick="event.stopPropagation(); onSkipExercise(${di}, ${ei})">⤼ Pulado hoje · desfazer</button>` : ''}
               ${ex.obs ? `<div class="exercise-obs">${_glossWrap(ex.obs)}</div>` : ''}
@@ -19690,7 +19689,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v489';
+    var APP_SHELL_V = 'metodo-gh-v490';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
