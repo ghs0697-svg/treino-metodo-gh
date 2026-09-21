@@ -9538,20 +9538,46 @@ function _achIgMostra() {
     if (inp && falta) inp.value = '';
   } catch (_) {}
 }
-function achIgSalva() {
+async function achIgSalva() {
+  const inp = document.getElementById('achIgInput');
+  const ar = _igArroba(inp && inp.value);
+  if (!ar) { _ghToast('Escreve teu @ do Instagram, tipo @teuperfil.'); return; }
+  if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
+  const btn = document.querySelector('#achIg button');
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
+  let resp = null;
   try {
-    const inp = document.getElementById('achIgInput');
-    const ar = _igArroba(inp && inp.value);
-    if (!ar) { _ghToast('Escreve teu @ do Instagram, tipo @teuperfil.'); return; }
-    try { localStorage.setItem('gh_ig_handle', ar); } catch (_) {}
-    const box = document.getElementById('achIg'); if (box) box.style.display = 'none';
-    _ghToast('Anotado: @' + ar + ' 👊 Marca o @gh.scheuermann no story que os pontos dobram.');
-    if (SHEET_ID && typeof LOG_ENDPOINT !== 'undefined') {
-      fetch(LOG_ENDPOINT, {
-        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true, redirect: 'follow',
-        body: JSON.stringify({ type: 'ig_handle', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(), instagram: ar })
-      }).catch(() => {});
-    }
+    const r = await fetch(LOG_ENDPOINT, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, redirect: 'follow',
+      body: JSON.stringify({ type: 'ig_handle', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(), instagram: ar })
+    });
+    resp = r.ok ? await r.json() : null;
+  } catch (_) { resp = null; }
+  if (btn) { btn.disabled = false; btn.textContent = 'Salvar'; }
+  // v492: o mesmo @ nao pode ser de dois alunos (senao a mencao de um dobra o ponto do outro).
+  if (resp && resp.erro === 'em_uso') {
+    _ghToast('Esse @ já está cadastrado por outro aluno. Confere se é o teu mesmo; se for, me chama no suporte que eu acerto.');
+    return;
+  }
+  try { localStorage.setItem('gh_ig_handle', ar); } catch (_) {}
+  const box = document.getElementById('achIg'); if (box) box.style.display = 'none';
+  _ghToast(resp ? ('Anotado: @' + ar + ' 👊 Marca o @gh.scheuermann no story que os pontos dobram.')
+    : ('Anotado aqui: @' + ar + '. Sem internet agora, eu confirmo contigo na próxima abertura.'));
+  if (!resp) { try { localStorage.setItem('gh_ig_pend', ar); } catch (_) {} }   // sem rede: tenta de novo depois
+  else { try { localStorage.removeItem('gh_ig_pend'); } catch (_) {} }
+}
+// @ que ficou sem confirmacao (app offline na hora): reenvia numa abertura seguinte
+function _igPendenteReenvia() {
+  try {
+    const ar = localStorage.getItem('gh_ig_pend');
+    if (!ar || !SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
+    fetch(LOG_ENDPOINT, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, redirect: 'follow',
+      body: JSON.stringify({ type: 'ig_handle', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(), instagram: ar })
+    }).then(r => r.json()).then(j => {
+      if (j && j.erro === 'em_uso') { try { localStorage.removeItem('gh_ig_handle'); } catch (_) {} }
+      try { localStorage.removeItem('gh_ig_pend'); } catch (_) {}
+    }).catch(() => {});
   } catch (_) {}
 }
 async function achShare() {
@@ -12453,6 +12479,7 @@ function renderExercises() {
   updateDayProgress();
   try { _carSync(); } catch (_) {}   // v481: carrossel do nome volta pro exercicio ativo
   if (typeof _vidBtnRefresh === "function") _vidBtnRefresh();
+  try { if (!window._igPendJaFoi) { window._igPendJaFoi = 1; setTimeout(_igPendenteReenvia, 4000); } } catch (_) {}   // v492
 }
 
 // ══ Baixar PDF (via print-to-PDF do navegador) ══
@@ -19731,7 +19758,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v491';
+    var APP_SHELL_V = 'metodo-gh-v492';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
