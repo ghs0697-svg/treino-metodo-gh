@@ -2998,6 +2998,12 @@
   .ach-btn.secondary { background: #2a2a2a; color: #fff; }
   .ach-btn.ghost { background: transparent; color: #888; }
   .ach-btn:hover { opacity: 0.85; }
+  /* v493: seletor do estilo da logo no card */
+  .ach-logo-sel { display: flex; gap: 8px; margin: 10px 0 2px; }
+  .ach-logo-op { flex: 1; min-width: 0; background: #151412; border: 1px solid #2b2620; border-radius: 10px; padding: 5px 5px 6px; color: #8a8377; font-family: inherit; font-size: 10.5px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .ach-logo-op canvas { width: 100%; height: auto; border-radius: 6px; display: block; }
+  .ach-logo-op.on { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 0 1px rgba(212,175,106,.35); }
+  .ach-logo-lbl { color: #8a8377; font-size: 10.5px; letter-spacing: .4px; text-transform: uppercase; margin-top: 10px; text-align: center; }
 
   /* === Lista de alunos (busca trainer) === */
   .trainer-student-list { max-height: 260px; overflow-y: auto; margin-top: 6px; display: flex; flex-direction: column; gap: 3px; }
@@ -4801,6 +4807,8 @@
   <div class="ach-box">
     <h3 class="ach-title" id="achTitle">🎉 Conquista</h3>
     <canvas id="achCanvas" width="1080" height="1920"></canvas>
+    <div class="ach-logo-lbl">Estilo da logo</div>
+    <div class="ach-logo-sel" id="achLogoSel"></div>
     <div class="ach-actions">
       <button class="ach-btn secondary" onclick="achPickPhoto()" id="achPhotoBtn">📷 Foto do pump</button>
     </div>
@@ -6179,7 +6187,7 @@ const I18N_EN = {
   'constância da semana': 'weekly consistency', 'Iniciar treino': 'Start workout', 'Pausar': 'Pause',
   'Cronômetro do treino': 'Workout timer', 'Recomeçar semana do zero': 'Restart the week',
   'Modo treino: um exercício por vez': 'Focus mode: one exercise at a time',
-  'dose convencional': 'standard dose', 'Salvar': 'Save',
+  'dose convencional': 'standard dose', 'Salvar': 'Save', 'Estilo da logo': 'Logo style', 'Clássica': 'Classic', 'Monograma': 'Monogram', 'Linha': 'Line',
   '📲 Compartilha e marca o @gh.scheuermann no story: dia marcado vale dobrado no ranking.': '📲 Share it and tag @gh.scheuermann in your story: a tagged day counts double in the ranking.',
   '✅ Treino contou! Compartilha marcando o @gh.scheuermann que o dia vale dobrado.': '✅ Workout counted! Share it tagging @gh.scheuermann and the day counts double.',
   'Começar treino': 'Start workout', 'Continuar treino': 'Back to workout',
@@ -8986,6 +8994,7 @@ function showAchievementCard(type, data) {
   };
   document.getElementById('achTitle').textContent = titleMap[type] || '🏆 Conquista';
   // Hint dos pontos só faz sentido pro card de COMPLETION (PR não credita pontos)
+  try { _logoSeletorRender(); } catch (_) {}   // v493
   const hint = document.getElementById('achPointsHint');
   if (hint) {
     if (type === 'completion') {
@@ -9313,6 +9322,77 @@ function drawAchievementCard(progress, rawP) {
 
 // Desenha texto com letter-spacing manual (canvas não suporta nativo
 // em todos os browsers — sobretudo iOS PWA mais antigo). x = centro.
+// ══ v493 · LOGO DO CARD DE COMPARTILHAR (GH 21/09: "tem que ficar mais estético, mais clean, mais
+// minimalista! coloca umas 3 opções pra pessoa escolher") ══ A logo era "MÉTODO GH" em negrito de 110px
+// com espaçamento, a coisa mais pesada do card. Agora é um bloco só, em 3 estilos, e o aluno escolhe no
+// próprio card (fica guardado no aparelho). Cinzel é a fonte do cabeçalho do app, já carregada pela página.
+const LOGO_ESTILOS = [
+  { id: 1, nome: 'Clássica' },
+  { id: 2, nome: 'Monograma' },
+  { id: 3, nome: 'Linha' }
+];
+let _logoEstilo = (function () { try { const v = parseInt(localStorage.getItem('gh_logo_estilo') || '1', 10); return (v >= 1 && v <= 3) ? v : 1; } catch (_) { return 1; } })();
+const LOGO_SERIF = '"Cinzel", "Times New Roman", Georgia, serif';
+try { if (document.fonts && document.fonts.load) { document.fonts.load('600 64px Cinzel'); document.fonts.load('700 52px Cinzel'); } } catch (_) {}
+// Desenha o bloco da logo centrado em cx, com a linha de base do nome em y. Ocupa ~ y-70 até y+40.
+function _logoBloco(ctx, cx, y, estilo, escala) {
+  const k = escala || 1;
+  const e = estilo || _logoEstilo;
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  if (e === 2) {
+    // Monograma: círculo fino com GH dentro, nome pequeno embaixo
+    const r = 58 * k, cy = y - 46 * k;
+    ctx.lineWidth = 2 * k; ctx.strokeStyle = 'rgba(212,175,106,0.9)';
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = '#D4AF6A';
+    ctx.font = `700 ${Math.round(50 * k)}px ${LOGO_SERIF}`;
+    ctx.fillText('GH', cx, cy + 18 * k);
+    ctx.fillStyle = 'rgba(212,175,106,0.85)';
+    ctx.font = `500 ${Math.round(24 * k)}px ${ACH_FONT}`;
+    fillTextSpaced(ctx, 'MÉTODO GH', cx, y + 40 * k, 8 * k);
+  } else if (e === 3) {
+    // Linha: só o nome, leve e espaçado, com um fio embaixo
+    ctx.fillStyle = '#D4AF6A';
+    ctx.font = `300 ${Math.round(40 * k)}px ${ACH_FONT}`;
+    fillTextSpaced(ctx, 'MÉTODO GH', cx, y, 14 * k);
+    ctx.strokeStyle = 'rgba(212,175,106,0.6)'; ctx.lineWidth = 1.5 * k;
+    ctx.beginPath(); ctx.moveTo(cx - 80 * k, y + 26 * k); ctx.lineTo(cx + 80 * k, y + 26 * k); ctx.stroke();
+  } else {
+    // Clássica: serifa do cabeçalho do app entre dois fios
+    ctx.strokeStyle = 'rgba(212,175,106,0.55)'; ctx.lineWidth = 1.5 * k;
+    ctx.beginPath(); ctx.moveTo(cx - 110 * k, y - 62 * k); ctx.lineTo(cx + 110 * k, y - 62 * k); ctx.stroke();
+    ctx.fillStyle = '#D4AF6A';
+    ctx.font = `600 ${Math.round(60 * k)}px ${LOGO_SERIF}`;
+    fillTextSpaced(ctx, 'MÉTODO GH', cx, y, 9 * k);
+    ctx.beginPath(); ctx.moveTo(cx - 110 * k, y + 28 * k); ctx.lineTo(cx + 110 * k, y + 28 * k); ctx.stroke();
+  }
+  ctx.restore();
+}
+// Seletor no card: 3 miniaturas desenhadas com o próprio _logoBloco; tocar troca e redesenha
+function _logoSeletorRender() {
+  try {
+    const host = document.getElementById('achLogoSel');
+    if (!host) return;
+    if (host.dataset.pronto !== '1') {
+      host.innerHTML = LOGO_ESTILOS.map(o => `<button type="button" class="ach-logo-op" data-estilo="${o.id}" onclick="logoEscolhe(${o.id})" aria-label="Logo ${o.nome}"><canvas width="300" height="120"></canvas><span>${o.nome}</span></button>`).join('');
+      host.dataset.pronto = '1';
+      host.querySelectorAll('.ach-logo-op').forEach(b => {
+        const c = b.querySelector('canvas'), ctx = c.getContext('2d');
+        ctx.fillStyle = '#121110'; ctx.fillRect(0, 0, c.width, c.height);
+        _logoBloco(ctx, c.width / 2, 80, parseInt(b.dataset.estilo, 10), 0.5);
+      });
+    }
+    host.querySelectorAll('.ach-logo-op').forEach(b => b.classList.toggle('on', parseInt(b.dataset.estilo, 10) === _logoEstilo));
+  } catch (_) {}
+}
+function logoEscolhe(n) {
+  _logoEstilo = (n >= 1 && n <= 3) ? n : 1;
+  try { localStorage.setItem('gh_logo_estilo', String(_logoEstilo)); } catch (_) {}
+  _logoSeletorRender();
+  try { drawAchievementCard(1, 1); } catch (_) {}
+}
 function fillTextSpaced(ctx, text, x, y, spacing) {
   const prevAlign = ctx.textAlign;
   ctx.textAlign = 'left';
@@ -9368,17 +9448,8 @@ function drawCompletionContent(ctx, W, H, p) {
   // ══ TUDO NA METADE INFERIOR (Y > 960) ══
   // Header "TREINO CONCLUÍDO" já foi desenhado no topo por drawAchievementCard.
 
-  // 1. MÉTODO GH — destaque máximo, abre o bloco da metade inferior
-  ctx.font = `bold 110px ${ACH_FONT}`;
-  ctx.fillStyle = '#d4a76a';
-  fillTextSpaced(ctx, 'MÉTODO  GH', W/2, 1080, 14);
-
-  // 2. Divider dourado fino
-  ctx.strokeStyle = '#d4a76a';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(W/2 - 90, 1115); ctx.lineTo(W/2 + 90, 1115);
-  ctx.stroke();
+  // 1. Logo (v493): bloco enxuto no estilo que o aluno escolheu, no lugar do negrito de 110px
+  _logoBloco(ctx, W/2, 1080);
 
   // 3. Músculos treinados — enxuto, dourado claro
   const name = d.dayName || ('DIA ' + d.day);
@@ -9449,17 +9520,8 @@ function drawPRContent(ctx, W, H, p) {
   ctx.font = '70px sans-serif';
   ctx.fillText('🏆', W/2, 560);
 
-  // MÉTODO GH — protagonista
-  ctx.font = `bold 120px ${ACH_FONT}`;
-  ctx.fillStyle = '#d4a76a';
-  fillTextSpaced(ctx, 'MÉTODO  GH', W/2, 700, 16);
-
-  // Divider
-  ctx.strokeStyle = '#d4a76a';
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(W/2 - 100, 760); ctx.lineTo(W/2 + 100, 760);
-  ctx.stroke();
+  // Logo (v493): mesmo bloco do card de treino concluido
+  _logoBloco(ctx, W/2, 700);
 
   // NOVO RECORDE — subtítulo discreto
   ctx.font = `300 44px ${ACH_FONT}`;
@@ -19758,7 +19820,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v492';
+    var APP_SHELL_V = 'metodo-gh-v493';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
