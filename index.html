@@ -9448,51 +9448,21 @@ function drawCompletionContent(ctx, W, H, p) {
   // ══ TUDO NA METADE INFERIOR (Y > 960) ══
   // Header "TREINO CONCLUÍDO" já foi desenhado no topo por drawAchievementCard.
 
-  // 1. Logo (v493): bloco enxuto no estilo que o aluno escolheu, no lugar do negrito de 110px
-  _logoBloco(ctx, W/2, 1080);
+  // 1. Logo (v493) no estilo que o aluno escolheu. v494: os 3 quadros de numeros sairam (GH: "tirar isso e
+  // deixar mais clean"), entao o miolo desce pro centro da metade de baixo em vez de ficar colado no topo dela.
+  _logoBloco(ctx, W/2, 1230);
 
-  // 3. Músculos treinados — enxuto, dourado claro
+  // 2. Musculos treinados, uma linha leve embaixo da logo
   const name = d.dayName || ('DIA ' + d.day);
   ctx.font = `500 30px ${ACH_FONT}`;
   ctx.fillStyle = 'rgba(212, 167, 106, 0.85)';
   if (ctx.measureText(name).width > W - 160) {
     const parts = name.split(' + ');
-    ctx.fillText(parts[0], W/2, 1170);
-    ctx.fillText('+ ' + parts.slice(1).join(' + '), W/2, 1208);
+    ctx.fillText(parts[0], W/2, 1330);
+    ctx.fillText('+ ' + parts.slice(1).join(' + '), W/2, 1368);
   } else {
-    ctx.fillText(name, W/2, 1180);
+    ctx.fillText(name, W/2, 1340);
   }
-
-  // 4. Stats compactos (boxes menores agora) — exercícios + dias
-  const cols = [{ num: d.exercises, lbl: 'EXERCÍCIOS' }];
-  if (d.totalKg) cols.push({ num: Math.round(parseFloat(kgToDisplay(d.totalKg)) || 0), lbl: getUnit().toUpperCase() + ' TOTAIS' });
-  cols.push({ num: d.streak, lbl: 'DIAS 🔥' });
-
-  const startY = 1280;
-  const boxW = cols.length === 3 ? 220 : 280;
-  const boxH = 180;
-  const gap = 24;
-  const totalW = cols.length * boxW + (cols.length - 1) * gap;
-  const startX = (W - totalW) / 2;
-
-  cols.forEach((s, i) => {
-    const x = startX + i * (boxW + gap);
-    ctx.fillStyle = 'rgba(212, 167, 106, 0.06)';
-    ctx.strokeStyle = 'rgba(212, 167, 106, 0.5)';
-    ctx.lineWidth = 2;
-    _roundRect(ctx, x, startY, boxW, boxH, 16);
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.font = `bold 80px ${ACH_FONT}`;
-    ctx.fillStyle = '#d4a76a';
-    const animated = Math.round(s.num * p);
-    ctx.fillText(animated, x + boxW/2, startY + 100);
-
-    ctx.font = `bold 20px ${ACH_FONT}`;
-    ctx.fillStyle = '#888';
-    ctx.fillText(s.lbl, x + boxW/2, startY + 145);
-  });
 
   // 5. Mini divider antes da assinatura
   ctx.strokeStyle = 'rgba(212, 167, 106, 0.4)';
@@ -19820,7 +19790,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v493';
+    var APP_SHELL_V = 'metodo-gh-v494';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
