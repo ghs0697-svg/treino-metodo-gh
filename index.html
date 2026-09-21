@@ -1031,9 +1031,10 @@
   .ex-sub-pill { max-width: 100%; }
   body.fonte-gg .ex-sub-pill .n { display: none; }   /* letra maior: o card tem ~190px uteis, o contador nao cabe */
   /* ── v481 (GH 19/09: "app meio poluído, as opções têm que ficar mais óbvias") ── */
-  .ex-car { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -ms-overflow-style: none; overscroll-behavior-x: contain; touch-action: pan-x pan-y; cursor: grab; }
+  .ex-car { overflow: hidden; touch-action: pan-y; cursor: grab; }
+  .ex-car-track { display: flex; will-change: transform; }
   .ex-car::-webkit-scrollbar { display: none; }
-  .ex-car-slide { flex: 0 0 89%; scroll-snap-align: start; padding: 2px 10px 6px 0; box-sizing: border-box; min-height: 52px; }
+  .ex-car-slide { flex: 0 0 89%; padding: 2px 10px 6px 0; box-sizing: border-box; min-height: 52px; }
   .ex-car-tag { font-size: 10.5px; color: var(--muted); margin-top: 3px; }
   .ex-car-tag.sub { color: var(--gold); }
   .ex-car-bar { display: flex; align-items: center; gap: 7px; margin: 6px 0 0; flex-wrap: wrap; }
@@ -6890,12 +6891,14 @@ function _carHtml(di, ei, act, hasVid) {
   }).join('');
   const dots = sl.map((a, k) => '<span class="ex-car-dot' + (k === idx ? ' on' : '') + '"></span>').join('');
   const livres = sl.length - 1;
-  // GH 20/09, no iPhone: "tentei rolar pro lado e nao deu pra trocar". A faixa do arrasto e baixa e o dedo
-  // sai dela fácil, entao a propria linha da dica virou botao: toca e abre a lista inteira das trocas.
+  // GH 20 e 21/09, no iPhone: "tentei rolar pro lado e nao deu pra trocar". O trilho era scroll nativo
+  // (overflow-x + scroll-snap) e no iPhone dele nao pegava de jeito nenhum. Agora o arrasto e NOSSO, em
+  // pointer events com translateX (v489), e a linha da dica continua abrindo a lista inteira no toque.
   const hint = idx > 0 ? 'trocado, toca pra ver as opções'
     : (livres + (livres === 1 ? ' opção: arrasta pro lado ou toca aqui' : ' opções: arrasta pro lado ou toca aqui'));
   const volta = idx > 0 ? '<button type="button" class="ex-car-volta" onclick="event.stopPropagation(); escolherSub(' + di + ', ' + ei + ', null, true)">Voltar pro original</button>' : '';
-  return '<div class="ex-car" id="car-' + di + '-' + ei + '" data-idx="' + idx + '" onscroll="_carRolou(' + di + ', ' + ei + ', this)">' + slides + '</div>'
+  return '<div class="ex-car" id="car-' + di + '-' + ei + '" data-di="' + di + '" data-ei="' + ei + '" data-idx="' + idx + '">'
+    + '<div class="ex-car-track">' + slides + '</div></div>'
     + '<div class="ex-car-bar">'
     + '<button type="button" class="ex-car-hint" onclick="event.stopPropagation(); openSubPicker(' + di + ', ' + ei + ')">'
     + '<span class="ex-car-dots">' + dots + '</span><span class="tx">' + hint + '</span></button>' + volta + '</div>';
@@ -6915,35 +6918,77 @@ function _nomeBlocoHtml(di, ei, act, exDone, isWarmup, hasVid) {
     + (hasVid ? ' <span class="video-icon">&#9654;</span>' : '') + '</div>';
 }
 const _carTimers = {};
-function _carRolou(di, ei, el) {
-  const k = di + '|' + ei;
-  clearTimeout(_carTimers[k]);
-  _carTimers[k] = setTimeout(() => {                     // só depois que o dedo parou: arrasto não troca no meio
-    try {
-      delete _carTimers[k];
-      const w = el.clientWidth || 1;
-      const novo = Math.round(el.scrollLeft / w);
-      const atual = parseInt(el.dataset.idx || '0', 10);
-      if (novo === atual) return;
-      const sl = el.querySelectorAll('.ex-car-slide');
-      const alvo = sl[novo] && sl[novo].dataset.norm;
-      if (!alvo) return;
-      el.dataset.idx = String(novo);
-      if (navigator.vibrate) navigator.vibrate(12);
-      escolherSub(di, ei, alvo, true);
-    } catch (_) {}
-  }, 220);
+// ══ v489 · ARRASTO PRÓPRIO DO CARROSSEL ══ O scroll nativo (overflow-x + scroll-snap) não pegava no
+// iPhone do GH, duas versões seguidas. Agora o dedo é nosso: pointer events + translateX, com
+// `touch-action: pan-y` no trilho (o navegador fica só com a rolagem vertical da página; o movimento
+// horizontal vem todo pra cá). Listener ÚNICO e delegado no document: repintar a lista não re-registra
+// nada. Arrastou mais de um quarto do slide = troca; menos que isso volta pro lugar.
+var _carArr = null;
+function _carLargura(el) {
+  try { var s = el.querySelector('.ex-car-slide'); return (s && s.getBoundingClientRect().width) || el.clientWidth || 1; } catch (_) { return el.clientWidth || 1; }
+}
+function _carPoe(el, px, animado) {
+  var t = el.querySelector('.ex-car-track'); if (!t) return;
+  t.style.transition = animado ? 'transform .22s ease' : 'none';
+  t.style.transform = 'translateX(' + px + 'px)';
+}
+function _carVaiPara(el, i, animado) {
+  var n = el.querySelectorAll('.ex-car-slide').length;
+  i = Math.max(0, Math.min(n - 1, i));
+  el.dataset.idx = String(i);
+  _carPoe(el, -i * _carLargura(el), animado !== false);
+  return i;
+}
+document.addEventListener('pointerdown', function (e) {
+  try {
+    var el = e.target && e.target.closest && e.target.closest('.ex-car');
+    if (!el || !el.querySelector('.ex-car-track')) return;
+    _carArr = { el: el, x0: e.clientX, y0: e.clientY, dx: 0, idx: parseInt(el.dataset.idx || '0', 10), larg: _carLargura(el), on: false, fim: false };
+  } catch (_) { _carArr = null; }
+}, { passive: true, capture: true });
+document.addEventListener('pointermove', function (e) {
+  var a = _carArr; if (!a || a.fim) return;
+  var dx = e.clientX - a.x0, dy = e.clientY - a.y0;
+  if (!a.on) {
+    if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { _carArr = null; return; }   // gesto vertical: a pagina rola
+    if (Math.abs(dx) < 8) return;
+    a.on = true;
+  }
+  a.dx = dx;
+  _carPoe(a.el, -a.idx * a.larg + dx, false);
+}, { passive: true, capture: true });
+function _carSolta(e) {
+  var a = _carArr; if (!a) return;
+  _carArr = null;
+  if (!a.on) return;
+  var el = a.el, sl = el.querySelectorAll('.ex-car-slide');
+  var passo = (Math.abs(a.dx) > a.larg * 0.25) ? (a.dx < 0 ? 1 : -1) : 0;
+  var alvo = Math.max(0, Math.min(sl.length - 1, a.idx + passo));
+  _carVaiPara(el, alvo, true);
+  _carCliqueMorto();                                   // o dedo arrastou: o toque que vem junto nao abre video
+  if (alvo === a.idx) return;
+  var norm = sl[alvo] && sl[alvo].dataset.norm;
+  if (!norm) return;
+  try { if (navigator.vibrate) navigator.vibrate(12); } catch (_) {}
+  var di = parseInt(el.dataset.di, 10), ei = el.dataset.ei;
+  setTimeout(function () { try { escolherSub(di, /^\d+$/.test(ei) ? parseInt(ei, 10) : ei, norm, true); } catch (_) {} }, 180);
+}
+document.addEventListener('pointerup', _carSolta, { passive: true, capture: true });
+document.addEventListener('pointercancel', function () { var a = _carArr; _carArr = null; if (a && a.on) _carVaiPara(a.el, a.idx, true); }, { passive: true, capture: true });
+function _carCliqueMorto() {
+  var mata = function (ev) { ev.stopPropagation(); ev.preventDefault(); };
+  document.addEventListener('click', mata, { capture: true, once: true });
+  setTimeout(function () { try { document.removeEventListener('click', mata, { capture: true }); } catch (_) {} }, 400);
 }
 // Depois de repintar a lista, cada carrossel volta pro slide do exercício ATIVO, sem animação.
 function _carSync() {
   try {
-    document.querySelectorAll('.ex-car').forEach(el => {
-      const i = parseInt(el.dataset.idx || '0', 10);
-      if (i > 0) el.scrollLeft = el.clientWidth * i;
+    document.querySelectorAll('.ex-car').forEach(function (el) {
+      var i = parseInt(el.dataset.idx || '0', 10);
+      if (i > 0) _carPoe(el, -i * _carLargura(el), false);
     });
   } catch (_) {}
 }
-// Por que trocou: o seletor perguntava ANTES de trocar; no arrasto a pergunta vem DEPOIS, em 3 chips no card.
 // O registro na aba TROCAS espera a resposta por 8 segundos e, sem ela, sobe como nao_informado. Uma linha só.
 let _trocaPend = null, _trocaTimer = null;
 function _trocaMotivoHtml(di, ei) {
@@ -19645,7 +19690,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v488';
+    var APP_SHELL_V = 'metodo-gh-v489';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
