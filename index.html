@@ -19570,7 +19570,12 @@ function _sendAppPing() {
         type: 'ping', sheetId: SHEET_ID,
         studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
         date: dia, ts: new Date().toISOString(),
-        v: (typeof window.GH_APP_V !== 'undefined' ? window.GH_APP_V : '')   // v488: versao do shell na ATIVIDADE
+        v: (typeof window.GH_APP_V !== 'undefined' ? window.GH_APP_V : ''),   // v488: versao do shell na ATIVIDADE
+        // v495: instalado na tela inicial ou no navegador, e o sistema (col E da ATIVIDADE). No iPhone o push
+        // so existe instalado; e o dado que diz se a base de push e pequena por instalacao ou por adesao.
+        modo: (function () { try { return ((window.matchMedia && matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone) ? 'instalado' : 'navegador'; } catch (_) { return ''; } })()
+          + '/' + (/iPad|iPhone|iPod/.test(navigator.userAgent) ? 'ios' : (/Android/i.test(navigator.userAgent) ? 'android' : 'outro'))
+          + '/' + (function () { try { return localStorage.getItem('gh_pushEndpoint') ? 'push' : 'sempush'; } catch (_) { return ''; } })()
       }),
       keepalive: true, redirect: 'follow'
     }).catch(function () {});
@@ -19621,7 +19626,7 @@ function dismissAvisoGlobal() {
   if (b) { try { localStorage.setItem('gh_avisoglobal_off', b.dataset.hash || '1'); } catch (_) {} b.style.display = 'none'; }
 }
 if (SHEET_ID && TAB_NAME) {
-  _sendAppPing(); // marca a abertura (independe de carregar treino/dieta)
+  setTimeout(_sendAppPing, 1500); // marca a abertura (independe de carregar treino/dieta). v495: depois do boot, senao a versao (GH_APP_V, definida mais abaixo) ia vazia
   loadAvisoGlobal();
   // Suporte: checa resposta nova SÓ pra quem já usou a aba (flag local). Quem nunca mandou
   // mensagem não tem thread, então a checagem seria uma chamada inútil ao Apps Script em
@@ -19790,7 +19795,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v494';
+    var APP_SHELL_V = 'metodo-gh-v495';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
