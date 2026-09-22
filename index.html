@@ -367,6 +367,7 @@
   .sets-grid.rotulada .set-in::placeholder { color: #5e574a; }
   .ex-presc .tp-chip { display: inline-block; border: 1px solid; border-radius: 999px; padding: 0 7px; font-size: 11px; line-height: 18px; margin: 1px 3px 1px 0; white-space: nowrap; cursor: pointer; }
   .ex-presc .tp-chip b { font-weight: 700; }
+  .ex-presc .tp-int { white-space: nowrap; display: inline-block; }
   .ex-presc .tp-chip.t-aq { color: var(--c-aq); border-color: rgba(143,184,216,.5); }
   .ex-presc .tp-chip.t-aj { color: var(--c-aj); border-color: rgba(230,171,92,.55); }
   .ex-presc .tp-chip.t-pap { color: var(--c-pap); border-color: rgba(207,155,230,.55); }
@@ -7075,7 +7076,8 @@ function _prescLinha(ex, isWarmup) {
   try {
     const p = [];
     const _tp = _serieTipos(ex);
-    if (_serieTemRotulo(ex)) {
+    const _rotP = _serieTemRotulo(ex);
+    if (_rotP) {
       // v496 resumia "2 válidas + aquecimento"; v498 (GH 22/09) vira um chip por tipo, nome por extenso, na mesma
       // cor da linha da grade: "aquecimento 1×10 · ajuste 1×6 · válidas 2×10 a 12". Toque no chip abre o glossário.
       p.push(_serieChipsHtml(ex, _tp));
@@ -7083,8 +7085,9 @@ function _prescLinha(ex, isWarmup) {
       if (ex.series) p.push(String(ex.series).replace(/\s*[xX]\s*$/, '') + ' séries');
       if (ex.reps) p.push(/seg|min|\bs\b/i.test(String(ex.reps)) ? ex.reps : (ex.reps + ' reps'));   // "20 seg" nao vira "20 seg reps"
     }
-    if (ex.rest) p.push('<span class="gl" onclick="event.stopPropagation();openGlossario(\'intervalo\')">' + ex.rest + ' de intervalo</span>');
-    let out = p.join(' · ');
+    // v499: com chips, o intervalo vai sem o "·" (a borda do chip já separa) e não quebra no meio da frase
+    if (ex.rest) p.push('<span class="gl' + (_rotP ? ' tp-int' : '') + '" onclick="event.stopPropagation();openGlossario(\'intervalo\')">' + ex.rest + ' de intervalo</span>');
+    let out = p.join(_rotP ? ' ' : ' · ');
     if (!isWarmup) {
       const c = parseCadencia(ex.obs);
       out += '<span class="cad gl" onclick="event.stopPropagation();openGlossario(\'cadencia\')">Pos ' + fmtSec(c.conc) + 's · Iso ' + fmtSec(c.iso) + 's · Neg ' + fmtSec(c.exc) + 's</span>';
@@ -20005,7 +20008,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v498';
+    var APP_SHELL_V = 'metodo-gh-v499';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
