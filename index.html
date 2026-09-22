@@ -349,10 +349,28 @@
   /* número da série é BOTÃO: toque marca a série como feita (Vitor 14/08) */
   button.set-num { background: transparent; border: 1px solid rgba(255, 255, 255, .14); border-radius: 7px; height: 24px; width: 24px; min-width: 24px; padding: 0; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; }
   .set-row.feita button.set-num { background: var(--gold); border-color: var(--gold); color: #15100a; font-weight: 800; }
-  /* v496: serie rotulada. O botao da linha mostra o tipo em vez do numero; o sobrou de aq/aj/pap fica apagado (nao conta) */
-  button.set-num.t-aq, button.set-num.t-aj, button.set-num.t-pap { font-size: 9px; letter-spacing: .3px; color: #8a7a52; text-transform: uppercase; }
-  button.set-num.t-val { font-size: 9px; letter-spacing: .3px; color: var(--gold); text-transform: uppercase; }
+  /* v496/v498: serie rotulada. O botao da linha diz o tipo por extenso (aquec. / ajuste / PAP / valida) na cor do
+     tipo, a linha ganha um tom da mesma cor e o sobrou de aq/aj/pap fica apagado (nao conta). O cabecalho alarga
+     junto pra manter as colunas alinhadas. Linha feita continua dourada com o check. */
+  :root { --c-aq: #8fb8d8; --c-aj: #e6ab5c; --c-pap: #cf9be6; --c-val: var(--gold); }
+  .sets-grid.rotulada .set-row button.set-num, .sets-grid.rotulada .set-head .set-num { width: 50px; min-width: 50px; }
+  .sets-grid.rotulada .set-row button.set-num { font-size: 10px; letter-spacing: 0; text-transform: none; font-weight: 700; padding: 0 2px; }
+  .set-row.t-aq:not(.feita) button.set-num { color: var(--c-aq); border-color: rgba(143,184,216,.55); background: rgba(143,184,216,.10); }
+  .set-row.t-aj:not(.feita) button.set-num { color: var(--c-aj); border-color: rgba(230,171,92,.6); background: rgba(230,171,92,.10); }
+  .set-row.t-pap:not(.feita) button.set-num { color: var(--c-pap); border-color: rgba(207,155,230,.6); background: rgba(207,155,230,.10); }
+  .set-row.t-val:not(.feita) button.set-num { color: var(--c-val); border-color: rgba(212,175,55,.7); background: rgba(212,175,55,.10); }
+  .set-row.t-aq { background: linear-gradient(90deg, rgba(143,184,216,.10), transparent 70%); border-radius: 6px; }
+  .set-row.t-aj { background: linear-gradient(90deg, rgba(230,171,92,.10), transparent 70%); border-radius: 6px; }
+  .set-row.t-pap { background: linear-gradient(90deg, rgba(207,155,230,.10), transparent 70%); border-radius: 6px; }
+  .set-row.t-val { background: linear-gradient(90deg, rgba(212,175,55,.09), transparent 70%); border-radius: 6px; }
   .set-row.t-aq .set-rs, .set-row.t-aj .set-rs, .set-row.t-pap .set-rs { opacity: .4; }
+  .sets-grid.rotulada .set-in::placeholder { color: #5e574a; }
+  .ex-presc .tp-chip { display: inline-block; border: 1px solid; border-radius: 999px; padding: 0 7px; font-size: 11px; line-height: 18px; margin: 1px 3px 1px 0; white-space: nowrap; cursor: pointer; }
+  .ex-presc .tp-chip b { font-weight: 700; }
+  .ex-presc .tp-chip.t-aq { color: var(--c-aq); border-color: rgba(143,184,216,.5); }
+  .ex-presc .tp-chip.t-aj { color: var(--c-aj); border-color: rgba(230,171,92,.55); }
+  .ex-presc .tp-chip.t-pap { color: var(--c-pap); border-color: rgba(207,155,230,.55); }
+  .ex-presc .tp-chip.t-val { color: var(--c-val); border-color: rgba(212,175,55,.6); }
   .set-row.feita .set-in { opacity: .38; }
   .set-row.feita .set-prev { opacity: .38; }
   .set-head .set-num { width: 24px; min-width: 24px; }
@@ -7057,17 +7075,10 @@ function _prescLinha(ex, isWarmup) {
   try {
     const p = [];
     const _tp = _serieTipos(ex);
-    if (_tp.length && _tp.some(x => x.tipo !== 'val')) {
-      // v496: serie rotulada. Conta as validas e cita o que vem antes, em vez de repetir a coluna inteira.
-      const nV = _tp.filter(x => x.tipo === 'val').length;
-      const antes = [];
-      if (_tp.some(x => x.tipo === 'aq')) antes.push('aquecimento');
-      if (_tp.some(x => x.tipo === 'aj')) antes.push('ajuste');
-      if (_tp.some(x => x.tipo === 'pap')) antes.push('PAP');
-      p.push(nV + (nV === 1 ? ' válida' : ' válidas') + (antes.length ? ' + ' + antes.join(' e ') : ''));
-      const segV = (_tp.find(x => x.tipo === 'val') || {}).seg;
-      const repsV = (segV != null) ? _repsSegmento(ex, segV) : String(ex.reps || '');
-      if (repsV) p.push(/seg|min|\bs\b/i.test(repsV) ? repsV : (repsV + ' reps'));
+    if (_serieTemRotulo(ex)) {
+      // v496 resumia "2 válidas + aquecimento"; v498 (GH 22/09) vira um chip por tipo, nome por extenso, na mesma
+      // cor da linha da grade: "aquecimento 1×10 · ajuste 1×6 · válidas 2×10 a 12". Toque no chip abre o glossário.
+      p.push(_serieChipsHtml(ex, _tp));
     } else {
       if (ex.series) p.push(String(ex.series).replace(/\s*[xX]\s*$/, '') + ' séries');
       if (ex.reps) p.push(/seg|min|\bs\b/i.test(String(ex.reps)) ? ex.reps : (ex.reps + ' reps'));   // "20 seg" nao vira "20 seg reps"
@@ -7156,7 +7167,39 @@ function _serieTipos(ex) {
     return out;
   } catch (_) { return []; }
 }
-function _serieTemRotulo(ex) { try { return _serieTipos(ex).some(x => x.tipo !== 'val'); } catch (_) { return false; } }
+// v498 (Entregas #2314): rotulado = tem rótulo explícito na col SÉRIES, inclusive '2X val' sem barra (o card diz
+// "2 válidas" igual aos outros). Sem rótulo nenhum = protocolo antigo, grade numerada como sempre.
+function _serieTemRotulo(ex) {
+  try { return _serieTipos(ex).length > 0 && /\d\s*[xX]\s*(aq|aj|pap|val)\b/i.test(String((ex && ex.series) || '')); } catch (_) { return false; }
+}
+// v498 (GH 22/09: "não dá pra entender o que são séries válidas, aquecimento, ajuste... destacar com cores"):
+// cada tipo tem cor própria (CSS --c-aq/--c-aj/--c-pap/--c-val), o botão da linha diz o tipo por extenso e o card
+// resume em chips na mesma cor: "aquecimento 1×10 · ajuste 1×6 · válidas 2×10 a 12". Placeholder do kg em
+// aquecimento/ajuste/PAP diz a carga esperada (leve / média / pesada), o das reps diz as reps daquele segmento.
+const SERIE_TIPO_CURTO = { aq: 'aquec.', aj: 'ajuste', pap: 'PAP', val: 'válida' };
+const SERIE_TIPO_CARGA = { aq: 'leve', aj: 'média', pap: 'pesada' };
+const SERIE_TIPO_ORDEM = ['aq', 'aj', 'pap', 'val'];
+// "10 a 12" -> "10-12" (cabe no placeholder de 52 px); texto longo ("até a falha") volta pra "reps"
+function _repsCurto(s) {
+  try {
+    const t = String(s || '').trim().replace(/\s*(a|à|-|–)\s*/g, '-').replace(/\s+/g, '');
+    return (t && /\d/.test(t) && t.length <= 6) ? t : 'reps';
+  } catch (_) { return 'reps'; }
+}
+function _serieChipsHtml(ex, tp) {
+  try {
+    tp = tp || _serieTipos(ex);
+    const grupos = {};
+    tp.forEach(x => { if (!grupos[x.tipo]) grupos[x.tipo] = { n: 0, seg: x.seg }; grupos[x.tipo].n++; });
+    return SERIE_TIPO_ORDEM.filter(t => grupos[t]).map(t => {
+      const g = grupos[t];
+      const reps = String(_repsSegmento(ex, g.seg) || '').trim();
+      const nome = t === 'val' ? (g.n === 1 ? 'válida' : 'válidas') : SERIE_TIPO_NOME[t];
+      return '<span class="tp-chip t-' + t + '" onclick="event.stopPropagation();openGlossario(\'' + t + '\')" title="Série de ' + SERIE_TIPO_NOME[t] + '">'
+        + nome + ' <b>' + g.n + '×' + (reps || '?') + '</b></span>';
+    }).join(' ');
+  } catch (_) { return ''; }
+}
 function _rowTipo(di, ei, si) {
   try { const tp = _serieTipos(_exObjAt(di, ei)); return (tp[si] && tp[si].tipo) || 'val'; } catch (_) { return 'val'; }
 }
@@ -7807,7 +7850,8 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
   const w = currentWeek;
   let sets = loadSets(di, ei, w);
   const _exG = _exObjAt(di, ei);
-  const _rotulada = _serieTemRotulo(_exG);   // v496: exercicio com aq/aj/pap na col SERIES
+  const _rotulada = _serieTemRotulo(_exG);   // v496: exercicio com aq/aj/pap/val na col SERIES
+  const _tpG = _rotulada ? _serieTipos(_exG) : [];   // v498: tipo e segmento de cada linha
   if (!sets || !sets.length) {
     const n = _serieCountPresc(_exG);
     sets = Array.from({ length: n }, () => ({ kg: '', pl: '', reps: '', rs: '' }));
@@ -7834,18 +7878,21 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
       : '<span class="set-prev"></span>';
     const feita = okSet.has(si);
     const _tipo = _rotulada ? _rowTipo(di, eiS, si) : 'val';   // v496
-    const _rot = _rotulada ? (SERIE_TIPO_ROTULO[_tipo] || 'val') : '';
+    const _rot = _rotulada ? (SERIE_TIPO_CURTO[_tipo] || 'válida') : '';   // v498: por extenso, na cor do tipo
+    const _segR = (_rotulada && _tpG[si]) ? _tpG[si].seg : null;
+    const _phReps = (_segR != null) ? _repsCurto(_repsSegmento(_exG, _segR)) : 'reps';
+    const _phKg = (_rotulada && _tipo !== 'val') ? (SERIE_TIPO_CARGA[_tipo] || getUnit()) : getUnit();
     return `<div class="set-row ${feita ? 'feita' : ''} ${_rotulada ? 't-' + _tipo : ''}" data-si="${si}" data-tipo="${_tipo}">
         <button type="button" class="set-num ${_rotulada ? 't-' + _tipo : ''}" onclick="toggleSetFeita(${di},'${eiS}',${si})" title="${_rotulada ? 'Série de ' + SERIE_TIPO_NOME[_tipo] + '. ' : ''}Marcar série como feita" aria-label="Marcar série ${si + 1} como feita">${feita ? '✓' : (_rotulada ? _rot : si + 1)}</button>
-        <input class="set-in set-kg" type="number" inputmode="decimal" placeholder="${getUnit()}" value="${kgToDisplay(s.kg)}" oninput="onSetField(${di},'${eiS}')">
+        <input class="set-in set-kg" type="number" inputmode="decimal" placeholder="${_phKg}" value="${kgToDisplay(s.kg)}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-pl" type="number" inputmode="numeric" placeholder="pl" value="${s.pl || ''}" oninput="onSetField(${di},'${eiS}')">
-        <input class="set-in set-reps" type="number" inputmode="numeric" placeholder="reps" value="${s.reps || ''}" oninput="onSetField(${di},'${eiS}')">
+        <input class="set-in set-reps" type="number" inputmode="numeric" placeholder="${_phReps}" value="${s.reps || ''}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-rs" type="number" inputmode="numeric" placeholder="${_tipo === 'val' ? rsPh : '·'}" title="${_tipo === 'val' ? 'Quantas repetições sobraram nessa série' : 'Série de ' + SERIE_TIPO_NOME[_tipo] + ': sobrar é o esperado, não entra no alvo'}" value="${s.rs || ''}" oninput="onSetField(${di},'${eiS}')">
         ${prevTxt}
         ${(semX || (_rotulada && si < _nPresc)) ? '' : `<button type="button" class="set-del" onclick="removeSet(${di},'${eiS}',${si})" title="Remover série" aria-label="Remover série">&times;</button>`}
       </div>`;
   }).join('');
-  return `<div class="sets-grid" id="sets-${di}-${eiS}" data-di="${di}" data-ei="${eiS}" data-noadd="${noAdd ? '1' : ''}" data-semx="${semX ? '1' : ''}">
+  return `<div class="sets-grid${_rotulada ? ' rotulada' : ''}" id="sets-${di}-${eiS}" data-di="${di}" data-ei="${eiS}" data-noadd="${noAdd ? '1' : ''}" data-semx="${semX ? '1' : ''}">
       ${label ? `<div class="carga-label" style="font-size:10px;margin-bottom:2px;">${label}</div>` : ''}
       ${evo}
       <div class="set-head"><span class="set-num"></span><span class="sh-kg">${getUnit()}</span><span class="sh-pl" onclick="openPlacaInfo()" title="O que e placa?">placa</span><span class="sh-reps">reps</span><span class="sh-rs" title="Quantas repetições sobraram">sobrou</span><button type="button" class="rs-info-btn" onclick="openSobrouInfo()" aria-label="O que é o sobrou?">i</button><span style="flex:1"></span></div>
@@ -19722,7 +19769,9 @@ function _sendAppPing() {
     if (typeof SHEET_ID === 'undefined' || !SHEET_ID || SHEET_ID === 'demo') return;
     if (new URLSearchParams(location.search).get('edit') === '1') return;
     var dia = (typeof todayKey === 'function') ? todayKey() : new Date().toISOString().slice(0, 10);
-    var key = 'gh_ping_' + SHEET_ID + '_' + dia;
+    // v498: 1 ping por dia POR VERSÃO. O shell velho pingava 1,5 s depois de abrir e o auto-update recarregava em
+    // seguida; a versão nova nunca aparecia na ATIVIDADE e a adoção parecia pior do que era.
+    var key = 'gh_ping_' + SHEET_ID + '_' + dia + '_' + (typeof window.GH_APP_V !== 'undefined' ? window.GH_APP_V : '');
     if (localStorage.getItem(key)) return;
     localStorage.setItem(key, '1');
     fetch(LOG_ENDPOINT, {
@@ -19956,7 +20005,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v497';
+    var APP_SHELL_V = 'metodo-gh-v498';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -19968,11 +20017,23 @@ if ('serviceWorker' in navigator) {
     ['pointerdown', 'keydown', 'touchstart'].forEach(function (ev) {
       document.addEventListener(ev, function () { _ultimoToque = Date.now(); }, { passive: true, capture: true });
     });
+    // v498 (GH 22/09, iPhone dele preso num shell < v495 por 13 h com 3 versões publicadas): NUNCA recarrega com
+    // descanso rolando ou modo foco aberto (perderia o cronômetro e a tela do exercício). Fora isso, o app em segundo
+    // plano recarrega na hora (é o momento sem interrupção), e o app aberto insiste até o aluno largar o dedo.
+    function _treinoRolando() {
+      try {
+        if (typeof _timerEndAt !== 'undefined' && _timerEndAt && _timerEndAt > Date.now()) return true;
+        var fo = document.getElementById('focusOverlay');
+        if (fo && fo.classList.contains('show')) return true;
+      } catch (_) {}
+      return false;
+    }
     function tentaRecarregar() {
       if (jaRecarregou) return;
       var a = document.activeElement;
       var digitando = a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
       if (digitando) return;   // não queima a trava: a próxima consulta tenta de novo
+      if (_treinoRolando()) return;
       if (document.visibilityState === 'visible' && Date.now() - _ultimoToque < 20000) return;   // mexendo agora: depois
       try { if (typeof _flushSetsPendentes_ === 'function') _flushSetsPendentes_(true); } catch (_) {}   // nada digitado se perde no reload
       // 1 tentativa por versão de shell por sessão — mata qualquer chance de loop
@@ -20007,12 +20068,24 @@ if ('serviceWorker' in navigator) {
     // claim tardio (rede lenta) → consulta na hora; e PWA voltando do congelamento do
     // iOS → força checagem de update + consulta
     navigator.serviceWorker.addEventListener('controllerchange', function () { setTimeout(conferirVersao, 300); });
+    // v498: antes eram 2 consultas (2 s e 6 s) ao voltar pra tela; quem já estava mexendo nos dois instantes nunca
+    // recarregava e ficava preso até a próxima volta. Agora: ao ir pro FUNDO consulta na hora (recarrega sem ninguém
+    // olhando); ao voltar, consulta a cada 5 s por 2 min (a primeira pausa de 20 s no dedo recarrega); e a cada 10 min
+    // com o app aberto reconfere se saiu versão nova (quem deixa o app aberto o dia inteiro).
+    var _vigiaVolta = null;
+    function _checaUpdate() { try { navigator.serviceWorker.getRegistration().then(function (r) { if (r) r.update(); }); } catch (_) {} }
     document.addEventListener('visibilitychange', function () {
-      if (document.visibilityState !== 'visible') return;
-      try { navigator.serviceWorker.getRegistration().then(function (r) { if (r) r.update(); }); } catch (_) {}
-      setTimeout(conferirVersao, 2000);
-      setTimeout(conferirVersao, 6000);
+      if (document.visibilityState !== 'visible') { conferirVersao(); return; }
+      _checaUpdate();
+      if (_vigiaVolta) clearInterval(_vigiaVolta);
+      var v2 = 0;
+      _vigiaVolta = setInterval(function () {
+        v2++;
+        conferirVersao();
+        if (v2 >= 24 || jaRecarregou) { clearInterval(_vigiaVolta); _vigiaVolta = null; }
+      }, 5000);
     });
+    setInterval(function () { if (document.visibilityState === 'visible') { _checaUpdate(); setTimeout(conferirVersao, 4000); } }, 600000);
   })();
 }
 
