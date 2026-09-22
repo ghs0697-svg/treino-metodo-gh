@@ -352,26 +352,28 @@
   /* v496/v498: serie rotulada. O botao da linha diz o tipo por extenso (aquec. / ajuste / PAP / valida) na cor do
      tipo, a linha ganha um tom da mesma cor e o sobrou de aq/aj/pap fica apagado (nao conta). O cabecalho alarga
      junto pra manter as colunas alinhadas. Linha feita continua dourada com o check. */
-  :root { --c-aq: #8fb8d8; --c-aj: #e6ab5c; --c-pap: #cf9be6; --c-val: var(--gold); }
+  /* v500 (GH 22/09): cor = intensidade. Azul aquecimento (leve), amarelo ajuste (média), roxo PAP (pesada, 1 rep),
+     vermelho válida (a que vale). */
+  :root { --c-aq: #5aa9e6; --c-aj: #f2c94c; --c-pap: #a86ee8; --c-val: #e9574f; }
   .sets-grid.rotulada .set-row button.set-num, .sets-grid.rotulada .set-head .set-num { width: 50px; min-width: 50px; }
   .sets-grid.rotulada .set-row button.set-num { font-size: 10px; letter-spacing: 0; text-transform: none; font-weight: 700; padding: 0 2px; }
-  .set-row.t-aq:not(.feita) button.set-num { color: var(--c-aq); border-color: rgba(143,184,216,.55); background: rgba(143,184,216,.10); }
-  .set-row.t-aj:not(.feita) button.set-num { color: var(--c-aj); border-color: rgba(230,171,92,.6); background: rgba(230,171,92,.10); }
-  .set-row.t-pap:not(.feita) button.set-num { color: var(--c-pap); border-color: rgba(207,155,230,.6); background: rgba(207,155,230,.10); }
-  .set-row.t-val:not(.feita) button.set-num { color: var(--c-val); border-color: rgba(212,175,55,.7); background: rgba(212,175,55,.10); }
-  .set-row.t-aq { background: linear-gradient(90deg, rgba(143,184,216,.10), transparent 70%); border-radius: 6px; }
-  .set-row.t-aj { background: linear-gradient(90deg, rgba(230,171,92,.10), transparent 70%); border-radius: 6px; }
-  .set-row.t-pap { background: linear-gradient(90deg, rgba(207,155,230,.10), transparent 70%); border-radius: 6px; }
-  .set-row.t-val { background: linear-gradient(90deg, rgba(212,175,55,.09), transparent 70%); border-radius: 6px; }
+  .set-row.t-aq:not(.feita) button.set-num { color: var(--c-aq); border-color: rgba(90,169,230,.55); background: rgba(90,169,230,.10); }
+  .set-row.t-aj:not(.feita) button.set-num { color: var(--c-aj); border-color: rgba(242,201,76,.6); background: rgba(242,201,76,.10); }
+  .set-row.t-pap:not(.feita) button.set-num { color: var(--c-pap); border-color: rgba(168,110,232,.6); background: rgba(168,110,232,.10); }
+  .set-row.t-val:not(.feita) button.set-num { color: var(--c-val); border-color: rgba(233,87,79,.7); background: rgba(233,87,79,.10); }
+  .set-row.t-aq { background: linear-gradient(90deg, rgba(90,169,230,.10), transparent 70%); border-radius: 6px; }
+  .set-row.t-aj { background: linear-gradient(90deg, rgba(242,201,76,.10), transparent 70%); border-radius: 6px; }
+  .set-row.t-pap { background: linear-gradient(90deg, rgba(168,110,232,.10), transparent 70%); border-radius: 6px; }
+  .set-row.t-val { background: linear-gradient(90deg, rgba(233,87,79,.09), transparent 70%); border-radius: 6px; }
   .set-row.t-aq .set-rs, .set-row.t-aj .set-rs, .set-row.t-pap .set-rs { opacity: .4; }
   .sets-grid.rotulada .set-in::placeholder { color: #5e574a; }
   .ex-presc .tp-chip { display: inline-block; border: 1px solid; border-radius: 999px; padding: 0 7px; font-size: 11px; line-height: 18px; margin: 1px 3px 1px 0; white-space: nowrap; cursor: pointer; }
   .ex-presc .tp-chip b { font-weight: 700; }
   .ex-presc .tp-int { white-space: nowrap; display: inline-block; }
-  .ex-presc .tp-chip.t-aq { color: var(--c-aq); border-color: rgba(143,184,216,.5); }
-  .ex-presc .tp-chip.t-aj { color: var(--c-aj); border-color: rgba(230,171,92,.55); }
-  .ex-presc .tp-chip.t-pap { color: var(--c-pap); border-color: rgba(207,155,230,.55); }
-  .ex-presc .tp-chip.t-val { color: var(--c-val); border-color: rgba(212,175,55,.6); }
+  .ex-presc .tp-chip.t-aq { color: var(--c-aq); border-color: rgba(90,169,230,.5); }
+  .ex-presc .tp-chip.t-aj { color: var(--c-aj); border-color: rgba(242,201,76,.55); }
+  .ex-presc .tp-chip.t-pap { color: var(--c-pap); border-color: rgba(168,110,232,.55); }
+  .ex-presc .tp-chip.t-val { color: var(--c-val); border-color: rgba(233,87,79,.6); }
   .set-row.feita .set-in { opacity: .38; }
   .set-row.feita .set-prev { opacity: .38; }
   .set-head .set-num { width: 24px; min-width: 24px; }
@@ -20008,7 +20010,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v499';
+    var APP_SHELL_V = 'metodo-gh-v500';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
