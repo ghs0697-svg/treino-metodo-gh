@@ -349,6 +349,10 @@
   /* número da série é BOTÃO: toque marca a série como feita (Vitor 14/08) */
   button.set-num { background: transparent; border: 1px solid rgba(255, 255, 255, .14); border-radius: 7px; height: 24px; width: 24px; min-width: 24px; padding: 0; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; }
   .set-row.feita button.set-num { background: var(--gold); border-color: var(--gold); color: #15100a; font-weight: 800; }
+  /* v496: serie rotulada. O botao da linha mostra o tipo em vez do numero; o sobrou de aq/aj/pap fica apagado (nao conta) */
+  button.set-num.t-aq, button.set-num.t-aj, button.set-num.t-pap { font-size: 9px; letter-spacing: .3px; color: #8a7a52; text-transform: uppercase; }
+  button.set-num.t-val { font-size: 9px; letter-spacing: .3px; color: var(--gold); text-transform: uppercase; }
+  .set-row.t-aq .set-rs, .set-row.t-aj .set-rs, .set-row.t-pap .set-rs { opacity: .4; }
   .set-row.feita .set-in { opacity: .38; }
   .set-row.feita .set-prev { opacity: .38; }
   .set-head .set-num { width: 24px; min-width: 24px; }
@@ -5000,6 +5004,10 @@
       <div class="gloss-it" data-g="restpause"><b>Rest-pause</b>Chegou perto da falha, respira 10 a 15 segundos parado e completa mais repetições com o mesmo peso.</div>
       <div class="gloss-it" data-g="cluster"><b>Cluster</b>Série quebrada em blocos pequenos com pausas curtíssimas dentro da própria série.</div>
       <div class="gloss-it" data-g="piramide"><b>Pirâmide</b>O peso sobe a cada série e as repetições descem.</div>
+      <div class="gloss-it" data-g="aq"><b>Aquecimento (aq)</b>Série leve, uns 10 movimentos, só pra lubrificar a articulação e o músculo acordar. Não é pra cansar: sobrar muita repetição aqui é o esperado. Não conta como série do treino.</div>
+      <div class="gloss-it" data-g="aj"><b>Ajuste (aj)</b>Série com carga média, 4 a 8 repetições, pra avisar o sistema nervoso do peso que vem, sem gastar energia. Também não conta como série do treino.</div>
+      <div class="gloss-it" data-g="pap"><b>PAP</b>Uma repetição pesada, acima do ajuste, pra ligar tudo antes da válida. Só quando eu prescrevo.</div>
+      <div class="gloss-it" data-g="val"><b>Válida (val)</b>A série que constrói músculo: até a falha ou perto dela, conforme o teu alvo de esforço. É a única que conta pro alvo, pra progressão de carga e pro recorde. Quando um exercício vem sem rótulo, todas as séries dele são válidas.</div>
       <div class="gloss-it" data-g="cadencia"><b>Cadência (Pos · Iso · Neg)</b>A velocidade de cada fase do movimento. Pos = subir. Iso = segurar parado. Neg = descer controlando. "Neg 3s" = descer em 3 segundos. O botão "ritmo" marca isso pra ti com som e bolinha.</div>
       <div class="gloss-it" data-g="concentrica"><b>Concêntrica (positiva)</b>A fase de vencer o peso, subindo.</div>
       <div class="gloss-it" data-g="excentrica"><b>Excêntrica (negativa)</b>A fase de descer segurando o peso. É onde mais se constrói músculo, por isso a ficha tanto pede controle aqui.</div>
@@ -6327,6 +6335,8 @@ const I18N_RX = [
   [/^(\d+) opções: arrasta pro lado ou toca aqui$/, (m, a) => a + ' options: swipe sideways or tap here'],
   [/^1 opção: arrasta pro lado ou toca aqui$/, '1 option: swipe sideways or tap here'],
   [/^Descanso de (.+)$/, (m, a) => 'Rest of ' + a],
+  [/^(\d+) válidas? \+ (.+)$/, (m, a, b) => a + ' working set' + (a === '1' ? '' : 's') + ' + ' + b.replace('aquecimento', 'warm-up').replace('ajuste', 'adjustment').replace(' e ', ' and ')],
+  [/^(\d+) válidas?$/, (m, a) => a + ' working set' + (a === '1' ? '' : 's')],
   [/^Desfazer "não consegui fazer"$/, 'Undo "couldn’t do it"'],
   [/^Abri mais uma série: fechou (\d+) reps e ainda sobrou (\d+)\. Sobe a carga nela\.$/, (m, a, b) => 'I opened one more set: you closed ' + a + ' reps with ' + b + ' left in the tank. Add weight on it.'],
   [/^Fechou (\d+) reps e ainda sobrou (\d+), acima do teu alvo de (.+)\. Dá pra subir a carga na próxima série\.$/, (m, a, b, c) => 'You closed ' + a + ' reps with ' + b + ' left in the tank, above your target of ' + c + '. You can add weight on the next set.'],
@@ -7036,8 +7046,22 @@ function _trocaEnvia(p, motivo) {
 function _prescLinha(ex, isWarmup) {
   try {
     const p = [];
-    if (ex.series) p.push(String(ex.series).replace(/\s*[xX]\s*$/, '') + ' séries');
-    if (ex.reps) p.push(/seg|min|\bs\b/i.test(String(ex.reps)) ? ex.reps : (ex.reps + ' reps'));   // "20 seg" nao vira "20 seg reps"
+    const _tp = _serieTipos(ex);
+    if (_tp.length && _tp.some(x => x.tipo !== 'val')) {
+      // v496: serie rotulada. Conta as validas e cita o que vem antes, em vez de repetir a coluna inteira.
+      const nV = _tp.filter(x => x.tipo === 'val').length;
+      const antes = [];
+      if (_tp.some(x => x.tipo === 'aq')) antes.push('aquecimento');
+      if (_tp.some(x => x.tipo === 'aj')) antes.push('ajuste');
+      if (_tp.some(x => x.tipo === 'pap')) antes.push('PAP');
+      p.push(nV + (nV === 1 ? ' válida' : ' válidas') + (antes.length ? ' + ' + antes.join(' e ') : ''));
+      const segV = (_tp.find(x => x.tipo === 'val') || {}).seg;
+      const repsV = (segV != null) ? _repsSegmento(ex, segV) : String(ex.reps || '');
+      if (repsV) p.push(/seg|min|\bs\b/i.test(repsV) ? repsV : (repsV + ' reps'));
+    } else {
+      if (ex.series) p.push(String(ex.series).replace(/\s*[xX]\s*$/, '') + ' séries');
+      if (ex.reps) p.push(/seg|min|\bs\b/i.test(String(ex.reps)) ? ex.reps : (ex.reps + ' reps'));   // "20 seg" nao vira "20 seg reps"
+    }
     if (ex.rest) p.push('<span class="gl" onclick="event.stopPropagation();openGlossario(\'intervalo\')">' + ex.rest + ' de intervalo</span>');
     let out = p.join(' · ');
     if (!isWarmup) {
@@ -7095,12 +7119,64 @@ function _sugLimpa(di, ei) { const e = _sugEl(di, ei); if (e) { e.style.display 
 function _sugMostra(di, ei, html) { const e = _sugEl(di, ei); if (!e) return; e.innerHTML = html; e.style.display = 'block'; }
 // Alvo de reps DESTA série: "8 a 12" = 12; "20 / 15 / 12 / 12" = o número da série (varia por série);
 // tempo ("20 seg") ou "até a falha" = sem alvo, e aí a série a mais nunca abre.
+// ══ v496 · SÉRIES ROTULADAS (Entregas #2300, lógica do GH de 21/09) ══ A col SÉRIES pode vir rotulada por
+// segmento: '1X aq / 1X aj / 2X val' (aquecimento, ajuste, PAP, válida). Segmento sem rótulo = val, então
+// todo protocolo antigo continua igual. Só a válida constrói: é a única que entra no alvo de esforço, na
+// série extra, na força estimada, na evolução, na progressão e no recorde. Aq, aj e PAP existem pra ela
+// render; "sobrou" alto nelas é o esperado.
+const SERIE_TIPO_ROTULO = { aq: 'aq', aj: 'aj', pap: 'PAP', val: 'val' };
+const SERIE_TIPO_NOME = { aq: 'aquecimento', aj: 'ajuste', pap: 'PAP', val: 'válida' };
+// '1X aq / 1X aj / 2X val' -> [{tipo:'aq',seg:0},{tipo:'aj',seg:1},{tipo:'val',seg:2},{tipo:'val',seg:2}]
+// Mesma contagem do _serieCountPresc (1 a 10 linhas); fora disso devolve [] e tudo vira val.
+function _serieTipos(ex) {
+  try {
+    const raw = String((ex && ex.series) || '');
+    const segs = raw.split('/').map(s => s.trim()).filter(Boolean);
+    const out = [];
+    segs.forEach((s, i) => {
+      const m = s.match(/(\d+)\s*[xX]\s*([a-zA-Z]*)/);
+      if (!m) return;
+      const n = parseInt(m[1], 10) || 0;
+      const t = String(m[2] || '').toLowerCase();
+      const tipo = (t === 'aq' || t === 'aj' || t === 'pap') ? t : 'val';
+      for (let k = 0; k < n && out.length < 12; k++) out.push({ tipo, seg: i });
+    });
+    if (out.length < 1 || out.length > 10) return [];
+    return out;
+  } catch (_) { return []; }
+}
+function _serieTemRotulo(ex) { try { return _serieTipos(ex).some(x => x.tipo !== 'val'); } catch (_) { return false; } }
+function _rowTipo(di, ei, si) {
+  try { const tp = _serieTipos(_exObjAt(di, ei)); return (tp[si] && tp[si].tipo) || 'val'; } catch (_) { return 'val'; }
+}
+// Só as linhas válidas de uma grade (linha além do prescrito = válida, é o aluno que abriu)
+function _soVal(di, ei, sets) {
+  try {
+    if (!Array.isArray(sets)) return sets;
+    const tp = _serieTipos(_exObjAt(di, ei));
+    if (!tp.length || !tp.some(x => x.tipo !== 'val')) return sets;
+    return sets.filter((s, i) => !tp[i] || tp[i].tipo === 'val');
+  } catch (_) { return sets; }
+}
+// Reps prescritas de UM segmento ('10 / 6 / 8 a 10', seg 2 -> '8 a 10'); sem barra, é a string inteira
+function _repsSegmento(ex, seg) {
+  try {
+    const t = String((ex && ex.reps) || '');
+    const segs = t.split('/').map(s => s.trim()).filter(s => /\d/.test(s));
+    if (segs.length > 1 && segs[seg] != null) return segs[seg];
+    return t;
+  } catch (_) { return ''; }
+}
+// Alvo de reps DESTA série: "8 a 12" = 12; "20 / 15 / 12 / 12" = o número da série (varia por série);
+// tempo ("20 seg") ou "até a falha" = sem alvo, e aí a série a mais nunca abre.
+// v496: com série rotulada ('1X aq / 1X aj / 2X val' e reps '10 / 6 / 8 a 10'), a linha 4 usa o segmento 3.
 function _repsAlvoDaSerie(ex, si) {
   try {
     const t = String((ex && ex.reps) || '');
     if (!t || /seg|min/i.test(t)) return null;
-    const segs = t.split('/').filter(x => /\d/.test(x));
-    const alvo = (segs.length > 1 && segs[si] != null) ? segs[si] : t;
+    const tp = _serieTipos(ex);
+    const seg = (tp[si] && tp[si].seg != null) ? tp[si].seg : si;
+    const alvo = _repsSegmento(ex, seg) || t;
     const ns = String(alvo).match(/\d+/g);
     if (!ns || !ns.length) return null;
     return Math.max.apply(null, ns.map(Number));
@@ -7110,13 +7186,17 @@ function _sobrouSugere(di, ei, arr) {
   try {
     if (!_sugEl(di, ei)) return;
     const alvo = _alvoTopo();
+    const ex = _exObjAt(di, ei);
+    const tp = _serieTipos(ex);
+    const ehVal = i => !tp[i] || tp[i].tipo === 'val';
+    // v496: so a serie VALIDA entra aqui. Aquecimento, ajuste e PAP com "sobrou" alto e o esperado (nao sao
+    // pra cansar): nunca abrem serie extra nem avisam "fecha a faixa".
     let li = -1;
-    for (let i = 0; i < arr.length; i++) if (String(arr[i].rs || '').trim()) li = i;
+    for (let i = 0; i < arr.length; i++) if (ehVal(i) && String(arr[i].rs || '').trim()) li = i;
     if (li < 0) { _sugLimpa(di, ei); return; }
     const v = parseInt(String(arr[li].rs).replace(/[^0-9]/g, ''), 10);
     if (!isFinite(v) || v <= alvo.hi) { _sugLimpa(di, ei); return; }   // dentro do alvo do protocolo: nada
     const faixa = alvo.lo === alvo.hi ? String(alvo.lo) : (alvo.lo + ' a ' + alvo.hi);
-    const ex = _exObjAt(di, ei);
     const rmax = _repsAlvoDaSerie(ex, li);
     const feitas = parseInt(String(arr[li].reps || '').replace(/[^0-9]/g, ''), 10);
     // GH 20/09: sobrar muito com POUCAS reps é peso leve com série curta, não série a mais. Só abre quando
@@ -7129,7 +7209,9 @@ function _sobrouSugere(di, ei, arr) {
     const k = di + '|' + ei + '|' + currentWeek;
     const presc = _serieCountPresc(ex);
     const cabeMais = arr.length < presc + 1;   // teto duro: no máximo UMA série além do prescrito, hoje e sempre
-    if (li < arr.length - 1 || _sugFeita[k] || !cabeMais) {
+    let ultimaVal = -1;
+    for (let j = 0; j < arr.length; j++) if (ehVal(j)) ultimaVal = j;
+    if (li < ultimaVal || _sugFeita[k] || !cabeMais) {
       _sugMostra(di, ei, 'Fechou ' + feitas + ' reps e ainda sobrou ' + v + ', acima do teu alvo de ' + faixa + '. Dá pra subir a carga na próxima série.');
       return;
     }
@@ -7605,7 +7687,8 @@ function _ultimas3Sessoes(d, e, w) {
     let raw = sf ? localStorage.getItem(setsKey(d, e, ww) + sf)
                  : (_cargaValida(d, e, ww) ? localStorage.getItem(setsKey(d, e, ww)) : null);
     if (!raw) return null;
-    try { const a = JSON.parse(raw); if (!Array.isArray(a) || !a.length) return null;
+    try { let a = JSON.parse(raw); if (!Array.isArray(a) || !a.length) return null;
+      a = _soVal(d, e, a);   // v496: aquecimento e ajuste nao entram na evolucao
       // topo do dia: maior peso lançado; se o aluno usa placas, cai pra placas
       let kg = 0, pl = 0;
       a.forEach(x => { const k = parseFloat(String(x && x.kg || '').replace(',', '.'));
@@ -7670,6 +7753,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
     ? _parseAlvoRange(STUDENT_ESFORCO_ALVO.valor) : null;
   const rsPh = alvoR ? (alvoR[0] === alvoR[1] ? String(alvoR[0]) : alvoR[0] + '-' + alvoR[1]) : '?';
   const okSet = loadSetOk(di, eiS, w);
+  const _rotulada = _serieTemRotulo(_exObjAt(di, eiS));   // v496: exercicio com aq/aj/pap na col SERIES
   const evo = _evolucaoChipHtml(di, ei);   // linha de evolução das últimas 3 sessões
   const rows = sets.map((s, si) => {
     const p = prev && prev[si];
@@ -7677,12 +7761,14 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
       ? `<span class="set-prev" title="Última vez"><span class="sp-lb">ant: </span>${p.kg ? kgToDisplay(p.kg) + getUnit() : (p.pl ? p.pl + 'pl' : '&mdash;')}${p.reps ? ' &times;' + p.reps : ''}</span>`
       : '<span class="set-prev"></span>';
     const feita = okSet.has(si);
-    return `<div class="set-row ${feita ? 'feita' : ''}" data-si="${si}">
-        <button type="button" class="set-num" onclick="toggleSetFeita(${di},'${eiS}',${si})" title="Marcar série como feita" aria-label="Marcar série ${si + 1} como feita">${feita ? '✓' : si + 1}</button>
+    const _tipo = _rotulada ? _rowTipo(di, eiS, si) : 'val';   // v496
+    const _rot = _rotulada ? (SERIE_TIPO_ROTULO[_tipo] || 'val') : '';
+    return `<div class="set-row ${feita ? 'feita' : ''} ${_rotulada ? 't-' + _tipo : ''}" data-si="${si}" data-tipo="${_tipo}">
+        <button type="button" class="set-num ${_rotulada ? 't-' + _tipo : ''}" onclick="toggleSetFeita(${di},'${eiS}',${si})" title="${_rotulada ? 'Série de ' + SERIE_TIPO_NOME[_tipo] + '. ' : ''}Marcar série como feita" aria-label="Marcar série ${si + 1} como feita">${feita ? '✓' : (_rotulada ? _rot : si + 1)}</button>
         <input class="set-in set-kg" type="number" inputmode="decimal" placeholder="${getUnit()}" value="${kgToDisplay(s.kg)}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-pl" type="number" inputmode="numeric" placeholder="pl" value="${s.pl || ''}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-reps" type="number" inputmode="numeric" placeholder="reps" value="${s.reps || ''}" oninput="onSetField(${di},'${eiS}')">
-        <input class="set-in set-rs" type="number" inputmode="numeric" placeholder="${rsPh}" title="Quantas repetições sobraram nessa série" value="${s.rs || ''}" oninput="onSetField(${di},'${eiS}')">
+        <input class="set-in set-rs" type="number" inputmode="numeric" placeholder="${_tipo === 'val' ? rsPh : '·'}" title="${_tipo === 'val' ? 'Quantas repetições sobraram nessa série' : 'Série de ' + SERIE_TIPO_NOME[_tipo] + ': sobrar é o esperado, não entra no alvo'}" value="${s.rs || ''}" oninput="onSetField(${di},'${eiS}')">
         ${prevTxt}
         ${semX ? '' : `<button type="button" class="set-del" onclick="removeSet(${di},'${eiS}',${si})" title="Remover série" aria-label="Remover série">&times;</button>`}
       </div>`;
@@ -7826,7 +7912,7 @@ function onSetField(di, ei) {
     saveSets(di, ei, currentWeek, arr);
     const el = document.getElementById(`sv-${di}-${_setSvKey(ei)}`);
     if (el) { el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 1500); }
-    const kg = Math.max(0, ...arr.map(s => parseFloat(s.kg) || 0));   // PR pela maior carga entre as séries (v480: arr ja vem em kg; converter de novo dava kg/2,2 em lb)
+    const kg = Math.max(0, ..._soVal(di, ei, arr).map(s => parseFloat(s.kg) || 0));   // PR pela maior carga entre as séries VALIDAS (v496); v480: arr ja vem em kg
     if (kg > 0 && typeof checkPR === 'function') checkPR(di, /^\d+$/.test(String(ei)) ? parseInt(ei) : ei, kg);
     _autoRestMaybe(di, ei, arr, _repsAntes);   // reps nova + treino rolando = descanso dispara sozinho (pill)
     try { _sobrouSugere(di, ei, arr); } catch (_) {}   // v481: sobrou acima do alvo = serie a mais / sobe a carga
@@ -11290,7 +11376,7 @@ function _progUltReg(di, ei) {
     for (let w = currentWeek - 1; w >= 1; w--) {
       const esf = loadEsf(di, String(ei), w);
       if (!esf) continue;
-      const base = _progBaseDoSets(loadSets(di, String(ei), w));
+      const base = _progBaseDoSets(_soVal(di, String(ei), loadSets(di, String(ei), w)));   // v496: so validas
       if (!base) continue;
       return { w, esf, base };
     }
@@ -11329,7 +11415,7 @@ function _forcaEstimadaDoSets(sets) {
 }
 function _forcaChipHtml(di, ei) {
   let f = null;
-  try { f = _forcaEstimadaDoSets(loadSets(di, String(ei), currentWeek)); } catch (_) { return ''; }
+  try { f = _forcaEstimadaDoSets(_soVal(di, String(ei), loadSets(di, String(ei), currentWeek))); } catch (_) { return ''; }   // v496: so validas
   if (!f) return '';
   const u = (typeof getUnit === 'function' ? getUnit() : 'kg');
   const v = String(f.val).replace('.', ',');
@@ -19795,7 +19881,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v495';
+    var APP_SHELL_V = 'metodo-gh-v496';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
