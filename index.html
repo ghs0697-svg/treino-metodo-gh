@@ -3223,6 +3223,7 @@
   <div class="last-mod" id="lastModBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:0.3px;"><span id="versionBadge" style="display:none;color:var(--gold);font-weight:600;">Protocolo v<span id="versionValue"></span></span><span id="lastModSep" style="display:none;"> · </span>Atualizado em <span id="lastModValue"></span></div>
   <div class="last-mod" id="proxReajusteBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:0.3px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-1px;margin-right:3px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span id="proxReajusteLabel">Próxima anamnese de reajuste: </span><span id="proxReajusteValue" style="color:var(--gold);font-weight:600;"></span></div>
   <div class="last-mod" id="esforcoAlvoBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:0.3px;">💪 Esforço: <span id="esforcoAlvoValue" style="color:var(--gold);font-weight:600;"></span><div id="esforcoAlvoTexto" style="display:none;font-size:10.5px;color:#8d8579;font-weight:400;margin-top:2px;line-height:1.4;"></div></div>
+  <div class="last-mod" id="metaNotasBadge" role="button" tabindex="0" onclick="openMetaNotas()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openMetaNotas();}" style="display:none;font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:0.3px;cursor:pointer;">📖 <span id="metaNotasTitulo"></span><span id="metaNotasResumo" style="color:var(--gold);font-weight:600;"></span> <span id="metaNotasChev" style="color:#8d8579;font-size:10px;white-space:nowrap;text-decoration:underline dotted;">ler</span><span id="metaNotasNovo" style="display:none;margin-left:5px;width:6px;height:6px;border-radius:50%;background:var(--gold);vertical-align:middle;"></span></div>
 </div>
 
 <!-- ══ AVISO GLOBAL (célula AVISOS!A2 da mestre; controlado sem deploy) ══ -->
@@ -3514,6 +3515,15 @@
       <p style="margin:0;">Pra que serve: é assim que tu compara com a semana passada e é daí que o GH enxerga tua progressão pra calibrar o próximo protocolo. Ficar sem marcar é o que atrapalha.</p>
     </div>
     <button type="button" class="evo-close" onclick="placaInfoClose()">Entendi 💪</button>
+  </div>
+</div>
+
+<!-- v497: notas 'meta' do protocolo (Como ler as tuas séries, etc.). Abre do badge do cabeçalho. -->
+<div class="evo-overlay" id="metaNotasModal" onclick="if(event.target.id==='metaNotasModal')metaNotasClose()">
+  <div class="evo-box">
+    <h4 id="metaNotasModalTitulo">Como ler o teu protocolo</h4>
+    <div id="metaNotasCorpo" style="color:#ccc;font-size:13px;line-height:1.65;"></div>
+    <button type="button" class="evo-close" onclick="metaNotasClose()">Entendi 💪</button>
   </div>
 </div>
 
@@ -7091,7 +7101,8 @@ function exMaisMenu(di, ei) {
     if (!ex.biset && !ex.warmup) add(alts ? 'Ver todas as opções de troca' : 'Pedir a troca pro Gabriel', () => alts ? openSubPicker(di, ei) : openSubFallback(di, ei));
     if (!ex.warmup) {
       const arr = loadSets(di, eiS, currentWeek) || [];
-      if (arr.length > 1) add('Remover a última série', () => removeSet(di, eiS, arr.length - 1));
+      const _minRem = _serieTemRotulo(ex) ? _serieCountPresc(ex) : 1;   // v497: grade rotulada só tira a linha EXTRA (rótulo é posicional)
+      if (arr.length > _minRem) add('Remover a última série', () => removeSet(di, eiS, arr.length - 1));
     }
     if (!ex.warmup && !ex.biset) add(isSkipped(di, ei) ? 'Desfazer "não consegui fazer"' : 'Não consegui fazer', () => onSkipExercise(di, ei));
     const c = document.createElement('button'); c.type = 'button'; c.className = 'rs-menu-cancel'; c.textContent = 'Fechar'; c.onclick = fecha;
@@ -7375,6 +7386,60 @@ let STUDENT_ESFORCO_ALVO = null; // {valor, texto} da linha 'meta' Esforco-alvo 
 // Esforco-alvo (RIR): linha 'meta' do TREINO (apos restrict), col B "Esforco-alvo".
 // gviz tira o col A 'meta' -> vem como ['', 'Esforco-alvo', valor, texto]. O regex no col B
 // desambigua do restrict (que tambem chega com col A vazio).
+let STUDENT_META_NOTAS = [];   // v497: notas 'meta' do TREINO escritas pro aluno ("Como ler as tuas séries" etc.)
+// v497 (Entregas #2300, séries rotuladas): a montagem escreve linhas 'meta' com recado pro aluno, col B o título
+// (uma frase, com espaço), col C o resumo e col D o texto. Até a v496 só o Esforço-alvo subia pro app; o resto ficava
+// invisível. Regra: título em frase + col D preenchida = nota do aluno. Chave interna (split, carimbo: uma palavra,
+// sem col D) e o Esforço-alvo (badge próprio) ficam de fora. A 1ª linha sem dia é o info (nome/freq/objetivo), nunca nota.
+function _parseMetaNotas(rows) {
+  const out = [];
+  let infoVisto = false;
+  for (let i = 1; i < (rows || []).length; i++) {
+    const r = rows[i] || [];
+    const a = String(r[0] == null ? '' : r[0]).toLowerCase().trim();
+    if (a && a !== 'meta' && a !== 'info') continue;
+    const b = String(r[1] == null ? '' : r[1]).trim(), c = String(r[2] == null ? '' : r[2]).trim(), d = String(r[3] == null ? '' : r[3]).trim();
+    if (!b && !c && !d) continue;
+    if (a === 'info' || (!a && !infoVisto)) { infoVisto = true; continue; }
+    if (!d || !/\s/.test(b) || b.length > 60) continue;
+    if (/esfor[çc]o[\s-]*alvo/i.test(b) || /^https?:/i.test(b) || /^@treino/i.test(b)) continue;
+    out.push({ titulo: b, resumo: c, texto: d });
+    if (out.length >= 6) break;
+  }
+  return out;
+}
+// Badge "📖 Como ler as tuas séries: aq · aj · val · ler" no topo; o texto abre num modal (o cabeçalho tem a foto do
+// GH à direita, texto longo ali fica embaixo dela). Ponto dourado até o aluno abrir uma vez nesse protocolo.
+function _metaNotasRender() {
+  const box = document.getElementById('metaNotasBadge');
+  if (!box) return;
+  const notas = STUDENT_META_NOTAS || [];
+  if (!notas.length) { box.style.display = 'none'; return; }
+  const esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const lead = notas.find(n => /como\s+ler/i.test(n.titulo)) || notas[0];
+  const tEl = document.getElementById('metaNotasTitulo'), rEl = document.getElementById('metaNotasResumo');
+  const cEl = document.getElementById('metaNotasCorpo'), hEl = document.getElementById('metaNotasModalTitulo');
+  if (tEl) tEl.textContent = lead.titulo + (lead.resumo ? ': ' : '');
+  if (rEl) rEl.textContent = lead.resumo || '';
+  if (hEl) hEl.textContent = lead.titulo;
+  if (cEl) cEl.innerHTML = notas.map(n => {
+    const cab = n === lead
+      ? (n.resumo ? '<p style="margin:0 0 6px;color:var(--gold);font-weight:600;">' + esc(n.resumo) + '</p>' : '')
+      : '<p style="margin:14px 0 6px;color:var(--gold);font-weight:600;">' + esc(n.titulo) + (n.resumo ? ' <span style="color:#b3a785;font-weight:400;">· ' + esc(n.resumo) + '</span>' : '') + '</p>';
+    return cab + '<p style="margin:0;">' + esc(n.texto) + '</p>';
+  }).join('');
+  const nv = document.getElementById('metaNotasNovo');
+  if (nv) nv.style.display = _metaNotasLido() ? 'none' : 'inline-block';
+  box.style.display = 'block';
+}
+function _metaNotasKey() { return 'gh_metanotas_lido:' + (typeof SHEET_ID !== 'undefined' ? SHEET_ID : '') + ':' + ((STUDENT_META_NOTAS || []).length); }
+function _metaNotasLido() { try { return !!localStorage.getItem(_metaNotasKey()); } catch (_) { return true; } }
+function openMetaNotas() {
+  try { localStorage.setItem(_metaNotasKey(), '1'); } catch (_) {}
+  const nv = document.getElementById('metaNotasNovo'); if (nv) nv.style.display = 'none';
+  try { document.getElementById('metaNotasModal').classList.add('show'); } catch (_) {}
+}
+function metaNotasClose() { try { document.getElementById('metaNotasModal').classList.remove('show'); } catch (_) {} }
 function _parseEsforcoAlvo(rows) {
   for (const r of (rows || [])) {
     const a = String(r[0] == null ? '' : r[0]).toLowerCase().trim();
@@ -7741,10 +7806,18 @@ function getPrevSets(d, e, w) {
 function _setsGridHtml(di, ei, label, noAdd, semX) {
   const w = currentWeek;
   let sets = loadSets(di, ei, w);
+  const _exG = _exObjAt(di, ei);
+  const _rotulada = _serieTemRotulo(_exG);   // v496: exercicio com aq/aj/pap na col SERIES
   if (!sets || !sets.length) {
-    const n = _serieCountPresc(_exObjAt(di, ei));
+    const n = _serieCountPresc(_exG);
     sets = Array.from({ length: n }, () => ({ kg: '', pl: '', reps: '', rs: '' }));
   }
+  // v497: grade ROTULADA com menos linhas salvas que o prescrito (grade de 1 linha vinda da carga legada, ou linha
+  // apagada): completa com linhas vazias até o prescrito, porque o rótulo é posicional (linha 1 = aq, 2 = aj,
+  // 3 e 4 = val). Só acrescenta no FIM; nunca tira, move nem apaga dado. Grade sem rótulo segue como sempre.
+  // Pelo mesmo motivo a linha prescrita da grade rotulada não tem o × (só a linha extra que o aluno abriu sai).
+  const _nPresc = _rotulada ? _serieCountPresc(_exG) : 0;
+  while (_nPresc && sets.length < _nPresc) sets.push({ kg: '', pl: '', reps: '', rs: '' });
   const prev = getPrevSets(di, ei, w);
   const eiS = String(ei);
   // "sobrou": quantas reps sobraram na série. O alvo prescrito (linha meta Esforço-alvo) vira
@@ -7753,7 +7826,6 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
     ? _parseAlvoRange(STUDENT_ESFORCO_ALVO.valor) : null;
   const rsPh = alvoR ? (alvoR[0] === alvoR[1] ? String(alvoR[0]) : alvoR[0] + '-' + alvoR[1]) : '?';
   const okSet = loadSetOk(di, eiS, w);
-  const _rotulada = _serieTemRotulo(_exObjAt(di, eiS));   // v496: exercicio com aq/aj/pap na col SERIES
   const evo = _evolucaoChipHtml(di, ei);   // linha de evolução das últimas 3 sessões
   const rows = sets.map((s, si) => {
     const p = prev && prev[si];
@@ -7770,7 +7842,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
         <input class="set-in set-reps" type="number" inputmode="numeric" placeholder="reps" value="${s.reps || ''}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-rs" type="number" inputmode="numeric" placeholder="${_tipo === 'val' ? rsPh : '·'}" title="${_tipo === 'val' ? 'Quantas repetições sobraram nessa série' : 'Série de ' + SERIE_TIPO_NOME[_tipo] + ': sobrar é o esperado, não entra no alvo'}" value="${s.rs || ''}" oninput="onSetField(${di},'${eiS}')">
         ${prevTxt}
-        ${semX ? '' : `<button type="button" class="set-del" onclick="removeSet(${di},'${eiS}',${si})" title="Remover série" aria-label="Remover série">&times;</button>`}
+        ${(semX || (_rotulada && si < _nPresc)) ? '' : `<button type="button" class="set-del" onclick="removeSet(${di},'${eiS}',${si})" title="Remover série" aria-label="Remover série">&times;</button>`}
       </div>`;
   }).join('');
   return `<div class="sets-grid" id="sets-${di}-${eiS}" data-di="${di}" data-ei="${eiS}" data-noadd="${noAdd ? '1' : ''}" data-semx="${semX ? '1' : ''}">
@@ -7956,6 +8028,7 @@ function addSet(di, ei) {
 function removeSet(di, ei, si) {
   const arr = _readSetsFromDom(di, ei) || [];
   if (arr.length <= 1) return;                  // mantém pelo menos 1 série
+  try { const _exR = _exObjAt(di, ei); if (_serieTemRotulo(_exR) && si < _serieCountPresc(_exR)) return; } catch (_) {}   // v497: linha prescrita da grade rotulada nunca sai (rótulo posicional)
   arr.splice(si, 1);
   saveSets(di, ei, currentWeek, arr);
   // remarca as séries feitas nos índices novos (removeu a 2ª: a 3ª vira 2ª e leva a marca junto)
@@ -12317,6 +12390,8 @@ async function loadFromSheets(injectedText) {
 
     // Esforco-alvo (RIR): badge no topo + valor global pro Modo Focado mostrar do lado do esforco
     STUDENT_ESFORCO_ALVO = _parseEsforcoAlvo(rows);
+    STUDENT_META_NOTAS = _parseMetaNotas(rows);   // v497: notas da montagem pro aluno (Como ler as tuas séries, etc.)
+    _metaNotasRender();
     if (STUDENT_ESFORCO_ALVO && STUDENT_ESFORCO_ALVO.valor) {
       const eaV = document.getElementById('esforcoAlvoValue'), eaB = document.getElementById('esforcoAlvoBadge');
       if (eaV) {
@@ -19881,7 +19956,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v496';
+    var APP_SHELL_V = 'metodo-gh-v497';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
