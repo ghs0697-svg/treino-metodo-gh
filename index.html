@@ -372,8 +372,15 @@
   .ept-t { display: inline-block; width: 50px; min-width: 50px; text-align: center; border: 1px solid; border-radius: 6px; font-size: 10px; font-weight: 700; padding: 2px 2px; cursor: pointer; }
   .ept-n { min-width: 56px; }
   .ept-r { min-width: 84px; color: #e8e2d6; font-weight: 600; }
-  .ept-c { color: #8f8778; overflow: hidden; text-overflow: ellipsis; }
-  .ept-foot { font-size: 12px; color: #9a9184; margin-top: 4px; white-space: normal; }
+  .ept-c { color: #8f8778; white-space: normal; line-height: 1.15; }
+  .ept-foot { font-size: 12px; color: #9a9184; margin-top: 6px; white-space: normal; }
+  /* v507: painel com cabeçalho de colunas, no mesmo estilo do cabeçalho da grade (os dois blocos rimam) */
+  .ept-panel { background: rgba(212,175,106,.045); border: 1px solid rgba(212,175,106,.14); border-radius: 10px; padding: 6px 10px 7px; }
+  .ept-row.ept-hdr { padding: 0 0 4px; margin-bottom: 2px; border-bottom: 1px solid rgba(212,175,106,.10); }
+  .ept-row.ept-hdr span { font-size: 9px; font-weight: 700; color: #8a7a52; text-transform: uppercase; letter-spacing: .4px; border: none; background: none; padding: 0; }
+  .ept-row.ept-hdr .ept-r, .ept-row.ept-hdr .ept-n { text-align: left; }
+  .ex-presc { margin-top: 6px; }
+  .exercise-obs { margin-top: 8px; }
   /* v504/v505: exercicio por tempo: coluna de tempo + sobrou (GH 22/09: "pode manter o campo sobrou sim"); kg e placa somem */
   .sets-grid.tempo .set-in.set-kg, .sets-grid.tempo .set-in.set-pl, .sets-grid.tempo .sh-kg, .sets-grid.tempo .sh-pl { display: none; }
   .sets-grid.tempo .set-in.set-reps, .sets-grid.tempo .sh-reps { width: 72px; }
@@ -7271,14 +7278,15 @@ function _prescTabelaHtml(ex, tp, isWarmup) {
       const g = grupos[t];
       let reps = String(_repsSegmento(ex, g.seg) || '').trim();
       if (reps && !/seg|min|\bs\b/i.test(reps)) reps += (reps === '1' ? ' rep' : ' reps');   // PAP: "1 rep"
-      const extra = t === 'val' ? esf : ('carga ' + (SERIE_TIPO_CARGA[t] || ''));
+      const extra = t === 'val' ? esf : (SERIE_TIPO_CARGA[t] || '');
       return '<div class="ept-row"><span class="ept-t t-' + t + '" onclick="event.stopPropagation();openGlossario(\'' + t + '\')" title="' + SERIE_TIPO_NOME[t] + '">' + SERIE_TIPO_CURTO[t] + '</span>'
         + '<span class="ept-n">' + g.n + (g.n === 1 ? ' série' : ' séries') + '</span><span class="ept-r">' + reps + '</span><span class="ept-c">' + extra + '</span></div>';
     }).join('');
     const foot = [];
     if (ex.rest) foot.push('<span class="gl" onclick="event.stopPropagation();openGlossario(\'intervalo\')">' + ex.rest + ' de intervalo</span>');
     if (!isWarmup) { const c = parseCadencia(ex.obs); foot.push('<span class="gl" onclick="event.stopPropagation();openGlossario(\'cadencia\')">Pos ' + fmtSec(c.conc) + 's · Iso ' + fmtSec(c.iso) + 's · Neg ' + fmtSec(c.exc) + 's</span>'); }
-    return '<div class="ex-presc-tbl"><div class="ept-head">Prescrição</div>' + rows + (foot.length ? '<div class="ept-foot">' + foot.join(' · ') + '</div>' : '') + '</div>';
+    const hdr = '<div class="ept-row ept-hdr"><span class="ept-t">tipo</span><span class="ept-n">séries</span><span class="ept-r">' + (_exPorTempo(ex) ? 'tempo' : 'reps') + '</span><span class="ept-c">como</span></div>';
+    return '<div class="ex-presc-tbl"><div class="ept-head">Prescrição</div><div class="ept-panel">' + hdr + rows + '</div>' + (foot.length ? '<div class="ept-foot">' + foot.join(' · ') + '</div>' : '') + '</div>';
   } catch (_) { return ''; }
 }
 function _serieChipsHtml(ex, tp) {
@@ -12785,12 +12793,12 @@ function renderExercises() {
             <div class="ex-check ${exDone ? 'done' : ''} ${exSkip ? 'skip' : ''}" onclick="event.stopPropagation(); onCheckExercise(${di}, ${ei})" title="Marcar como feito"></div>
             <div class="exercise-info">
               ${_nomeBlocoHtml(di, ei, act, exDone, isWarmup, hasVid)}
-              <div class="ex-presc">${_prescLinha(ex, isWarmup)}</div>
               ${!isWarmup ? _muscTag(act.name) : ''}
+              <div class="ex-presc">${_prescLinha(ex, isWarmup)}</div>
+              ${ex.obs ? `<div class="exercise-obs">${_glossWrap(ex.obs)}</div>` : ''}
               ${!isWarmup && !exDone ? _subPillHtml(di, ei, act, subAlts) : ''}
               ${_trocaMotivoHtml(di, ei)}
               ${!isWarmup && exSkip ? `<button type="button" class="ex-skip-btn on" onclick="event.stopPropagation(); onSkipExercise(${di}, ${ei})">⤼ Pulado hoje · desfazer</button>` : ''}
-              ${ex.obs ? `<div class="exercise-obs">${_glossWrap(ex.obs)}</div>` : ''}
             </div>
           </div>
           ${!isWarmup ? `
@@ -20107,7 +20115,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v506';
+    var APP_SHELL_V = 'metodo-gh-v507';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
