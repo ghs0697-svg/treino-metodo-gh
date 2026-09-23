@@ -371,9 +371,9 @@
   .set-row.t-val.nv:not(.feita) button.set-num { background: transparent; color: #a3936f; border-color: rgba(212,175,106,.35); font-size: 9px; line-height: 1.05; white-space: normal; padding: 0 2px; }
   .set-row.t-val.nv { background: none; }
   /* v517: aluno com Esforço-alvo limitado (2 a 3) lê no manual e no glossário a frase sem corte */
-  .corte-off { display: none; }
-  body.corte-off .corte-on { display: none; }
-  body.corte-off .corte-off { display: inline; }
+  span.corte-off { display: none; }
+  body.sem-corte span.corte-on { display: none; }
+  body.sem-corte span.corte-off { display: inline; }
   .sets-grid.rotulada .set-in::placeholder { color: #5e574a; font-size: 12px; }
   /* v506: em cima a PRESCRIÇÃO (uma linha por tipo, espelhando a grade), embaixo o TEU REGISTRO */
   .ex-presc-tbl { margin-top: 6px; }
@@ -7218,7 +7218,9 @@ function _corteAtivo() {
     return r[0] === 0 && r[1] <= 1;
   } catch (_) { return true; }
 }
-function _corteClasseBody_() { try { document.body.classList.toggle("corte-off", !_corteAtivo()); } catch (_) {} }
+// v518: a classe do body é "sem-corte". Na v517 era "corte-off", igual à classe dos spans, e a regra CSS que esconde os
+// spans escondia o body inteiro: tela branca pra todo aluno com Esforço-alvo 2 a 3, das 13:45 às 15:00 de 23/09.
+function _corteClasseBody_() { try { document.body.classList.remove("corte-off"); document.body.classList.toggle("sem-corte", !_corteAtivo()); } catch (_) {} }
 function _sugEl(di, ei) { return document.getElementById('sug-' + di + '-' + ei); }
 function _sugLimpa(di, ei) { const e = _sugEl(di, ei); if (e) { e.style.display = 'none'; e.innerHTML = ''; } }
 function _sugMostra(di, ei, html) { const e = _sugEl(di, ei); if (!e) return; e.innerHTML = html; e.style.display = 'block'; }
@@ -20243,7 +20245,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v517';
+    var APP_SHELL_V = 'metodo-gh-v518';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
