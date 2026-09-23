@@ -370,6 +370,10 @@
   /* v514: válida que sobrou acima do combinado não valeu: pastilha vazada e apagada, com o motivo escrito */
   .set-row.t-val.nv:not(.feita) button.set-num { background: transparent; color: #a3936f; border-color: rgba(212,175,106,.35); font-size: 9px; line-height: 1.05; white-space: normal; padding: 0 2px; }
   .set-row.t-val.nv { background: none; }
+  /* v517: aluno com Esforço-alvo limitado (2 a 3) lê no manual e no glossário a frase sem corte */
+  .corte-off { display: none; }
+  body.corte-off .corte-on { display: none; }
+  body.corte-off .corte-off { display: inline; }
   .sets-grid.rotulada .set-in::placeholder { color: #5e574a; font-size: 12px; }
   /* v506: em cima a PRESCRIÇÃO (uma linha por tipo, espelhando a grade), embaixo o TEU REGISTRO */
   .ex-presc-tbl { margin-top: 6px; }
@@ -3991,7 +3995,7 @@
     <div class="ts-row"><span class="ts-pill t-aq">aquecimento</span><div class="tec-body"><b>Carga leve, 10 repetições.</b> Serve pra lubrificar a articulação que vai trabalhar, não pra cansar. É normal sobrar muito. Ela só aparece quando o exercício traz uma articulação que ainda não trabalhou no dia.</div></div>
     <div class="ts-row"><span class="ts-pill t-aj">ajuste</span><div class="tec-body"><b>Carga média, 6 repetições.</b> Serve pra avisar o teu sistema nervoso que vem esforço pesado, sem gastar energia. Também sobra muito, de propósito. Aparece quando o movimento muda de direção ou de ângulo, mesmo com a articulação já quente.</div></div>
     <div class="ts-row"><span class="ts-pill t-pap">PAP</span><div class="tec-body"><b>Uma repetição só, com carga acima do ajuste.</b> É um estímulo máximo pro sistema nervoso antes da série válida. Não é pra falhar. Só entra em quem já tem experiência, e só quando eu coloco.</div></div>
-    <div class="ts-row"><span class="ts-pill t-val">válida</span><div class="tec-body"><b>É a série que constrói músculo.</b> Vai até a falha ou fica a uma repetição dela. É a única onde tu anota o "sobrou", e a única que conta como volume na semana. Sobrou 3 ou mais? Então essa não valeu: o app abre outra série pra tu fazer.</div></div>
+    <div class="ts-row"><span class="ts-pill t-val">válida</span><div class="tec-body"><b>É a série que constrói músculo.</b> Vai até a falha ou fica a uma repetição dela. É a única onde tu anota o "sobrou", e a única que conta como volume na semana. <span class="corte-on">Sobrou 3 ou mais? Então essa não valeu: o app abre outra série pra tu fazer.</span><span class="corte-off">No teu protocolo o esforço-alvo é maior de propósito: toda série tua conta, e o app não abre série a mais.</span></div></div>
     <div class="tec-body ts-why"><b>Por que alguns exercícios não têm aquecimento nem ajuste?</b> Porque a articulação e a direção do movimento já vieram prontas do exercício anterior. Barra fixa depois da puxada alta vai direto na válida: mesma direção, mesma articulação. Remada depois delas ajusta de novo, porque a direção mudou. Repetir aquecimento numa articulação que já está quente é série perdida.</div>
     <div class="tec-body ts-why"><b>Panturrilha, abdômen e lombar</b> levam só ajuste, porque os outros exercícios já usaram eles pra estabilizar. <b>Prancha e isometria</b> vão direto, porque não é carga a calibrar.</div>
   </div>
@@ -5093,7 +5097,7 @@
       <div class="gloss-it" data-g="aq"><b><span class="gl-cor t-aq">aquec.</span> Aquecimento</b>Carga leve, 10 repetições. Serve pra lubrificar a articulação que vai trabalhar, não pra cansar. É normal sobrar muito. Ela só aparece quando o exercício traz uma articulação que ainda não trabalhou no dia.</div>
       <div class="gloss-it" data-g="aj"><b><span class="gl-cor t-aj">ajuste</span> Ajuste</b>Carga média, 6 repetições. Serve pra avisar o teu sistema nervoso que vem esforço pesado, sem gastar energia. Também sobra muito, de propósito. Aparece quando o movimento muda de direção ou de ângulo, mesmo com a articulação já quente.</div>
       <div class="gloss-it" data-g="pap"><b><span class="gl-cor t-pap">PAP</span> PAP</b>Uma repetição só, com carga acima do ajuste. É um estímulo máximo pro sistema nervoso antes da série válida. Não é pra falhar. Só entra em quem já tem experiência, e só quando eu coloco.</div>
-      <div class="gloss-it" data-g="val"><b><span class="gl-cor t-val">válida</span> Válida</b>É a série que constrói músculo. Vai até a falha ou fica a uma repetição dela. É a única onde tu anota o "sobrou", e a única que conta como volume na semana. Sobrou 3 ou mais? Então essa não valeu: o app abre outra série pra tu fazer. Exercício sem cor na grade é só de válidas.</div>
+      <div class="gloss-it" data-g="val"><b><span class="gl-cor t-val">válida</span> Válida</b>É a série que constrói músculo. Vai até a falha ou fica a uma repetição dela. É a única onde tu anota o "sobrou", e a única que conta como volume na semana. <span class="corte-on">Sobrou 3 ou mais? Então essa não valeu: o app abre outra série pra tu fazer.</span><span class="corte-off">No teu protocolo o esforço-alvo é maior de propósito: toda série tua conta, e o app não abre série a mais.</span> Exercício sem cor na grade é só de válidas.</div>
       <div class="gloss-it" data-g="semaq"><b>Por que alguns exercícios não têm aquecimento nem ajuste?</b>Porque a articulação e a direção do movimento já vieram prontas do exercício anterior. Barra fixa depois da puxada alta vai direto na válida: mesma direção, mesma articulação. Remada depois delas ajusta de novo, porque a direção mudou. Repetir aquecimento numa articulação que já está quente é série perdida. Panturrilha, abdômen e lombar levam só ajuste, porque os outros exercícios já usaram eles pra estabilizar. Prancha e isometria vão direto, porque não é carga a calibrar.</div>
       <div class="gloss-it" data-g="cadencia"><b>Cadência (Pos · Iso · Neg)</b>A velocidade de cada fase do movimento. Pos = subir. Iso = segurar parado. Neg = descer controlando. "Neg 3s" = descer em 3 segundos. O botão "ritmo" marca isso pra ti com som e bolinha.</div>
       <div class="gloss-it" data-g="concentrica"><b>Concêntrica (positiva)</b>A fase de vencer o peso, subindo.</div>
@@ -7200,6 +7204,21 @@ function _alvoTopo() {
 // orientação de esforço; quem decide o "não valeu" e a linha nova é o 2.
 const LIMITE_VALIDA = 2;
 function _limiteValida() { return LIMITE_VALIDA; }
+// v517 (Entregas #2392, decisão do GH 23/09, textual: "Então vamos de 1... Toda série conta"): aluno com Esforço-alvo
+// diferente de "0 a 1" (2 a 3 por restrição clínica, iniciante destreinado) NÃO tem corte: toda série dele conta, nada
+// vira "não valeu" e nenhuma linha extra abre. O corte existe pra empurrar o aluno a fazer mais; em quem o protocolo manda
+// segurar, ele inverteria a proteção. Sem a linha meta (protocolo antigo), ou valor sem número ("até a falha"), o corte
+// vale como sempre. Casa pelo valor (0 a 1), não pela string "2 a 3", pra não quebrar se um dia existir outro valor.
+function _corteAtivo() {
+  try {
+    const v = (typeof STUDENT_ESFORCO_ALVO !== "undefined" && STUDENT_ESFORCO_ALVO) ? String(STUDENT_ESFORCO_ALVO.valor || "") : "";
+    if (!v) return true;
+    const r = _parseAlvoRange(v);
+    if (!r) return true;
+    return r[0] === 0 && r[1] <= 1;
+  } catch (_) { return true; }
+}
+function _corteClasseBody_() { try { document.body.classList.toggle("corte-off", !_corteAtivo()); } catch (_) {} }
 function _sugEl(di, ei) { return document.getElementById('sug-' + di + '-' + ei); }
 function _sugLimpa(di, ei) { const e = _sugEl(di, ei); if (e) { e.style.display = 'none'; e.innerHTML = ''; } }
 function _sugMostra(di, ei, html) { const e = _sugEl(di, ei); if (!e) return; e.innerHTML = html; e.style.display = 'block'; }
@@ -7361,6 +7380,7 @@ function _repsAlvoDaSerie(ex, si) {
 function _sobrouSugere(di, ei, arr) {
   try {
     if (!_sugEl(di, ei)) return;
+    if (!_corteAtivo()) { _sugLimpa(di, ei); return; }   // v517: Esforço-alvo limitado = sem corte, toda série conta
     const alvo = _alvoTopo();
     const ex = _exObjAt(di, ei);
     const tp = _serieTipos(ex);
@@ -7976,6 +7996,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
   const _rotulada = _serieTemRotulo(_exG);   // v496: exercicio com aq/aj/pap/val na col SERIES
   const _tpG = _rotulada ? _serieTipos(_exG) : [];   // v498: tipo e segmento de cada linha
   const _alvoHi = _limiteValida();   // v514/v515: válida com sobrou acima do LIMITE (2) não valeu
+  const _corteOn = _corteAtivo();   // v517: Esforço-alvo limitado (2 a 3) = sem corte, nada vira "não valeu"
   const _porTempo = _exPorTempo(_exG);   // v504: prancha, isometria, alongamento: so tempo, sem kg/placa/sobrou
   const _tUnid = _porTempo ? _tempoUnidade(_exG) : '';
   if (!sets || !sets.length) {
@@ -8011,7 +8032,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
     const _tipo = _rotulada ? _rowTipo(di, eiS, si) : 'val';   // v496
     const _rot = _rotulada ? (SERIE_TIPO_CURTO[_tipo] || 'válida') : '';   // v498: por extenso, na cor do tipo
     const _rsV = parseInt(String(s.rs || '').replace(/[^0-9]/g, ''), 10);
-    const _nv = _rotulada && _tipo === 'val' && isFinite(_rsV) && _rsV > _alvoHi;   // v514: sobrou mais que o combinado = não valeu
+    const _nv = _corteOn && _rotulada && _tipo === 'val' && isFinite(_rsV) && _rsV > _alvoHi;   // v514: sobrou mais que o combinado = não valeu
     const _segR = (_rotulada && _tpG[si]) ? _tpG[si].seg : null;
     const _phReps = (_segR != null) ? _repsCurto(_repsSegmento(_exG, _segR)) : 'reps';
     const _phKg = (_rotulada && _tipo !== 'val') ? (SERIE_TIPO_CARGA[_tipo] || getUnit()) : getUnit();
@@ -12586,6 +12607,7 @@ async function loadFromSheets(injectedText) {
 
     // Esforco-alvo (RIR): badge no topo + valor global pro Modo Focado mostrar do lado do esforco
     STUDENT_ESFORCO_ALVO = _parseEsforcoAlvo(rows);
+    _corteClasseBody_();   // v517: manual e glossário trocam a frase do corte quando o alvo é limitado
     STUDENT_META_NOTAS = _parseMetaNotas(rows);   // v497: notas da montagem pro aluno (Como ler as tuas séries, etc.)
     _metaNotasRender();
     if (STUDENT_ESFORCO_ALVO && STUDENT_ESFORCO_ALVO.valor) {
@@ -20221,7 +20243,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v516';
+    var APP_SHELL_V = 'metodo-gh-v517';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
