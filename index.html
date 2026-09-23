@@ -398,7 +398,7 @@
   /* v445 (Agentes #2023): aluno perguntou "o que e PLACA?", nao achou no app e DEIXOU DE LANCAR a carga.
      O cabecalho da coluna vira tocavel (pontilhado) e abre o mesmo tipo de modal do "sobrou". Sem elemento
      novo na linha: qualquer botao extra no cabecalho desalinharia as colunas dos inputs de baixo. */
-  .set-head .sh-pl { text-decoration: underline dotted; text-underline-offset: 2px; cursor: pointer; }
+  .set-head .sh-pl, .set-head .sh-kg { text-decoration: underline dotted; text-underline-offset: 2px; cursor: pointer; }
   /* ⓘ do "sobrou": explica pro aluno o que anotar (clareza > caixinha muda) */
   .rs-info-btn { flex: none; width: 15px; height: 15px; padding: 0; margin-left: -2px; border-radius: 50%; border: 1px solid rgba(212,175,106,.5); background: transparent; color: var(--gold); font-size: 9px; font-weight: 800; font-style: italic; font-family: Georgia, serif; line-height: 1; cursor: pointer; }
   /* série preenchida "acende": número dourado + campos com borda viva (progressive enhancement via :has) */
@@ -3549,7 +3549,8 @@
     <div style="color:#ccc;font-size:13px;line-height:1.65;">
       <p style="margin:0 0 10px;">Tem máquina que não mostra o peso em quilo: a pilha é numerada, e tu escolhe onde enfiar o pino. Nesse caso anota <b style="color:var(--gold);">o número da placa</b> (ou do furo) que tu usou.</p>
       <p style="margin:0 0 10px;">Se o aparelho, a barra ou o halter mostram o peso, ignora a placa e preenche só o <b>kg</b>. <b>Preencher um dos dois já basta</b>, nunca os dois.</p>
-      <p style="margin:0;">Pra que serve: é assim que tu compara com a semana passada e é daí que o GH enxerga tua progressão pra calibrar o próximo protocolo. Ficar sem marcar é o que atrapalha.</p>
+      <p style="margin:0 0 10px;">Pra que serve: é assim que tu compara com a semana passada e é daí que o GH enxerga tua progressão pra calibrar o próximo protocolo. Ficar sem marcar é o que atrapalha.</p>
+      <p style="margin:0;"><b style="color:var(--gold);">Halter e barra: de cada lado ou o total?</b> Do jeito que tu preferir, mas sempre o mesmo critério. Eu anoto de cada lado: assim não preciso ficar calculando quanto colocar nos outros treinos.</p>
     </div>
     <button type="button" class="evo-close" onclick="placaInfoClose()">Entendi 💪</button>
   </div>
@@ -5074,6 +5075,7 @@
       <div class="gloss-it" data-g="contracao"><b>Máxima contração</b>No ponto final do movimento, aperta o músculo com força total por um instante, como se estivesse posando pra foto. Não é só chegar lá: é contrair.</div>
       <div class="gloss-it" data-g="amplitude"><b>Amplitude máxima</b>Usar o percurso inteiro do movimento: alonga tudo, contrai tudo.</div>
       <div class="gloss-it" data-g="parciais"><b>Parciais</b>Repetições de propósito mais curtas, só no pedaço do movimento que ainda sai. Quando a ficha pede "parciais no final", é depois que as completas acabaram.</div>
+      <div class="gloss-it" data-g="kg"><b>Kg: de cada lado ou o total?</b>Do jeito que tu preferir, mas sempre o mesmo critério. Eu anoto de cada lado: assim não preciso ficar calculando quanto colocar nos outros treinos.</div>
       <div class="gloss-it" data-g="sobrou"><b>Sobrou (a caixinha do app)</b>Quantas repetições tu ainda aguentaria na última série. É como o Gabriel enxerga se a tua carga está certa.</div>
       <div class="gloss-it" data-g="falha"><b>Falha</b>O ponto em que não sai nem mais uma repetição com execução boa.</div>
       <div class="gloss-it" data-g="roubadas"><b>Roubadas</b>Repetições depois da falha usando um impulso proposital pra completar o movimento. Só onde a ficha pede, e sempre freando a descida.</div>
@@ -7928,7 +7930,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
   return `<div class="sets-grid${_rotulada ? ' rotulada' : ''}" id="sets-${di}-${eiS}" data-di="${di}" data-ei="${eiS}" data-noadd="${noAdd ? '1' : ''}" data-semx="${semX ? '1' : ''}">
       ${label ? `<div class="carga-label" style="font-size:10px;margin-bottom:2px;">${label}</div>` : ''}
       ${evo}
-      <div class="set-head"><span class="set-num"></span><span class="sh-kg">${getUnit()}</span><span class="sh-pl" onclick="openPlacaInfo()" title="O que e placa?">placa</span><span class="sh-reps">reps</span><span class="sh-rs" title="Quantas repetições sobraram">sobrou</span><button type="button" class="rs-info-btn" onclick="openSobrouInfo()" aria-label="O que é o sobrou?">i</button><span style="flex:1"></span></div>
+      <div class="set-head"><span class="set-num"></span><span class="sh-kg" onclick="openGlossario('kg')" title="De cada lado ou o total?">${getUnit()}</span><span class="sh-pl" onclick="openPlacaInfo()" title="O que e placa?">placa</span><span class="sh-reps">reps</span><span class="sh-rs" title="Quantas repetições sobraram">sobrou</span><button type="button" class="rs-info-btn" onclick="openSobrouInfo()" aria-label="O que é o sobrou?">i</button><span style="flex:1"></span></div>
       ${rows}
       ${noAdd ? '' : `<button type="button" class="set-add" onclick="addSet(${di},'${eiS}')">+ série</button>`}
     </div>`;
@@ -20039,7 +20041,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v502';
+    var APP_SHELL_V = 'metodo-gh-v503';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
