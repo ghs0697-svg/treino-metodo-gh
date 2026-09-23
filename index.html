@@ -364,8 +364,8 @@
   .set-row.t-val { background: linear-gradient(90deg, rgba(var(--c-val-rgb),.09), transparent 70%); border-radius: 6px; }
   .set-row.t-aq .set-rs, .set-row.t-aj .set-rs, .set-row.t-pap .set-rs { opacity: .4; }
   .sets-grid.rotulada .set-in::placeholder { color: #5e574a; }
-  /* v504: exercicio por tempo: so a coluna de tempo; kg, placa, sobrou e o "i" do sobrou somem */
-  .sets-grid.tempo .set-in.set-kg, .sets-grid.tempo .set-in.set-pl, .sets-grid.tempo .set-in.set-rs, .sets-grid.tempo .sh-kg, .sets-grid.tempo .sh-pl, .sets-grid.tempo .sh-rs, .sets-grid.tempo .rs-info-btn { display: none; }
+  /* v504/v505: exercicio por tempo: coluna de tempo + sobrou (GH 22/09: "pode manter o campo sobrou sim"); kg e placa somem */
+  .sets-grid.tempo .set-in.set-kg, .sets-grid.tempo .set-in.set-pl, .sets-grid.tempo .sh-kg, .sets-grid.tempo .sh-pl { display: none; }
   .sets-grid.tempo .set-in.set-reps, .sets-grid.tempo .sh-reps { width: 72px; }
   .ex-presc .tp-chip { display: inline-block; border: 1px solid; border-radius: 999px; padding: 0 8px; font-size: 11px; line-height: 18px; margin: 1px 3px 1px 0; white-space: nowrap; cursor: pointer; }
   .ex-presc .tp-chip b { font-weight: 700; }
@@ -20053,7 +20053,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v504';
+    var APP_SHELL_V = 'metodo-gh-v505';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
