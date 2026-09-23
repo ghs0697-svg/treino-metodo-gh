@@ -1,4 +1,4 @@
-const CACHE_NAME = 'metodo-gh-v518';
+const CACHE_NAME = 'metodo-gh-v519';
 const ASSETS = [
   './',
   './index.html',
@@ -21,10 +21,11 @@ self.addEventListener('install', e => {
   // cache: 'reload' fura o cache HTTP do Pages (max-age=600) — sem isso o SW novo
   // instalava carregando o index VELHO e a "atualização" vinha com shell antigo.
   // v440: um asset secundario falhando (404/rede) NAO derruba a instalacao inteira; so o shell e obrigatorio.
+  // v519 (23/09, tela branca da v517): o install baixa SÓ o shell (./ e ./index.html) e ativa em 1 a 2 s. Os outros
+  // assets entram em segundo plano depois do activate (e pelo fetch handler). Antes o install precachava 15 arquivos
+  // (MBs, 5 a 20 s no 4G): o aluno com a tela branca fechava o app antes de terminar e nunca recebia a correção.
   e.waitUntil(
-    caches.open(CACHE_NAME).then(c => Promise.all(ASSETS.map(u =>
-      c.add(new Request(u, { cache: 'reload' })).catch(err => { if (u === './' || u === './index.html') throw err; })
-    )))
+    caches.open(CACHE_NAME).then(c => Promise.all(['./', './index.html'].map(u => c.add(new Request(u, { cache: 'reload' })))))
   );
   self.skipWaiting();
 });
@@ -34,14 +35,19 @@ self.addEventListener('activate', e => {
     const keys = await caches.keys();
     // gh-videos-v1 = vídeos de execução baixados pelo ALUNO pro offline. NUNCA entra na
     // limpeza de versão: sem esta exceção, cada atualização do app apagaria os downloads.
+    // v519: se o cache velho é o da v517 (shell que escondia o app inteiro de quem tem Esforço-alvo 2 a 3), TODAS as
+    // janelas recarregam, a visível inclusive: naquela versão não há nada na tela pra interromper.
+    const preso517 = keys.indexOf('metodo-gh-v517') >= 0;
     await Promise.all(keys.filter(k => k !== CACHE_NAME && k !== 'gh-videos-v1').map(k => caches.delete(k)));
     await self.clients.claim();
+    // v519: o resto dos assets entra agora, em segundo plano, sem segurar a ativação.
+    caches.open(CACHE_NAME).then(c => Promise.all(ASSETS.map(u => c.add(new Request(u, { cache: 'reload' })).catch(() => {})))).catch(() => {});
     // v488 (GH 20/09, aluno preso na v467): quando o SW novo assume, as janelas que NÃO estão
     // na frente do aluno recarregam por aqui, sem depender do JS velho que está rodando nelas.
     // A janela visível fica quieta (pode estar digitando carga); essa o próprio app recarrega.
     try {
       const cs = await self.clients.matchAll({ type: 'window' });
-      cs.forEach(c => { try { if (c.visibilityState !== 'visible' && typeof c.navigate === 'function') c.navigate(c.url); } catch (_) {} });
+      cs.forEach(c => { try { if ((preso517 || c.visibilityState !== 'visible') && typeof c.navigate === 'function') c.navigate(c.url); } catch (_) {} });
     } catch (_) {}
   })());
 });

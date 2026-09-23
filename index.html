@@ -20245,7 +20245,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v518';
+    var APP_SHELL_V = 'metodo-gh-v519';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -20274,7 +20274,9 @@ if ('serviceWorker' in navigator) {
       var digitando = a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
       if (digitando) return;   // não queima a trava: a próxima consulta tenta de novo
       if (_treinoRolando()) return;
-      if (document.visibilityState === 'visible' && Date.now() - _ultimoToque < 20000) return;   // mexendo agora: depois
+      // v519: app sem tela (body escondido ou sem altura, caso da v517) não tem o que interromper: recarrega já.
+      var semTela = false; try { semTela = getComputedStyle(document.body).display === 'none' || document.body.offsetHeight === 0; } catch (_) {}
+      if (!semTela && document.visibilityState === 'visible' && Date.now() - _ultimoToque < 20000) return;   // mexendo agora: depois
       try { if (typeof _flushSetsPendentes_ === 'function') _flushSetsPendentes_(true); } catch (_) {}   // nada digitado se perde no reload
       // 1 tentativa por versão de shell por sessão — mata qualquer chance de loop
       try { if (sessionStorage.getItem('gh_upd_' + APP_SHELL_V) === '1') return; sessionStorage.setItem('gh_upd_' + APP_SHELL_V, '1'); } catch (_) {}
@@ -20297,6 +20299,18 @@ if ('serviceWorker' in navigator) {
       } catch (_) {}
     }
     navigator.serviceWorker.register('sw.js').catch(function () {});
+    // v519: vigia de tela branca. 8 s depois de abrir, body escondido ou sem altura = shell quebrado (caso da v517):
+    // força a atualização na hora, 1 vez por sessão, sem esperar o boot nem o dedo parar.
+    setTimeout(function () {
+      try {
+        var b = document.body; if (!b) return;
+        var escondido = getComputedStyle(b).display === 'none' || b.offsetHeight === 0;
+        if (!escondido) return;
+        if (sessionStorage.getItem('gh_branco_' + APP_SHELL_V) === '1') return;
+        sessionStorage.setItem('gh_branco_' + APP_SHELL_V, '1');
+        if (typeof forcarAtualizacaoApp === 'function') forcarAtualizacaoApp();
+      } catch (_) {}
+    }, 8000);
     // Vigia de 60s: consulta a cada 3s enquanto o update pode estar baixando/instalando
     // (timeout fixo perdia SW que terminava depois dele). Barato: é 1 postMessage.
     var vezes = 0;
