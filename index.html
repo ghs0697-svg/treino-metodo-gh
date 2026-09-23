@@ -13,6 +13,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://docs.google.com">
 <link rel="preconnect" href="https://script.google.com">
+<!-- v511: toda resposta do Apps Script vem por 302 de script.googleusercontent.com, e o vídeo de execução é iframe do YouTube; pré-conectar poupa o aperto de mão TLS na 1ª chamada (medição de 23/09: vídeo abria em 1,0 s a 4x CPU) -->
+<link rel="preconnect" href="https://script.googleusercontent.com">
+<link rel="preconnect" href="https://www.youtube-nocookie.com">
+<link rel="preconnect" href="https://i.ytimg.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cinzel:wght@600;700&display=swap">
 <style>
   :root {
@@ -20119,7 +20123,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v510';
+    var APP_SHELL_V = 'metodo-gh-v511';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
