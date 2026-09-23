@@ -8006,7 +8006,6 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
       ${evo}
       <div class="set-head"><span class="set-num"></span><span class="sh-kg" onclick="openGlossario('kg')" title="De cada lado ou o total?">${getUnit()}</span><span class="sh-pl" onclick="openPlacaInfo()" title="O que e placa?">placa</span><span class="sh-reps">${_porTempo ? _tUnid : 'reps'}</span><span class="sh-rs" title="Quantas repetições sobraram">sobrou</span><button type="button" class="rs-info-btn" onclick="openSobrouInfo()" aria-label="O que é o sobrou?">i</button><span style="flex:1"></span></div>
       ${rows}
-      ${noAdd ? '' : `<button type="button" class="set-add" onclick="addSet(${di},'${eiS}')">+ série</button>`}
     </div>`;
 }
 // Resolve a grade CERTA de (di,ei). O modo foco ("um exercício por vez") renderiza a MESMA grade
@@ -12805,7 +12804,7 @@ function renderExercises() {
           <div class="carga-section" style="flex-direction:column;align-items:stretch;gap:8px;">
             ${_setsGridHtml(di, ei, '', true, true)}
             <div class="sets-footer">
-            <button type="button" class="set-add" onclick="addSet(${di},'${ei}')">+ série</button>
+
             <span class="carga-saved" id="sv-${di}-${ei}">&#10003; salvo</span>
             <div class="ex-actions">
               <button class="ex-action-btn" onclick="event.stopPropagation(); openPacer(${di}, ${ei})" title="Treinar no ritmo (coach de cadência)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="ex-action-lbl">ritmo</span></button>
@@ -20115,7 +20114,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v507';
+    var APP_SHELL_V = 'metodo-gh-v508';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
