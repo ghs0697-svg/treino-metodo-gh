@@ -8780,8 +8780,8 @@ async function enviarDor() {
 async function _tlemHydrate() {
   try {
     if (_tlemLoad() || !SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
-    const r = await fetch(LOG_ENDPOINT + '?action=treino_lembrete&id=' + encodeURIComponent(SHEET_ID), { redirect: 'follow' });
-    const j = await r.json();
+    let j = await _bootPeca_('lembrete');   // v512: vem no boot
+    if (!j) { const r = await fetch(LOG_ENDPOINT + '?action=treino_lembrete&id=' + encodeURIComponent(SHEET_ID), { redirect: 'follow' }); j = await r.json(); }
     if (j && j.pref && j.pref.hora) {
       _tlemStore({ d: String(j.pref.dias || '').split(',').filter(Boolean).map(Number), h: j.pref.hora, on: !!j.pref.ligado });
       _tlemChipRefresh();
@@ -8880,10 +8880,14 @@ function _restoreCargasRealign(cargas, ifEmpty) {
 async function syncCargasFromServer_() {
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
   try {
-    const url = `${LOG_ENDPOINT}?action=cargas&id=${encodeURIComponent(SHEET_ID)}`;
-    const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) return;
-    const data = await res.json();
+    let data = null;
+    try { const rs = await _restoreFetch_(); if (rs && Array.isArray(rs.cargas)) data = { cargas: rs.cargas }; } catch (_) {}   // v512
+    if (!data) {
+      const url = `${LOG_ENDPOINT}?action=cargas&id=${encodeURIComponent(SHEET_ID)}`;
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) return;
+      data = await res.json();
+    }
     if (!data || !Array.isArray(data.cargas)) return;
     const restored = _restoreCargasRealign(data.cargas, true); // if-empty: respeita peso local
     if (restored > 0) {
@@ -8973,10 +8977,14 @@ const DONE_KEEP_MS = 28 * 24 * 60 * 60 * 1000; // 4 semanas
 async function syncDoneFromServer_() {
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
   try {
-    const url = `${LOG_ENDPOINT}?action=progresso&id=${encodeURIComponent(SHEET_ID)}`;
-    const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) return;
-    const data = await res.json();
+    let data = null;
+    try { const rs = await _restoreFetch_(); if (rs && Array.isArray(rs.done)) data = { done: rs.done, atual: rs.atual }; } catch (_) {}   // v512
+    if (!data) {
+      const url = `${LOG_ENDPOINT}?action=progresso&id=${encodeURIComponent(SHEET_ID)}`;
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) return;
+      data = await res.json();
+    }
     if (!data || !Array.isArray(data.done)) return;
     // Corte = o mais recente entre (data do reajuste) e (hoje − 4 semanas).
     // `atual` no futuro/inválido é ignorado (cai no rolling) pra um typo na col E
@@ -10139,10 +10147,13 @@ async function loadAndShowLastModified() {
       const badge = document.getElementById('lastModBadge');
       if (el && badge) { el.textContent = cached; badge.style.display = 'block'; }
     }
-    const url = `${LOG_ENDPOINT}?action=lastmod&id=${encodeURIComponent(SHEET_ID)}`;
-    const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) return;
-    const data = await res.json();
+    let data = await _bootPeca_('lastmod');   // v512
+    if (!data) {
+      const url = `${LOG_ENDPOINT}?action=lastmod&id=${encodeURIComponent(SHEET_ID)}`;
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) return;
+      data = await res.json();
+    }
     if (!data || !data.lastModifiedBR) return;
     try { if (data.gs) localStorage.setItem('gh_gs_build', String(data.gs)); } catch (_) {}   // v472: build do servidor, pro app so chamar rota que ja existe la (v479: localStorage, sobrevive a sessao)
     const el = document.getElementById('lastModValue');
@@ -13278,7 +13289,8 @@ async function loadTempoTreino() {
   let hist = {};
   try { hist = JSON.parse(localStorage.getItem(_wtHistKey()) || '{}'); Object.assign(_wtServer, hist); } catch (_) {}
   try {
-    const j = await (await fetch(`${LOG_ENDPOINT}?action=tempo_treino_list&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`, { cache: 'no-store' })).json();
+    let j = await _bootPeca_('tempo');   // v512
+    if (!j) j = await (await fetch(`${LOG_ENDPOINT}?action=tempo_treino_list&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`, { cache: 'no-store' })).json();
     if (j && j.ok) {
       const protoMs = Number(j.protoMs) || 0;
       _wtServer = {};
@@ -15181,9 +15193,9 @@ function _fotosBannerKey(startDate) {
 async function checkFotosBannerOnLoad() {
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
   try {
-    const resp = await fetch(`${LOG_ENDPOINT}?action=foto_window&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`, { cache: 'no-store' });
-    const j = await resp.json();
-    if (!j.open || !j.startDate) return;
+    let j = await _bootPeca_('foto_window');   // v512
+    if (!j) { const resp = await fetch(`${LOG_ENDPOINT}?action=foto_window&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`, { cache: 'no-store' }); j = await resp.json(); }
+    if (!j || !j.open || !j.startDate) return;
     // Aluno já dispensou pra essa janela específica?
     if (localStorage.getItem(_fotosBannerKey(j.startDate)) === '1') return;
     const banner = document.getElementById('fotosBanner');
@@ -15911,7 +15923,8 @@ async function loadLaudoDestaque() {
   if (!slot) return;
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') { slot.innerHTML = ''; return; }
   try {
-    const j = await (await fetch(`${LOG_ENDPOINT}?action=comparacoes_list&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`, { cache: 'no-store' })).json();
+    let j = await _bootPeca_('laudos');   // v512
+    if (!j) j = await (await fetch(`${LOG_ENDPOINT}?action=comparacoes_list&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`, { cache: 'no-store' })).json();
     const laudos = (j && j.laudos) || [];
     _laudosCache = laudos;
     if (!laudos.length) { slot.innerHTML = ''; return; }
@@ -17492,6 +17505,8 @@ async function loadRecado() {
   try {
     // v510: o áudio desce em base64 pelo Apps Script e o front door às vezes estoura o tempo (caso Gerson, 23/09):
     // até 3 tentativas com 4 s de pausa. Resposta JSON "sem recado" não repete.
+    const rs = await _bootPeca_('recado_status');   // v512: sem recado no servidor, nem chama a rota do áudio
+    if (rs && rs.ok && !rs.exists) { slot.innerHTML = ''; return; }
     let j = null;
     for (let tent = 0; tent < 3 && !j; tent++) {
       try { const r = await fetch(`${LOG_ENDPOINT}?action=recado&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`); j = await r.json(); }
@@ -19039,7 +19054,7 @@ function _equipeVencidoAviso(motivo, j) {
     b.style.display = 'block';
   } catch (_) {}
 }
-(function planBlockGate() {
+function planBlockGate(pre) {   // v512: pre = pedaço do boot; sem ele busca sozinho
   try {
     if (typeof SHEET_ID === 'undefined' || !SHEET_ID) return;
     if (new URLSearchParams(location.search).get('edit') === '1') return;
@@ -19050,8 +19065,8 @@ function _equipeVencidoAviso(motivo, j) {
     // (mediana) quando o plano venceu, ou seja a decisao acontece ~3 semanas antes. Com 15
     // o primeiro aviso do app chegava DEPOIS da decisao ja tomada.
     var PRE_DIAS = 25; // banner de aviso começa 25 dias antes de vencer
-    fetch(LOG_ENDPOINT + '?action=planstatus&sheet=' + encodeURIComponent(SHEET_ID) + '&_=' + Date.now())
-      .then(function (r) { return r.json(); })
+    (pre ? Promise.resolve(pre) : fetch(LOG_ENDPOINT + '?action=planstatus&sheet=' + encodeURIComponent(SHEET_ID) + '&_=' + Date.now())
+      .then(function (r) { return r.json(); }))
       .then(function (j) {
         var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
         var d = _planGateDecision(j, GRACE, PRE_DIAS, hoje.getTime());
@@ -19068,15 +19083,15 @@ function _equipeVencidoAviso(motivo, j) {
       })
       .catch(function () { /* fail open */ });
   } catch (e) { /* fail open */ }
-})();
+}
 
 // Vitrine: ofusca a aba GHFLIX pra quem não assina (cosmético; clicar abre a oferta dentro do iframe).
-(function ghflixTabState() {
+function ghflixTabState(pre) {   // v512: pre = pedaço do boot
   try {
     if (typeof SHEET_ID === 'undefined' || !SHEET_ID) return;
     var ep = 'https://script.google.com/macros/s/AKfycby0Kej7V7Gi2gIDKorBookSLofBMHOF50UFWq4Q1fTmstCD8ed8O9XLyCaZo8QIeUPfeQ/exec';
-    fetch(ep + '?action=ghflixAccess&id=' + encodeURIComponent(SHEET_ID))
-      .then(function (r) { return r.json(); })
+    (pre ? Promise.resolve(pre) : fetch(ep + '?action=ghflixAccess&id=' + encodeURIComponent(SHEET_ID))
+      .then(function (r) { return r.json(); }))
       .then(function (j) {
         if (!(j && j.liberado)) {
           var btn = document.getElementById('navGhflix');
@@ -19086,7 +19101,39 @@ function _equipeVencidoAviso(motivo, j) {
         }
       }).catch(function () {});
   } catch (e) {}
+}
+
+// ══ v512 ("fluidez", GH 23/09/2026): UMA chamada ao Apps Script na abertura (action=boot) no lugar de 9 a 11
+// execuções (lastmod, planstatus, ghflixAccess, foto_window, tempo_treino_list, recado, comparacoes_list...).
+// Cada handler de sempre passa a aceitar o pedaço pré-buscado; se o boot falhar (rede, .gs antigo sem a rota) ou
+// o pedaço vier nulo, o handler busca sozinho pela rota antiga. Restore de carga e de feito vai numa 2ª chamada
+// (action=restore, que junta 'cargas' e 'progresso'), porque é o pedaço pesado e só serve pra aparelho novo.
+var _bootPromise = (async function () {
+  try {
+    if (typeof SHEET_ID === 'undefined' || !SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return null;
+    if (new URLSearchParams(location.search).get('edit') === '1') return null;
+    const r = await fetch(LOG_ENDPOINT + '?action=boot&id=' + encodeURIComponent(SHEET_ID) + '&_=' + Date.now(), { cache: 'no-store' });
+    const j = await r.json();
+    return (j && j.ok) ? j : null;
+  } catch (_) { return null; }
 })();
+async function _bootPeca_(k) { try { const b = await _bootPromise; return (b && b[k] != null && !b[k].error) ? b[k] : null; } catch (_) { return null; } }
+_bootPromise.then(function (b) { planBlockGate(b && b.planstatus); ghflixTabState(b && b.ghflix); });
+
+let _restoreProm = null;
+function _restoreFetch_() {
+  if (_restoreProm) return _restoreProm;
+  _restoreProm = (async () => {
+    try {
+      if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return null;
+      const r = await fetch(`${LOG_ENDPOINT}?action=restore&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`, { cache: 'no-store' });
+      const j = await r.json();
+      return (j && j.ok) ? j : null;
+    } catch (_) { return null; }
+  })();
+  setTimeout(() => { _restoreProm = null; }, 5000);
+  return _restoreProm;
+}
 
 function selectDietOption(uid, opIdx) {
   const tabs = document.querySelectorAll(`#optTabs${uid} .diet-option-tab`);
@@ -20123,7 +20170,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v511';
+    var APP_SHELL_V = 'metodo-gh-v512';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
