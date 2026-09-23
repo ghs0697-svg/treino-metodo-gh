@@ -367,6 +367,9 @@
   .set-row.t-pap { background: linear-gradient(90deg, rgba(var(--c-pap-rgb),.09), transparent 70%); border-radius: 6px; }
   .set-row.t-val { background: linear-gradient(90deg, rgba(var(--c-val-rgb),.09), transparent 70%); border-radius: 6px; }
   .set-row.t-aq .set-rs, .set-row.t-aj .set-rs, .set-row.t-pap .set-rs { opacity: .4; }
+  /* v514: válida que sobrou acima do combinado não valeu: pastilha vazada e apagada, com o motivo escrito */
+  .set-row.t-val.nv:not(.feita) button.set-num { background: transparent; color: #a3936f; border-color: rgba(212,175,106,.35); font-size: 9px; line-height: 1.05; white-space: normal; padding: 0 2px; }
+  .set-row.t-val.nv { background: none; }
   .sets-grid.rotulada .set-in::placeholder { color: #5e574a; font-size: 12px; }
   /* v506: em cima a PRESCRIÇÃO (uma linha por tipo, espelhando a grade), embaixo o TEU REGISTRO */
   .ex-presc-tbl { margin-top: 6px; }
@@ -3988,7 +3991,7 @@
     <div class="ts-row"><span class="ts-pill t-aq">aquecimento</span><div class="tec-body"><b>Carga leve, 10 repetições.</b> Serve pra lubrificar a articulação que vai trabalhar, não pra cansar. É normal sobrar muito. Ela só aparece quando o exercício traz uma articulação que ainda não trabalhou no dia.</div></div>
     <div class="ts-row"><span class="ts-pill t-aj">ajuste</span><div class="tec-body"><b>Carga média, 6 repetições.</b> Serve pra avisar o teu sistema nervoso que vem esforço pesado, sem gastar energia. Também sobra muito, de propósito. Aparece quando o movimento muda de direção ou de ângulo, mesmo com a articulação já quente.</div></div>
     <div class="ts-row"><span class="ts-pill t-pap">PAP</span><div class="tec-body"><b>Uma repetição só, com carga acima do ajuste.</b> É um estímulo máximo pro sistema nervoso antes da série válida. Não é pra falhar. Só entra em quem já tem experiência, e só quando eu coloco.</div></div>
-    <div class="ts-row"><span class="ts-pill t-val">válida</span><div class="tec-body"><b>É a série que constrói músculo.</b> Vai até a falha ou fica a uma repetição dela. É a única onde tu anota o "sobrou", e a única que conta como volume na semana.</div></div>
+    <div class="ts-row"><span class="ts-pill t-val">válida</span><div class="tec-body"><b>É a série que constrói músculo.</b> Vai até a falha ou fica a uma repetição dela. É a única onde tu anota o "sobrou", e a única que conta como volume na semana. Sobrou mais que o teu alvo? Então essa não valeu: o app abre outra série pra tu fazer.</div></div>
     <div class="tec-body ts-why"><b>Por que alguns exercícios não têm aquecimento nem ajuste?</b> Porque a articulação e a direção do movimento já vieram prontas do exercício anterior. Barra fixa depois da puxada alta vai direto na válida: mesma direção, mesma articulação. Remada depois delas ajusta de novo, porque a direção mudou. Repetir aquecimento numa articulação que já está quente é série perdida.</div>
     <div class="tec-body ts-why"><b>Panturrilha, abdômen e lombar</b> levam só ajuste, porque os outros exercícios já usaram eles pra estabilizar. <b>Prancha e isometria</b> vão direto, porque não é carga a calibrar.</div>
   </div>
@@ -5090,7 +5093,7 @@
       <div class="gloss-it" data-g="aq"><b><span class="gl-cor t-aq">aquec.</span> Aquecimento</b>Carga leve, 10 repetições. Serve pra lubrificar a articulação que vai trabalhar, não pra cansar. É normal sobrar muito. Ela só aparece quando o exercício traz uma articulação que ainda não trabalhou no dia.</div>
       <div class="gloss-it" data-g="aj"><b><span class="gl-cor t-aj">ajuste</span> Ajuste</b>Carga média, 6 repetições. Serve pra avisar o teu sistema nervoso que vem esforço pesado, sem gastar energia. Também sobra muito, de propósito. Aparece quando o movimento muda de direção ou de ângulo, mesmo com a articulação já quente.</div>
       <div class="gloss-it" data-g="pap"><b><span class="gl-cor t-pap">PAP</span> PAP</b>Uma repetição só, com carga acima do ajuste. É um estímulo máximo pro sistema nervoso antes da série válida. Não é pra falhar. Só entra em quem já tem experiência, e só quando eu coloco.</div>
-      <div class="gloss-it" data-g="val"><b><span class="gl-cor t-val">válida</span> Válida</b>É a série que constrói músculo. Vai até a falha ou fica a uma repetição dela. É a única onde tu anota o "sobrou", e a única que conta como volume na semana. Exercício sem cor na grade é só de válidas.</div>
+      <div class="gloss-it" data-g="val"><b><span class="gl-cor t-val">válida</span> Válida</b>É a série que constrói músculo. Vai até a falha ou fica a uma repetição dela. É a única onde tu anota o "sobrou", e a única que conta como volume na semana. Sobrou mais que o teu alvo? Então essa não valeu: o app abre outra série pra tu fazer. Exercício sem cor na grade é só de válidas.</div>
       <div class="gloss-it" data-g="semaq"><b>Por que alguns exercícios não têm aquecimento nem ajuste?</b>Porque a articulação e a direção do movimento já vieram prontas do exercício anterior. Barra fixa depois da puxada alta vai direto na válida: mesma direção, mesma articulação. Remada depois delas ajusta de novo, porque a direção mudou. Repetir aquecimento numa articulação que já está quente é série perdida. Panturrilha, abdômen e lombar levam só ajuste, porque os outros exercícios já usaram eles pra estabilizar. Prancha e isometria vão direto, porque não é carga a calibrar.</div>
       <div class="gloss-it" data-g="cadencia"><b>Cadência (Pos · Iso · Neg)</b>A velocidade de cada fase do movimento. Pos = subir. Iso = segurar parado. Neg = descer controlando. "Neg 3s" = descer em 3 segundos. O botão "ritmo" marca isso pra ti com som e bolinha.</div>
       <div class="gloss-it" data-g="concentrica"><b>Concêntrica (positiva)</b>A fase de vencer o peso, subindo.</div>
@@ -7189,8 +7192,8 @@ const _sugFeita = {};
 function _alvoTopo() {
   try {
     const r = (typeof STUDENT_ESFORCO_ALVO !== 'undefined' && STUDENT_ESFORCO_ALVO) ? _parseAlvoRange(STUDENT_ESFORCO_ALVO.valor) : null;
-    return r ? { lo: r[0], hi: r[1] } : { lo: 2, hi: 3 };
-  } catch (_) { return { lo: 2, hi: 3 }; }
+    return r ? { lo: r[0], hi: r[1] } : { lo: 0, hi: 2 };   // v514: sem Esforço-alvo, vale o combinado do GH (sobrar no máximo 2)
+  } catch (_) { return { lo: 0, hi: 2 }; }
 }
 function _sugEl(di, ei) { return document.getElementById('sug-' + di + '-' + ei); }
 function _sugLimpa(di, ei) { const e = _sugEl(di, ei); if (e) { e.style.display = 'none'; e.innerHTML = ''; } }
@@ -7357,32 +7360,25 @@ function _sobrouSugere(di, ei, arr) {
     const ex = _exObjAt(di, ei);
     const tp = _serieTipos(ex);
     const ehVal = i => !tp[i] || tp[i].tipo === 'val';
-    // v496: so a serie VALIDA entra aqui. Aquecimento, ajuste e PAP com "sobrou" alto e o esperado (nao sao
-    // pra cansar): nunca abrem serie extra nem avisam "fecha a faixa".
+    // v496: só a série VÁLIDA entra aqui (aquecimento, ajuste e PAP sobrar é o esperado).
     let li = -1;
     for (let i = 0; i < arr.length; i++) if (ehVal(i) && String(arr[i].rs || '').trim()) li = i;
     if (li < 0) { _sugLimpa(di, ei); return; }
     const v = parseInt(String(arr[li].rs).replace(/[^0-9]/g, ''), 10);
-    if (!isFinite(v) || v <= alvo.hi) { _sugLimpa(di, ei); return; }   // dentro do alvo do protocolo: nada
-    const faixa = alvo.lo === alvo.hi ? String(alvo.lo) : (alvo.lo + ' a ' + alvo.hi);
-    const rmax = _repsAlvoDaSerie(ex, li);
-    const feitas = parseInt(String(arr[li].reps || '').replace(/[^0-9]/g, ''), 10);
-    // GH 20/09: sobrar muito com POUCAS reps é peso leve com série curta, não série a mais. Só abre quando
-    // o aluno FECHOU o topo da faixa prescrita e AINDA sobrou acima do alvo dele.
-    if (!rmax || !isFinite(feitas)) { _sugLimpa(di, ei); return; }
-    if (feitas < rmax) {
-      _sugMostra(di, ei, 'Sobrou ' + v + ' com ' + feitas + ' de ' + rmax + ' reps. Fecha a faixa de reps antes de subir a carga.');
-      return;
-    }
-    const k = di + '|' + ei + '|' + currentWeek;
+    if (!isFinite(v) || v <= alvo.hi) { _sugLimpa(di, ei); return; }   // dentro do combinado: valeu, nada a dizer
+    // v514 (GH 23/09/2026, textual): "meu combinado é que pra ser série válida não pode sobrar mais que 2 repetições, se
+    // sobrou mais que isso não é válida, daí automaticamente tem que abrir uma nova linha de série pra pessoa fazer, com
+    // uma explicação". O SOBROU decide, não as reps (a regra de 20/09, de fechar a faixa antes, saiu). O combinado é o
+    // Esforço-alvo do protocolo (alvo.hi); sem a linha meta, 2. Uma abertura por linha que não valeu; teto de 3 linhas
+    // além do prescrito.
+    const k = di + '|' + ei + '|' + currentWeek + '|' + li;
     const presc = _serieCountPresc(ex);
-    const cabeMais = arr.length < presc + 1;   // teto duro: no máximo UMA série além do prescrito, hoje e sempre
+    const cabeMais = arr.length < presc + 3;
     let ultimaVal = -1;
     for (let j = 0; j < arr.length; j++) if (ehVal(j)) ultimaVal = j;
-    if (li < ultimaVal || _sugFeita[k] || !cabeMais) {
-      _sugMostra(di, ei, 'Fechou ' + feitas + ' reps e ainda sobrou ' + v + ', acima do teu alvo de ' + faixa + '. Dá pra subir a carga na próxima série.');
-      return;
-    }
+    const explica = 'Sobrou ' + v + ', mais que ' + alvo.hi + ': essa não foi uma série válida.';
+    if (li < ultimaVal) { _sugMostra(di, ei, explica + ' Faz a próxima com mais carga, pra sobrar no máximo ' + alvo.hi + '.'); return; }
+    if (_sugFeita[k] || !cabeMais) { _sugMostra(di, ei, explica + ' Faz outra série com mais carga.'); return; }
     _sugFeita[k] = 1;
     let _aberta = false;
     const abre = () => {
@@ -7390,7 +7386,7 @@ function _sobrouSugere(di, ei, arr) {
       _aberta = true;
       try {
         addSet(di, ei);
-        _sugMostra(di, ei, 'Abri mais uma série: fechou ' + feitas + ' reps e ainda sobrou ' + v + '. Sobe a carga nela.'
+        _sugMostra(di, ei, explica + ' Abri outra série: faz de novo com mais carga, pra sobrar no máximo ' + alvo.hi + '.'
           + '<br><button type="button" class="und" onclick="_sugDesfaz(' + di + ', \'' + ei + '\')">desfazer</button>');
       } catch (_) {}
     };
@@ -7412,7 +7408,7 @@ function _sugDesfaz(di, ei) {
     const arr = loadSets(di, ei, currentWeek) || [];
     const ult = arr[arr.length - 1];
     if (arr.length > 1 && ult && !String(ult.kg || '').trim() && !String(ult.reps || '').trim() && !String(ult.pl || '').trim()) removeSet(di, ei, arr.length - 1);
-    delete _sugFeita[di + '|' + ei + '|' + currentWeek];
+    Object.keys(_sugFeita).forEach(x => { if (x.indexOf(di + '|' + ei + '|' + currentWeek) === 0) delete _sugFeita[x]; });   // v514: chave por linha
     _sugLimpa(di, ei);
   } catch (_) {}
 }
@@ -7973,6 +7969,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
   const _exG = _exObjAt(di, ei);
   const _rotulada = _serieTemRotulo(_exG);   // v496: exercicio com aq/aj/pap/val na col SERIES
   const _tpG = _rotulada ? _serieTipos(_exG) : [];   // v498: tipo e segmento de cada linha
+  const _alvoHi = _alvoTopo().hi;   // v514: válida com sobrou acima disso não valeu
   const _porTempo = _exPorTempo(_exG);   // v504: prancha, isometria, alongamento: so tempo, sem kg/placa/sobrou
   const _tUnid = _porTempo ? _tempoUnidade(_exG) : '';
   if (!sets || !sets.length) {
@@ -7985,9 +7982,9 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
   // Pelo mesmo motivo a linha prescrita da grade rotulada não tem o × (só a linha extra que o aluno abriu sai).
   const _nPresc = _rotulada ? _serieCountPresc(_exG) : 0;
   while (_nPresc && sets.length < _nPresc) sets.push({ kg: '', pl: '', reps: '', rs: '' });
-  // v513: acima de prescrito + 1 (a extra automática) só sobra linha que TEM dado; linha vazia sobrando é resto de grade
-  // antiga e sai do render. Nunca tira linha com peso, reps ou sobrou.
-  if (_nPresc) { while (sets.length > _nPresc + 1) { const u = sets[sets.length - 1] || {}; if (String(u.kg || '').trim() || String(u.pl || '').trim() || String(u.reps || '').trim() || String(u.rs || '').trim()) break; sets.pop(); } }
+  // v513/v514: acima de prescrito + 3 (o teto das extras automáticas, uma por série que não valeu) só sobra linha que TEM
+  // dado; linha vazia além disso é resto de grade antiga e sai do render. Nunca tira linha com peso, reps ou sobrou.
+  if (_nPresc) { while (sets.length > _nPresc + 3) { const u = sets[sets.length - 1] || {}; if (String(u.kg || '').trim() || String(u.pl || '').trim() || String(u.reps || '').trim() || String(u.rs || '').trim()) break; sets.pop(); } }
   const prev = getPrevSets(di, ei, w);
   const eiS = String(ei);
   // "sobrou": quantas reps sobraram na série. O alvo prescrito (linha meta Esforço-alvo) vira
@@ -8007,12 +8004,14 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
     const feita = okSet.has(si);
     const _tipo = _rotulada ? _rowTipo(di, eiS, si) : 'val';   // v496
     const _rot = _rotulada ? (SERIE_TIPO_CURTO[_tipo] || 'válida') : '';   // v498: por extenso, na cor do tipo
+    const _rsV = parseInt(String(s.rs || '').replace(/[^0-9]/g, ''), 10);
+    const _nv = _rotulada && _tipo === 'val' && isFinite(_rsV) && _rsV > _alvoHi;   // v514: sobrou mais que o combinado = não valeu
     const _segR = (_rotulada && _tpG[si]) ? _tpG[si].seg : null;
     const _phReps = (_segR != null) ? _repsCurto(_repsSegmento(_exG, _segR)) : 'reps';
     const _phKg = (_rotulada && _tipo !== 'val') ? (SERIE_TIPO_CARGA[_tipo] || getUnit()) : getUnit();
     const _phTempo = _porTempo ? (_tempoCurto((_rotulada && _segR != null) ? _repsSegmento(_exG, _segR) : _exG.reps) || _tUnid) : '';   // v504
-    return `<div class="set-row ${feita ? 'feita' : ''} ${_rotulada ? 't-' + _tipo : ''}" data-si="${si}" data-tipo="${_tipo}">
-        <button type="button" class="set-num ${_rotulada ? 't-' + _tipo : ''}" onclick="toggleSetFeita(${di},'${eiS}',${si})" title="${_rotulada ? 'Série de ' + SERIE_TIPO_NOME[_tipo] + '. ' : ''}Marcar série como feita" aria-label="Marcar série ${si + 1} como feita">${feita ? '✓' : (_rotulada ? _rot : si + 1)}</button>
+    return `<div class="set-row ${feita ? 'feita' : ''} ${_rotulada ? 't-' + _tipo : ''} ${_nv ? 'nv' : ''}" data-si="${si}" data-tipo="${_tipo}">
+        <button type="button" class="set-num ${_rotulada ? 't-' + _tipo : ''}" onclick="toggleSetFeita(${di},'${eiS}',${si})" title="${_rotulada ? 'Série de ' + SERIE_TIPO_NOME[_tipo] + '. ' : ''}Marcar série como feita" aria-label="Marcar série ${si + 1} como feita">${feita ? '✓' : (_rotulada ? (_nv ? 'não valeu' : _rot) : si + 1)}</button>
         <input class="set-in set-kg" type="number" inputmode="decimal" placeholder="${_phKg}" value="${kgToDisplay(s.kg)}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-pl" type="number" inputmode="numeric" placeholder="pl" value="${s.pl || ''}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-reps" type="number" inputmode="numeric" placeholder="${_porTempo ? _tUnid : 'reps'}" title="${_porTempo ? 'Quantos ' + (_tUnid === 'min' ? 'minutos' : 'segundos') + ' tu segurou' : ''}" value="${s.reps || ''}" oninput="onSetField(${di},'${eiS}')">
@@ -20192,7 +20191,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v513';
+    var APP_SHELL_V = 'metodo-gh-v514';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
