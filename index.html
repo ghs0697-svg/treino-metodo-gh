@@ -363,7 +363,17 @@
   .set-row.t-pap { background: linear-gradient(90deg, rgba(var(--c-pap-rgb),.09), transparent 70%); border-radius: 6px; }
   .set-row.t-val { background: linear-gradient(90deg, rgba(var(--c-val-rgb),.09), transparent 70%); border-radius: 6px; }
   .set-row.t-aq .set-rs, .set-row.t-aj .set-rs, .set-row.t-pap .set-rs { opacity: .4; }
-  .sets-grid.rotulada .set-in::placeholder { color: #5e574a; }
+  .sets-grid.rotulada .set-in::placeholder { color: #5e574a; font-size: 12px; }
+  /* v506: em cima a PRESCRIÇÃO (uma linha por tipo, espelhando a grade), embaixo o TEU REGISTRO */
+  .ex-presc-tbl { margin-top: 6px; }
+  .ept-head, .sg-head { font-size: 9.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: rgba(212,175,106,.7); margin: 0 0 4px; }
+  .sg-head { margin: 0 0 6px 2px; }
+  .ept-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #bdb5a6; line-height: 1.3; padding: 2px 0; white-space: nowrap; }
+  .ept-t { display: inline-block; width: 50px; min-width: 50px; text-align: center; border: 1px solid; border-radius: 6px; font-size: 10px; font-weight: 700; padding: 2px 2px; cursor: pointer; }
+  .ept-n { min-width: 56px; }
+  .ept-r { min-width: 84px; color: #e8e2d6; font-weight: 600; }
+  .ept-c { color: #8f8778; overflow: hidden; text-overflow: ellipsis; }
+  .ept-foot { font-size: 12px; color: #9a9184; margin-top: 4px; white-space: normal; }
   /* v504/v505: exercicio por tempo: coluna de tempo + sobrou (GH 22/09: "pode manter o campo sobrou sim"); kg e placa somem */
   .sets-grid.tempo .set-in.set-kg, .sets-grid.tempo .set-in.set-pl, .sets-grid.tempo .sh-kg, .sets-grid.tempo .sh-pl { display: none; }
   .sets-grid.tempo .set-in.set-reps, .sets-grid.tempo .sh-reps { width: 72px; }
@@ -374,10 +384,10 @@
   .ts-row { margin-top: 12px; }
   .ts-row .tec-body { margin: 4px 0 0; }
   .ts-pill { display: inline-block; min-width: 96px; text-align: center; border: 1px solid; border-radius: 999px; padding: 2px 10px; font-size: 11px; font-weight: 700; }
-  .ts-pill.t-aq, .gl-cor.t-aq { color: var(--c-aq); border-color: rgba(var(--c-aq-rgb),.4); background: transparent; }
-  .ts-pill.t-aj, .gl-cor.t-aj { color: var(--c-aj); border-color: rgba(var(--c-aj-rgb),.6); background: rgba(var(--c-aj-rgb),.08); }
-  .ts-pill.t-pap, .gl-cor.t-pap { color: var(--c-ink); border-color: var(--c-pap); background: var(--c-pap); }
-  .ts-pill.t-val, .gl-cor.t-val { color: var(--c-ink); border-color: var(--c-val); background: var(--c-val); }
+  .ts-pill.t-aq, .gl-cor.t-aq, .ept-t.t-aq { color: var(--c-aq); border-color: rgba(var(--c-aq-rgb),.4); background: transparent; }
+  .ts-pill.t-aj, .gl-cor.t-aj, .ept-t.t-aj { color: var(--c-aj); border-color: rgba(var(--c-aj-rgb),.6); background: rgba(var(--c-aj-rgb),.08); }
+  .ts-pill.t-pap, .gl-cor.t-pap, .ept-t.t-pap { color: var(--c-ink); border-color: var(--c-pap); background: var(--c-pap); }
+  .ts-pill.t-val, .gl-cor.t-val, .ept-t.t-val { color: var(--c-ink); border-color: var(--c-val); background: var(--c-val); }
   .ts-why { margin-top: 12px; }
   .gl-cor { display: inline-block; border: 1px solid; border-radius: 999px; padding: 0 8px; font-size: 10px; font-weight: 700; margin-right: 6px; vertical-align: middle; }
   .ex-presc .tp-chip.t-aq { color: var(--c-aq); border-color: rgba(var(--c-aq-rgb),.4); }
@@ -7112,17 +7122,14 @@ function _prescLinha(ex, isWarmup) {
     const p = [];
     const _tp = _serieTipos(ex);
     const _rotP = _serieTemRotulo(ex);
-    if (_rotP) {
-      // v496 resumia "2 válidas + aquecimento"; v498 (GH 22/09) vira um chip por tipo, nome por extenso, na mesma
-      // cor da linha da grade: "aquecimento 1×10 · ajuste 1×6 · válidas 2×10 a 12". Toque no chip abre o glossário.
-      p.push(_serieChipsHtml(ex, _tp));
-    } else {
+    if (_rotP) return _prescTabelaHtml(ex, _tp, isWarmup);   // v506: bloco "Prescrição" espelhando a grade
+    {
       if (ex.series) p.push(String(ex.series).replace(/\s*[xX]\s*$/, '') + ' séries');
       if (ex.reps) p.push(/seg|min|\bs\b/i.test(String(ex.reps)) ? ex.reps : (ex.reps + ' reps'));   // "20 seg" nao vira "20 seg reps"
     }
     // v499: com chips, o intervalo vai sem o "·" (a borda do chip já separa) e não quebra no meio da frase
     if (ex.rest) p.push('<span class="gl' + (_rotP ? ' tp-int' : '') + '" onclick="event.stopPropagation();openGlossario(\'intervalo\')">' + ex.rest + ' de intervalo</span>');
-    let out = p.join(_rotP ? ' ' : ' · ');
+    let out = p.join(' · ');
     if (!isWarmup) {
       const c = parseCadencia(ex.obs);
       out += '<span class="cad gl" onclick="event.stopPropagation();openGlossario(\'cadencia\')">Pos ' + fmtSec(c.conc) + 's · Iso ' + fmtSec(c.iso) + 's · Neg ' + fmtSec(c.exc) + 's</span>';
@@ -7228,6 +7235,52 @@ function _repsCurto(s) {
 function _exPorTempo(ex) { try { return /\b(seg|segundos?|min|minutos?)\b/i.test(String((ex && ex.reps) || '')); } catch (_) { return false; } }
 function _tempoUnidade(ex) { const t = String((ex && ex.reps) || ''); return (/\bmin/i.test(t) && !/\bseg/i.test(t)) ? 'min' : 'seg'; }
 function _tempoCurto(s) { try { const ns = String(s || '').match(/\d+/g); return ns ? ns.slice(0, 2).join('-') : ''; } catch (_) { return ''; } }
+// v506: frase do card, em português corrido: "1 aquecimento + 1 ajuste + 2 válidas de 8 a 12 reps". Só a válida leva as
+// reps (as outras mostram as delas no placeholder da grade). Cada tipo abre o glossário no toque.
+function _serieFraseHtml(ex, tp) {
+  try {
+    tp = tp || _serieTipos(ex);
+    const grupos = {};
+    tp.forEach(x => { if (!grupos[x.tipo]) grupos[x.tipo] = { n: 0, seg: x.seg }; grupos[x.tipo].n++; });
+    return SERIE_TIPO_ORDEM.filter(t => grupos[t]).map(t => {
+      const g = grupos[t];
+      const nome = t === 'val' ? (g.n === 1 ? 'válida' : 'válidas') : (t === 'pap' ? 'PAP' : SERIE_TIPO_NOME[t]);
+      let txt = g.n + ' <span class="gl" onclick="event.stopPropagation();openGlossario(\'' + t + '\')">' + nome + '</span>';
+      if (t === 'val') {
+        const reps = String(_repsSegmento(ex, g.seg) || '').trim();
+        if (reps) txt += ' de ' + reps + (/seg|min|\bs\b/i.test(reps) ? '' : ' reps');
+      }
+      return txt;
+    }).join(' + ');
+  } catch (_) { return ''; }
+}
+// v506 (GH 22/09: "em cima é a parte de recomendação minha e a parte de baixo é pros alunos preencherem"): bloco
+// "Prescrição" com UMA LINHA POR TIPO, na mesma ordem e cor das linhas da grade: tipo · quantas · reps · carga ou esforço.
+// A grade embaixo se chama "Teu registro". Um espelha o outro; o aluno vê o que eu pedi e onde anota.
+function _prescTabelaHtml(ex, tp, isWarmup) {
+  try {
+    const grupos = {};
+    tp.forEach(x => { if (!grupos[x.tipo]) grupos[x.tipo] = { n: 0, seg: x.seg }; grupos[x.tipo].n++; });
+    let esf = '';
+    try {
+      const v = (typeof STUDENT_ESFORCO_ALVO !== 'undefined' && STUDENT_ESFORCO_ALVO) ? STUDENT_ESFORCO_ALVO.valor : '';
+      const a = _alvoTopo();
+      esf = (v && _esforcoEhFalha(v)) ? 'até a falha' : ('sobrar ' + a.lo + (a.hi > a.lo ? ' a ' + a.hi : ''));
+    } catch (_) { esf = ''; }
+    const rows = SERIE_TIPO_ORDEM.filter(t => grupos[t]).map(t => {
+      const g = grupos[t];
+      let reps = String(_repsSegmento(ex, g.seg) || '').trim();
+      if (reps && !/seg|min|\bs\b/i.test(reps)) reps += (reps === '1' ? ' rep' : ' reps');   // PAP: "1 rep"
+      const extra = t === 'val' ? esf : ('carga ' + (SERIE_TIPO_CARGA[t] || ''));
+      return '<div class="ept-row"><span class="ept-t t-' + t + '" onclick="event.stopPropagation();openGlossario(\'' + t + '\')" title="' + SERIE_TIPO_NOME[t] + '">' + SERIE_TIPO_CURTO[t] + '</span>'
+        + '<span class="ept-n">' + g.n + (g.n === 1 ? ' série' : ' séries') + '</span><span class="ept-r">' + reps + '</span><span class="ept-c">' + extra + '</span></div>';
+    }).join('');
+    const foot = [];
+    if (ex.rest) foot.push('<span class="gl" onclick="event.stopPropagation();openGlossario(\'intervalo\')">' + ex.rest + ' de intervalo</span>');
+    if (!isWarmup) { const c = parseCadencia(ex.obs); foot.push('<span class="gl" onclick="event.stopPropagation();openGlossario(\'cadencia\')">Pos ' + fmtSec(c.conc) + 's · Iso ' + fmtSec(c.iso) + 's · Neg ' + fmtSec(c.exc) + 's</span>'); }
+    return '<div class="ex-presc-tbl"><div class="ept-head">Prescrição</div>' + rows + (foot.length ? '<div class="ept-foot">' + foot.join(' · ') + '</div>' : '') + '</div>';
+  } catch (_) { return ''; }
+}
 function _serieChipsHtml(ex, tp) {
   try {
     tp = tp || _serieTipos(ex);
@@ -7933,13 +7986,14 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
         <button type="button" class="set-num ${_rotulada ? 't-' + _tipo : ''}" onclick="toggleSetFeita(${di},'${eiS}',${si})" title="${_rotulada ? 'Série de ' + SERIE_TIPO_NOME[_tipo] + '. ' : ''}Marcar série como feita" aria-label="Marcar série ${si + 1} como feita">${feita ? '✓' : (_rotulada ? _rot : si + 1)}</button>
         <input class="set-in set-kg" type="number" inputmode="decimal" placeholder="${_phKg}" value="${kgToDisplay(s.kg)}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-pl" type="number" inputmode="numeric" placeholder="pl" value="${s.pl || ''}" oninput="onSetField(${di},'${eiS}')">
-        <input class="set-in set-reps" type="number" inputmode="numeric" placeholder="${_porTempo ? _phTempo : _phReps}" title="${_porTempo ? 'Quantos ' + (_tUnid === 'min' ? 'minutos' : 'segundos') + ' tu segurou' : ''}" value="${s.reps || ''}" oninput="onSetField(${di},'${eiS}')">
+        <input class="set-in set-reps" type="number" inputmode="numeric" placeholder="${_porTempo ? _tUnid : 'reps'}" title="${_porTempo ? 'Quantos ' + (_tUnid === 'min' ? 'minutos' : 'segundos') + ' tu segurou' : ''}" value="${s.reps || ''}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-rs" type="number" inputmode="numeric" placeholder="${_tipo === 'val' ? rsPh : '·'}" title="${_tipo === 'val' ? 'Quantas repetições sobraram nessa série' : 'Série de ' + SERIE_TIPO_NOME[_tipo] + ': sobrar é o esperado, não entra no alvo'}" value="${s.rs || ''}" oninput="onSetField(${di},'${eiS}')">
         ${prevTxt}
         ${(semX || (_rotulada && si < _nPresc)) ? '' : `<button type="button" class="set-del" onclick="removeSet(${di},'${eiS}',${si})" title="Remover série" aria-label="Remover série">&times;</button>`}
       </div>`;
   }).join('');
   return `<div class="sets-grid${_rotulada ? ' rotulada' : ''}${_porTempo ? ' tempo' : ''}" id="sets-${di}-${eiS}" data-di="${di}" data-ei="${eiS}" data-noadd="${noAdd ? '1' : ''}" data-semx="${semX ? '1' : ''}">
+      <div class="sg-head">Teu registro</div>
       ${label ? `<div class="carga-label" style="font-size:10px;margin-bottom:2px;">${label}</div>` : ''}
       ${evo}
       <div class="set-head"><span class="set-num"></span><span class="sh-kg" onclick="openGlossario('kg')" title="De cada lado ou o total?">${getUnit()}</span><span class="sh-pl" onclick="openPlacaInfo()" title="O que e placa?">placa</span><span class="sh-reps">${_porTempo ? _tUnid : 'reps'}</span><span class="sh-rs" title="Quantas repetições sobraram">sobrou</span><button type="button" class="rs-info-btn" onclick="openSobrouInfo()" aria-label="O que é o sobrou?">i</button><span style="flex:1"></span></div>
@@ -20053,7 +20107,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v505';
+    var APP_SHELL_V = 'metodo-gh-v506';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
