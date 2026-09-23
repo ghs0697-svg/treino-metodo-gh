@@ -3991,7 +3991,7 @@
     <div class="ts-row"><span class="ts-pill t-aq">aquecimento</span><div class="tec-body"><b>Carga leve, 10 repetições.</b> Serve pra lubrificar a articulação que vai trabalhar, não pra cansar. É normal sobrar muito. Ela só aparece quando o exercício traz uma articulação que ainda não trabalhou no dia.</div></div>
     <div class="ts-row"><span class="ts-pill t-aj">ajuste</span><div class="tec-body"><b>Carga média, 6 repetições.</b> Serve pra avisar o teu sistema nervoso que vem esforço pesado, sem gastar energia. Também sobra muito, de propósito. Aparece quando o movimento muda de direção ou de ângulo, mesmo com a articulação já quente.</div></div>
     <div class="ts-row"><span class="ts-pill t-pap">PAP</span><div class="tec-body"><b>Uma repetição só, com carga acima do ajuste.</b> É um estímulo máximo pro sistema nervoso antes da série válida. Não é pra falhar. Só entra em quem já tem experiência, e só quando eu coloco.</div></div>
-    <div class="ts-row"><span class="ts-pill t-val">válida</span><div class="tec-body"><b>É a série que constrói músculo.</b> Vai até a falha ou fica a uma repetição dela. É a única onde tu anota o "sobrou", e a única que conta como volume na semana. Sobrou mais que o teu alvo? Então essa não valeu: o app abre outra série pra tu fazer.</div></div>
+    <div class="ts-row"><span class="ts-pill t-val">válida</span><div class="tec-body"><b>É a série que constrói músculo.</b> Vai até a falha ou fica a uma repetição dela. É a única onde tu anota o "sobrou", e a única que conta como volume na semana. Sobrou 3 ou mais? Então essa não valeu: o app abre outra série pra tu fazer.</div></div>
     <div class="tec-body ts-why"><b>Por que alguns exercícios não têm aquecimento nem ajuste?</b> Porque a articulação e a direção do movimento já vieram prontas do exercício anterior. Barra fixa depois da puxada alta vai direto na válida: mesma direção, mesma articulação. Remada depois delas ajusta de novo, porque a direção mudou. Repetir aquecimento numa articulação que já está quente é série perdida.</div>
     <div class="tec-body ts-why"><b>Panturrilha, abdômen e lombar</b> levam só ajuste, porque os outros exercícios já usaram eles pra estabilizar. <b>Prancha e isometria</b> vão direto, porque não é carga a calibrar.</div>
   </div>
@@ -5093,7 +5093,7 @@
       <div class="gloss-it" data-g="aq"><b><span class="gl-cor t-aq">aquec.</span> Aquecimento</b>Carga leve, 10 repetições. Serve pra lubrificar a articulação que vai trabalhar, não pra cansar. É normal sobrar muito. Ela só aparece quando o exercício traz uma articulação que ainda não trabalhou no dia.</div>
       <div class="gloss-it" data-g="aj"><b><span class="gl-cor t-aj">ajuste</span> Ajuste</b>Carga média, 6 repetições. Serve pra avisar o teu sistema nervoso que vem esforço pesado, sem gastar energia. Também sobra muito, de propósito. Aparece quando o movimento muda de direção ou de ângulo, mesmo com a articulação já quente.</div>
       <div class="gloss-it" data-g="pap"><b><span class="gl-cor t-pap">PAP</span> PAP</b>Uma repetição só, com carga acima do ajuste. É um estímulo máximo pro sistema nervoso antes da série válida. Não é pra falhar. Só entra em quem já tem experiência, e só quando eu coloco.</div>
-      <div class="gloss-it" data-g="val"><b><span class="gl-cor t-val">válida</span> Válida</b>É a série que constrói músculo. Vai até a falha ou fica a uma repetição dela. É a única onde tu anota o "sobrou", e a única que conta como volume na semana. Sobrou mais que o teu alvo? Então essa não valeu: o app abre outra série pra tu fazer. Exercício sem cor na grade é só de válidas.</div>
+      <div class="gloss-it" data-g="val"><b><span class="gl-cor t-val">válida</span> Válida</b>É a série que constrói músculo. Vai até a falha ou fica a uma repetição dela. É a única onde tu anota o "sobrou", e a única que conta como volume na semana. Sobrou 3 ou mais? Então essa não valeu: o app abre outra série pra tu fazer. Exercício sem cor na grade é só de válidas.</div>
       <div class="gloss-it" data-g="semaq"><b>Por que alguns exercícios não têm aquecimento nem ajuste?</b>Porque a articulação e a direção do movimento já vieram prontas do exercício anterior. Barra fixa depois da puxada alta vai direto na válida: mesma direção, mesma articulação. Remada depois delas ajusta de novo, porque a direção mudou. Repetir aquecimento numa articulação que já está quente é série perdida. Panturrilha, abdômen e lombar levam só ajuste, porque os outros exercícios já usaram eles pra estabilizar. Prancha e isometria vão direto, porque não é carga a calibrar.</div>
       <div class="gloss-it" data-g="cadencia"><b>Cadência (Pos · Iso · Neg)</b>A velocidade de cada fase do movimento. Pos = subir. Iso = segurar parado. Neg = descer controlando. "Neg 3s" = descer em 3 segundos. O botão "ritmo" marca isso pra ti com som e bolinha.</div>
       <div class="gloss-it" data-g="concentrica"><b>Concêntrica (positiva)</b>A fase de vencer o peso, subindo.</div>
@@ -7195,6 +7195,9 @@ function _alvoTopo() {
     return r ? { lo: r[0], hi: r[1] } : { lo: 0, hi: 2 };   // v514: sem Esforço-alvo, vale o combinado do GH (sobrar no máximo 2)
   } catch (_) { return { lo: 0, hi: 2 }; }
 }
+// v515 (Entregas #2383 e GH 23/09): 0 a 1 é o ALVO (o que mira), 2 é o LIMITE de validade (sobrou 2 ainda conta; 3 ou
+// mais não valeu). Protocolo clínico com alvo 2 a 3 fica com limite 3. É esse número que decide o "não valeu" e a linha nova.
+function _limiteValida() { try { return Math.max(2, _alvoTopo().hi); } catch (_) { return 2; } }
 function _sugEl(di, ei) { return document.getElementById('sug-' + di + '-' + ei); }
 function _sugLimpa(di, ei) { const e = _sugEl(di, ei); if (e) { e.style.display = 'none'; e.innerHTML = ''; } }
 function _sugMostra(di, ei, html) { const e = _sugEl(di, ei); if (!e) return; e.innerHTML = html; e.style.display = 'block'; }
@@ -7365,7 +7368,8 @@ function _sobrouSugere(di, ei, arr) {
     for (let i = 0; i < arr.length; i++) if (ehVal(i) && String(arr[i].rs || '').trim()) li = i;
     if (li < 0) { _sugLimpa(di, ei); return; }
     const v = parseInt(String(arr[li].rs).replace(/[^0-9]/g, ''), 10);
-    if (!isFinite(v) || v <= alvo.hi) { _sugLimpa(di, ei); return; }   // dentro do combinado: valeu, nada a dizer
+    const lim = _limiteValida();   // v515: limite (2), não o alvo (0 a 1)
+    if (!isFinite(v) || v <= lim) { _sugLimpa(di, ei); return; }   // dentro do combinado: valeu, nada a dizer
     // v514 (GH 23/09/2026, textual): "meu combinado é que pra ser série válida não pode sobrar mais que 2 repetições, se
     // sobrou mais que isso não é válida, daí automaticamente tem que abrir uma nova linha de série pra pessoa fazer, com
     // uma explicação". O SOBROU decide, não as reps (a regra de 20/09, de fechar a faixa antes, saiu). O combinado é o
@@ -7376,8 +7380,8 @@ function _sobrouSugere(di, ei, arr) {
     const cabeMais = arr.length < presc + 3;
     let ultimaVal = -1;
     for (let j = 0; j < arr.length; j++) if (ehVal(j)) ultimaVal = j;
-    const explica = 'Sobrou ' + v + ', mais que ' + alvo.hi + ': essa não foi uma série válida.';
-    if (li < ultimaVal) { _sugMostra(di, ei, explica + ' Faz a próxima com mais carga, pra sobrar no máximo ' + alvo.hi + '.'); return; }
+    const explica = 'Sobrou ' + v + ', mais que ' + lim + ': essa não foi uma série válida.';
+    if (li < ultimaVal) { _sugMostra(di, ei, explica + ' Faz a próxima com mais carga, pra sobrar no máximo ' + lim + '.'); return; }
     if (_sugFeita[k] || !cabeMais) { _sugMostra(di, ei, explica + ' Faz outra série com mais carga.'); return; }
     _sugFeita[k] = 1;
     let _aberta = false;
@@ -7386,7 +7390,7 @@ function _sobrouSugere(di, ei, arr) {
       _aberta = true;
       try {
         addSet(di, ei);
-        _sugMostra(di, ei, explica + ' Abri outra série: faz de novo com mais carga, pra sobrar no máximo ' + alvo.hi + '.'
+        _sugMostra(di, ei, explica + ' Abri outra série: faz de novo com mais carga, pra sobrar no máximo ' + lim + '.'
           + '<br><button type="button" class="und" onclick="_sugDesfaz(' + di + ', \'' + ei + '\')">desfazer</button>');
       } catch (_) {}
     };
@@ -7969,7 +7973,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
   const _exG = _exObjAt(di, ei);
   const _rotulada = _serieTemRotulo(_exG);   // v496: exercicio com aq/aj/pap/val na col SERIES
   const _tpG = _rotulada ? _serieTipos(_exG) : [];   // v498: tipo e segmento de cada linha
-  const _alvoHi = _alvoTopo().hi;   // v514: válida com sobrou acima disso não valeu
+  const _alvoHi = _limiteValida();   // v514/v515: válida com sobrou acima do LIMITE (2) não valeu
   const _porTempo = _exPorTempo(_exG);   // v504: prancha, isometria, alongamento: so tempo, sem kg/placa/sobrou
   const _tUnid = _porTempo ? _tempoUnidade(_exG) : '';
   if (!sets || !sets.length) {
@@ -19139,7 +19143,31 @@ var _bootPromise = (async function () {
   } catch (_) { return null; }
 })();
 async function _bootPeca_(k) { try { const b = await _bootPromise; return (b && b[k] != null && !b[k].error) ? b[k] : null; } catch (_) { return null; } }
-_bootPromise.then(function (b) { planBlockGate(b && b.planstatus); ghflixTabState(b && b.ghflix); });
+_bootPromise.then(function (b) { planBlockGate(b && b.planstatus); ghflixTabState(b && b.ghflix); _versaoMinimaChecar_(b && b.versaoMinima); });
+// v515 (GH 23/09: "força a atualização de todos"): AVISOS!E2 na mestre = versão mínima (ex.: 515). Shell abaixo dela faz
+// o mesmo que "Atualizar o app agora" (derruba service worker e caches, recarrega furando o cache), mas só quando o
+// aluno não está digitando nem no meio de descanso ou modo foco; senão tenta de novo em 1 min. Célula vazia = desligado.
+function _versaoNum_(v) { const m = String(v || '').match(/(\d+)\s*$/); return m ? parseInt(m[1], 10) : 0; }
+function _versaoMinimaChecar_(min) {
+  try {
+    const alvo = _versaoNum_(min), atual = _versaoNum_(window.GH_APP_V);
+    if (!alvo || !atual || atual >= alvo) return;
+    if (new URLSearchParams(location.search).get('edit') === '1') return;
+    const tenta = () => {
+      try {
+        const a = document.activeElement, digitando = a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
+        const fo = document.getElementById('focusOverlay');
+        const treinando = (fo && fo.classList.contains('show')) || (typeof _timerEndAt !== 'undefined' && _timerEndAt > Date.now());
+        if (digitando || treinando) { setTimeout(tenta, 60000); return; }
+        if (sessionStorage.getItem('gh_vmin_' + alvo) === '1') return;   // 1 tentativa por sessão: nunca vira loop
+        sessionStorage.setItem('gh_vmin_' + alvo, '1');
+        try { if (typeof _flushSetsPendentes_ === 'function') _flushSetsPendentes_(true); } catch (_) {}
+        forcarAtualizacaoApp();
+      } catch (_) {}
+    };
+    setTimeout(tenta, 3000);
+  } catch (_) {}
+}
 
 let _restoreProm = null;
 function _restoreFetch_() {
@@ -20191,7 +20219,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v514';
+    var APP_SHELL_V = 'metodo-gh-v515';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
