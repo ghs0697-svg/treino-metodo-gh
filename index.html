@@ -17486,8 +17486,13 @@ async function loadRecado() {
   if (!slot) return;
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') { slot.innerHTML = ''; return; }
   try {
-    const r = await fetch(`${LOG_ENDPOINT}?action=recado&id=${encodeURIComponent(SHEET_ID)}`);
-    const j = await r.json();
+    // v510: o áudio desce em base64 pelo Apps Script e o front door às vezes estoura o tempo (caso Gerson, 23/09):
+    // até 3 tentativas com 4 s de pausa. Resposta JSON "sem recado" não repete.
+    let j = null;
+    for (let tent = 0; tent < 3 && !j; tent++) {
+      try { const r = await fetch(`${LOG_ENDPOINT}?action=recado&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`); j = await r.json(); }
+      catch (_) { j = null; if (tent < 2) await new Promise(res => setTimeout(res, 4000)); }
+    }
     if (!j || !j.ok || !j.b64) { slot.innerHTML = ''; return; }
     // Recado é sempre WAV (toca em todo lugar). Se o servidor devolver mime
     // genérico/ausente, força audio/wav pra não quebrar o player.
@@ -20114,7 +20119,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v509';
+    var APP_SHELL_V = 'metodo-gh-v510';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -20730,7 +20735,7 @@ function teHide(id) { document.getElementById(id).classList.remove('show'); }
 // ── Recado em áudio (só treinador, no editor) ──
 // Grava voz no navegador → base64 → POST type:'recado' pro Apps Script, que
 // salva no Drive do aluno (trainerSheetId). Player aparece no protocolo do
-// aluno e some em 2 dias (RECADO_TTL_DAYS no .gs). Prefere audio/mp4 (toca em iPhone). Máx 3 min.
+// aluno e some em 2 dias (RECADO_TTL_DAYS no .gs). Captura PCM, comprime em MP3 (v510; WAV se o encoder falhar). Máx 3 min.
 let _recadoBlob = null, _recadoMime = 'audio/wav', _recadoRecording = false;
 let _recadoStream = null, _recadoTimerInt = null, _recadoT0 = 0, _recadoPerm = false;
 let _recadoCtx = null, _recadoProc = null, _recadoSrc = null, _recadoPCM = [], _recadoSampleRate = 44100;
@@ -20865,15 +20870,65 @@ function _recadoStopRec() {
   _recadoTeardown_(); // para e solta o mic
   const btn = document.getElementById('recadoRecBtn');
   btn.textContent = '● Regravar'; btn.classList.remove('recording');
-  _recadoBlob = _pcmToWav(pcm, inRate, _RECADO_OUT_HZ);
+  _recadoBlob = _pcmToWav(pcm, inRate, _RECADO_OUT_HZ); _recadoMime = 'audio/wav';
   const prev = document.getElementById('recadoPreview');
   prev.src = URL.createObjectURL(_recadoBlob);
   prev.style.display = 'block';
-  document.getElementById('recadoSendBtn').style.display = 'block';
-  const kb = Math.round(_recadoBlob.size / 1024);
+  const sendBtn = document.getElementById('recadoSendBtn');
+  sendBtn.style.display = 'block';
   const st = document.getElementById('recadoStatus');
-  st.textContent = 'Gravado (' + kb + ' KB). Ouve aí, e se ficou bom, envia.';
   st.style.color = '';
+  // v510: comprime em MP3 (5 a 8x menor) antes de liberar o envio; se o encoder falhar, vai o WAV mesmo
+  sendBtn.disabled = true;
+  st.textContent = 'Comprimindo o áudio...';
+  _pcmToMp3(pcm, inRate, _RECADO_OUT_HZ, 32).then(mp3 => {
+    if (_recadoRecording) return;   // regravou no meio: descarta
+    if (mp3 && mp3.size > 1000) { _recadoBlob = mp3; _recadoMime = 'audio/mpeg'; prev.src = URL.createObjectURL(mp3); }
+  }).catch(() => {}).then(() => {
+    if (_recadoRecording) return;
+    sendBtn.disabled = false;
+    const kb = Math.round(_recadoBlob.size / 1024);
+    st.textContent = 'Gravado (' + kb + ' KB' + (_recadoMime === 'audio/mpeg' ? ', comprimido' : '') + '). Ouve aí, e se ficou bom, envia.';
+  });
+}
+// v510 (caso Gerson, 23/09/2026: recado de 2:39 em WAV = 5,1 MB; o envio "falhava" na confirmação e o app do aluno levava
+// 25 a 45 s pra baixar o base64 e às vezes desistia): o gravador comprime em MP3 (32 kbps mono, 16 kHz; 2:39 vira uns
+// 640 KB), que toca em iPhone, Android e computador. Encoder lamejs carregado sob demanda do cdnjs só no editor;
+// se não carregar, segue em WAV como antes.
+function _recadoLame() {
+  return new Promise((res, rej) => {
+    if (window.lamejs) return res(window.lamejs);
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js';
+    s.onload = () => window.lamejs ? res(window.lamejs) : rej(new Error('lamejs vazio'));
+    s.onerror = () => rej(new Error('lamejs nao carregou'));
+    document.head.appendChild(s);
+  });
+}
+// PCM (chunks Float32) → Int16 mono no outRate (mesma reamostragem do WAV)
+function _pcmToInt16(chunks, inRate, outRate) {
+  let len = 0; chunks.forEach(c => len += c.length);
+  const data = new Float32Array(len);
+  let off = 0; chunks.forEach(c => { data.set(c, off); off += c.length; });
+  const useDs = outRate < inRate;
+  const ds = useDs ? _recadoDownsample(data, inRate, outRate) : data;
+  const out = new Int16Array(ds.length);
+  for (let i = 0; i < ds.length; i++) { const s = Math.max(-1, Math.min(1, ds[i])); out[i] = s < 0 ? s * 0x8000 : s * 0x7FFF; }
+  return { rate: useDs ? outRate : inRate, samples: out };
+}
+async function _pcmToMp3(chunks, inRate, outRate, kbps) {
+  const lame = await _recadoLame();
+  const { rate, samples } = _pcmToInt16(chunks, inRate, outRate);
+  const enc = new lame.Mp3Encoder(1, rate, kbps || 32);
+  const parts = [];
+  const BLOCO = 1152;
+  for (let i = 0; i < samples.length; i += BLOCO) {
+    const b = enc.encodeBuffer(samples.subarray(i, i + BLOCO));
+    if (b && b.length) parts.push(new Int8Array(b));
+  }
+  const fim = enc.flush();
+  if (fim && fim.length) parts.push(new Int8Array(fim));
+  return new Blob(parts, { type: 'audio/mpeg' });
 }
 // PCM (chunks Float32) → WAV 16-bit mono no outRate (downsample por média).
 function _pcmToWav(chunks, inRate, outRate) {
