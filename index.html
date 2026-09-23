@@ -7195,9 +7195,11 @@ function _alvoTopo() {
     return r ? { lo: r[0], hi: r[1] } : { lo: 0, hi: 2 };   // v514: sem Esforço-alvo, vale o combinado do GH (sobrar no máximo 2)
   } catch (_) { return { lo: 0, hi: 2 }; }
 }
-// v515 (Entregas #2383 e GH 23/09): 0 a 1 é o ALVO (o que mira), 2 é o LIMITE de validade (sobrou 2 ainda conta; 3 ou
-// mais não valeu). Protocolo clínico com alvo 2 a 3 fica com limite 3. É esse número que decide o "não valeu" e a linha nova.
-function _limiteValida() { try { return Math.max(2, _alvoTopo().hi); } catch (_) { return 2; } }
+// v516 (GH 23/09, textual: "sobrou 2 é válida, mais que duas não valeu" e "clínico também é 2, pode deixar igual pra todos"):
+// o LIMITE de validade é 2, constante, pra todo aluno. O Esforço-alvo do protocolo (0 a 1, ou 2 a 3 no clínico) vira só
+// orientação de esforço; quem decide o "não valeu" e a linha nova é o 2.
+const LIMITE_VALIDA = 2;
+function _limiteValida() { return LIMITE_VALIDA; }
 function _sugEl(di, ei) { return document.getElementById('sug-' + di + '-' + ei); }
 function _sugLimpa(di, ei) { const e = _sugEl(di, ei); if (e) { e.style.display = 'none'; e.innerHTML = ''; } }
 function _sugMostra(di, ei, html) { const e = _sugEl(di, ei); if (!e) return; e.innerHTML = html; e.style.display = 'block'; }
@@ -20219,7 +20221,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v515';
+    var APP_SHELL_V = 'metodo-gh-v516';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
