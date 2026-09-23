@@ -349,41 +349,39 @@
   /* número da série é BOTÃO: toque marca a série como feita (Vitor 14/08) */
   button.set-num { background: transparent; border: 1px solid rgba(255, 255, 255, .14); border-radius: 7px; height: 24px; width: 24px; min-width: 24px; padding: 0; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; }
   .set-row.feita button.set-num { background: var(--gold); border-color: var(--gold); color: #15100a; font-weight: 800; }
-  /* v496/v498: serie rotulada. O botao da linha diz o tipo por extenso (aquec. / ajuste / PAP / valida) na cor do
-     tipo, a linha ganha um tom da mesma cor e o sobrou de aq/aj/pap fica apagado (nao conta). O cabecalho alarga
-     junto pra manter as colunas alinhadas. Linha feita continua dourada com o check. */
-  /* v500 (GH 22/09): cor = intensidade. Azul aquecimento (leve), amarelo ajuste (média), roxo PAP (pesada, 1 rep),
-     vermelho válida (a que vale). */
-  :root { --c-aq: #5aa9e6; --c-aj: #f2c94c; --c-pap: #a86ee8; --c-val: #e9574f; }
+  /* v502 (GH 22/09: "pega escalas que combinem com o amarelo"): paleta só no dourado, intensidade pelo PREENCHIMENTO.
+     Aquecimento vazado e apagado (leve), ajuste vazado dourado (média), válida dourado CHEIO (a que vale), PAP cobre
+     cheio (pesada, 1 rep). Mesma regra no chip do card, na grade, no manual e no glossário. Trocar cor = as 4 linhas de :root. */
+  :root { --c-aq: #a39b88; --c-aq-rgb: 163,155,136; --c-aj: #cbb27c; --c-aj-rgb: 203,178,124; --c-pap: #c98b55; --c-pap-rgb: 201,139,85; --c-val: #D4AF6A; --c-val-rgb: 212,175,106; --c-ink: #15100a; }
   .sets-grid.rotulada .set-row button.set-num, .sets-grid.rotulada .set-head .set-num { width: 50px; min-width: 50px; }
   .sets-grid.rotulada .set-row button.set-num { font-size: 10px; letter-spacing: 0; text-transform: none; font-weight: 700; padding: 0 2px; }
-  .set-row.t-aq:not(.feita) button.set-num { color: var(--c-aq); border-color: rgba(90,169,230,.55); background: rgba(90,169,230,.10); }
-  .set-row.t-aj:not(.feita) button.set-num { color: var(--c-aj); border-color: rgba(242,201,76,.6); background: rgba(242,201,76,.10); }
-  .set-row.t-pap:not(.feita) button.set-num { color: var(--c-pap); border-color: rgba(168,110,232,.6); background: rgba(168,110,232,.10); }
-  .set-row.t-val:not(.feita) button.set-num { color: var(--c-val); border-color: rgba(233,87,79,.7); background: rgba(233,87,79,.10); }
-  .set-row.t-aq { background: linear-gradient(90deg, rgba(90,169,230,.10), transparent 70%); border-radius: 6px; }
-  .set-row.t-aj { background: linear-gradient(90deg, rgba(242,201,76,.10), transparent 70%); border-radius: 6px; }
-  .set-row.t-pap { background: linear-gradient(90deg, rgba(168,110,232,.10), transparent 70%); border-radius: 6px; }
-  .set-row.t-val { background: linear-gradient(90deg, rgba(233,87,79,.09), transparent 70%); border-radius: 6px; }
+  .set-row.t-aq:not(.feita) button.set-num { color: var(--c-aq); border-color: rgba(var(--c-aq-rgb),.4); background: transparent; }
+  .set-row.t-aj:not(.feita) button.set-num { color: var(--c-aj); border-color: rgba(var(--c-aj-rgb),.6); background: rgba(var(--c-aj-rgb),.08); }
+  .set-row.t-pap:not(.feita) button.set-num { color: var(--c-ink); border-color: var(--c-pap); background: var(--c-pap); }
+  .set-row.t-val:not(.feita) button.set-num { color: var(--c-ink); border-color: var(--c-val); background: var(--c-val); }
+  .set-row.t-aj { background: linear-gradient(90deg, rgba(var(--c-aj-rgb),.06), transparent 70%); border-radius: 6px; }
+  .set-row.t-pap { background: linear-gradient(90deg, rgba(var(--c-pap-rgb),.09), transparent 70%); border-radius: 6px; }
+  .set-row.t-val { background: linear-gradient(90deg, rgba(var(--c-val-rgb),.09), transparent 70%); border-radius: 6px; }
   .set-row.t-aq .set-rs, .set-row.t-aj .set-rs, .set-row.t-pap .set-rs { opacity: .4; }
   .sets-grid.rotulada .set-in::placeholder { color: #5e574a; }
-  .ex-presc .tp-chip { display: inline-block; border: 1px solid; border-radius: 999px; padding: 0 7px; font-size: 11px; line-height: 18px; margin: 1px 3px 1px 0; white-space: nowrap; cursor: pointer; }
+  .ex-presc .tp-chip { display: inline-block; border: 1px solid; border-radius: 999px; padding: 0 8px; font-size: 11px; line-height: 18px; margin: 1px 3px 1px 0; white-space: nowrap; cursor: pointer; }
   .ex-presc .tp-chip b { font-weight: 700; }
   .ex-presc .tp-int { white-space: nowrap; display: inline-block; }
   /* v501: tipos de serie no manual de execucao e no glossario, com a cor da grade */
   .ts-row { margin-top: 12px; }
   .ts-row .tec-body { margin: 4px 0 0; }
   .ts-pill { display: inline-block; min-width: 96px; text-align: center; border: 1px solid; border-radius: 999px; padding: 2px 10px; font-size: 11px; font-weight: 700; }
-  .ts-pill.t-aq, .gl-cor.t-aq { color: var(--c-aq); border-color: rgba(90,169,230,.6); background: rgba(90,169,230,.10); }
-  .ts-pill.t-aj, .gl-cor.t-aj { color: var(--c-aj); border-color: rgba(242,201,76,.6); background: rgba(242,201,76,.10); }
-  .ts-pill.t-pap, .gl-cor.t-pap { color: var(--c-pap); border-color: rgba(168,110,232,.6); background: rgba(168,110,232,.10); }
-  .ts-pill.t-val, .gl-cor.t-val { color: var(--c-val); border-color: rgba(233,87,79,.6); background: rgba(233,87,79,.10); }
+  .ts-pill.t-aq, .gl-cor.t-aq { color: var(--c-aq); border-color: rgba(var(--c-aq-rgb),.4); background: transparent; }
+  .ts-pill.t-aj, .gl-cor.t-aj { color: var(--c-aj); border-color: rgba(var(--c-aj-rgb),.6); background: rgba(var(--c-aj-rgb),.08); }
+  .ts-pill.t-pap, .gl-cor.t-pap { color: var(--c-ink); border-color: var(--c-pap); background: var(--c-pap); }
+  .ts-pill.t-val, .gl-cor.t-val { color: var(--c-ink); border-color: var(--c-val); background: var(--c-val); }
   .ts-why { margin-top: 12px; }
-  .gl-cor { display: inline-block; border: 1px solid; border-radius: 999px; padding: 0 7px; font-size: 10px; font-weight: 700; margin-left: 6px; vertical-align: middle; }
-  .ex-presc .tp-chip.t-aq { color: var(--c-aq); border-color: rgba(90,169,230,.5); }
-  .ex-presc .tp-chip.t-aj { color: var(--c-aj); border-color: rgba(242,201,76,.55); }
-  .ex-presc .tp-chip.t-pap { color: var(--c-pap); border-color: rgba(168,110,232,.55); }
-  .ex-presc .tp-chip.t-val { color: var(--c-val); border-color: rgba(233,87,79,.6); }
+  .gl-cor { display: inline-block; border: 1px solid; border-radius: 999px; padding: 0 8px; font-size: 10px; font-weight: 700; margin-right: 6px; vertical-align: middle; }
+  .ex-presc .tp-chip.t-aq { color: var(--c-aq); border-color: rgba(var(--c-aq-rgb),.4); }
+  .ex-presc .tp-chip.t-aj { color: var(--c-aj); border-color: rgba(var(--c-aj-rgb),.55); }
+  .ex-presc .tp-chip.t-pap { color: var(--c-ink); border-color: var(--c-pap); background: var(--c-pap); }
+  .ex-presc .tp-chip.t-val { color: var(--c-ink); border-color: var(--c-val); background: var(--c-val); }
+  .ex-presc .tp-chip.t-pap b, .ex-presc .tp-chip.t-val b { color: var(--c-ink); }
   .set-row.feita .set-in { opacity: .38; }
   .set-row.feita .set-prev { opacity: .38; }
   .set-head .set-num { width: 24px; min-width: 24px; }
@@ -758,7 +756,7 @@
   #floatMoreGroup.open { display: flex; }
   /* desktop: modo aluno centrado (o editor ?edit=1 marca body.wide-mode e segue full width) */
   @media (min-width: 900px) {
-    body:not(.wide-mode) { max-width: 840px; margin-left: auto; margin-right: auto; }
+    body:not(.wide-mode) { max-width: 600px; margin-left: auto; margin-right: auto; }
   }
   .float-options.show { display: flex; }
   .float-opt { background: #161513; border: 1px solid rgba(255,255,255,0.10); color: var(--white); padding: 10px 16px 10px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; letter-spacing: 0.01em; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,0.55); display: flex; align-items: center; gap: 10px; text-decoration: none; white-space: nowrap; transition: all 0.15s; }
@@ -1745,6 +1743,14 @@
   /* utilitários compactos do hero (GH 24/08: botão de vídeo grande demais chamava atenção) */
   .util-row { display: flex; gap: 8px; }
   .util-row .focus-entry.util-mini { flex: 1; font-size: 11px; font-weight: 700; letter-spacing: 0; padding: 8px 6px; margin: 0 0 12px; border-color: #33302a; color: #9a9184; background: transparent; }
+  /* v502 (GH 22/09: "tá muito poluído, precisamos deixar mais clean e elegante"): as ações secundárias do card do dia
+     (lembrete, pouco tempo, vídeos, viagem) viram UMA linha de links discretos, sem moldura; a dica de troca fica leve;
+     a legenda "toca pra girar" some depois do 1º giro; no desktop o app fica numa coluna de 600 px. */
+  .util-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 18px; margin: 6px 0 2px; }
+  .util-row .focus-entry.util-mini, .util-row .tlem-chip { flex: 0 0 auto; width: auto; margin: 0; padding: 6px 2px; border: none; background: none; box-shadow: none; color: #8f8778; font-size: 12px; font-weight: 600; letter-spacing: 0; border-radius: 0; }
+  .util-row .focus-entry.util-mini:active, .util-row .tlem-chip:active { background: none; color: var(--gold); }
+  .ex-dica-troca { border-color: rgba(212,175,106,.18); font-size: 12.5px; color: #a49d90; }
+  .const-dots .cd-lbl { font-weight: 500; color: #6f6a60; }
   /* modo viagem/livre */
   #viagemBtn.viagem-on { background: var(--gold) !important; color: #141310 !important; border-color: var(--gold) !important; }
   .ex-sub-badge.viagem { background: #7ea8c9; }
@@ -3628,7 +3634,6 @@
     <div class="pg-bar"><div class="pg-fill" id="pgFill" style="width:0%"></div></div>
   </div>
   <div class="const-dots" id="constDots" style="display:none;"></div>
-  <button type="button" class="tlem-chip" id="tlemChip" onclick="openTlem()" style="display:none;">🔔 Lembrete de treino</button>
   <div class="sem-card" id="semCard" style="display:none;"></div>
   <div class="wt-card" id="wtCard">
     <div>
@@ -3642,6 +3647,7 @@
   <button type="button" class="dia-start" id="diaStartBtn" onclick="comecarTreino()">▶&nbsp; Começar treino</button>
   <button type="button" class="dia-lista" onclick="verListaDoDia()">ou ver a lista completa do dia</button>
   <div class="util-row">
+  <button type="button" class="tlem-chip" id="tlemChip" onclick="openTlem()" style="display:none;">🔔 Lembrete de treino</button>
     <button type="button" class="focus-entry util-mini" id="shortModeBtn" onclick="openShortMode()">⏱ Pouco tempo</button>
     <button type="button" class="focus-entry util-mini" id="vidOffBtn" onclick="baixarVideosDoDia()" style="display:none;">⬇ Vídeos offline</button>
     <button type="button" class="focus-entry util-mini" id="viagemBtn" onclick="toggleViagem()">✈️ Viagem/Livre</button>
@@ -5056,10 +5062,10 @@
       <div class="gloss-it" data-g="restpause"><b>Rest-pause</b>Chegou perto da falha, respira 10 a 15 segundos parado e completa mais repetições com o mesmo peso.</div>
       <div class="gloss-it" data-g="cluster"><b>Cluster</b>Série quebrada em blocos pequenos com pausas curtíssimas dentro da própria série.</div>
       <div class="gloss-it" data-g="piramide"><b>Pirâmide</b>O peso sobe a cada série e as repetições descem.</div>
-      <div class="gloss-it" data-g="aq"><b>Aquecimento <span class="gl-cor t-aq">azul</span></b>Carga leve, 10 repetições. Serve pra lubrificar a articulação que vai trabalhar, não pra cansar. É normal sobrar muito. Ela só aparece quando o exercício traz uma articulação que ainda não trabalhou no dia.</div>
-      <div class="gloss-it" data-g="aj"><b>Ajuste <span class="gl-cor t-aj">amarela</span></b>Carga média, 6 repetições. Serve pra avisar o teu sistema nervoso que vem esforço pesado, sem gastar energia. Também sobra muito, de propósito. Aparece quando o movimento muda de direção ou de ângulo, mesmo com a articulação já quente.</div>
-      <div class="gloss-it" data-g="pap"><b>PAP <span class="gl-cor t-pap">roxa</span></b>Uma repetição só, com carga acima do ajuste. É um estímulo máximo pro sistema nervoso antes da série válida. Não é pra falhar. Só entra em quem já tem experiência, e só quando eu coloco.</div>
-      <div class="gloss-it" data-g="val"><b>Válida <span class="gl-cor t-val">vermelha</span></b>É a série que constrói músculo. Vai até a falha ou fica a uma repetição dela. É a única onde tu anota o "sobrou", e a única que conta como volume na semana. Exercício sem cor na grade é só de válidas.</div>
+      <div class="gloss-it" data-g="aq"><b><span class="gl-cor t-aq">aquec.</span> Aquecimento</b>Carga leve, 10 repetições. Serve pra lubrificar a articulação que vai trabalhar, não pra cansar. É normal sobrar muito. Ela só aparece quando o exercício traz uma articulação que ainda não trabalhou no dia.</div>
+      <div class="gloss-it" data-g="aj"><b><span class="gl-cor t-aj">ajuste</span> Ajuste</b>Carga média, 6 repetições. Serve pra avisar o teu sistema nervoso que vem esforço pesado, sem gastar energia. Também sobra muito, de propósito. Aparece quando o movimento muda de direção ou de ângulo, mesmo com a articulação já quente.</div>
+      <div class="gloss-it" data-g="pap"><b><span class="gl-cor t-pap">PAP</span> PAP</b>Uma repetição só, com carga acima do ajuste. É um estímulo máximo pro sistema nervoso antes da série válida. Não é pra falhar. Só entra em quem já tem experiência, e só quando eu coloco.</div>
+      <div class="gloss-it" data-g="val"><b><span class="gl-cor t-val">válida</span> Válida</b>É a série que constrói músculo. Vai até a falha ou fica a uma repetição dela. É a única onde tu anota o "sobrou", e a única que conta como volume na semana. Exercício sem cor na grade é só de válidas.</div>
       <div class="gloss-it" data-g="semaq"><b>Por que alguns exercícios não têm aquecimento nem ajuste?</b>Porque a articulação e a direção do movimento já vieram prontas do exercício anterior. Barra fixa depois da puxada alta vai direto na válida: mesma direção, mesma articulação. Remada depois delas ajusta de novo, porque a direção mudou. Repetir aquecimento numa articulação que já está quente é série perdida. Panturrilha, abdômen e lombar levam só ajuste, porque os outros exercícios já usaram eles pra estabilizar. Prancha e isometria vão direto, porque não é carga a calibrar.</div>
       <div class="gloss-it" data-g="cadencia"><b>Cadência (Pos · Iso · Neg)</b>A velocidade de cada fase do movimento. Pos = subir. Iso = segurar parado. Neg = descer controlando. "Neg 3s" = descer em 3 segundos. O botão "ritmo" marca isso pra ti com som e bolinha.</div>
       <div class="gloss-it" data-g="concentrica"><b>Concêntrica (positiva)</b>A fase de vencer o peso, subindo.</div>
@@ -10633,7 +10639,7 @@ function renderMuscleMap() {
           <div class="mm-face mm-back">${face(false)}</div>
         </div>
       </div>
-      <div class="mm-hint">toca pra girar</div>
+      ${(function () { try { return localStorage.getItem('gh_mm_girou') ? '' : '<div class="mm-hint">toca pra girar</div>'; } catch (_) { return '<div class="mm-hint">toca pra girar</div>'; } })()}
     </div>
     <div class="mm-info"><div class="mm-title">Músculos de hoje</div><div class="mm-chips">${chips}</div></div>`;
   box.style.display = 'flex';
@@ -10642,6 +10648,7 @@ function renderMuscleMap() {
 // permissão de sensor, que não pedimos: sem sensor fica só o flip, sem erro).
 let _mmFlipped = false, _mmTiltX = 0, _mmTiltY = 0;
 function mmFlip() {
+  try { localStorage.setItem('gh_mm_girou', '1'); const _h = document.querySelector('#muscleMap .mm-hint'); if (_h) _h.remove(); } catch (_) {}   // v502: legenda só até o 1º giro
   _mmFlipped = !_mmFlipped;
   const c = document.getElementById('mmCard3d');
   if (c) c.classList.toggle('flip', _mmFlipped);
@@ -20032,7 +20039,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v501';
+    var APP_SHELL_V = 'metodo-gh-v502';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
