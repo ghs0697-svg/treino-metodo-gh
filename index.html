@@ -7293,6 +7293,13 @@ function _prescTabelaHtml(ex, tp, isWarmup) {
     return '<div class="ex-presc-tbl"><div class="ept-head">Prescrição</div><div class="ept-panel">' + hdr + rows + (foot.length ? '<div class="ept-foot">' + foot.join(' · ') + '</div>' : '') + '</div></div>';   // v509: intervalo e cadência dentro do painel
   } catch (_) { return ''; }
 }
+// v513: resumo curto pra etiqueta do modo foco: "1 aquec. + 1 ajuste + 2 válidas"
+function _serieResumoCurto(ex) {
+  try {
+    const g = {}; _serieTipos(ex).forEach(x => { g[x.tipo] = (g[x.tipo] || 0) + 1; });
+    return SERIE_TIPO_ORDEM.filter(t => g[t]).map(t => g[t] + ' ' + (t === 'val' ? (g[t] === 1 ? 'válida' : 'válidas') : SERIE_TIPO_CURTO[t])).join(' + ') || String((ex && ex.series) || '');
+  } catch (_) { return String((ex && ex.series) || ''); }
+}
 function _serieChipsHtml(ex, tp) {
   try {
     tp = tp || _serieTipos(ex);
@@ -7779,7 +7786,11 @@ function _exAtivoSub_(d, e) {
 // slot com QUANDO foi salvo (blkKey, ms) e escondemos DO CAMPO os slots anteriores ao bloco atual
 // (CURRENT_BLOCK_START = data do "Protocolo Atual", vinda do sync do progresso). NUNCA apaga: o
 // peso segue no localStorage e no lembrete "Ant" (getPrevCarga lê cru, ignora o bloco).
-let CURRENT_BLOCK_START = 0;   // ms; 0 = desconhecido → não filtra (seguro)
+let CURRENT_BLOCK_START = (function () {   // ms; 0 = desconhecido → não filtra (seguro)
+  // v513: parte do último "Protocolo Atual" que o sync viu (gh_carga_atual_), senão o 1º render (antes do restore
+  // voltar) mostrava a grade do ciclo velho, o aluno digitava nela e ela virava "atual" com carimbo novo.
+  try { return Number(localStorage.getItem('gh_carga_atual_' + STUDENT_ID)) || 0; } catch (_) { return 0; }
+})();
 function blkKey(d, e, w) { return `gh_blk_${STUDENT_ID}_d${d}_e${e}_w${w}`; }
 function _cargaBlocoAntigo(d, e, w) {
   if (!(CURRENT_BLOCK_START > 0)) return false;                 // sem blockStart → não esconde
@@ -7860,6 +7871,9 @@ function _serieCountPresc(ex) {
 // Lê a grade salva. null = nada salvo (o render seeda N linhas vazias do prescrito).
 function loadSets(d, e, w) {
   if (_cargaBlocoAntigo(d, e, w)) return null;                 // ciclo anterior → grade limpa (seeda do prescrito)
+  // v513: exercício rotulado (formato de 21/09) com grade SEM carimbo: a grade é de antes do formato (o app carimba toda
+  // grade que salva há meses), ou seja, ciclo velho. Fica no aparelho e no "ant:", mas não volta pro campo.
+  try { if (_serieTemRotulo(_exObjAt(d, e))) { const _b = localStorage.getItem(blkKey(d, e, w) + _cargaSlotSuffix(d, e)); if (_b == null || _b === '') return null; } } catch (_) {}
   const sf = _cargaSlotSuffix(d, e);
   let raw = sf ? localStorage.getItem(setsKey(d, e, w) + sf)
               : (_cargaValida(d, e, w) ? localStorage.getItem(setsKey(d, e, w)) : null);
@@ -7971,6 +7985,9 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
   // Pelo mesmo motivo a linha prescrita da grade rotulada não tem o × (só a linha extra que o aluno abriu sai).
   const _nPresc = _rotulada ? _serieCountPresc(_exG) : 0;
   while (_nPresc && sets.length < _nPresc) sets.push({ kg: '', pl: '', reps: '', rs: '' });
+  // v513: acima de prescrito + 1 (a extra automática) só sobra linha que TEM dado; linha vazia sobrando é resto de grade
+  // antiga e sai do render. Nunca tira linha com peso, reps ou sobrou.
+  if (_nPresc) { while (sets.length > _nPresc + 1) { const u = sets[sets.length - 1] || {}; if (String(u.kg || '').trim() || String(u.pl || '').trim() || String(u.reps || '').trim() || String(u.rs || '').trim()) break; sets.pop(); } }
   const prev = getPrevSets(di, ei, w);
   const eiS = String(ei);
   // "sobrou": quantas reps sobraram na série. O alvo prescrito (linha meta Esforço-alvo) vira
@@ -8997,6 +9014,7 @@ async function syncDoneFromServer_() {
     // como "antigo" os slots de carga/placa ainda SEM carimbo (legado) → loadCarga limpa o campo
     // no bloco novo. NUNCA deleta: o peso segue no localStorage e no lembrete "Ant". Baseline-guard:
     // não carimba no 1º load (cargaSeen vazio), só quando a col E muda de fato.
+    const _blkAntes = CURRENT_BLOCK_START;   // v513
     if (atualMs) CURRENT_BLOCK_START = atualMs;
     const cargaEpochKey = `gh_carga_atual_${STUDENT_ID}`;
     const cargaSeen = Number(localStorage.getItem(cargaEpochKey)) || 0;
@@ -9073,7 +9091,7 @@ async function syncDoneFromServer_() {
         restored++;
       }
     });
-    if (restored > 0 || cleared > 0 || wiped > 0) {
+    if (restored > 0 || cleared > 0 || wiped > 0 || (atualMs && atualMs !== _blkAntes)) {   // v513: ciclo mudou = re-render
       console.log(`[gh] Treino marcado sincronizado: +${restored} / −${cleared}${wiped ? ' / reajuste limpou ' + wiped : ''} (corte ${new Date(cutoff).toISOString().slice(0,10)})`);
       if (typeof renderExercises === 'function' && document.getElementById('exerciseContainer')) {
         renderExercises();
@@ -11806,8 +11824,10 @@ function _focusRender() {
 
   const tags = (o) => {
     const t = [];
-    if (o.series) t.push(`<span class="focus-tag"><b>Séries</b>${o.series}</span>`);
-    if (o.reps) t.push(`<span class="focus-tag"><b>Reps</b>${o.reps}</span>`);
+    const _rF = _serieTemRotulo(o);   // v513: rotulado mostra "2 válidas" e as reps da válida, não a coluna crua
+    const _sV = _rF ? ((_serieTipos(o).find(x => x.tipo === 'val') || {}).seg) : null;
+    if (o.series) t.push(`<span class="focus-tag"><b>Séries</b>${_rF ? _serieResumoCurto(o) : o.series}</span>`);
+    if (o.reps) t.push(`<span class="focus-tag"><b>Reps</b>${(_rF && _sV != null) ? (_repsSegmento(o, _sV) || o.reps) : o.reps}</span>`);
     if (o.rest) t.push(`<span class="focus-tag"><b>Interv</b>${o.rest}</span>`);
     return t.join('');
   };
@@ -12787,8 +12807,10 @@ function renderExercises() {
       const subAlts = _alternativasNoDia(di, ei);          // alternativas oferecíveis neste dia (2+) OU null
       const hasVid = act.video && act.video.length > 0;
       const tags = [];
-      if (ex.series) tags.push(`<span class="exercise-tag"><span class="tl">Séries</span>${ex.series}</span>`);
-      if (ex.reps) tags.push(`<span class="exercise-tag"><span class="tl">Reps</span>${ex.reps}</span>`);
+      const _rotT = _serieTemRotulo(ex);   // v513: rotulado mostra "2 válidas", não "2X val" (aluno leu como bug)
+      const _segVT = _rotT ? ((_serieTipos(ex).find(x => x.tipo === 'val') || {}).seg) : null;
+      if (ex.series) tags.push(`<span class="exercise-tag"><span class="tl">Séries</span>${_rotT ? _serieResumoCurto(ex) : ex.series}</span>`);
+      if (ex.reps) tags.push(`<span class="exercise-tag"><span class="tl">Reps</span>${(_rotT && _segVT != null) ? (_repsSegmento(ex, _segVT) || ex.reps) : ex.reps}</span>`);
       if (ex.rest) tags.push(`<span class="exercise-tag" onclick="event.stopPropagation();openGlossario('intervalo')"><span class="tl">Interv</span>${ex.rest}</span>`);
       if (!isWarmup) tags.push(cadenciaTag(ex.obs));
 
@@ -20170,7 +20192,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v512';
+    var APP_SHELL_V = 'metodo-gh-v513';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
