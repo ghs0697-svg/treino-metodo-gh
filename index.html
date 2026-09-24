@@ -20245,7 +20245,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v519';
+    var APP_SHELL_V = 'metodo-gh-v520';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -20298,7 +20298,7 @@ if ('serviceWorker' in navigator) {
         ctrl.postMessage('gh_versao', [mc.port2]);
       } catch (_) {}
     }
-    navigator.serviceWorker.register('sw.js').catch(function () {});
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(function () { try { navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (_) {} });   // v520: sw.js sempre da rede (Pages manda max-age=600)
     // v519: vigia de tela branca. 8 s depois de abrir, body escondido ou sem altura = shell quebrado (caso da v517):
     // força a atualização na hora, 1 vez por sessão, sem esperar o boot nem o dedo parar.
     setTimeout(function () {

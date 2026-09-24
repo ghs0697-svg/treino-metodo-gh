@@ -1,4 +1,4 @@
-const CACHE_NAME = 'metodo-gh-v519';
+const CACHE_NAME = 'metodo-gh-v520';
 const ASSETS = [
   './',
   './index.html',
@@ -24,9 +24,10 @@ self.addEventListener('install', e => {
   // v519 (23/09, tela branca da v517): o install baixa SÓ o shell (./ e ./index.html) e ativa em 1 a 2 s. Os outros
   // assets entram em segundo plano depois do activate (e pelo fetch handler). Antes o install precachava 15 arquivos
   // (MBs, 5 a 20 s no 4G): o aluno com a tela branca fechava o app antes de terminar e nunca recebia a correção.
-  e.waitUntil(
-    caches.open(CACHE_NAME).then(c => Promise.all(['./', './index.html'].map(u => c.add(new Request(u, { cache: 'reload' })))))
-  );
+  // v520: install VAZIO, ativa em menos de 1 s. O shell entra no cache pela primeira navegação (o fetch handler
+  // guarda o que vem da rede) e pelo precache em segundo plano no activate. Assim a cura de um shell quebrado
+  // (recarregar as janelas presas) acontece 2 a 3 s depois de abrir, antes de o aluno desistir e fechar.
+  e.waitUntil(caches.open(CACHE_NAME));
   self.skipWaiting();
 });
 
@@ -38,9 +39,11 @@ self.addEventListener('activate', e => {
     // v519: se o cache velho é o da v517 (shell que escondia o app inteiro de quem tem Esforço-alvo 2 a 3), TODAS as
     // janelas recarregam, a visível inclusive: naquela versão não há nada na tela pra interromper.
     const preso517 = keys.indexOf('metodo-gh-v517') >= 0;
+    // v520: caches velhos saem ANTES de recarregar as janelas, senão a navegação acharia o shell velho neles
+    // (caches.match procura em todos os caches). Sem cache, a navegação vai à rede e traz o shell novo.
     await Promise.all(keys.filter(k => k !== CACHE_NAME && k !== 'gh-videos-v1').map(k => caches.delete(k)));
     await self.clients.claim();
-    // v519: o resto dos assets entra agora, em segundo plano, sem segurar a ativação.
+    // v519/v520: shell e assets entram em segundo plano, sem segurar a ativação.
     caches.open(CACHE_NAME).then(c => Promise.all(ASSETS.map(u => c.add(new Request(u, { cache: 'reload' })).catch(() => {})))).catch(() => {});
     // v488 (GH 20/09, aluno preso na v467): quando o SW novo assume, as janelas que NÃO estão
     // na frente do aluno recarregam por aqui, sem depender do JS velho que está rodando nelas.
