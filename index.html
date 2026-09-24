@@ -3612,15 +3612,15 @@
   </div>
 </div>
 
-<!-- AVISO UNICO DA LIVE DE QUARTA (GH 14/09/2026): aparece UMA vez por aluno no aparelho e expira -->
+<!-- AVISO UNICO DA LIVE (GH 14/09/2026): aparece UMA vez por aluno no aparelho e expira. Aposentado na v476 (a call mora nas Novidades); texto mantido certo: quinta 19h30 desde 24/09/2026 (era quarta 20h) -->
 <div class="evo-overlay" id="liveAvisoModal" onclick="if(event.target.id==='liveAvisoModal')liveAvisoFecha()">
   <div class="evo-box" role="dialog" aria-modal="true" aria-labelledby="liveAvisoTit">
     <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px;">
       <span aria-hidden="true" style="width:9px;height:9px;border-radius:50%;background:#e53935;box-shadow:0 0 0 4px rgba(229,57,53,.2);flex:none;"></span>
-      <h4 id="liveAvisoTit" style="margin:0;font-size:15px;">Live toda quarta, às 20h</h4>
+      <h4 id="liveAvisoTit" style="margin:0;font-size:15px;">Live toda quinta, às 19h30</h4>
     </div>
     <div style="color:#ccc;font-size:13px;line-height:1.65;">
-      <p style="margin:0 0 10px;">Toda <b style="color:var(--gold);">quarta-feira, às 20h</b>, tem live pros alunos.</p>
+      <p style="margin:0 0 10px;">Toda <b style="color:var(--gold);">quinta-feira, às 19h30</b>, tem live pros alunos.</p>
       <p style="margin:0 0 10px;">O link de cada live é enviado no <b>grupo dos alunos</b> no WhatsApp.</p>
       <p style="margin:0;">Ainda não tá no grupo? Entra por aqui pra não perder nenhuma:</p>
     </div>
@@ -20245,7 +20245,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v520';
+    var APP_SHELL_V = 'metodo-gh-v521';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -20672,9 +20672,11 @@ function _novMarcaVistas() {
   _novDots();
 }
 function _novDiasSemana() { return ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']; }   // v480: funcao (o boot le antes de um var chegar a ser atribuido)
-function _novProximo(diaIdx) {   // data (dd/mm) do proximo dia da semana, contando de hoje (hoje conta)
+function _novProximo(diaIdx) {   // data (dd/mm) do proximo dia da semana, contando de hoje (hoje conta ate as 21h)
+  var agora = new Date();
   var d = new Date(); d.setHours(0, 0, 0, 0);
   var delta = (diaIdx - d.getDay() + 7) % 7;
+  if (delta === 0 && agora.getHours() >= 21) delta = 7;   // v521: a call de hoje ja passou (19h30), a proxima e semana que vem
   d.setDate(d.getDate() + delta);
   return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
 }
