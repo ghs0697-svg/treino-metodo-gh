@@ -20258,7 +20258,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v523';
+    var APP_SHELL_V = 'metodo-gh-v524';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -20353,6 +20353,40 @@ if ('serviceWorker' in navigator) {
       }, 5000);
     });
     setInterval(function () { if (document.visibilityState === 'visible') { _checaUpdate(); setTimeout(conferirVersao, 4000); } }, 600000);
+    // v524 (25/09/2026): atualização que NÃO depende do service worker. Na ATIVIDADE, 10 aparelhos (9 iPhones instalados)
+    // ficaram presos na v501 desde 22/09 com todo o mecanismo acima rodando: o iOS não trocava o sw.js de jeito nenhum.
+    // Aqui o app mesmo lê o sw.js da rede (cache: no-store), compara o número da versão e, se o servidor está na frente,
+    // faz o que o botão "Atualizar o app agora" faz (derruba SW e caches e recarrega furando o cache). Roda 8 s depois de
+    // abrir e ao voltar pra tela (no máximo 1x a cada 10 min), nunca digitando nem no meio do treino, 1 tentativa por
+    // versão-alvo por sessão (nunca vira loop).
+    var _autoUpVisto = 0;
+    function _versaoNumLocal_(v) { var m = String(v || '').match(/(\d+)\s*$/); return m ? parseInt(m[1], 10) : 0; }
+    function _autoUpdateSemSW() {
+      try {
+        if (Date.now() - _autoUpVisto < 600000) return;
+        _autoUpVisto = Date.now();
+        if (new URLSearchParams(location.search).get('edit') === '1') return;
+        fetch('sw.js?_=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (t) {
+          var m = String(t || '').match(/CACHE_NAME\s*=\s*['"]metodo-gh-v(\d+)['"]/);
+          if (!m) return;
+          var alvo = parseInt(m[1], 10), atual = _versaoNumLocal_(APP_SHELL_V);
+          if (!alvo || !atual || alvo <= atual) return;
+          var tenta = function () {
+            try {
+              var a = document.activeElement, digitando = a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
+              if (digitando || _treinoRolando()) { setTimeout(tenta, 60000); return; }
+              if (sessionStorage.getItem('gh_autoup_' + alvo) === '1') return;
+              sessionStorage.setItem('gh_autoup_' + alvo, '1');
+              try { if (typeof _flushSetsPendentes_ === 'function') _flushSetsPendentes_(true); } catch (_) {}
+              if (typeof forcarAtualizacaoApp === 'function') forcarAtualizacaoApp();
+            } catch (_) {}
+          };
+          setTimeout(tenta, 1500);
+        }).catch(function () {});
+      } catch (_) {}
+    }
+    setTimeout(_autoUpdateSemSW, 8000);
+    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') setTimeout(_autoUpdateSemSW, 2000); });
   })();
 }
 
