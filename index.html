@@ -12864,6 +12864,8 @@ function renderExercises() {
       const exDone = isDone(di, ei);
       const exSkip = !exDone && !isWarmup && isSkipped(di, ei);
       const safeRest = (ex.rest || '').replace(/'/g, "\\'");
+      // v523: botão "+ série" de volta na grade do card (GH 25/09); o × por linha segue fora. v525: o comentário disso
+      // estava DENTRO do template e apareceu como texto no card do aluno (print do GH, Pedro Sousa).
 
       return `
         <div class="exercise-card ${isWarmup ? 'warmup' : ''} ${hasVid ? 'has-video' : ''} ${exDone ? 'done' : ''} ${exSkip ? 'skipped' : ''} ${_shortSkip(di, ei) ? 'short-skip' : ''}">
@@ -12881,7 +12883,7 @@ function renderExercises() {
           </div>
           ${!isWarmup ? `
           <div class="carga-section" style="flex-direction:column;align-items:stretch;gap:8px;">
-            ${_setsGridHtml(di, ei, '', false, true)}   /* v523: botão "+ série" de volta (GH 25/09); o × por linha segue fora */
+            ${_setsGridHtml(di, ei, '', false, true)}
             <div class="sets-footer">
 
             <span class="carga-saved" id="sv-${di}-${ei}">&#10003; salvo</span>
@@ -20258,7 +20260,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v524';
+    var APP_SHELL_V = 'metodo-gh-v525';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
