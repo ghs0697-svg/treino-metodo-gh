@@ -12452,6 +12452,7 @@ async function loadFromSheets(injectedText) {
     let studentDur = params.get('dur') || `${TOTAL_WEEKS} semanas`;
     let hipoData = null;
     let infoFound = false;
+    let lastDayNum = null;   // v522: último dia numérico visto (linha de exercício sem dia herda ele)
 
     for (let i = 1; i < rows.length; i++) {
       const r = rows[i];
@@ -12487,8 +12488,14 @@ async function loadFromSheets(injectedText) {
         continue;
       }
 
+      // v522 (Patrícia Pizzolatto, 25/09/2026): linha de EXERCÍCIO com a col A (dia) apagada por edição manual da planilha
+      // (caso conhecido: "edição manual apaga a col A") era descartada aqui: o dia aparecia pela metade (2 de 6 exercícios)
+      // e o Trocar não achava o exercício. Linha com nome + séries/reps, sem dia, com um dia em curso = pertence ao dia em curso.
+      if (infoFound && (r[0] === '' || r[0] == null) && lastDayNum != null && r[1] && String(r[1]).trim() && (r[2] || r[3]) && !String(r[1]).trim().startsWith('http')) {
+        r[0] = String(lastDayNum);
+      }
       // Skip restrict row (col A stripped by gviz, not a link, not an exercise)
-      if (infoFound && r[0] === '' && isNaN(parseInt(r[0])) && !(r[1] && r[1].toString().startsWith('http'))) {
+      if (infoFound && (r[0] === '' || r[0] == null) && isNaN(parseInt(r[0])) && !(r[1] && r[1].toString().startsWith('http'))) {
         continue;
       }
 
@@ -12502,6 +12509,7 @@ async function loadFromSheets(injectedText) {
       const dayRaw = (r[0] || '').toString().trim().toLowerCase();
       const dayNum = parseInt(dayRaw);
       if (isNaN(dayNum)) continue;
+      lastDayNum = dayNum;   // v522
       const isBisetStart = /bi/.test(dayRaw); // ex: "1bi" marca primeiro do bi-set
 
       // Se ainda não houve marker, usa bloco anônimo (comportamento clássico)
@@ -20245,7 +20253,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v521';
+    var APP_SHELL_V = 'metodo-gh-v522';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
