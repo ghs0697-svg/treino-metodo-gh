@@ -7176,6 +7176,7 @@ function exMaisMenu(di, ei) {
     if (!ex.warmup) {
       const arr = loadSets(di, eiS, currentWeek) || [];
       const _minRem = _serieTemRotulo(ex) ? _serieCountPresc(ex) : 1;   // v497: grade rotulada só tira a linha EXTRA (rótulo é posicional)
+      if (arr.length < 12) add('Adicionar uma série', () => addSet(di, eiS));   // v523: o aluno abre série quando precisar (GH 25/09)
       if (arr.length > _minRem) add('Remover a última série', () => removeSet(di, eiS, arr.length - 1));
     }
     if (!ex.warmup && !ex.biset) add(isSkipped(di, ei) ? 'Desfazer "não consegui fazer"' : 'Não consegui fazer', () => onSkipExercise(di, ei));
@@ -8009,7 +8010,10 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
   // apagada): completa com linhas vazias até o prescrito, porque o rótulo é posicional (linha 1 = aq, 2 = aj,
   // 3 e 4 = val). Só acrescenta no FIM; nunca tira, move nem apaga dado. Grade sem rótulo segue como sempre.
   // Pelo mesmo motivo a linha prescrita da grade rotulada não tem o × (só a linha extra que o aluno abriu sai).
-  const _nPresc = _rotulada ? _serieCountPresc(_exG) : 0;
+  // v523 (Cleiton da Silva, 25/09/2026: "é 4 séries mas só aparece 2"): TODA grade completa até o prescrito, rotulada ou não.
+  // Antes só a rotulada completava; grade comum com 2 linhas salvas ficava em 2 e, sem o botão de adicionar (v508), o aluno
+  // não tinha como registrar a 3ª e a 4ª. Só acrescenta no fim; nunca tira, move nem apaga dado.
+  const _nPresc = _serieCountPresc(_exG);
   while (_nPresc && sets.length < _nPresc) sets.push({ kg: '', pl: '', reps: '', rs: '' });
   // v513/v514: acima de prescrito + 3 (o teto das extras automáticas, uma por série que não valeu) só sobra linha que TEM
   // dado; linha vazia além disso é resto de grade antiga e sai do render. Nunca tira linha com peso, reps ou sobrou.
@@ -8055,6 +8059,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
       ${evo}
       <div class="set-head"><span class="set-num"></span><span class="sh-kg" onclick="openGlossario('kg')" title="De cada lado ou o total?">${getUnit()}</span><span class="sh-pl" onclick="openPlacaInfo()" title="O que e placa?">placa</span><span class="sh-reps">${_porTempo ? _tUnid : 'reps'}</span><span class="sh-rs" title="Quantas repetições sobraram">sobrou</span><button type="button" class="rs-info-btn" onclick="openSobrouInfo()" aria-label="O que é o sobrou?">i</button><span style="flex:1"></span></div>
       ${rows}
+      ${noAdd ? '' : `<button type="button" class="set-add" onclick="addSet(${di},'${eiS}')" title="Abrir mais uma série">+ série</button>`}
     </div>`;
 }
 // Resolve a grade CERTA de (di,ei). O modo foco ("um exercício por vez") renderiza a MESMA grade
@@ -12876,7 +12881,7 @@ function renderExercises() {
           </div>
           ${!isWarmup ? `
           <div class="carga-section" style="flex-direction:column;align-items:stretch;gap:8px;">
-            ${_setsGridHtml(di, ei, '', true, true)}
+            ${_setsGridHtml(di, ei, '', false, true)}   /* v523: botão "+ série" de volta (GH 25/09); o × por linha segue fora */
             <div class="sets-footer">
 
             <span class="carga-saved" id="sv-${di}-${ei}">&#10003; salvo</span>
@@ -20253,7 +20258,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v522';
+    var APP_SHELL_V = 'metodo-gh-v523';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
