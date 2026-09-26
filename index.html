@@ -5846,7 +5846,7 @@
   <div class="te-modal-box" style="max-width:460px;">
     <h3>🎙 Recado em áudio</h3>
     <p style="color:#888;font-size:11px;margin:0 0 6px;">Grava um recado de voz pro aluno (entrega inicial). Aparece no topo do protocolo dele. Lê o card "O que observei no teu caso" enquanto grava.</p>
-    <p style="color:var(--gold);font-size:11px;margin:0 0 4px;">Pode gravar em qualquer navegador (Chrome, Safari). O áudio toca em qualquer celular do aluno.</p>
+    <p style="color:var(--gold);font-size:11px;margin:0 0 4px;">Pode gravar em qualquer navegador (Chrome, Safari) ou anexar um áudio pronto. O áudio toca em qualquer celular do aluno.</p>
     <div class="recado-existing" id="recadoExisting" style="display:none;">
       <span id="recadoExistingTxt"></span>
       <button type="button" class="recado-prazo-btn" id="recadoDelBtn" onclick="recadoDelete()" style="border-color:#e25555;color:#e25555;">🗑 Excluir</button>
@@ -5854,6 +5854,8 @@
     <div class="recado-rec-row">
       <button type="button" class="recado-rec-btn" id="recadoRecBtn" onclick="recadoToggle()">● Gravar</button>
       <span class="recado-timer" id="recadoTimer">0:00</span>
+      <button type="button" class="recado-prazo-btn" id="recadoAnexarBtn" onclick="document.getElementById('recadoFile').click()" style="margin-left:auto;" title="Subir um áudio que já está no computador ou no celular">📎 Anexar áudio</button>
+      <input type="file" id="recadoFile" accept="audio/*,.mp3,.m4a,.wav,.ogg,.opus,.aac,.webm" style="display:none;" onchange="recadoAnexar(this)">
     </div>
     <div style="display:flex;gap:6px;align-items:center;margin:8px 0;">
       <span style="font-size:12px;color:var(--muted);">Prazo:</span>
@@ -5862,6 +5864,7 @@
     </div>
     <div class="recado-status" id="recadoStatus"></div>
     <audio id="recadoPreview" controls style="width:100%;display:none;margin:6px 0;"></audio>
+    <button type="button" class="recado-prazo-btn" id="recadoBaixarBtn" onclick="recadoBaixar()" style="display:none;margin:0 0 4px;" title="Guarda a gravação no computador; se o envio falhar, é só anexar depois">⬇ Baixar o áudio</button>
     <div style="display:flex;gap:8px;margin-top:10px;">
       <button type="button" class="te-btn" id="recadoSendBtn" onclick="recadoSend()" style="display:none;flex:1;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Enviar recado</button>
       <button type="button" class="te-btn ghost" onclick="closeRecadoModal()" style="flex:1;">Fechar</button>
@@ -20260,7 +20263,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v525';
+    var APP_SHELL_V = 'metodo-gh-v526';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -21001,6 +21004,7 @@ function _recadoResetUI() {
   const prev = document.getElementById('recadoPreview');
   prev.style.display = 'none'; prev.removeAttribute('src');
   document.getElementById('recadoSendBtn').style.display = 'none';
+  const _bx = document.getElementById('recadoBaixarBtn'); if (_bx) _bx.style.display = 'none';   // v526
   recadoSetPrazo(false); // default: temporário (2 dias)
   document.getElementById('recadoExisting').style.display = 'none';
 }
@@ -21047,6 +21051,7 @@ async function _recadoStartRec() {
   btn.textContent = '■ Parar'; btn.classList.add('recording');
   document.getElementById('recadoSendBtn').style.display = 'none';
   document.getElementById('recadoPreview').style.display = 'none';
+  const _bx = document.getElementById('recadoBaixarBtn'); if (_bx) _bx.style.display = 'none';   // v526
   const st = document.getElementById('recadoStatus'); st.textContent = 'Gravando...'; st.style.color = '';
   _recadoTimerInt = setInterval(() => {
     const s = Math.floor((Date.now() - _recadoT0) / 1000);
@@ -21078,6 +21083,7 @@ function _recadoStopRec() {
   }).catch(() => {}).then(() => {
     if (_recadoRecording) return;
     sendBtn.disabled = false;
+    const _bx = document.getElementById('recadoBaixarBtn'); if (_bx) _bx.style.display = 'inline-block';   // v526: guarda a gravação antes de enviar
     const kb = Math.round(_recadoBlob.size / 1024);
     st.textContent = 'Gravado (' + kb + ' KB' + (_recadoMime === 'audio/mpeg' ? ', comprimido' : '') + '). Ouve aí, e se ficou bom, envia.';
   });
@@ -21152,8 +21158,87 @@ function _recadoDownsample(data, inRate, outRate) {
   }
   return res;
 }
+// v526 (GH 25/09/2026, textual: "cria uma possibilidade de eu anexar áudios aqui, pra caso eu gravar e não enviar, eu baixo
+// e recarrego a página, daí eu mesmo subo o áudio"): 📎 Anexar áudio (o que o navegador conseguir ler: mp3, m4a do gravador
+// do iPhone, wav, ogg/opus do WhatsApp) e ⬇ Baixar o áudio gravado. O anexo passa pelo mesmo MP3 32 kbps mono 16 kHz do
+// gravador (toca em todo celular e fica leve); mp3 que já é pequeno vai como está.
+const _RECADO_ANEXO_MAX_S = 360;
+const _RECADO_ANEXO_DIRETO_BYTES = 1536 * 1024;
+let _RECADO_CONFERE_MS = [3000, 7000, 10000, 15000];   // v526: esperas da conferência no servidor quando a confirmação se perde
+function _recadoNomeArquivo_() {
+  const base = String((typeof trainerStudentNameHint !== 'undefined' && trainerStudentNameHint) || 'aluno')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'aluno';
+  const d = new Date();
+  return 'recado-' + base + '-' + String(d.getDate()).padStart(2, '0') + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getHours()).padStart(2, '0') + String(d.getMinutes()).padStart(2, '0');
+}
+function _recadoExt_(mime) {
+  const m = String(mime || '').toLowerCase();
+  if (m.indexOf('mpeg') >= 0 || m.indexOf('mp3') >= 0) return 'mp3';
+  if (m.indexOf('wav') >= 0) return 'wav';
+  if (m.indexOf('mp4') >= 0 || m.indexOf('m4a') >= 0 || m.indexOf('aac') >= 0) return 'm4a';
+  if (m.indexOf('ogg') >= 0 || m.indexOf('opus') >= 0) return 'ogg';
+  if (m.indexOf('webm') >= 0) return 'webm';
+  return 'audio';
+}
+function recadoBaixar() {
+  if (!_recadoBlob) return;
+  try {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(_recadoBlob);
+    a.download = _recadoNomeArquivo_() + '.' + _recadoExt_(_recadoMime);
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { try { URL.revokeObjectURL(a.href); a.remove(); } catch (_) {} }, 3000);
+  } catch (_) {}
+}
+async function recadoAnexar(inp) {
+  const f = inp && inp.files && inp.files[0];
+  try { inp.value = ''; } catch (_) {}   // deixa anexar o mesmo arquivo de novo
+  if (!f) return;
+  if (_recadoRecording) { alert('Para a gravação antes de anexar.'); return; }
+  const st = document.getElementById('recadoStatus'); st.style.color = '';
+  const sendBtn = document.getElementById('recadoSendBtn');
+  const prev = document.getElementById('recadoPreview');
+  const baixar = document.getElementById('recadoBaixarBtn');
+  sendBtn.style.display = 'none'; if (baixar) baixar.style.display = 'none';
+  st.textContent = 'Lendo o áudio anexado...';
+  await new Promise(r => setTimeout(r, 30));   // deixa a tela mostrar o aviso antes do trabalho pesado
+  try {
+    const buf = await f.arrayBuffer();
+    const tipo = String(f.type || '').toLowerCase(), nome = String(f.name || '').toLowerCase();
+    const ehMp3 = tipo === 'audio/mpeg' || tipo === 'audio/mp3' || /\.mp3$/.test(nome);
+    let pcm = null, rate = 0, dur = 0;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AC();
+      const ab = await new Promise((res, rej) => { const p = ctx.decodeAudioData(buf.slice(0), res, rej); if (p && p.then) p.then(res, rej); });
+      try { ctx.close(); } catch (_) {}
+      dur = ab.duration || 0; rate = ab.sampleRate;
+      const n = ab.length, ch = ab.numberOfChannels || 1, mono = new Float32Array(n);
+      for (let c = 0; c < ch; c++) { const d = ab.getChannelData(c); for (let i = 0; i < n; i++) mono[i] += d[i] / ch; }
+      pcm = [mono];
+    } catch (_) { pcm = null; }
+    if (dur > _RECADO_ANEXO_MAX_S) { st.textContent = '❌ Esse áudio tem ' + _recadoFmt(Math.round(dur)) + '. O máximo é ' + _recadoFmt(_RECADO_ANEXO_MAX_S) + '.'; return; }
+    let blob = null, mime = '';
+    if (ehMp3 && f.size <= _RECADO_ANEXO_DIRETO_BYTES) { blob = f; mime = 'audio/mpeg'; }
+    else if (pcm) {
+      st.textContent = 'Comprimindo o áudio anexado...';
+      await new Promise(r => setTimeout(r, 30));
+      try { const mp3 = await _pcmToMp3(pcm, rate, _RECADO_OUT_HZ, 32); if (mp3 && mp3.size > 1000) { blob = mp3; mime = 'audio/mpeg'; } } catch (_) {}
+    }
+    if (!blob && f.size <= _RECADO_ANEXO_DIRETO_BYTES && /^audio\//.test(tipo)) { blob = f; mime = tipo; }
+    if (!blob) { st.textContent = '❌ Não consegui ler esse arquivo. Tenta em mp3, m4a ou wav.'; return; }
+    _recadoBlob = blob; _recadoMime = mime;
+    prev.src = URL.createObjectURL(blob); prev.style.display = 'block';
+    sendBtn.style.display = 'block'; sendBtn.disabled = false;
+    if (dur) document.getElementById('recadoTimer').textContent = _recadoFmt(Math.round(dur));
+    const btnRec = document.getElementById('recadoRecBtn'); btnRec.textContent = '● Gravar'; btnRec.classList.remove('recording');
+    st.textContent = 'Áudio anexado (' + Math.round(blob.size / 1024) + ' KB' + (dur ? ', ' + _recadoFmt(Math.round(dur)) : '') + '). Ouve aí, e se ficou bom, envia.';
+  } catch (e) {
+    st.textContent = '❌ Não consegui ler esse arquivo: ' + ((e && e.message) || e);
+  }
+}
 async function recadoSend() {
-  if (!_recadoBlob) { alert('Grava o recado primeiro.'); return; }
+  if (!_recadoBlob) { alert('Grava ou anexa o recado primeiro.'); return; }
   if (!trainerSheetId) { alert('Sem aluno selecionado.'); return; }
   const sendBtn = document.getElementById('recadoSendBtn');
   sendBtn.disabled = true; sendBtn.textContent = 'Enviando...';
@@ -21187,21 +21272,27 @@ async function recadoSend() {
     const st = document.getElementById('recadoStatus');
     st.textContent = '⏳ A confirmação falhou. Conferindo no servidor se o áudio chegou...';
     let chegou = false;
-    try {
-      await new Promise(r => setTimeout(r, 2500));
-      const q = await fetch(TRAINER_APPS_SCRIPT + '?action=recado&id=' + encodeURIComponent(trainerSheetId) + '&_=' + Date.now(), { redirect: 'follow' });
-      const rj = await q.json().catch(() => ({}));
-      const esperado = _recadoBlob ? _recadoBlob.size : 0;
-      const la = (rj && rj.ok && rj.b64) ? Math.round(rj.b64.length * 3 / 4) : 0;
-      if (esperado && la && Math.abs(la - esperado) / esperado < 0.1 && (!!rj.permanente === !!_recadoPerm)) chegou = true;
-    } catch (_) {}
+    // v526: confere até 4 vezes (3, 10, 20 e 35 s). Uma conferência só, 2,5 s depois, acusava "não enviou" quando o Google
+    // ainda estava gravando o arquivo ou devolvia a página de erro dele (caso Vitor Hugo, 25/09: o áudio tinha chegado).
+    const esperado = _recadoBlob ? _recadoBlob.size : 0;
+    for (let k = 0; k < _RECADO_CONFERE_MS.length && !chegou; k++) {
+      await new Promise(r => setTimeout(r, _RECADO_CONFERE_MS[k]));
+      try {
+        const q = await fetch(TRAINER_APPS_SCRIPT + '?action=recado&id=' + encodeURIComponent(trainerSheetId) + '&_=' + Date.now(), { redirect: 'follow' });
+        const rj = await q.json().catch(() => ({}));
+        const la = (rj && rj.ok && rj.b64) ? Math.round(rj.b64.length * 3 / 4) : 0;
+        if (esperado && la && Math.abs(la - esperado) / esperado < 0.1 && (!!rj.permanente === !!_recadoPerm)) chegou = true;
+      } catch (_) {}
+      if (!chegou && k < _RECADO_CONFERE_MS.length - 1) st.textContent = '⏳ Ainda conferindo no servidor (' + (k + 2) + ' de ' + _RECADO_CONFERE_MS.length + ')...';
+    }
     if (chegou) {
       const prazoTxt = _recadoPerm ? 'fica permanente' : 'some em 2 dias';
       st.textContent = '✅ Chegou sim! A confirmação é que demorou. O aluno já vê no topo do protocolo (' + prazoTxt + ').';
       sendBtn.style.display = 'none';
       _recadoLoadStatus();
     } else {
-      st.textContent = '❌ Não consegui enviar: ' + e.message + '. Tenta de novo.';
+      st.textContent = '❌ Não consegui confirmar o envio (' + e.message + '). Baixa o áudio (⬇) pra não perder, tenta de novo, e se a página travar, recarrega e anexa (📎).';
+      const _bx = document.getElementById('recadoBaixarBtn'); if (_bx) _bx.style.display = 'inline-block';
     }
   } finally {
     sendBtn.disabled = false; sendBtn.textContent = 'Enviar recado';
