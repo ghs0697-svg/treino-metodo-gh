@@ -1,4 +1,4 @@
-const CACHE_NAME = 'metodo-gh-v527';
+const CACHE_NAME = 'metodo-gh-v528';
 const ASSETS = [
   './',
   './index.html',
@@ -38,7 +38,7 @@ self.addEventListener('activate', e => {
     // limpeza de versão: sem esta exceção, cada atualização do app apagaria os downloads.
     // v519: se o cache velho é o da v517 (shell que escondia o app inteiro de quem tem Esforço-alvo 2 a 3), TODAS as
     // janelas recarregam, a visível inclusive: naquela versão não há nada na tela pra interromper.
-    const preso517 = keys.indexOf('metodo-gh-v527') >= 0;
+    const preso517 = keys.indexOf('metodo-gh-v528') >= 0;
     // v520: caches velhos saem ANTES de recarregar as janelas, senão a navegação acharia o shell velho neles
     // (caches.match procura em todos os caches). Sem cache, a navegação vai à rede e traz o shell novo.
     await Promise.all(keys.filter(k => k !== CACHE_NAME && k !== 'gh-videos-v1').map(k => caches.delete(k)));
