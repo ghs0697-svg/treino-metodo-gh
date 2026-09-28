@@ -20263,7 +20263,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v528';
+    var APP_SHELL_V = 'metodo-gh-v529';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -21321,8 +21321,14 @@ function authTrainer() {
 let trainerStudentsList = [];
 let trainerStudentsLoaded = false;
 let trainerStudentsRefreshing = false;
-const TRAINER_CACHE_KEY = 'gh_trainer_students_v1';
+// v529 (Vitor, suporte, 28/09/2026: "quase não acha nenhum aluno, tenho sempre que procurar o link"): a lista do aparelho
+// dele era velha (815 contra 822) e a busca não se refazia quando a lista nova chegava. Chave v2 descarta a lista velha
+// em todo aparelho; a busca se refaz quando a lista atualiza; e se não acha ninguém, busca a lista fresca na mestre.
+const TRAINER_CACHE_KEY = 'gh_trainer_students_v2';
 const TRAINER_CACHE_TTL_MS = 5 * 60 * 1000; // 5 min — pra alunos novos aparecerem rápido
+let _trainerListaTs = 0, _trainerListaErro = false, _trainerBuscaForcada = 0;
+try { localStorage.removeItem('gh_trainer_students_v1'); } catch (_) {}
+function _trainerReBusca_() { try { const el = document.getElementById('trainerStudentSearch'); if (el && el.value) trainerSearchStudents(el.value); } catch (_) {} }
 
 function loadTrainerStudentsFromCache_() {
   try {
@@ -21330,8 +21336,10 @@ function loadTrainerStudentsFromCache_() {
     if (!raw) return false;
     const obj = JSON.parse(raw);
     if (!obj || !Array.isArray(obj.students) || !obj.ts) return false;
+    if (!obj.students.length || !obj.students[0] || !obj.students[0].n || !obj.students[0].s) return false;   // v529: formato estranho = ignora
     trainerStudentsList = obj.students;
     trainerStudentsLoaded = true;
+    _trainerListaTs = obj.ts;
     return (Date.now() - obj.ts) < TRAINER_CACHE_TTL_MS; // true = fresh, false = stale (mas usável)
   } catch (e) { return false; }
 }
@@ -21359,6 +21367,7 @@ async function loadTrainerStudents(force) {
     if (j && j.students) {
       trainerStudentsList = j.students.slice().sort((a, b) => a.n.localeCompare(b.n));
       trainerStudentsLoaded = true;
+      _trainerListaTs = Date.now(); _trainerListaErro = false;
       try { localStorage.setItem(TRAINER_CACHE_KEY, JSON.stringify({ts: Date.now(), students: trainerStudentsList})); } catch (e) {}
     } else if (j && j.error === 'unauthorized') {
       localStorage.removeItem('gh_trainer_token'); // senha errada — pede de novo na próxima
@@ -21369,9 +21378,11 @@ async function loadTrainerStudents(force) {
     }
   } catch (e) {
     console.warn('loadTrainerStudents:', e);
+    _trainerListaErro = true;   // v529: a lista velha fica, mas o contador avisa
   } finally {
     trainerStudentsRefreshing = false;
     renderTrainerStudentCount();
+    _trainerReBusca_();   // v529: a busca que já está digitada se refaz com a lista nova
   }
 }
 
@@ -21379,9 +21390,11 @@ function renderTrainerStudentCount() {
   const el = document.getElementById('trainerStudentCount');
   if (!el) return;
   if (trainerStudentsLoaded) {
+    const _idade = _trainerListaTs ? Date.now() - _trainerListaTs : 0;
+    const _velha = _idade > 3600000 ? (_idade > 86400000 ? ` (lista de ${Math.floor(_idade / 86400000)} d atrás)` : ` (lista de ${Math.floor(_idade / 3600000)} h atrás)`) : '';
     el.textContent = trainerStudentsRefreshing
       ? `· ${trainerStudentsList.length} alunos · atualizando…`
-      : `· ${trainerStudentsList.length} alunos disponíveis`;
+      : (_trainerListaErro ? `· ${trainerStudentsList.length} alunos${_velha} · não atualizou, toca em Atualizar` : `· ${trainerStudentsList.length} alunos disponíveis${_velha}`);
   } else {
     el.textContent = '· carregando lista de alunos…';
   }
@@ -21400,9 +21413,20 @@ function trainerSearchStudents(query) {
     list.innerHTML = '<p style="color:#666;font-size:11px;padding:4px;">Carregando lista de alunos do mestre…</p>';
     return;
   }
-  const filtered = trainerStudentsList.filter(s => norm(s.n).includes(q)).slice(0, 15);
+  // v529: cada palavra digitada tem que aparecer no nome, em qualquer ordem ("sousa wyll" acha "Wylliams de Sousa Carvalho")
+  const _toks = q.split(/\s+/).filter(Boolean);
+  const filtered = trainerStudentsList.filter(s => { const nn = norm(s.n); return _toks.every(t => nn.includes(t)); }).slice(0, 15);
   if (!filtered.length) {
-    list.innerHTML = '<p style="color:#666;font-size:11px;padding:4px;">Nenhum aluno encontrado com esse nome.</p>';
+    const _msg = t => '<p style="color:#888;font-size:11px;padding:4px;">' + t + '</p>';
+    if (trainerStudentsRefreshing) { list.innerHTML = _msg('Não achei na lista salva. Buscando a lista atualizada da mestre…'); return; }
+    // v529: não achou: busca a lista fresca na mestre (1x por minuto) e procura de novo quando ela chegar
+    if (Date.now() - _trainerBuscaForcada > 60000) {
+      _trainerBuscaForcada = Date.now();
+      list.innerHTML = _msg('Não achei na lista salva. Buscando a lista atualizada da mestre…');
+      loadTrainerStudents(true);
+      return;
+    }
+    list.innerHTML = _msg('Nenhum aluno com esse nome na mestre. Se ele acabou de entrar, a planilha dele pode não estar pronta ainda: cola o link embaixo.');
     return;
   }
   list.innerHTML = filtered.map(s =>
