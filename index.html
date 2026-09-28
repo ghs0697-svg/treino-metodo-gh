@@ -8901,9 +8901,20 @@ function _restoreCargasRealign(cargas, ifEmpty) {
   // posicao, o aparelho novo recebia a carga do exercicio que saiu (e escondia) e perdia a do que entrou.
   const _tsN = x => { const t = x && x.c && x.c.ts; const v = Number(t); return (isFinite(v) && v > 0) ? v : (Date.parse(t) || 0); };
   const _casaNome = x => { try { return (!x.sub && x.c.exercicio && _normEx(x.c.exercicio) === _normEx(_exNameAt(x.di, x.ei))) ? 1 : 0; } catch (_) { return 0; } };
-  items.sort((a, b) => ((a.moved ? 1 : 0) - (b.moved ? 1 : 0)) || (_casaNome(b) - _casaNome(a)) || (_tsN(b) - _tsN(a))); // não-movidos primeiro, depois o nome certo, depois o mais novo
+  // v530 (Jefferson Almeida, 28/09/2026: "quando volto em cima pra ver a carga, ela some"): um registro ANTIGO do mesmo slot
+  // (o exercício que ocupava a posição no protocolo anterior, ex. "Pulldown" de agosto onde hoje é o Voador) preenchia um campo
+  // vazio (placa) e, com isso, regravava o carimbo do slot (nome e data) com os DELE. O peso de hoje continuava no aparelho e
+  // no servidor, mas o app passava a achar que era de agosto e de outro exercício, e escondia a grade. Agora cada slot é
+  // decidido por UM registro só, o melhor (nome certo, depois o mais novo, depois o não realinhado); os outros do mesmo slot
+  // são ignorados inteiros. E no fim, os slots já estragados assim voltam a ter o carimbo certo (ver o conserto abaixo).
+  items.sort((a, b) => (_casaNome(b) - _casaNome(a)) || (_tsN(b) - _tsN(a)) || ((a.moved ? 1 : 0) - (b.moved ? 1 : 0)));
   const seen = new Set();
-  items.forEach(({ c, di, ei, suffix, sub }) => {
+  const _slotDono = new Map();
+  items.forEach(_it => {
+    const { c, di, ei, suffix, sub } = _it;
+    const _slotK = setsKey(di, ei, c.w) + suffix;
+    if (_slotDono.has(_slotK)) return;   // v530: slot já decidido pelo registro melhor
+    _slotDono.set(_slotK, _it);
     const kC = storageKey(di, ei, c.w) + suffix, kP = placasKey(di, ei, c.w) + suffix, kB = blkKey(di, ei, c.w) + suffix;
     const kS = setsKey(di, ei, c.w) + suffix;
     let wrote = false;
@@ -8928,7 +8939,30 @@ function _restoreCargasRealign(cargas, ifEmpty) {
     // novo/forceSync classifica ciclo atual x anterior sem depender de ordem de fetch.
     if (wrote && c.ts != null) localStorage.setItem(kB, String(c.ts));
   });
-  return n;
+  // v530: CONSERTO de aparelho já afetado. Slot original cuja grade LOCAL é idêntica à do servidor pro exercício que está hoje
+  // naquela posição, mas escondida por carimbo de outro exercício ou de outro ciclo, volta a ter o carimbo certo. Só mexe no
+  // carimbo (nome e data), nunca em peso, repetição ou placa.
+  let _reparos = 0;
+  _slotDono.forEach((it, slotK) => {
+    try {
+      const { c, di, ei, sub } = it;
+      if (sub || !c.exercicio || c.sets == null || c.sets === '') return;
+      if (_cargaSlotSuffix(di, ei)) return;                                  // substituto ativo nesse slot: não é o caso
+      if (_normEx(c.exercicio) !== _normEx(_exNameAt(di, ei))) return;       // o registro é de outro exercício
+      const local = localStorage.getItem(slotK);
+      if (!local) return;
+      const _canon = j => { try { return JSON.stringify(JSON.parse(j)); } catch (_) { return String(j); } };
+      if (_canon(local) !== _canon(c.sets)) return;                          // só quando é a MESMA grade do servidor
+      if (_cargaValida(di, ei, c.w) && !_cargaBlocoAntigo(di, ei, c.w)) return;   // já aparece: nada a fazer
+      const tsS = _tsN(it);
+      if (!tsS || (CURRENT_BLOCK_START > 0 && tsS < CURRENT_BLOCK_START)) return;  // grade do ciclo anterior segue escondida
+      localStorage.setItem(exnKey(di, ei, c.w), String(c.exercicio));
+      localStorage.setItem(blkKey(di, ei, c.w), String(tsS));
+      _reparos++;
+    } catch (_) {}
+  });
+  if (_reparos) console.log('[gh] v530: ' + _reparos + ' grade(s) escondida(s) por carimbo errado voltaram');
+  return n + _reparos;
 }
 async function syncCargasFromServer_() {
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
@@ -12891,6 +12925,7 @@ function renderExercises() {
 
             <span class="carga-saved" id="sv-${di}-${ei}">&#10003; salvo</span>
             <div class="ex-actions">
+              <button class="ex-action-btn save-btn" onclick="event.stopPropagation(); saveSetsManual(${di}, '${ei}', this)" title="Salvar as séries agora (o app já salva sozinho enquanto tu digita; isto manda pro servidor na hora)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span class="ex-action-lbl">salvar</span></button>
               <button class="ex-action-btn" onclick="event.stopPropagation(); openPacer(${di}, ${ei})" title="Treinar no ritmo (coach de cadência)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="ex-action-lbl">ritmo</span></button>
               <button class="ex-action-btn" onclick="event.stopPropagation(); startTimer('${safeName}', parseIntervalSeconds('${safeRest}'))" title="Cronômetro de descanso (${ex.rest || 'auto'})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="ex-action-lbl">descanso</span></button>
               <button class="ex-action-btn" onclick="event.stopPropagation(); showHistory(${di}, ${ei})" title="Histórico de cargas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg><span class="ex-action-lbl">histórico</span></button>
@@ -20263,7 +20298,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v529';
+    var APP_SHELL_V = 'metodo-gh-v530';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
