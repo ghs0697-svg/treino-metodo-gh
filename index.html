@@ -467,6 +467,18 @@
     .ex-actions { margin-left: 0; flex-wrap: wrap; }
     .ex-action-btn { padding: 5px 6px 4px; font-size: 12px; }
   }
+  /* v532: dica do sobrou embaixo da linha tocada */
+  .rs-dica { display: block; width: 100%; box-sizing: border-box; font-size: 11px; color: #c9bf9f; background: rgba(212,175,106,.07); border: 1px solid rgba(212,175,106,.22); border-radius: 8px; padding: 6px 9px; margin: 2px 0 5px; line-height: 1.45; }
+  /* v532: aviso de instalar (celular sem o app instalado; uma vez, e de novo só depois de 14 dias, no máximo 3) */
+  .inst-aviso { position: fixed; left: 12px; right: 12px; bottom: 16px; z-index: 8950; background: rgba(18,17,14,.98); border: 1px solid rgba(212,175,106,.45); border-radius: 14px; padding: 12px 13px; box-shadow: 0 10px 30px rgba(0,0,0,.6); display: flex; flex-direction: column; gap: 9px; }
+  .inst-aviso[hidden] { display: none; }
+  body.has-bnav .inst-aviso { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+  .inst-aviso-tx { display: flex; flex-direction: column; gap: 3px; color: #e7e2d8; font-size: 13px; line-height: 1.45; }
+  .inst-aviso-tx span { color: #a39a86; font-size: 12px; }
+  .inst-aviso-bt { display: flex; gap: 8px; }
+  .inst-aviso-bt button { flex: 1; border-radius: 9px; padding: 9px 8px; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .inst-aviso-bt .ia-ok { background: var(--gold); color: #0c0c0d; border: 1px solid var(--gold); }
+  .inst-aviso-bt .ia-nao { background: transparent; color: #a39a86; border: 1px solid #2a2a2f; }
   .set-del {
     width: 20px; min-width: 20px; height: 24px; border: none; background: transparent;
     color: #35353a; font-size: 15px; line-height: 1; cursor: pointer; border-radius: 5px; padding: 0;
@@ -3617,6 +3629,7 @@
         <div style="color:#8d8579;font-size:11.5px;margin-top:3px;line-height:1.5;" id="sobrouAlvoTexto"></div>
       </div>
       <p style="margin:0;">Pra que serve: o peso na barra varia de dia pra dia, mas o esforço não mente. Anotando o sobrou, o GH enxerga se tu treina perto ou longe do teu limite e usa isso pra calibrar teu próximo protocolo.</p>
+      <p style="margin:10px 0 0;">O sobrou da última série e a pergunta <b>"Última série: como foi?"</b> são a mesma coisa: preenche um, o outro se responde sozinho.</p>
     </div>
     <button type="button" class="evo-close" onclick="sobrouInfoClose()">Entendi 💪</button>
   </div>
@@ -4782,6 +4795,12 @@
 
 <!-- ══ INSTALL GUIDE BUTTON ══ -->
 <button class="install-btn" id="installBtn" onclick="toggleInstallGuide(true)" title="Como instalar o app">?</button>
+
+<!-- v532 (GH 30/09/2026): aviso pra quem usa pelo navegador do celular sem instalar, "pra otimizar o uso" -->
+<div class="inst-aviso" id="instAviso" hidden role="dialog" aria-label="Instalar o app">
+  <div class="inst-aviso-tx"><b>📲 Pra otimizar o uso, instala o app na tela de início.</b><span>Abre com um toque, roda mais liso e te avisa na hora do treino.</span></div>
+  <div class="inst-aviso-bt"><button type="button" class="ia-ok" onclick="instAvisoVer()">Ver como instalar</button><button type="button" class="ia-nao" onclick="instAvisoFecha()">Agora não</button></div>
+</div>
 
 <!-- ══ INSTALL GUIDE MODAL ══ -->
 <div class="install-modal" id="installModal">
@@ -6321,10 +6340,10 @@ const I18N_EN = {
   'SUBST.': 'SWAPPED', '✈ LIVRE': '✈ FREE', '⏳ se sobrar tempo': '⏳ if time allows',
   'FORÇA ESTIMADA': 'ESTIMATED STRENGTH', 'referência, não é pra testar': 'reference, not a test target',
   'Última série: como foi?': 'Last set: how did it go?',
-  'Na ÚLTIMA SÉRIE, quantas repetições ainda dava pra fazer?': 'On your LAST SET, how many reps were left in the tank?',
-  'Fácil, ainda dava 3 ou mais': 'Easy, 3 or more left', 'Dava mais 2 repetições': '2 more reps left',
-  'Dava mais 1 repetição': '1 more rep left', 'Fiz todas, mas não dava nem mais 1': 'Did them all, nothing left',
-  'Pesado demais, travei antes de terminar': 'Too heavy, failed before finishing',
+  'Na última série, quantas reps sobraram? (quantas ainda dava pra fazer)': 'On your last set, how many reps were left in the tank?',
+  'Sobrou 3 ou mais: fácil': 'Easy, 3 or more left', 'Sobrou 2': '2 left',
+  'Sobrou 1': '1 left', 'Sobrou 0: no limite': 'Did them all, nothing left',
+  'Travei antes de terminar': 'Too heavy, failed before finishing',
   '⚠️ Problema no aparelho?': '⚠️ Machine problem?', 'Máquina ruim': 'Bad machine',
   'Não sinto o músculo': "Can't feel the muscle", 'Carga estranha': 'Weight feels off',
   '🩹 Sentindo dor?': '🩹 Feeling pain?', '📝 Quer anotar como foi?': '📝 Add a note?',
@@ -8062,7 +8081,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
         <input class="set-in set-kg${_antKg ? ' ph-ant' : ''}" type="number" inputmode="decimal" placeholder="${_antKg || _phKg}" value="${kgToDisplay(s.kg)}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-pl${_antPl ? ' ph-ant' : ''}" type="number" inputmode="numeric" placeholder="${_antPl || 'pl'}" value="${s.pl || ''}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-reps${_antReps ? ' ph-ant' : ''}" type="number" inputmode="numeric" placeholder="${_antReps || (_porTempo ? _tUnid : 'reps')}" title="${_porTempo ? 'Quantos ' + (_tUnid === 'min' ? 'minutos' : 'segundos') + ' tu segurou' : ''}" value="${s.reps || ''}" oninput="onSetField(${di},'${eiS}')">
-        <input class="set-in set-rs" type="number" inputmode="numeric" placeholder="${_tipo === 'val' ? rsPh : '·'}" title="${_tipo === 'val' ? 'Quantas repetições sobraram nessa série' : 'Série de ' + SERIE_TIPO_NOME[_tipo] + ': sobrar é o esperado, não entra no alvo'}" value="${s.rs || ''}" oninput="onSetField(${di},'${eiS}')">
+        <input class="set-in set-rs" type="number" inputmode="numeric" onfocus="sobrouDica(this)" onblur="sobrouDicaSome()" placeholder="${_tipo === 'val' ? rsPh : '·'}" title="${_tipo === 'val' ? 'Quantas repetições sobraram nessa série' : 'Série de ' + SERIE_TIPO_NOME[_tipo] + ': sobrar é o esperado, não entra no alvo'}" value="${s.rs || ''}" oninput="onSetField(${di},'${eiS}')">
         ${prevTxt}
         ${(semX || (_rotulada && si < _nPresc)) ? '' : `<button type="button" class="set-del" onclick="removeSet(${di},'${eiS}',${si})" title="Remover série" aria-label="Remover série">&times;</button>`}
       </div>`;
@@ -8212,6 +8231,7 @@ function onSetField(di, ei) {
     if (kg > 0 && typeof checkPR === 'function') checkPR(di, /^\d+$/.test(String(ei)) ? parseInt(ei) : ei, kg);
     _autoRestMaybe(di, ei, arr, _repsAntes);   // reps nova + treino rolando = descanso dispara sozinho (pill)
     try { _sobrouSugere(di, ei, arr); } catch (_) {}   // v481: sobrou acima do alvo = serie a mais / sobe a carga
+    try { _sobrouSincronizaEsf(di, ei, arr); } catch (_) {}   // v532: sobrou da última série responde "Última série: como foi?"
   }, 400);
 }
 // v449: marca/desmarca "não consegui fazer". Pular um exercício que estava feito desmarca o feito.
@@ -11776,17 +11796,17 @@ function _progChipHtml(di, ei, nomeEx) {
   if (sug.tipo === 'sobe') return `<div class="prog-chip up">💡 Semana passada: ${reg.base.txt}, sobrou 3+. Hoje <b>tenta ${sug.prox}</b>${sug.passo ? ' (' + sug.passo + ')' : ''}. Se travar, volta sem drama.</div>`;
   return `<div class="prog-chip down">Semana passada travou antes de terminar: hoje vale <b>manter ou descer um degrau</b>.</div>`;
 }
-const _ESF_OPTS = [['sobrou3', 'Fácil, ainda dava 3 ou mais'], ['sobrou2', 'Dava mais 2 repetições'], ['sobrou1', 'Dava mais 1 repetição'], ['falha_ult', 'Fiz todas, mas não dava nem mais 1'], ['falha_antes', 'Pesado demais, travei antes de terminar']];
+const _ESF_OPTS = [['sobrou3', 'Sobrou 3 ou mais: fácil'], ['sobrou2', 'Sobrou 2'], ['sobrou1', 'Sobrou 1'], ['falha_ult', 'Sobrou 0: no limite'], ['falha_antes', 'Travei antes de terminar']];   // v532: mesma palavra da coluna
 const _ESF_AP = [['maquina_ruim', 'Máquina ruim'], ['nao_sinto', 'Não sinto o músculo'], ['carga_estranha', 'Carga estranha']];
 function _focusEsforcoBlock(di, key, compact) {
   const curE = loadEsf(di, key, currentWeek);
   const curA = (loadApf(di, key, currentWeek) || '').split(',').filter(Boolean);
-  const chips = _ESF_OPTS.map(([v, l]) => `<button class="esf-chip${curE === v ? ' sel' : ''}" onclick="onEsforco(${di},'${key}',this,'${v}')">${l}</button>`).join('');
+  const chips = _ESF_OPTS.map(([v, l]) => `<button class="esf-chip${curE === v ? ' sel' : ''}" data-v="${v}" onclick="onEsforco(${di},'${key}',this,'${v}')">${l}</button>`).join('');
   const apChips = _ESF_AP.map(([v, l]) => `<button class="esf-apchip${curA.includes(v) ? ' sel' : ''}" data-v="${v}" onclick="onEsforcoAp(${di},'${key}',this)">${l}</button>`).join('');
   const apOpen = curA.length > 0;
   const curN = loadNota(di, key, currentWeek);
   const inner = `
-    <div class="focus-carga-label">Na ÚLTIMA SÉRIE, quantas repetições ainda dava pra fazer?</div>
+    <div class="focus-carga-label">Na última série, quantas reps sobraram? (quantas ainda dava pra fazer)</div>
     <div class="esf-chips">${chips}</div>
     <button class="esf-aptoggle${apOpen ? ' open' : ''}" onclick="esfToggleAp(this)">⚠️ Problema no aparelho?</button>
     <div class="esf-apchips" style="display:${apOpen ? 'flex' : 'none'};">${apChips}</div>
@@ -11798,12 +11818,12 @@ function _focusEsforcoBlock(di, key, compact) {
         oninput="notaInput(${di},'${key}',this)" onblur="notaSalva(${di},'${key}',this)">${_chatEsc(curN)}</textarea>
       <div class="esf-nota-hint"><span id="notast-${di}-${key}">O Gabriel lê isso quando for montar teu próximo protocolo.</span></div>
     </div>`;
-  if (!compact) return `<div class="focus-esforco">${inner}</div>`;
+  if (!compact) return `<div class="focus-esforco" data-di="${di}" data-key="${key}">${inner}</div>`;
   // Card da lista (GH 2026-07-06): colapsado numa linha pra não poluir; expande no
   // toque, auto-abre ao marcar feito sem resposta, e mostra a resposta escolhida.
   const opt = _ESF_OPTS.find(([v]) => v === curE);
   const resumo = opt ? `Última série: <b>${opt[1]}</b>` : 'Última série: como foi?';
-  return `<div class="focus-esforco esf-compact${opt ? ' answered' : ''}" id="esfw-${di}-${key}">
+  return `<div class="focus-esforco esf-compact${opt ? ' answered' : ''}" id="esfw-${di}-${key}" data-di="${di}" data-key="${key}">
     <button type="button" class="esf-summary" onclick="esfToggleWrap('${di}','${key}')"><span class="esf-sum-tx">${resumo}</span><span class="esf-chev">▾</span></button>
     <div class="esf-body" style="display:none;">${inner}</div>
   </div>`;
@@ -11852,41 +11872,92 @@ function esfToggleAp(btn) {
   wrap.style.display = show ? 'flex' : 'none';
   btn.classList.toggle('open', show);
 }
-function onEsforco(di, key, btn, val) {
-  btn.parentElement.querySelectorAll('.esf-chip').forEach(b => b.classList.remove('sel'));
-  btn.classList.add('sel');
-  saveEsf(di, key, currentWeek, val, loadApf(di, key, currentWeek));
-  // Feedback imediato da progressão (regras do GH): fecha o ciclo anota → orienta.
-  try {
-    const host = btn.closest('.focus-esforco');
-    if (host) {
-      let msg = '';
-      if (val === 'sobrou3') {
-        const base = _progBaseDoSets(loadSets(di, String(key), currentWeek));
-        const nomeEx = (WORKOUT[di] && WORKOUT[di].exercises[parseInt(key)] || {}).name || '';
-        const sug = base ? _progSugestao(nomeEx, base, 'sobrou3') : null;
-        msg = sug ? `💪 Sobrou 3+: na próxima <b>tenta ${sug.prox}</b>. Se travar, volta sem drama.` : '💪 Sobrou 3+: na próxima dá pra subir um degrau na carga.';
-      }
-      else if (val === 'falha_ult') msg = '🎯 Perfeito: é exatamente o alvo do método.';
-      else if (val === 'sobrou1' || val === 'sobrou2') msg = 'Carga certa, mantém.';
-      else if (val === 'falha_antes') msg = 'Tranquilo. Na próxima, segura ou desce um degrau.';
+// v532 (GH 30/09/2026, aluna: "não sei o que preencher no sobrou"): o "sobrou" da última série e a pergunta "Última série:
+// como foi?" eram a MESMA informação pedida duas vezes, com palavras diferentes. Agora é uma coisa só: digitou o sobrou da
+// última linha da grade, a pergunta se responde; escolheu a resposta, o sobrou da última série feita se preenche. E o
+// vocabulário é o mesmo nos três lugares (coluna, pergunta e respostas): sobrou.
+function _esfMsg(di, key, val) {
+  if (val === 'sobrou3') {
+    const base = _progBaseDoSets(loadSets(di, String(key), currentWeek));
+    const nomeEx = (WORKOUT[di] && WORKOUT[di].exercises[parseInt(key)] || {}).name || '';
+    const sug = base ? _progSugestao(nomeEx, base, 'sobrou3') : null;
+    return sug ? `💪 Sobrou 3+: na próxima <b>tenta ${sug.prox}</b>. Se travar, volta sem drama.` : '💪 Sobrou 3+: na próxima dá pra subir um degrau na carga.';
+  }
+  if (val === 'falha_ult') return '🎯 Perfeito: é exatamente o alvo do método.';
+  if (val === 'sobrou1' || val === 'sobrou2') return 'Carga certa, mantém.';
+  if (val === 'falha_antes') return 'Tranquilo. Na próxima, segura ou desce um degrau.';
+  return '';
+}
+// pinta a resposta em todo lugar em que a pergunta deste exercício está na tela (card da lista e modo foco)
+function _esfAplicaUi(di, key, val) {
+  const opt = _ESF_OPTS.find(([v]) => v === val);
+  document.querySelectorAll('.focus-esforco[data-di="' + di + '"][data-key="' + key + '"]').forEach(host => {
+    host.querySelectorAll('.esf-chip').forEach(b => b.classList.toggle('sel', (b.getAttribute('data-v') || '') === val));
+    try {
+      const msg = _esfMsg(di, key, val);
       let el = host.querySelector('.prog-now');
       if (!el) { el = document.createElement('div'); el.className = 'prog-now'; host.appendChild(el); }
       el.innerHTML = msg;
+    } catch (_) {}
+    if (host.classList.contains('esf-compact')) {
+      const s = host.querySelector('.esf-sum-tx');
+      if (s && opt) s.innerHTML = 'Última série: <b>' + opt[1] + '</b>';
+      host.classList.add('answered');
     }
-  } catch (_) {}
-  // No card compacto: atualiza o resumo e recolhe sozinho depois de responder
+  });
+}
+function onEsforco(di, key, btn, val) {
+  saveEsf(di, key, currentWeek, val, loadApf(di, key, currentWeek));
+  _esfAplicaUi(di, key, val);
+  // No card compacto: recolhe sozinho depois de responder
   const w = btn.closest('.esf-compact');
-  if (w) {
-    const opt = _ESF_OPTS.find(([v]) => v === val);
-    const s = w.querySelector('.esf-sum-tx');
-    if (s && opt) s.innerHTML = 'Última série: <b>' + opt[1] + '</b>';
-    w.classList.add('answered');
-    setTimeout(() => {
-      const b = w.querySelector('.esf-body');
-      if (b) { b.style.display = 'none'; w.classList.remove('open'); }
-    }, 450);
+  if (w) setTimeout(() => { const b = w.querySelector('.esf-body'); if (b) { b.style.display = 'none'; w.classList.remove('open'); } }, 450);
+  try { _esfPreencheSobrou(di, key, val); } catch (_) {}
+}
+// resposta -> sobrou da última série FEITA (a última linha da grade com peso, placa ou reps; linha vazia não é série feita)
+function _esfPreencheSobrou(di, key, val) {
+  const n = { sobrou3: '3', sobrou2: '2', sobrou1: '1', falha_ult: '0', falha_antes: '0' }[val];
+  if (n == null) return;
+  const exW = WORKOUT[di] && WORKOUT[di].exercises && WORKOUT[di].exercises[parseInt(key)];
+  const ei = (exW && exW.biset) ? (String(key) + 'b') : String(key);
+  const exG = _exObjAt(di, ei);
+  if (exG && _exPorTempo(exG)) return;   // prancha, isometria: não tem sobrou
+  const g = _gridEl(di, ei); if (!g) return;
+  let alvo = null;
+  g.querySelectorAll('.set-row').forEach(r => { const v = s => String((r.querySelector(s) || {}).value || '').trim(); if (v('.set-kg') || v('.set-pl') || v('.set-reps')) alvo = r; });
+  if (!alvo) return;
+  const rs = alvo.querySelector('.set-rs');
+  if (!rs || String(rs.value || '').trim() === n) return;
+  rs.value = n;
+  onSetField(di, ei);
+}
+// sobrou da ÚLTIMA linha da grade -> resposta da pergunta (roda no save da grade). Sobrou 0 com menos reps que o mínimo
+// prescrito = travou antes de terminar.
+function _sobrouSincronizaEsf(di, ei, arr) {
+  if (!Array.isArray(arr) || !arr.length) return;
+  if (/a$/.test(String(ei))) return;   // biset: a pergunta é do par, vale a parte B
+  const ex = _exObjAt(di, ei);
+  if (!ex || _exPorTempo(ex)) return;
+  const key = String(ei).replace(/b$/, '');
+  const u = arr[arr.length - 1];
+  const rs = String(u.rs || '').trim();
+  if (!rs) return;
+  const v = parseInt(rs.replace(/[^0-9]/g, ''), 10);
+  if (!isFinite(v)) return;
+  let val = v >= 3 ? 'sobrou3' : v === 2 ? 'sobrou2' : v === 1 ? 'sobrou1' : 'falha_ult';
+  if (v === 0) {
+    try {
+      const tp = _serieTipos(ex);
+      const seg = (tp.find(x => x.tipo === 'val') || {}).seg;
+      const repsP = String((seg != null ? _repsSegmento(ex, seg) : ex.reps) || '');
+      const min = parseInt((repsP.match(/\d+/) || [])[0], 10);
+      const feitas = parseInt(String(u.reps || '').replace(/[^0-9]/g, ''), 10);
+      if (isFinite(min) && isFinite(feitas) && feitas < min) val = 'falha_antes';
+    } catch (_) {}
   }
+  if (loadEsf(di, key, currentWeek) === val) return;
+  saveEsf(di, key, currentWeek, val, loadApf(di, key, currentWeek));
+  _esfAplicaUi(di, key, val);
 }
 function onEsforcoAp(di, key, btn) {
   btn.classList.toggle('sel');
@@ -12145,6 +12216,27 @@ function registrarPeso() {
 // ══ "O que é o sobrou?" (ⓘ da grade de séries) ══
 // Explica a caixinha em linguagem de aluno e mostra o ALVO DELE (e a frase da montagem,
 // col D) quando existem. Clareza pedida pelo GH: caixa vazia sem explicação é adivinhação.
+// v532 (aluna: "não sei o que preencher no sobrou"): a explicação aparece embaixo da linha na hora em que o campo é tocado,
+// com o alvo do protocolo. Some quando o aluno sai do campo.
+function sobrouDica(inp) {
+  try {
+    document.querySelectorAll('.rs-dica').forEach(e => e.remove());
+    const row = inp.closest('.set-row'); if (!row) return;
+    const tipo = row.getAttribute('data-tipo') || 'val';
+    let alvo = '';
+    try {
+      const v = (typeof STUDENT_ESFORCO_ALVO !== 'undefined' && STUDENT_ESFORCO_ALVO) ? STUDENT_ESFORCO_ALVO.valor : '';
+      const a = _alvoTopo();
+      alvo = (v && _esforcoEhFalha(v)) ? 'Teu alvo: até a falha, sobrar 0.' : ('Teu alvo: sobrar ' + (a.hi > a.lo ? a.lo + ' a ' + a.hi : a.lo) + '.');
+    } catch (_) {}
+    const d = document.createElement('div'); d.className = 'rs-dica';
+    d.innerHTML = tipo === 'val'
+      ? '<b>Sobrou</b> = quantas reps tu ainda conseguia fazer quando parou. Parou no limite, nenhuma a mais: <b>0</b>. ' + alvo
+      : 'Série de ' + ((typeof SERIE_TIPO_NOME !== 'undefined' && SERIE_TIPO_NOME[tipo]) || tipo) + ': sobrar é o esperado, não precisa anotar.';
+    row.insertAdjacentElement('afterend', d);
+  } catch (_) {}
+}
+function sobrouDicaSome() { setTimeout(() => { try { document.querySelectorAll('.rs-dica').forEach(e => e.remove()); } catch (_) {} }, 200); }
 function openSobrouInfo() {
   try {
     const box = document.getElementById('sobrouAlvoBox');
@@ -12752,6 +12844,7 @@ async function loadFromSheets(injectedText) {
     renderWtCard();        // cronômetro do treino (retoma sessão viva se o app foi fechado no meio)
     loadTempoTreino();     // durações registradas → badges nos dias
     _tourMaybeStart();     // 1º acesso: tour de boas-vindas (o _showNav da dieta roda cedo demais, sem WORKOUT)
+    _instAvisoMaybe();     // v532: celular sem o app instalado: aviso pra instalar (nunca por cima do tour)
 
   } catch (err) {
     document.getElementById('loadingScreen').style.display = 'none';
@@ -18672,6 +18765,40 @@ function _macroStatsGrid(pcg, kcal) {
   const cell = (v, l, cls) => `<div class="diet-macro-stat"><div class="v${cls ? ' ' + cls : ''}">${v || ''}</div><div class="l">${l}</div></div>`;
   return `<div class="diet-macro-stats">${cell(map.P, 'Proteína')}${cell(map.C, 'Carbo')}${cell(map.G, 'Gordura')}${cell(kdisp, 'kcal', 'kcal')}</div>`;
 }
+// v532 (GH 30/09/2026, Rodrigo Müller abre todo dia pelo Safari sem instalar): aviso pra instalar "pra otimizar o uso".
+// Só celular (iPhone/Android) fora do app instalado, nunca no 1º acesso (o tour vem primeiro), nunca por cima do tour, de um
+// modal ou com treino rolando, no máximo 3 vezes e com 14 dias entre uma e outra. O passo a passo é o guia que já existe.
+const _INST_KEY = 'gh_inst_aviso';
+function _instAvisoMaybe() {
+  try {
+    if (typeof SHEET_ID === 'undefined' || !SHEET_ID || SHEET_ID === 'demo') return;
+    if (new URLSearchParams(location.search).get('edit') === '1') return;
+    if (!/iPad|iPhone|iPod|Android/i.test(navigator.userAgent || '')) return;
+    if ((window.matchMedia && matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone) return;
+    const visitas = (parseInt(localStorage.getItem('gh_inst_visitas') || '0', 10) || 0) + 1;
+    localStorage.setItem('gh_inst_visitas', String(visitas));
+    if (visitas < 2) return;
+    let reg = {}; try { reg = JSON.parse(localStorage.getItem(_INST_KEY) || '{}') || {}; } catch (_) { reg = {}; }
+    if ((reg.n || 0) >= 3) return;
+    if (reg.ts && Date.now() - reg.ts < 14 * 86400000) return;
+    const tenta = function (vez) {
+      try {
+        if (vez > 20) return;
+        const ocupado = (typeof _tourAtivo !== 'undefined' && _tourAtivo)
+          || document.querySelector('.evo-overlay.show, .install-modal.active, #focusOverlay.show')
+          || (typeof _timerEndAt !== 'undefined' && _timerEndAt && _timerEndAt > Date.now())
+          || document.visibilityState !== 'visible';
+        if (ocupado) { setTimeout(function () { tenta(vez + 1); }, 15000); return; }
+        const el = document.getElementById('instAviso'); if (!el) return;
+        el.hidden = false;
+        localStorage.setItem(_INST_KEY, JSON.stringify({ n: (reg.n || 0) + 1, ts: Date.now() }));
+      } catch (_) {}
+    };
+    setTimeout(function () { tenta(1); }, 12000);
+  } catch (_) {}
+}
+function instAvisoFecha() { try { document.getElementById('instAviso').hidden = true; } catch (_) {} }
+function instAvisoVer() { instAvisoFecha(); try { toggleInstallGuide(true); } catch (_) {} }
 function toggleInstallGuide(show) {
   document.getElementById('installModal').classList.toggle('active', show);
   document.getElementById('installBtn').style.display = show ? 'none' : 'block';
@@ -20310,7 +20437,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v531';
+    var APP_SHELL_V = 'metodo-gh-v532';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -21761,7 +21888,7 @@ function renderCurrentEditor() {
 // (subir carga / ideal / baixar-técnica / aparelho ruim). O kg é incomparável
 // entre academias; o esforço é o sinal real de calibração.
 const _ESF_SCORE = { sobrou3: 3, sobrou2: 2, sobrou1: 1, falha_ult: 0, falha_antes: -1 };
-const _ESF_LABEL = { sobrou3: 'Fácil, ainda dava 3 ou mais', sobrou2: 'Dava mais 2 repetições', sobrou1: 'Dava mais 1 repetição', falha_ult: 'Fiz todas, mas não dava nem mais 1', falha_antes: 'Pesado demais, travei antes de terminar' };
+const _ESF_LABEL = { sobrou3: 'Sobrou 3 ou mais: fácil', sobrou2: 'Sobrou 2', sobrou1: 'Sobrou 1', falha_ult: 'Sobrou 0: no limite', falha_antes: 'Travei antes de terminar' };
 const _ESF_APLABEL = { maquina_ruim: 'Máquina ruim', nao_sinto: 'Não sinto o músculo', carga_estranha: 'Carga estranha' };
 
 // Replica o parser do WORKOUT (bloco @TREINO → dia col A → exercícios, merge
