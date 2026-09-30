@@ -395,6 +395,8 @@
   /* v504/v505: exercicio por tempo: coluna de tempo + sobrou (GH 22/09: "pode manter o campo sobrou sim"); kg e placa somem */
   .sets-grid.tempo .set-in.set-kg, .sets-grid.tempo .set-in.set-pl, .sets-grid.tempo .sh-kg, .sets-grid.tempo .sh-pl { display: none; }
   .sets-grid.tempo .set-in.set-reps, .sets-grid.tempo .sh-reps { width: 72px; }
+  /* v531 (Rodrigo Müller, prancha): tempo não tem "sobrou" */
+  .sets-grid.tempo .set-in.set-rs, .sets-grid.tempo .sh-rs, .sets-grid.tempo .rs-info-btn { display: none; }
   .ex-presc .tp-chip { display: inline-block; border: 1px solid; border-radius: 999px; padding: 0 8px; font-size: 11px; line-height: 18px; margin: 1px 3px 1px 0; white-space: nowrap; cursor: pointer; }
   .ex-presc .tp-chip b { font-weight: 700; }
   .ex-presc .tp-int { white-space: nowrap; display: inline-block; }
@@ -435,7 +437,15 @@
   /* série preenchida "acende": número dourado + campos com borda viva (progressive enhancement via :has) */
   .set-in:not(:placeholder-shown) { border-color: rgba(212,175,55,.55); background: #26221a; }
   .set-row:has(.set-in:not(:placeholder-shown)) .set-num { color: var(--gold); }
-  .set-prev { font-size: 10px; color: var(--muted); white-space: nowrap; margin-left: 2px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .set-prev { font-size: 11px; color: #a39a86; white-space: nowrap; margin-left: 2px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  /* v531 (Rodrigo Müller, "o ideal seria eu saber o que eu fiz antes"): a última vez vinha num texto de 9,5px sem título.
+     Agora o número da última vez fica DENTRO do campo vazio, num cinza legível, e a coluna da direita tem título. */
+  .set-in.ph-ant::placeholder { color: #8a8070; }
+  .set-head .sh-prev { flex: 1; min-width: 0; font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left; margin-left: 2px; }
+  .sg-ant-nota { font-size: 11px; color: #8a8070; margin: -2px 0 6px; }
+  /* v531: "+ série" confundia ("achei que estavam faltando séries"): vira "+ série extra" e só aparece depois que todas as
+     séries da grade têm reps (o caminho de sempre segue no menu ··· > Adicionar uma série) */
+  .sets-grid:has(.set-row .set-in.set-reps:placeholder-shown) > .set-add { display: none; }
   /* TELA ESTREITA (Vitor 02/09, alunos reclamando): a linha da serie somava ~350px e o card
      tem overflow:hidden, entao a coluna "ant:" (a ultima) sumia pela direita em celular de
      360-375px. Encolhe campos/gaps/padding so aqui embaixo de 430px; acima nada muda. */
@@ -446,7 +456,7 @@
     .set-head .sh-reps, .set-in.set-reps { width: 44px; }
     .set-head .sh-rs, .set-in.set-rs { width: 40px; }
     .set-in { font-size: 13px; padding: 6px 2px; }
-    .set-prev { font-size: 9.5px; margin-left: 0; }
+    .set-prev { font-size: 10.5px; margin-left: 0; }
     .set-prev .sp-lb { display: none; }   /* "ant:" vira so o numero: "12kg x10" */
     .focus-carga { padding: 10px 8px; }
     /* fileira "+ serie | salvar ritmo descanso historico trocar": em 360px o ultimo botao
@@ -7149,9 +7159,9 @@ function _prescLinha(ex, isWarmup) {
       if (ex.reps) p.push(/seg|min|\bs\b/i.test(String(ex.reps)) ? ex.reps : (ex.reps + ' reps'));   // "20 seg" nao vira "20 seg reps"
     }
     // v499: com chips, o intervalo vai sem o "·" (a borda do chip já separa) e não quebra no meio da frase
-    if (ex.rest) p.push('<span class="gl' + (_rotP ? ' tp-int' : '') + '" onclick="event.stopPropagation();openGlossario(\'intervalo\')">' + ex.rest + ' de intervalo</span>');
+    if (ex.rest) p.push('<span class="gl' + (_rotP ? ' tp-int' : '') + '" onclick="event.stopPropagation();openGlossario(\'intervalo\')">' + ex.rest + ' de descanso</span>');   // v531 (Rodrigo Müller): "de intervalo" do lado do tempo da prancha confundia tempo com descanso
     let out = p.join(' · ');
-    if (!isWarmup) {
+    if (!isWarmup && !_exPorTempo(ex)) {   // v531: prancha, isometria e alongamento não têm subida e descida
       const c = parseCadencia(ex.obs);
       out += '<span class="cad gl" onclick="event.stopPropagation();openGlossario(\'cadencia\')">Pos ' + fmtSec(c.conc) + 's · Iso ' + fmtSec(c.iso) + 's · Neg ' + fmtSec(c.exc) + 's</span>';
     }
@@ -7315,13 +7325,13 @@ function _prescTabelaHtml(ex, tp, isWarmup) {
       const g = grupos[t];
       let reps = String(_repsSegmento(ex, g.seg) || '').trim();
       if (reps && !/seg|min|\bs\b/i.test(reps)) reps += (reps === '1' ? ' rep' : ' reps');   // PAP: "1 rep"
-      const extra = t === 'val' ? esf : (SERIE_TIPO_CARGA[t] || '');
+      const extra = t === 'val' ? (_exPorTempo(ex) ? 'segurar firme' : esf) : (SERIE_TIPO_CARGA[t] || '');   // v531: prancha não tem "sobrar"
       return '<div class="ept-row"><span class="ept-t t-' + t + '" onclick="event.stopPropagation();openGlossario(\'' + t + '\')" title="' + SERIE_TIPO_NOME[t] + '">' + SERIE_TIPO_CURTO[t] + '</span>'
         + '<span class="ept-n">' + g.n + (g.n === 1 ? ' série' : ' séries') + '</span><span class="ept-r">' + reps + '</span><span class="ept-c">' + extra + '</span></div>';
     }).join('');
     const foot = [];
-    if (ex.rest) foot.push('<span class="gl" onclick="event.stopPropagation();openGlossario(\'intervalo\')">' + ex.rest + ' de intervalo</span>');
-    if (!isWarmup) { const c = parseCadencia(ex.obs); foot.push('<span class="gl" onclick="event.stopPropagation();openGlossario(\'cadencia\')">Pos ' + fmtSec(c.conc) + 's · Iso ' + fmtSec(c.iso) + 's · Neg ' + fmtSec(c.exc) + 's</span>'); }
+    if (ex.rest) foot.push('<span class="gl" onclick="event.stopPropagation();openGlossario(\'intervalo\')">' + ex.rest + ' de descanso</span>');
+    if (!isWarmup && !_exPorTempo(ex)) { const c = parseCadencia(ex.obs); foot.push('<span class="gl" onclick="event.stopPropagation();openGlossario(\'cadencia\')">Pos ' + fmtSec(c.conc) + 's · Iso ' + fmtSec(c.iso) + 's · Neg ' + fmtSec(c.exc) + 's</span>'); }
     const hdr = '<div class="ept-row ept-hdr"><span class="ept-t">tipo</span><span class="ept-n">séries</span><span class="ept-r">' + (_exPorTempo(ex) ? 'tempo' : 'reps') + '</span><span class="ept-c">como</span></div>';
     return '<div class="ex-presc-tbl"><div class="ept-head">Prescrição</div><div class="ept-panel">' + hdr + rows + (foot.length ? '<div class="ept-foot">' + foot.join(' · ') + '</div>' : '') + '</div></div>';   // v509: intervalo e cadência dentro do painel
   } catch (_) { return ''; }
@@ -8046,11 +8056,12 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
     const _phReps = (_segR != null) ? _repsCurto(_repsSegmento(_exG, _segR)) : 'reps';
     const _phKg = (_rotulada && _tipo !== 'val') ? (SERIE_TIPO_CARGA[_tipo] || getUnit()) : getUnit();
     const _phTempo = _porTempo ? (_tempoCurto((_rotulada && _segR != null) ? _repsSegmento(_exG, _segR) : _exG.reps) || _tUnid) : '';   // v504
+    const _antKg = (p && p.kg) ? kgToDisplay(p.kg) : '', _antPl = (p && p.pl) ? String(p.pl) : '', _antReps = (p && p.reps) ? String(p.reps) : '';   // v531: última vez dentro do campo
     return `<div class="set-row ${feita ? 'feita' : ''} ${_rotulada ? 't-' + _tipo : ''} ${_nv ? 'nv' : ''}" data-si="${si}" data-tipo="${_tipo}">
         <button type="button" class="set-num ${_rotulada ? 't-' + _tipo : ''}" onclick="toggleSetFeita(${di},'${eiS}',${si})" title="${_rotulada ? 'Série de ' + SERIE_TIPO_NOME[_tipo] + '. ' : ''}Marcar série como feita" aria-label="Marcar série ${si + 1} como feita">${feita ? '✓' : (_rotulada ? (_nv ? 'não valeu' : _rot) : si + 1)}</button>
-        <input class="set-in set-kg" type="number" inputmode="decimal" placeholder="${_phKg}" value="${kgToDisplay(s.kg)}" oninput="onSetField(${di},'${eiS}')">
-        <input class="set-in set-pl" type="number" inputmode="numeric" placeholder="pl" value="${s.pl || ''}" oninput="onSetField(${di},'${eiS}')">
-        <input class="set-in set-reps" type="number" inputmode="numeric" placeholder="${_porTempo ? _tUnid : 'reps'}" title="${_porTempo ? 'Quantos ' + (_tUnid === 'min' ? 'minutos' : 'segundos') + ' tu segurou' : ''}" value="${s.reps || ''}" oninput="onSetField(${di},'${eiS}')">
+        <input class="set-in set-kg${_antKg ? ' ph-ant' : ''}" type="number" inputmode="decimal" placeholder="${_antKg || _phKg}" value="${kgToDisplay(s.kg)}" oninput="onSetField(${di},'${eiS}')">
+        <input class="set-in set-pl${_antPl ? ' ph-ant' : ''}" type="number" inputmode="numeric" placeholder="${_antPl || 'pl'}" value="${s.pl || ''}" oninput="onSetField(${di},'${eiS}')">
+        <input class="set-in set-reps${_antReps ? ' ph-ant' : ''}" type="number" inputmode="numeric" placeholder="${_antReps || (_porTempo ? _tUnid : 'reps')}" title="${_porTempo ? 'Quantos ' + (_tUnid === 'min' ? 'minutos' : 'segundos') + ' tu segurou' : ''}" value="${s.reps || ''}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-rs" type="number" inputmode="numeric" placeholder="${_tipo === 'val' ? rsPh : '·'}" title="${_tipo === 'val' ? 'Quantas repetições sobraram nessa série' : 'Série de ' + SERIE_TIPO_NOME[_tipo] + ': sobrar é o esperado, não entra no alvo'}" value="${s.rs || ''}" oninput="onSetField(${di},'${eiS}')">
         ${prevTxt}
         ${(semX || (_rotulada && si < _nPresc)) ? '' : `<button type="button" class="set-del" onclick="removeSet(${di},'${eiS}',${si})" title="Remover série" aria-label="Remover série">&times;</button>`}
@@ -8058,11 +8069,12 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
   }).join('');
   return `<div class="sets-grid${_rotulada ? ' rotulada' : ''}${_porTempo ? ' tempo' : ''}" id="sets-${di}-${eiS}" data-di="${di}" data-ei="${eiS}" data-noadd="${noAdd ? '1' : ''}" data-semx="${semX ? '1' : ''}">
       <div class="sg-head">Teu registro</div>
+      ${(prev && prev.length) ? '<div class="sg-ant-nota">Em cinza, o que tu fez na última vez</div>' : ''}
       ${label ? `<div class="carga-label" style="font-size:10px;margin-bottom:2px;">${label}</div>` : ''}
       ${evo}
-      <div class="set-head"><span class="set-num"></span><span class="sh-kg" onclick="openGlossario('kg')" title="De cada lado ou o total?">${getUnit()}</span><span class="sh-pl" onclick="openPlacaInfo()" title="O que e placa?">placa</span><span class="sh-reps">${_porTempo ? _tUnid : 'reps'}</span><span class="sh-rs" title="Quantas repetições sobraram">sobrou</span><button type="button" class="rs-info-btn" onclick="openSobrouInfo()" aria-label="O que é o sobrou?">i</button><span style="flex:1"></span></div>
+      <div class="set-head"><span class="set-num"></span><span class="sh-kg" onclick="openGlossario('kg')" title="De cada lado ou o total?">${getUnit()}</span><span class="sh-pl" onclick="openPlacaInfo()" title="O que e placa?">placa</span><span class="sh-reps">${_porTempo ? _tUnid : 'reps'}</span><span class="sh-rs" title="Quantas repetições sobraram">sobrou</span><button type="button" class="rs-info-btn" onclick="openSobrouInfo()" aria-label="O que é o sobrou?">i</button><span class="sh-prev">${(prev && prev.length) ? 'última vez' : ''}</span></div>
       ${rows}
-      ${noAdd ? '' : `<button type="button" class="set-add" onclick="addSet(${di},'${eiS}')" title="Abrir mais uma série">+ série</button>`}
+      ${noAdd ? '' : `<button type="button" class="set-add" onclick="addSet(${di},'${eiS}')" title="Série a mais, além do que foi prescrito">+ série extra</button>`}
     </div>`;
 }
 // Resolve a grade CERTA de (di,ei). O modo foco ("um exercício por vez") renderiza a MESMA grade
@@ -20298,7 +20310,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v530';
+    var APP_SHELL_V = 'metodo-gh-v531';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -20416,17 +20428,38 @@ if ('serviceWorker' in navigator) {
               var a = document.activeElement, digitando = a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
               if (digitando || _treinoRolando()) { setTimeout(tenta, 60000); return; }
               if (sessionStorage.getItem('gh_autoup_' + alvo) === '1') return;
+              // v531 (Rodrigo Müller: o app recarregava sozinho 10 s depois de aberto, com o aluno lendo o treino): com o app
+              // na tela, só marca a versão nova como pendente. Aplica quando o aluno sai (tela apagada, outro app) ou quando
+              // volta depois de 30 s fora, que é quando o app parece estar abrindo de novo. Versão abaixo da mínima segue
+              // forçando na hora pelo caminho da AVISOS!E2.
+              if (document.visibilityState === 'visible') { _autoUpPend = alvo; return; }
               sessionStorage.setItem('gh_autoup_' + alvo, '1');
               try { if (typeof _flushSetsPendentes_ === 'function') _flushSetsPendentes_(true); } catch (_) {}
               if (typeof forcarAtualizacaoApp === 'function') forcarAtualizacaoApp();
             } catch (_) {}
           };
+          _autoUpTenta = tenta;
           setTimeout(tenta, 1500);
         }).catch(function () {});
       } catch (_) {}
     }
+    var _autoUpPend = 0, _autoUpTenta = null, _autoUpSaiu = 0;
     setTimeout(_autoUpdateSemSW, 8000);
-    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') setTimeout(_autoUpdateSemSW, 2000); });
+    document.addEventListener('visibilitychange', function () {
+      try {
+        if (document.visibilityState === 'hidden') {
+          _autoUpSaiu = Date.now();
+          if (_autoUpPend && _autoUpTenta && !_treinoRolando()) _autoUpTenta();   // saiu do app: atualiza escondido
+          return;
+        }
+        if (_autoUpPend && _autoUpTenta && _autoUpSaiu && Date.now() - _autoUpSaiu >= 30000 && !_treinoRolando()) {   // voltou depois de 30 s: é a "abertura"
+          var alvoP = _autoUpPend; _autoUpPend = 0;
+          if (sessionStorage.getItem('gh_autoup_' + alvoP) !== '1') { sessionStorage.setItem('gh_autoup_' + alvoP, '1'); try { if (typeof _flushSetsPendentes_ === 'function') _flushSetsPendentes_(true); } catch (_) {} if (typeof forcarAtualizacaoApp === 'function') forcarAtualizacaoApp(); }
+          return;
+        }
+        setTimeout(_autoUpdateSemSW, 2000);
+      } catch (_) {}
+    });
   })();
 }
 
