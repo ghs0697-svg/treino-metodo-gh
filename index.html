@@ -1168,6 +1168,11 @@
   /* substituto que já está no treino do dia: visível, mas sem clique */
   .sub-opt-nodia { opacity: .5; cursor: default; }
   .sub-opt-nodia .sub-opt-name { text-decoration: line-through; }
+  /* v533: o exercício de agora não é botão; opção livre diz "escolher"; voltar pro original é botão próprio */
+  .sub-opt-now { background: transparent; border: 1px dashed rgba(212,175,106,.45); color: #cfc7b5; cursor: default; }
+  .sub-opt-now .sub-opt-tag { color: var(--gold); border-color: rgba(212,175,106,.5); }
+  .sub-opt-go { font-size: 11px; font-weight: 800; color: var(--gold); border: 1px solid rgba(212,175,106,.55); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+  .sub-opt-volta { background: transparent; border: 1px solid #3a3a42; color: #b8b8c0; font-weight: 600; }
   .sub-aviso { background: rgba(212,175,106,.10); border: 1px solid rgba(212,175,106,.32); color: #d9d4cb; font-size: 12.5px; line-height: 1.5; border-radius: 11px; padding: 12px 13px; margin-bottom: 10px; }
   .sub-picker-close { width: 100%; margin-top: 6px; background: transparent; border: 1px solid #3a3a42; color: #b8b8c0; padding: 12px; border-radius: 11px; font-size: 14px; font-weight: 600; cursor: pointer; }
 
@@ -6327,6 +6332,7 @@ const I18N_EN = {
   'Pouco tempo': 'Short on time', 'Por que trocou?': 'Why did you swap?',
   'Não tem o aparelho': 'Machine not available', 'Estava ocupado': 'It was busy', 'Senti desconforto': 'It felt uncomfortable',
   'Ver todas as opções de troca': 'See every swap option', 'Pedir a troca pro Gabriel': 'Ask Gabriel for the swap',
+  'no teu treino agora': 'in your workout now', 'escolher': 'choose', 'já no treino de hoje': 'already in today\'s workout',
   'Treinar no ritmo': 'Train to the tempo', 'Histórico de carga': 'Weight history',
   'Remover a última série': 'Remove the last set', 'Fechar': 'Close',
   'prescrito pelo Gabriel': 'prescribed by Gabriel', 'troca do mesmo grupo, com vídeo': 'swap from the same group, with video',
@@ -6963,6 +6969,7 @@ function _subSetMotivo(btn) {
 }
 function _ghToast(txt, ms) {
   try {
+    try { document.querySelectorAll('.gh-toast').forEach(x => x.remove()); } catch (_) {}   // v533: uma confirmação por vez, a nova substitui a anterior
     const t = document.createElement('div');
     t.className = 'gh-toast'; t.innerHTML = txt;
     document.body.appendChild(t);
@@ -6993,8 +7000,16 @@ function escolherSub(di, ei, chosenNorm, doArrasto) {
       }, 8000);
     } else {
       _trocaEnvia(_pay, _subMotivo || 'nao_informado');
-      if (_subMotivo === 'desconforto' && !voltouOriginal) _ghToast('Anotado 👊 Se o desconforto continuar mesmo com a troca, pede um ajuste pro Gabriel no botão <b>Solicitar ajuste</b>.');
     }
+    // v533 (Patrícia Pizzolatto: "não atualiza a nova opção"): confirmação visível do que mudou
+    try {
+      const _e = x => String(x || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+      if (voltouOriginal) _ghToast('↩ Voltou pro original: <b>' + _e(ex.name) + '</b>');
+      else {
+        const m = (_grupoDe(ex.name) || []).find(x => x.norm === _normEx(chosenNorm));
+        _ghToast('✓ Trocado: <b>' + _e((m && m.name) || chosenNorm) + '</b> no lugar de ' + _e(ex.name) + '. A carga do original fica guardada.' + (_subMotivo === 'desconforto' ? ' Se o desconforto continuar, pede um ajuste pro Gabriel no botão <b>Solicitar ajuste</b>.' : ''), 5500);
+      }
+    } catch (_) {}
     _subMotivo = '';
     closeSubPicker();
     renderExercises();
@@ -7524,7 +7539,6 @@ function openSubPicker(di, ei) {
   if (!ov || !list || !orig) return;
   const escAttr = s => String(s).replace(/'/g, "\\'");
   const escHtml = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
-  orig.textContent = 'Prescrito: ' + ex.name;
   const livres = alts.filter(a => !a.noDia && !a.atual).length;
   const ocupadas = alts.filter(a => a.noDia).length;
   let aviso = '';
@@ -7533,17 +7547,25 @@ function openSubPicker(di, ei) {
       ? '<div class="sub-aviso">A única troca desse exercício já está no teu treino de hoje. Se quiser trocar mesmo assim, me chama que eu resolvo direto no teu protocolo.</div>'
       : '<div class="sub-aviso">As trocas desse exercício já estão no teu treino de hoje. Se quiser trocar mesmo assim, me chama que eu resolvo direto no teu protocolo.</div>';
   }
-  list.innerHTML = aviso + alts.map(a =>
-    a.noDia
-      ? `<div class="sub-opt sub-opt-nodia" aria-disabled="true">` +
-          `<span class="sub-opt-name">${escHtml(a.name)}</span>` +
-          `<span class="sub-opt-tag">já no treino de hoje</span>` +
-        `</div>`
-      : `<button class="sub-opt ${a.atual ? 'sub-opt-on' : ''}" onclick="escolherSub(${di}, ${ei}, '${escAttr(a.norm)}')">` +
-          `<span class="sub-opt-name">${escHtml(a.name)}</span>` +
-          (a.norm === _normEx(ex.name) ? '<span class="sub-opt-tag">original</span>' : '') +
-          (a.atual ? '<span class="sub-opt-check">&#10003;</span>' : '') +
-        `</button>`).join('');
+  // v533 (Patrícia Pizzolatto, 25 e 30/09/2026: tocava na opção dourada com ✓, que era o exercício de agora, e o app
+  // "não atualizava"): o exercício de agora vira uma linha SEM toque, no topo; as opções livres ganham "escolher";
+  // voltar pro original é um botão próprio no fim, não uma linha que parece escolha.
+  const norig = _normEx(ex.name);
+  const ativoAlt = alts.find(a => a.atual);
+  const origAlt = alts.find(a => a.norm === norig);
+  const subAtivo = !!(ativoAlt && ativoAlt.norm !== norig);
+  orig.textContent = subAtivo
+    ? ('Prescrito: ' + ex.name + '. Toca em outro pra trocar de novo, ou volta pro original.')
+    : ('Toca no exercício que tu vai fazer no lugar de ' + ex.name + '.');
+  const linhas = [];
+  if (ativoAlt) linhas.push(`<div class="sub-opt sub-opt-now" aria-current="true"><span class="sub-opt-name">${escHtml(ativoAlt.name)}</span><span class="sub-opt-tag">no teu treino agora</span></div>`);
+  alts.filter(a => !a.atual).forEach(a => {
+    if (a.noDia) { linhas.push(`<div class="sub-opt sub-opt-nodia" aria-disabled="true"><span class="sub-opt-name">${escHtml(a.name)}</span><span class="sub-opt-tag">já no treino de hoje</span></div>`); return; }
+    if (a.norm === norig) return;   // o original entra como botão de voltar, embaixo
+    linhas.push(`<button class="sub-opt" onclick="escolherSub(${di}, ${ei}, '${escAttr(a.norm)}')"><span class="sub-opt-name">${escHtml(a.name)}</span><span class="sub-opt-go">escolher</span></button>`);
+  });
+  if (subAtivo && origAlt && !origAlt.noDia) linhas.push(`<button class="sub-opt sub-opt-volta" onclick="escolherSub(${di}, ${ei}, '${escAttr(norig)}')"><span class="sub-opt-name">↩ Voltar pro original: ${escHtml(ex.name)}</span></button>`);
+  list.innerHTML = aviso + linhas.join('');
   // sem nenhuma opção livre: oferece o caminho de falar comigo, dentro do próprio modal
   if (!livres) list.innerHTML += `<button class="sub-opt" style="justify-content:center;color:var(--gold);border-color:rgba(212,175,106,.45);" onclick="teHide('subPickerOverlay'); openSubFallback(${di}, ${ei});">🔧 Pedir a troca pro Gabriel</button>`;
   ov.classList.add('show');
@@ -20437,7 +20459,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v532';
+    var APP_SHELL_V = 'metodo-gh-v533';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
