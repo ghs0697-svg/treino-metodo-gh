@@ -14839,17 +14839,39 @@ function _chatTarjaPretaRedirect() {
 }
 // Registra o ajuste + confirma no chat + CTA de foto + log. Usado pelo modo "ajuste" (aluno
 // escolheu a aba) E pelo botão do nudge (aluno confirmou o palpite do bot). Determinístico.
+// v534 (Ajustes #2600, Rosane Gomes 24/09 e mais 4 casos desde julho): o aluno escreve o pedido inteiro, o bot só sugere
+// registrar, ele não toca na sugestão e manda uma frase curta ("Se fizer sentido aguardo seu retorno"); o registro saía só
+// com a frase curta. Agora o registro junta as mensagens dele da mesma conversa que o bot apontou como pedido (até 30 min
+// atrás, até o último registro), na ordem, e avisa que juntou.
+function _chatPedidoCompleto(pedido) {
+  try {
+    const agora = Date.now(), pend = [], entradas = [];
+    for (let i = _chatHistory.length - 1; i >= 0; i--) {
+      const m = _chatHistory[i];
+      if (m.role === 'assistant' && /Anotado!/.test(String(m.content || ''))) break;   // já registrado: conversa anterior
+      if (m.role !== 'user' || !m.proGh || m.registrado || !m.ts || agora - m.ts > 30 * 60000) continue;
+      if (String(m.content || '').trim() === String(pedido || '').trim()) continue;
+      pend.unshift(String(m.content || '').trim()); entradas.unshift(m);
+    }
+    const partes = pend.filter(Boolean).slice(-5).concat([String(pedido || '').trim()]);
+    return { texto: partes.join('\n').slice(0, 2000), juntou: partes.length - 1, entradas };
+  } catch (_) { return { texto: pedido, juntou: 0, entradas: [] }; }
+}
 function _chatConfirmAjuste(pedido, contexto) {
+  const comp = _chatPedidoCompleto(pedido);
   // Tarja preta nunca vira ajuste registrado: redireciona o aluno pro GH (regra #564).
-  if (_isTarjaPreta(pedido)) { _chatTarjaPretaRedirect(); return; }
+  if (_isTarjaPreta(comp.texto)) { _chatTarjaPretaRedirect(); return; }
   const reqId = 'aj_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  const ctx = contexto || _chatGuessContexto(pedido);
-  _chatRegisterAjusteAuto(pedido, reqId, ctx);
+  const ctx = contexto || _chatGuessContexto(comp.texto);
+  _chatRegisterAjusteAuto(comp.texto, reqId, ctx);
+  try { comp.entradas.forEach(m => { m.registrado = true; }); const u = [..._chatHistory].reverse().find(m => m.role === 'user' && String(m.content || '').trim() === String(pedido || '').trim()); if (u) u.registrado = true; } catch (_) {}
   const box = document.getElementById('chatMsgs');
-  const resposta = '✅ Anotado! Já registrei teu pedido de ajuste pro GH. Fica de olho no banner de Ajuste no topo da página que ele resolve por aí 💪';
+  const resposta = comp.juntou
+    ? '✅ Anotado! Registrei teu pedido pro GH junto com o que tu escreveu antes aqui na conversa. Fica de olho no banner de Ajuste no topo da página que ele resolve por aí 💪'
+    : '✅ Anotado! Já registrei teu pedido de ajuste pro GH. Fica de olho no banner de Ajuste no topo da página que ele resolve por aí 💪';
   if (box) box.appendChild(_chatBubble('assistant', resposta));
   _chatHistory.push({ role: 'assistant', content: resposta });
-  _chatAddCta(reqId, pedido, ctx);
+  _chatAddCta(reqId, comp.texto, ctx);
   _chatSaveHistory();
   _chatScrollBottom();
   try {
@@ -15110,7 +15132,7 @@ async function sendChat() {
   const box = document.getElementById('chatMsgs');
   if (!_chatHistory.length) box.innerHTML = ''; // tira a saudação ao iniciar conversa real
 
-  _chatHistory.push({ role: 'user', content: text });
+  _chatHistory.push({ role: 'user', content: text, ts: Date.now() });   // v534: hora, pra juntar só a conversa de agora
   box.appendChild(_chatBubble('user', text));
   _chatScrollBottom();
 
@@ -15204,7 +15226,7 @@ async function sendChat() {
     // avisa que não foi marcado como ajuste e oferece registrar com 1 toque (a decisão fica
     // com o aluno, mas o palpite do bot continua valendo). pro_suporte → WhatsApp.
     if (j.tipo === 'pro_suporte') _chatAddSupportCta();
-    else if (j.tipo === 'pro_gh') _chatAddAjusteNudge(text);
+    else if (j.tipo === 'pro_gh') { try { const u = [..._chatHistory].reverse().find(m => m.role === 'user' && m.content === text); if (u) u.proGh = true; _chatSaveHistory(); } catch (_) {} _chatAddAjusteNudge(text); }   // v534: marca pra entrar no registro
     _chatSaveHistory();
     _chatScrollBottom();
     // Log da conversa pro GH (aba CHAT_LOGS do mestre) — fire-and-forget, não trava o chat
@@ -20459,7 +20481,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v533';
+    var APP_SHELL_V = 'metodo-gh-v534';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
