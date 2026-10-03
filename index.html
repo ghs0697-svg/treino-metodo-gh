@@ -3353,7 +3353,7 @@
   <div style="display:flex;align-items:flex-start;gap:10px;">
     <div style="width:30px;height:30px;border-radius:9px;background:var(--gold-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--gold);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;vertical-align:-2px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
     <div style="flex:1;min-width:0;">
-      <div style="color:var(--gold);font-weight:700;font-size:13px;margin-bottom:3px;">Janela de fotos do reajuste aberta</div>
+      <div style="color:var(--gold);font-weight:700;font-size:13px;margin-bottom:3px;" id="fotosBannerTit">Janela de fotos do reajuste aberta</div>
       <div style="color:#ccc;font-size:12px;line-height:1.4;" id="fotosBannerMsg">Se você não conseguiu anexar suas fotos na anamnese de reajuste, mande aqui pelo app.</div>
       <div style="display:flex;gap:6px;margin-top:9px;flex-wrap:wrap;">
         <button class="te-btn primary" type="button" onclick="openFotosModal()" style="padding:7px 12px;font-size:12px;">Enviar agora</button>
@@ -15566,7 +15566,12 @@ async function checkFotosBannerOnLoad() {
     const banner = document.getElementById('fotosBanner');
     if (banner) {
       const msg = document.getElementById('fotosBannerMsg');
-      if (msg && j.daysLeft) {
+      const tit = document.getElementById('fotosBannerTit');
+      if (j.status === 'inicial') {   // v540: janela das fotos do INÍCIO (aluno novo, primeiros dias do protocolo 1.0; .gs 2026-10-03a)
+        if (tit) tit.textContent = 'Faltou mandar tuas fotos do início?';
+        if (msg) msg.textContent = 'Manda aqui pelo app, da galeria ou da câmera: frente, costas e os dois perfis. Elas viram o "antes" da tua comparação de evolução.' + (j.daysLeft ? ' Faltam ' + j.daysLeft + (j.daysLeft === 1 ? ' dia.' : ' dias.') : ' Hoje é o último dia.');
+      } else if (msg && j.daysLeft) {
+        if (tit) tit.textContent = 'Janela de fotos do reajuste aberta';
         msg.textContent = `Se você não conseguiu anexar suas fotos na anamnese de reajuste, mande aqui pelo app. Faltam ${j.daysLeft} dia${j.daysLeft === 1 ? '' : 's'} pra janela fechar.`;
       }
       banner._startDate = j.startDate; // guarda pra usar no dismiss
@@ -20694,7 +20699,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v539';
+    var APP_SHELL_V = 'metodo-gh-v540';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
