@@ -1115,7 +1115,7 @@
   .ex-sub-pill.on .n { color: #3a2e14; }
   .ex-sub-pill:active { transform: scale(.97); }
   .ex-sub-pill { max-width: 100%; }
-  body.fonte-gg .ex-sub-pill .n { display: none; }   /* letra maior: o card tem ~190px uteis, o contador nao cabe */
+  body.fonte-gg .ex-sub-pill .n, body.fonte-ggg .ex-sub-pill .n { display: none; }   /* letra maior: o card tem ~190px uteis, o contador nao cabe */
   /* ── v481 (GH 19/09: "app meio poluído, as opções têm que ficar mais óbvias") ── */
   .ex-car { overflow: hidden; touch-action: pan-y; cursor: grab; }
   .ex-car-track { display: flex; will-change: transform; }
@@ -1671,6 +1671,8 @@
      (localStorage gh_fonte). O player do GHFlix e o unico que mede em dvh: compensa pra nao passar da tela. */
   body.fonte-g { zoom: 1.15; }
   body.fonte-gg { zoom: 1.3; }
+  body.fonte-ggg { zoom: 1.45; }   /* v537 (GH 02/10: "tem aluno que achou pequena ainda") */
+  body.fonte-ggg.view-ghflix #ghflixView { height: calc((100dvh - 96px) / 1.45 - 28px); }
   body.fonte-g.view-ghflix #ghflixView { height: calc((100dvh - 96px) / 1.15 - 12px); }   /* o cabecalho tambem cresce: desconta */
   body.fonte-gg.view-ghflix #ghflixView { height: calc((100dvh - 96px) / 1.3 - 21px); }
   #ghflixView iframe { width: 100%; height: 100%; border: 0; display: block; }
@@ -2901,6 +2903,9 @@
   /* Dieta: refeição que não rolou */
   .dm-nao { background:none; border:none; color:#6f6a62; font-size:11px; cursor:pointer; padding:4px 6px; text-decoration:underline; text-underline-offset:2px; }
   .dm-nao.marcado { color:#a9a49b; text-decoration:none; }
+  /* v537: anotação da refeição que não rolou */
+  .dm-nota { margin:0 0 8px; color:#a9a49b; font-size:12px; line-height:1.45; }
+  .rs-menu-sheet textarea.dm-nota-in { width:100%; box-sizing:border-box; background:#0c0c0d; border:1px solid #2a2a2f; color:#fff; border-radius:8px; padding:8px 10px; font-size:14px; font-family:inherit; line-height:1.4; margin:4px 0 8px; resize:vertical; display:block; }
   /* Toast genérico */
   .gh-toast { position:fixed; left:50%; bottom:84px; transform:translateX(-50%); background:#1b1b1e; color:#f1ede4; border:1px solid #3a3a40; padding:11px 16px; border-radius:12px; font-size:12.5px; z-index:10008; max-width:86vw; text-align:center; line-height:1.5; box-shadow:0 6px 22px rgba(0,0,0,.5); }
   /* Cronômetro do treino */
@@ -3308,7 +3313,7 @@
 </style>
 </head>
 <body>
-<script>try{var _gf=localStorage.getItem('gh_fonte');if(_gf==='g'||_gf==='gg')document.body.classList.add('fonte-'+_gf);}catch(e){}</script>
+<script>try{var _gf=localStorage.getItem('gh_fonte');if(_gf==='g'||_gf==='gg'||_gf==='ggg')document.body.classList.add('fonte-'+_gf);}catch(e){}</script>
 
 <div class="app-header">
   <div class="gh-hero-foto" aria-hidden="true"></div>
@@ -6449,6 +6454,7 @@ Object.assign(I18N_EN, {
   'Indicação: indica um amigo e ganha': 'Referral: refer a friend and earn', 'Indica um amigo e ganha': 'Refer a friend and earn', 'Ver como funciona': 'See how it works', 'Fica em Mais, Indicação': 'Lives in More, Referral',
   'Esse treino já foi concluído': 'This workout was already completed', 'Só desmarcar este exercício': 'Just uncheck this exercise', 'Recomeçar a semana': 'Restart the week',
   'Tamanho da letra': 'Text size', 'corrigir': 'fix', 'Tuas indicações': 'Your referrals',
+  'O que tu comeu no lugar, ou o que aconteceu? (opcional)': 'What did you eat instead, or what happened? (optional)', 'Toca no motivo pra salvar. O que tu escreveu vai junto.': 'Tap the reason to save. Your note goes with it.',
   '🔤 Tamanho da letra: normal (tocar pra aumentar)': '🔤 Text size: normal (tap to enlarge)', '🔤 Tamanho da letra: grande (tocar pra aumentar mais)': '🔤 Text size: large (tap to enlarge more)', '🔤 Tamanho da letra: maior (tocar pra voltar ao normal)': '🔤 Text size: larger (tap to go back to normal)'
 });
 const I18N_RX = [
@@ -6571,21 +6577,21 @@ function _langBtnRefresh() {
 // disparam ANTES do card. Preferência por aparelho (localStorage).
 function _celebOff() { try { return localStorage.getItem('gh_celeb_off') === '1'; } catch (_) { return false; } }
 // v469: tamanho da letra em 3 niveis (normal, grande, maior), so neste aparelho. Toque cicla.
-function _fonteNivel() { try { const v = localStorage.getItem('gh_fonte'); return (v === 'g' || v === 'gg') ? v : ''; } catch (_) { return ''; } }
+function _fonteNivel() { try { const v = localStorage.getItem('gh_fonte'); return (v === 'g' || v === 'gg' || v === 'ggg') ? v : ''; } catch (_) { return ''; } }   // v537: 4 níveis
 function _fonteAplica(nivel) {
-  document.body.classList.remove('fonte-g', 'fonte-gg');
+  document.body.classList.remove('fonte-g', 'fonte-gg', 'fonte-ggg');
   if (nivel) document.body.classList.add('fonte-' + nivel);
   try { if (nivel) localStorage.setItem('gh_fonte', nivel); else localStorage.removeItem('gh_fonte'); } catch (_) {}
   _fonteBtnRefresh();
 }
 function toggleFonte() {
   const atual = _fonteNivel();
-  _fonteAplica(atual === '' ? 'g' : (atual === 'g' ? 'gg' : ''));
+  _fonteAplica(atual === '' ? 'g' : (atual === 'g' ? 'gg' : (atual === 'gg' ? 'ggg' : '')));
 }
 function _fonteBtnRefresh() {
   const el = document.getElementById('fonteToggleLabel'); if (!el) return;
   const n = _fonteNivel();
-  el.textContent = n === 'gg' ? '🔤 Tamanho da letra: maior (tocar pra voltar ao normal)' : (n === 'g' ? '🔤 Tamanho da letra: grande (tocar pra aumentar mais)' : '🔤 Tamanho da letra: normal (tocar pra aumentar)');
+  el.textContent = n === 'ggg' ? '🔤 Tamanho da letra: máxima (tocar pra voltar ao normal)' : (n === 'gg' ? '🔤 Tamanho da letra: maior (tocar pra aumentar mais)' : (n === 'g' ? '🔤 Tamanho da letra: grande (tocar pra aumentar mais)' : '🔤 Tamanho da letra: normal (tocar pra aumentar)'));
 }
 function toggleCeleb() {
   try { localStorage.setItem('gh_celeb_off', _celebOff() ? '0' : '1'); } catch (_) {}
@@ -18365,28 +18371,51 @@ function openMealNao(ri, nome) {
   if (m) m.remove();
   m = document.createElement('div');
   m.id = 'mealNaoMenu'; m.className = 'rs-menu on';
+  // v537 (ideia de aluno via GH, 02/10/2026): campo pra contar o que comeu no lugar, ou o que aconteceu. Vai junto do motivo
+  // pra DIETA_SINAIS (col Nota). Reabrir com a refeição já anotada mostra o motivo marcado e o texto salvo.
+  const motivoAtual = _mealNaoMotivo(ri), notaAtual = _mealNota(ri);
+  const esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const bt = (m2, rot) => `<button onclick="registrarMealNao(${ri}, '${String(nome).replace(/'/g, "\\'")}', '${m2}')"${motivoAtual === m2 ? ' style="border-color:var(--gold);color:var(--gold);"' : ''}>${rot}${motivoAtual === m2 ? ' ✓' : ''}</button>`;
   m.innerHTML = `<div class="rs-menu-sheet">
-    <div style="color:#a9a49b;font-size:12.5px;line-height:1.55;padding:2px 6px 4px;">A <b style="color:#f1ede4;">${String(nome).replace(/</g, '&lt;')}</b> não rolou hoje? Acontece, zero culpa. Me diz o porquê que o Gabriel usa isso pra deixar tua dieta mais a tua cara no próximo ajuste.</div>
-    <button onclick="registrarMealNao(${ri}, '${String(nome).replace(/'/g, "\\'")}', 'enjoei_sem_fome')">Enjoei / sem fome</button>
-    <button onclick="registrarMealNao(${ri}, '${String(nome).replace(/'/g, "\\'")}', 'sem_tempo')">Sem tempo / correria</button>
-    <button onclick="registrarMealNao(${ri}, '${String(nome).replace(/'/g, "\\'")}', 'comi_outra_coisa')">Comi outra coisa</button>
+    <div style="color:#a9a49b;font-size:12.5px;line-height:1.55;padding:2px 6px 4px;">A <b style="color:#f1ede4;">${esc(nome)}</b> não rolou hoje? Acontece, zero culpa. Me diz o porquê que o Gabriel usa isso pra deixar tua dieta mais fácil de seguir.</div>
+    <textarea id="mealNaoNota" class="dm-nota-in" rows="2" maxlength="300" placeholder="O que tu comeu no lugar, ou o que aconteceu? (opcional)">${esc(notaAtual)}</textarea>
+    ${bt('enjoei_sem_fome', 'Enjoei / sem fome')}
+    ${bt('sem_tempo', 'Sem tempo / correria')}
+    ${bt('comi_outra_coisa', 'Comi outra coisa')}
+    <div style="color:#6f6a62;font-size:11px;padding:2px 6px 6px;">Toca no motivo pra salvar. O que tu escreveu vai junto.</div>
     <button class="rs-menu-cancel" onclick="document.getElementById('mealNaoMenu').remove()">Cancelar</button>
   </div>`;
   m.addEventListener('click', e => { if (e.target === m) m.remove(); });
   document.body.appendChild(m);
 }
+function _mealNotaKey(ri) { return `gh_mealnota_${STUDENT_ID}_${todayKey()}_r${ri}`; }
+function _mealNota(ri) { try { return localStorage.getItem(_mealNotaKey(ri)) || ''; } catch (_) { return ''; } }
+function _mealNotaMostra(ri) {   // linha "📝 ..." embaixo do cabeçalho da refeição, sem re-renderizar a dieta
+  try {
+    const btn = document.getElementById('dmnao-' + ri); if (!btn) return;
+    const head = btn.closest('.diet-meal-header'); if (!head) return;
+    let el = document.getElementById('dmnota-' + ri);
+    const nota = _mealNota(ri);
+    if (!nota) { if (el) el.remove(); return; }
+    if (!el) { el = document.createElement('div'); el.className = 'dm-nota'; el.id = 'dmnota-' + ri; head.insertAdjacentElement('afterend', el); }
+    el.textContent = '📝 ' + nota;
+  } catch (_) {}
+}
 function registrarMealNao(ri, nome, motivo) {
+  let nota = '';
+  try { const ta = document.getElementById('mealNaoNota'); nota = ta ? String(ta.value || '').trim().slice(0, 300) : ''; } catch (_) {}
   const m = document.getElementById('mealNaoMenu'); if (m) m.remove();
-  try { localStorage.setItem(_mealNaoKey(ri), motivo); } catch (_) {}
+  try { localStorage.setItem(_mealNaoKey(ri), motivo); if (nota) localStorage.setItem(_mealNotaKey(ri), nota); else localStorage.removeItem(_mealNotaKey(ri)); } catch (_) {}
   const btn = document.getElementById('dmnao-' + ri);
   if (btn) { btn.textContent = 'anotado 🤝'; btn.classList.add('marcado'); }
+  _mealNotaMostra(ri);
   try {
     if (SHEET_ID && typeof LOG_ENDPOINT !== 'undefined') {
       fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true, redirect: 'follow',
-        body: JSON.stringify({ type: 'dieta_sinal', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(), refeicao: nome, motivo: motivo }) });
+        body: JSON.stringify({ type: 'dieta_sinal', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(), refeicao: nome, motivo: motivo, nota: nota }) });
     }
   } catch (_) {}
-  _ghToast('Anotado, sem culpa 🤝 Amanhã segue o jogo. Se repetir muito, o Gabriel já ajusta essa refeição pra ti.');
+  _ghToast(nota ? 'Anotado, sem culpa 🤝 O que tu escreveu vai junto pro Gabriel.' : 'Anotado, sem culpa 🤝 Amanhã segue o jogo. Se repetir muito, o Gabriel já ajusta essa refeição pra ti.');
 }
 function mealDoneKey(ri) { return `gh_meal_${STUDENT_ID}_${todayKey()}_r${ri}`; }
 function isMealDone(ri) { return localStorage.getItem(mealDoneKey(ri)) === '1'; }
@@ -18668,6 +18697,7 @@ function renderDiet() {
       const hasOps = ref.opcoes.length > 0;
       html += `<div class="diet-meal-card">`;
       html += `<div class="diet-meal-header"><span class="dm-nome">${ref.nome}</span>${_refHoraChipHtml(ri)}<button type="button" class="dm-nao${_mealNaoMotivo(ri) ? ' marcado' : ''}" id="dmnao-${ri}" onclick="openMealNao(${ri}, '${String(ref.nome || '').replace(/'/g, "\\'")}')">${_mealNaoMotivo(ri) ? 'anotado 🤝' : 'não rolou?'}</button><button type="button" class="diet-meal-check${isMealDone(ri) ? ' done' : ''}" data-meal-ri="${ri}" onclick="onCheckMeal(${ri})" aria-label="Marcar refeição feita"><svg class="dm-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><svg class="dm-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span class="dm-txt">Feita</span></button></div>`;
+      if (_mealNota(ri)) html += `<div class="dm-nota" id="dmnota-${ri}">📝 ${String(_mealNota(ri)).replace(/&/g, '&amp;').replace(/</g, '&lt;')}</div>`;   // v537
       if (ref.instrucao) html += `<div class="diet-meal-instruction">${ref.instrucao}</div>`;
 
       // Alimentos base SEMPRE visíveis (caso Paulo Lages: refeição mista com alimentos +
@@ -20517,7 +20547,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v536';
+    var APP_SHELL_V = 'metodo-gh-v537';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
