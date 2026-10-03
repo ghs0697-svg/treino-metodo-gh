@@ -16777,7 +16777,7 @@ function _semanaResumo(off) {
   for (let i = 0; i < 7; i++) { const d = new Date(seg); d.setDate(seg.getDate() + i); dias.push(feitos.has(dk(d))); }
   let recordes = 0;
   try { recordes = JSON.parse(localStorage.getItem(_prLogKey()) || '[]').filter(p => p.d >= dk(seg) && p.d <= dk(dom)).length; } catch (_) {}
-  const freq = (typeof WORKOUT !== 'undefined' && Array.isArray(WORKOUT) && WORKOUT.length) ? Math.min(7, WORKOUT.length) : 0;
+  const freq = _freqSemanal();   // v542
   const fx = d => String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
   return { treinos: feitos.size, alvo: freq, dias: dias, recordes: recordes, streak: _mtStreakSemanas(freq), faixa: fx(seg) + ' a ' + fx(dom) };
 }
@@ -16850,6 +16850,22 @@ async function compartilharSemana() {
   setTimeout(() => { try { URL.revokeObjectURL(a.href); } catch (_) {} }, 4000);
 }
 
+// v542 (03/10/2026): quantos treinos por semana o protocolo pede. Com UM treino é o número de dias (como sempre foi). Com DOIS ou
+// mais treinos na mesma aba (blocos @TREINO: "ACADEMIA | EM CASA", "Normal | Emergência") somar os dias dos blocos inflava a meta
+// (Glaucio Hashimoto: 4 + 4 dava "0 de 7 na semana"). Aí vale a frequência escrita na linha info; sem número nela, os dias do 1º bloco.
+function _freqSemanal() {
+  try {
+    if (typeof WORKOUT === 'undefined' || !Array.isArray(WORKOUT) || !WORKOUT.length) return 0;
+    if (typeof BLOCOS !== 'undefined' && BLOCOS.length >= 2) {
+      const m = String((document.getElementById('infoFreq') || {}).textContent || '').match(/\d+/);
+      const nInfo = m ? parseInt(m[0], 10) : 0;
+      if (nInfo >= 1 && nInfo <= 7) return nInfo;
+      const d1 = WORKOUT.filter(w => w.bloco === BLOCOS[0]).length;
+      return Math.min(7, d1 || WORKOUT.length);
+    }
+    return Math.min(7, WORKOUT.length);
+  } catch (_) { return 0; }
+}
 function _metaSemanaInfo() {
   try {
     const pref = `gh_logsent_${SHEET_ID}_`;
@@ -16864,8 +16880,7 @@ function _metaSemanaInfo() {
       const d = new Date(+m[1], +m[2] - 1, +m[3]); d.setHours(0, 0, 0, 0);
       if (d >= seg && d <= hoje) dates.add(m[1] + m[2] + m[3]);
     }
-    const alvo = (typeof WORKOUT !== 'undefined' && Array.isArray(WORKOUT) && WORKOUT.length)
-      ? Math.min(7, WORKOUT.length) : 0;
+    const alvo = _freqSemanal();   // v542
     return { feitos: dates.size, alvo: alvo };
   } catch (e) { return { feitos: 0, alvo: 0 }; }
 }
@@ -17063,7 +17078,7 @@ function _mtStreakSemanas(freq) {
 function _metasCardHtml() {
   try {
     if (typeof SHEET_ID === 'undefined' || !SHEET_ID) return '';
-    const freq = (typeof WORKOUT !== 'undefined' && Array.isArray(WORKOUT) && WORKOUT.length) ? Math.min(7, WORKOUT.length) : 0;
+    const freq = _freqSemanal();   // v542
     const js = _mtJanela('sem'), jm = _mtJanela('mes');
     const hoje = jm[1];
     const diasCorridos = hoje.getDate();
@@ -20713,7 +20728,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v541';
+    var APP_SHELL_V = 'metodo-gh-v542';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
