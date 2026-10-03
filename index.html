@@ -3857,7 +3857,7 @@
   </div>
   <div class="video-frame-container">
     <video id="videoNative" controls playsinline style="display:none;width:100%;max-height:70vh;background:#000;border-radius:12px;"></video>
-    <iframe id="videoFrame" src="" allow="accelerometer; autoplay; encrypted-media; gyroscope; fullscreen; picture-in-picture" allowfullscreen></iframe>
+    <iframe id="videoFrame" src="" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; encrypted-media; gyroscope; fullscreen; picture-in-picture" allowfullscreen></iframe>
   </div>
   <div style="text-align:center;padding:10px 12px 16px;">
     <a id="videoOpenYT" href="#" target="_blank" rel="noopener"
@@ -13701,7 +13701,7 @@ function openVideo(name, url) {
       } catch (_) {}
     });
   }
-  const _direto = _ytFalhouRecente();   // v535: aparelho onde o YouTube falhou nos últimos 7 dias abre direto do nosso servidor
+  const _direto = VID_PREFERE_MP4 || _ytFalhouRecente();   // v536: nosso servidor primeiro; v535: ou aparelho onde o YouTube falhou nos últimos 7 dias
   if (iframe) iframe.style.display = '';
   if (!_direto) { iframe.src = youtubeEmbed(url); _vidWatchdogStart(url); }   // v467: sem sinal do YouTube em 10 s, vai pro MP4 sozinho
   // Quando o iframe carrega, manda comando "listening" pra IFrame API
@@ -13831,6 +13831,11 @@ function _vidWatchdogStop() { if (_vidWatchTimer) { clearTimeout(_vidWatchTimer)
 // falha é o player do YouTube dentro do app em certos aparelhos): (1) aparelho onde o YouTube falhou nos últimos 7 dias abre
 // DIRETO do nosso servidor, e depois de 7 dias tenta o YouTube de novo; (2) o vigia de silêncio caiu de 10 s pra 7 s;
 // (3) segundo vigia: player vivo mas carregando há 8 s = plano B sozinho.
+// v536 (Jefferson Almeida 02/10, "sempre me joga no YouTube, mas no 'assistir direto' funcionou", depois do Luiz Felipe e de 99 alunos
+// em 8 dias): o vídeo abre PRIMEIRO do nosso servidor (chat.metodogh.com.br/videos/<id>.mp4, player nativo, instantâneo) e o
+// YouTube fica no botão "Abrir vídeo no YouTube" e como plano B se o nosso servidor falhar. Custo: a visualização de quem assiste
+// dentro do app não conta no canal do GH. Pra voltar ao YouTube primeiro: VID_PREFERE_MP4 = false (volta a valer a regra dos 7 dias).
+const VID_PREFERE_MP4 = true;
 const _YT_FALHOU_KEY = 'gh_yt_falhou';
 function _ytFalhouRecente() { try { const t = Number(localStorage.getItem(_YT_FALHOU_KEY) || 0); return !!t && Date.now() - t < 7 * 86400000; } catch (_) { return false; } }
 let _vidBufTimer = null;
@@ -13885,7 +13890,7 @@ function _videoFallbackNativo(motivo) {
     if (iframe) { iframe.onload = null; iframe.src = 'about:blank'; iframe.style.display = 'none'; }
     nat.onerror = function () {
       nat.style.display = 'none'; _vidDebug('mp4_falhou_' + String(motivo || ''), src);
-      if (direto && iframe) { try { localStorage.removeItem(_YT_FALHOU_KEY); } catch (_) {} iframe.style.display = ''; iframe.src = youtubeEmbed(_vidUrlAtual); return; }   // nosso servidor falhou: volta pro YouTube
+      if (direto && iframe) { try { localStorage.removeItem(_YT_FALHOU_KEY); } catch (_) {} iframe.style.display = ''; iframe.src = youtubeEmbed(_vidUrlAtual); _vidWatchdogStart(_vidUrlAtual); return; }   // nosso servidor falhou: volta pro YouTube (com o vigia, que leva ao aviso + botão do YouTube)
       avisa(falhou);
     };
     nat.onloadedmetadata = function () { if (!direto) avisa('O YouTube n\u00e3o abriu no teu aparelho. Tocando direto do servidor do M\u00e9todo GH.'); };
@@ -20512,7 +20517,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v535';
+    var APP_SHELL_V = 'metodo-gh-v536';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
