@@ -1079,6 +1079,7 @@
   .const-dot i { width: 13px; height: 13px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.18); background: transparent; font-style: normal; display: flex; align-items: center; justify-content: center; font-size: 8px; color: transparent; }
   .const-dot.feito i { background: var(--gold); border-color: var(--gold); color: #0c0c0d; font-weight: 800; }
   .const-dot.hoje span { color: var(--gold); }
+  .const-dot.parcial i { border-color: var(--gold); background: rgba(212,175,106,.16); color: transparent; }   /* v539: registrou carga/série, não fechou o dia */
   .const-dot.hoje i { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(212,175,106,.22); }
   .const-dots .cd-lbl { font-size: 9.5px; color: #8d8579; font-weight: 600; margin-left: 4px; }
 
@@ -3601,7 +3602,7 @@
     <h4 id="semanaModalTit">Esse treino já foi concluído</h4>
     <div id="semanaModalTxt" style="color:#ccc;font-size:13px;line-height:1.65;margin-top:6px;"></div>
     <button type="button" id="semanaModalPrim" class="sem-aviso-btn" onclick="semanaModalPrimario()"></button>
-    <button type="button" class="evo-close" onclick="semanaSoDesmarcar()">Só desmarcar este exercício</button>
+    <button type="button" class="evo-close" id="semanaModalSo" onclick="semanaSoDesmarcar()">Só desmarcar este exercício</button>
     <button type="button" class="evo-close" style="margin-top:8px;" onclick="semanaModalFecha()">Cancelar</button>
   </div>
 </div>
@@ -4428,6 +4429,7 @@
     </div>
     <div id="pesoChart" style="margin-top:10px;"></div>
     <div id="pesoResumo" style="color:#888;font-size:11px;margin-top:6px;line-height:1.4;"></div>
+    <p style="color:#888;font-size:11px;margin:8px 0 0;line-height:1.4;">Medidas de fita (cintura, braço, coxa) vão na anamnese de reajuste: Mais &gt; Anamnese de reajuste.</p>
     <p style="color:#666;font-size:10px;margin:8px 0 0;line-height:1.4;font-style:italic;">Pesa sempre igual (de manhã, em jejum) que a linha mostra a tendência real entre os reajustes. O GH vê essa linha no teu acompanhamento.</p>
   </div>
 
@@ -5390,6 +5392,14 @@
     <button type="button" class="mais-opt" onclick="closeMaisSheet(); openRenovModal('menu')">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span><span>Renovar meu plano</span>
     </button>
+    <button type="button" class="mais-opt" id="maisPlanoOpt" onclick="closeMaisSheet(); openRenovModal('menu')">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+      <span>Meu plano: <b id="maisPlanoTxt" style="color:var(--gold);font-weight:700;">conferindo…</b></span>
+    </button>
+    <button type="button" class="mais-opt" onclick="closeMaisSheet(); maisAnamnese()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></span>
+      <span>Anamnese de reajuste <span style="color:#9a9488;font-weight:500;">(fotos e medidas)</span></span>
+    </button>
     <button type="button" class="mais-opt" onclick="closeMaisSheet(); openIndicacao()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></span><span>Indicação: indica um amigo e ganha</span>
     </button>
@@ -5528,7 +5538,8 @@
 <div class="te-modal-overlay" id="installModalV2" onclick="closeInstallOnBg(event)">
   <div class="te-modal-box" style="max-width:420px;">
     <h3>📱 Instalar o app na tela inicial</h3>
-    <p style="color:#aaa;font-size:12px;margin:0 0 14px;">Acesso rápido sem precisar abrir o navegador toda vez.</p>
+    <p style="color:#aaa;font-size:12px;margin:0 0 10px;">Acesso rápido sem precisar abrir o navegador toda vez.</p>
+    <div style="background:rgba(212,167,106,0.10);border-left:3px solid var(--gold);border-radius:4px;padding:8px 10px;margin:0 0 12px;font-size:12px;color:#d4a76a;line-height:1.5;">Abriu o link pelo <strong>WhatsApp</strong> ou pelo <strong>Instagram</strong>? Lá dentro a opção de instalar não aparece. Toca nos <strong>···</strong> (ou no ícone do navegador) e escolhe <strong>Abrir no Safari</strong> ou <strong>Abrir no Chrome</strong>. Aí segue os passos abaixo.</div>
     <div style="background:#161616;border:1px solid #2a2a2a;border-radius:6px;padding:12px;margin-bottom:10px;">
       <p style="color:var(--gold);font-weight:700;font-size:12px;margin:0 0 6px;">📱 iPhone (Safari)</p>
       <p style="color:#ccc;font-size:12px;line-height:1.5;margin:0;">1. Toca no ícone <strong>Compartilhar</strong> (quadrado com seta pra cima) na barra inferior<br>2. Rola e toca em <strong>"Adicionar à Tela de Início"</strong><br>3. Confirma "Adicionar"</p>
@@ -5606,7 +5617,7 @@
     <!-- ══ ABA ENVIAR ══ -->
     <div id="fotosPaneEnviar" style="flex:1;overflow-y:auto;min-height:0;display:flex;flex-direction:column;">
     <p style="color:#aaa;font-size:11px;margin:0 0 12px;line-height:1.45;">
-      Toca em cada espaço pra adicionar a foto. O GH usa elas pra analisar tua evolução e montar o próximo protocolo. Tudo vai direto pra tua pasta do Drive.
+      Toca em cada espaço pra adicionar a foto (da galeria ou da câmera). O GH usa elas pra analisar tua evolução e montar o próximo protocolo. Tudo vai direto pra tua pasta do Drive. As medidas de fita (cintura, braço, coxa) vão na anamnese de reajuste, junto com as fotos.
     </p>
     <div id="fotosWindowStatus" style="background:#222;border-radius:6px;padding:12px;margin:0 0 14px;font-size:13px;line-height:1.5;">
       <span style="color:#888;">Verificando janela de envio…</span>
@@ -5614,25 +5625,25 @@
     <div id="fotosUploadArea" style="display:none;flex:1;overflow-y:auto;min-height:0;">
       <div class="fotos-grid" id="fotosGrid">
         <div class="foto-slot" data-role="frente" onclick="_fotoSlotClick('frente')">
-          <input type="file" accept="image/*" capture="environment" data-role="frente" onchange="_onFotoSlotChange('frente', this)" style="display:none;">
+          <input type="file" accept="image/*" data-role="frente" onchange="_onFotoSlotChange('frente', this)" style="display:none;">
           <div class="foto-slot-icon">+</div>
           <div class="foto-slot-label">FRENTE</div>
           <button type="button" class="foto-slot-remove" onclick="_removeFotoSlot(event, 'frente')" style="display:none;">×</button>
         </div>
         <div class="foto-slot" data-role="costas" onclick="_fotoSlotClick('costas')">
-          <input type="file" accept="image/*" capture="environment" data-role="costas" onchange="_onFotoSlotChange('costas', this)" style="display:none;">
+          <input type="file" accept="image/*" data-role="costas" onchange="_onFotoSlotChange('costas', this)" style="display:none;">
           <div class="foto-slot-icon">+</div>
           <div class="foto-slot-label">COSTAS</div>
           <button type="button" class="foto-slot-remove" onclick="_removeFotoSlot(event, 'costas')" style="display:none;">×</button>
         </div>
         <div class="foto-slot" data-role="direito" onclick="_fotoSlotClick('direito')">
-          <input type="file" accept="image/*" capture="environment" data-role="direito" onchange="_onFotoSlotChange('direito', this)" style="display:none;">
+          <input type="file" accept="image/*" data-role="direito" onchange="_onFotoSlotChange('direito', this)" style="display:none;">
           <div class="foto-slot-icon">+</div>
           <div class="foto-slot-label">PERFIL DIREITO</div>
           <button type="button" class="foto-slot-remove" onclick="_removeFotoSlot(event, 'direito')" style="display:none;">×</button>
         </div>
         <div class="foto-slot" data-role="esquerdo" onclick="_fotoSlotClick('esquerdo')">
-          <input type="file" accept="image/*" capture="environment" data-role="esquerdo" onchange="_onFotoSlotChange('esquerdo', this)" style="display:none;">
+          <input type="file" accept="image/*" data-role="esquerdo" onchange="_onFotoSlotChange('esquerdo', this)" style="display:none;">
           <div class="foto-slot-icon">+</div>
           <div class="foto-slot-label">PERFIL ESQUERDO</div>
           <button type="button" class="foto-slot-remove" onclick="_removeFotoSlot(event, 'esquerdo')" style="display:none;">×</button>
@@ -6085,6 +6096,10 @@ try {
   }
 } catch (_) {}
 const TOTAL_WEEKS = parseInt(params.get('weeks')) || 8;
+// v539 (Daniel Barbosa 28/09: "não está aparecendo a semana 09"): o protocolo é de 8 semanas, mas o reajuste atrasa e o aluno
+// continua treinando. O seletor vai até WEEK_MAX; os gráficos vão até a semana em que o aluno está (_weekTeto).
+const WEEK_MAX = Math.max(TOTAL_WEEKS, 24);
+function _weekTeto() { return Math.max(TOTAL_WEEKS, (typeof currentWeek === 'number' ? currentWeek : 1)); }
 
 // ══ BANCO DE VÍDEOS OFICIAL (fallback) — embutido de 08-referencias/hiperlinks-novos.json ══
 // Se a planilha vier SEM link de vídeo numa linha mas o nome bater com o banco,
@@ -7995,6 +8010,7 @@ function saveSets(d, e, w, arr) {
   }));
   localStorage.setItem(setsKey(d, e, w) + sf, JSON.stringify(clean));
   localStorage.setItem(blkKey(d, e, w) + sf, String(Date.now()));   // carimba: salvo agora = bloco atual
+  if (clean.some(x => x.kg || x.pl || x.reps)) _diaAtivoMarca(d);   // v539: dia com registro conta na constância (bolinha parcial)
   if (!sf) _stampExn(d, e, w);
   // ESPELHA a Série 1 nas chaves legadas (caminho de carga é sagrado: histórico/ranking/Ant/restore intactos)
   const s1 = clean[0] || { kg: '', pl: '' };
@@ -9090,7 +9106,7 @@ function setSkipped(di, ei, val) {
 // sync, isto separa "recém-feita" de "legado local-only de verdade".
 const _doneMarkedThisSession = new Set();
 function setDone(di, ei, val) {
-  if (val) { localStorage.setItem(doneKey(di, ei), '1'); _doneMarkedThisSession.add(`${currentWeek}|${di}|${ei}`); }
+  if (val) { localStorage.setItem(doneKey(di, ei), '1'); _doneMarkedThisSession.add(`${currentWeek}|${di}|${ei}`); _diaAtivoMarca(di); }
   else localStorage.removeItem(doneKey(di, ei));
   syncDoneToServer_(di, ei, val);
 }
@@ -9372,7 +9388,7 @@ function _diaFechadoEmOutraData(di) {
     return (u && u < todayKey()) ? u : '';
   } catch (_) { return ''; }
 }
-function _semanaEhUltima() { return currentWeek >= TOTAL_WEEKS; }
+function _semanaEhUltima() { return currentWeek >= WEEK_MAX; }   // v539: só a última possível recomeça; antes travava na 8
 function _semanaAvisoHtml(di) {
   const u = _diaFechadoEmOutraData(di);
   if (!u) return '';
@@ -9399,24 +9415,56 @@ function semanaProxima() {
 }
 let _semanaCtx = null, _semanaSoDesmarca = false;
 function _semanaPromptAbrir(di, ei, u) {
-  _semanaCtx = { di: di, ei: ei };
+  const boot = (ei === null || ei === undefined);   // v539: aberto sozinho ao entrar no app (semana inteira fechada em outra data)
+  _semanaCtx = { di: di, ei: ei, boot: boot };
   const dBR = u.slice(8, 10) + '/' + u.slice(5, 7), ult = _semanaEhUltima();
-  const txt = document.getElementById('semanaModalTxt'), prim = document.getElementById('semanaModalPrim');
-  if (txt) txt.innerHTML = 'Tu fechou este treino na <b style="color:var(--gold);">Semana ' + currentWeek + '</b> em ' + dBR + ', ent\u00e3o os exerc\u00edcios j\u00e1 aparecem marcados e o toque <b>desmarca</b>.<br><br>'
-    + (ult ? 'Se vai treinar ele de novo, recome\u00e7a a semana: tudo volta desmarcado e o treino de hoje \u00e9 registrado.'
-           : 'Se vai treinar ele de novo, passa pra <b>Semana ' + (currentWeek + 1) + '</b>: tudo volta desmarcado, tuas cargas ficam de refer\u00eancia e o treino de hoje \u00e9 registrado.');
+  const txt = document.getElementById('semanaModalTxt'), prim = document.getElementById('semanaModalPrim'), so = document.getElementById('semanaModalSo'), tit = document.getElementById('semanaModalTit');
+  if (tit) tit.textContent = boot ? 'Semana ' + currentWeek + ' já fechada' : 'Esse treino já foi concluído';
+  if (so) so.style.display = boot ? 'none' : '';
+  if (txt) txt.innerHTML = (boot
+      ? 'Tu já fechou <b style="color:var(--gold);">todos os treinos da Semana ' + currentWeek + '</b> (o último em ' + dBR + '), por isso os exerc\u00edcios aparecem marcados e o toque <b>desmarca</b>.<br><br>'
+      : 'Tu fechou este treino na <b style="color:var(--gold);">Semana ' + currentWeek + '</b> em ' + dBR + ', ent\u00e3o os exerc\u00edcios j\u00e1 aparecem marcados e o toque <b>desmarca</b>.<br><br>')
+    + (ult ? 'Se vai treinar de novo, recome\u00e7a a semana: tudo volta desmarcado e o treino de hoje \u00e9 registrado.'
+           : 'Pra treinar hoje, passa pra <b>Semana ' + (currentWeek + 1) + '</b>: tudo volta desmarcado, tuas cargas ficam de refer\u00eancia e o treino de hoje \u00e9 registrado.');
   if (prim) prim.textContent = ult ? '\u21ba Recome\u00e7ar a semana' : 'Ir pra Semana ' + (currentWeek + 1) + ' \u2192';
   document.getElementById('semanaModal').classList.add('show');
-  _semanaLog('abriu_modal');
+  _semanaLog(boot ? 'abriu_boot' : 'abriu_modal');
 }
 function semanaModalFecha() { try { document.getElementById('semanaModal').classList.remove('show'); } catch (_) {} _semanaCtx = null; }
-function semanaModalPrimario() { semanaModalFecha(); if (_semanaEhUltima()) openWeekReset(); else semanaProxima(); }
+function semanaModalPrimario() {
+  const boot = !!(_semanaCtx && _semanaCtx.boot);
+  semanaModalFecha();
+  if (_semanaEhUltima()) { openWeekReset(); return; }
+  semanaProxima();
+  if (boot) { try { selectDay(_primeiroDiaIncompleto()); } catch (_) {} }   // v539: semana nova começa no primeiro dia
+}
 function semanaSoDesmarcar() {
   const c = _semanaCtx; semanaModalFecha();
-  if (!c) return;
+  if (!c || c.ei === null || c.ei === undefined) return;
   _semanaLog('so_desmarcar');
   _semanaSoDesmarca = true;
   try { onCheckExercise(c.di, c.ei); } finally { _semanaSoDesmarca = false; }
+}
+// v539 (Serginho 28/09 "vou fazer o treino do dia 01 hoje e está com as marcações da semana passada"; Rosado Bruno 23/09): ao abrir o app,
+// se TODOS os treinos da semana já estão fechados e o último fechamento foi em outra data, pergunta na hora se passa pra próxima
+// semana. Antes só aparecia ao tocar num exercício marcado (v470). Uma vez por dia por semana/dia; nunca por cima do tour ou de modal.
+function _semanaPromptBoot() {
+  try {
+    if (typeof params !== 'undefined' && params.get('edit')) return;
+    if (typeof _tourAtivo !== 'undefined' && _tourAtivo) return;
+    if (typeof WORKOUT === 'undefined' || !Array.isArray(WORKOUT) || !WORKOUT.length) return;
+    const vis = di => (typeof _isVisibleDay !== 'function') || _isVisibleDay(WORKOUT[di]);
+    let algum = false;
+    for (let di = 0; di < WORKOUT.length; di++) { if (!vis(di)) continue; algum = true; if (!allDoneOfDay(di)) return; }
+    if (!algum) return;
+    const u = _diaFechadoEmOutraData(currentDay);
+    if (!u) return;
+    const k = 'gh_sem_boot_' + SHEET_ID + '_' + todayKey() + '_w' + currentWeek;
+    if (localStorage.getItem(k)) return;
+    if (document.querySelector('.evo-overlay.show, .te-modal-overlay.active, .install-modal.active, #focusOverlay.show')) return;
+    localStorage.setItem(k, '1');
+    _semanaPromptAbrir(currentDay, null, u);
+  } catch (_) {}
 }
 function onCheckExercise(di, ei) {
   const newVal = !isDone(di, ei);
@@ -12091,7 +12139,8 @@ function _histChartData(di, ei) {
   if (!ex) return null;
   const _hnm = (!ex.biset && typeof _exAtivo === 'function') ? _exAtivo(di, ei).name : (ex.name || (ex.a || {}).name || '');
   const values = [];
-  for (let w = 1; w <= TOTAL_WEEKS; w++) {
+  const _WT = _weekTeto();   // v539
+  for (let w = 1; w <= _WT; w++) {
     const c = parseFloat(loadCarga(di, ei, w)) || 0;
     const p = parseFloat(loadPlacas(di, ei, w)) || 0;
     values.push({ w, kg: c, placas: p });
@@ -12109,7 +12158,7 @@ function _histChartData(di, ei) {
     const pr = filled.reduce((a, b) => val(b) >= val(a) ? b : a);
     const lo = Math.min(...filled.map(val)), hi = Math.max(...filled.map(val));
     const W = 320, H = 148, padL = 10, padR = 26, padT = 22, padB = 24;
-    const x = w => padL + (TOTAL_WEEKS > 1 ? (w - 1) / (TOTAL_WEEKS - 1) : 0) * (W - padL - padR);
+    const x = w => padL + (_WT > 1 ? (w - 1) / (_WT - 1) : 0) * (W - padL - padR);
     const yLo = lo === hi ? lo * 0.85 : lo - (hi - lo) * 0.25;
     const yHi = lo === hi ? hi * 1.1 + 1 : hi + (hi - lo) * 0.18;
     const y = v => padT + (1 - (v - yLo) / (yHi - yLo)) * (H - padT - padB);
@@ -12121,7 +12170,7 @@ function _histChartData(di, ei) {
     svg += `<line x1="${padL}" y1="${H - padB}" x2="${W - padR}" y2="${H - padB}" stroke="rgba(255,255,255,.12)" stroke-width="1"/>`;
     values.forEach(v => { svg += `<line x1="${x(v.w).toFixed(1)}" y1="${H - padB}" x2="${x(v.w).toFixed(1)}" y2="${H - padB + 3}" stroke="rgba(255,255,255,.2)" stroke-width="1"/>`; });
     svg += `<text x="${x(1).toFixed(1)}" y="${H - 8}" fill="#8a8579" font-size="9.5" text-anchor="middle">S1</text>`;
-    svg += `<text x="${x(TOTAL_WEEKS).toFixed(1)}" y="${H - 8}" fill="#8a8579" font-size="9.5" text-anchor="middle">S${TOTAL_WEEKS}</text>`;
+    svg += `<text x="${x(_WT).toFixed(1)}" y="${H - 8}" fill="#8a8579" font-size="9.5" text-anchor="middle">S${_WT}</text>`;
     if (pts.length > 1) svg += `<path d="${areaD}" fill="url(#ghGradCarga)"/>`;
     // 1 ponto só: linha-guia tracejada pra curva não parecer gráfico quebrado
     if (pts.length === 1) svg += `<line x1="${padL}" y1="${pts[0].py.toFixed(1)}" x2="${W - padR}" y2="${pts[0].py.toFixed(1)}" stroke="rgba(212,175,106,.28)" stroke-width="1.5" stroke-dasharray="4 5"/>`;
@@ -12389,7 +12438,7 @@ function _estagInfo(di, ei) {
     const ex = (WORKOUT[di] || {}).exercises ? WORKOUT[di].exercises[ei] : null;
     if (!ex || ex.warmup || ex.biset) return null;
     const pts = [];
-    for (let w = 1; w <= TOTAL_WEEKS; w++) { const b = _estagBest(di, ei, w); if (b) pts.push({ w: w, v: b.v, t: b.t, r: b.r }); }
+    for (let w = 1, _wt = _weekTeto(); w <= _wt; w++) { const b = _estagBest(di, ei, w); if (b) pts.push({ w: w, v: b.v, t: b.t, r: b.r }); }
     if (pts.length < 3) return null;
     const tres = pts.slice(-3);
     const a = tres[0], z = tres[2];
@@ -12434,7 +12483,7 @@ function renderRecordes() {
     partes.forEach(pt => {
       if (!pt.nome) return;
       const serie = [];
-      for (let w = 1; w <= TOTAL_WEEKS; w++) {
+      for (let w = 1, _wt = _weekTeto(); w <= _wt; w++) {
         const v = parseFloat(loadCarga(di, pt.k, w)) || 0;
         if (v > 0) serie.push({ w, kg: v });
       }
@@ -12773,15 +12822,15 @@ async function loadFromSheets(injectedText) {
       const _sigAtual = TOTAL_WEEKS + 'x' + WORKOUT.length + 'x' + (localStorage.getItem(`gh_done_atual_${STUDENT_ID}`) || '0');
       // Teto pelo CALENDÁRIO: semanas possíveis desde o início do protocolo atual. Protocolo
       // de 26/08 aberto em 01/09 não pode estar na semana 8 (caso Sergio Valões, 01/09).
-      let _tetoW = TOTAL_WEEKS;
+      let _tetoW = WEEK_MAX;   // v539
       try {
         const _ini = Number(localStorage.getItem(`gh_done_atual_${STUDENT_ID}`)) || 0;
         if (_ini > 0 && _ini <= Date.now()) {
-          _tetoW = Math.max(1, Math.min(TOTAL_WEEKS, Math.ceil((Date.now() - _ini) / 604800000) || 1));
+          _tetoW = Math.max(1, Math.min(WEEK_MAX, Math.ceil((Date.now() - _ini) / 604800000) || 1));
         }
       } catch (_) {}
       if (_pos && (_pos.sig === _sigAtual || _pos.sig === TOTAL_WEEKS + 'x' + WORKOUT.length)) {
-        if (_pos.w >= 1 && _pos.w <= TOTAL_WEEKS) currentWeek = Math.min(_pos.w, _tetoW);
+        if (_pos.w >= 1 && _pos.w <= WEEK_MAX) currentWeek = Math.min(_pos.w, _tetoW);   // v539
         if (BLOCOS.length < 2 && Number.isInteger(_pos.di) && _pos.di >= 0 && _pos.di < WORKOUT.length) currentDay = _pos.di;
         const _wl = document.getElementById('weekLabel');
         if (_wl) _wl.textContent = 'Semana ' + currentWeek;
@@ -12891,6 +12940,7 @@ async function loadFromSheets(injectedText) {
     loadTempoTreino();     // durações registradas → badges nos dias
     _tourMaybeStart();     // 1º acesso: tour de boas-vindas (o _showNav da dieta roda cedo demais, sem WORKOUT)
     _instAvisoMaybe();     // v532: celular sem o app instalado: aviso pra instalar (nunca por cima do tour)
+    setTimeout(_semanaPromptBoot, 2500);   // v539: semana inteira fechada em outra data: pergunta se passa pra próxima
 
   } catch (err) {
     document.getElementById('loadingScreen').style.display = 'none';
@@ -13370,11 +13420,12 @@ function _exEnterAnim() {
 
 function changeWeek(d) {
   const n = currentWeek + d;
-  if (n < 1 || n > TOTAL_WEEKS) return;
+  if (n < 1 || n > WEEK_MAX) return;   // v539: passa das 8 semanas do protocolo (até WEEK_MAX)
   try { _flushSetsPendentes_(false); } catch (_) {}   // v447: grava na semana VIGENTE antes de virar a semana
   currentWeek = n;
   _posSave();
   document.getElementById("weekLabel").textContent = `Semana ${currentWeek}`;
+  if (d > 0 && n === TOTAL_WEEKS + 1) { try { _ghToast('Teu protocolo é de ' + TOTAL_WEEKS + ' semanas, mas pode seguir: a Semana ' + n + ' guarda tuas cargas até o reajuste chegar.', 5200); } catch (_) {} }   // v539
   renderExercises();
   renderTabs();        // badges de tempo por dia dependem da semana
   renderWtCard();      // linha "este treino na semana N"
@@ -13494,6 +13545,7 @@ function _wtCommit(di, w, secs, pausas, corrigido) {
   } catch (_) {}
   // cache local pro badge aparecer na hora (e sobreviver até o servidor ter o dado)
   const k = di + '|' + w;
+  if (!corrigido) _diaAtivoMarca(di);   // v539
   _wtServer[k] = { segundos: secs, duracao: dur };
   try {
     const hist = JSON.parse(localStorage.getItem(_wtHistKey()) || '{}');
@@ -15587,6 +15639,7 @@ async function openFotosModal() {
     const resp = await fetch(`${LOG_ENDPOINT}?action=foto_window&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`, { cache: 'no-store' });
     const j = await resp.json();
     _fotosWindowOpen = !!j.open;
+    _fotosWindowMsg = '';
     if (j.open) {
       status.innerHTML = `<div style="color:#4caf50;font-weight:700;margin-bottom:4px;">✅ Envio liberado</div><div style="color:#aaa;font-size:12px;">${escapeFotosTxt(j.message || '')}</div>`;
       _setFotosSlotsEnabled(true);
@@ -15595,7 +15648,9 @@ async function openFotosModal() {
       if (j.status === 'after') icon = '🔒';
       else if (j.error || j.status === 'sem_data') icon = '⚠️';
       const msg = j.message || j.error || 'Janela indisponível no momento.';
-      status.innerHTML = `<div style="color:#d4a76a;font-weight:700;margin-bottom:4px;">${icon} Envio não disponível agora</div><div style="color:#aaa;font-size:12px;">${escapeFotosTxt(msg)}</div>`;
+      _fotosWindowMsg = msg;   // v539
+      status.innerHTML = `<div style="color:#d4a76a;font-weight:700;margin-bottom:4px;">${icon} Envio não disponível agora</div><div style="color:#aaa;font-size:12px;">${escapeFotosTxt(msg)} As fotos entram no laudo de evolução do teu reajuste.</div>`
+        + `<a class="te-btn ghost" style="display:block;text-align:center;margin-top:10px;text-decoration:none;" href="${_fotosWaLink()}" target="_blank" rel="noopener">Precisa mandar antes? Fala no WhatsApp</a>`;
       _setFotosSlotsEnabled(false);
     }
   } catch (err) {
@@ -15612,7 +15667,8 @@ function _setFotosSlotsEnabled(enabled) {
   const grid = document.getElementById('fotosGrid');
   if (grid) {
     grid.style.opacity = enabled ? '1' : '0.45';
-    grid.style.pointerEvents = enabled ? 'auto' : 'none';
+    grid.style.pointerEvents = 'auto';   // v539: o toque com a janela fechada EXPLICA (antes não acontecia nada: "o app não permite anexar")
+    grid.classList.toggle('fechada', !enabled);
   }
   if (!enabled) document.getElementById('fotosSendBtn').style.display = 'none';
 }
@@ -15621,7 +15677,13 @@ function escapeFotosTxt(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+let _fotosWindowMsg = '';
+function _fotosWaLink() { return 'https://wa.me/555520131470?text=' + encodeURIComponent('Oi! Quero mandar minhas fotos de evolução. O app diz: ' + (_fotosWindowMsg || 'envio não disponível agora')); }
+function _fotosFechadaAviso() {
+  try { _ghToast('📷 ' + (_fotosWindowMsg || 'O envio pelo app está fechado agora.') + ' As fotos entram no laudo do reajuste. Precisa mandar antes? Fala no WhatsApp do suporte (botão aqui em cima).', 6500); } catch (_) {}
+}
 function _fotoSlotClick(role) {
+  if (!_fotosWindowOpen) { _fotosFechadaAviso(); return; }   // v539
   const slot = document.querySelector(`.foto-slot[data-role="${role}"]`);
   if (!slot) return;
   const input = slot.querySelector('input[type=file]');
@@ -16635,7 +16697,7 @@ function _progCollect() {
   const out = [];
   items.forEach(it => {
     const vals = [];
-    for (let w = 1; w <= TOTAL_WEEKS; w++) vals.push(parseFloat(loadCarga(it.di, it.key, w)) || 0);
+    for (let w = 1, _wt = _weekTeto(); w <= _wt; w++) vals.push(parseFloat(loadCarga(it.di, it.key, w)) || 0);
     const filled = vals.map((v, i) => ({ v, w: i + 1 })).filter(x => x.v > 0);
     if (!filled.length) return;
     it.vals = vals;
@@ -16804,12 +16866,38 @@ function _metaSemanaInfo() {
 }
 // Bolinhas de constância seg→dom no hero (GH 2026-08-13). Mesmas chaves _concl da meta:
 // bolinha cheia = dia com treino concluído; anel = hoje. Sem linguagem de prêmio, só constância.
+// v539 (Vinicius Canzi 25/09: "segunda e quarta ficam em branco, mas os treinos estão preenchidos"): a bolinha cheia é o dia FECHADO
+// (todos os exercícios com ✓, mesma regra do ranking). Dia em que o aluno registrou carga/série, marcou exercício ou finalizou o
+// cronômetro sem fechar o dia aparece como bolinha vazada, com a legenda explicando. Chave: gh_ativo_<SID>_<data> = dias (di).
+function _diaAtivoMarca(di) {
+  try {
+    if (typeof SHEET_ID === 'undefined' || !SHEET_ID) return;
+    if (typeof params !== 'undefined' && params.get('edit')) return;
+    const k = 'gh_ativo_' + SHEET_ID + '_' + todayKey();
+    const arr = JSON.parse(localStorage.getItem(k) || '[]');
+    const d = parseInt(di, 10); if (isNaN(d)) return;
+    if (arr.indexOf(d) < 0) { arr.push(d); localStorage.setItem(k, JSON.stringify(arr)); }
+  } catch (_) {}
+}
+function _diasAtivos() {
+  const out = new Set();
+  try {
+    const pref = 'gh_ativo_' + SHEET_ID + '_';
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.indexOf(pref) === 0 && /^\d{4}-\d{2}-\d{2}$/.test(k.slice(pref.length))) out.add(k.slice(pref.length));
+    }
+  } catch (_) {}
+  return out;
+}
 function _constDotsRender() {
   const el = document.getElementById('constDots');
   if (!el) return;
   try {
     const pref = `gh_logsent_${SHEET_ID}_`;
     const feitos = new Set();
+    const ativos = _diasAtivos();   // v539
+    let temParcial = false;
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
       if (!k || k.indexOf(pref) !== 0) continue;
@@ -16823,10 +16911,12 @@ function _constDotsRender() {
     for (let i = 0; i < 7; i++) {
       const d = new Date(seg); d.setDate(seg.getDate() + i);
       const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-      const cls = ['const-dot', feitos.has(key) ? 'feito' : '', d.getTime() === hoje.getTime() ? 'hoje' : ''].filter(Boolean).join(' ');
+      const parcial = !feitos.has(key) && ativos.has(key);   // v539
+      if (parcial) temParcial = true;
+      const cls = ['const-dot', feitos.has(key) ? 'feito' : '', parcial ? 'parcial' : '', d.getTime() === hoje.getTime() ? 'hoje' : ''].filter(Boolean).join(' ');
       html += `<div class="${cls}"><span>${rot[i]}</span><i>✓</i></div>`;
     }
-    el.innerHTML = html + '<span class="cd-lbl">constância da semana</span>';
+    el.innerHTML = html + '<span class="cd-lbl">' + (temParcial ? 'vazada: treinou, mas não fechou o dia (marca todos os ✓)' : 'constância da semana') + '</span>';
     el.style.display = 'flex';
   } catch (_) { el.style.display = 'none'; }
 }
@@ -18905,7 +18995,7 @@ function _instAvisoMaybe() {
     if ((window.matchMedia && matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone) return;
     const visitas = (parseInt(localStorage.getItem('gh_inst_visitas') || '0', 10) || 0) + 1;
     localStorage.setItem('gh_inst_visitas', String(visitas));
-    if (visitas < 2) return;
+    const atraso = visitas < 2 ? 45000 : 12000;   // v539: já na 1ª visita (3 alunos em 2 semanas "não achei onde baixa o app"), mais tarde pra ver o protocolo antes
     let reg = {}; try { reg = JSON.parse(localStorage.getItem(_INST_KEY) || '{}') || {}; } catch (_) { reg = {}; }
     if ((reg.n || 0) >= 3) return;
     if (reg.ts && Date.now() - reg.ts < 14 * 86400000) return;
@@ -18922,7 +19012,7 @@ function _instAvisoMaybe() {
         localStorage.setItem(_INST_KEY, JSON.stringify({ n: (reg.n || 0) + 1, ts: Date.now() }));
       } catch (_) {}
     };
-    setTimeout(function () { tenta(1); }, 12000);
+    setTimeout(function () { tenta(1); }, atraso);
   } catch (_) {}
 }
 function instAvisoFecha() { try { document.getElementById('instAviso').hidden = true; } catch (_) {} }
@@ -19162,6 +19252,43 @@ function _reajRespKey() {
 function _reajRespondidoEsteCiclo() {
   try { return !!_proxReajusteBR && localStorage.getItem(_reajRespKey()) === '1'; } catch (e) { return false; }
 }
+// v539: "Meu plano" na aba Mais, com o vencimento que o servidor já manda (planstatus).
+function _maisPlanoRender(j) {
+  try {
+    var el = document.getElementById('maisPlanoTxt'); if (!el) return;
+    if (!j || !j.found || !j.vencimento) { el.textContent = 'sem data no cadastro, fala no suporte'; return; }
+    if (j.vitalicio || String(j.vencimento) >= '2099') { el.textContent = 'acesso vitalício'; return; }
+    var st = String(j.status || '');
+    if (/paus/i.test(st)) { el.textContent = 'pausado'; return; }
+    if (/cancel/i.test(st)) { el.textContent = 'cancelado'; return; }
+    var v = new Date(String(j.vencimento).slice(0, 10) + 'T00:00:00'); if (isNaN(v.getTime())) { el.textContent = 'sem data'; return; }
+    var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    var dias = Math.round((v.getTime() - hoje.getTime()) / 86400000);
+    var dBR = ('0' + v.getDate()).slice(-2) + '/' + ('0' + (v.getMonth() + 1)).slice(-2) + '/' + v.getFullYear();
+    el.textContent = dias < 0 ? 'venceu em ' + dBR : (dias === 0 ? 'vence hoje (' + dBR + ')' : 'vence em ' + dBR + ' (' + dias + (dias === 1 ? ' dia' : ' dias') + ')');
+  } catch (e) {}
+}
+// v539: entrada fixa pra anamnese de reajuste (GuiSBorges 28/09 "não tá aparecendo no app"; Leonardo 24/09 "onde coloco minhas medidas";
+// Matheus Machado 25/09 tocou em "já respondi" sem querer e não conseguia voltar). Abre o formulário só na janela do reajuste
+// (REAJ_PRE_DIAS antes da col M em diante); antes disso diz a data. "Já respondi" marcado: oferece desfazer.
+function maisAnamnese() {
+  try {
+    if (_reajRespondidoEsteCiclo()) {
+      if (!confirm('Tu marcou que já respondeu a anamnese deste reajuste. Quer desfazer e abrir a anamnese de novo?')) return;
+      try { localStorage.removeItem(_reajRespKey()); sessionStorage.removeItem('reajBannerOff'); } catch (e) {}
+      protoProgressUpdate(); reajusteBannerCheck();
+      window.open(REAJ_FORM, '_blank', 'noopener');
+      return;
+    }
+    if (!_proxReajusteBR || !/^\d{2}\/\d{2}\/\d{4}$/.test(_proxReajusteBR)) { _ghToast('A data do teu reajuste ainda não está no cadastro. Fala no WhatsApp do suporte que eu confiro.', 5200); return; }
+    var p = _proxReajusteBR.split('/').map(Number);
+    var reaj = new Date(p[2], p[1] - 1, p[0]); reaj.setHours(0, 0, 0, 0);
+    var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    var dias = Math.round((reaj.getTime() - hoje.getTime()) / 86400000);
+    if (dias <= REAJ_PRE_DIAS) { window.open(REAJ_FORM, '_blank', 'noopener'); return; }
+    _ghToast('Teu reajuste é dia ' + _proxReajusteBR.slice(0, 5) + '. A anamnese (com fotos e medidas) abre aqui ' + REAJ_PRE_DIAS + ' dias antes, em ' + (dias - REAJ_PRE_DIAS) + (dias - REAJ_PRE_DIAS === 1 ? ' dia' : ' dias') + '. Até lá, segue o protocolo.', 6500);
+  } catch (e) {}
+}
 // "Já respondi a anamnese": dispensa DURÁVEL pra este ciclo (não re-aparece toda sessão).
 // Volta sozinho no próximo reajuste, quando a data da col M avança (chave nova).
 function reajusteBannerJaRespondi() {
@@ -19356,6 +19483,7 @@ function _obsCardApplyTTL() {
 // Toque na barra: abre o Acompanhamento (sequência + recordes) e rola até ele.
 function protoProgressTap() {
   try {
+    if (_reajRespondidoEsteCiclo()) { maisAnamnese(); return; }   // v539: "anamnese respondida ✓" tocado = oferece desfazer
     var t = document.getElementById('accompToggle');
     if (!t || t.style.display === 'none') return;
     var c = document.getElementById('accompContent');
@@ -19450,6 +19578,7 @@ function planBlockGate(pre) {   // v512: pre = pedaço do boot; sem ele busca so
         // está a ≤15d de vencer não é cutucado pra reajuste — renovação assume).
         _vencServidoISO = (j && j.found && j.vencimento) || '';
         _renovPendenteServidor = !!(j && j.found && j.renovacaoPendente);
+        _maisPlanoRender(j);   // v539: "Meu plano: vence em ..." na aba Mais (Elias 24/09: "procurei no app e não achei")
         reajusteBannerCheck();
       })
       .catch(function () { /* fail open */ });
@@ -20565,7 +20694,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v538';
+    var APP_SHELL_V = 'metodo-gh-v539';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
