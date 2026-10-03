@@ -18081,19 +18081,33 @@ function _mealNaoMotivo(ri) { try { return localStorage.getItem(_mealNaoKey(ri))
 let _dcTipo = 'pronto', _dcCtx = { nome: '', doseTxt: '' };
 // Itens de via oral no vocabulário do GH: comprimido/cápsula não tem "quanto puxar".
 // Fora da lista, a via aparece escrita na dose/observação (comprimido, cápsula, oral).
-const _DC_ORAIS = /(hemogenin|oximetolona|oxandrolona|anavar|dianabol|clomid|clomifeno|tamoxifeno|anastrozol|letrozol|exemestano|cabergolina|mk[ -]?677|ibutamoren|clembuterol|glifage|metformina|ostarine|ligandrol|sibutramina|\bt3\b|\bt4\b)/i;
+const _DC_ORAIS = /(hemogenin|oximetolona|oxandrolona|anavar|dianabol|metandrostenolona|turinabol|halotestin|fluoximesterona|proviron|mesterolona|clomid|clomifeno|tamoxifeno|anastrozol|letrozol|exemestano|cabergolina|dostinex|finasterida|dutasterida|espironolactona|tadalafila|telmisartana|mk[ -]?677|ibutamoren|clembuterol|glifage|metformina|janumet|ostarine|ligandrol|cardarine|sibutramina|\bnac\b|acetilciste[íi]na|silimarina|tudca|\bt3\b|\bt4\b)/i;
+// v541 (Entregas #2663, Cauã Machado 03/10: o Masteron perdeu o botão porque a observação dizia "e não um comprimido de propósito").
+// Injetável conhecido pelo NOME ganha a calculadora mesmo com palavra de comprimido solta na observação (texto livre fala de outras coisas).
+const _DC_INJ = /(testosterona|durateston|enantato|cipionato|propionato|undecanoato|undecilenato|decanoato|fenilpropionato|\bnpp\b|nandrolona|\bdeca\b|masteron|drostanolona|trembolona|\btrembo\b|boldenona|primobolan|metenolona|trestolona|\bhcg\b|\bhmg\b|gonadotrofina|somatropina|\bhgh\b|bpc[ -]?157|tb[ -]?500|\bcjc\b|ipamorelin|tesamorelin|sermorelin|ghrp|hexarelin|mots[ -]?c|ss[ -]?31|\bghk\b|aod[ -]?9604|semaglutida|tirzepatida|retatrutida|liraglutida|kisspeptin|pt[ -]?141|melanotan|epitalon|timosina|thymosin|igf[ -]?1)/i;
+// Forma que não vai em seringa escrita no NOME ("Testosterona gel", "Minoxidil oral", "Primobolan comprimido"): vence o nome de injetável.
+const _DC_FORMA_NOME = /\b(gel|creme|spray|nasal|adesivo|transd[ée]rmic[oa]|t[óo]pic[oa]|oral|sublingual|comprimidos?|c[áa]psulas?|gotas)\b/i;
+// Dose escrita em unidade de engolir: "2 comprimidos", "1 cápsula", "20 gotas".
+const _DC_DOSE_ENGOLE = /\b(comprimidos?|c[áa]psulas?|caps|cp|gotas)\b|sach[êe]/i;
 // Suplemento de vidro/pote (16/08: o Ômega 3 do João Márcio apareceu com botão de seringa
 // porque a observação dele não dizia a via). Ninguém puxa ômega em seringa.
 const _DC_SUPL = /([oô]mega|vitamina|\bvit\b|creatina|whey|multivitamin|magn[ée]sio|zinco|sel[eê]nio|natto|coenzima|curcuma|c[uú]rcuma|resveratrol|berberina|ashwagandha|melatonina|col[áa]geno|glutamina|cafe[íi]na|ioimbina|taurina|arginina|citrulina|beta ?alanina|psyllium|probi[óo]tico|enzimas|pic?olinato|inositol|espirulina|cloreto de magn|epa e dha)/i;
-function _dcEhOral(nome, obs) {
+function _dcEhOral(nome, obs, dose) {
   // A Entregas escreve a FINALIDADE entre parênteses ("GHK-Cu (colágeno, pele e cabelo)").
   // Isso é o efeito, não a composição: sem tirar, o GHK-Cu virava "suplemento de colágeno"
   // e perdia a calculadora (16/08). As listas olham só o nome real.
   const nomeBase = String(nome || '').replace(/\([^)]*\)/g, ' ');
+  const doseBase = String(dose || '').replace(/\([^)]*\)/g, ' ');   // v541
   const tudo = nomeBase + ' ' + String(obs || '');
+  // 0º) v541: forma que não vai em seringa escrita no NOME, ou dose em unidade de engolir ("2 comprimidos")
+  if (_DC_FORMA_NOME.test(nomeBase) || _DC_DOSE_ENGOLE.test(doseBase)) return true;
   // 1º) comprimido por natureza vence tudo: o GH escreve "via oral, junto da aplicação"
   // e a palavra "aplicação" fazia o anastrozol ganhar calculadora de seringa.
   if (_DC_ORAIS.test(nomeBase)) return true;
+  // 1º-b) v541: injetável conhecido pelo nome → tem calculadora, mesmo que a observação cite "comprimido" ou "via oral" de passagem
+  if (_DC_INJ.test(nomeBase)) return false;
+  // 1º-c) v541: composto de engolir escrito na DOSE ("Se o hematócrito passar de 50 | Nattokinase 200mg por dia")
+  if (_DC_ORAIS.test(doseBase) || _DC_SUPL.test(doseBase)) return true;
   if (/(comprimido|c[áa]psula|\bcaps\b|\bcp\b|via oral|sublingual|gotas|sachê|sache)/i.test(tudo)) return true;
   // 2º) via de aplicação declarada = injetável (cobre suplemento injetável, tipo vit. B12)
   if (/(intramuscular|subcut[âa]n|\bIM\b|\bSC\b|seringa|gl[úu]teo|deltoid)/i.test(tudo)) return false;
@@ -18920,7 +18934,7 @@ function renderDiet() {
       if (p.obs) html += `<div class="proto-obs">${p.obs}</div>`;
       // Calculadora de dose (GH 14/08): só onde faz sentido puxar seringa — item de
       // via oral (comprimido/cápsula) não ganha botão, senão vira ruído no card.
-      if (p.dose && _dcDoseCalculavel(p.dose) && !_dcEhOral(p.nome, p.obs) && !_dcDoseEhGrama(p.dose)) {
+      if (p.dose && _dcDoseCalculavel(p.dose) && !_dcEhOral(p.nome, p.obs, p.dose) && !_dcDoseEhGrama(p.dose)) {
         const _nm = String(p.nome || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
         const _ds = String(p.dose || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
         html += `<button type="button" class="proto-calc-btn" onclick="openDoseCalc('${_nm}','${_ds}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="8" y2="11"/><line x1="12" y1="11" x2="12" y2="11"/><line x1="16" y1="11" x2="16" y2="11"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="12" y1="16" x2="12" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg> Quanto dá na seringa?</button>`;
@@ -20699,7 +20713,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v540';
+    var APP_SHELL_V = 'metodo-gh-v541';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
