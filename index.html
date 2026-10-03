@@ -6853,6 +6853,7 @@ function _subEscolhidoValido(ex, di, ei) {
   if (!grp) return null;
   const cn = _normEx(chosen);
   if (cn === _normEx(ex.name)) return null;          // escolheu o próprio original
+  if (STUDENT_NAO_TROCAR.has(cn)) return null;      // v538: substituto que entrou na lista "Não trocar por" volta pro original
   const m = grp.find(x => x.norm === cn);            // a escolha tem que estar no MESMO grupo
   if (!m) return null;                               // escolha estranha/antiga: ignora → original
   const v = _bankVideo(m.name);
@@ -6946,6 +6947,7 @@ function _alternativasNoDia(di, ei) {
   grp.forEach(x => {
     const v = _bankVideo(x.name);
     if (!v) return;                                  // sem vídeo: não entra
+    if (x.norm !== orig && STUDENT_NAO_TROCAR.has(x.norm)) return;   // v538: linha meta "Não trocar por" (doeu / academia não tem)
     // Substituto que JÁ está em outro exercício do dia não some da lista (GH 16/08:
     // "não tem troca" era mentira). Ele aparece marcado como ocupado, e o aluno
     // entende por que não dá pra escolher em vez de achar que o app não tem opção.
@@ -7625,6 +7627,21 @@ function closeSubPicker() {
 
 let WORKOUT = [];
 let STUDENT_ESFORCO_ALVO = null; // {valor, texto} da linha 'meta' Esforco-alvo do TREINO (RIR alvo)
+// v538 (Patrícia Pizzolatto 30/09: o seletor oferecia de volta a Flexora Unilateral, que doeu em 11/09): linha 'meta' do
+// TREINO com col B "Não trocar por" e col C os nomes separados por ponto e vírgula (col D opcional, motivo interno, não
+// aparece). O seletor tira esses exercícios das opções e um substituto que esteja na lista volta pro original. Quem escreve
+// a linha é a lane que registra dor ou "academia não tem" (Ajustes, Entregas, Reajustes). Sem a linha, nada muda.
+let STUDENT_NAO_TROCAR = new Set();
+function _parseNaoTrocar(rows) {
+  const out = new Set();
+  for (const r of (rows || [])) {
+    const a = String(r[0] == null ? '' : r[0]).toLowerCase().trim();
+    if ((a === 'meta' || a === '') && /n[ãa]o\s+trocar/i.test(String(r[1] || ''))) {
+      String(r[2] || '').split(/[;,|\n]/).map(x => _normEx(x)).filter(Boolean).forEach(n => out.add(n));
+    }
+  }
+  return out;
+}
 // Esforco-alvo (RIR): linha 'meta' do TREINO (apos restrict), col B "Esforco-alvo".
 // gviz tira o col A 'meta' -> vem como ['', 'Esforco-alvo', valor, texto]. O regex no col B
 // desambigua do restrict (que tambem chega com col A vazio).
@@ -7644,7 +7661,7 @@ function _parseMetaNotas(rows) {
     if (!b && !c && !d) continue;
     if (a === 'info' || (!a && !infoVisto)) { infoVisto = true; continue; }
     if (!d || !/\s/.test(b) || b.length > 60) continue;
-    if (/esfor[çc]o[\s-]*alvo/i.test(b) || /^https?:/i.test(b) || /^@treino/i.test(b)) continue;
+    if (/esfor[çc]o[\s-]*alvo/i.test(b) || /n[ãa]o\s+trocar/i.test(b) || /^https?:/i.test(b) || /^@treino/i.test(b)) continue;   // v538: "Não trocar por" é chave interna, não nota
     out.push({ titulo: b, resumo: c, texto: d });
     if (out.length >= 6) break;
   }
@@ -12791,6 +12808,7 @@ async function loadFromSheets(injectedText) {
 
     // Esforco-alvo (RIR): badge no topo + valor global pro Modo Focado mostrar do lado do esforco
     STUDENT_ESFORCO_ALVO = _parseEsforcoAlvo(rows);
+    STUDENT_NAO_TROCAR = _parseNaoTrocar(rows);   // v538
     _corteClasseBody_();   // v517: manual e glossário trocam a frase do corte quando o alvo é limitado
     STUDENT_META_NOTAS = _parseMetaNotas(rows);   // v497: notas da montagem pro aluno (Como ler as tuas séries, etc.)
     _metaNotasRender();
@@ -20547,7 +20565,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v537';
+    var APP_SHELL_V = 'metodo-gh-v538';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
