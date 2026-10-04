@@ -3841,7 +3841,7 @@
   <div class="pacer-reps">Reps: <b id="pacerReps">0</b></div>
   <div class="timer-actions">
     <button class="timer-btn" onclick="closePacer()">Fechar</button>
-    <button class="timer-btn" id="pacerSomBtn" onclick="pacerMudoToggle()" title="Bip a cada troca de fase">🔊 Som on</button>
+    <button class="timer-btn" id="pacerSomBtn" onclick="pacerMudoToggle()" title="Bip a cada troca de fase">🔊 Som ligado</button>
     <button class="timer-btn" id="pacerPauseBtn" onclick="pacerPause()">Pausar</button>
     <button class="timer-btn primary" onclick="pacerToRest()">Descansar</button>
   </div>
@@ -7261,7 +7261,7 @@ function _prescLinha(ex, isWarmup) {
     const _rotP = _serieTemRotulo(ex);
     if (_rotP) return _prescTabelaHtml(ex, _tp, isWarmup);   // v506: bloco "Prescrição" espelhando a grade
     {
-      if (ex.series) p.push(String(ex.series).replace(/\s*[xX]\s*$/, '') + ' séries');
+      if (ex.series) { const _ns = String(ex.series).replace(/\s*[xX]\s*$/, ''); p.push(_ns + (/^\s*0?1\s*$/.test(_ns) ? ' série' : ' séries')); }   // v553: "1 série"
       if (ex.reps) p.push(/seg|min|\bs\b/i.test(String(ex.reps)) ? ex.reps : (ex.reps + ' reps'));   // "20 seg" nao vira "20 seg reps"
     }
     // v499: com chips, o intervalo vai sem o "·" (a borda do chip já separa) e não quebra no meio da frase
@@ -11991,7 +11991,7 @@ function pacerMudoToggle() {
   _pacMudo = !_pacMudo;
   try { localStorage.setItem('gh_pacer_mudo', _pacMudo ? '1' : '0'); } catch (_) {}
   const b = document.getElementById('pacerSomBtn');
-  if (b) { b.textContent = _pacMudo ? '🔇 Som off' : '🔊 Som on'; b.classList.toggle('off', _pacMudo); }
+  if (b) { b.textContent = _pacMudo ? '🔇 Som desligado' : '🔊 Som ligado'; b.classList.toggle('off', _pacMudo); }
   if (!_pacMudo) { _pacAudioInit(); _pacBeep(880, 0.09); }   // devolve um bip de confirmação
 }
 function openPacer(di, ei) {
@@ -12017,7 +12017,7 @@ function openPacer(di, ei) {
                                          // soltava a trava de tela no meio de um descanso em andamento
   _pacAudioInit();                       // gesto do usuário: é aqui que o iOS libera o som
   const _sb = document.getElementById('pacerSomBtn');
-  if (_sb) { _sb.textContent = _pacMudo ? '🔇 Som off' : '🔊 Som on'; _sb.classList.toggle('off', _pacMudo); }
+  if (_sb) { _sb.textContent = _pacMudo ? '🔇 Som desligado' : '🔊 Som ligado'; _sb.classList.toggle('off', _pacMudo); }
   _pacApplyPhase();
   _pacWaveBuild();                       // desenha a montanha desta cadência
   _pacBeepFase(_pacPhases[0].lab);       // marca o início da 1ª fase
@@ -21952,7 +21952,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v552';
+    var APP_SHELL_V = 'metodo-gh-v553';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -23459,8 +23459,13 @@ const _ESF_APLABEL = { maquina_ruim: 'Máquina ruim', nao_sinto: 'Não sinto o m
 function _esfBuildDays(rows) {
   const blocos = []; let cur = null;
   const ensure = (nome) => { let b = blocos.find(x => x.nome === nome); if (!b) { b = { nome, days: {} }; blocos.push(b); } return b; };
+  // v553: o painel montava os dias com regra PRÓPRIA. Linha de exercício com a col A (dia) apagada era pulada aqui e mantida
+  // no app do aluno (ela herda o dia da linha de cima): dali pra baixo o esforço e o "aparelho ruim" do aluno apareciam no
+  // exercício ERRADO do Raio-X. Agora vale a mesma regra do leitor do aluno (herda o dia; linha sem nome e sem série fica fora).
+  let _ultDia = null;
   for (const r of rows) {
-    const a = String(r[0] == null ? '' : r[0]).trim();
+    let a = String(r[0] == null ? '' : r[0]).trim();
+    if (a === '' && _ultDia != null && r[1] && String(r[1]).trim() && /^\s*\d+\s*x/i.test(String(r[2] || '')) && !String(r[1]).trim().startsWith('http') && !/^@TREINO/i.test(String(r[1]).trim())) a = String(_ultDia);
     const al = a.toLowerCase();
     if (al === 'info' || al === 'restrict' || al === 'link' || al === 'hipo') continue;
     if (a === '' && r[1] && String(r[1]).trim().toUpperCase().startsWith('@TREINO')) {
@@ -23468,11 +23473,13 @@ function _esfBuildDays(rows) {
     }
     const dayNum = parseInt(a);
     if (isNaN(dayNum)) continue;
+    _ultDia = dayNum;
+    if (!String(r[1] || '').trim() && !String(r[2] || '').trim() && !String(r[3] || '').trim()) continue;   // dia sozinho na linha: não é exercício
     const isBisetStart = /bi/.test(al);
     if (cur === null) cur = '';
     const b = ensure(cur);
     if (!b.days[dayNum]) b.days[dayNum] = [];
-    b.days[dayNum].push({ name: r[1] || '', warmup: String(r[7] || '').toLowerCase() === 'sim', bisetStart: isBisetStart });
+    b.days[dayNum].push({ name: String(r[1] || '').trim() ? r[1] : 'Exercício sem nome', warmup: String(r[7] || '').toLowerCase() === 'sim', bisetStart: isBisetStart });
   }
   blocos.forEach(b => Object.keys(b.days).forEach(d => {
     const o = b.days[d], m = [];
@@ -24268,6 +24275,23 @@ async function trainerSave() {
   const tab = isTreino ? 'TREINO' : 'DIETA';
   if (!data || !data.length) return;
   if (!confirm(`Salvar todas as mudanças em ${tab}? (a aba ${tab} vai ser sobrescrita)`)) return;
+  // v553: o editor lê a planilha pelo mesmo caminho do app, que às vezes devolve a coluna do DIA vazia numa linha de exercício.
+  // Salvar regravava a aba inteira com essa coluna vazia DE VERDADE (o "edição manual apaga a col A"). Antes de salvar, linha
+  // de exercício sem dia recebe o dia da linha de cima, com confirmação.
+  if (isTreino) {
+    let _ult = null; const _semDia = [];
+    data.forEach((r, i) => {
+      if (!r) return;
+      const a = String(r[0] == null ? '' : r[0]).trim(), nDia = parseInt(a, 10);
+      if (!isNaN(nDia)) { _ult = nDia; return; }
+      const nm = String(r[1] || '').trim();
+      if (a === '' && _ult != null && nm && /^\s*\d+\s*x/i.test(String(r[2] || '')) && !nm.startsWith('http') && !/^@TREINO/i.test(nm)) _semDia.push({ i: i, dia: _ult, nome: nm });
+    });
+    if (_semDia.length) {
+      if (!confirm(_semDia.length + ' exercício(s) estão SEM o número do dia na coluna A:\n\n' + _semDia.slice(0, 6).map(x => '• ' + x.nome + ' (vai pro dia ' + x.dia + ')').join('\n') + (_semDia.length > 6 ? '\n...' : '') + '\n\nOK = preencher com o dia da linha de cima e salvar.\nCancelar = não salvar agora.')) return;
+      _semDia.forEach(x => { data[x.i][0] = String(x.dia); });
+    }
+  }
   // Guard anti-footgun: linha 'ciclo' com nome de hormonio some do card de Protocolo no app do aluno (caso Romulo).
   if (!isTreino && !guardCicloHormonio(data)) return;
   const btn = document.getElementById('trainerSaveBtn');
