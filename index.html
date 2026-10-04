@@ -1190,9 +1190,18 @@
   #timerRingFill { transition: stroke-dashoffset 0.95s linear; }
   #timerRingFill.warn { stroke: #ff9800; }
   #timerRingFill.done { stroke: #4caf50; }
-  .timer-pill { position: fixed; bottom: 92px; left: 50%; transform: translateX(-50%); z-index: 10500; display: none; align-items: center; gap: 7px; background: #131316; color: var(--gold); border: 1.5px solid var(--gold); border-radius: 999px; padding: 11px 20px; font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; box-shadow: 0 4px 16px rgba(0,0,0,0.55); cursor: pointer; }
+  .timer-pill { position: fixed; bottom: 92px; left: 50%; transform: translateX(-50%); z-index: 9400; display: none; align-items: center; gap: 7px; background: #131316; color: var(--gold); border: 1.5px solid var(--gold); border-radius: 999px; padding: 11px 20px; font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; box-shadow: 0 4px 16px rgba(0,0,0,0.55); cursor: pointer; }
   .timer-pill.show { display: flex; }
   .timer-pill.done { background: #4caf50; color: #111; border-color: #4caf50; }
+  /* v548: no modo treino a contagem do descanso mora no botão do rodapé (a pílula flutuante cobria a grade e as respostas) */
+  body.foco-aberto .timer-pill { display: none !important; }
+  .focus-main-btn.rest.rodando { border-color: var(--gold); color: var(--gold); }
+  .focus-main-btn.rest.acabou { background: #4caf50; border-color: #4caf50; color: #111; }
+  /* aviso flutuante sobe quando a pílula está na tela (nasciam um em cima do outro) */
+  body:has(.timer-pill.show) .gh-toast { bottom: 150px; }
+  /* fim do descanso: moldura verde na tela inteira (iPhone não vibra) */
+  body.descanso-fim::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 100040; box-shadow: inset 0 0 0 5px #4caf50, inset 0 0 70px rgba(76,175,80,.5); animation: ghDescFim 1.6s ease-out both; }
+  @keyframes ghDescFim { 0% { opacity: 0; } 12% { opacity: 1; } 55% { opacity: 1; } 100% { opacity: 0; } }
 
   /* ── Bloqueio de plano vencido ── */
   .plan-block-overlay { position: fixed; inset: 0; z-index: 99999; background: rgba(6,6,6,0.985); display: none; align-items: center; justify-content: center; padding: 28px; }
@@ -3842,7 +3851,7 @@
   <div class="focus-body" id="focusBody"></div>
   <div class="focus-foot">
     <button class="focus-nav" id="focusPrev" onclick="focusNav(-1)" title="Anterior">‹</button>
-    <button class="focus-main-btn rest" onclick="focusRest()" style="display:inline-flex;align-items:center;justify-content:center;gap:7px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Descanso</button>
+    <button class="focus-main-btn rest" onclick="focusRest()" style="display:inline-flex;align-items:center;justify-content:center;gap:7px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> <span id="focusRestLbl">Descanso</span></button>
     <button class="focus-main-btn donebtn" id="focusDoneBtn" onclick="focusToggleDone()">✓ Feito</button>
     <button class="focus-nav" id="focusNext" onclick="focusNav(1)" title="Próximo">›</button>
   </div>
@@ -9616,6 +9625,15 @@ function migrateLegacyDoneKeys_() {
   localStorage.setItem(flagKey, '1');
 }
 function _diaConcluidoDispara(di) {
+  // v548: fechou o dia com o cronômetro DESTE treino ligado: o tempo é registrado sozinho. Antes ele seguia rodando, e no dia
+  // seguinte o "Continuar treino" retomava a sessão de ontem (o tempo de hoje ia pro treino de ontem).
+  try {
+    const s = (typeof _wtLoad === 'function') ? _wtLoad() : null;
+    if (s && Number(s.di) === Number(di) && Number(s.w) === Number(currentWeek)) {
+      const secs = Math.floor(_wtElapsedMs(s) / 1000);
+      if (secs >= 60 && secs <= _WT_SUSPEITO_SECS) _wtCommit(s.di, s.w, secs, s.pausas || 0, false);
+    }
+  } catch (_) {}
   updateStreakOnComplete();
   // Loga a CONCLUSÃO do treino (vale 5 pts). Compartilhar depois
   // gera outro log que vale 10. Assim quem treina pontua mesmo
@@ -11432,12 +11450,46 @@ document.addEventListener('visibilitychange', () => {
   _timerSync();
   if (_timerInt && !_timerWakeLock) _timerLockOn();
 });
+// v548: temporizadores do "acabou" (some a pílula, fecha a tela). Eram soltos: se outro descanso começava em menos de 4 s,
+// eles escondiam a contagem nova.
+let _timerFimT = [];
+function _timerFimLimpa() {
+  try { _timerFimT.forEach(t => clearTimeout(t)); } catch (_) {}
+  _timerFimT = [];
+  try { document.body.classList.remove('descanso-fim'); } catch (_) {}
+  try { const b = document.querySelector('.focus-main-btn.rest'); if (b) b.classList.remove('acabou'); } catch (_) {}
+}
+// v548: o fim do descanso fica guardado no aparelho. O iPhone fecha o app quando o aluno vai pro WhatsApp no meio do
+// descanso; ao voltar, a contagem continua de onde estava (antes sumia, sem bip).
+function _descansoKey() { return 'gh_descanso_' + (typeof STUDENT_ID !== 'undefined' ? STUDENT_ID : 'x'); }
+function _descansoGuarda(nome) { try { localStorage.setItem(_descansoKey(), JSON.stringify({ fim: _timerEndAt, total: _timerTotal, nome: String(nome || '') })); } catch (_) {} }
+function _descansoEsquece() { try { localStorage.removeItem(_descansoKey()); } catch (_) {} }
+function _descansoRetoma() {
+  try {
+    const j = JSON.parse(localStorage.getItem(_descansoKey()) || 'null');
+    if (!j || !(j.fim > 0)) return;
+    const falta = Math.ceil((j.fim - Date.now()) / 1000);
+    if (falta <= 0 || falta > 900 || _timerInt) { _descansoEsquece(); return; }
+    const total = Number(j.total) || falta;
+    startTimerAuto(j.nome || 'Descanso', falta);
+    if (total > _timerTotal) { _timerTotal = total; updateTimerDisplay(); }
+  } catch (_) {}
+}
+function _focusRestLbl() {
+  try {
+    const l = document.getElementById('focusRestLbl'); if (!l) return;
+    const b = l.closest('button');
+    if (_timerInt) { l.textContent = _timerLeft + 's'; if (b) { b.classList.add('rodando'); b.classList.remove('acabou'); } }
+    else if (!(b && b.classList.contains('acabou'))) { l.textContent = 'Descanso'; if (b) b.classList.remove('rodando'); }
+  } catch (_) {}
+}
 function startTimer(name, seconds) {
   // modo pouco tempo: descanso encurtado (30s isolados / 50s compostos — números do GH)
   if (typeof _shortMin === 'function' && _shortMin() && seconds > 0) seconds = Math.min(seconds, _shortRestCap(name));
   _timerLeft = seconds;
   _timerTotal = seconds;
   _timerEndAt = Date.now() + seconds * 1000;
+  _timerFimLimpa(); _descansoGuarda(name);   // v548
   document.getElementById('timerName').textContent = name;
   document.getElementById('timerOverlay').classList.add('show');
   document.getElementById('timerPill').classList.remove('show', 'done');
@@ -11456,6 +11508,7 @@ function startTimerAuto(name, seconds) {
   _timerLeft = seconds;
   _timerTotal = seconds;
   _timerEndAt = Date.now() + seconds * 1000;
+  _timerFimLimpa(); _descansoGuarda(name);   // v548
   document.getElementById('timerName').textContent = name;
   document.getElementById('timerOverlay').classList.remove('show');
   const pill = document.getElementById('timerPill');
@@ -11727,6 +11780,7 @@ function updateTimerDisplay() {
   if (_timerLeft <= 5) d.classList.add('warn');
   const pt = document.getElementById('timerPillTime');
   if (pt) pt.textContent = _timerLeft + 's';
+  _focusRestLbl();   // v548: no modo treino a contagem aparece no botão do rodapé
 }
 function timerMinimize() {
   // Timer continua rodando — só esconde o overlay e mostra a pill flutuante
@@ -11744,12 +11798,20 @@ function timerReopen() {
 function timerCancel() {
   if (_timerInt) { clearInterval(_timerInt); _timerInt = null; }
   _timerEndAt = 0;
+  _timerFimLimpa(); _descansoEsquece(); _focusRestLbl();   // v548
   document.getElementById('timerOverlay').classList.remove('show');
   document.getElementById('timerPill').classList.remove('show', 'done');
   document.body.style.overflow = '';
   _timerLockOff();
 }
 function timerAdd(secs) {
+  if (!_timerInt) {   // v548: o descanso já tinha acabado: o "+15s" começa um novo (antes somava em zero e mostrava "0")
+    _timerFimLimpa();
+    _timerEndAt = Date.now(); _timerTotal = 0;
+    try { const d0 = document.getElementById('timerDisplay'); if (d0) d0.classList.remove('done'); const r0 = document.getElementById('timerRingFill'); if (r0) r0.classList.remove('done'); } catch (_) {}
+    _timerInt = setInterval(_timerSync, 250);
+    _timerLockOn();
+  }
   _timerEndAt += secs * 1000;                 // v446: o +30s empurra o FIM, não um contador solto
   _timerLeft = _timerRestante();
   if (_timerLeft > _timerTotal) _timerTotal = _timerLeft;
@@ -11759,13 +11821,17 @@ function timerDone(atrasoMs) {
   if (_timerInt) { clearInterval(_timerInt); _timerInt = null; }
   _timerEndAt = 0;
   _timerLockOff();
+  _descansoEsquece();   // v548
   // v446: se o descanso venceu enquanto o app estava fora da tela e o aluno só voltou muito depois,
   // encerra calado — apitar por um descanso que acabou há 5 min só assusta.
   const mudo = Number(atrasoMs || 0) > _TIMER_ATRASO_MUDO;
   if (!mudo) {
     beep();
     if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
+    // v548: sinal na TELA (o iPhone não vibra, e sem fone o bip pode passar batido)
+    try { document.body.classList.add('descanso-fim'); _timerFimT.push(setTimeout(() => { try { document.body.classList.remove('descanso-fim'); } catch (_) {} }, 1700)); } catch (_) {}
   }
+  try { const fl = document.getElementById('focusRestLbl'); if (fl) { fl.textContent = '✓ Bora!'; const fb = fl.closest('button'); if (fb) { fb.classList.remove('rodando'); fb.classList.add('acabou'); } _timerFimT.push(setTimeout(() => { try { if (fb) fb.classList.remove('acabou'); _focusRestLbl(); } catch (_) {} }, 4000)); } } catch (_) {}
   const pill = document.getElementById('timerPill');
   const minimized = pill.classList.contains('show');
   if (minimized) {
@@ -11773,19 +11839,32 @@ function timerDone(atrasoMs) {
     pill.classList.add('done');
     const pt = document.getElementById('timerPillTime');
     if (pt) pt.textContent = '✓ Bora!';
-    setTimeout(() => pill.classList.remove('show', 'done'), 4000);
+    _timerFimT.push(setTimeout(() => pill.classList.remove('show', 'done'), 4000));
   } else {
     const d = document.getElementById('timerDisplay');
     d.classList.add('done');
     d.textContent = '✓';
     const ring = document.getElementById('timerRingFill');
     if (ring) { ring.classList.add('done'); ring.style.strokeDashoffset = '0'; }
-    setTimeout(timerCancel, 2500);
+    _timerFimT.push(setTimeout(timerCancel, 2500));
   }
 }
+// v548: UM contexto de áudio só, destravado no toque. No iPhone, som que não nasce de um toque não toca: o bip do fim do
+// descanso criava um contexto novo de dentro do temporizador (nascia suspenso) e o aluno de iPhone não ouvia nada. E cada
+// fim de descanso deixava um contexto aberto pra trás.
+let _somAC = null;
+function _somDestrava() {
+  try {
+    if (!_somAC) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) _somAC = new AC(); }
+    if (_somAC && _somAC.state === 'suspended') _somAC.resume();
+  } catch (_) {}
+}
+['touchend', 'click'].forEach(ev => { try { document.addEventListener(ev, _somDestrava, { passive: true, capture: true }); } catch (_) {} });
 function beep() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    _somDestrava();
+    const ctx = _somAC;
+    if (!ctx) return;
     const make = (freq, t0, dur) => {
       const o = ctx.createOscillator(), g = ctx.createGain();
       o.connect(g); g.connect(ctx.destination);
@@ -12067,8 +12146,10 @@ function openFocusMode(di) {
   // (no-op se já tem sessão viva) — é ele que habilita o descanso automático.
   try { if (typeof wtStart === 'function') wtStart(); } catch (_) {}
   document.getElementById('focusOverlay').classList.add('show');
+  document.body.classList.add('foco-aberto');   // v548
   document.body.style.overflow = 'hidden';
   _focusRender();
+  _focusRestLbl();
 }
 function closeFocusMode() {
   // Blindagem (Hugo, 2026-07-06 "fecha sozinho ao abrir"): ignora qualquer close
@@ -12078,6 +12159,7 @@ function closeFocusMode() {
   if (Date.now() - _focusOpenedAt < 300) return;
   _flushFocoPendente();          // salva série digitada antes de sair (overlay ainda .show → lê a grade do foco)
   document.getElementById('focusOverlay').classList.remove('show');
+  document.body.classList.remove('foco-aberto');   // v548
   document.body.style.overflow = '';
   renderExercises();
 }
@@ -12111,7 +12193,20 @@ function focusToggleDone() {
   }
   _focusRender();
 }
+function focusSkip() {
+  _flushFocoPendente();
+  onSkipExercise(_focusDi, _focusIdx);
+  if (allDoneOfDay(_focusDi)) { setTimeout(closeFocusMode, 350); return; }
+  const exs = WORKOUT[_focusDi].exercises;
+  if (isSkipped(_focusDi, _focusIdx)) {
+    let n = _focusIdx + 1;
+    while (n < exs.length && (isDone(_focusDi, n) || isSkipped(_focusDi, n))) n++;
+    if (n < exs.length) _focusIdx = n;
+  }
+  _focusRender();
+}
 function focusRest() {
+  if (_timerInt) { timerReopen(); return; }   // v548: descanso já rodando: o botão abre ele (não começa outro por cima)
   const ex = WORKOUT[_focusDi].exercises[_focusIdx];
   const base = ex.biset ? ex.a : ex;
   startTimer(base.name || 'Descanso', parseIntervalSeconds(base.rest));
@@ -12133,7 +12228,16 @@ function _focusCargaBlock(di, key, label) {
 // série até quase travar") · falha_antes → segura ou desce. Degrau = menor passo físico real:
 // +1 placa; kg: +2 superiores, +5 inferiores. Sem histórico ou sem "sobrou" → NENHUMA sugestão.
 const _PROG_INF = /perna|agach|leg|stiff|terra|panturr|flexora|extensora|adutor|abdutor|hack|b[uú]lgaro|afundo|p[eé]lvica|gl[uú]teo|coxa|passada|sum[oô]|coice/i;
-function _progStepKg(nome) { return _PROG_INF.test(String(nome || '')) ? 5 : 2; }
+// v548: braço, ombro, peito, costas e abdômen nunca levam o degrau de perna ("Tríceps Coice" e "Abdominal Elevação de
+// Pernas" casavam com a lista de inferiores), e o degrau não passa de uns 10% da carga (coice com caneleira de 3 kg
+// recebia "tenta 8 kg").
+const _PROG_SUP = /tr[ií]ceps|b[ií]ceps|rosca|abdominal|ombro|eleva[cç][aã]o lateral|supino|peito|remada|puxada|pulldown|crucifixo|desenvolvimento|caneleira/i;
+function _progStepKg(nome, baseKg) {
+  const n = String(nome || '');
+  let st = (_PROG_INF.test(n) && !_PROG_SUP.test(n)) ? 5 : 2;
+  if (baseKg > 0) st = Math.max(1, Math.min(st, Math.round(baseKg * 0.1)));
+  return st;
+}
 function _progBaseDoSets(sets) {
   // última série preenchida (kg ou placas) — é a carga de trabalho real
   if (!Array.isArray(sets)) return null;
@@ -12160,7 +12264,7 @@ function _progUltReg(di, ei) {
 function _progSugestao(nomeEx, base, esf) {
   if (esf === 'sobrou3') {
     if (base.pl != null && !isNaN(base.pl)) return { tipo: 'sobe', prox: (base.pl + 1) + ' placas' };
-    if (base.kg != null && !isNaN(base.kg)) { const st = _progStepKg(nomeEx); const _u = getUnit(); return { tipo: 'sobe', prox: String(kgToDisplay(String(Math.round((base.kg + st) * 10) / 10))).replace('.', ',') + _u, passo: _u === 'kg' ? '+' + st : '' }; }
+    if (base.kg != null && !isNaN(base.kg)) { const st = _progStepKg(nomeEx, base.kg); const _u = getUnit(); return { tipo: 'sobe', prox: String(kgToDisplay(String(Math.round((base.kg + st) * 10) / 10))).replace('.', ',') + _u, passo: _u === 'kg' ? '+' + st : '' }; }
     return null;
   }
   if (esf === 'falha_antes') return { tipo: 'segura' };
@@ -12204,8 +12308,9 @@ function _progChipHtml(di, ei, nomeEx) {
   const sug = _progSugestao(nomeEx, reg.base, reg.esf);
   if (!sug) return '';
   if (sug.tipo === 'sobe' && !_corteAtivo() && _alvoTopo().hi >= 3) return '';   // v544: "sobrou 3" está DENTRO do alvo de quem tem esforço limitado: não manda subir
-  if (sug.tipo === 'sobe') return `<div class="prog-chip up">💡 Semana passada: ${reg.base.txt}, sobrou 3+. Hoje <b>tenta ${sug.prox}</b>${sug.passo ? ' (' + sug.passo + ')' : ''}. Se travar, volta sem drama.</div>`;
-  return `<div class="prog-chip down">Semana passada travou antes de terminar: hoje vale <b>manter ou descer um degrau</b>.</div>`;
+  const _quando = (reg.w === currentWeek - 1) ? 'Semana passada' : ('Na Semana ' + reg.w);   // v548: nem sempre o último registro é da semana passada
+  if (sug.tipo === 'sobe') return `<div class="prog-chip up">💡 ${_quando}: ${reg.base.txt}, sobrou 3+. Hoje <b>tenta ${sug.prox}</b>${sug.passo ? ' (' + sug.passo + ')' : ''}. Se travar, volta sem drama.</div>`;
+  return `<div class="prog-chip down">${_quando} travou antes de terminar: hoje vale <b>manter ou descer um degrau</b>.</div>`;
 }
 const _ESF_OPTS = [['sobrou3', 'Sobrou 3 ou mais: fácil'], ['sobrou2', 'Sobrou 2'], ['sobrou1', 'Sobrou 1'], ['falha_ult', 'Sobrou 0: no limite'], ['falha_antes', 'Travei antes de terminar']];   // v532: mesma palavra da coluna
 const _ESF_AP = [['maquina_ruim', 'Máquina ruim'], ['nao_sinto', 'Não sinto o músculo'], ['carga_estranha', 'Carga estranha']];
@@ -12436,8 +12541,11 @@ function _focusRender() {
     html += `<div class="focus-tags">${tags(ex)}</div>`;
     if (ex.obs) html += `<div class="focus-obs">${_glossWrap(ex.obs)}</div>`;
     html += `<button class="focus-sub-btn" onclick="openPacer(_focusDi, _focusIdx)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Treinar no ritmo</button>`;
+    if (!ex.warmup) { try { html += _progChipHtml(_focusDi, _focusIdx, _fact.name); } catch (_) {} }   // v548: a dica "hoje tenta X" também aparece no modo treino
     if (!ex.warmup) html += _focusCargaBlock(_focusDi, String(_focusIdx), 'Carga de hoje');
     if (!ex.warmup) html += _focusEsforcoBlock(_focusDi, String(_focusIdx));
+    // v548: "não consegui fazer" dentro do modo treino (aparelho quebrado, sem tempo). Antes só dava pra passar com a seta e o dia nunca fechava.
+    if (!ex.warmup && !isDone(_focusDi, _focusIdx)) html += `<button type="button" class="focus-sub-btn" style="margin-top:12px;" onclick="focusSkip()">${isSkipped(_focusDi, _focusIdx) ? 'Desfazer o "não consegui fazer"' : 'Não consegui fazer este exercício'}</button>`;
   }
   document.getElementById('focusBody').innerHTML = html;
   document.getElementById('focusBody').scrollTop = 0;
@@ -12452,6 +12560,9 @@ function _focusRender() {
   document.addEventListener('touchstart', e => {
     const ov = document.getElementById('focusOverlay');
     if (!ov || !ov.classList.contains('show')) return;
+    // v548: o arrasto só vale no corpo do modo treino. Arrastar no vídeo, no descanso em tela cheia, no seletor de troca ou
+    // num campo pulava de exercício por baixo, e o aluno anotava a carga no exercício errado.
+    if (!e.target || !e.target.closest || !e.target.closest('#focusBody') || e.target.closest('textarea, select, video, input, .set-row')) { sx = sy = null; return; }
     sx = e.touches[0].clientX; sy = e.touches[0].clientY;
   }, { passive: true });
   document.addEventListener('touchend', e => {
@@ -12545,8 +12656,11 @@ function _histChartData(di, ei) {
     } else if (diffKg < 0) {
       trendText = `⚠ Reduziu ${Math.abs(diffDisp)}${unit} da semana ${first.w} pra ${last.w}, checa se foi descanso/lesão`;
       trendCls = 'down';
-    } else {
+    } else if (filled.every(x => val(x) === val(first))) {
       trendText = `⏸ Mesma carga ${fmt(val(first))} em ${filled.length} semanas, hora de tentar progredir`;
+    } else {
+      // v548: começou e terminou igual, mas variou no meio (40, 50, 40): não é "mesma carga"
+      trendText = `Voltou pra ${fmt(val(first))} depois de variar nas semanas do meio. Hora de firmar a carga mais alta.`;
     }
   }
   return { name: _hnm, html, trendText, trendCls, hasData: filled.length > 0 };
@@ -12772,7 +12886,10 @@ function _estagInfo(di, ei) {
     const ex = (WORKOUT[di] || {}).exercises ? WORKOUT[di].exercises[ei] : null;
     if (!ex || ex.warmup || ex.biset) return null;
     const pts = [];
-    for (let w = 1, _wt = _weekTeto(); w <= _wt; w++) { const b = _estagBest(di, ei, w); if (b) pts.push({ w: w, v: b.v, t: b.t, r: b.r }); }
+    for (let w = 1, _wt = _weekTeto(); w <= _wt; w++) {
+      if (w === currentWeek && !isDone(di, ei)) continue;   // v548: a semana em andamento só conta com o exercício já feito (aquecimento digitado virava "sem subir")
+      const b = _estagBest(di, ei, w); if (b) pts.push({ w: w, v: b.v, t: b.t, r: b.r });
+    }
     if (pts.length < 3) return null;
     const tres = pts.slice(-3);
     const a = tres[0], z = tres[2];
@@ -13226,7 +13343,14 @@ async function loadFromSheets(injectedText) {
         // devolvia pra semana anterior, a cada abertura, quem fechou a semana antes do tempo e passou pra próxima (e ele
         // digitava de novo por cima das cargas da semana). O teto segue só pra posição antiga, sem a data na assinatura.
         if (_pos.w >= 1 && _pos.w <= WEEK_MAX) currentWeek = (_pos.sig === _sigAtual) ? _pos.w : Math.min(_pos.w, _tetoW);
-        if (BLOCOS.length < 2 && Number.isInteger(_pos.di) && _pos.di >= 0 && _pos.di < WORKOUT.length) currentDay = _pos.di;
+        // v548: com a semana restaurada, o dia de abertura é o 1º ainda não fechado NELA; o dia salvo só volta se foi mexido há
+        // pouco (3 h) ou se ainda não fechou. Antes o app abria sempre no treino de ontem, já concluído, com o convite de "ir
+        // pra próxima semana", e o aluno pulava a semana em vez de ir pro treino seguinte.
+        try { currentDay = _primeiroDiaIncompleto(); } catch (_) {}
+        if (BLOCOS.length < 2 && Number.isInteger(_pos.di) && _pos.di >= 0 && _pos.di < WORKOUT.length) {
+          let _fechado = false; try { _fechado = allDoneOfDay(_pos.di); } catch (_) {}
+          if (!_fechado || (Date.now() - (Number(_pos.ts) || 0)) < 3 * 3600000) currentDay = _pos.di;
+        }
         const _wl = document.getElementById('weekLabel');
         if (_wl) _wl.textContent = 'Semana ' + currentWeek;
       }
@@ -13338,6 +13462,7 @@ async function loadFromSheets(injectedText) {
                     // então quem ficava na aba TREINO nunca via o recado)
     loadLaudoDestaque();   // antes-e-depois do reajuste em destaque na página principal (fora do modal)
     renderWtCard();        // cronômetro do treino (retoma sessão viva se o app foi fechado no meio)
+    _descansoRetoma();     // v548: descanso que estava rodando quando o sistema fechou o app
     loadTempoTreino();     // durações registradas → badges nos dias
     _tourMaybeStart();     // 1º acesso: tour de boas-vindas (o _showNav da dieta roda cedo demais, sem WORKOUT)
     _instAvisoMaybe();     // v532: celular sem o app instalado: aviso pra instalar (nunca por cima do tour)
@@ -13923,7 +14048,14 @@ function renderWtCard() {
 }
 
 function wtStart() {
-  if (_wtLoad()) { renderWtCard(); return; }   // já tem sessão viva
+  const _viva = _wtLoad();
+  if (_viva) {
+    const _ini = new Date(); _ini.setHours(0, 0, 0, 0);
+    if (Number(_viva.di) === Number(currentDay) && Number(_viva.w) === Number(currentWeek) && (_viva.startedAt || 0) >= _ini.getTime()) { renderWtCard(); return; }   // já tem sessão viva DESTE treino, de hoje
+    // v548: sessão de OUTRO treino (ou de outro dia) que ficou aberta: fecha antes de abrir a nova. Tempo plausível é
+    // registrado no treino dela; tempo de sessão esquecida é descartado.
+    try { const secs = Math.floor(_wtElapsedMs(_viva) / 1000); if (secs >= 60 && secs <= _WT_SUSPEITO_SECS) _wtCommit(_viva.di, _viva.w, secs, _viva.pausas || 0, false); else localStorage.removeItem(_wtKey()); } catch (_) { try { localStorage.removeItem(_wtKey()); } catch (__) {} }
+  }
   _wtSave({ status: 'running', di: currentDay, w: currentWeek, startMs: Date.now(), startedAt: Date.now(), accumMs: 0, pausas: 0 });
   renderWtCard();
 }
@@ -21420,7 +21552,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v547';
+    var APP_SHELL_V = 'metodo-gh-v548';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
