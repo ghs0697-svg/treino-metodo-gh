@@ -1078,6 +1078,7 @@
   .const-dot span { font-size: 8.5px; font-weight: 700; letter-spacing: .4px; color: #6f6a60; }
   .const-dot i { width: 13px; height: 13px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.18); background: transparent; font-style: normal; display: flex; align-items: center; justify-content: center; font-size: 8px; color: transparent; }
   .const-dot.feito i { background: var(--gold); border-color: var(--gold); color: #0c0c0d; font-weight: 800; }
+  .const-dot.pulado i { background: transparent; border: 1.5px dashed var(--gold); color: var(--gold); font-weight: 800; }   /* v554: fechou o dia com exercício pulado */
   .const-dot.hoje span { color: var(--gold); }
   .const-dot.parcial i { border-color: var(--gold); background: rgba(212,175,106,.16); color: transparent; }   /* v539: registrou carga/série, não fechou o dia */
   .const-dot.hoje i { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(212,175,106,.22); }
@@ -4429,14 +4430,14 @@
   </div>
 
   <div class="accomp-card">
-    <h4>🔥 Sequência de Treinos</h4>
+    <h4>🔥 Teus treinos</h4>
     <div class="streak-grid">
-      <div class="streak-stat"><div class="num" id="streakCurrent">0</div><div class="lbl">Atual</div></div>
-      <div class="streak-stat"><div class="num" id="streakLongest">0</div><div class="lbl">Recorde</div></div>
-      <div class="streak-stat"><div class="num" id="streakTotal">0</div><div class="lbl">Total dias</div></div>
+      <div class="streak-stat"><div class="num" id="streakCurrent">0</div><div class="lbl">Treinos fechados</div></div>
+      <div class="streak-stat"><div class="num" id="streakLongest">0</div><div class="lbl">Semanas seguidas</div></div>
+      <div class="streak-stat"><div class="num" id="streakTotal">0</div><div class="lbl">Neste mês</div></div>
     </div>
-    <p style="color:#888;font-size:11px;margin:10px 0 0;line-height:1.4;">Conta 1 a cada dia em que tu marca todos os exercícios do treino como ✓. Dia de descanso não tira nada: treino fechado fica contado.</p>
-    <p style="color:#666;font-size:10px;margin:6px 0 0;line-height:1.4;font-style:italic;">Sequências e dias treinados são compartilhados com a equipe pra ranking de premiação mensal.</p>
+    <p style="color:#888;font-size:11px;margin:10px 0 0;line-height:1.4;">Treino fechado é o dia em que tu marca todos os exercícios como ✓, e fica contado pra sempre. Dia de descanso não tira nada. Semanas seguidas são as semanas em que tu bateu a meta do teu protocolo, uma atrás da outra.</p>
+    <p style="color:#666;font-size:10px;margin:6px 0 0;line-height:1.4;font-style:italic;">Os dias treinados entram no ranking de premiação do mês.</p>
   </div>
 
   <div class="accomp-card" id="pesoCard">
@@ -6389,6 +6390,10 @@ const I18N_EN = {
   'Panturrilha': 'Calves', 'PANTURRILHA': 'CALVES', 'Abdômen': 'Abs', 'ABDÔMEN': 'ABS',
   'Antebraço': 'Forearms', 'ANTEBRAÇO': 'FOREARMS', 'Adutores': 'Adductors', 'Abdutores': 'Abductors',
   'constância da semana': 'weekly consistency', 'Iniciar treino': 'Start workout', 'Pausar': 'Pause',
+  'Treinos fechados': 'Workouts done', 'Semanas seguidas': 'Weeks in a row', 'Neste mês': 'This month', 'treinos fechados': 'workouts done', 'treino fechado': 'workout done',
+  'vazada: treinou, mas não fechou o dia (marca todos os ✓)': 'hollow: trained but did not close the day (tick every ✓)',
+  'tracejada: fechou com exercício pulado (fora do ranking)': 'dashed: closed with a skipped exercise (not in the ranking)',
+  'vazada: não fechou · tracejada: com pulado': 'hollow: not closed · dashed: with a skip',
   'Cronômetro do treino': 'Workout timer', 'Recomeçar semana do zero': 'Restart the week',
   'Modo treino: um exercício por vez': 'Focus mode: one exercise at a time',
   'dose convencional': 'standard dose', 'Salvar': 'Save', 'Estilo da logo': 'Logo style', 'Clássica': 'Classic', 'Monograma': 'Monogram', 'Linha': 'Line',
@@ -6547,6 +6552,7 @@ const I18N_RX = [
   [/^Hoje: (\d+)\/(\d+) exercícios(.*)$/, 'Today: $1/$2 exercises$3'],
   [/^Este treino na semana (\d+): (.+)$/, 'This workout in week $1: $2'],
   [/^🔥 (\d+) dias?$/, '🔥 $1 days'],
+  [/^🔥 (\d+) treinos?$/, '🔥 $1 workouts'],
   [/^⬇ Vídeos \((\d+) · (\d+)MB\)$/, '⬇ Videos ($1 · $2MB)'],
   [/^⬇ Baixando (\d+)\/(\d+)…$/, '⬇ Downloading $1/$2…'],
   [/^⚠ (\d+) falharam · tentar de novo$/, '⚠ $1 failed · try again'],
@@ -11152,7 +11158,7 @@ function updateDayProgress() {
   if (hero) hero.style.display = total > 0 ? 'block' : 'none';
   // Streak label
   const streak = getStreakDays();
-  document.getElementById('pgStreak').textContent = streak > 0 ? `🔥 ${streak} dia${streak === 1 ? '' : 's'}` : '';
+  document.getElementById('pgStreak').textContent = streak > 0 ? `🔥 ${streak} treino${streak === 1 ? '' : 's'}` : '';   // v554: é o total de treinos fechados (nunca zera), não uma sequência de dias
   // Meta da semana: dias fechados nesta semana vs a frequência do protocolo do aluno
   const mw = _metaSemanaInfo();
   const wEl = document.getElementById('pgWeek');
@@ -17243,7 +17249,7 @@ async function _cmpLoadImg(fid, imgId) {
   const falhou = () => { const el = document.getElementById(imgId); const ld = el && el.previousElementSibling; if (el && el.dataset.fid === String(fid) && ld && ld.classList.contains('cmp-photo-loading')) ld.textContent = 'Não consegui carregar essa foto. Toca em "Trocar foto" e escolhe de novo.'; };
   if (_cmpState.imgCache[fid]) { poe(_cmpState.imgCache[fid]); return; }
   try {
-    const resp = await fetch(`${LOG_ENDPOINT}?action=foto_img&fid=${encodeURIComponent(fid)}&_=${Date.now()}`, { cache:'no-store' });
+    const resp = await fetch(`${LOG_ENDPOINT}?action=foto_img&fid=${encodeURIComponent(fid)}&w=1280&_=${Date.now()}`, { cache:'no-store' });   // v554: foto de vários MB vinha inteira; agora vem na largura da tela
     const j = await resp.json();
     if (!j.ok) { falhou(); return; }
     const uri = 'data:' + (j.mime || 'image/jpeg') + ';base64,' + j.b64;
@@ -17524,9 +17530,14 @@ async function cmpShareExport() {
 // ══ Painel Streak ══
 function renderStreakPanel() {
   const s = getStreak();
+  // v554: os três números eram sempre IGUAIS (a regra é "treino fechado conta pra sempre", então atual = recorde = total).
+  // Agora: treinos fechados, semanas seguidas na meta do protocolo e treinos neste mês.
   document.getElementById('streakCurrent').textContent = s.current || 0;
-  document.getElementById('streakLongest').textContent = s.longest || 0;
-  document.getElementById('streakTotal').textContent = s.totalDaysDone || 0;
+  let _semSeg = 0, _noMes = 0;
+  try { _semSeg = _mtStreakSemanas(_freqSemanal()) || 0; } catch (_) {}
+  try { _noMes = _progDiasNoMes() || 0; } catch (_) {}
+  document.getElementById('streakLongest').textContent = _semSeg;
+  document.getElementById('streakTotal').textContent = _noMes;
 }
 
 // ══ Menu flutuante (Install + WhatsApp) ══
@@ -17796,14 +17807,17 @@ function _constDotsRender() {
   if (!el) return;
   try {
     const pref = `gh_logsent_${SHEET_ID}_`;
-    const feitos = new Set();
+    // v554: dia fechado com exercício pulado ("não consegui fazer") conta na tua semana, mas o ranking não pontua. Aqui ele
+    // aparecia igual a um dia completo e o aluno não entendia a diferença entre o app e o ranking. Agora a bolinha dele é
+    // tracejada, com a legenda dizendo o porquê. cheios = dia com pelo menos um treino fechado SEM pulado.
+    const feitos = new Set(), cheios = new Set();
     const ativos = _diasAtivos();   // v539
-    let temParcial = false;
+    let temParcial = false, temPulado = false;
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
       if (!k || k.indexOf(pref) !== 0) continue;
       const m = k.slice(pref.length).match(/^(\d{4}-\d{2}-\d{2})_d\d+_concl$/);
-      if (m) feitos.add(m[1]);
+      if (m) { feitos.add(m[1]); if (localStorage.getItem(k) !== 'p') cheios.add(m[1]); }
     }
     const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
     const seg = new Date(hoje); seg.setDate(hoje.getDate() - ((hoje.getDay() + 6) % 7));
@@ -17814,10 +17828,15 @@ function _constDotsRender() {
       const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
       const parcial = !feitos.has(key) && ativos.has(key);   // v539
       if (parcial) temParcial = true;
-      const cls = ['const-dot', feitos.has(key) ? 'feito' : '', parcial ? 'parcial' : '', d.getTime() === hoje.getTime() ? 'hoje' : ''].filter(Boolean).join(' ');
+      const pulado = feitos.has(key) && !cheios.has(key);   // v554
+      if (pulado) temPulado = true;
+      const cls = ['const-dot', feitos.has(key) ? 'feito' : '', pulado ? 'pulado' : '', parcial ? 'parcial' : '', d.getTime() === hoje.getTime() ? 'hoje' : ''].filter(Boolean).join(' ');
       html += `<div class="${cls}"><span>${rot[i]}</span><i>✓</i></div>`;
     }
-    el.innerHTML = html + '<span class="cd-lbl">' + (temParcial ? 'vazada: treinou, mas não fechou o dia (marca todos os ✓)' : 'constância da semana') + '</span>';
+    const _lblCD = (temPulado && temParcial) ? 'vazada: não fechou · tracejada: com pulado'
+      : temPulado ? 'tracejada: fechou com exercício pulado (fora do ranking)'
+      : temParcial ? 'vazada: treinou, mas não fechou o dia (marca todos os ✓)' : 'constância da semana';
+    el.innerHTML = html + '<span class="cd-lbl">' + _lblCD + '</span>';
     el.style.display = 'flex';
   } catch (_) { el.style.display = 'none'; }
 }
@@ -18134,7 +18153,7 @@ function _progBodyHtml(items, fmt) {
   const stat = (ic, val, label) => `<div class="pg-stat">${IC[ic]}<div class="v">${val}</div><div class="l">${label}</div></div>`;
   let html = `<div class="pg-stats">
     ${stat('cal', dias, 'treinos no mês')}
-    ${stat('fogo', streak.current || 0, 'sequência')}
+    ${stat('fogo', streak.current || 0, (streak.current || 0) === 1 ? 'treino fechado' : 'treinos fechados')}
     ${stat('tro', newPRs.length, newPRs.length === 1 ? 'recorde novo' : 'recordes novos')}
     ${stat('up', (bestPct > 0 ? '+' : '') + bestPct + '%', 'melhor evolução')}
   </div>`;
@@ -20881,6 +20900,44 @@ var _bootPromise = (async function () {
 })();
 async function _bootPeca_(k) { try { const b = await _bootPromise; return (b && b[k] != null && !b[k].error) ? b[k] : null; } catch (_) { return null; } }
 _bootPromise.then(function (b) { planBlockGate(b && b.planstatus); ghflixTabState(b && b.ghflix); _versaoMinimaChecar_(b && b.versaoMinima); });
+// v554: aparelho novo abria com o número de treinos, a meta da semana e do mês, a constância e os anéis ZERADOS, mesmo com
+// meses de treino registrados no servidor (essas marcas moravam só no aparelho). Quando este aparelho não tem NENHUMA marca
+// de dia concluído deste aluno, o app pede ao servidor os dias concluídos (treino, dieta, cardio) dos últimos 70 dias e
+// recoloca as marcas. Uma vez por aparelho. Precisa do servidor 2026-10-04b: antes disso a rota não existe e nada é chamado.
+async function _conclRestaura_(b) {
+  try {
+    if (!b || String(b.build || '') < '2026-10-04b') return;
+    if (typeof SHEET_ID === 'undefined' || !SHEET_ID) return;
+    const feito = 'gh_concl_rest_' + SHEET_ID;
+    if (localStorage.getItem(feito)) return;
+    const wid = (typeof STUDENT_ID !== 'undefined' && STUDENT_ID) ? STUDENT_ID : SHEET_ID;
+    const pT = 'gh_logsent_' + SHEET_ID + '_', pD = 'gh_dietlog_' + SHEET_ID + '_', pC = 'gh_cardio_' + wid + '_';
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i) || '';
+      if (((k.indexOf(pT) === 0 || k.indexOf(pD) === 0) && /_concl$/.test(k)) || k.indexOf(pC) === 0) { localStorage.setItem(feito, 'tinha'); return; }
+    }
+    const r = await fetch(LOG_ENDPOINT + '?action=concluidos&id=' + encodeURIComponent(SHEET_ID) + '&_=' + Date.now(), { cache: 'no-store' });
+    const j = await r.json();
+    if (!j || !j.ok) return;                       // não deu agora: tenta na próxima abertura
+    const c = new Date(); c.setDate(c.getDate() - 69);
+    const corte = c.getFullYear() + '-' + String(c.getMonth() + 1).padStart(2, '0') + '-' + String(c.getDate()).padStart(2, '0');
+    const hojeK = todayKey();
+    const dOk = d => /^\d{4}-\d{2}-\d{2}$/.test(d) && d >= corte && d <= hojeK;
+    const poe = (k, v) => { if (localStorage.getItem(k) == null) { localStorage.setItem(k, v); return 1; } return 0; };
+    let n = 0; const diasTr = new Set();
+    (j.treino || []).forEach(t => { const d = String((t && t[0]) || ''), di = parseInt(t && t[1], 10) - 1; if (!dOk(d) || !(di >= 0)) return; diasTr.add(d); n += poe(pT + d + '_d' + di + '_concl', t[2] === 'p' ? 'p' : '1'); });
+    (j.dieta || []).forEach(d => { d = String(d || ''); if (dOk(d)) n += poe(pD + d + '_concl', '1'); });
+    (j.cardio || []).forEach(d => { d = String(d || ''); if (dOk(d)) n += poe(pC + d, '1'); });
+    // o número de treinos fechados (o do topo) também morava só no aparelho
+    try {
+      const st = getStreak(), alvo = Math.max(parseInt(j.seq, 10) || 0, diasTr.size);
+      if (alvo > (st.current || 0)) { st.current = alvo; st.longest = alvo; st.totalDaysDone = alvo; localStorage.setItem(streakKey(), JSON.stringify(st)); }
+    } catch (_) {}
+    localStorage.setItem(feito, String(n));
+    if (n) { try { updateDayProgress(); } catch (_) {} try { renderStreakPanel(); } catch (_) {} }
+  } catch (_) {}
+}
+_bootPromise.then(function (b) { try { _conclRestaura_(b); } catch (_) {} });
 // v515 (GH 23/09: "força a atualização de todos"): AVISOS!E2 na mestre = versão mínima (ex.: 515). Shell abaixo dela faz
 // o mesmo que "Atualizar o app agora" (derruba service worker e caches, recarrega furando o cache), mas só quando o
 // aluno não está digitando nem no meio de descanso ou modo foco; senão tenta de novo em 1 min. Célula vazia = desligado.
@@ -21637,6 +21694,24 @@ function guardCicloHormonio(values) {
   return false;
 }
 
+// v554: as duas publicações do editor (painel e modo treinador) passam a mandar a senha do treinador. O servidor 2026-10-04b
+// recusa publicação sem ela quando o interruptor da AVISOS está ligado. Senha faltando ou errada neste aparelho: pede uma
+// vez e tenta de novo; se continuar errada, esquece a senha salva pra pedir de novo na próxima.
+async function _publicaAba_(url, corpo) {
+  const manda = async tok => {
+    const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({}, corpo, { token: tok })), redirect: 'follow' });
+    const txt = await resp.text();
+    let j = null; try { j = JSON.parse(txt); } catch (_) {}
+    return { resp: resp, txt: txt, j: j };
+  };
+  const recusou = r => !!(r.j && r.j.success !== true && /unauthorized/i.test(String(r.j.error || '')));
+  let r = await manda(localStorage.getItem('gh_trainer_token') || '');
+  if (recusou(r)) {
+    const t = _trainerToken_(true);
+    if (t) { r = await manda(t); if (recusou(r)) { try { localStorage.removeItem('gh_trainer_token'); } catch (_) {} } }
+  }
+  return r;
+}
 async function publishToSheet(tab) {
   const sheetId = document.getElementById('adminSheetId').value.trim();
   if (!sheetId) { alert('Preencha o ID da planilha do aluno.'); return; }
@@ -21648,12 +21723,8 @@ async function publishToSheet(tab) {
   statusEl.textContent = 'Publicando...';
   statusEl.style.display = 'inline';
   try {
-    const resp = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ sheetId, tab, values: data })
-    });
-    const text = await resp.text();
+    const _pb = await _publicaAba_(APPS_SCRIPT_URL, { sheetId, tab, values: data });   // v554: com a senha do treinador
+    const resp = _pb.resp, text = _pb.txt;
     let result;
     // v551: resposta que não é do servidor (página de login, cota, erro em HTML) virava "Publicado com sucesso" sem ter gravado nada
     try { result = JSON.parse(text); } catch(e) { throw new Error('o servidor não confirmou a gravação (resposta inesperada). Confere a planilha antes de publicar de novo'); }
@@ -21952,7 +22023,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v553';
+    var APP_SHELL_V = 'metodo-gh-v554';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -24306,16 +24377,10 @@ async function trainerSave() {
       while (out.length < cols) out.push('');
       return out.slice(0, cols);
     });
-    const payload = JSON.stringify({ sheetId: trainerSheetId, tab, values: data, skipDispatch: true });
-    console.log('[trainerSave]', tab, '— rows:', data.length, '— payload bytes:', payload.length);
-    const resp = await fetch(TRAINER_APPS_SCRIPT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: payload,
-      redirect: 'follow'
-    });
+    const _pb = await _publicaAba_(TRAINER_APPS_SCRIPT, { sheetId: trainerSheetId, tab, values: data, skipDispatch: true });   // v554: com a senha do treinador
+    const resp = _pb.resp;
     if (!resp.ok) throw new Error(`HTTP ${resp.status} ${resp.statusText}`);
-    const txt = await resp.text();
+    const txt = _pb.txt;
     let ok = false, errMsg = '';
     try { const j = JSON.parse(txt); ok = j.success; errMsg = j.error || ''; } catch (_) { errMsg = txt.slice(0, 300); }
     btn.textContent = ok ? '✅ Salvo' : '❌ Falhou';
