@@ -2073,6 +2073,13 @@
     box-shadow: 0 0 18px var(--gold-glow);
   }
   .gh-top-card + .gh-top-card { margin-top: 10px; }
+  /* v549: nota geral da dieta e explicação do ciclo */
+  .diet-nota-card { margin: 0 14px 14px; box-shadow: none; }
+  .diet-nota-card + .diet-nota-card { margin-top: 0; }
+  .diet-nota-card .gh-top-card-title { margin-bottom: 6px; }
+  .diet-nota-txt { color: #d6d0c4; font-size: 13px; line-height: 1.6; white-space: pre-line; }
+  .diet-nota-txt + .diet-nota-txt { margin-top: 8px; }
+  .diet-ciclo-desc { margin: 10px 12px 0; padding: 9px 12px; border-left: 3px solid var(--gold); background: rgba(212,167,106,0.07); border-radius: 0 8px 8px 0; color: #cfc9bd; font-size: 12.5px; line-height: 1.5; }
   .gh-top-card-title {
     color: var(--gold); font-weight: 700; font-size: 14px;
     margin-bottom: 10px; letter-spacing: 0.3px;
@@ -2452,7 +2459,7 @@
     box-shadow: var(--hairline);
   }
   .diet-macro-title { color: var(--gold); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 11px; }
-  .diet-macro-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; }
+  .diet-macro-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(54px, 1fr)); gap: 6px; text-align: center; }
   .diet-macro-stat .v { font-size: 18px; font-weight: 700; color: var(--gold); line-height: 1.1; }
   .diet-macro-stat .v.kcal { color: var(--white); }
   .diet-macro-stat .l { font-size: 11px; color: var(--muted); margin-top: 3px; }
@@ -13485,9 +13492,21 @@ async function loadFromSheets(injectedText) {
     // v547: o dado do treino não veio. Mensagem em português com "tentar de novo" (o app instalado no iPhone não tem recarregar);
     // com dieta carregada, o app abre nela e a aba Treino fica com a mensagem em vez de tela vazia.
     _treinoErroMostra(dietLoaded && /Nenhum exerc|Planilha vazia/.test(String((err && err.message) || '')));
-    if (dietLoaded) { _showNav(); switchView('dieta'); }
+    if (dietLoaded) { _showNav(); switchView('dieta'); _soDietaExtras_(); }
     return false;
   }
+}
+// v549: quem não tem treino no app (plano só de dieta ou de protocolo) nunca passava pelo fim feliz da abertura do treino,
+// que é onde o app busca o recado em áudio, o selo "Protocolo X · dia N", o aviso de reajuste, o laudo e o aviso de fotos.
+let _soDietaExtrasFeito = false;
+function _soDietaExtras_() {
+  if (_soDietaExtrasFeito) return; _soDietaExtrasFeito = true;
+  try { loadAndShowLastModified(); } catch (_) {}
+  try { loadRecado(); } catch (_) {}
+  try { checkFotosBannerOnLoad(); } catch (_) {}
+  try { checkChatBannerOnLoad(); } catch (_) {}
+  try { loadLaudoDestaque(); } catch (_) {}
+  try { _instAvisoMaybe(); } catch (_) {}
 }
 function _treinoErroMostra(semTreino) {
   try {
@@ -13801,13 +13820,18 @@ function _buildDietaPrintHTML() {
 
   // Info card (kcal, objetivo, metas) — mesma regra do renderDiet: kcal sem número é objetivo
   let info = '';
-  const pdfKcalNum = /\d/.test(String((d.info && d.info.kcal) || ''));
-  if (d.info && d.info.kcal) info += `<tr><td><strong>${pdfKcalNum ? 'Calorias' : 'Objetivo'}</strong></td><td>${esc(d.info.kcal)}</td></tr>`;
+  const pdfKcalNum = _infoKcalTipo(d.info && d.info.kcal) === 'kcal';
+  if (d.info && d.info.kcal && _infoKcalTipo(d.info.kcal) !== 'oculta') info += `<tr><td><strong>${pdfKcalNum ? 'Calorias' : 'Objetivo'}</strong></td><td>${esc(d.info.kcal)}</td></tr>`;
   if (d.info && d.info.objetivo && (pdfKcalNum || String(d.info.objetivo).trim().toLowerCase() !== String(d.info.kcal || '').trim().toLowerCase())) info += `<tr><td><strong>Objetivo</strong></td><td>${esc(d.info.objetivo)}</td></tr>`;
   (d.metas || []).forEach(m => {
     info += `<tr><td><strong>${esc(m.campo)}</strong></td><td>${esc(m.valor)}${m.detalhe ? ' · ' + esc(m.detalhe) : ''}</td></tr>`;
   });
+  // v549: o PDF saía sem os macros do dia, sem a explicação da dieta e sem a do ciclo
+  (d.macroDia || []).forEach(m => { info += `<tr><td><strong>Macros do dia${m.label ? ' (' + esc(m.label) + ')' : ''}</strong></td><td>${esc([m.pcg, m.kcal].filter(Boolean).join(' · '))}${m.extra ? '<div class="pa-obs">' + esc(m.extra) + '</div>' : ''}</td></tr>`; });
+  if (d.macroPorque) info += `<tr><td><strong>Por que esses macros</strong></td><td>${esc(String(d.macroPorque).replace(/^por que esses macros[:\s]*/i, '').trim())}</td></tr>`;
   if (info) html += `<div class="pa-day"><h2 class="pa-day-title">Resumo</h2><table>${info}</table></div>`;
+  (d.notasGerais || []).forEach(n => { html += `<div class="pa-day">${n.titulo ? '<h2 class="pa-day-title">' + esc(n.titulo) + '</h2>' : ''}<table><tr><td>${esc(n.texto)}</td></tr></table></div>`; });
+  if (d.cicloNotas && d.cicloNotas.length) html += `<div class="pa-day"><h2 class="pa-day-title">Ciclo de carboidrato</h2><table>${d.cicloNotas.map(c => '<tr><td><strong>' + esc(c.titulo) + '</strong></td><td>' + esc(c.texto) + '</td></tr>').join('')}</table></div>`;
 
   // Regras gerais
   if (d.regras && d.regras.length) {
@@ -13820,7 +13844,7 @@ function _buildDietaPrintHTML() {
 
   // Refeições (por ciclo)
   (d.ciclos || []).forEach(cy => {
-    if (cy.nome) html += `<div class="pa-day"><h2 class="pa-day-title">${esc(cy.nome)}</h2></div>`;
+    if (cy.nome) html += `<div class="pa-day"><h2 class="pa-day-title">${esc(cy.nome)}</h2>${cy.desc ? '<div class="pa-obs">' + esc(cy.desc) + '</div>' : ''}${(cy.notas || []).map(n => '<div class="pa-obs">' + (n.titulo ? esc(n.titulo) + ': ' : '') + esc(n.texto) + '</div>').join('')}</div>`;
     (cy.refeicoes || []).forEach(ref => {
       let rows = '';
       const renderAlimentos = (arr, label) => {
@@ -14597,15 +14621,36 @@ function waterCount() { return parseInt(localStorage.getItem(waterKey()) || '0',
 function addWater(delta) {
   let n = waterCount() + delta;
   if (n < 0) n = 0;
-  if (n > 30) n = 30;
-  localStorage.setItem(waterKey(), String(n));
+  if (n > 50) n = 50;
+  try { localStorage.setItem(waterKey(), String(n)); } catch (_) {}
   renderWater();
 }
+// v549: a meta de água vem da DIETA (345 dietas trazem "Água: 3,5 litros por dia"; o app dava a meta por batida aos 2 L pra
+// todo mundo). Faixa ("3 a 4 litros") usa o piso. Sem número na dieta, segue 2 L.
+function _waterMetaLitros() {
+  try {
+    const D = (typeof DIET_DATA !== 'undefined' && DIET_DATA) ? DIET_DATA : null;
+    if (!D) return 2;
+    const fontes = [];
+    (D.metas || []).forEach(m => fontes.push([m.campo, (m.valor || '') + ' ' + (m.detalhe || '')]));
+    (D.regras || []).forEach(r => fontes.push([r.nome, (r.valor || '') + ' ' + (r.detalhe || '')]));
+    (D.orientacoes || []).forEach(o => fontes.push([o.categoria, o.texto || '']));
+    for (let i = 0; i < fontes.length; i++) {
+      if (!/^(?:á|a)gua\b|^hidrata/i.test(String(fontes[i][0] || '').trim())) continue;
+      const m = /(\d+(?:[.,]\d+)?)\s*(?:(?:a|ou|-)\s*\d+(?:[.,]\d+)?\s*)?(?:l\b|litros?\b)/i.exec(String(fontes[i][1] || ''));
+      if (m) { const v = parseFloat(m[1].replace(',', '.')); if (v >= 1 && v <= 8) return v; }
+    }
+  } catch (_) {}
+  return 2;
+}
+function _litrosTxt(v) { return String(Math.round(v * 10) / 10).replace('.', ','); }
 function renderWater() {
   const n = waterCount();
-  document.getElementById('waterCounter').textContent = n;
+  const elC = document.getElementById('waterCounter'), elM = document.getElementById('waterMeta');
+  if (elC) elC.textContent = n;
   const ml = n * 200; // copo padrão = 200ml
-  document.getElementById('waterMeta').textContent = `copos (200ml) hoje · ${(ml/1000).toFixed(1)}L · meta 10 (2L)${n >= 10 ? ' ✅' : ''}`;
+  const metaL = _waterMetaLitros(), metaCopos = Math.ceil(metaL * 1000 / 200 - 1e-9);
+  if (elM) elM.textContent = `copos (200ml) hoje · ${_litrosTxt(ml / 1000)} L · meta ${metaCopos} (${_litrosTxt(metaL)} L)${n >= metaCopos ? ' ✅' : ''}`;
 }
 
 // Notificação de hidratação
@@ -14627,6 +14672,27 @@ function urlBase64ToUint8Array(base64) {
   return out;
 }
 
+function _iosForaDoApp_() {
+  try { return /iPad|iPhone|iPod/.test(navigator.userAgent) && !((window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone); } catch (_) { return false; }
+}
+// v549: a atualização forçada do app apaga a inscrição de notificação junto com o registro antigo, e ninguém refazia: o
+// lembrete parava de chegar com o app fechado e o app seguia achando que estava tudo ligado. Na abertura, quem tem lembrete
+// ligado e permissão dada ganha a inscrição de volta, em silêncio.
+async function _pushConfereBoot_() {
+  try {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window) || Notification.permission !== 'granted') return;
+    if (localStorage.getItem('gh_pushOff') === '1') return;   // foi o ALUNO que desligou (botão da água): não religa por conta
+    let querLembrete = isWaterNotifOn();
+    if (!querLembrete) { try { const mp = _refHoras(); querLembrete = Object.keys(mp).some(k => mp[k] && mp[k].on && mp[k].h); } catch (_) {} }
+    if (!querLembrete) return;
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    const salvo = localStorage.getItem('gh_pushEndpoint') || '';
+    if (sub && salvo && sub.endpoint === salvo) return;   // inscrição viva e conhecida do servidor
+    await registerPushSubscription();
+  } catch (_) {}
+}
+setTimeout(function () { try { _pushConfereBoot_(); } catch (_) {} }, 15000);
 async function registerPushSubscription() {
   if (!('serviceWorker' in navigator)) return { ok: false, reason: 'no-sw' };
   if (!('PushManager' in window)) return { ok: false, reason: 'no-pushmanager' };
@@ -14663,6 +14729,7 @@ async function registerPushSubscription() {
       return { ok: false, reason: 'subscribe-server-' + resp.status + ': ' + txt.substring(0, 80) };
     }
     localStorage.setItem('gh_pushEndpoint', sub.endpoint);
+    try { localStorage.removeItem('gh_pushOff'); } catch (_) {}
     return { ok: true };
   } catch (e) {
     console.warn('registerPushSubscription falhou:', e);
@@ -14672,13 +14739,19 @@ async function registerPushSubscription() {
 
 async function unregisterPushSubscription() {
   try {
+    try { localStorage.setItem('gh_pushOff', '1'); } catch (_) {}   // v549: marca que o desligamento foi escolha do aluno
     const endpoint = localStorage.getItem('gh_pushEndpoint');
     if (endpoint) {
-      await fetch(PUSH_API_BASE + '/subscribe', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ endpoint })
-      });
+      // v549: sem sinal o pedido falhava e a função saía antes de cancelar a inscrição no aparelho: o lembrete seguia chegando
+      // com o botão desligado. Agora o aparelho cancela de qualquer jeito.
+      try {
+        await fetch(PUSH_API_BASE + '/subscribe', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ endpoint }),
+          keepalive: true
+        });
+      } catch (_) {}
       localStorage.removeItem('gh_pushEndpoint');
     }
     if ('serviceWorker' in navigator) {
@@ -14711,6 +14784,8 @@ async function toggleWaterNotif() {
   let pushResult = { ok: false, reason: 'no-permission' };
   if (nativeOk) {
     pushResult = await registerPushSubscription();
+  } else if (_iosForaDoApp_()) {
+    pushResult = { ok: false, reason: 'ios-not-installed' };   // v549: no Safari do iPhone nem existe a permissão; a orientação de instalar nunca aparecia
   }
 
   localStorage.setItem(waterNotifKey(), '1');
@@ -14721,13 +14796,14 @@ async function toggleWaterNotif() {
   if (pushResult.ok) {
     msg = '🔔 Lembrete ativado!\n\nVai receber notificação a cada hora (8h-22h), mesmo com o app fechado.';
   } else if (pushResult.reason === 'ios-not-installed') {
-    msg = '⚠️ Pra notificação fora do app no iPhone, primeiro instala como app:\n\n1. Toca em Compartilhar (quadrado com seta no Safari)\n2. Adicionar à Tela de Início\n3. Abre o app pelo ÍCONE da tela inicial (não pelo Safari)\n4. Ativa o lembrete de novo\n\nEnquanto isso, mostro banner quando o app estiver aberto.';
+    msg = '⚠️ Pra notificação chegar com o app fechado no iPhone, primeiro instala o app:\n\n1. Toca em Compartilhar (quadrado com seta no Safari)\n2. Adicionar à Tela de Início\n3. Abre o app pelo ÍCONE da tela inicial (não pelo Safari)\n4. Ativa o lembrete de novo\n\nEnquanto isso, te aviso aqui na tela quando o app estiver aberto.';
   } else if (pushResult.reason === 'no-pushmanager') {
-    msg = 'Teu navegador não suporta Web Push. Vou mostrar banner enquanto o app estiver aberto.\n\n(Push fora do app só funciona em iOS 16.4+ Safari como PWA, ou Chrome/Firefox/Edge.)';
+    msg = 'Lembrete ativado. Esse navegador não manda notificação com o app fechado, então te aviso aqui na tela enquanto o app estiver aberto.';
   } else if (nativeOk) {
-    msg = 'Lembrete ativado por aqui, mas o registro pro push fora do app falhou.\n\nMotivo: ' + (pushResult.reason || 'desconhecido') + '\n\nVou mostrar banner enquanto o app estiver aberto.';
+    msg = 'Lembrete ativado. Não consegui ligar a notificação com o app fechado agora (pode ser a internet): te aviso aqui na tela enquanto o app estiver aberto. Pra tentar de novo, desliga e liga o lembrete mais tarde.';
+    try { console.warn('[gh] notificação: ' + (pushResult.reason || '')); } catch (_) {}
   } else {
-    msg = 'Lembrete ativado por banner. Permissão de notificação não foi concedida.';
+    msg = 'Lembrete ativado aqui na tela. Pra receber com o app fechado, libera as notificações do app nos ajustes do celular e ativa de novo.';
   }
   alert(msg);
 }
@@ -14735,10 +14811,12 @@ function startWaterNotif() {
   if (window._waterNotifInt) clearInterval(window._waterNotifInt);
   window._waterNotifInt = setInterval(() => {
     if (!isWaterNotifOn()) return;
+    const _hAgua = new Date().getHours();
+    if (_hAgua < 8 || _hAgua >= 22) return;   // v549: sem lembrete de madrugada (o que chega com o app fechado também é das 8h às 22h)
     showWaterReminder();
-    // Tenta também a Notification nativa pra quem permitiu (notif do sistema)
+    // Notificação do sistema só pra quem NÃO tem a do app fechado registrada (com ela chegavam duas por hora)
     try {
-      if ('Notification' in window && Notification.permission === 'granted') {
+      if (!localStorage.getItem('gh_pushEndpoint') && 'Notification' in window && Notification.permission === 'granted') {
         new Notification('💧 Hora da água!', { body: 'Já tomou água? Marca +1 copo no app.', icon: 'icon-192.png' });
       }
     } catch (_) {}
@@ -14945,38 +15023,72 @@ function _normalizeFoodKey(nome) {
     .trim();
 }
 
+// v549: mais chaves gerais (o texto da dieta fala "Salada verde", "Legumes", "Frutas")
+Object.assign(_SHOPPING_CATS, { 'salada': 'legume', 'legume': 'legume', 'verdura': 'legume', 'vegetais': 'legume', 'fruta': 'fruta', 'carne': 'proteina', 'peito de peru': 'proteina', 'presunto': 'proteina', 'requeijao': 'proteina', 'pao de queijo': 'carbo', 'mel': 'carbo', 'geleia': 'carbo', 'cacau': 'outros', 'cafe': 'outros', 'blueberry': 'fruta', 'mirtilo': 'fruta', 'ameixa': 'fruta', 'framboesa': 'fruta', 'amora': 'fruta', 'caqui': 'fruta', 'figo': 'fruta', 'coco': 'fruta', 'acai': 'fruta', 'frutas vermelhas': 'fruta', 'pitaya': 'fruta', 'nectarina': 'fruta', 'beterraba': 'legume', 'margarina': 'gordura', 'oleo': 'gordura', 'oleaginosas': 'gordura', 'nuts': 'gordura', 'mix de sementes': 'gordura', 'porco': 'proteina', 'lombo': 'proteina', 'coxao': 'proteina', 'coracao de galinha': 'proteina', 'mucarela': 'proteina', 'paes': 'carbo', 'pipoca': 'carbo', 'sucrilhos': 'carbo' });
 function _shoppingCategory(nomeNorm) {
   if (_SHOPPING_CATS[nomeNorm]) return _SHOPPING_CATS[nomeNorm];
-  // tenta achar por substring (ex: "peito de frango grelhado" → "peito de frango" → proteina)
+  // v549: casa por PALAVRA INTEIRA (com plural) e vale a chave que aparece PRIMEIRO no nome (em português o substantivo vem
+  // na frente); empate, a mais longa. Era por pedaço de palavra, na ordem do dicionário: "salada temperada" caía em FRUTAS
+  // (casava "pera") e "pão de queijo" em PROTEÍNAS.
+  const txt = ' ' + String(nomeNorm || '').replace(/[^a-z0-9]+/g, ' ').trim() + ' ';
+  let best = null;
   for (const key of Object.keys(_SHOPPING_CATS)) {
-    if (nomeNorm.includes(key)) return _SHOPPING_CATS[key];
+    let i = txt.indexOf(' ' + key + ' ');
+    if (i < 0) i = txt.indexOf(' ' + key + 's ');
+    if (i < 0) continue;
+    if (!best || i < best.i || (i === best.i && key.length > best.len)) best = { i: i, len: key.length, cat: _SHOPPING_CATS[key] };
   }
-  return 'outros';
+  return best ? best.cat : 'outros';
 }
 
 function _buildShoppingList() {
   if (!DIET_DATA) return null;
   const d = DIET_DATA;
-  const seen = {}; // displayName → { cat, originalName }
+  const seen = {}; // chave sem acento → { cat, nome (como está na dieta), alts }
 
-  function addFood(nome) {
+  // v549: o nome que aparece é o que está na dieta, com acento (saía "Pao Frances", "Maca"). A célula pode trazer
+  // alternativas ("Carne (220g) | Frango (240g)", "Maçã ou Mamão"): a 1ª é o item, as outras vão do lado como "ou ...".
+  // Quantidade escrita no nome sai ("100g de arroz" virava "G De Arroz").
+  const semPar = t => String(t || '').replace(/[(\[][^)\]]*[)\]]/g, ' ');   // tira "(220g)" ANTES de separar as alternativas
+  const UNID = '(?:kg|g|ml|l|un(?:idades?)?|fatias?|colher(?:es)?(?:\\s+de\\s+(?:sopa|ch[áa]|sobremesa|caf[ée]))?|x[íi]caras?|copos?|doses?|scoops?|por[çc](?:[ãa]o|[õo]es)|dentes?|folhas?|latas?|potes?|pacotes?|sach[êe]s?)';
+  const GENERICO = /^(?:prote[ií]nas?|carboidratos?|carbos?|frutas?|gorduras?)$/i;
+  function limpa(n) {
+    return semPar(n)
+      .replace(/^\s*(?:prote[ií]nas?|carboidratos?|carbos?|frutas?|gorduras?|legumes?|verduras?|vegetais|saladas?)\s*:\s*/i, '')
+      .replace(/^\s*\d+\s*[.)]\s+/, '')
+      .replace(/^\s*[\d.,\/½¼¾]+\s*(?:kg|g|ml|l|un(?:idades?)?|fatias?|colher(?:es)?(?:\s+de\s+(?:sopa|ch[áa]|sobremesa|caf[ée]))?|x[íi]caras?|copos?|doses?|scoops?|por[çc](?:[ãa]o|[õo]es)|dentes?|folhas?|latas?|potes?|pacotes?|sach[êe]s?)?(?![a-zA-ZÀ-ÿ])\.?\s*(?:de\s+)?/i, '')
+      .replace(new RegExp('(?:\\s*[-.]\\s*|\\s+)[\\d.,\\/½¼¾]+\\s*' + UNID + '\\s*$', 'i'), '')   // quantidade no fim: "Arroz 80g", "Aveia - 10g"
+      .replace(/\s+[àa]\s+vontade\s*$/i, '')
+      .replace(/\s+/g, ' ').replace(/^[\s:,;.+\-]+|[\s:,;.+\-]+$/g, '').trim();
+  }
+  function addFood(nome, obs) {
     if (!nome) return;
-    const original = String(nome).trim();
-    const key = _normalizeFoodKey(original);
+    // "Aveia - 10g• Whey - 1 dose• Iogurte zero": bolinha separa INGREDIENTES (todos entram), não alternativas
+    if (/•/.test(String(nome))) { String(nome).split(/\s*•\s*/).forEach(p => { if (p.trim()) addFood(p, ''); }); return; }
+    let partes = semPar(nome).split(/\s*\|\s*|\s+ou\s+/i).map(limpa).filter(p => p && p.length >= 2);
+    // "Proteína (escolher 1)" com a lista escrita na observação: os alimentos são os da observação
+    if (partes.length === 1 && GENERICO.test(partes[0]) && /[a-zA-ZÀ-ÿ]{3,}/.test(String(obs || ''))) {
+      const daObs = semPar(obs).split(/\s*\|\s*|\s+ou\s+|\s*,\s*/i).map(limpa).filter(p => p && p.length >= 2 && !/^escolher\b/i.test(p));
+      if (daObs.length) partes = daObs;
+    }
+    if (!partes.length) return;
+    const principal = partes[0];
+    const key = _normalizeFoodKey(principal);
     if (!key || key.length < 2) return;
-    // capitaliza pra exibição
-    const display = key.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-    if (seen[display]) return;
-    seen[display] = { cat: _shoppingCategory(key), original: original };
+    if (!seen[key]) seen[key] = { cat: _shoppingCategory(key), nome: principal.charAt(0).toUpperCase() + principal.slice(1), alts: [] };
+    partes.slice(1).forEach(p => {
+      const k2 = _normalizeFoodKey(p);
+      if (k2 && k2 !== key && !seen[key].alts.some(a => _normalizeFoodKey(a) === k2)) seen[key].alts.push(p);
+    });
   }
 
   // Itera refeições — alimentos base + 1ª opção (alternativas o aluno escolhe).
   // Linhas de alternativa inline (alt) não são alimento de compra, ficam fora.
   d.ciclos.forEach(cy => {
     cy.refeicoes.forEach(ref => {
-      (ref.alimentos || []).forEach(a => { if (!a.alt) addFood(a.nome); });
+      (ref.alimentos || []).forEach(a => { if (!a.alt) addFood(a.nome, a.obs); });
       if (ref.opcoes && ref.opcoes.length > 0) {
-        ref.opcoes[0].alimentos.forEach(a => { if (!a.alt) addFood(a.nome); });
+        ref.opcoes[0].alimentos.forEach(a => { if (!a.alt) addFood(a.nome, a.obs); });
       }
     });
   });
@@ -14985,9 +15097,8 @@ function _buildShoppingList() {
   const grouped = {
     proteina: [], carbo: [], legume: [], fruta: [], gordura: [], outros: []
   };
-  Object.keys(seen).sort().forEach(name => {
-    const cat = seen[name].cat;
-    (grouped[cat] || grouped.outros).push(name);
+  Object.keys(seen).map(k => seen[k]).sort((a, b) => a.nome.localeCompare(b.nome, 'pt')).forEach(it => {
+    (grouped[it.cat] || grouped.outros).push(it.nome + (it.alts.length ? ' (ou ' + it.alts.join(', ') + ')' : ''));
   });
 
   // Suplementos vêm direto do DIET_DATA.supls (com dose, já estruturado)
@@ -15052,7 +15163,7 @@ function openShoppingListModal() {
 
   if (!anyItem) html = '<p style="color:#888;text-align:center;padding:20px;">Nenhum alimento encontrado na dieta.</p>';
 
-  html += `<div style="margin-top:18px;padding:8px 10px;background:rgba(212,167,106,0.08);border-left:3px solid var(--gold);border-radius:4px;font-size:11px;color:#aaa;line-height:1.5;">As quantidades da dieta são <strong>cozidas/preparadas</strong>. Compre o que precisar pra cobrir a semana de treino.</div>`;
+  html += `<div style="margin-top:18px;padding:8px 10px;background:rgba(212,167,106,0.08);border-left:3px solid var(--gold);border-radius:4px;font-size:11px;color:#aaa;line-height:1.5;">As quantidades da dieta são do alimento <strong>já cozido ou preparado</strong>. Compra o que precisar pra cobrir a tua semana.</div>`;
 
   c.innerHTML = html;
   teShow('shoppingListModal');
@@ -15076,7 +15187,7 @@ function _shoppingListAsText() {
     data.supls.forEach(s => { txt += `• ${s.nome}${s.dose ? ' · ' + s.dose : ''}\n`; });
     txt += '\n';
   }
-  txt += `_Quantidades da dieta são cozidas. Compre conforme sua semana._`;
+  txt += `_As quantidades da dieta são do alimento já cozido. Compra conforme a tua semana._`;
   return txt;
 }
 
@@ -15095,7 +15206,7 @@ async function copyShoppingList() {
     ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
     document.body.appendChild(ta); ta.select();
     try { document.execCommand('copy'); btn.textContent = '✅ Copiado!'; setTimeout(() => btn.textContent = '📋 Copiar', 1800); }
-    catch (_) { alert('Não consegui copiar, selecione o texto manualmente.'); }
+    catch (_) { alert('Não consegui copiar. Seleciona o texto e copia na mão.'); }
     document.body.removeChild(ta);
   }
 }
@@ -18367,7 +18478,7 @@ async function loadDietFromSheets(injectedText) {
     rows = r;
   }
   if (!rows) try {
-    rows = await tryFetch(false);
+    rows = await tryFetch(true);   // v549: sempre com fura-cache (a 1ª tentativa podia receber a dieta antiga do cache do navegador)
   } catch (e1) {
     // aba VAZIA (rows<3) é determinístico: fetch OK, sem conteúdo (aluno só treino).
     // Re-tentar não muda nada; sai silencioso sem 2ª request nem warn (higiene de log/rede).
@@ -18389,6 +18500,9 @@ async function loadDietFromSheets(injectedText) {
   }
   try {
     DIET_DATA = parseDietData(rows);
+    // v549: aluno SÓ de dieta (aba TREINO sem exercício) ficava com o nome "-" no app. Refeição, dia de dieta, cardio e pedido
+    // saíam sem nome, e a conclusão era descartada no servidor (nunca entrava no ranking). O nome do cabeçalho da dieta serve.
+    try { const _inD = document.getElementById('infoNome'), _nmD = String((DIET_DATA.info && DIET_DATA.info.nome) || '').trim(); if (_inD && _nmD && (!_inD.textContent.trim() || _inD.textContent.trim() === '-')) _inD.textContent = _nmD; } catch (_) {}
     // DECISÃO GH 2026-07-02: aluno treino-only/cortesia (ex. Meire, ~1/100) fica COM a aba DIETA
     // mesmo sem refeição. O "casco" (info + observações) carrega o card "O que observei no teu
     // caso", que é regra dura da Entregas (§8.E + auditor D6, personalização + base do áudio do
@@ -18432,10 +18546,17 @@ function parseDietData(rows) {
     receitas: [],        // linhas `dica` "Receita N · nome" (§8.B.6) — seção própria (GH 2026-07-05)
     aerobicos: [],
     protocolos: [],
+    notasGerais: [],     // v549: nota escrita antes da 1ª refeição ("Como a tua dieta foi pensada"): card próprio no topo
+    cicloNotas: [],      // v549: linhas "ciclo" que só explicam o rodízio (sem refeição própria)
     observacoes: []    // card "O que observei/ajustei" — 1ª linha c/ ":" = título
   };
+  // v549: junta as colunas preenchidas de uma linha (o leitor pegava só a primeira e o resto sumia da tela)
+  const _dj = function () { return Array.prototype.slice.call(arguments).map(function (x) { return String(x == null ? '' : x).trim(); }).filter(Boolean).join(' · '); };
+  // v549: observação escrita na 5ª coluna ("Escolher um", 45 dietas). Número puro ali é macro por alimento e fica de fora.
+  const _obsAlim = function (r) { const e = String(r[4] || '').trim(); return _dj(r[3], /[a-zA-ZÀ-ÿ]{3,}/.test(e) ? e : ''); };
+  const _ciclosVazios = [];
 
-  let currentCycle = { nome: null, refeicoes: [], notas: [] };
+  let currentCycle = { nome: null, desc: '', refeicoes: [], notas: [] };
   let currentRef = null;
   let currentOp = null;
   let hasCiclo = false;
@@ -18461,11 +18582,22 @@ function parseDietData(rows) {
         // pro ciclo de carbo.
         const _mc = (r[1] || '').trim();
         const _mcl = _mc.toLowerCase();
-        if (/^macros?\b/.test(_mcl) && (/\bdia\b/.test(_mcl) || /\bdi[aá]ri/.test(_mcl))) {
+        if (/^macros?\b/.test(_mcl)) {
+          // v549: vale pra "Macros" sem "do dia" também (31 dietas caíam na lista comum e 4 perdiam a gordura, que estava na
+          // 5ª coluna). As colunas preenchidas viram pedaços: P/C/G, kcal, e o que sobrar (explicação) vai embaixo do card.
           const _pl = (_mc.match(/\(([^)]+)\)/) || [])[1] || '';
-          const _lab = /alto|baixo|moder/i.test(_pl) ? _pl.trim() : '';   // rotula SO ciclo de carbo (ALTO/BAIXO), nao "(aproximado)"
-          data.macroDia.push({ label: _lab, pcg: (r[2] || '').trim(), kcal: (r[3] || '').trim() });
-          break;
+          const _lab = /alto|baixo|moder/i.test(_pl) ? _pl.trim() : ((_mc.replace(/\([^)]*\)/g, '').match(/\b(alto|baixo|moderado)\b/i) || [])[1] || '').toUpperCase();   // rotula SO ciclo de carbo (ALTO/BAIXO), nao "(aproximado)"
+          const _ped = [];
+          [r[2], r[3], r[4], r[5]].forEach(function (c) { String(c || '').split(/[·•|]|,\s*(?=[PCG]\b)/).forEach(function (t) { t = t.trim(); if (t) _ped.push(t); }); });
+          const _ehPcg = function (t) { return /^(?:[PCG]|prote[ií]nas?|carbo(?:idratos?)?s?|gorduras?)\b\s*[:\-]?\s*[~≈]?\s*\d/i.test(t); };
+          const _ehKc = function (t) { return /kcal/i.test(t) || /^[~≈]?\s*\d[\d.,]*$/.test(t); };
+          const _pcg = _ped.filter(_ehPcg), _kc = _ped.filter(function (t) { return !_ehPcg(t) && _ehKc(t); }), _ext = _ped.filter(function (t) { return !_ehPcg(t) && !_ehKc(t); });
+          if (_pcg.length) {
+            data.macroDia.push({ label: _lab, pcg: _pcg.join(' · '), kcal: _kc[0] || '', extra: _ext.concat(_kc.slice(1)).join(' · ') });
+            break;
+          }
+          // sem P/C/G legível mas é a linha "Macros do dia": segue no card como texto, igual sempre foi
+          if (/\bdia\b/.test(_mcl) || /\bdi[aá]ri/.test(_mcl)) { data.macroDia.push({ label: _lab, pcg: (r[2] || '').trim(), kcal: (r[3] || '').trim() }); break; }
         }
         if (/^por que/.test(_mcl) && /(macro|n[uú]mero)/.test(_mcl)) {
           data.macroPorque = (r[2] || '').trim() || (r[3] || '').trim();
@@ -18512,7 +18644,9 @@ function parseDietData(rows) {
       case 'ciclo':
         hasCiclo = true;
         if (currentCycle.refeicoes.length > 0) data.ciclos.push(currentCycle);
-        currentCycle = { nome: r[1] || '', refeicoes: [], notas: [] };
+        else if (currentCycle.nome) _ciclosVazios.push(currentCycle);   // v549: ciclo sem refeição = linha que só explica o rodízio
+        // v549: a explicação do ciclo (colunas C e D: "Aplicar no dia de costas. 1 a cada 3 dias") era descartada (19 alunos)
+        currentCycle = { nome: r[1] || '', desc: _dj(r[2], r[3]), refeicoes: [], notas: [] };
         currentRef = null;
         currentOp = null;
         break;
@@ -18540,7 +18674,7 @@ function parseDietData(rows) {
         break;
       }
       case 'alimento': {
-        const food = { nome: r[1] || '', qtd: r[2] || '', obs: r[3] || '' };
+        const food = { nome: r[1] || '', qtd: r[2] || '', obs: _obsAlim(r) };
         if (currentOp) currentOp.alimentos.push(food);
         else if (currentRef) currentRef.alimentos.push(food);
         break;
@@ -18553,7 +18687,7 @@ function parseDietData(rows) {
         // Receitas (§8.B.6): col B "Receita N · nome" (ou "Receita N. nome") sai das
         // Orientações e ganha seção própria — o GH não as achava no toggle (2026-07-05).
         const _cat = (r[1] || '').trim();
-        const _item = { categoria: r[1] || '', texto: r[3] || r[2] || '' };
+        const _item = { categoria: r[1] || '', texto: _dj(r[2], r[3]) };   // v549: junta C e D ("Doce opcional | 01 paçoca | Adicionar a uma refeição": a coluna C sumia em 142 linhas de 87 alunos)
         if (/^receitas?\b/i.test(_cat)) data.receitas.push(_item);
         else data.orientacoes.push(_item);
         break;
@@ -18563,10 +18697,15 @@ function parseDietData(rows) {
         data.aerobicos.push({ freq: r[1] || '', duracao: r[2] || '', obs: r[3] || '' });
         break;
       case 'nota':
-      case 'obs':
-        if (currentRef) currentRef.notas.push(r[1] || r[3] || '');
-        else currentCycle.notas.push(r[1] || r[3] || '');
+      case 'obs': {
+        // v549: a nota pode ter título (col B) e texto (col C e D). Antes entrava só a primeira coluna preenchida: de
+        // "Como a tua dieta foi pensada | | texto" ficava o título, e ainda numa lista que a tela nunca mostrou (29 alunos).
+        const _nb = String(r[1] || '').trim().replace(/[:\s]+$/, ''), _nr = _dj(r[2], r[3]);
+        if (!_nb && !_nr) break;
+        if (currentRef) currentRef.notas.push(_nb && _nr ? _nb + ': ' + _nr : (_nb || _nr));
+        else (hasCiclo ? currentCycle.notas : data.notasGerais).push({ titulo: _nb && _nr ? _nb : '', texto: _nr || _nb });
         break;
+      }
       case 'proto':
         data.protocolos.push({ nome: r[1] || '', dose: r[2] || '', obs: r[3] || '' });
         break;
@@ -18586,7 +18725,7 @@ function parseDietData(rows) {
       default:
         // Empty col A with content in B = food item (new simplified format)
         if (secao === '' && (r[1] || '').trim() !== '') {
-          const food = { nome: r[1] || '', qtd: r[2] || '', obs: r[3] || '' };
+          const food = { nome: r[1] || '', qtd: r[2] || '', obs: _obsAlim(r) };
           if (currentOp) currentOp.alimentos.push(food);
           else if (currentRef) currentRef.alimentos.push(food);
         }
@@ -18596,6 +18735,14 @@ function parseDietData(rows) {
 
   // Push last cycle
   if (currentCycle.refeicoes.length > 0) data.ciclos.push(currentCycle);
+  else if (currentCycle.nome) _ciclosVazios.push(currentCycle);
+  // v549: planilha que usa as linhas "ciclo" como TABELA de explicação (Dia BAIXO / Dia ALTO / Como girar) e escreve as
+  // refeições uma vez só. O último "ciclo" ficava de título das refeições e a explicação dos outros sumia (6 alunos).
+  if (_ciclosVazios.length && data.ciclos.length <= 1) {
+    const _cx = data.ciclos[0];
+    data.cicloNotas = _ciclosVazios.concat(_cx && _cx.nome ? [{ nome: _cx.nome, desc: _cx.desc }] : []).map(function (c) { return { titulo: String(c.nome || '').replace(/^[\-\s]+|[\-\s]+$/g, ''), texto: c.desc || '' }; }).filter(function (c) { return c.titulo || c.texto; });
+    if (_cx) { _cx.nome = ''; _cx.desc = ''; }
+  }
 
   return data;
 }
@@ -18745,7 +18892,8 @@ function _cardioTreinoMount(d, cardioFromOrient, temCardio) {
   html += `<div class="diet-section-content" id="cardioContent">`;
   if (d.aerobicos && d.aerobicos.length > 0) {
     d.aerobicos.forEach(function (a) {
-      html += `<div class="diet-orient"><span class="diet-orient-cat">Aeróbico</span><span class="diet-orient-text">${a.freq} · ${a.duracao}${a.obs ? ' · ' + a.obs : ''}</span></div>`;
+      // v549: só as colunas preenchidas (51 alunos viam "Cardio ·  · 4x na semana"), e sem repetir "Cardio" depois do rótulo
+      html += `<div class="diet-orient"><span class="diet-orient-cat">Aeróbico</span><span class="diet-orient-text">${_dx([a.freq, a.duracao, a.obs].map(x => String(x || '').trim()).filter(x => x && !/^(cardio|aer[oó]bicos?)$/i.test(x)).join(' · '))}</span></div>`;
     });
   }
   (cardioFromOrient || []).forEach(o => {
@@ -19111,8 +19259,10 @@ function _refNorm(s) {
 }
 function _refNomesAtuais() {
   try {
-    const cy = DIET_DATA && DIET_DATA.ciclos && DIET_DATA.ciclos[0];
-    return ((cy && cy.refeicoes) || []).map(r => String(r.nome || '').trim());
+    // v549: manda o ciclo com MAIS refeições (ciclo 1 com 5 e ciclo 2 com 6: o horário da 6ª era apagado a cada abertura)
+    let best = [];
+    ((DIET_DATA && DIET_DATA.ciclos) || []).forEach(cy => { const rf = (cy && cy.refeicoes) || []; if (rf.length > best.length) best = rf; });
+    return best.map(r => String(r.nome || '').trim());
   } catch (_) { return []; }
 }
 // Re-encaixa os horários salvos nos índices atuais da dieta, casando pelo nome.
@@ -19154,6 +19304,8 @@ async function _refHorasBoot() {
     let map = _refHoras();
     const temLocal = Object.keys(map).length > 0;
     if (!temLocal) {
+      if (window._refHorasConsultou) return;   // v549: uma consulta por sessão (era uma a cada render da dieta pra quem não tem horário definido)
+      window._refHorasConsultou = true;
       const resp = await fetch(PUSH_API_BASE + '/meal-times?studentId=' + encodeURIComponent(SHEET_ID) + '&_=' + Date.now(), { cache: 'no-store' });
       const j = await resp.json().catch(() => null);
       const times = (j && j.ok && Array.isArray(j.times)) ? j.times : [];
@@ -19180,7 +19332,10 @@ async function _refHorasBoot() {
 }
 function _refNome(ri) {
   try {
-    const cy = DIET_DATA && DIET_DATA.ciclos && DIET_DATA.ciclos[0];
+    // v549: nome pela refeição do ciclo que o aluno está vendo; se esse ciclo não tem a posição, o primeiro que tiver
+    const cs = (DIET_DATA && DIET_DATA.ciclos) || [];
+    const at = cs[_dietCycleIdx || 0];
+    const cy = (at && at.refeicoes && at.refeicoes[ri]) ? at : cs.find(c => c && c.refeicoes && c.refeicoes[ri]);
     const nome = cy && cy.refeicoes && cy.refeicoes[ri] && cy.refeicoes[ri].nome;
     return String(nome || ('Refeição ' + (ri + 1))).replace(/\s+/g, ' ').trim();
   } catch (_) { return 'Refeição ' + (ri + 1); }
@@ -19250,6 +19405,7 @@ async function salvarRefHora() {
     } catch (_) {}
     let push = { ok: false, reason: 'no-permission' };
     if (nativeOk) push = await registerPushSubscription();
+    else if (_iosForaDoApp_()) push = { ok: false, reason: 'ios-not-installed' };   // v549
     if (push.ok) {
       _refToast('Lembrete ativado', (ajustou ? 'Encaixei em ' + h + ' (o lembrete sai de 10 em 10 min). ' : '') + 'Te aviso nesse horário, mesmo com o app fechado. 🤝');
     } else if (push.reason === 'ios-not-installed') {
@@ -19272,7 +19428,7 @@ function removerRefHora() {
 function _refHoraChipRefresh(ri) {
   // re-render só dos chips dessa refeição (um por ciclo), sem reconstruir a dieta
   document.querySelectorAll('.diet-meal-card').forEach(card => {
-    const nao = card.querySelector(`#dmnao-${ri}`);
+    const nao = card.querySelector(`.dm-nao[data-nao-ri="${ri}"]`);
     if (!nao) return;
     const chip = card.querySelector('.dm-hora');
     if (chip) chip.outerHTML = _refHoraChipHtml(ri);
@@ -19305,6 +19461,7 @@ function _refTickLembrete() {
     Object.keys(map).forEach(ri => {
       const r = map[ri];
       if (!r || !r.on || r.h !== hm) return;
+      if (isMealDone(parseInt(ri, 10))) return;   // v549: refeição já marcada não ganha "tá na hora"
       const k = 'gh_refnotif_' + SHEET_ID + '_' + dia + '_' + ri;
       if (localStorage.getItem(k) === '1') return;
       localStorage.setItem(k, '1');
@@ -19319,6 +19476,26 @@ function _refTickLembrete() {
   } catch (_) {}
 }
 setInterval(_refTickLembrete, 45000);
+// v549: chaves de UM DIA (refeição feita, "não rolou", água, cardio, lembrete tocado) ganhavam uma por dia e ninguém apagava.
+// Sai o que tem mais de 70 dias (as telas de progresso leem até o mês anterior). Uma vez por dia.
+function _faxinaChavesDiarias_() {
+  try {
+    const hoje = todayKey();
+    if (localStorage.getItem('gh_faxina_dia') === hoje) return;
+    localStorage.setItem('gh_faxina_dia', hoje);
+    const corte = Date.now() - 70 * 86400000;
+    const re = /^gh_(?:meal|meallog|mealnao|mealnota|dietlog|dietciclo|dietshare|refnotif|water|cardio|cardioreg|cardiolog)_.*?_(\d{4})-(\d{1,2})-(\d{1,2})(?:_|$)/;
+    const apagar = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i), m = k && re.exec(k);
+      if (m && new Date(+m[1], +m[2] - 1, +m[3]).getTime() < corte) apagar.push(k);
+    }
+    apagar.forEach(k => { try { localStorage.removeItem(k); } catch (_) {} });
+  } catch (_) {}
+}
+setTimeout(_faxinaChavesDiarias_, 20000);
+// v549: "Meu plano: conferindo…" ficava pra sempre quando a resposta do plano não chegava (rede, cortesia)
+setTimeout(function () { try { var el = document.getElementById('maisPlanoTxt'); if (el && /conferindo/.test(el.textContent || '')) el.textContent = 'não consegui conferir agora'; } catch (_) {} }, 30000);
 function _refToast(titulo, texto) {
   let t = document.getElementById('refToast');
   if (t) t.remove();
@@ -19331,6 +19508,7 @@ function _refToast(titulo, texto) {
 }
 
 function openMealNao(ri, nome) {
+  nome = nome || _refNome(ri);   // v549: o nome saiu do onclick (aspas no nome da refeição quebravam o botão)
   let m = document.getElementById('mealNaoMenu');
   if (m) m.remove();
   m = document.createElement('div');
@@ -19339,7 +19517,7 @@ function openMealNao(ri, nome) {
   // pra DIETA_SINAIS (col Nota). Reabrir com a refeição já anotada mostra o motivo marcado e o texto salvo.
   const motivoAtual = _mealNaoMotivo(ri), notaAtual = _mealNota(ri);
   const esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
-  const bt = (m2, rot) => `<button onclick="registrarMealNao(${ri}, '${String(nome).replace(/'/g, "\\'")}', '${m2}')"${motivoAtual === m2 ? ' style="border-color:var(--gold);color:var(--gold);"' : ''}>${rot}${motivoAtual === m2 ? ' ✓' : ''}</button>`;
+  const bt = (m2, rot) => `<button onclick="registrarMealNao(${ri}, '${m2}')"${motivoAtual === m2 ? ' style="border-color:var(--gold);color:var(--gold);"' : ''}>${rot}${motivoAtual === m2 ? ' ✓' : ''}</button>`;
   m.innerHTML = `<div class="rs-menu-sheet">
     <div style="color:#a9a49b;font-size:12.5px;line-height:1.55;padding:2px 6px 4px;">A <b style="color:#f1ede4;">${esc(nome)}</b> não rolou hoje? Acontece, zero culpa. Me diz o porquê que o Gabriel usa isso pra deixar tua dieta mais fácil de seguir.</div>
     <textarea id="mealNaoNota" class="dm-nota-in" rows="2" maxlength="300" placeholder="O que tu comeu no lugar, ou o que aconteceu? (opcional)">${esc(notaAtual)}</textarea>
@@ -19347,6 +19525,7 @@ function openMealNao(ri, nome) {
     ${bt('sem_tempo', 'Sem tempo / correria')}
     ${bt('comi_outra_coisa', 'Comi outra coisa')}
     <div style="color:#6f6a62;font-size:11px;padding:2px 6px 6px;">Toca no motivo pra salvar. O que tu escreveu vai junto.</div>
+    ${motivoAtual ? `<button onclick="desfazerMealNao(${ri})">Desfazer: marquei sem querer</button>` : ''}
     <button class="rs-menu-cancel" onclick="document.getElementById('mealNaoMenu').remove()">Cancelar</button>
   </div>`;
   m.addEventListener('click', e => { if (e.target === m) m.remove(); });
@@ -19354,28 +19533,55 @@ function openMealNao(ri, nome) {
 }
 function _mealNotaKey(ri) { return `gh_mealnota_${STUDENT_ID}_${todayKey()}_r${ri}`; }
 function _mealNota(ri) { try { return localStorage.getItem(_mealNotaKey(ri)) || ''; } catch (_) { return ''; } }
-function _mealNotaMostra(ri) {   // linha "📝 ..." embaixo do cabeçalho da refeição, sem re-renderizar a dieta
+function _mealNotaMostra(ri) {   // linha "📝 ..." embaixo do cabeçalho da refeição (uma por ciclo), sem re-renderizar a dieta
   try {
-    const btn = document.getElementById('dmnao-' + ri); if (!btn) return;
-    const head = btn.closest('.diet-meal-header'); if (!head) return;
-    let el = document.getElementById('dmnota-' + ri);
     const nota = _mealNota(ri);
-    if (!nota) { if (el) el.remove(); return; }
-    if (!el) { el = document.createElement('div'); el.className = 'dm-nota'; el.id = 'dmnota-' + ri; head.insertAdjacentElement('afterend', el); }
-    el.textContent = '📝 ' + nota;
+    document.querySelectorAll('.dm-nao[data-nao-ri="' + ri + '"]').forEach(function (btn) {
+      const head = btn.closest('.diet-meal-header'); if (!head || !head.parentElement) return;
+      let el = head.parentElement.querySelector('.dm-nota[data-nota-ri="' + ri + '"]');
+      if (!nota) { if (el) el.remove(); return; }
+      if (!el) { el = document.createElement('div'); el.className = 'dm-nota'; el.setAttribute('data-nota-ri', String(ri)); head.insertAdjacentElement('afterend', el); }
+      el.textContent = '📝 ' + nota;
+    });
   } catch (_) {}
 }
-function registrarMealNao(ri, nome, motivo) {
+// v549: pinta o botão "não rolou?" e a anotação em TODAS as abas de ciclo (era só na primeira: na 2ª o aluno tocava, via o
+// aviso, o botão não mudava e ele mandava de novo)
+function _mealNaoPinta(ri) {
+  try {
+    const mot = _mealNaoMotivo(ri);
+    document.querySelectorAll('.dm-nao[data-nao-ri="' + ri + '"]').forEach(function (b) { b.textContent = mot ? 'anotado 🤝' : 'não rolou?'; b.classList.toggle('marcado', !!mot); });
+  } catch (_) {}
+  _mealNotaMostra(ri);
+}
+function _alunoNome_() { return (document.getElementById('infoNome')?.textContent || '').trim(); }
+// v549: tira o "não rolou" de uma refeição (toque sem querer, ou a refeição acabou sendo feita) e avisa a planilha com "desfeito"
+function _mealNaoLimpa(ri, avisa) {
+  let tinha = '';
+  try { tinha = _mealNaoMotivo(ri); localStorage.removeItem(_mealNaoKey(ri)); localStorage.removeItem(_mealNotaKey(ri)); } catch (_) {}
+  _mealNaoPinta(ri);
+  if (tinha && avisa) {
+    try { if (SHEET_ID && typeof LOG_ENDPOINT !== 'undefined') _enviaComFila_('dieta_sinal', { type: 'dieta_sinal', sheetId: SHEET_ID, studentName: _alunoNome_(), refeicao: _refNome(ri), motivo: 'desfeito', nota: '' }); } catch (_) {}
+  }
+  return !!tinha;
+}
+function desfazerMealNao(ri) {
+  const m = document.getElementById('mealNaoMenu'); if (m) m.remove();
+  _mealNaoLimpa(ri, true);
+  _ghToast('Desfeito. Essa refeição voltou ao normal.');
+}
+function registrarMealNao(ri, a, b) {
+  const motivo = (b === undefined) ? a : b, nome = (b === undefined) ? _refNome(ri) : a;
   let nota = '';
   try { const ta = document.getElementById('mealNaoNota'); nota = ta ? String(ta.value || '').trim().slice(0, 300) : ''; } catch (_) {}
   const m = document.getElementById('mealNaoMenu'); if (m) m.remove();
   try { localStorage.setItem(_mealNaoKey(ri), motivo); if (nota) localStorage.setItem(_mealNotaKey(ri), nota); else localStorage.removeItem(_mealNotaKey(ri)); } catch (_) {}
-  const btn = document.getElementById('dmnao-' + ri);
-  if (btn) { btn.textContent = 'anotado 🤝'; btn.classList.add('marcado'); }
-  _mealNotaMostra(ri);
+  // v549: "não rolou" e "Feita" não convivem na mesma refeição
+  try { if (isMealDone(ri)) { localStorage.removeItem(mealDoneKey(ri)); document.querySelectorAll(`.diet-meal-check[data-meal-ri="${ri}"]`).forEach(x => x.classList.remove('done')); updateDietProgress(); } } catch (_) {}
+  _mealNaoPinta(ri);
   try {
     if (SHEET_ID && typeof LOG_ENDPOINT !== 'undefined') {
-      _enviaComFila_('dieta_sinal', { type: 'dieta_sinal', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(), refeicao: nome, motivo: motivo, nota: nota });   // v545: com fila de reenvio
+      _enviaComFila_('dieta_sinal', { type: 'dieta_sinal', sheetId: SHEET_ID, studentName: _alunoNome_(), refeicao: nome, motivo: motivo, nota: nota });   // v545: com fila de reenvio
     }
   } catch (_) {}
   _ghToast(nota ? 'Anotado, sem culpa 🤝 O que tu escreveu vai junto pro Gabriel.' : 'Anotado, sem culpa 🤝 Amanhã segue o jogo. Se repetir muito, o Gabriel já ajusta essa refeição pra ti.');
@@ -19407,15 +19613,25 @@ function updateDietProgress() {
 }
 function onCheckMeal(ri) {
   const nv = !isMealDone(ri);
-  if (nv) localStorage.setItem(mealDoneKey(ri), '1'); else localStorage.removeItem(mealDoneKey(ri));
+  try { if (nv) localStorage.setItem(mealDoneKey(ri), '1'); else localStorage.removeItem(mealDoneKey(ri)); }
+  catch (_) { try { _semEspacoAvisa(); } catch (__) {} return; }   // v549: aparelho sem espaço não finge que marcou
   // atualiza TODAS as cópias do botão dessa refeição (cada ciclo renderiza a sua)
   document.querySelectorAll(`.diet-meal-check[data-meal-ri="${ri}"]`).forEach(b => b.classList.toggle('done', nv));
   updateDietProgress();
   if (nv) {
+    if (_mealNaoMotivo(ri)) _mealNaoLimpa(ri, true);   // v549: feita = o "não rolou" dela sai
     logMealRegistro(ri);                               // registra a refeição na planilha (backup granular)
     setTimeout(() => showMealPhotoCard(ri), 120);      // tirar foto + postar
-    if (allMealsDone()) notifyDietCompletion(false);   // dia de dieta cumprido (pontua no ranking)
+    _dietDiaFechou();                                  // dia de dieta cumprido (pontua no ranking)
   }
+}
+// v549: foto compartilhada ANTES de o dia fechar passa a contar quando ele fecha. O card promete "conta como desempate", e
+// quem postava a foto da 4ª refeição e marcava a 5ª sem foto ficava sem o crédito. A regra segue: só conta com o dia completo.
+function _dietShareKey() { return 'gh_dietshare_' + STUDENT_ID + '_' + todayKey(); }
+function _dietDiaFechou() {
+  if (!allMealsDone()) return;
+  notifyDietCompletion(false);
+  try { if (localStorage.getItem(_dietShareKey()) === '1') notifyDietCompletion(true); } catch (_) {}
 }
 // Registra CADA refeição marcada no servidor (aba REFEICOES) — backup granular, igual os dias de treino.
 // Dedup local por refeição/dia. Não pontua sozinho (o ranking conta o DIA completo via notifyDietCompletion);
@@ -19560,15 +19776,50 @@ async function mealPhotoShare() {
       const a = document.createElement('a'); a.href = _mealPhotoDataUrl; a.download = fname; a.click();
     }
     if (isCardio) notifyCardioCompletion(true);   // cardio compartilhado = pontua DOBRO no ranking
-    else { if (allMealsDone()) notifyDietCompletion(true); }   // dieta so pontua (dobro) se o DIA INTEIRO estiver feito (espelha o treino; antes creditava com 1 refeicao marcada)
+    else { try { localStorage.setItem(_dietShareKey(), '1'); } catch (_) {} if (allMealsDone()) notifyDietCompletion(true); }   // dieta so pontua (dobro) se o DIA INTEIRO estiver feito; v549: dia ainda aberto = conta quando fechar
   } catch (_) { /* cancelou o share */ }
   mealPhotoClose();
 }
 
+// v549: texto da planilha vai pro HTML da tela; "<" seguido de letra viraria marcação e engoliria o resto ("sal <meia colher")
+function _dx(s) { return String(s == null ? '' : s).replace(/<(?=[a-zA-Z\/!?])/g, '&lt;'); }
+// v549: o ciclo escolhido (Alto / Baixo) vale pro dia inteiro. Antes todo render voltava pro 1º, e a meta do dia mudava
+// conforme a aba aberta: em dia de carbo baixo (5 refeições) quem marcava na aba "Alto" (6) ficava em 5/6 e o dia não fechava.
+function _dietCicloKey() { return 'gh_dietciclo_' + STUDENT_ID + '_' + todayKey(); }
+function _dietCicloHoje(d) {
+  try { const n = parseInt(localStorage.getItem(_dietCicloKey()) || '0', 10) || 0; return (d && d.ciclos && n > 0 && n < d.ciclos.length) ? n : 0; } catch (_) { return 0; }
+}
+// v549: notas gerais da dieta ("Como a tua dieta foi pensada") e a explicação do rodízio de carboidrato, que a tela não mostrava
+function _renderNotasDieta(d) {
+  let h = '';
+  (d.notasGerais || []).forEach(function (n) {
+    h += '<div class="gh-top-card diet-nota-card">' + (n.titulo ? '<div class="gh-top-card-title">' + _dx(n.titulo) + '</div>' : '') + '<div class="diet-nota-txt">' + _dx(n.texto) + '</div></div>';
+  });
+  if (d.cicloNotas && d.cicloNotas.length) {
+    h += '<div class="gh-top-card diet-nota-card"><div class="gh-top-card-title">Ciclo de carboidrato</div>';
+    d.cicloNotas.forEach(function (c) { h += '<div class="diet-nota-txt"><b>' + _dx(c.titulo) + '</b>' + (c.texto ? (c.titulo ? ': ' : '') + _dx(c.texto) : '') + '</div>'; });
+    h += '</div>';
+  }
+  return h;
+}
+// v549: virou o dia com o app aberto: as marcas de ontem ("Feita", "anotado", água, cardio) saem da tela. Conferido ao
+// voltar pro app e de minuto em minuto.
+let _dietDiaRender = '';
+function _viradaDoDia_() {
+  try {
+    if (!_dietDiaRender || _dietDiaRender === todayKey()) return;
+    if (typeof DIET_DATA !== 'undefined' && DIET_DATA && dietLoaded) renderDiet();
+    try { renderWater(); } catch (_) {}
+    try { updateCardioProgress(); } catch (_) {}
+  } catch (_) {}
+}
+document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') _viradaDoDia_(); });
+setInterval(_viradaDoDia_, 60000);
 function renderDiet() {
   if (!DIET_DATA) return;
   const d = DIET_DATA;
-  _dietCycleIdx = 0;   // render abre sempre no 1o ciclo (aba ativa = 0); mantem a meta do dia em sincronia
+  _dietCycleIdx = _dietCicloHoje(d);   // v549: abre no ciclo que o aluno escolheu hoje (1º se ainda não escolheu)
+  _dietDiaRender = todayKey();
   const container = document.getElementById('dietContent');
   let html = '';
 
@@ -19579,8 +19830,10 @@ function renderDiet() {
   html += `<div class="diet-info-card">`;
   // Célula de kcal sem número = o montador escreveu o objetivo ali ("hipertrofia e
   // saúde mental"); rotular de "Calorias" parece bug pro aluno. Vira Objetivo.
-  const kcalEhNumero = /\d/.test(String(d.info.kcal || ''));
-  if (d.info.kcal) html += `<div class="diet-info-row"><span class="diet-info-label">${kcalEhNumero ? 'Calorias:' : 'Objetivo:'}</span><span class="diet-info-value">${d.info.kcal}</span></div>`;
+  // v549: só é "Calorias" se tem kcal ou um número de verdade (2.800); "(V4.0)" e "Protocolo Hormonal 2.0" tinham dígito e
+  // saíam como "Calorias: (V4.0)". Marca de versão sozinha nem aparece.
+  const _tkc = _infoKcalTipo(d.info.kcal), kcalEhNumero = _tkc === 'kcal';
+  if (d.info.kcal && _tkc !== 'oculta') html += `<div class="diet-info-row"><span class="diet-info-label">${kcalEhNumero ? 'Calorias:' : 'Objetivo:'}</span><span class="diet-info-value">${_dx(d.info.kcal)}</span></div>`;
   if (d.info.objetivo && (kcalEhNumero || String(d.info.objetivo).trim().toLowerCase() !== String(d.info.kcal || '').trim().toLowerCase())) html += `<div class="diet-info-row"><span class="diet-info-label">Objetivo:</span><span class="diet-info-value">${d.info.objetivo}</span></div>`;
   d.metas.forEach(m => {
     html += `<div class="diet-info-row"><span class="diet-info-label">${m.campo}:</span><span class="diet-info-value">${m.valor}${m.detalhe ? ' · ' + m.detalhe : ''}</span></div>`;
@@ -19590,6 +19843,7 @@ function renderDiet() {
   // Card "Meta de macros do dia" (item C, GH 2026-06-24) — render dedicado, NAO passa
   // pelo template de meta (que injeta travessao). So aparece se a dieta trouxer macro.
   if (d.macroDia && d.macroDia.length) html += _renderMacroDia(d);
+  html += _renderNotasDieta(d);   // v549
 
   // Ações rápidas da dieta — PDF + Lista de compras (padrão Shape de Elite)
   html += `<div class="diet-actions">
@@ -19633,7 +19887,7 @@ function renderDiet() {
     html += `<div class="diet-cycle-tabs" id="cycleTabs">`;
     d.ciclos.forEach((cy, ci) => {
       const nome = (cy.nome || `Ciclo ${ci + 1}`).replace(/^[—\-\s]+|[—\-\s]+$/g, '').trim() || `Ciclo ${ci + 1}`;
-      html += `<button class="diet-cycle-tab ${ci === 0 ? 'active' : ''}" onclick="selectDietCycle(${ci})">${nome}</button>`;
+      html += `<button class="diet-cycle-tab ${ci === _dietCycleIdx ? 'active' : ''}" onclick="selectDietCycle(${ci})">${_dx(nome)}</button>`;
     });
     html += `</div>`;
   }
@@ -19650,18 +19904,23 @@ function renderDiet() {
   d.ciclos.forEach((cy, ci) => {
     const prefix = `c${ci}_`;
     if (multiCiclo) {
-      html += `<div class="diet-cycle-content ${ci === 0 ? 'active' : ''}" id="cycleContent${ci}">`;
+      html += `<div class="diet-cycle-content ${ci === _dietCycleIdx ? 'active' : ''}" id="cycleContent${ci}">`;
     } else if (cy.nome) {
-      html += `<div class="diet-cycle-header">${cy.nome}</div>`;
+      html += `<div class="diet-cycle-header">${_dx(String(cy.nome).replace(/^[\-\s]+|[\-\s]+$/g, '') || cy.nome)}</div>`;
     }
+    // v549: explicação do ciclo ("Aplicar no dia de costas. 1 a cada 3 dias") e nota escrita antes da 1ª refeição dele
+    if (cy.desc) html += `<div class="diet-ciclo-desc">${_dx(cy.desc)}</div>`;
+    (cy.notas || []).forEach(n => { if (n && (n.texto || n.titulo)) html += `<div class="diet-ciclo-desc">${n.titulo ? '<b>' + _dx(n.titulo) + ':</b> ' : ''}${_dx(n.texto)}</div>`; });
 
     cy.refeicoes.forEach((ref, ri) => {
       const uid = `${prefix}${ri}`;
       const hasOps = ref.opcoes.length > 0;
       html += `<div class="diet-meal-card">`;
-      html += `<div class="diet-meal-header"><span class="dm-nome">${ref.nome}</span>${_refHoraChipHtml(ri)}<button type="button" class="dm-nao${_mealNaoMotivo(ri) ? ' marcado' : ''}" id="dmnao-${ri}" onclick="openMealNao(${ri}, '${String(ref.nome || '').replace(/'/g, "\\'")}')">${_mealNaoMotivo(ri) ? 'anotado 🤝' : 'não rolou?'}</button><button type="button" class="diet-meal-check${isMealDone(ri) ? ' done' : ''}" data-meal-ri="${ri}" onclick="onCheckMeal(${ri})" aria-label="Marcar refeição feita"><svg class="dm-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><svg class="dm-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span class="dm-txt">Feita</span></button></div>`;
-      if (_mealNota(ri)) html += `<div class="dm-nota" id="dmnota-${ri}">📝 ${String(_mealNota(ri)).replace(/&/g, '&amp;').replace(/</g, '&lt;')}</div>`;   // v537
-      if (ref.instrucao) html += `<div class="diet-meal-instruction">${ref.instrucao}</div>`;
+      // v549: o botão "não rolou?" e a anotação existem uma vez POR CICLO (aba Alto / Baixo): saíram os ids repetidos, que
+      // faziam o toque na 2ª aba atualizar só a 1ª. O nome da refeição não vai mais dentro do onclick (aspas quebravam o botão).
+      html += `<div class="diet-meal-header"><span class="dm-nome">${_dx(ref.nome)}</span>${_refHoraChipHtml(ri)}<button type="button" class="dm-nao${_mealNaoMotivo(ri) ? ' marcado' : ''}" data-nao-ri="${ri}" onclick="openMealNao(${ri})">${_mealNaoMotivo(ri) ? 'anotado 🤝' : 'não rolou?'}</button><button type="button" class="diet-meal-check${isMealDone(ri) ? ' done' : ''}" data-meal-ri="${ri}" onclick="onCheckMeal(${ri})" aria-label="Marcar refeição feita"><svg class="dm-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><svg class="dm-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span class="dm-txt">Feita</span></button></div>`;
+      if (_mealNota(ri)) html += `<div class="dm-nota" data-nota-ri="${ri}">📝 ${String(_mealNota(ri)).replace(/&/g, '&amp;').replace(/</g, '&lt;')}</div>`;   // v537
+      if (ref.instrucao) html += `<div class="diet-meal-instruction">${_dx(ref.instrucao)}</div>`;
 
       // Alimentos base SEMPRE visíveis (caso Paulo Lages: refeição mista com alimentos +
       // opções escondia os base e o almoço virava "só arroz"). Opções vêm depois, como abas.
@@ -19669,7 +19928,7 @@ function renderDiet() {
       if (hasOps) {
         html += `<div class="diet-option-tabs" id="optTabs${uid}">`;
         ref.opcoes.forEach((op, oi) => {
-          html += `<button class="diet-option-tab ${oi === 0 ? 'active' : ''}" onclick="selectDietOption('${uid}',${oi})">${op.nome}</button>`;
+          html += `<button class="diet-option-tab ${oi === 0 ? 'active' : ''}" onclick="selectDietOption('${uid}',${oi})">${_dx(op.nome)}</button>`;
         });
         html += `</div>`;
         ref.opcoes.forEach((op, oi) => {
@@ -19680,7 +19939,7 @@ function renderDiet() {
       }
 
       ref.notas.forEach(n => {
-        if (n) html += `<div class="diet-meal-note">${n}</div>`;
+        if (n) html += `<div class="diet-meal-note">${_dx(n)}</div>`;
       });
       html += `</div>`;
     });
@@ -19724,7 +19983,7 @@ function renderDiet() {
     html += `<div class="diet-section-toggle" onclick="toggleDietSection('orient')"><span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg></span><span class="tog-label">Orientações</span><span class="tog-chev" id="orientArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></div>`;
     html += `<div class="diet-section-content" id="orientContent">`;
     orientacoesReais.forEach(o => {
-      html += `<div class="diet-orient">${o.categoria ? `<span class="diet-orient-cat">${o.categoria}</span>` : ''}<span class="diet-orient-text">${o.texto}</span></div>`;
+      html += `<div class="diet-orient">${o.categoria ? `<span class="diet-orient-cat">${_dx(o.categoria)}</span>` : ''}<span class="diet-orient-text">${_dx(o.texto)}</span></div>`;
     });
     html += `</div>`;
   }
@@ -19794,22 +20053,30 @@ function renderFoodItem(a) {
   if (a.alt) {
     // linha de alternativa inline ("op" no meio da refeição): troca equivalente, não item novo
     return `<div class="diet-food-item diet-food-alt">
-      <div class="diet-food-main"><span class="diet-food-name">&#128260; ${a.nome}</span>${a.qtd ? `<span class="diet-food-qty">${a.qtd}</span>` : ''}</div>
-      ${a.obs ? `<div class="diet-food-obs">${a.obs}</div>` : ''}
+      <div class="diet-food-main"><span class="diet-food-name">&#128260; ${_dx(a.nome)}</span>${a.qtd ? `<span class="diet-food-qty">${_dx(a.qtd)}</span>` : ''}</div>
+      ${a.obs ? `<div class="diet-food-obs">${_dx(a.obs)}</div>` : ''}
     </div>`;
   }
   return `<div class="diet-food-item">
-    <div class="diet-food-main"><span class="diet-food-name">${a.nome}</span>${a.qtd ? `<span class="diet-food-qty">${a.qtd}</span>` : ''}</div>
-    ${a.obs ? `<div class="diet-food-obs">${a.obs}</div>` : ''}
+    <div class="diet-food-main"><span class="diet-food-name">${_dx(a.nome)}</span>${a.qtd ? `<span class="diet-food-qty">${_dx(a.qtd)}</span>` : ''}</div>
+    ${a.obs ? `<div class="diet-food-obs">${_dx(a.obs)}</div>` : ''}
   </div>`;
 }
 
 // ── Item C (GH 2026-06-24): render do macro do dia + porque + macro por refeicao ──
+function _infoKcalTipo(k) {
+  const t = String(k == null ? '' : k).trim();
+  if (!t) return 'oculta';
+  if (/^\(?\s*v\s*\d+(?:[.,]\d+)?\s*\)?$/i.test(t)) return 'oculta';                 // só a marca de versão
+  return (/kcal/i.test(t) || /\d{3,}/.test(t.replace(/[.,]/g, ''))) ? 'kcal' : 'objetivo';
+}
 function _renderMacroDia(d) {
   let h = `<div class="diet-macro-card"><div class="diet-macro-title">Meta de macros do dia</div>`;
   (d.macroDia || []).forEach(m => {
     if (m.label) h += `<div class="diet-macro-cyclabel">${m.label}</div>`;
-    h += _macroStatsGrid(m.pcg, m.kcal);
+    // v549: linha de macros sem as calorias (31 dietas) deixava a casa "kcal" vazia: com uma linha só, vale a caloria do cabeçalho
+    h += _macroStatsGrid(m.pcg, m.kcal || (((d.macroDia || []).length === 1 && d.info && /\d[\d.]*\s*kcal/i.test(String(d.info.kcal || ''))) ? String(d.info.kcal) : ''));
+    if (m.extra) h += `<div class="diet-macro-porque">${_dx(m.extra)}</div>`;   // v549: o que veio escrito junto dos macros
   });
   if (d.macroPorque) {
     const txt = String(d.macroPorque).replace(/^por que esses macros[:\s]*/i, '').trim();
@@ -19825,8 +20092,8 @@ function _macroStatsGrid(pcg, kcal) {
   let k = String(kcal || '').trim();
   toks.forEach(t => {
     if (/kcal/i.test(t)) { if (!k) k = t; return; }
-    const m = t.match(/^([PCG])\b\s*[:\-]?\s*(.+)$/i);
-    if (m) map[m[1].toUpperCase()] = m[2].trim();
+    const m = t.match(/^(P|C|G|prote[ií]nas?|carbo(?:idratos?)?s?|gorduras?)\b\s*[:\-]?\s*(.+)$/i);   // v549: "Proteína 195g" também
+    if (m && (m[1].length === 1 || /^[~≈]?\s*\d/.test(m[2]))) map[m[1].charAt(0).toUpperCase()] = m[2].trim();
   });
   const kdisp = k ? k.replace(/\s*kcal/ig, '').trim() : '';
   if (!(map.P || map.C || map.G)) {           // parse falhou: mostra o texto cru (sem grid)
@@ -19834,7 +20101,7 @@ function _macroStatsGrid(pcg, kcal) {
     return `<div class="diet-macro-rawline">${raw}</div>`;
   }
   const cell = (v, l, cls) => `<div class="diet-macro-stat"><div class="v${cls ? ' ' + cls : ''}">${v || ''}</div><div class="l">${l}</div></div>`;
-  return `<div class="diet-macro-stats">${cell(map.P, 'Proteína')}${cell(map.C, 'Carbo')}${cell(map.G, 'Gordura')}${cell(kdisp, 'kcal', 'kcal')}</div>`;
+  return `<div class="diet-macro-stats">${cell(map.P, 'Proteína')}${cell(map.C, 'Carbo')}${cell(map.G, 'Gordura')}${kdisp ? cell(kdisp, 'kcal', 'kcal') : ''}</div>`;   // v549: sem caloria conhecida, a casa "kcal" não aparece vazia
 }
 // v532 (GH 30/09/2026, Rodrigo Müller abre todo dia pelo Safari sem instalar): aviso pra instalar "pra otimizar o uso".
 // Só celular (iPhone/Android) fora do app instalado, nunca no 1º acesso (o tour vem primeiro), nunca por cima do tour, de um
@@ -20133,7 +20400,19 @@ function maisAnamnese() {
       window.open(REAJ_FORM, '_blank', 'noopener');
       return;
     }
-    if (!_proxReajusteBR || !/^\d{2}\/\d{2}\/\d{4}$/.test(_proxReajusteBR)) { _ghToast('A data do teu reajuste ainda não está no cadastro. Fala no WhatsApp do suporte que eu confiro.', 5200); return; }
+    // v549: quem já comprou a renovação (ou está na reta do vencimento) não responde a anamnese de REAJUSTE: a resposta seria
+    // descartada e ele preencheria tudo de novo na renovação. O aviso da tela já respeitava; esta entrada não.
+    if (_reajSuprimidoPorVenc()) {
+      if (_renovPendenteServidor) { _ghToast('Tua renovação já está registrada: o teu protocolo novo vem por ela, então a anamnese de reajuste não precisa ser respondida agora.', 7000); return; }
+      _ghToast('Teu plano está na reta do vencimento: agora o que vale é a renovação, não o reajuste.', 5200);
+      try { openRenovModal('mais_anamnese'); } catch (_) {}
+      return;
+    }
+    if (!_proxReajusteBR || !/^\d{2}\/\d{2}\/\d{4}$/.test(_proxReajusteBR)) {
+      // v549: nos primeiros segundos a data ainda não chegou do servidor: não manda o aluno pro suporte à toa
+      if (typeof performance !== 'undefined' && performance.now() < 20000) { _ghToast('Ainda estou carregando teus dados. Tenta de novo em alguns segundos.', 4200); return; }
+      _ghToast('A data do teu reajuste ainda não está no cadastro. Fala no WhatsApp do suporte que eu confiro.', 5200); return;
+    }
     var p = _proxReajusteBR.split('/').map(Number);
     var reaj = new Date(p[2], p[1] - 1, p[0]); reaj.setHours(0, 0, 0, 0);
     var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
@@ -20536,9 +20815,11 @@ function selectDietOption(uid, opIdx) {
 
 function selectDietCycle(idx) {
   _dietCycleIdx = idx;   // a meta de refeicoes do dia passa a contar por este ciclo
+  try { localStorage.setItem(_dietCicloKey(), String(idx)); } catch (_) {}   // v549: a escolha vale pro dia inteiro
   document.querySelectorAll('#cycleTabs .diet-cycle-tab').forEach((t, i) => t.classList.toggle('active', i === idx));
   document.querySelectorAll('[id^="cycleContent"]').forEach((c, i) => c.classList.toggle('active', i === idx));
   if (typeof updateDietProgress === 'function') updateDietProgress();   // atualiza a barra X/N pro ciclo escolhido
+  try { _dietDiaFechou(); } catch (_) {}   // v549: trocar pro ciclo certo do dia pode fechar o dia (5 de 5 no baixo)
 }
 
 function toggleDietSection(id) {
@@ -21552,7 +21833,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v548';
+    var APP_SHELL_V = 'metodo-gh-v549';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
