@@ -1533,7 +1533,9 @@
     #printArea .pa-day-title {
       font-size: 14px; font-weight: 700; background: #000; color: #fff;
       padding: 5px 10px; margin: 0 0 6px;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;   /* v555: sem isto, onde o navegador não imprime fundo o título saía branco no branco */
     }
+    #printArea .pa-legenda { font-size: 10px; color: #444; margin: 8px 2px 0; }
     #printArea table { width: 100%; border-collapse: collapse; font-size: 11px; }
     #printArea th, #printArea td {
       border: 1px solid #999; padding: 4px 6px; text-align: left; vertical-align: top;
@@ -1941,7 +1943,7 @@
   .mais-sep { font-size: 10px; font-weight: 700; letter-spacing: 1.2px; color: #6f6a60; margin: 12px 2px 8px; }
 
   /* ── TOUR DE PRIMEIRO ACESSO (spotlight: escurece tudo, destaca um feature por vez) ── */
-  #tourOverlay { position: fixed; inset: 0; z-index: 100060; display: none; }
+  #tourOverlay { position: fixed; inset: 0; z-index: 100060; display: none; touch-action: none; }   /* v555: arrastar o dedo no tutorial não rola a tela por baixo do destaque */
   #tourOverlay.show { display: block; }
   .tour-hole { position: absolute; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(0, 0, 0, .8); transition: all .32s ease; pointer-events: none; border: 1.5px solid rgba(212, 175, 106, .85); }
   .tour-tip { position: absolute; width: min(320px, calc(100vw - 28px)); background: #17150f; border: 1px solid rgba(212, 175, 106, .45); border-radius: 14px; padding: 14px 15px 12px; box-shadow: 0 10px 34px rgba(0, 0, 0, .6); transition: all .32s ease; }
@@ -3808,7 +3810,7 @@
       <circle id="pacerRingFill" cx="80" cy="80" r="70" fill="none" stroke="#D4AF37" stroke-width="7" stroke-linecap="round" stroke-dasharray="439.8" stroke-dashoffset="439.8" transform="rotate(-90 80 80)"/>
     </svg>
     <div class="pacer-center">
-      <div class="pacer-phase" id="pacerPhase">SOBE</div>
+      <div class="pacer-phase" id="pacerPhase">FORÇA</div>
       <div class="pacer-secs" id="pacerSecs">1,0</div>
       <div class="pacer-cue" id="pacerCue">explode e sopra o ar</div>
     </div>
@@ -6086,6 +6088,17 @@
 // ══════════════════════════════════════════════════════════════
 // ══ CONFIGURAÇÃO — lê parâmetros da URL ══
 // ══════════════════════════════════════════════════════════════
+// v555: com o armazenamento do navegador bloqueado (Safari com "Bloquear Todos os Cookies", modo restrito), o app parava
+// aqui, só com o cabeçalho na tela e sem explicação. Agora diz o que fazer.
+try { localStorage.getItem('gh_teste_armazenamento'); } catch (_eArm) {
+  try {
+    var _dvArm = document.createElement('div');
+    _dvArm.id = 'semArmazenamento';
+    _dvArm.setAttribute('style', 'position:fixed;inset:0;z-index:2147483000;background:#0c0c0d;color:#eee;display:flex;align-items:center;justify-content:center;padding:28px;text-align:center;font:15px/1.55 -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;');
+    _dvArm.innerHTML = '<div style="max-width:340px"><div style="font-size:19px;font-weight:800;color:#D4AF6A;margin-bottom:12px">O app não conseguiu abrir</div>Teu navegador está bloqueando o armazenamento, e é nele que ficam teus pesos e marcações.<br><br><b>No iPhone:</b> Ajustes, Safari, desliga "Bloquear Todos os Cookies".<br><b>No Android:</b> Chrome, Configurações, Configurações do site, Cookies, deixa permitido.<br><br>Depois fecha e abre o app de novo.</div>';
+    (document.body || document.documentElement).appendChild(_dvArm);
+  } catch (_) {}
+}
 const params = new URLSearchParams(window.location.search);
 let SHEET_ID = params.get('sheet');
 let TAB_NAME = params.get('tab');
@@ -6633,6 +6646,7 @@ function toggleLang() {
       fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ type: 'app_pref', sheetId: SHEET_ID, lang: novo, ts: new Date().toISOString() }), keepalive: true, redirect: 'follow' });
     }
   } catch (_) {}
+  try { if (typeof _flushSetsPendentes_ === 'function') _flushSetsPendentes_(true); } catch (_) {}   // v555: peso digitado e idioma trocado em seguida perdia o número
   setTimeout(() => location.reload(), 250);
 }
 function _langBtnRefresh() {
@@ -7268,7 +7282,7 @@ function _prescLinha(ex, isWarmup) {
     if (_rotP) return _prescTabelaHtml(ex, _tp, isWarmup);   // v506: bloco "Prescrição" espelhando a grade
     {
       if (ex.series) { const _ns = String(ex.series).replace(/\s*[xX]\s*$/, ''); p.push(_ns + (/^\s*0?1\s*$/.test(_ns) ? ' série' : ' séries')); }   // v553: "1 série"
-      if (ex.reps) p.push(/seg|min|\bs\b/i.test(String(ex.reps)) ? ex.reps : (ex.reps + ' reps'));   // "20 seg" nao vira "20 seg reps"
+      if (ex.reps) p.push((/seg|min|\bs\b/i.test(String(ex.reps)) || !/\d\s*$/.test(String(ex.reps))) ? ex.reps : (ex.reps + ' reps'));   // "20 seg" nao vira "20 seg reps"; v555: só ganha "reps" o texto que TERMINA em número ("até a falha" e "10 / até a falha" ficam como estão)
     }
     // v499: com chips, o intervalo vai sem o "·" (a borda do chip já separa) e não quebra no meio da frase
     if (ex.rest) p.push('<span class="gl' + (_rotP ? ' tp-int' : '') + '" onclick="event.stopPropagation();openGlossario(\'intervalo\')">' + ex.rest + ' de descanso</span>');   // v531 (Rodrigo Müller): "de intervalo" do lado do tempo da prancha confundia tempo com descanso
@@ -7435,7 +7449,7 @@ function _serieFraseHtml(ex, tp) {
       let txt = g.n + ' <span class="gl" onclick="event.stopPropagation();openGlossario(\'' + t + '\')">' + nome + '</span>';
       if (t === 'val') {
         const reps = String(_repsSegmento(ex, g.seg) || '').trim();
-        if (reps) txt += ' de ' + reps + (/seg|min|\bs\b/i.test(reps) ? '' : ' reps');
+        if (reps) txt += (/\d/.test(reps) ? ' de ' : ' ') + reps + ((/seg|min|\bs\b/i.test(reps) || !/\d\s*$/.test(reps)) ? '' : ' reps');   // v555: "2 válidas até a falha" (saía "de até a falha reps")
       }
       return txt;
     }).join(' + ');
@@ -7457,7 +7471,7 @@ function _prescTabelaHtml(ex, tp, isWarmup) {
     const rows = SERIE_TIPO_ORDEM.filter(t => grupos[t]).map(t => {
       const g = grupos[t];
       let reps = String(_repsSegmento(ex, g.seg) || '').trim();
-      if (reps && !/seg|min|\bs\b/i.test(reps)) reps += (reps === '1' ? ' rep' : ' reps');   // PAP: "1 rep"
+      if (reps && /\d\s*$/.test(reps) && !/seg|min|\bs\b/i.test(reps)) reps += (reps === '1' ? ' rep' : ' reps');   // PAP: "1 rep"; v555: só ganha "reps" o texto que termina em número ("até a falha" fica como está)
       const extra = t === 'val' ? (_exPorTempo(ex) ? 'segurar firme' : esf) : (SERIE_TIPO_CARGA[t] || '');   // v531: prancha não tem "sobrar"
       return '<div class="ept-row"><span class="ept-t t-' + t + '" onclick="event.stopPropagation();openGlossario(\'' + t + '\')" title="' + SERIE_TIPO_NOME[t] + '">' + SERIE_TIPO_CURTO[t] + '</span>'
         + '<span class="ept-n">' + g.n + (g.n === 1 ? ' série' : ' séries') + '</span><span class="ept-r">' + reps + '</span><span class="ept-c">' + extra + '</span></div>';
@@ -9721,7 +9735,7 @@ function _semanaAvisoHtml(di) {
   const ult = _semanaEhUltima();
   return '<div class="sem-aviso"><div class="sem-aviso-t">\u2705 Tu j\u00e1 concluiu este treino na Semana ' + currentWeek + ' (' + dBR + ').</div>'
     + '<div class="sem-aviso-p">Vai treinar ele de novo? ' + (ult
-      ? 'Recome\u00e7a a semana pra os exerc\u00edcios voltarem desmarcados.'
+      ? 'Recome\u00e7a a semana pros exerc\u00edcios voltarem desmarcados.'
       : 'Passa pra Semana ' + (currentWeek + 1) + ': os exerc\u00edcios voltam desmarcados e tuas cargas ficam de refer\u00eancia.') + '</div>'
     + '<button type="button" class="sem-aviso-btn" onclick="' + (ult ? 'openWeekReset()' : 'semanaProxima()') + '">' + (ult ? '\u21ba Recome\u00e7ar a semana' : 'Ir pra Semana ' + (currentWeek + 1) + ' \u2192') + '</button></div>';
 }
@@ -10514,7 +10528,7 @@ function onShareConfirmed() {
   if (typeof di !== 'number') return;
   if (alreadyClaimedToday(di)) return;
   markPointsClaimed(di);
-  notifyDayCompletion(di, true); // log de COMPARTILHAMENTO — vale 10 pts
+  notifyDayCompletion(di, true, _achData.dia); // registro de COMPARTILHAMENTO (vale 10 pts), com a data do treino
 }
 
 // Tenta abrir Stories Instagram direto via URL scheme + clipboard
@@ -10718,6 +10732,7 @@ function showCompletionCard(di) {
   }
   showAchievementCard('completion', {
     di: di, // index do dia, usado pra disparar notifyDayCompletion após o share
+    dia: todayKey(),   // v555: data em que o treino foi fechado (o compartilhamento usa esta, mesmo depois da meia-noite)
     day: di + 1,
     dayName: dayName,
     exercises: exercises,
@@ -10959,9 +10974,12 @@ function injectAffiliateUTM() {
 // shared=false → aluno só CONCLUIU o treino (vale 5 pts no ranking)
 // shared=true  → aluno COMPARTILHOU o card (vale 10 pts no ranking)
 // Cada um tem dedup próprio: um dia pode gerar 1 log de conclusão + 1 de share.
-function notifyDayCompletion(di, shared) {
+function notifyDayCompletion(di, shared, diaFixo) {
   const kind = shared ? 'share' : 'concl';
-  const dedupKey = `gh_logsent_${SHEET_ID}_${todayKey()}_d${di}_${kind}`;
+  // v555: fechou o treino 23:50 e compartilhou 00:10: o compartilhamento ia com a data do dia seguinte (sem conclusão nesse
+  // dia) e o dia do treino ficava sem o bônus. O cartão guarda a data em que o treino foi fechado e ela vem em diaFixo.
+  const _diaLog = (diaFixo && /^\d{4}-\d{2}-\d{2}$/.test(String(diaFixo))) ? String(diaFixo) : todayKey();
+  const dedupKey = `gh_logsent_${SHEET_ID}_${_diaLog}_d${di}_${kind}`;
   const day = WORKOUT[di];
   const _pulAgora = day ? day.exercises.reduce((a, ex, ei) => a + (!ex.warmup && isSkipped(di, ei) ? 1 : 0), 0) : 0;
   // v456: 'p' = este dia ja foi com exercicio pulado (o servidor grava treino_pulado e o ranking nao pontua).
@@ -10977,7 +10995,7 @@ function notifyDayCompletion(di, shared) {
     type: 'completion',
     sheetId: SHEET_ID,
     studentName: studentName,
-    date: todayKey(),
+    date: _diaLog,
     day: di + 1,
     totalEx: total,
     // v449: quantos o aluno fez e quantos marcou "não consegui fazer" (.gs 14b: pulados > 0 grava treino_pulado, fora do ranking)
@@ -11364,15 +11382,30 @@ function mmFlip() {
   if (c) c.classList.toggle('flip', _mmFlipped);
   if (navigator.vibrate) navigator.vibrate(15);
 }
+// v555: o sensor ficava ligado a sessão inteira e, a cada leitura (umas 60 por segundo), procurava o mapa e reescrevia o
+// estilo dele, mesmo com o mapa fora da tela (treino de 1 h no modo treino, aba Dieta). Agora: no máximo 20 leituras por
+// segundo, nada com a tela apagada ou o mapa fora da tela, e só escreve quando o valor muda.
+let _mmTiltTs = 0, _mmTiltVisTs = 0, _mmTiltVis = false, _mmTiltUlt = '';
 window.addEventListener('deviceorientation', function (e) {
+  if (e.beta == null || e.gamma == null) return;
+  const agora = Date.now();
+  if (agora - _mmTiltTs < 50 || document.hidden) return;
+  _mmTiltTs = agora;
   const t = document.getElementById('mmTilt');
-  if (!t || e.beta == null || e.gamma == null) return;
+  if (!t) return;
+  if (agora - _mmTiltVisTs > 600) {
+    _mmTiltVisTs = agora;
+    const r = t.getBoundingClientRect();
+    _mmTiltVis = r.width > 0 && r.bottom > 0 && r.top < (window.innerHeight || 0);
+  }
+  if (!_mmTiltVis) return;
   // beta ~45° segurando o celular: centraliza nessa pegada e limita a ±6°
   const tx = Math.max(-6, Math.min(6, (e.beta - 45) / 6));
   const ty = Math.max(-6, Math.min(6, e.gamma / 6));
-  _mmTiltX += ((-tx) - _mmTiltX) * 0.15;
-  _mmTiltY += ((ty) - _mmTiltY) * 0.15;
-  t.style.transform = 'rotateX(' + _mmTiltX.toFixed(2) + 'deg) rotateY(' + _mmTiltY.toFixed(2) + 'deg)';
+  _mmTiltX += ((-tx) - _mmTiltX) * 0.35;
+  _mmTiltY += ((ty) - _mmTiltY) * 0.35;
+  const tr = 'rotateX(' + _mmTiltX.toFixed(1) + 'deg) rotateY(' + _mmTiltY.toFixed(1) + 'deg)';
+  if (tr !== _mmTiltUlt) { _mmTiltUlt = tr; t.style.transform = tr; }
 }, { passive: true });
 
 // ══ Abertura cinematográfica ══
@@ -11674,7 +11707,10 @@ function _tourVeterano_() {
       const k = localStorage.key(i) || '';
       if (k.indexOf('gh_') !== 0) continue;
       if (!/^gh_(blk|wt|logsent)_/.test(k)) continue;
-      if (_tourTsDe_(localStorage.getItem(k)) >= limite) return true;
+      let _tsV = _tourTsDe_(localStorage.getItem(k));
+      // v555: no treino concluído a data está no NOME da chave (o valor é '1' ou 'p'), então essa evidência nunca contava
+      if (!_tsV) { const _md = k.match(/_(\d{4})-(\d{2})-(\d{2})_d\d+_/); if (_md) _tsV = new Date(+_md[1], +_md[2] - 1, +_md[3]).getTime(); }
+      if (_tsV >= limite) return true;
     }
   } catch (_) {}
   return false;
@@ -11718,9 +11754,14 @@ function reverTutorial() {
   switchView('treino');
   setTimeout(tourStart, 350);
 }
+// v555: os passos "Anota tuas cargas aqui" e "Sem o aparelho? Troca." pegavam o PRIMEIRO alvo do documento, que é do dia 1.
+// Com outro dia na tela ele está escondido e o passo era descartado. Agora procura primeiro no dia que está aberto.
+function _tourAlvo_(sel) {
+  try { return document.querySelector('.day-content.active ' + sel) || document.querySelector(sel); } catch (_) { return document.querySelector(sel); }
+}
 function tourStart() {
   const passos = _tourSteps().filter(s => {
-    const el = document.querySelector(s.sel);
+    const el = _tourAlvo_(s.sel);
     return el && (el.offsetParent !== null || getComputedStyle(el).position === 'fixed');
   });
   if (passos.length < 2) { _tourMarcaVisto(); return; }
@@ -11736,7 +11777,7 @@ function tourNext() {
   _tourIdx++;
   if (_tourIdx >= _tourPassos.length) { tourEnd(); return; }
   const s = _tourPassos[_tourIdx];
-  const el = document.querySelector(s.sel);
+  const el = _tourAlvo_(s.sel);
   if (!el) { tourNext(); return; }
   // Elemento fixo (barra inferior, botão flutuante) não precisa nem PODE rolar:
   // scrollIntoView nele salta pro fim do body e desenquadra tudo.
@@ -12007,9 +12048,12 @@ function openPacer(di, ei) {
   const act = (!ex.biset && typeof _exAtivo === 'function') ? _exAtivo(di, ei) : null;
   const cad = parseCadencia(_pacBase.obs);
   _pacPhases = [
-    { lab: 'SOBE', cue: 'explode e sopra o ar', dur: cad.conc, cls: '' },
-    { lab: 'SEGURA', cue: 'aperta a contração', dur: cad.iso, cls: 'iso' },
-    { lab: 'DESCE', cue: 'controla e puxa o ar', dur: cad.exc, cls: 'neg' }
+    // v555: na tela as fases viraram FORÇA / SEGURA / VOLTA. "SOBE" e "DESCE" enganavam em puxada e tríceps na polia, onde a
+    // fase de força é pra BAIXO (o aluno lia "DESCE 3 s" como puxar devagar e "SOBE 1 s" como soltar rápido, o inverso do
+    // método). lab segue sendo a chave interna (som e desenho); txt é o que aparece.
+    { lab: 'SOBE', txt: 'FORÇA', cue: 'explode e sopra o ar', dur: cad.conc, cls: '' },
+    { lab: 'SEGURA', txt: 'SEGURA', cue: 'aperta a contração', dur: cad.iso, cls: 'iso' },
+    { lab: 'DESCE', txt: 'VOLTA', cue: 'controla e puxa o ar', dur: cad.exc, cls: 'neg' }
   ].filter(p => p.dur > 0.05);
   if (!_pacPhases.length) return;
   _pacPh = 0; _pacT = 0; _pacReps = 0; _pacPaused = false;
@@ -12055,7 +12099,7 @@ function _pacWaveBuild() {
     const w = ws[i];
     const y1 = p.lab === 'SOBE' ? yTopo : (p.lab === 'DESCE' ? yBase : y);
     _pacSegs.push({ x0: x, y0: y, x1: x + w, y1: y1 });
-    if (w > 34) lbls.push({ x: x + w / 2, t: p.lab, i });
+    if (w > 34) lbls.push({ x: x + w / 2, t: p.txt || p.lab, i });
     x += w; y = y1;
   });
   // caminho com cantos arredondados: encurta cada reta perto do vértice e fecha com uma curva
@@ -12124,7 +12168,7 @@ function _pacBurst() {
 function _pacApplyPhase() {
   const p = _pacPhases[_pacPh];
   const ph = document.getElementById('pacerPhase');
-  ph.textContent = p.lab;
+  ph.textContent = p.txt || p.lab;
   ph.className = 'pacer-phase ' + p.cls;
   document.getElementById('pacerCue').textContent = p.cue;
   document.getElementById('pacerRingFill').setAttribute('class', p.cls);
@@ -12318,7 +12362,7 @@ function _progBaseDoSets(sets) {
   if (!Array.isArray(sets)) return null;
   for (let i = sets.length - 1; i >= 0; i--) {
     const s = sets[i] || {};
-    if (String(s.pl || '').trim()) return { pl: parseFloat(String(s.pl).replace(',', '.')), txt: String(s.pl).trim() + ' placas' };
+    if (String(s.pl || '').trim()) return { pl: parseFloat(String(s.pl).replace(',', '.')), txt: String(s.pl).trim() + (parseFloat(String(s.pl).replace(',', '.')) === 1 ? ' placa' : ' placas') };   // v555: "1 placa"
     if (String(s.kg || '').trim()) return { kg: parseFloat(String(s.kg).replace(',', '.')), txt: String(kgToDisplay(String(s.kg).trim())).replace('.', ',') + getUnit() };   // v546: na unidade do aluno (em libra saía o número em kg)
   }
   return null;
@@ -12338,7 +12382,7 @@ function _progUltReg(di, ei) {
 }
 function _progSugestao(nomeEx, base, esf) {
   if (esf === 'sobrou3') {
-    if (base.pl != null && !isNaN(base.pl)) return { tipo: 'sobe', prox: (base.pl + 1) + ' placas' };
+    if (base.pl != null && !isNaN(base.pl)) return { tipo: 'sobe', prox: (base.pl + 1) + ((base.pl + 1) === 1 ? ' placa' : ' placas') };
     if (base.kg != null && !isNaN(base.kg)) { const st = _progStepKg(nomeEx, base.kg); const _u = getUnit(); return { tipo: 'sobe', prox: String(kgToDisplay(String(Math.round((base.kg + st) * 10) / 10))).replace('.', ',') + _u, passo: _u === 'kg' ? '+' + st : '' }; }
     return null;
   }
@@ -12601,7 +12645,7 @@ function _focusRender() {
     html += `<span class="focus-badge">BI-SET: sem descanso entre A e B</span>`;
     html += `<div class="focus-name">${ex.a.name}</div>${vidBtn(ex.a)}<div class="focus-tags">${tags(ex.a)}</div>`;
     if (ex.a.obs) html += `<div class="focus-obs">${_glossWrap(ex.a.obs)}</div>`;
-    html += `<button class="focus-sub-btn" onclick="openPacer(_focusDi, _focusIdx)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Treinar no ritmo</button>`;
+    if (!_exPorTempo(ex.a)) html += `<button class="focus-sub-btn" onclick="openPacer(_focusDi, _focusIdx)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Treinar no ritmo</button>`;
     html += _focusCargaBlock(_focusDi, `${_focusIdx}a`, 'Carga A');
     html += `<div style="text-align:center;color:var(--gold);font-size:11px;font-weight:700;margin:10px 0;">↓ SEM DESCANSO ↓</div>`;
     html += `<div class="focus-name" style="font-size:20px;">${ex.b.name}</div>${vidBtn(ex.b)}`;
@@ -12617,7 +12661,7 @@ function _focusRender() {
     if (_falts) html += `<button class="focus-sub-btn" onclick="openSubPicker(${_focusDi}, ${_focusIdx})">🔄 Trocar exercício</button>`;
     html += `<div class="focus-tags">${tags(ex)}</div>`;
     if (ex.obs) html += `<div class="focus-obs">${_glossWrap(ex.obs)}</div>`;
-    html += `<button class="focus-sub-btn" onclick="openPacer(_focusDi, _focusIdx)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Treinar no ritmo</button>`;
+    if (!ex.warmup && !_exPorTempo(ex)) html += `<button class="focus-sub-btn" onclick="openPacer(_focusDi, _focusIdx)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Treinar no ritmo</button>`;
     if (!ex.warmup) { try { html += _progChipHtml(_focusDi, _focusIdx, _fact.name); } catch (_) {} }   // v548: a dica "hoje tenta X" também aparece no modo treino
     if (!ex.warmup) html += _focusCargaBlock(_focusDi, String(_focusIdx), 'Carga de hoje');
     if (!ex.warmup) html += _focusEsforcoBlock(_focusDi, String(_focusIdx));
@@ -12714,7 +12758,7 @@ function _histChartData(di, ei) {
     html = svg + `<div class="hist-chips">
       <span class="hist-chip">Início <b>${fmt(val(first))}</b></span>
       <span class="hist-chip">Atual <b>${fmt(val(last))}</b></span>
-      <span class="hist-chip pr">Recorde <b>${fmt(val(pr))}</b> · S${pr.w}</span>
+      <span class="hist-chip pr">Recorde <b>${fmt(val(pr))}</b> · sem ${pr.w}</span>
     </div>`;
   }
   let trendText = '', trendCls = '';
@@ -12925,7 +12969,7 @@ function evoRender(nome) {
     pts = hist.map(p => ({ x: p.d, y: p.kg }));
     sub.textContent = 'toda a tua história nesse exercício';
   } else {
-    pts = (_evoLocal[nome] || []).filter(p => sane(p.kg)).map(p => ({ x: 'S' + p.w, y: p.kg }));
+    pts = (_evoLocal[nome] || []).filter(p => sane(p.kg)).map(p => ({ x: 'Sem ' + p.w, y: p.kg }));   // v555: "Sem 3" (era "S3")
     sub.textContent = 'bloco atual';
   }
   chart.innerHTML = _lineChartSvg(pts, { fmt: fmt });
@@ -13065,7 +13109,7 @@ function parseCadencia(obs) {
   if (v !== null) { conc = v; custom = true; }
   return { conc, iso, exc, custom };
 }
-function fmtSec(n) { return Number.isInteger(n) ? String(n) : n.toFixed(1).replace(/\.0$/, ''); }
+function fmtSec(n) { return Number.isInteger(n) ? String(n) : n.toFixed(1).replace(/\.0$/, '').replace('.', ','); }   // v555: "Iso 0,5s" (saía "0.5s", com ponto)
 function cadenciaTag(obs) {
   const c = parseCadencia(obs);
   return `<span class="exercise-tag${c.custom ? ' tag-custom' : ''}" onclick="event.stopPropagation();openGlossario('cadencia')" title="Positiva (subida) · Isometria (pausa no topo) · Negativa (descida), em segundos">Pos ${fmtSec(c.conc)}s · Iso ${fmtSec(c.iso)}s · Neg ${fmtSec(c.exc)}s</span>`;
@@ -13758,7 +13802,7 @@ function renderExercises() {
             <span class="carga-saved" id="sv-${di}-${ei}">&#10003; salvo</span>
             <div class="ex-actions">
               <button class="ex-action-btn save-btn" onclick="event.stopPropagation(); saveSetsManual(${di}, '${ei}', this)" title="Salvar as séries agora (o app já salva sozinho enquanto tu digita; isto manda pro servidor na hora)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span class="ex-action-lbl">salvar</span></button>
-              <button class="ex-action-btn" onclick="event.stopPropagation(); openPacer(${di}, ${ei})" title="Treinar no ritmo (coach de cadência)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="ex-action-lbl">ritmo</span></button>
+              <button class="ex-action-btn"${_exPorTempo(ex) ? ' style="display:none"' : ''} onclick="event.stopPropagation(); openPacer(${di}, ${ei})" title="Treinar no ritmo (coach de cadência)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="ex-action-lbl">ritmo</span></button>
               <button class="ex-action-btn" onclick="event.stopPropagation(); startTimer('${safeName}', parseIntervalSeconds('${safeRest}'))" title="Cronômetro de descanso (${ex.rest || 'auto'})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="ex-action-lbl">descanso</span></button>
               <button class="ex-action-btn" onclick="event.stopPropagation(); showHistory(${di}, ${ei})" title="Histórico de cargas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg><span class="ex-action-lbl">histórico</span></button>
               <button class="ex-action-btn ex-mais" onclick="event.stopPropagation(); exMaisMenu(${di}, '${ei}')" title="Mais opções" aria-label="Mais opções deste exercício"><span style="font-size:15px;line-height:14px;letter-spacing:1px;">&#183;&#183;&#183;</span><span class="ex-action-lbl">mais</span></button>
@@ -13817,6 +13861,7 @@ function _buildTreinoPrintHTML() {
   const esc = _pdfEsc;
   const unit = (typeof getUnit === 'function') ? getUnit() : 'kg';
 
+  let _temTrocaPdf = false;   // v555: o asterisco do exercício trocado saía sem explicação
   const exRow = (ex, di, ei, label) => {
     const warm = ex.warmup ? ' class="pa-warm"' : '';
     // PDF sai com o exercício ATIVO (substituto se o aluno trocou). Componente de BI-SET (label A/B)
@@ -13824,6 +13869,7 @@ function _buildTreinoPrintHTML() {
     // exercício solto trocado contaminaria um componente de biset de mesmo nome, pois a chave é global).
     const isBisetComp = label === 'A' || label === 'B';
     const act = (!isBisetComp && typeof _exAtivo === 'function') ? _exAtivo(di, ei) : { name: ex.name, sub: false };
+    if (act.sub) _temTrocaPdf = true;
     const nome = esc(act.name) + (ex.warmup ? ' (aquecimento)' : '') + (act.sub ? ' *' : '');
     const carga = (typeof _cargaTopo === 'function') ? _cargaTopo(di, ei, currentWeek) : '';   // v544
     const placas = (typeof _placasTopo === 'function') ? _placasTopo(di, ei, currentWeek) : '';
@@ -13879,7 +13925,7 @@ function _buildTreinoPrintHTML() {
   return _pdfHeader('PROTOCOLO DE TREINO').replace(
     '<div><strong>Emitido:</strong>',
     `<div><strong>Semana:</strong> ${currentWeek}</div><div><strong>Emitido:</strong>`
-  ) + daysHtml + cardioHtml + `<div class="pa-foot">Gerado pelo app MÉTODO GH · app.metodogh.com.br</div>`;
+  ) + daysHtml + cardioHtml + (_temTrocaPdf ? '<div class="pa-legenda">* exercício que tu trocou no app. O original segue no teu protocolo.</div>' : '') + `<div class="pa-foot">Gerado pelo app MÉTODO GH · app.metodogh.com.br</div>`;
 }
 
 function _buildDietaPrintHTML() {
@@ -14362,7 +14408,7 @@ async function baixarVideosDoDia() {
   const b = document.getElementById('vidOffBtn');
   const vids = _vidsDoDia(currentDay);
   if (!vids.size) return;
-  if (!navigator.onLine) { alert('Precisa de internet pra baixar. Depois de baixado, toca sem.'); return; }
+  if (!navigator.onLine) { alert('Precisa de internet pra baixar. Depois de baixados, os vídeos tocam sem internet.'); return; }
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (_) {}
   b.disabled = true;
   let feitos = 0, falhas = 0;
@@ -14601,7 +14647,7 @@ function _videoFallbackNativo(motivo) {
     const hint = document.getElementById('videoFallbackHint'), mb = document.getElementById('videoFallbackBtn');
     const src = _vidOffUrl(_vidUrlAtual);
     const avisa = function (t) { if (hint) { hint.textContent = t; hint.style.display = 'block'; } };
-    const falhou = 'Esse v\u00eddeo n\u00e3o abriu aqui dentro (' + String(motivo || '') + '). Toca em "Abrir v\u00eddeo no YouTube".';
+    const falhou = 'Esse v\u00eddeo n\u00e3o abriu aqui dentro. Toca em "Abrir v\u00eddeo no YouTube".';   // v555: sem o código interno no aviso (ele já vai no registro de falha)
     if (mb) mb.style.display = 'none';
     if (!nat || !src) { avisa(falhou); return; }
     if (iframe) { iframe.onload = null; iframe.src = 'about:blank'; iframe.style.display = 'none'; }
@@ -20893,13 +20939,23 @@ var _bootPromise = (async function () {
   try {
     if (typeof SHEET_ID === 'undefined' || !SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return null;
     if (new URLSearchParams(location.search).get('edit') === '1') return null;
-    const r = await fetch(LOG_ENDPOINT + '?action=boot&id=' + encodeURIComponent(SHEET_ID) + '&_=' + Date.now(), { cache: 'no-store' });
+    // v555: sem limite de tempo, conexão presa deixava "Atualizado em", janela de fotos, tempos, recado e laudo esperando
+    // juntos pra sempre. 25 s (a abertura fria do servidor foi medida em 14 a 16 s): passou disso, cada peça busca sozinha.
+    const _acB = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    const _toB = _acB ? setTimeout(function () { try { _acB.abort(); } catch (_) {} }, 25000) : null;
+    const r = await fetch(LOG_ENDPOINT + '?action=boot&id=' + encodeURIComponent(SHEET_ID) + '&_=' + Date.now(), _acB ? { cache: 'no-store', signal: _acB.signal } : { cache: 'no-store' });
     const j = await r.json();
+    if (_toB) clearTimeout(_toB);
     return (j && j.ok) ? j : null;
   } catch (_) { return null; }
 })();
+// v555: a peça do GHFlix que veio com ERRO do servidor (não é "sem assinatura": é falha de leitura) travava a aba pro
+// assinante na sessão inteira. Só vale como resposta se liberou ou se o motivo é um dos de negócio; senão a aba consulta sozinha.
+function _ghflixPecaOk_(g) {
+  try { return !!(g && (g.liberado || /^(sem id nem email|cortesia vencida|aluno nao encontrado|assinatura vencida|sem assinatura ativa)$/.test(String(g.motivo || '')))); } catch (_) { return false; }
+}
 async function _bootPeca_(k) { try { const b = await _bootPromise; return (b && b[k] != null && !b[k].error) ? b[k] : null; } catch (_) { return null; } }
-_bootPromise.then(function (b) { planBlockGate(b && b.planstatus); ghflixTabState(b && b.ghflix); _versaoMinimaChecar_(b && b.versaoMinima); });
+_bootPromise.then(function (b) { planBlockGate(b && b.planstatus); ghflixTabState((b && _ghflixPecaOk_(b.ghflix)) ? b.ghflix : null); _versaoMinimaChecar_(b && b.versaoMinima); });
 // v554: aparelho novo abria com o número de treinos, a meta da semana e do mês, a constância e os anéis ZERADOS, mesmo com
 // meses de treino registrados no servidor (essas marcas moravam só no aparelho). Quando este aparelho não tem NENHUMA marca
 // de dia concluído deste aluno, o app pede ao servidor os dias concluídos (treino, dieta, cardio) dos últimos 70 dias e
@@ -21803,7 +21859,10 @@ function _sendAppPing() {
     // seguida; a versão nova nunca aparecia na ATIVIDADE e a adoção parecia pior do que era.
     var key = 'gh_ping_' + SHEET_ID + '_' + dia + '_' + (typeof window.GH_APP_V !== 'undefined' ? window.GH_APP_V : '');
     if (localStorage.getItem(key)) return;
-    localStorage.setItem(key, '1');
+    // v555: a marca de "já enviei hoje" entrava ANTES do envio. Abriu sem sinal de manhã = nenhum ping no dia, mesmo abrindo
+    // com sinal depois (e o aluno podia entrar na lista de sumidos). Agora marca só com a resposta do servidor.
+    if (window._ghPingIndo) return;
+    window._ghPingIndo = true;
     fetch(LOG_ENDPOINT, {
       method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
@@ -21818,7 +21877,7 @@ function _sendAppPing() {
           + '/' + (function () { try { return localStorage.getItem('gh_pushEndpoint') ? 'push' : 'sempush'; } catch (_) { return ''; } })()
       }),
       keepalive: true, redirect: 'follow'
-    }).catch(function () {});
+    }).then(function (r) { if (r && r.ok) { try { localStorage.setItem(key, '1'); } catch (_) {} } }).catch(function () {}).then(function () { window._ghPingIndo = false; });
   } catch (_) {}
 }
 
@@ -22023,7 +22082,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v554';
+    var APP_SHELL_V = 'metodo-gh-v555';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;

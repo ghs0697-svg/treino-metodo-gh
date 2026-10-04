@@ -1,4 +1,4 @@
-const CACHE_NAME = 'metodo-gh-v554';
+const CACHE_NAME = 'metodo-gh-v555';
 const ASSETS = [
   './',
   './index.html',
@@ -86,6 +86,9 @@ function _semNull_(p, req) {
 async function _gasFetch(req) {
   const r = await fetch(req, { cache: 'no-store' });
   if (req.method !== 'GET') return r;
+  // v555: a frase "sem action" só vem do Apps Script. Planilha (CSV do treino e da dieta) e outras respostas do Google passam
+  // direto, sem serem lidas duas vezes.
+  if (String(req.url || '').indexOf('script.google') === -1) return r;
   try {
     const txt = await r.clone().text();
     if (txt && txt.indexOf('sem action') !== -1) {
