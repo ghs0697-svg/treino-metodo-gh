@@ -7261,10 +7261,11 @@ function exMaisMenu(di, ei) {
     const alts = (!ex.biset && !ex.warmup) ? _alternativasNoDia(di, ei) : null;
     if (!ex.biset && !ex.warmup) add(alts ? 'Ver todas as opções de troca' : 'Pedir a troca pro Gabriel', () => alts ? openSubPicker(di, ei) : openSubFallback(di, ei));
     if (!ex.warmup) {
-      const arr = loadSets(di, eiS, currentWeek) || [];
-      const _minRem = _serieTemRotulo(ex) ? _serieCountPresc(ex) : 1;   // v497: grade rotulada só tira a linha EXTRA (rótulo é posicional)
-      if (arr.length < 12) add('Adicionar uma série', () => addSet(di, eiS));   // v523: o aluno abre série quando precisar (GH 25/09)
-      if (arr.length > _minRem) add('Remover a última série', () => removeSet(di, eiS, arr.length - 1));
+      // v544: conta pela grade salva completada até o prescrito (é o que está na tela). Antes o menu contava só o que estava
+      // salvo e mandava remover por esse índice: em "4 séries com 3 feitas", o 2º toque apagava a 3ª série, COM dado.
+      const _nLin = _setsBase(di, eiS).length;
+      if (_nLin < 12) add('Adicionar uma série', () => addSet(di, eiS));   // v523: o aluno abre série quando precisar (GH 25/09)
+      if (_nLin > _serieCountPresc(ex)) add('Remover a última série', () => removeSet(di, eiS, _setsBase(di, eiS).length - 1));   // só sai a série a mais; a prescrita fica
     }
     if (!ex.warmup && !ex.biset) add(isSkipped(di, ei) ? 'Desfazer "não consegui fazer"' : 'Não consegui fazer', () => onSkipExercise(di, ei));
     const c = document.createElement('button'); c.type = 'button'; c.className = 'rs-menu-cancel'; c.textContent = 'Fechar'; c.onclick = fecha;
@@ -7309,7 +7310,11 @@ function _corteAtivo() {
 // v518: a classe do body é "sem-corte". Na v517 era "corte-off", igual à classe dos spans, e a regra CSS que esconde os
 // spans escondia o body inteiro: tela branca pra todo aluno com Esforço-alvo 2 a 3, das 13:45 às 15:00 de 23/09.
 function _corteClasseBody_() { try { document.body.classList.remove("corte-off"); document.body.classList.toggle("sem-corte", !_corteAtivo()); } catch (_) {} }
-function _sugEl(di, ei) { return document.getElementById('sug-' + di + '-' + ei); }
+// v544: com o modo treino aberto, o aviso da série aparece DENTRO dele (antes ia pro card da lista, atrás da tela)
+function _sugEl(di, ei) {
+  try { const fo = document.getElementById('focusOverlay'); if (fo && fo.classList.contains('show')) { const e = fo.querySelector('[id="sug-' + di + '-' + ei + '"]'); if (e) return e; } } catch (_) {}
+  return document.getElementById('sug-' + di + '-' + ei);
+}
 function _sugLimpa(di, ei) { const e = _sugEl(di, ei); if (e) { e.style.display = 'none'; e.innerHTML = ''; } }
 function _sugMostra(di, ei, html) { const e = _sugEl(di, ei); if (!e) return; e.innerHTML = html; e.style.display = 'block'; }
 // Alvo de reps DESTA série: "8 a 12" = 12; "20 / 15 / 12 / 12" = o número da série (varia por série);
@@ -7455,6 +7460,20 @@ function _repsSegmento(ex, seg) {
 // Alvo de reps DESTA série: "8 a 12" = 12; "20 / 15 / 12 / 12" = o número da série (varia por série);
 // tempo ("20 seg") ou "até a falha" = sem alvo, e aí a série a mais nunca abre.
 // v496: com série rotulada ('1X aq / 1X aj / 2X val' e reps '10 / 6 / 8 a 10'), a linha 4 usa o segmento 3.
+// v544: faixa de reps da LINHA si da grade. Reps com barra casam por segmento da col SÉRIES quando as duas têm o mesmo
+// número de pedaços ('1X aq / 1X aj / 2X val' com '10 / 6 / 8 a 10'); senão casam linha a linha ('4X' com
+// '20 / 15 / 12 / 12'). Linha além do prescrito (série a mais) usa a última faixa.
+function _repsDaLinha(ex, si) {
+  try {
+    const t = String((ex && ex.reps) || '');
+    const rs = t.split('/').map(s => s.trim()).filter(s => /\d/.test(s));
+    if (rs.length <= 1) return t;
+    const tp = _serieTipos(ex);
+    const nSeg = String((ex && ex.series) || '').split('/').map(s => s.trim()).filter(Boolean).length;
+    if (nSeg > 1 && rs.length === nSeg) return (tp[si] && rs[tp[si].seg] != null) ? rs[tp[si].seg] : rs[rs.length - 1];
+    return rs[si] != null ? rs[si] : rs[rs.length - 1];
+  } catch (_) { return String((ex && ex.reps) || ''); }
+}
 function _repsAlvoDaSerie(ex, si) {
   try {
     const t = String((ex && ex.reps) || '');
@@ -7501,6 +7520,9 @@ function _sobrouSugere(di, ei, arr) {
       if (_aberta) return;
       _aberta = true;
       try {
+        // v544: no modo treino, se o aluno já passou pra outro exercício, não abre série no que ficou pra trás
+        const _fo = document.getElementById('focusOverlay');
+        if (_fo && _fo.classList.contains('show') && !_fo.querySelector('[id="sets-' + di + '-' + ei + '"]')) { delete _sugFeita[k]; return; }
         addSet(di, ei);
         _sugMostra(di, ei, explica + ' Abri outra série: faz de novo com mais carga, pra sobrar no máximo ' + lim + '.'
           + '<br><button type="button" class="und" onclick="_sugDesfaz(' + di + ', \'' + ei + '\')">desfazer</button>');
@@ -8025,21 +8047,64 @@ function saveSets(d, e, w, arr) {
     reps: (s && s.reps != null ? String(s.reps) : '').trim(),
     rs: (s && s.rs != null ? String(s.rs) : '').trim()   // "sobrou": reps que sobraram (percepção de esforço)
   }));
-  localStorage.setItem(setsKey(d, e, w) + sf, JSON.stringify(clean));
-  localStorage.setItem(blkKey(d, e, w) + sf, String(Date.now()));   // carimba: salvo agora = bloco atual
-  if (clean.some(x => x.kg || x.pl || x.reps)) _diaAtivoMarca(d);   // v539: dia com registro conta na constância (bolinha parcial)
-  if (!sf) _stampExn(d, e, w);
-  // ESPELHA a Série 1 nas chaves legadas (caminho de carga é sagrado: histórico/ranking/Ant/restore intactos)
   const s1 = clean[0] || { kg: '', pl: '' };
-  localStorage.setItem(storageKey(d, e, w) + sf, s1.kg || '');
-  localStorage.setItem(placasKey(d, e, w) + sf, s1.pl || '');
+  // v544: aparelho sem espaço (celular cheio, ou o da equipe, que abre muitos alunos) fazia a gravação falhar no meio: nada
+  // era salvo, nada subia pro servidor e ninguém ficava sabendo. Agora tenta liberar espaço (cache de protocolo de outros
+  // alunos), sobe pro servidor de qualquer jeito e avisa.
+  const _grava = () => {
+    localStorage.setItem(setsKey(d, e, w) + sf, JSON.stringify(clean));
+    // carimba: salvo agora = bloco atual. Nunca atrás do início do ciclo (celular com a data atrasada salvava como "ciclo
+    // anterior" e a grade sumia no repinte seguinte).
+    localStorage.setItem(blkKey(d, e, w) + sf, String(Math.max(Date.now(), CURRENT_BLOCK_START || 0)));
+    if (!sf) _stampExn(d, e, w);
+    // ESPELHA a Série 1 nas chaves legadas (caminho de carga é sagrado: histórico/ranking/Ant/restore intactos)
+    localStorage.setItem(storageKey(d, e, w) + sf, s1.kg || '');
+    localStorage.setItem(placasKey(d, e, w) + sf, s1.pl || '');
+  };
+  let _gravou = true;
+  try { _grava(); } catch (_e1) {
+    try { _liberaEspaco_(); _grava(); } catch (_e2) { _gravou = false; }
+  }
+  try { if (clean.some(x => x.kg || x.pl || x.reps)) _diaAtivoMarca(d); } catch (_) {}   // v539: dia com registro conta na constância (bolinha parcial)
   // sync numa POST só: carga+placas da S1 (legado) + JSON das séries (novo)
   syncCargaToServer_(d, e, w, s1.kg || '', s1.pl || '', JSON.stringify(clean));
-  // recorde armazenado nunca fica acima do que existe de verdade (corrigiu 255→25,5 = PR desce)
-  if (typeof _prReconcilia === 'function') _prReconcilia(d, e);
+  if (!_gravou) _semEspacoAvisa();
+  // recorde: só a grade que gerou o recorde pode rebaixá-lo (corrigiu 255 pra 25,5 = o recorde desce junto)
+  if (typeof _prReconcilia === 'function') _prReconcilia(d, e, w);
   // força estimada acompanha o que acabou de ser digitado (só o chip, não repinta a grade)
   if (typeof _atualizaForcaChip === 'function' && w === currentWeek) _atualizaForcaChip(d, e);
 }
+// v544: abre espaço no aparelho apagando só CACHE (o protocolo em texto de OUTROS alunos abertos neste navegador). Nunca
+// mexe em carga, marca de feito nem em nada do aluno atual: cache se refaz sozinho na próxima abertura.
+function _liberaEspaco_() {
+  const del = [];
+  for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.indexOf('gh_protocsv_') === 0 && k !== _protoCacheKey()) del.push(k); }
+  del.forEach(k => { try { localStorage.removeItem(k); } catch (_) {} });
+  return del.length;
+}
+let _semEspacoAvisou = false;
+function _semEspacoAvisa() {
+  if (_semEspacoAvisou) return;
+  _semEspacoAvisou = true;
+  try { _ghToast('Teu celular está sem espaço pro app guardar os registros. O que tu digitou foi enviado, mas pode sumir da tela. Libera espaço no aparelho e, se continuar, chama o suporte.', 9000); } catch (_) {}
+}
+// v544: carga que REPRESENTA o exercício numa semana = a maior entre as séries VÁLIDAS. Histórico, recordes, Meu Progresso,
+// card de conclusão e PDF liam a Série 1 espelhada, que na grade rotulada (aquecimento, ajuste, válidas) é o AQUECIMENTO:
+// quem registrava 20 / 40 / 60 / 60 via "mesma carga, 20 kg" por semanas. Grade de uma linha só, ou carga antiga sem
+// grade, segue pela chave de sempre.
+function _topoDaSemana(d, e, w, campo) {
+  try {
+    const sets = loadSets(d, e, w);
+    if (sets && sets.length > 1) {
+      let max = 0;
+      _soVal(d, e, sets).forEach(s => { const v = parseFloat(String((s && s[campo]) || '').replace(',', '.')); if (isFinite(v) && v > max) max = v; });
+      return max > 0 ? String(max) : '';
+    }
+  } catch (_) {}
+  return campo === 'kg' ? loadCarga(d, e, w) : loadPlacas(d, e, w);
+}
+function _cargaTopo(d, e, w) { return _topoDaSemana(d, e, w, 'kg'); }
+function _placasTopo(d, e, w) { return _topoDaSemana(d, e, w, 'pl'); }
 // Grade da sessão anterior (semana < w, mais recente) pro lembrete "anterior" por série.
 // ── Últimas 3 sessões do exercício (ideia do Vitor, 18/08): o "ant:" por série já mostrava
 // a sessão anterior, mas um número sozinho não diz DIREÇÃO. Com três, o aluno vê se está
@@ -8069,7 +8134,10 @@ function _ultimas3Sessoes(d, e, w) {
 }
 // Chip compacto da evolução. Uma linha só, de propósito: o GH já vetou poluir o card.
 function _evolucaoChipHtml(di, ei) {
-  const h = _ultimas3Sessoes(di, ei, currentWeek);
+  let h = _ultimas3Sessoes(di, ei, currentWeek);
+  // v544: sessão em kg e sessão em placa não se comparam (saía "null · 40 · 42,5 kg"): fica o tipo que tem 2 pontos ou mais
+  const _hKg = h.filter(x => x.kg), _hPl = h.filter(x => x.pl && !x.kg);
+  h = _hKg.length >= 2 ? _hKg : (_hPl.length >= 2 ? _hPl : []);
   if (h.length < 2) return '';                      // com 1 ponto não existe tendência
   const usaPl = h.every(x => x.pl && !x.kg);
   const val = x => usaPl ? x.pl : x.kg;
@@ -8090,7 +8158,8 @@ function getPrevSets(d, e, w) {
   const read = ww => {
     let raw = sf ? localStorage.getItem(setsKey(d, e, ww) + sf)
                 : (_cargaValida(d, e, ww) ? localStorage.getItem(setsKey(d, e, ww)) : null);
-    if (raw) { try { const a = JSON.parse(raw); if (Array.isArray(a) && a.length) return a; } catch (_) {} }
+    // v544: grade só de linhas vazias não é "última vez" (um salvar em branco na semana 3 escondia a carga da semana 2)
+    if (raw) { try { const a = JSON.parse(raw); if (Array.isArray(a) && a.some(s => s && (String(s.kg || '').trim() || String(s.pl || '').trim() || String(s.reps || '').trim()))) return a; } catch (_) {} }
     return null;
   };
   for (let ww = w - 1; ww >= 1; ww--) { const v = read(ww); if (v) return v; }
@@ -8142,7 +8211,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
     const prevTxt = _porTempo
       ? ((p && p.reps) ? `<span class="set-prev" title="Última vez"><span class="sp-lb">ant: </span>${p.reps}${_tUnid}</span>` : '<span class="set-prev"></span>')   // v504
       : ((p && (p.kg || p.pl || p.reps))
-      ? `<span class="set-prev" title="Última vez"><span class="sp-lb">ant: </span>${p.kg ? kgToDisplay(p.kg) + getUnit() : (p.pl ? p.pl + 'pl' : '&mdash;')}${p.reps ? ' &times;' + p.reps : ''}</span>`
+      ? `<span class="set-prev" title="Última vez"><span class="sp-lb">ant: </span>${p.kg ? String(kgToDisplay(p.kg)).replace('.', ',') + getUnit() : (p.pl ? p.pl + 'pl' : '')}${p.reps ? ((p.kg || p.pl) ? ' ' : '') + '&times;' + p.reps : ''}</span>`
       : '<span class="set-prev"></span>');
     const feita = okSet.has(si);
     const _tipo = _rotulada ? _rowTipo(di, eiS, si) : 'val';   // v496
@@ -8161,7 +8230,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
         <input class="set-in set-reps${_antReps ? ' ph-ant' : ''}" type="number" inputmode="numeric" placeholder="${_antReps || (_porTempo ? _tUnid : 'reps')}" title="${_porTempo ? 'Quantos ' + (_tUnid === 'min' ? 'minutos' : 'segundos') + ' tu segurou' : ''}" value="${s.reps || ''}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-rs" type="number" inputmode="numeric" onfocus="sobrouDica(this)" onblur="sobrouDicaSome()" placeholder="${_tipo === 'val' ? rsPh : '·'}" title="${_tipo === 'val' ? 'Quantas repetições sobraram nessa série' : 'Série de ' + SERIE_TIPO_NOME[_tipo] + ': sobrar é o esperado, não entra no alvo'}" value="${s.rs || ''}" oninput="onSetField(${di},'${eiS}')">
         ${prevTxt}
-        ${(semX || (_rotulada && si < _nPresc)) ? '' : `<button type="button" class="set-del" onclick="removeSet(${di},'${eiS}',${si})" title="Remover série" aria-label="Remover série">&times;</button>`}
+        ${(semX || si < _nPresc) ? '' : `<button type="button" class="set-del" onclick="removeSet(${di},'${eiS}',${si})" title="Remover série" aria-label="Remover série">&times;</button>`}
       </div>`;
   }).join('');
   return `<div class="sets-grid${_rotulada ? ' rotulada' : ''}${_porTempo ? ' tempo' : ''}" id="sets-${di}-${eiS}" data-di="${di}" data-ei="${eiS}" data-noadd="${noAdd ? '1' : ''}" data-semx="${semX ? '1' : ''}">
@@ -8260,6 +8329,14 @@ function loadSetOk(d, e, w) {
 function saveSetOk(d, e, w, conj) {
   try { localStorage.setItem(setOkKey(d, e, w), JSON.stringify([...conj].sort((a, b) => a - b))); } catch (_) {}
 }
+// v544: texto do botão da série quando ela NÃO está marcada: o tipo, na grade rotulada (aquec., ajuste, válida, não valeu),
+// ou o número. Antes, desmarcar uma série rotulada trocava o tipo por um número.
+function _setNumRotulo(di, ei, si, row) {
+  try {
+    if (_serieTemRotulo(_exObjAt(di, ei))) return (row && row.classList.contains('nv')) ? 'não valeu' : (SERIE_TIPO_CURTO[_rowTipo(di, ei, si)] || 'válida');
+  } catch (_) {}
+  return String(si + 1);
+}
 function toggleSetFeita(di, ei, si) {
   const ok = loadSetOk(di, ei, currentWeek);
   const marcando = !ok.has(si);
@@ -8271,7 +8348,7 @@ function toggleSetFeita(di, ei, si) {
     if (!row) return;
     row.classList.toggle('feita', marcando);
     const n = row.querySelector('.set-num');
-    if (n) { n.textContent = marcando ? '✓' : String(si + 1); if (marcando) { n.classList.remove('pop'); void n.offsetWidth; n.classList.add('pop'); setTimeout(() => n.classList.remove('pop'), 260); } }
+    if (n) { n.textContent = marcando ? '✓' : _setNumRotulo(di, ei, si, row); if (marcando) { n.classList.remove('pop'); void n.offsetWidth; n.classList.add('pop'); setTimeout(() => n.classList.remove('pop'), 260); } }
   });
   if (!marcando) return;
   if (navigator.vibrate) navigator.vibrate(15);
@@ -8284,8 +8361,13 @@ function toggleSetFeita(di, ei, si) {
       const eiNum = parseInt(ei, 10);
       if (typeof isDone === 'function' && !isDone(di, eiNum)) {
         const fo = document.getElementById('focusOverlay');
-        const noFoco = fo && fo.classList.contains('show') && _focusDi === di && _focusIdx === eiNum;
-        setTimeout(() => { noFoco ? focusToggleDone() : onCheckExercise(di, eiNum); }, 250);
+        // v544: confere de novo na hora de marcar. Em 250 ms o aluno pode ter tocado no check (aí o exercício era DESmarcado)
+        // ou passado pro próximo no modo treino (aí marcava o exercício errado).
+        setTimeout(() => {
+          if (isDone(di, eiNum)) return;
+          const noFoco = fo && fo.classList.contains('show') && _focusDi === di && _focusIdx === eiNum;
+          noFoco ? focusToggleDone() : onCheckExercise(di, eiNum);
+        }, 250);
       }
     }
   }
@@ -8340,17 +8422,50 @@ function _puladoEnvia(di, ei, acao) {
 }
 // biset salva sob "2a"/"2b" mas o badge "salvo" é do card (sv-di-2) → normaliza pro badge
 function _setSvKey(ei) { const m = String(ei).match(/^(\d+)[ab]$/); return m ? m[1] : ei; }
+// v544: grade BASE de um exercício = o que está SALVO, completado até o prescrito (como o render faz). "Série a mais" e
+// "remover série" partem daqui, não das linhas da tela: no modo treino a grade da lista fica atrás, desatualizada, e uma
+// série aberta com atraso (o aviso do "sobrou") relia essa grade velha e gravava por cima das séries que o aluno digitou.
+function _setsBase(di, ei) {
+  let arr = null;
+  try { arr = loadSets(di, ei, currentWeek); } catch (_) { arr = null; }
+  arr = Array.isArray(arr) ? arr.map(s => ({ kg: (s && s.kg) || '', pl: (s && s.pl) || '', reps: (s && s.reps) || '', rs: (s && s.rs) || '' })) : [];
+  const n = _serieCountPresc(_exObjAt(di, ei));
+  while (arr.length < n) arr.push({ kg: '', pl: '', reps: '', rs: '' });
+  return arr;
+}
+// v544: o que o salvamento normal faz DEPOIS de gravar e que o salvamento "apressado" (marcou feito ou trocou de exercício
+// antes dos 400 ms) pulava: o recorde e a resposta da "Última série" pelo sobrou digitado.
+function _posFlush_(di, ei, arr) {
+  try { const kg = Math.max(0, ..._soVal(di, ei, arr).map(s => parseFloat(s.kg) || 0)); if (kg > 0 && typeof checkPR === 'function') checkPR(di, /^\d+$/.test(String(ei)) ? parseInt(ei) : ei, kg); } catch (_) {}
+  try { _sobrouSincronizaEsf(di, ei, arr); } catch (_) {}
+}
+// grava o que está digitado e ainda no debounce DESTE exercício (só no aparelho; o envio segue o ritmo normal)
+function _flushSetLocal_(di, ei) {
+  const kS = `s-${di}-${ei}`;
+  if (!_setTimers[kS]) return;
+  clearTimeout(_setTimers[kS]); delete _setTimers[kS];
+  const arr = _readSetsFromDom(di, ei);
+  if (arr) { saveSets(di, ei, currentWeek, arr); _posFlush_(di, ei, arr); }
+}
 function addSet(di, ei) {
-  const arr = _readSetsFromDom(di, ei) || [];
+  if (!_exObjAt(di, ei)) return;
+  _flushSetLocal_(di, ei);
+  const arr = _setsBase(di, ei);
   if (arr.length >= 12) return;                 // teto de sanidade
-  arr.push({ kg: '', pl: '', reps: '' });
+  arr.push({ kg: '', pl: '', reps: '', rs: '' });
   saveSets(di, ei, currentWeek, arr);
   _reRenderSetsGrid(di, ei);
 }
 function removeSet(di, ei, si) {
-  const arr = _readSetsFromDom(di, ei) || [];
-  if (arr.length <= 1) return;                  // mantém pelo menos 1 série
-  try { const _exR = _exObjAt(di, ei); if (_serieTemRotulo(_exR) && si < _serieCountPresc(_exR)) return; } catch (_) {}   // v497: linha prescrita da grade rotulada nunca sai (rótulo posicional)
+  _flushSetLocal_(di, ei);
+  const arr = _setsBase(di, ei);
+  si = parseInt(si, 10);
+  if (!(si >= 0) || si >= arr.length || arr.length <= 1) return;
+  // v544: linha PRESCRITA nunca sai, em grade nenhuma (o render completava de volta com uma vazia no fim, e a série de
+  // baixo, com dado, mudava de lugar ou sumia). Pra limpar uma série prescrita basta apagar os campos dela.
+  if (si < _serieCountPresc(_exObjAt(di, ei))) return;
+  const s = arr[si] || {};
+  if ((String(s.kg || '').trim() || String(s.pl || '').trim() || String(s.reps || '').trim()) && !confirm('Essa série tem registro. Remover mesmo assim?')) return;
   arr.splice(si, 1);
   saveSets(di, ei, currentWeek, arr);
   // remarca as séries feitas nos índices novos (removeu a 2ª: a 3ª vira 2ª e leva a marca junto)
@@ -8360,7 +8475,7 @@ function removeSet(di, ei, si) {
   saveSetOk(di, ei, currentWeek, novo);
   _reRenderSetsGrid(di, ei);
 }
-// Salva imediato (botão 💾) — sem esperar o debounce.
+// Salva imediato (botão de salvar), sem esperar o debounce.
 function saveSetsManual(di, ei, btn) {
   clearTimeout(_setTimers[`s-${di}-${ei}`]); delete _setTimers[`s-${di}-${ei}`];   // v480
   const arr = _readSetsFromDom(di, ei);
@@ -8978,10 +9093,13 @@ function _cargaSegura(carga, setsJson) {
   };
   const direto = num(carga);
   if (direto) return direto;
+  // v544: carga VAZIA é vazia mesmo (aluno que registra só placa, ou 1ª série em branco). Antes o plano B pegava o primeiro
+  // kg OU placa das séries e gravava número de placa na chave de kg: "7 placas" virava "7 kg" no histórico e no recorde.
+  if (String(carga == null ? '' : carga).trim() === '') return null;
   try {
     const arr = JSON.parse(setsJson || '[]');
     for (const s of (Array.isArray(arr) ? arr : [])) {
-      const v = num(s && (s.kg || s.pl));
+      const v = num(s && s.kg);
       if (v) return v;
     }
   } catch (_) {}
@@ -9025,6 +9143,11 @@ function _restoreCargasRealign(cargas, ifEmpty) {
     const _slotK = setsKey(di, ei, c.w) + suffix;
     if (_slotDono.has(_slotK)) return;   // v530: slot já decidido pelo registro melhor
     _slotDono.set(_slotK, _it);
+    // v544: aparelho que JÁ tem grade neste slot fica como está. Antes o restore ainda completava a carga ou a placa
+    // espelhadas quando estavam vazias e, junto, regravava o nome e a data do slot com os do registro do servidor: se esse
+    // registro era do exercício antigo da posição (ou de outro ciclo), a grade de hoje passava a ser tratada como dele e
+    // sumia da tela até a próxima abertura.
+    if (ifEmpty && localStorage.getItem(_slotK)) return;
     const kC = storageKey(di, ei, c.w) + suffix, kP = placasKey(di, ei, c.w) + suffix, kB = blkKey(di, ei, c.w) + suffix;
     const kS = setsKey(di, ei, c.w) + suffix;
     let wrote = false;
@@ -9123,7 +9246,8 @@ function setSkipped(di, ei, val) {
 // sync, isto separa "recém-feita" de "legado local-only de verdade".
 const _doneMarkedThisSession = new Set();
 function setDone(di, ei, val) {
-  if (val) { localStorage.setItem(doneKey(di, ei), '1'); _doneMarkedThisSession.add(`${currentWeek}|${di}|${ei}`); _diaAtivoMarca(di); }
+  _doneMarkedThisSession.add(`${currentWeek}|${di}|${ei}`);   // v544: marcar E desmarcar entram: o restore que chega atrasado não desfaz o que o aluno acabou de fazer
+  if (val) { localStorage.setItem(doneKey(di, ei), '1'); _diaAtivoMarca(di); }
   else localStorage.removeItem(doneKey(di, ei));
   syncDoneToServer_(di, ei, val);
 }
@@ -9171,6 +9295,40 @@ function syncDoneToServer_(di, ei, val) {
 // no ranking — o ranking lê o LOGS (logCompletion_), o checkbox é o PROGRESSO.
 const DONE_KEEP_MS = 28 * 24 * 60 * 60 * 1000; // 4 semanas
 
+// v544: apaga do aparelho o estado "por semana" que não é carga (série feita, resposta de esforço, problema no aparelho,
+// anotação). quais = função (dia, exercício, semana) -> true pra apagar; sem função, apaga tudo. O que o aluno respondeu
+// já está no servidor (abas ESFORCO e NOTAS_SERIE); aqui é só o que a tela mostra.
+function _auxCicloApaga_(quais) {
+  const prefs = ['gh_setok_', 'gh_esf_', 'gh_apf_', 'gh_nota_'].map(p => p + STUDENT_ID + '_d');
+  const del = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k) continue;
+    const p = prefs.find(x => k.startsWith(x));
+    if (!p) continue;
+    const m = k.slice(p.length).match(/^(\d+)_e(\d+[ab]?)_w(\d+)$/);
+    if (!m) continue;
+    if (quais && !quais(+m[1], m[2], +m[3])) continue;
+    del.push(k);
+  }
+  del.forEach(k => { try { localStorage.removeItem(k); } catch (_) {} });
+  return del.length;
+}
+// v544: aparelho que passou pela virada de ciclo ANTES desta versão ainda guarda série riscada e resposta do ciclo velho.
+// Uma vez por ciclo: sai o que é de slot cuja grade é do ciclo anterior e o que está em semana à frente da atual sem grade
+// deste ciclo. Slot com grade deste ciclo (inclusive a do substituto) nunca é tocado.
+function _auxCicloFaxina_(atualMs) {
+  if (!(atualMs > 0)) return;
+  const fk = 'gh_auxlimpo_' + STUDENT_ID;
+  if (localStorage.getItem(fk) === String(atualMs)) return;
+  _auxCicloApaga_((d, e, w) => {
+    let doCiclo = false, velho = false;
+    [blkKey(d, e, w), blkKey(d, e, w) + _cargaSlotSuffix(d, e)].forEach(k => { const b = Number(localStorage.getItem(k)) || 0; if (b >= atualMs) doCiclo = true; else if (b > 0) velho = true; });
+    if (doCiclo) return false;
+    return velho || w > currentWeek;
+  });
+  localStorage.setItem(fk, String(atualMs));
+}
 async function syncDoneFromServer_() {
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
   try {
@@ -9234,6 +9392,9 @@ async function syncDoneFromServer_() {
       try { localStorage.removeItem(_posKey()); } catch (_) {}
       // v480: o "nao consegui fazer" do ciclo velho tambem sai (a chave e por semana; o ciclo novo abria com exercicio pulado)
       for (let i = localStorage.length - 1; i >= 0; i--) { const k = localStorage.key(i); if (k && k.startsWith(`gh_skip_${STUDENT_ID}_w`)) localStorage.removeItem(k); }
+      // v544: série marcada como feita, resposta da última série, problema no aparelho e anotação também são por semana: as do
+      // ciclo velho saem junto (o protocolo novo abria com série riscada, pergunta já respondida e anotação antiga)
+      try { _auxCicloApaga_(null); localStorage.setItem('gh_auxlimpo_' + STUDENT_ID, String(atualMs)); } catch (_) {}
       if (typeof currentWeek !== 'undefined' && currentWeek !== 1) {
         try { _flushSetsPendentes_(false); } catch (_) {}   // v480: grava o pendente na semana em que foi digitado
         currentWeek = 1;
@@ -9243,6 +9404,7 @@ async function syncDoneFromServer_() {
       }
     }
     if (atualMs) localStorage.setItem(epochKey, String(atualMs));
+    try { _auxCicloFaxina_(atualMs); } catch (_) {}   // v544
     const cutoff = Math.max(atualMs, Date.now() - DONE_KEEP_MS);
     let restored = 0, cleared = 0;
     data.done.forEach(d => {
@@ -9251,6 +9413,9 @@ async function syncDoneFromServer_() {
       // removeItem silencioso (sem POST de 'nao'): a linha no PROGRESSO permanece
       // e é filtrada pelo corte a cada load — idempotente, durável a wipe do iOS
       // (o restore abaixo nunca re-adiciona marca anterior ao corte).
+      // v544: o que o aluno marcou ou desmarcou AGORA (nesta sessão, ou ainda na fila de envio) ganha de qualquer linha do
+      // servidor. Antes essa conferência vinha depois do corte: a linha velha do mesmo exercício apagava a marca recém-feita.
+      if (_donePendenteLocal_(d.w, d.di, d.ei)) return;
       const _t = Number(d.ts) || 0; // ts ausente/inválido = idade desconhecida → trata como antiga
       if (_t < cutoff) {
         if (localStorage.getItem(key)) { localStorage.removeItem(key); cleared++; }
@@ -9493,7 +9658,7 @@ function onCheckExercise(di, ei) {
   renderExercises();
   // Burst dourado no card recém-concluído (some sozinho ao fim da animação)
   if (newVal) {
-    const card = document.querySelectorAll('#exerciseContainer .exercise-card')[ei];
+    const card = (document.querySelector('#exerciseContainer .day-content[data-di="' + di + '"]') || document.getElementById('exerciseContainer') || document).querySelectorAll('.exercise-card')[ei];   // v544: o card DESTE dia (pegava o do Dia 1, escondido)
     if (card) {
       card.classList.add('just-done');
       if (navigator.vibrate) navigator.vibrate(25);
@@ -10283,49 +10448,96 @@ function achSave() {
 }
 
 // ══ PR (Personal Record) detection ══
-function prKey(di, ei) { return `gh_pr_${STUDENT_ID}_d${di}_e${ei}`; }
-function checkPR(di, ei, newKg) {
-  if (!newKg || newKg <= 0) return;
-  const k = prKey(di, ei);
-  const stored = parseFloat(localStorage.getItem(k) || '0');
-  if (newKg > stored) {
-    if (stored > 0) {
-      // Real PR (já tinha registro anterior)
-      const ex = WORKOUT[di] && WORKOUT[di].exercises[ei];
-      if (ex && !ex.warmup) {
-        if (!_celebOff()) showAchievementCard('pr', {
-          exerciseName: ex.name,
-          oldKg: stored,
-          newKg: newKg,
-          prDi: di,   // pro "Digitei errado, desfazer" saber qual chave restaurar
-          prEi: ei
-        });
-        _prLogAdd(di, ei, newKg);   // fechamento da semana conta os recordes daqui (mesmo com card desligado)
+// v544: o recorde é do EXERCÍCIO (pelo nome), não da posição. A chave era dia + posição: depois de um reajuste, de uma troca
+// ou do modo Viagem, o recorde de um exercício valia pro outro que caiu no mesmo lugar (saía "NOVO RECORDE" falso), e a
+// reconciliação rebaixava o recorde de verdade pro maior peso do ciclo atual. Agora a chave é o nome do exercício ATIVO (o
+// substituto tem a dele), o valor só sobe, e só desce quando o aluno corrige o número que gerou o recorde.
+// Valor guardado: {kg, ant (recorde que valia antes), d, e, w (a grade que gerou), dia}; número puro também é aceito.
+function _prNome(di, ei) { try { return _normEx(_exAtivoNome_(di, ei) || ''); } catch (_) { return ''; } }
+function prKey(di, ei) { const n = _prNome(di, ei); return n ? `gh_prn_${STUDENT_ID}_${n}` : `gh_pr_${STUDENT_ID}_d${di}_e${ei}`; }
+function _prLe(di, ei) {
+  try {
+    const raw = localStorage.getItem(prKey(di, ei));
+    if (raw == null || raw === '') return null;
+    if (raw.charAt(0) === '{') { const o = JSON.parse(raw); return (o && o.kg > 0) ? o : null; }
+    const v = parseFloat(raw);
+    return v > 0 ? { kg: v } : null;
+  } catch (_) { return null; }
+}
+// Ponto de partida do recorde por nome, pra quem já treinava antes desta versão: a maior carga VÁLIDA que o aparelho guarda
+// pra este exercício neste lugar (todas as semanas, menos a grade que está sendo salva agora) e o recorde antigo da
+// posição, quando a posição sempre foi deste exercício e nunca teve substituto.
+function _prSemente(di, ei, w) {
+  let max = 0;
+  try {
+    const sf = _cargaSlotSuffix(di, ei);
+    const nomeAgora = _normEx(_exNameAt(di, ei));
+    let posConfiavel = !sf;
+    const hi = Math.max((typeof TOTAL_WEEKS === 'number' ? TOTAL_WEEKS : 8), 24);
+    for (let ww = 1; ww <= hi; ww++) {
+      if (!sf) { const exn = localStorage.getItem(exnKey(di, ei, ww)); if (exn && _normEx(exn) !== nomeAgora) { posConfiavel = false; continue; } }
+      if (ww === w) continue;
+      const raw = localStorage.getItem(setsKey(di, ei, ww) + sf);
+      if (raw) {
+        try { _soVal(di, ei, JSON.parse(raw)).forEach(s => { const v = parseFloat(String((s && s.kg) || '').replace(',', '.')); if (isFinite(v) && v > max && v < 2000) max = v; }); } catch (_) {}
+      } else if (!sf) {
+        const leg = parseFloat(localStorage.getItem(storageKey(di, ei, ww)) || '0');
+        if (leg > max && leg < 2000) max = leg;
       }
     }
-    localStorage.setItem(k, String(newKg));
+    if (posConfiavel) {
+      const pre = setsKey(di, ei, '');   // gh_sets_<id>_d<di>_e<ei>_w
+      for (let i = 0; i < localStorage.length && posConfiavel; i++) { const k = localStorage.key(i); if (k && k.indexOf(pre) === 0 && /^\d+_./.test(k.slice(pre.length))) posConfiavel = false; }   // já teve substituto aqui
+    }
+    if (posConfiavel) { const pos = parseFloat(localStorage.getItem(`gh_pr_${STUDENT_ID}_d${di}_e${ei}`) || '0'); if (pos > max && pos < 2000) max = pos; }
+  } catch (_) {}
+  return max;
+}
+function checkPR(di, ei, newKg, w) {
+  if (!newKg || newKg <= 0) return;
+  if (w == null) w = currentWeek;
+  const k = prKey(di, ei);
+  let cur = _prLe(di, ei);
+  if (!cur) { const s = _prSemente(di, ei, w); if (s > 0) cur = { kg: s }; }
+  const stored = cur ? cur.kg : 0;
+  if (newKg > stored) {
+    const hoje = todayKey();
+    const hojeJa = !!(cur && cur.dia === hoje);          // o recorde deste exercício já foi mexido hoje: sobe em silêncio
+    const antes = hojeJa ? (cur.ant || 0) : stored;      // o recorde que valia antes de hoje
+    const ex = _exObjAt(di, ei);
+    if (antes > 0 && ex && !ex.warmup) {
+      // Real PR (já tinha registro anterior). Um card por exercício por dia: 85, 90 e 95 no mesmo treino não abrem 3 cards.
+      if (!hojeJa && !_celebOff()) showAchievementCard('pr', {
+        exerciseName: _exAtivoNome_(di, ei) || ex.name,
+        oldKg: antes,
+        newKg: newKg,
+        prDi: di,   // pro "Digitei errado, desfazer" saber qual chave restaurar
+        prEi: ei
+      });
+      _prLogAdd(di, ei, newKg);   // fechamento da semana conta os recordes daqui (mesmo com card desligado)
+    }
+    try { localStorage.setItem(k, JSON.stringify({ kg: newKg, ant: antes, d: di, e: String(ei), w: w, dia: hoje })); } catch (_) {}
+  } else if (cur && localStorage.getItem(k) == null) {
+    try { localStorage.setItem(k, JSON.stringify({ kg: stored })); } catch (_) {}   // guarda o ponto de partida: não recalcula a cada salvamento
   }
 }
-// Reconciliação do PR com o dado REAL (Vitor 14/08): o recorde armazenado nunca pode
-// ficar acima do máximo que existe de verdade nas séries salvas. Aluno digitou 255 em
-// vez de 25,5 e corrigiu na grade → o 255 some das séries → o PR desce junto, sozinho.
-function _prReconcilia(di, ei) {
+// Reconciliação do recorde com o dado REAL (Vitor 14/08): digitou 255 em vez de 25,5 e corrigiu na grade → o recorde desce
+// junto, sozinho. v544: só a grade que GEROU o recorde pode rebaixá-lo, e ele volta pro que valia antes (ou pro maior valor
+// que ficou nela). Grade de outra semana, de outro ciclo ou de outro exercício não mexe mais no recorde.
+function _prReconcilia(di, ei, w) {
   try {
-    const k = prKey(di, ei);
-    const stored = parseFloat(localStorage.getItem(k) || '0');
-    if (!stored || stored <= 0) return;
-    let max = 0;
-    const hi = Math.max((typeof TOTAL_WEEKS === 'number' ? TOTAL_WEEKS : 8), 24);
-    for (let w = 1; w <= hi; w++) {
-      const sets = loadSets(di, ei, w);
-      if (sets && sets.length) sets.forEach(s => { const v = parseFloat(s && s.kg); if (v > max) max = v; });
-      const leg = parseFloat(loadCarga(di, ei, w)) || 0;   // chave legada (S1 espelhada, histórico antigo)
-      if (leg > max) max = leg;
-    }
-    if (stored > max) {
-      if (max > 0) localStorage.setItem(k, String(max));
-      else localStorage.removeItem(k);   // apagou tudo: recorde órfão sai junto
-    }
+    const cur = _prLe(di, ei);
+    if (!cur || cur.d == null) return;
+    if (w == null) w = currentWeek;
+    if (String(cur.d) !== String(di) || String(cur.e) !== String(ei) || Number(cur.w) !== Number(w)) return;
+    let m = 0;
+    _soVal(di, ei, loadSets(di, ei, w) || []).forEach(s => { const v = parseFloat(String((s && s.kg) || '').replace(',', '.')); if (isFinite(v) && v > m) m = v; });
+    if (m >= cur.kg) return;
+    const ant = cur.ant || 0, novo = Math.max(ant, m);
+    if (novo > ant) localStorage.setItem(prKey(di, ei), JSON.stringify(Object.assign({}, cur, { kg: novo })));
+    else if (ant > 0) localStorage.setItem(prKey(di, ei), JSON.stringify({ kg: ant }));
+    else localStorage.removeItem(prKey(di, ei));
+    if (cur.dia === todayKey() && ant > 0) { if (novo > ant) _prLogAdd(di, ei, novo); else _prLogRemove(di, ei); }
   } catch (_) {}
 }
 
@@ -10336,7 +10548,7 @@ function showCompletionCard(di) {
   let totalKg = 0;
   day.exercises.forEach((ex, ei) => {
     if (ex.warmup) return;
-    const carga = parseFloat(loadCarga(di, ei, currentWeek)) || 0;
+    const carga = parseFloat(_cargaTopo(di, ei, currentWeek)) || 0;   // v544: a maior série válida (era a Série 1)
     if (carga > 0) totalKg += carga;
   });
   const exercises = day.exercises.filter(ex => !ex.warmup).length;
@@ -11822,6 +12034,7 @@ function _focusCargaBlock(di, key, label) {
   return `<div class="focus-carga">
     <div class="focus-carga-label">${label}</div>
     ${_setsGridHtml(di, key)}
+    ${/^\d+$/.test(String(key)) ? `<div class="set-sug" id="sug-${di}-${key}" style="display:none;"></div>` : ''}
     <span style="color:#5f5f66;font-size:11px;">salva sozinho</span>
   </div>`;
 }
@@ -11903,6 +12116,7 @@ function _progChipHtml(di, ei, nomeEx) {
   if (!reg) return '';
   const sug = _progSugestao(nomeEx, reg.base, reg.esf);
   if (!sug) return '';
+  if (sug.tipo === 'sobe' && !_corteAtivo() && _alvoTopo().hi >= 3) return '';   // v544: "sobrou 3" está DENTRO do alvo de quem tem esforço limitado: não manda subir
   if (sug.tipo === 'sobe') return `<div class="prog-chip up">💡 Semana passada: ${reg.base.txt}, sobrou 3+. Hoje <b>tenta ${sug.prox}</b>${sug.passo ? ' (' + sug.passo + ')' : ''}. Se travar, volta sem drama.</div>`;
   return `<div class="prog-chip down">Semana passada travou antes de terminar: hoje vale <b>manter ou descer um degrau</b>.</div>`;
 }
@@ -11987,6 +12201,18 @@ function esfToggleAp(btn) {
 // última linha da grade, a pergunta se responde; escolheu a resposta, o sobrou da última série feita se preenche. E o
 // vocabulário é o mesmo nos três lugares (coluna, pergunta e respostas): sobrou.
 function _esfMsg(di, key, val) {
+  // v544: aluno com Esforço-alvo limitado (2 a 3: restrição clínica ou começo de treino) NÃO deve ir ao limite. O retorno
+  // respeita o combinado dele; antes dizia "Perfeito: é exatamente o alvo do método" pra quem foi até travar.
+  if (!_corteAtivo()) {
+    const a = _alvoTopo(), faixa = a.lo + (a.hi > a.lo ? ' a ' + a.hi : '');
+    const n = { sobrou3: 3, sobrou2: 2, sobrou1: 1, falha_ult: 0, falha_antes: 0 }[val];
+    if (n == null) return '';
+    if (n === 0) return 'Passou do combinado: o teu é parar com ' + faixa + ' repetições sobrando. Na próxima, para antes.';
+    if (n < a.lo) return 'Quase no limite. O teu combinado é parar com ' + faixa + ' sobrando: para um pouco antes.';
+    if (val === 'sobrou3' && a.hi < 3) return 'Sobrou mais que o combinado (' + faixa + '): na próxima dá pra subir um degrau na carga.';
+    if (val === 'sobrou3') return 'No alvo. Se sobrou bem mais que ' + a.hi + ', na próxima dá pra subir um degrau na carga.';
+    return 'No alvo: carga certa, mantém.';
+  }
   if (val === 'sobrou3') {
     const base = _progBaseDoSets(loadSets(di, String(key), currentWeek));
     const nomeEx = (WORKOUT[di] && WORKOUT[di].exercises[parseInt(key)] || {}).name || '';
@@ -12056,14 +12282,18 @@ function _sobrouSincronizaEsf(di, ei, arr) {
   if (!isFinite(v)) return;
   let val = v >= 3 ? 'sobrou3' : v === 2 ? 'sobrou2' : v === 1 ? 'sobrou1' : 'falha_ult';
   if (v === 0) {
+    let _completou = false;
     try {
-      const tp = _serieTipos(ex);
-      const seg = (tp.find(x => x.tipo === 'val') || {}).seg;
-      const repsP = String((seg != null ? _repsSegmento(ex, seg) : ex.reps) || '');
+      // v544: a faixa de reps é a DESTA linha. Antes vinha do primeiro segmento válido: em "20 / 15 / 12 / 12", fazer as 12
+      // da última série com sobrou 0 virava "Travei antes de terminar" (12 < 20) e a progressão mandava descer a carga.
+      const repsP = String(_repsDaLinha(ex, arr.length - 1) || '');
       const min = parseInt((repsP.match(/\d+/) || [])[0], 10);
       const feitas = parseInt(String(u.reps || '').replace(/[^0-9]/g, ''), 10);
-      if (isFinite(min) && isFinite(feitas) && feitas < min) val = 'falha_antes';
+      if (isFinite(min) && isFinite(feitas)) { if (feitas < min) val = 'falha_antes'; else _completou = true; }
     } catch (_) {}
+    // v544: quem respondeu "Travei antes de terminar" e não anotou reps que provem o contrário fica com a resposta dele (o
+    // sobrou 0 que a própria resposta preenche trocava ela, sozinho, por "Sobrou 0: no limite")
+    if (val === 'falha_ult' && !_completou && loadEsf(di, key, currentWeek) === 'falha_antes') return;
   }
   if (loadEsf(di, key, currentWeek) === val) return;
   saveEsf(di, key, currentWeek, val, loadApf(di, key, currentWeek));
@@ -12158,8 +12388,8 @@ function _histChartData(di, ei) {
   const values = [];
   const _WT = _weekTeto();   // v539
   for (let w = 1; w <= _WT; w++) {
-    const c = parseFloat(loadCarga(di, ei, w)) || 0;
-    const p = parseFloat(loadPlacas(di, ei, w)) || 0;
+    const c = parseFloat(_cargaTopo(di, ei, w)) || 0;    // v544: a maior série válida da semana (era a Série 1, que na grade rotulada é o aquecimento)
+    const p = parseFloat(_placasTopo(di, ei, w)) || 0;
     values.push({ w, kg: c, placas: p });
   }
   // Série do gráfico: kg quando existe; exercício só de placas acompanha placas.
@@ -12437,7 +12667,7 @@ function evoRender(nome) {
 // progressão dupla: fechou o topo das reps, sobe o peso; então reps subindo NÃO é
 // estagnação. Só aviso pro aluno; a equipe vê o mesmo nos dados de carga no reajuste.
 function _estagBest(d, e, w) {
-  const sets = loadSets(d, String(e), w);
+  const sets = _soVal(d, String(e), loadSets(d, String(e), w));   // v544: só as válidas (a linha PAP, fixa e pesada, fazia o alerta dizer "sem subir" com as válidas subindo)
   if (!sets || !sets.length) return null;
   const num = v => parseFloat(String(v == null ? '' : v).replace(',', '.')) || 0;
   let kg = 0, pl = 0;
@@ -12501,7 +12731,7 @@ function renderRecordes() {
       if (!pt.nome) return;
       const serie = [];
       for (let w = 1, _wt = _weekTeto(); w <= _wt; w++) {
-        const v = parseFloat(loadCarga(di, pt.k, w)) || 0;
+        const v = parseFloat(_cargaTopo(di, pt.k, w)) || 0;   // v544
         if (v > 0) serie.push({ w, kg: v });
       }
       if (!serie.length) return;
@@ -12847,7 +13077,10 @@ async function loadFromSheets(injectedText) {
         }
       } catch (_) {}
       if (_pos && (_pos.sig === _sigAtual || _pos.sig === TOTAL_WEEKS + 'x' + WORKOUT.length)) {
-        if (_pos.w >= 1 && _pos.w <= WEEK_MAX) currentWeek = Math.min(_pos.w, _tetoW);   // v539
+        // v544: posição salva JÁ neste protocolo (a assinatura leva a data dele) vale como está. O teto pelo calendário
+        // devolvia pra semana anterior, a cada abertura, quem fechou a semana antes do tempo e passou pra próxima (e ele
+        // digitava de novo por cima das cargas da semana). O teto segue só pra posição antiga, sem a data na assinatura.
+        if (_pos.w >= 1 && _pos.w <= WEEK_MAX) currentWeek = (_pos.sig === _sigAtual) ? _pos.w : Math.min(_pos.w, _tetoW);
         if (BLOCOS.length < 2 && Number.isInteger(_pos.di) && _pos.di >= 0 && _pos.di < WORKOUT.length) currentDay = _pos.di;
         const _wl = document.getElementById('weekLabel');
         if (_wl) _wl.textContent = 'Semana ' + currentWeek;
@@ -13211,8 +13444,8 @@ function _buildTreinoPrintHTML() {
     const isBisetComp = label === 'A' || label === 'B';
     const act = (!isBisetComp && typeof _exAtivo === 'function') ? _exAtivo(di, ei) : { name: ex.name, sub: false };
     const nome = esc(act.name) + (ex.warmup ? ' (aquecimento)' : '') + (act.sub ? ' *' : '');
-    const carga = (typeof loadCarga === 'function') ? loadCarga(di, ei, currentWeek) : '';
-    const placas = (typeof loadPlacas === 'function') ? loadPlacas(di, ei, currentWeek) : '';
+    const carga = (typeof _cargaTopo === 'function') ? _cargaTopo(di, ei, currentWeek) : '';   // v544
+    const placas = (typeof _placasTopo === 'function') ? _placasTopo(di, ei, currentWeek) : '';
     let cargaTxt = '';
     if (carga) cargaTxt = (typeof kgToDisplay === 'function' ? kgToDisplay(carga) : carga) + unit;
     if (placas) cargaTxt += (cargaTxt ? ' / ' : '') + placas + 'pl';
@@ -13649,7 +13882,7 @@ function _flushSetsPendentes_(enviarJa) {
     try {
       clearTimeout(_setTimers[k]); delete _setTimers[k];
       const arr = _readSetsFromDom(parseInt(m[1], 10), m[2]);
-      if (arr) saveSets(parseInt(m[1], 10), m[2], currentWeek, arr);
+      if (arr) { saveSets(parseInt(m[1], 10), m[2], currentWeek, arr); _posFlush_(parseInt(m[1], 10), m[2], arr); }   // v544
     } catch (_) {}
   });
   if (enviarJa) _cargaSyncFlushAll_();
@@ -13659,7 +13892,7 @@ function flushCargaPendente_(di, ei) {
   if (!_setTimers[kS]) return;
   clearTimeout(_setTimers[kS]); delete _setTimers[kS];   // v480
   const arr = _readSetsFromDom(di, ei);
-  if (arr) saveSets(di, ei, currentWeek, arr);   // grava no slot vigente ANTES do sufixo mudar
+  if (arr) { saveSets(di, ei, currentWeek, arr); _posFlush_(di, ei, arr); }   // grava no slot vigente ANTES do sufixo mudar (v544: com recorde e resposta do sobrou)
   _cargaSyncFlushAll_();                          // e manda já, com o nome do exercício vigente
 }
 
@@ -14610,8 +14843,16 @@ async function apagarPesosMarcados() {
   if (typed === null) return;
   if (String(typed).trim().toUpperCase() !== 'APAGAR') { alert('Não apaguei nada. Pra apagar de verdade, digita APAGAR.'); return; }
   Object.keys(_setTimers || {}).forEach(k => { clearTimeout(_setTimers[k]); delete _setTimers[k]; });   // v480
-  // 1. local: cargas + placas + companheiro nome-do-exercício
-  const prefs = [`gh_${STUDENT_ID}_d`, `gh_sets_${STUDENT_ID}_d`, `gh_placas_${STUDENT_ID}_d`, `gh_exn_${STUDENT_ID}_d`];
+  // v544: o que estava agendado ou na fila de reenvio não pode subir DEPOIS do apagar, e o app esquece "a última coisa que
+  // enviou" (senão, redigitar os mesmos números na mesma sessão não era enviado: ele achava que o servidor já tinha).
+  try {
+    Object.keys(_cargaSyncTimers).forEach(k => { clearTimeout(_cargaSyncTimers[k]); delete _cargaSyncTimers[k]; });
+    Object.keys(_cargaSyncPend).forEach(k => delete _cargaSyncPend[k]);
+    Object.keys(_cargaSyncUltimo).forEach(k => delete _cargaSyncUltimo[k]);
+    _syncQueueClear('carga');
+  } catch (_) {}
+  // 1. local: cargas + placas + companheiro nome-do-exercício (v544: + recordes, marcar do zero é do zero)
+  const prefs = [`gh_${STUDENT_ID}_d`, `gh_sets_${STUDENT_ID}_d`, `gh_placas_${STUDENT_ID}_d`, `gh_exn_${STUDENT_ID}_d`, `gh_prn_${STUDENT_ID}_`, `gh_pr_${STUDENT_ID}_d`];
   const del = [];
   for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && prefs.some(p => k.startsWith(p))) del.push(k); }
   del.forEach(k => localStorage.removeItem(k));
@@ -14660,7 +14901,7 @@ async function forceSyncFromServer() {
       if (!cargasData || !Array.isArray(cargasData.cargas)) throw new Error('resposta invalida');
     } catch (e) {
       console.warn('forceSync cargas fetch fail:', e);
-      alert('Não consegui falar com o servidor agora, então NÃO apaguei nada aqui — teus pesos seguem salvos. Tenta de novo com internet.');
+      alert('Não consegui falar com o servidor agora, então NÃO apaguei nada aqui: teus pesos seguem salvos. Tenta de novo com internet.');
       return;
     }
 
@@ -14688,8 +14929,12 @@ async function forceSyncFromServer() {
       const url2 = `${LOG_ENDPOINT}?action=progresso&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`;
       const res2 = await fetch(url2, { cache: 'no-store' });
       const data2 = await res2.json();
+      // v544: mesmo corte da abertura (marca do ciclo anterior, ou com mais de 4 semanas, não volta). Sem ele o botão trazia
+      // a Semana 1 do protocolo novo inteira marcada com as marcas do ciclo antigo.
+      let _atual2 = Number(data2.atual); if (!(_atual2 > 0) || _atual2 > Date.now()) _atual2 = 0;
+      const _corte2 = Math.max(_atual2, Date.now() - DONE_KEEP_MS);
       (data2.done || []).forEach(d => {
-        if (d.feito) {
+        if (d.feito && (Number(d.ts) || 0) >= _corte2) {
           localStorage.setItem(`gh_done_${STUDENT_ID}_w${d.w}_d${d.di}_e${d.ei}`, '1');
           totalDone++;
         }
@@ -16719,7 +16964,7 @@ function _progCollect() {
   const out = [];
   items.forEach(it => {
     const vals = [];
-    for (let w = 1, _wt = _weekTeto(); w <= _wt; w++) vals.push(parseFloat(loadCarga(it.di, it.key, w)) || 0);
+    for (let w = 1, _wt = _weekTeto(); w <= _wt; w++) vals.push(parseFloat(_cargaTopo(it.di, it.key, w)) || 0);   // v544
     const filled = vals.map((v, i) => ({ v, w: i + 1 })).filter(x => x.v > 0);
     if (!filled.length) return;
     it.vals = vals;
@@ -16761,17 +17006,21 @@ function _prLogKey() { return 'gh_prlog_' + SHEET_ID; }
 function _prLogAdd(di, ei, kg) {
   try {
     const arr = JSON.parse(localStorage.getItem(_prLogKey()) || '[]');
-    const d = new Date();
-    const dk = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    arr.push({ d: dk, di: di, ei: ei, kg: kg });
+    const dk = todayKey();
+    const nome = (typeof _prNome === 'function') ? _prNome(di, ei) : '';
+    // v544: um recorde por exercício por dia (o maior). Cada série acima do recorde contava: 85, 90 e 95 no mesmo treino
+    // viravam "3 recordes" no fechamento da semana.
+    const i = arr.findIndex(p => p.d === dk && (p.n ? p.n === nome : (p.di === di && String(p.ei) === String(ei))));
+    if (i >= 0) arr[i].kg = kg; else arr.push({ d: dk, di: di, ei: ei, kg: kg, n: nome });
     localStorage.setItem(_prLogKey(), JSON.stringify(arr.slice(-120)));
   } catch (_) {}
 }
-function _prLogRemove(di, ei, kg) {
+function _prLogRemove(di, ei) {
   try {
     const arr = JSON.parse(localStorage.getItem(_prLogKey()) || '[]');
+    const dk = todayKey(), nome = (typeof _prNome === 'function') ? _prNome(di, ei) : '';
     for (let i = arr.length - 1; i >= 0; i--) {
-      if (arr[i].di === di && arr[i].ei === ei && arr[i].kg === kg) { arr.splice(i, 1); break; }
+      if (arr[i].d === dk && (arr[i].n ? arr[i].n === nome : (arr[i].di === di && String(arr[i].ei) === String(ei)))) { arr.splice(i, 1); break; }
     }
     localStorage.setItem(_prLogKey(), JSON.stringify(arr));
   } catch (_) {}
@@ -20839,7 +21088,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v543';
+    var APP_SHELL_V = 'metodo-gh-v544';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
