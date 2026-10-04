@@ -4920,7 +4920,7 @@
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
     <span>Suporte no WhatsApp</span>
   </a>
-  <span class="footer-support-hours">Atendimento de segunda à sexta, em horário comercial</span>
+  <span class="footer-support-hours">Atendimento de segunda a sexta, em horário comercial</span>
   <span>MÉTODO GH · @gh.scheuermann</span>
 </div>
 
@@ -4997,7 +4997,7 @@
       <span id="planBlockCtaLabel">💳 Renovar agora</span>
     </a>
     <a href="https://wa.me/555520131470?text=Oi!%20Meu%20plano%20venceu%2C%20quero%20renovar." target="_blank" rel="noopener" style="display:block;margin-top:12px;color:#25D366;font-size:12px;text-decoration:underline;">Prefere renovar pelo WhatsApp? Chama aqui</a>
-    <div class="plan-block-hours">Atendimento de segunda à sexta, em horário comercial</div>
+    <div class="plan-block-hours">Atendimento de segunda a sexta, em horário comercial</div>
   </div>
 </div>
 
@@ -5183,7 +5183,7 @@
 
 <!-- ══ DOR: triagem guiada (vira pedido estruturado na fila da equipe) ══ -->
 <!-- ══ CADERNO DE BORDO (GH 29/08): parâmetros permanentes do aluno, escritos por ele ou pela equipe ══ -->
-<div class="te-modal-overlay" id="cadernoModal" onclick="if(event.target.id==='cadernoModal')teHide('cadernoModal')">
+<div class="te-modal-overlay" id="cadernoModal" onclick="if(event.target.id==='cadernoModal'&&!_temRascunho_('cadernoTexto'))teHide('cadernoModal')">
   <div class="te-modal-box" style="max-width:460px;max-height:88vh;overflow-y:auto;">
     <h3 style="margin:0 0 6px;">📓 Anotações do teu acompanhamento</h3>
     <p style="color:#aaa;font-size:11.5px;margin:0 0 12px;line-height:1.55;">
@@ -5692,7 +5692,7 @@
       <!-- Laudo de evolução gerado no reajuste (só aparece se existir) -->
       <div id="laudoEvoArea"></div>
       <p style="color:#aaa;font-size:11px;margin:0 0 12px;line-height:1.45;">
-        Escolhe qualquer foto pra cada lado e compara tua evolução. Toca em "Trocar foto" pra mudar o round ou usar uma foto nova do celular como prévia.
+        Escolhe qualquer foto pra cada lado e compara tua evolução. Toca em "Trocar foto" pra mudar a rodada ou usar uma foto nova do celular como prévia.
       </p>
       <div class="cmp-angle-hint" id="cmpAngleHint" style="display:none;">
         <span class="lbl">Atalho:</span>
@@ -5781,7 +5781,7 @@
     <h3 id="cmpChooserTitle" style="margin:0 0 12px;font-size:15px;">Escolher foto</h3>
     <button class="cmp-local-btn" onclick="cmpPickLocal()">📱 Usar foto do meu celular (prévia, sem enviar)</button>
     <input type="file" id="cmpLocalInput" accept="image/*" style="display:none;" onchange="cmpOnLocalFile(this)">
-    <div class="cmp-or">ou escolhe um round já enviado</div>
+    <div class="cmp-or">ou escolhe uma rodada já enviada</div>
     <select id="cmpChooserRound" onchange="cmpRenderPicks()" style="width:100%;padding:10px;background:#222;border:1px solid var(--gold-dim);color:var(--white);border-radius:8px;font-size:13px;font-weight:600;margin-bottom:12px;font-family:inherit;"></select>
     <div class="cmp-pick-grid" id="cmpPickGrid" style="flex:1;overflow-y:auto;"></div>
     <button class="te-btn ghost" onclick="teHide('cmpChooserModal')" style="width:100%;margin-top:12px;">Fechar</button>
@@ -8902,19 +8902,33 @@ async function salvarTlem() {
   _tlemSel.d.sort((a, b) => a - b);
   const pref = { d: _tlemSel.d, h: String(_tlemSel.hh).padStart(2, '0') + ':' + _tlemSel.mm, on: _tlemSel.on };
   _tlemStore(pref);
+  // v550: o lembrete era salvo como LIGADO mesmo sem notificação possível (iPhone pelo Safari, notificação bloqueada): o
+  // aluno via "Lembrete: seg · qua · sex às 18:00" e nada chegava. Agora diz por quê e o que fazer.
+  let _tlAviso = '';
   if (pref.on) {
-    // mesmo caminho de permissão da água/refeições; registrar de novo é inofensivo
+    let nativeOk = false, push = { ok: false, reason: 'no-permission' };
     try {
       if ('Notification' in window) {
         let perm = Notification.permission;
         if (perm === 'default') perm = await Notification.requestPermission();
-        if (perm === 'granted' && typeof registerPushSubscription === 'function') await registerPushSubscription();
+        nativeOk = (perm === 'granted');
       }
     } catch (_) {}
+    try {
+      if (nativeOk && typeof registerPushSubscription === 'function') push = await registerPushSubscription();
+      else if (typeof _iosForaDoApp_ === 'function' && _iosForaDoApp_()) push = { ok: false, reason: 'ios-not-installed' };
+    } catch (_) {}
+    if (!push || !push.ok) {
+      _tlAviso = (push && push.reason === 'ios-not-installed')
+        ? 'Lembrete salvo. No iPhone ele só chega com o app instalado: no Safari, toca em Compartilhar, Adicionar à Tela de Início, abre pelo ícone e salva o lembrete de novo.'
+        : (nativeOk ? 'Lembrete salvo, mas não consegui ligar a notificação agora (pode ser a internet). Abre o lembrete e salva de novo mais tarde.'
+          : 'Lembrete salvo, mas as notificações do app estão bloqueadas neste aparelho. Libera nos ajustes do celular e salva o lembrete de novo.');
+    }
   }
   syncTreinoLembreteToServer_();
   teHide('tlemModal');
   _tlemChipRefresh();
+  if (_tlAviso) _ghToast(_tlAviso, 9500);
 }
 function syncTreinoLembreteToServer_() {
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
@@ -8947,7 +8961,7 @@ let _cadernoCarregado = false;
 function openCaderno() {
   const box = document.getElementById('cadernoAvisoEquipe');
   if (box) box.style.display = (localStorage.getItem('gh_trainer_token') || '') ? '' : 'none';
-  document.getElementById('cadernoTexto').value = '';
+  // v550: o campo não é mais apagado ao abrir (anotação escrita e não salva sumia); salvar é que limpa
   teShow('cadernoModal');
   _cadernoRender(_cadernoLocal());          // pinta na hora o que já está no aparelho
   _cadernoFetch();                          // e busca o do servidor por cima
@@ -8989,8 +9003,8 @@ function _cadernoRender(notas) {
     const titulo = esc(linhas[0].slice(0, 42) + (linhas[0].length > 42 ? '...' : ''));
     const resto = esc(linhas.slice(1).join(' ').trim() || linhas[0].slice(42).trim());
     const aberta = _cadernoAberta === n.ts;
-    const podeApagar = n.ts && (souEquipe || !eq);
-    html += `<div onclick="_cadernoToggle(${n.ts || 0})" style="background:#1a1a1a;border:1px solid #262626;border-radius:12px;padding:11px 13px;margin-bottom:8px;cursor:pointer;">
+    const podeApagar = n.ts && !n.pendente && (souEquipe || !eq);
+    html += `<div onclick="_cadernoToggle(${Number(n.ts) || 0})" style="background:#1a1a1a;border:1px solid #262626;border-radius:12px;padding:11px 13px;margin-bottom:8px;cursor:pointer;">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
         <span style="font-size:13.5px;font-weight:700;color:#eee;">${titulo}</span>
         <span style="font-size:10px;font-weight:800;letter-spacing:.4px;color:${cor};white-space:nowrap;">${quem}</span>
@@ -8998,11 +9012,11 @@ function _cadernoRender(notas) {
       ${aberta
         ? `<div style="font-size:12.5px;color:#ccc;line-height:1.55;white-space:pre-wrap;margin-top:7px;">${esc(n.texto)}</div>
            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:9px;">
-             <span style="font-size:11px;color:#777;">${n.data || ''}</span>
-             ${podeApagar ? `<button type="button" onclick="event.stopPropagation();apagarNotaCaderno(${n.ts})" style="background:none;border:1px solid #444;border-radius:7px;color:#c96;font-size:11px;font-weight:700;padding:4px 10px;cursor:pointer;">Apagar</button>` : ''}
+             <span style="font-size:11px;color:#777;">${esc(n.data || '')}${n.pendente ? ' · enviando' : ''}</span>
+             ${podeApagar ? `<button type="button" onclick="event.stopPropagation();apagarNotaCaderno(${Number(n.ts) || 0})" style="background:none;border:1px solid #444;border-radius:7px;color:#c96;font-size:11px;font-weight:700;padding:4px 10px;cursor:pointer;">Apagar</button>` : ''}
            </div>`
         : `<div style="display:flex;gap:7px;margin-top:3px;">
-             <span style="font-size:11px;color:#777;white-space:nowrap;">${n.data || ''}</span>
+             <span style="font-size:11px;color:#777;white-space:nowrap;">${esc(n.data || '')}${n.pendente ? ' · enviando' : ''}</span>
              <span style="font-size:11px;color:#8a8a8a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${resto}</span>
            </div>`}
     </div>`;
@@ -9018,7 +9032,13 @@ async function _cadernoFetch() {
   try {
     const r = await fetch(`${LOG_ENDPOINT}?action=notas_aluno&id=${encodeURIComponent(SHEET_ID)}`, { redirect: 'follow' });
     const j = await r.json();
-    if (j && j.ok && Array.isArray(j.notas)) { _cadernoSalvaLocal(j.notas); _cadernoRender(j.notas); _cadernoCarregado = true; }
+    if (j && j.ok && Array.isArray(j.notas)) {
+      // v550: anotação que ainda não subiu (salva sem sinal) continua na lista até o servidor ter ela. Antes a lista do
+      // servidor passava por cima, a nota sumia e o aluno escrevia de novo (e depois duplicava).
+      const _pend = _cadernoLocal().filter(n => n && n.pendente && Date.now() - (n.ts || 0) < 14 * 86400000 && !j.notas.some(s => String(s.texto || '').trim() === String(n.texto || '').trim()));
+      const _junta = _pend.concat(j.notas);
+      _cadernoSalvaLocal(_junta); _cadernoRender(_junta); _cadernoCarregado = true;
+    }
   } catch (_) { /* offline: fica o que já está no aparelho */ }
 }
 async function apagarNotaCaderno(ts) {
@@ -9059,7 +9079,8 @@ async function salvarCaderno() {
   };
   // otimista: já mostra a entrada, mesmo antes do servidor confirmar
   const hoje = new Date().toLocaleDateString('pt-BR');
-  const local = [{ data: hoje, autor: tok ? 'equipe' : 'aluno', texto: texto }].concat(_cadernoLocal());
+  // v550: a entrada nascia sem data: caía no grupo "Antigas" e não abria. E some só quando o servidor tiver ela.
+  const local = [{ ts: Date.now(), pendente: true, data: hoje, autor: tok ? 'equipe' : 'aluno', texto: texto }].concat(_cadernoLocal());
   _cadernoSalvaLocal(local); _cadernoRender(local);
   el.value = '';
   const enfileira = () => _syncQueuePush('nota_aluno', payload, p => String(p.ts));
@@ -14684,6 +14705,7 @@ async function _pushConfereBoot_() {
     if (localStorage.getItem('gh_pushOff') === '1') return;   // foi o ALUNO que desligou (botão da água): não religa por conta
     let querLembrete = isWaterNotifOn();
     if (!querLembrete) { try { const mp = _refHoras(); querLembrete = Object.keys(mp).some(k => mp[k] && mp[k].on && mp[k].h); } catch (_) {} }
+    if (!querLembrete) { try { const tl = _tlemLoad(); querLembrete = !!(tl && tl.on); } catch (_) {} }   // v550: lembrete de treino também conta
     if (!querLembrete) return;
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.getSubscription();
@@ -15518,6 +15540,7 @@ function _chatBubble(role, text) {
   div.innerHTML = _chatEsc(text);
   return div;
 }
+let _chatNudgePend = null;   // v550: palpite pendente ("isso parece pedido de ajuste" + botão), pra redesenhar depois de trocar de aba
 function _chatRenderAll() {
   const box = document.getElementById('chatMsgs');
   if (!box) return;
@@ -15527,6 +15550,8 @@ function _chatRenderAll() {
     return;
   }
   _chatHistory.forEach(m => box.appendChild(_chatBubble(m.role, m.content)));
+  // v550: o aviso e o botão só existiam na tela. Tocar na aba "Pedir ajuste" em vez do botão apagava os dois e nada era registrado.
+  try { if (_chatNudgePend) (_chatNudgePend.t === 'd' ? _chatAddDuvidaNudge : _chatAddAjusteNudge)(_chatNudgePend.pedido); } catch (_) {}
 }
 // CTA opcional depois do pro_gh: o pedido JÁ foi registrado automático (garantido).
 // Esse botão só serve pra anexar foto (ex: máquina que tem em casa). Abre o form com
@@ -15686,7 +15711,8 @@ function _chatAddAjusteNudge(pedido) {
   btn.className = 'te-btn';
   btn.style.cssText = 'padding:8px 14px;font-size:12px;';
   btn.textContent = '🔧 Registrar como ajuste pro GH';
-  btn.onclick = () => { btn.disabled = true; btn.style.opacity = '0.5'; _chatConfirmAjuste(pedido); };
+  _chatNudgePend = { t: 'a', pedido: pedido };
+  btn.onclick = () => { _chatNudgePend = null; btn.disabled = true; btn.style.opacity = '0.5'; _chatConfirmAjuste(pedido); };
   wrap.appendChild(btn);
   box.appendChild(wrap);
   _chatScrollBottom();
@@ -15704,7 +15730,8 @@ function _chatAddDuvidaNudge(pedido) {
   btn.className = 'te-btn';
   btn.style.cssText = 'padding:8px 14px;font-size:12px;';
   btn.textContent = '🔧 Registrar como ajuste mesmo assim';
-  btn.onclick = () => { btn.disabled = true; btn.style.opacity = '0.5'; _chatConfirmAjuste(pedido); };
+  _chatNudgePend = { t: 'd', pedido: pedido };
+  btn.onclick = () => { _chatNudgePend = null; btn.disabled = true; btn.style.opacity = '0.5'; _chatConfirmAjuste(pedido); };
   wrap.appendChild(btn);
   box.appendChild(wrap);
   _chatScrollBottom();
@@ -15749,6 +15776,7 @@ let _supSeq = 0;   // v545: sobe a cada envio; consulta que saiu antes do envio 
 // Interruptor remoto (AVISOS!B2 = 'on'/'off' via aviso_global): com o WhatsApp de suporte
 // no ar o GH mantém a aba DESLIGADA; numa queda é só digitar 'on' na célula, sem deploy.
 let _supEnabled = false;
+let _supBootConsultou = false, _supUltima = 0, _supFetching = false;
 function _supSetEnabled(on) {
   _supEnabled = !!on;
   const tab = document.getElementById('chatModeSuporte');
@@ -15763,7 +15791,9 @@ function _supSetEnabled(on) {
     ['supDotTab', 'supDotOpt', 'supDotFab', 'supDotMais', 'supDotBn'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('on'); });
     if (_chatMode === 'suporte') setChatMode('duvida');
   } else {
-    try { _supFetch(); } catch (_) {}   // ligou: já confere se tem resposta esperando
+    // ligou: confere se tem resposta esperando. v550: UMA vez por abertura (esta função roda duas vezes na abertura, pelo
+    // cache e pela resposta do servidor, e quem já tinha usado o suporte ainda fazia a terceira consulta)
+    if (!_supBootConsultou) { _supBootConsultou = true; try { _supFetch(); } catch (_) {} }
   }
 }
 
@@ -15817,6 +15847,8 @@ function _supRender() {
 }
 async function _supFetch() {
   if (typeof SHEET_ID === 'undefined' || !SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
+  if (_supFetching) return;   // v550: sem consulta em cima de consulta (a lenta chegava fora de ordem e a lista velha sobrescrevia a nova)
+  _supFetching = true; _supUltima = Date.now();
   try {
     const _seq = _supSeq;
     const r = await fetch(LOG_ENDPOINT + '?action=suporte_msgs&id=' + encodeURIComponent(SHEET_ID) + '&_=' + Date.now(), { cache: 'no-store' });
@@ -15835,12 +15867,25 @@ async function _supFetch() {
       }
     }
   } catch (_) {}
+  finally { _supFetching = false; }
 }
+// v550: quem usa o suporte e VOLTA pro app (ou abre o chat) confere se a equipe respondeu. A bolinha só era conferida no
+// carregamento da página: quem deixava o app aberto em segundo plano não ficava sabendo da resposta.
+function _supConfereSeUsa(minMs) {
+  try {
+    if (!_supEnabled || typeof SHEET_ID === 'undefined' || !SHEET_ID) return;
+    if (!localStorage.getItem('gh_sup_used_' + SHEET_ID)) return;
+    if (Date.now() - _supUltima < (minMs || 300000)) return;
+    _supFetch();
+  } catch (_) {}
+}
+document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') _supConfereSeUsa(300000); });
 function _supPollStart() {
   _supPollStop();
   _supTimer = setInterval(() => {
     const aberto = document.getElementById('chatModal')?.classList.contains('show');
     if (!aberto || _chatMode !== 'suporte') { _supPollStop(); return; }
+    if (document.visibilityState !== 'visible') return;   // v550: app em segundo plano não consulta a cada 9 s
     _supFetch();
   }, 9000);
 }
@@ -15888,13 +15933,15 @@ async function _supSend(text, inp) {
       err.textContent = '⚠️ Não consegui enviar agora. Tua mensagem voltou pro campo: confere a internet e manda de novo.';
       box.appendChild(err); _chatScrollBottom();
     }
-  } else { _supSeq++; try { _supFetch(); } catch (_) {} }
+  } else { _supSeq++; _supFetching = false; try { _supFetch(); } catch (_) {} }
   _supBusy = false;
   if (sendBtn) sendBtn.disabled = false;
   if (inp) inp.focus();
 }
 
-function closeChatOnBg(e) { if (e.target.id === 'chatModal') teHide('chatModal'); }
+// v550: toque fora da caixa não fecha quando tem texto digitado (fechava, e nos formulários a reabertura ainda apagava)
+function _temRascunho_(id) { try { const el = document.getElementById(id); return !!(el && el.offsetParent !== null && String(el.value || '').trim()); } catch (_) { return false; } }
+function closeChatOnBg(e) { if (e.target.id === 'chatModal' && !_temRascunho_('chatInput')) teHide('chatModal'); }
 
 // Banner do assistente no topo do card. Aparece sempre que o aluno abre
 // (igual ao de ajuste); × só fecha na sessão.
@@ -15915,6 +15962,7 @@ function openChatModal() {
   // abre em "tirar dúvida", EXCETO se a equipe respondeu no suporte (aí cai direto na resposta)
   setChatMode(_supEnabled && _supHasUnread() ? 'suporte' : 'duvida');
   teShow('chatModal');
+  _supConfereSeUsa(60000);   // v550: abriu o chat: se a equipe respondeu, a bolinha da aba Suporte acende
   setTimeout(() => { const inp = document.getElementById('chatInput'); if (inp) inp.focus(); _chatScrollBottom(); }, 120);
 }
 
@@ -15928,6 +15976,7 @@ async function sendChat() {
     return;
   }
   if (_chatMode === 'suporte') { _supSend(text, inp); return; }   // conversa com a EQUIPE, caminho próprio
+  _chatNudgePend = null;   // v550: mensagem nova encerra o palpite anterior
   _chatBusy = true;
   const sendBtn = document.getElementById('chatSendBtn');
   sendBtn.disabled = true;
@@ -16079,16 +16128,19 @@ async function sendChat() {
 // Aluno descreve o que quer mudar no protocolo → POST pro Apps Script →
 // grava em aba AJUSTES_PEDIDOS no mestre. Conversa Code agendada 2x/dia
 // (separada) lê pendentes e aplica nos sheets dos alunos.
-function closeAjusteOnBg(e) { if (e.target.id === 'ajusteModal') teHide('ajusteModal'); }
+function closeAjusteOnBg(e) { if (e.target.id === 'ajusteModal' && !_temRascunho_('ajusteTexto')) teHide('ajusteModal'); }
 
 function openAjusteModal(prefill, contexto, reqId) {
   document.getElementById('floatOptions').classList.remove('show');
   document.getElementById('floatBtn').classList.remove('open');
+  // v550: rascunho que NÃO foi enviado fica (abrir de novo pelo menu apagava o que o aluno tinha escrito)
+  const _ajEnviado = document.getElementById('ajusteSuccess').style.display !== 'none';
+  const _ajRasc = _ajEnviado ? '' : String(document.getElementById('ajusteTexto').value || '');
   // Reset modal pro estado inicial (form visível, success escondido)
   document.getElementById('ajusteForm').style.display = '';
   document.getElementById('ajusteSuccess').style.display = 'none';
   try { const _av = document.getElementById('ajusteTarja'); if (_av) _av.remove(); } catch (_) {}
-  const pf = (typeof prefill === 'string') ? prefill : '';
+  const pf = (typeof prefill === 'string') ? prefill : _ajRasc;
   document.getElementById('ajusteTexto').value = pf;
   document.getElementById('ajusteContexto').value = (contexto === 'DIETA' || contexto === 'OUTRO') ? contexto : 'TREINO';
   document.getElementById('ajusteCharCount').textContent = pf.length + ' / 2000';
@@ -16226,16 +16278,17 @@ async function submitAjuste() {
 // ══ FEEDBACK E SUGESTÕES ══
 // Aluno escreve no rodapé → POST type:'feedback' → aba FEEDBACKS do mestre.
 function openFeedbackModal() {
+  const _fbEnviado = document.getElementById('feedbackSuccess').style.display !== 'none';   // v550: rascunho não enviado fica
   document.getElementById('feedbackForm').style.display = '';
   document.getElementById('feedbackSuccess').style.display = 'none';
-  document.getElementById('feedbackTexto').value = '';
-  document.getElementById('feedbackCharCount').textContent = '0 / 1500';
+  if (_fbEnviado) document.getElementById('feedbackTexto').value = '';
+  document.getElementById('feedbackCharCount').textContent = (document.getElementById('feedbackTexto').value || '').length + ' / 1500';
   const b = document.getElementById('feedbackSubmitBtn');
   b.disabled = false; b.textContent = 'Enviar';
   teShow('feedbackModal');
   setTimeout(() => document.getElementById('feedbackTexto').focus(), 100);
 }
-function closeFeedbackOnBg(e) { if (e.target && e.target.id === 'feedbackModal') teHide('feedbackModal'); }
+function closeFeedbackOnBg(e) { if (e.target && e.target.id === 'feedbackModal' && !_temRascunho_('feedbackTexto')) teHide('feedbackModal'); }
 async function submitFeedback() {
   const texto = (document.getElementById('feedbackTexto').value || '').trim();
   const tipo = document.getElementById('feedbackTipo').value || 'Outro';
@@ -16611,13 +16664,17 @@ async function loadRegistrosSemanais() {
   if (!box || !SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
   try {
     const j = await (await fetch(`${LOG_ENDPOINT}?action=registros_semanais_list&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`, { cache: 'no-store' })).json();
+    if (!j || j.ok === false) throw new Error('servidor');   // v550
     const regs = (j && j.registros) || [];
     _rsRegistros = regs;
     if (!regs.length) { box.innerHTML = '<p style="color:#666;font-size:11px;font-style:italic;margin:4px 0 0;">Ainda não tens registros aqui. Manda as fotos de hoje pra começar teu histórico.</p>'; return; }
     const chips = regs.map((r, i) => `<span class="rs-hist-chip" onclick="verRegistroSemana(${i})">${escapeFotosTxt(r.date)}</span>`).join('');
     const cmp = regs.length >= 2 ? `<button class="water-btn" style="margin-top:10px;width:100%;" onclick="abrirCompararSemanas()">📊 Comparar duas semanas</button>` : '';
-    box.innerHTML = `<div style="color:#8d8579;font-size:11px;margin-bottom:6px;">Teu histórico (${regs.length}), toque numa data pra ver:</div><div class="rs-hist">${chips}</div>${cmp}`;
-  } catch (_) { box.innerHTML = ''; }
+    box.innerHTML = `<div style="color:#8d8579;font-size:11px;margin-bottom:6px;">Teu histórico (${regs.length}), toca numa data pra ver:</div><div class="rs-hist">${chips}</div>${cmp}`;
+  } catch (_) {
+    // v550: falha de rede ou do servidor não é "ainda não tens registros" (quem tinha 8 semanas de registro lia isso)
+    box.innerHTML = '<p style="color:#b9a27a;font-size:11.5px;margin:4px 0 0;">Não consegui carregar teu histórico agora. <a href="#" onclick="loadRegistrosSemanais();return false;" style="color:var(--gold);text-decoration:underline;">Tentar de novo</a></p>';
+  }
 }
 
 function _rsOverlay() {
@@ -16661,8 +16718,8 @@ function _rsCmpRender() {
     <div class="rs-cmp-row">
       <div class="ang">${_RS_LABELS[role]}</div>
       <div class="rs-cmp-pair">
-        <div class="cell" data-fid="${(L && L.fotos[role]) || ''}"><span>sem foto</span></div>
-        <div class="cell" data-fid="${(R && R.fotos[role]) || ''}"><span>sem foto</span></div>
+        <div class="cell" data-fid="${escapeFotosTxt((L && L.fotos[role]) || '')}"><span>${(L && L.fotos[role]) ? 'carregando…' : 'sem foto'}</span></div>
+        <div class="cell" data-fid="${escapeFotosTxt((R && R.fotos[role]) || '')}"><span>${(R && R.fotos[role]) ? 'carregando…' : 'sem foto'}</span></div>
       </div>
     </div>`).join('');
   body.querySelectorAll('.cell[data-fid]').forEach(cell => {
@@ -16814,6 +16871,7 @@ function _laudoPdfBlob(jpeg, w, h) {
 function _laudoBaixarPDF(imgId, versao) {
   const img = document.getElementById(imgId);
   if (!img || !img.src || !img.src.startsWith('data:')) return;
+  versao = versao || (img.dataset && img.dataset.versao) || '';   // v550: a versão é a do laudo que está NA TELA (o botão levava sempre a mais nova)
   try {
     const R = _laudoRasterComMarcas(img);   // com marcações da equipe, o PDF leva círculos + legendas
     const jpeg = _jpegBytesDe(R ? R.dataUrl : img.src);
@@ -16823,7 +16881,7 @@ function _laudoBaixarPDF(imgId, versao) {
     a.href = url; a.download = `Evolucao_MetodoGH${versao ? '_V' + versao : ''}.pdf`;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 4000);
-  } catch (_) {}
+  } catch (_) { try { _ghToast('Não consegui gerar o PDF agora. Tenta de novo, ou tira um print da tela.', 5200); } catch (__) {} }
 }
 async function loadLaudos() {
   const area = document.getElementById('laudoEvoArea');
@@ -16831,8 +16889,9 @@ async function loadLaudos() {
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
   try {
     const j = await (await fetch(`${LOG_ENDPOINT}?action=comparacoes_list&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`, { cache: 'no-store' })).json();
+    if (!j || j.ok === false) throw new Error('servidor');   // v550
     _laudosLoaded = true;
-    const laudos = (j && j.laudos) || [];
+    const laudos = ((j && j.laudos) || []).filter(l => l && /^[\w-]{10,}$/.test(String(l.fid || '')));   // v550: o id do arquivo vai dentro de atributo e de onclick: só com cara de id
     _laudosCache = laudos;
     // Sem laudo o aluno via uma tela VAZIA e ninguem cobrava a foto dele (achado da Reajustes:
     // quem nao manda foto some do laudo e a calibragem do protocolo fica no escuro). Agora
@@ -16856,24 +16915,32 @@ async function loadLaudos() {
       return;
     }
     const chips = recentes.length > 1
-      ? `<div class="laudo-vers">${recentes.map((l, i) => `<span class="laudo-chip${i === 0 ? ' on' : ''}" data-fid="${l.fid}" onclick="showLaudo('${l.fid}', this)">V${l.versao}</span>`).join('')}</div>`
+      ? `<div class="laudo-vers">${recentes.map((l, i) => `<span class="laudo-chip${i === 0 ? ' on' : ''}" data-fid="${l.fid}" onclick="showLaudo('${l.fid}', this, ${parseFloat(l.versao) || 0})">V${_laudoEsc(String(l.versao == null ? '' : l.versao))}</span>`).join('')}</div>`
       : '';
     area.innerHTML = `<div class="laudo-card"><div class="laudo-h">📊 Tua evolução</div>${chips}<div class="laudo-imgwrap"><div class="laudo-loading" id="laudoLoading">Carregando…</div><img id="laudoImg" class="laudo-img" onclick="laudoFull()" alt="Evolução" style="display:none;"></div>
-      <button class="cmp-share-btn" style="margin-top:10px;" onclick="_laudoBaixarPDF('laudoImg', ${recentes[0].versao || 0})">⬇️ Baixar em PDF</button>
+      <button class="cmp-share-btn" style="margin-top:10px;" onclick="_laudoBaixarPDF('laudoImg')">⬇️ Baixar em PDF</button>
       <div style="color:#8d8579;font-size:11px;margin-top:6px;text-align:center;">Fica disponível por ${LAUDO_TTL_DIAS} dias. Baixa em PDF se quiser guardar.</div></div>`;
-    showLaudo(recentes[0].fid);
-  } catch (_) { _laudosLoaded = true; area.innerHTML = ''; }
+    showLaudo(recentes[0].fid, null, parseFloat(recentes[0].versao) || 0);
+  } catch (_) {
+    // v550: falha de rede ou do servidor não vira tela vazia nem "ainda não tem comparação" (o laudo só fica uns dias no ar):
+    // avisa e deixa tentar de novo
+    _laudosLoaded = false;
+    area.innerHTML = '<div class="laudo-card"><div class="laudo-h">📊 Tua evolução</div><div style="color:#bbb;font-size:12.5px;line-height:1.6;margin-top:6px;">Não consegui carregar agora. Pode ser a internet.</div><button class="cmp-share-btn" style="margin-top:10px;" onclick="loadLaudos()">Tentar de novo</button></div>';
+  }
 }
-async function showLaudo(fid, chipEl) {
+let _laudoReq = 0;
+async function showLaudo(fid, chipEl, versao) {
   if (chipEl) { document.querySelectorAll('.laudo-chip').forEach(c => c.classList.remove('on')); chipEl.classList.add('on'); }
   const img = document.getElementById('laudoImg'), ld = document.getElementById('laudoLoading');
   if (!img) return;
   img.style.display = 'none'; if (ld) { ld.style.display = 'block'; ld.textContent = 'Carregando…'; }
+  const _req = ++_laudoReq;   // v550: tocar em V2 e V3 em seguida deixava o chip V3 aceso com a imagem da V2
   try {
     const j = await (await fetch(`${LOG_ENDPOINT}?action=comparacao_img&fid=${encodeURIComponent(fid)}&_=${Date.now()}`, { cache: 'no-store' })).json();
-    if (j && j.ok) { img.onload = () => _laudoMarcasAplica('laudoImg', fid); img.src = `data:${j.mime};base64,${j.b64}`; img.style.display = 'block'; if (ld) ld.style.display = 'none'; }
+    if (_req !== _laudoReq) return;
+    if (j && j.ok) { img.onload = () => _laudoMarcasAplica('laudoImg', fid); img.dataset.versao = versao ? String(versao) : ''; img.src = `data:${j.mime};base64,${j.b64}`; img.style.display = 'block'; if (ld) ld.style.display = 'none'; }
     else if (ld) ld.textContent = 'Não consegui carregar o laudo.';
-  } catch (_) { if (ld) ld.textContent = 'Não consegui carregar o laudo.'; }
+  } catch (_) { if (_req === _laudoReq && ld) ld.textContent = 'Não consegui carregar o laudo.'; }
 }
 function _laudoOpenFull(src) {
   if (!src) return;
@@ -17087,12 +17154,16 @@ async function loadFotosCompare() {
     _cmpState.rounds = j.rounds || [];
     _cmpState.loaded = true;
     if (!_cmpState.rounds.length) {
-      status.innerHTML = 'Você ainda não tem fotos enviadas.<br><span style="font-size:11px;color:#777;">Manda tuas fotos na aba <b>Enviar</b> que elas aparecem aqui pra comparar.</span>';
+      status.innerHTML = 'Tu ainda não tem fotos enviadas.<br><span style="font-size:11px;color:#777;">Manda tuas fotos na aba <b>Enviar</b> que elas aparecem aqui pra comparar.</span>';
       return;
     }
     // padrão: ANTES = primeiro round, DEPOIS = último
-    _cmpState.sel.L = _cmpDefaultPick(0);
-    _cmpState.sel.R = _cmpDefaultPick(_cmpState.rounds.length - 1);
+    // v550: o par padrão usa um ângulo que existe NAS DUAS rodadas (abria com costas no ANTES e frente no DEPOIS quando a
+    // primeira rodada não tinha "frente")
+    const _iA = 0, _iB = _cmpState.rounds.length - 1;
+    const _angComum = ['frente', 'costas', 'direito', 'esquerdo'].find(rl => _cmpRoundItems(_iA).some(i => i.role === rl) && _cmpRoundItems(_iB).some(i => i.role === rl));
+    _cmpState.sel.L = (_angComum && _cmpRoundItems(_iA).find(i => i.role === _angComum)) || _cmpDefaultPick(_iA);
+    _cmpState.sel.R = (_angComum && _cmpRoundItems(_iB).find(i => i.role === _angComum)) || _cmpDefaultPick(_iB);
     // Mostra os atalhos de ângulo só se ALGUM round tiver foto nomeada.
     // Fotos antigas (nome de celular) não têm ângulo → atalho não faz nada.
     const temAngulo = _cmpState.rounds.some(r => r.roles && Object.keys(r.roles).length > 0);
@@ -17101,7 +17172,7 @@ async function loadFotosCompare() {
     body.style.display = 'block';
     cmpRenderCards();
   } catch (err) {
-    status.innerHTML = `<span style="color:#c0392b;">Erro ao carregar fotos: ${escapeFotosTxt(err.message)}</span>`;
+    status.innerHTML = '<span style="color:#c0392b;">Não consegui carregar tuas fotos agora. Confere a internet e abre de novo.</span>';   // v550: sem a mensagem técnica em inglês
   }
 }
 
@@ -17123,20 +17194,19 @@ function _cmpDefaultPick(idx) {
 
 // Carrega 1 foto (base64) sob demanda, com cache por fid. Seta no <img id=imgId>.
 async function _cmpLoadImg(fid, imgId) {
-  if (_cmpState.imgCache[fid]) {
-    const el = document.getElementById(imgId);
-    if (el) el.src = _cmpState.imgCache[fid];
-    return;
-  }
+  // v550: a resposta só entra se o lado AINDA está nessa foto (trocar de foto antes de a anterior chegar deixava a foto antiga
+  // com a etiqueta e a data da nova), e falha deixa de ficar em "carregando…" pra sempre
+  const poe = uri => { const el = document.getElementById(imgId); if (el && (!el.dataset.fid || el.dataset.fid === String(fid))) el.src = uri; };
+  const falhou = () => { const el = document.getElementById(imgId); const ld = el && el.previousElementSibling; if (el && el.dataset.fid === String(fid) && ld && ld.classList.contains('cmp-photo-loading')) ld.textContent = 'Não consegui carregar essa foto. Toca em "Trocar foto" e escolhe de novo.'; };
+  if (_cmpState.imgCache[fid]) { poe(_cmpState.imgCache[fid]); return; }
   try {
     const resp = await fetch(`${LOG_ENDPOINT}?action=foto_img&fid=${encodeURIComponent(fid)}&_=${Date.now()}`, { cache:'no-store' });
     const j = await resp.json();
-    if (!j.ok) return;
+    if (!j.ok) { falhou(); return; }
     const uri = 'data:' + (j.mime || 'image/jpeg') + ';base64,' + j.b64;
     _cmpState.imgCache[fid] = uri;
-    const el = document.getElementById(imgId);
-    if (el) el.src = uri;
-  } catch (_) {}
+    poe(uri);
+  } catch (_) { falhou(); }
 }
 
 function cmpRenderCards() {
@@ -17176,8 +17246,8 @@ function cmpRenderCard(side) {
   const imgId = 'cmpImg' + side;
   const cached = _cmpState.imgCache[it.fid];
   wrap.innerHTML = cached
-    ? `<img id="${imgId}" class="cmp-photo" src="${cached}" alt="foto">${tagHtml}`
-    : `<div class="cmp-photo-loading">carregando…</div><img id="${imgId}" class="cmp-photo" style="display:none" onload="this.style.display='block';this.previousElementSibling.style.display='none'" alt="foto">${tagHtml}`;
+    ? `<img id="${imgId}" data-fid="${escapeFotosTxt(String(it.fid))}" class="cmp-photo" src="${cached}" alt="foto">${tagHtml}`
+    : `<div class="cmp-photo-loading">carregando…</div><img id="${imgId}" data-fid="${escapeFotosTxt(String(it.fid))}" class="cmp-photo" style="display:none" onload="this.style.display='block';this.previousElementSibling.style.display='none'" alt="foto">${tagHtml}`;
   meta.innerHTML = `${escapeFotosTxt(r.folder)}<br>${escapeFotosTxt(r.date || '')}`;
   if (!cached) _cmpLoadImg(it.fid, imgId);
 }
@@ -17189,13 +17259,15 @@ function cmpRenderEvo() {
 }
 
 function cmpQuickAngle(role) {
+  let faltou = false;
   ['L','R'].forEach(side => {
     const cur = _cmpState.sel[side];
     if (!cur || cur.local) return;
     const found = _cmpRoundItems(cur.roundIdx).find(i => i.role === role);
-    if (found) _cmpState.sel[side] = found;
+    if (found) _cmpState.sel[side] = found; else faltou = true;
   });
   cmpRenderCards();
+  if (faltou) _ghToast('Um dos lados não tem foto desse ângulo: ficou a que estava.');   // v550: antes trocava só um lado, sem avisar
 }
 
 function cmpSwapSides() { const t=_cmpState.sel.L; _cmpState.sel.L=_cmpState.sel.R; _cmpState.sel.R=t; cmpRenderCards(); }
@@ -17216,7 +17288,7 @@ function cmpRenderPicks() {
   const items = _cmpRoundItems(idx);
   const cur = _cmpState.sel[_cmpState.chooserSide];
   const grid = document.getElementById('cmpPickGrid');
-  if (!items.length) { grid.innerHTML = `<div style="grid-column:1/-1;color:#777;text-align:center;padding:24px;font-size:12px;">Esse round não tem fotos.</div>`; return; }
+  if (!items.length) { grid.innerHTML = `<div style="grid-column:1/-1;color:#777;text-align:center;padding:24px;font-size:12px;">Essa rodada não tem fotos.</div>`; return; }
   grid.innerHTML = items.map((it,i) => {
     const selCls = (cur && !cur.local && cur.fid === it.fid) ? 'sel' : '';
     const tagCls = it.role ? 'role' : '';
@@ -21679,9 +21751,7 @@ if (SHEET_ID && TAB_NAME) {
   // Suporte: checa resposta nova SÓ pra quem já usou a aba (flag local). Quem nunca mandou
   // mensagem não tem thread, então a checagem seria uma chamada inútil ao Apps Script em
   // TODA abertura de TODO aluno (a fila de execuções engasga o servidor, visto 2026-08-03).
-  if (localStorage.getItem('gh_sup_used_' + SHEET_ID)) {
-    setTimeout(() => { try { if (_supEnabled) _supFetch(); } catch (_) {} }, 2500);
-  }
+  // v550: a consulta do suporte sai uma vez só, de dentro do _supSetEnabled (ver _supBootConsultou)
   // Modo aluno. ABERTURA INSTANTÂNEA (GH 2026-07-29): com cache do protocolo, renderiza
   // NA HORA do localStorage (zero tela preta) e revalida em background — só re-renderiza
   // se o protocolo mudou no Google. Sem cache (1ª visita), busca DIETA+TREINO em PARALELO
@@ -21833,7 +21903,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v549';
+    var APP_SHELL_V = 'metodo-gh-v550';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
