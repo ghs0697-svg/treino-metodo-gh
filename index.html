@@ -6951,10 +6951,14 @@ function _resolveDayActive(di) {
       const r = res[ei];
       if (!e || e.biset || e.warmup || !r || !r.name) return;
       if (!_ehMaquina(r.name)) return;
+      if (r.sub) return;   // v552: troca que o ALUNO escolheu no seletor ganha do modo viagem (o aviso dizia "Trocado" e o card mostrava outra coisa)
       const grp = _grupoDe(e.name);
       if (!grp) return;
-      const cand = grp.filter(x => x.norm !== _normEx(r.name) && _bankVideo(x.name) && !used[x.norm]);
-      const livre = cand.find(x => _RX_LIVRE.test(x.name)) || cand.find(x => !_ehMaquina(x.name));
+      // v552: respeita a linha "Não trocar por" (exercício que doeu, ou que a academia não tem: a aluna com "Não trocar por:
+      // Stiff" ligava o modo viagem e a Mesa Flexora virava Stiff) e não troca máquina por outra máquina ("Stiff na Máquina"
+      // casava como livre)
+      const cand = grp.filter(x => x.norm !== _normEx(r.name) && _bankVideo(x.name) && !used[x.norm] && !STUDENT_NAO_TROCAR.has(x.norm) && !_ehMaquina(x.name));
+      const livre = cand.find(x => _RX_LIVRE.test(x.name)) || cand[0];
       if (!livre) return;
       delete used[_normEx(r.name)];
       res[ei] = { name: livre.name, video: _bankVideo(livre.name), sub: true, viagem: true };
@@ -7689,6 +7693,10 @@ function closeSubPicker() {
 (function migrateLegacyCargaKeys() {
   if (!SHEET_ID) return; // sem sheet, sem migração
   try {
+    // v552: UMA vez por aparelho. Rodando em toda abertura, as cargas antigas voltavam depois do "Apagar pesos" e ainda eram
+    // copiadas pra qualquer OUTRO aluno aberto no mesmo aparelho.
+    if (localStorage.getItem('gh_legado_migrado')) return;
+    localStorage.setItem('gh_legado_migrado', String(STUDENT_ID));
     const newPrefix = `gh_${STUDENT_ID}_`;
     const newPlacasPrefix = `gh_placas_${STUDENT_ID}_`;
     const legacy = ['treino', 'atual', 'dieta'];
@@ -9851,11 +9859,17 @@ function showAchievementCard(type, data) {
       const di = data && typeof data.di === 'number' ? data.di : null;
       const claimed = di != null && alreadyClaimedToday(di);
       hint.style.display = '';
-      hint.textContent = claimed
-        ? '✅ Treino contou! Compartilha marcando o @gh.scheuermann que o dia vale dobrado.'
-        : '📲 Compartilha e marca o @gh.scheuermann no story: dia marcado vale dobrado no ranking.';
+      // v552: dia fechado com exercício marcado "não consegui fazer" fica registrado mas NÃO entra no ranking (regra do GH de
+      // 14/09). O card prometia "vale dobrado" e o botão dizia "treino já contou": o aluno pulava um por treino e via 0 no ranking.
+      const _temPulado = di != null && WORKOUT[di] && WORKOUT[di].exercises.some((ex, ei) => !ex.warmup && isSkipped(di, ei));
+      hint.textContent = _temPulado
+        ? 'Treino registrado. Como teve exercício marcado "não consegui fazer", esse dia não entra no ranking. Se der pra fazer depois, desfaz o pulado e completa que ele passa a contar.'
+        : (claimed
+          ? '✅ Treino contou! Compartilha marcando o @gh.scheuermann que o dia vale dobrado.'
+          : '📲 Compartilha e marca o @gh.scheuermann no story: dia marcado vale dobrado no ranking.');
       try { _achIgMostra(); } catch (_) {}
-      hint.style.color = claimed ? '#4caf50' : 'var(--gold)';
+      hint.style.color = _temPulado ? '#b9a27a' : (claimed ? '#4caf50' : 'var(--gold)');
+      hint.dataset.pulado = _temPulado ? '1' : '';
     } else {
       hint.style.display = 'none';
       const _bi = document.getElementById('achIg'); if (_bi) _bi.style.display = 'none';
@@ -9863,7 +9877,7 @@ function showAchievementCard(type, data) {
   }
   // Mesmo do botão "Pular": só relevante em completion
   const closeBtn = document.querySelector('button.ach-btn.ghost[onclick="achClose()"]');
-  if (closeBtn) closeBtn.textContent = type === 'completion' ? 'Pular (treino já contou)' : 'Fechar';
+  if (closeBtn) closeBtn.textContent = (type === 'completion' && !(hint && hint.dataset.pulado === '1')) ? 'Pular (treino já contou)' : 'Fechar';
   // "Digitei errado" só no card de PR (Vitor 14/08: 25,5 virou 255 e travou o recorde pra sempre)
   const wrongBtn = document.getElementById('achWrongBtn');
   if (wrongBtn) wrongBtn.style.display = type === 'pr' ? '' : 'none';
@@ -10479,6 +10493,8 @@ async function achShare() {
       }
     } catch (e) {
       // User cancelled o share — não credita pontos
+      // v552: erro que NÃO é cancelamento (o aparelho recusou abrir o compartilhar): o toque não fazia nada. Salva a imagem.
+      if (e && e.name !== 'AbortError') { try { achSave(); _ghToast('Não consegui abrir o compartilhar aqui: salvei a imagem pra tu postar pelo Instagram.', 6000); } catch (_) {} }
     }
     if (shared) onShareConfirmed();
   }, 'image/png');
@@ -21936,7 +21952,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v551';
+    var APP_SHELL_V = 'metodo-gh-v552';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
