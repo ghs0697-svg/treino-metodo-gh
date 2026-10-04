@@ -2006,6 +2006,9 @@
   .dc-seg { display: flex; gap: 6px; background: rgba(255, 255, 255, .04); border-radius: 10px; padding: 4px; }
   .dc-seg button { flex: 1; background: transparent; border: none; color: #9a9389; font-size: 12px; font-weight: 700; padding: 8px 6px; border-radius: 8px; cursor: pointer; font-family: inherit; }
   .dc-seg button.on { background: var(--gold); color: #15100a; }
+  .dc-seg-k { flex-wrap: wrap; }
+  .dc-seg-k button { flex: 1 1 auto; min-width: 44px; }
+  .dc-pergunta { background: rgba(212, 175, 106, .1); border: 1px solid rgba(212, 175, 106, .35); color: #e6d3aa; font-size: 12px; line-height: 1.5; border-radius: 10px; padding: 11px 12px; margin-top: 14px; }
   .dc-in { width: 100%; background: #26262c; border: 1px solid #36363e; color: #fff; padding: 11px 12px; border-radius: 9px; font-size: 16px; font-family: inherit; font-variant-numeric: tabular-nums; }
   .dc-row { display: flex; gap: 8px; }
   .dc-row > div { flex: 1; }
@@ -5462,34 +5465,48 @@
 
     <div class="dc-label">O QUE VEM ESCRITO NO TEU FRASCO</div>
     <div class="dc-seg" id="dcSeg">
-      <button type="button" class="on" id="dcSegPronto" onclick="dcSetTipo('pronto')">Já vem líquido</button>
-      <button type="button" id="dcSegPo" onclick="dcSetTipo('po')">É pó, eu diluo</button>
+      <button type="button" class="on" id="dcSegPronto" onclick="dcSetTipo('pronto', true)">Já vem líquido</button>
+      <button type="button" id="dcSegPo" onclick="dcSetTipo('po', true)">É pó, eu diluo</button>
     </div>
 
     <div id="dcCampoPronto">
-      <div class="dc-label">CONCENTRAÇÃO DO FRASCO</div>
+      <div class="dc-label">O QUE O RÓTULO DIZ</div>
       <div class="dc-row">
-        <div><input type="number" inputmode="decimal" class="dc-in" id="dcConc" placeholder="250" oninput="dcCalc()"></div>
-        <div><select class="dc-in" id="dcConcUn" onchange="dcCalc()"><option value="mg">mg/ml</option><option value="mcg">mcg/ml</option><option value="ui">UI/ml</option></select></div>
+        <div><input type="text" inputmode="decimal" class="dc-in" id="dcConc" placeholder="250" oninput="dcInput()" autocomplete="off"></div>
+        <div><select class="dc-in" id="dcConcUn" onchange="dcInput()"><option value="mg">mg</option><option value="mcg">mcg</option><option value="ui">UI</option></select></div>
       </div>
-      <p class="dc-hint">Está escrito no rótulo, tipo “250mg/ml”. Se o rótulo disser o total e o volume (ex: 250mg em 1ml), põe o número por ml aqui.</p>
+      <div class="dc-label">EM QUANTOS ML</div>
+      <input type="text" inputmode="decimal" class="dc-in" id="dcConcMl" placeholder="1" oninput="dcInput()" autocomplete="off">
+      <p class="dc-hint">Copia do rótulo. Se diz “250mg/ml”, põe 250 e 1. Se diz “200mg/2ml”, põe 200 e 2. A conta por ml eu faço.</p>
     </div>
 
     <div id="dcCampoPo" style="display:none;">
       <div class="dc-label">QUANTO VEM NO FRASCO</div>
       <div class="dc-row">
-        <div><input type="number" inputmode="decimal" class="dc-in" id="dcTotal" placeholder="5" oninput="dcCalc()"></div>
-        <div><select class="dc-in" id="dcTotalUn" onchange="dcCalc()"><option value="mg">mg</option><option value="mcg">mcg</option><option value="ui">UI</option></select></div>
+        <div><input type="text" inputmode="decimal" class="dc-in" id="dcTotal" placeholder="5" oninput="dcInput()" autocomplete="off"></div>
+        <div><select class="dc-in" id="dcTotalUn" onchange="dcInput()"><option value="mg">mg</option><option value="mcg">mcg</option><option value="ui">UI</option></select></div>
       </div>
       <div class="dc-label">ÁGUA QUE TU COLOCOU (ML)</div>
-      <input type="number" inputmode="decimal" class="dc-in" id="dcAgua" placeholder="2" oninput="dcCalc()">
+      <input type="text" inputmode="decimal" class="dc-in" id="dcAgua" placeholder="2" oninput="dcInput()" autocomplete="off">
       <p class="dc-hint">A água de diluição não muda a dose, muda só o volume que tu puxa. Mais água = número maior na seringa, mesma dose.</p>
     </div>
 
-    <div class="dc-label">DOSE DE CADA APLICAÇÃO</div>
+    <div id="dcSemanaBox" style="display:none;">
+      <div class="dc-label">EM QUANTAS APLICAÇÕES TU DIVIDE NA SEMANA?</div>
+      <div class="dc-seg dc-seg-k" id="dcAplicSeg">
+        <button type="button" data-k="1" onclick="dcSetAplic(1, true)">1</button>
+        <button type="button" data-k="2" onclick="dcSetAplic(2, true)">2</button>
+        <button type="button" data-k="3" onclick="dcSetAplic(3, true)">3</button>
+        <button type="button" data-k="3.5" onclick="dcSetAplic(3.5, true)">dia sim, dia não</button>
+        <button type="button" data-k="7" onclick="dcSetAplic(7, true)">todo dia</button>
+      </div>
+      <p class="dc-hint" id="dcSemanaHint"></p>
+    </div>
+
+    <div class="dc-label" id="dcDoseLabel">DOSE DE CADA APLICAÇÃO</div>
     <div class="dc-row">
-      <div><input type="number" inputmode="decimal" class="dc-in" id="dcDose" oninput="dcCalc()"></div>
-      <div><select class="dc-in" id="dcDoseUn" onchange="dcCalc()"><option value="mg">mg</option><option value="mcg">mcg</option><option value="ui">UI</option></select></div>
+      <div><input type="text" inputmode="decimal" class="dc-in" id="dcDose" oninput="dcInput()" autocomplete="off"></div>
+      <div><select class="dc-in" id="dcDoseUn" onchange="dcInput()"><option value="mg">mg</option><option value="mcg">mcg</option><option value="ui">UI</option></select></div>
     </div>
     <p class="dc-hint" id="dcDoseHint"></p>
 
@@ -18093,10 +18110,10 @@ function _mealNaoMotivo(ri) { try { return localStorage.getItem(_mealNaoKey(ri))
 // Entregas/Reajustes prescrevem em mg (+ fragmentação) e muito aluno não sabe quanto
 // aquilo dá na seringa. Isto NÃO prescreve nada: só converte a dose que JÁ está no
 // protocolo dele pro volume, usando o frasco que ELE tem na mão.
-let _dcTipo = 'pronto', _dcCtx = { nome: '', doseTxt: '' };
+let _dcTipo = 'pronto', _dcCtx = { nome: '', doseTxt: '', obs: '', semanal: false, total: null, un: 'mg', aplic: null, deProtocolo: false, frascoSalvo: false };
 // Itens de via oral no vocabulário do GH: comprimido/cápsula não tem "quanto puxar".
 // Fora da lista, a via aparece escrita na dose/observação (comprimido, cápsula, oral).
-const _DC_ORAIS = /(hemogenin|oximetolona|oxandrolona|anavar|dianabol|metandrostenolona|turinabol|halotestin|fluoximesterona|proviron|mesterolona|clomid|clomifeno|tamoxifeno|anastrozol|letrozol|exemestano|cabergolina|dostinex|finasterida|dutasterida|espironolactona|tadalafila|telmisartana|mk[ -]?677|ibutamoren|clembuterol|glifage|metformina|janumet|ostarine|ligandrol|cardarine|sibutramina|\bnac\b|acetilciste[íi]na|silimarina|tudca|\bt3\b|\bt4\b)/i;
+const _DC_ORAIS = /(hemogenin|oximetolona|oxandrolona|anavar|dianabol|metandrostenolona|turinabol|halotestin|fluoximesterona|proviron|mesterolona|clomid|clomifeno|tamoxifeno|anastrozol|letrozol|exemestano|cabergolina|dostinex|finasterida|dutasterida|espironolactona|tadalafila|telmisartana|mk[ -]?677|ibutamoren|cle[mn]buterol|glifage|metformina|janumet|ostarine|ligandrol|cardarine|sibutramina|\bnac\b|acetilciste[íi]na|silimarina|tudca|\bt3\b|\bt4\b)/i;
 // v541 (Entregas #2663, Cauã Machado 03/10: o Masteron perdeu o botão porque a observação dizia "e não um comprimido de propósito").
 // Injetável conhecido pelo NOME ganha a calculadora mesmo com palavra de comprimido solta na observação (texto livre fala de outras coisas).
 const _DC_INJ = /(testosterona|durateston|enantato|cipionato|propionato|undecanoato|undecilenato|decanoato|fenilpropionato|\bnpp\b|nandrolona|\bdeca\b|masteron|drostanolona|trembolona|\btrembo\b|boldenona|primobolan|metenolona|trestolona|\bhcg\b|\bhmg\b|gonadotrofina|somatropina|\bhgh\b|bpc[ -]?157|tb[ -]?500|\bcjc\b|ipamorelin|tesamorelin|sermorelin|ghrp|hexarelin|mots[ -]?c|ss[ -]?31|\bghk\b|aod[ -]?9604|semaglutida|tirzepatida|retatrutida|liraglutida|kisspeptin|pt[ -]?141|melanotan|epitalon|timosina|thymosin|igf[ -]?1)/i;
@@ -18114,6 +18131,8 @@ function _dcEhOral(nome, obs, dose) {
   const nomeBase = String(nome || '').replace(/\([^)]*\)/g, ' ');
   const doseBase = String(dose || '').replace(/\([^)]*\)/g, ' ');   // v541
   const tudo = nomeBase + ' ' + String(obs || '');
+  // v543: observação que COMEÇA com "Via oral" é declaração da via (regra de escrita das lanes), vence o nome de injetável
+  if (/^\s*via oral\b/i.test(String(obs || ''))) return true;
   // 0º) v541: forma que não vai em seringa escrita no NOME, ou dose em unidade de engolir ("2 comprimidos")
   if (_DC_FORMA_NOME.test(nomeBase) || _DC_DOSE_ENGOLE.test(doseBase)) return true;
   // 1º) comprimido por natureza vence tudo: o GH escreve "via oral, junto da aplicação"
@@ -18132,7 +18151,7 @@ function _dcEhOral(nome, obs, dose) {
 }
 // Calculadora só faz sentido com dose de verdade: número + unidade. Sem isso a linha é
 // uma instrução ("SUSPENSA nesta versão", "1x a cada 3 meses"), não um volume a puxar.
-function _dcDoseCalculavel(dose) { return /\d+(?:[.,]\d+)?\s*(mg|mcg|µg|ui|u\.i\.)\b/i.test(String(dose || '')); }
+function _dcDoseCalculavel(dose) { return /\d+(?:[.,]\d+)?\s*(mg|mcg|µg|μg|ug|ui|u\.i\.?)(?![a-zà-ú])/i.test(String(dose || '')); }   // v543: "U.I." e µg
 // grama = suplemento de pote, não vai pra seringa
 function _dcDoseEhGrama(dose) { return /\d+(?:[.,]\d+)?\s*g\b/i.test(String(dose || '')) && !/\bmg\b|\bmcg\b/i.test(String(dose || '')); }
 // mcg é a base de massa (1mg = 1000mcg). UI é base própria: não se converte em massa.
@@ -18141,88 +18160,177 @@ function _dcBase(v, un) {
   if (un === 'mcg') return { v: v, fam: 'massa' };
   return { v: v, fam: 'ui' };
 }
-function _dcNum(id) {
-  const el = document.getElementById(id);
-  const n = parseFloat(String((el && el.value) || '').replace(',', '.'));
+// v543: número do jeito que o aluno e a planilha escrevem. "2.000" é dois mil (ponto de milhar), "2,5" e "2.5" são decimais,
+// "0.250" é decimal. Antes "2.000 UI" era lido como 2 e a marca da seringa saía mil vezes menor.
+function _dcNumTxt(t) {
+  let s = String(t == null ? '' : t).trim().replace(/\s+/g, '');
+  if (!s) return null;
+  if (/^[1-9]\d{0,2}(\.\d{3})+(,\d+)?$/.test(s)) s = s.replace(/\./g, '').replace(',', '.');
+  else s = s.replace(',', '.');
+  if (!/^\d*\.?\d+$/.test(s) && !/^\d+\.$/.test(s)) return null;
+  const n = parseFloat(s);
   return isNaN(n) ? null : n;
 }
+function _dcNum(id) { const el = document.getElementById(id); return _dcNumTxt(el && el.value); }
 function _dcFmt(n, casas) {
   const c = casas === undefined ? 2 : casas;
   return String(Math.round(n * Math.pow(10, c)) / Math.pow(10, c)).replace('.', ',');
 }
-// Lê a dose escrita no protocolo: primeiro "número + unidade" do texto + a fragmentação.
+// Lê a dose escrita no protocolo. semanalTotal = o número é o TOTAL DA SEMANA ("400mg por semana", "300mg na semana"): fala em
+// semana, não diz "por aplicação" e não traz frequência colada ("100mg 2x na semana" é 100 de cada vez, 2 vezes).
 function _dcParseDose(txt) {
-  const s = String(txt || '').toLowerCase();
-  const m = s.match(/(\d+(?:[.,]\d+)?)\s*(mcg|mg|ui|u\.i\.|g\b)/);
+  const s = String(txt || '').toLowerCase().replace(/µg|μg|\bug\b/g, 'mcg');
+  const m = s.match(/(\d[\d.]*(?:,\d+)?)\s*(mcg|mg|ui(?![a-zà-ú])|u\.i\.?|g\b)/);
   let valor = null, un = 'mg';
   if (m) {
-    valor = parseFloat(m[1].replace(',', '.'));
+    valor = _dcNumTxt(m[1]);
     const u = m[2].replace(/\./g, '');
     un = (u === 'mcg') ? 'mcg' : (u === 'ui' ? 'ui' : 'mg');
-    if (u === 'g') valor = valor * 1000;                 // grama vira mg
+    if (u === 'g' && valor != null) valor = valor * 1000;                 // grama vira mg
   }
-  const fr = s.match(/(\d+)\s*x\s*(?:\/|\s|por)?\s*(semana|sem\b|dia|d\b|mes|mês)/);
+  const fr = s.match(/(\d+)\s*(?:x|vezes)\s*(?:\/|na|no|ao|por|a)?\s*(semana|sem\b|dia\b|d\b|mes|mês)/);
   let vezes = null, periodo = null;
-  if (fr) { vezes = parseInt(fr[1], 10); periodo = /dia|d\b/.test(fr[2]) ? 'dia' : (/mes|mês/.test(fr[2]) ? 'mês' : 'semana'); }
-  else if (/(\/|\bpor\s*)dia|ao dia|diari/.test(s)) { vezes = 1; periodo = 'dia'; }
+  if (fr) { vezes = parseInt(fr[1], 10); periodo = /dia|^d$/.test(fr[2]) ? 'dia' : (/mes|mês/.test(fr[2]) ? 'mês' : 'semana'); }
+  else if (/(\/|\bpor\s*)dia|ao dia|diari|por noite|\/noite/.test(s)) { vezes = 1; periodo = 'dia'; }
   else if (/(\/|\bpor\s*)sem|na semana|semanal/.test(s)) { vezes = 1; periodo = 'semana'; }
-  return { valor: valor, un: un, vezes: vezes, periodo: periodo };
+  const temSemana = /(\/|\bpor\s+|\bna\s+)sem(ana)?\b|semanal/.test(s);
+  const porAplic = /por aplica|cada aplica|por dose|\/aplica/.test(s);
+  const semanalTotal = valor != null && valor > 0 && temSemana && !porAplic && !(fr && /sem/.test(fr[2]));
+  const semX = s.replace(/\d+\s*(?:x|vezes)/g, ' ');
+  const faixa = /\d\s*(?:a|-|até)\s*\d/.test(semX);
+  return { valor: valor, un: un, vezes: vezes, periodo: periodo, semanalTotal: semanalTotal, faixa: faixa };
 }
-function openDoseCalc(nome, doseTxt) {
-  _dcCtx = { nome: String(nome || ''), doseTxt: String(doseTxt || '') };
+// Em quantas aplicações a semana é dividida, lendo o que o protocolo JÁ diz (observação da linha, a própria dose, ou o card
+// "Dias de aplicação"). null = o protocolo não diz, o aluno escolhe. 3.5 = dia sim, dia não.
+function _dcAplicSemana(txt) {
+  const s = String(txt || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (!s.trim()) return null;
+  const m = s.match(/dividid[oa]s?\s+em\s+(\d+)/) || s.match(/(\d+)\s*(?:x|vezes|aplicacoes)\s*(?:\/|na|por|a)?\s*sem/) || s.match(/(\d+)\s*aplicacoes/);
+  if (m) { const k = parseInt(m[1], 10); if (k >= 1 && k <= 7) return k; }
+  if (/dia sim,?\s*(e\s*)?dia nao|dias alternados/.test(s)) return 3.5;
+  if (/todo dia|todos os dias|diariamente/.test(s)) return 7;
+  let dias = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'].filter(function (d) { return new RegExp('\\b' + d).test(s); }).length;
+  if (!dias) dias = ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'].filter(function (d) { return new RegExp('\\b' + d + '\\b').test(s); }).length;
+  if (dias >= 1) return dias;
+  if (/uma vez (na|por) semana|1 vez (na|por) semana|dose unica/.test(s)) return 1;
+  return null;
+}
+function _dcAplicDoProtocolo(obs, doseTxt) {
+  let k = _dcAplicSemana(obs);
+  if (k == null) k = _dcAplicSemana(String(doseTxt || '').replace(/\d+(?:[.,]\d+)?\s*(mcg|mg|ui|g)\b/gi, ' '));
+  if (k == null) {
+    try {
+      const card = (DIET_DATA && DIET_DATA.protocolos || []).filter(function (p) { return /dias? de aplica/i.test(String(p.nome || '')); })[0];
+      if (card) k = _dcAplicSemana(String(card.dose || '') + ' ' + String(card.obs || ''));
+    } catch (_) {}
+  }
+  return k;
+}
+// Óleo intramuscular vai em seringa comum (3 ml): o número grande sai em ml. Peptídeo e HCG vão na de insulina: sai a marca.
+const _DC_OLEO = /(testosterona|durateston|deposteron|enantato|cipionato|propionato|undecanoato|undecilenato|decanoato|fenilpropionato|\bnpp\b|nandrolona|\bdeca\b|masteron|drostanolona|trembolona|\btrembo\b|boldenona|primobolan|metenolona|trestolona)/i;
+function _dcFrascoKey() { return 'gh_dcfrasco2_' + SHEET_ID + '_' + _dcCtx.nome; }   // v543: chave nova (a antiga pode ter frasco de outro item)
+function openDoseCalcIdx(i) {
+  try { const p = DIET_DATA.protocolos[i]; if (p) openDoseCalc(p.nome, p.dose, p.obs); } catch (_) {}
+}
+function openDoseCalc(nome, doseTxt, obs) {
+  const p = _dcParseDose(doseTxt);
+  _dcCtx = { nome: String(nome || ''), doseTxt: String(doseTxt || ''), obs: String(obs || ''), semanal: !!p.semanalTotal, total: p.valor, un: p.un, aplic: null, deProtocolo: false, frascoSalvo: false };
   document.getElementById('dcItem').textContent = _dcCtx.nome;
   document.getElementById('dcLead').innerHTML = 'Isto <b>não muda tua prescrição</b>: só transforma a dose que já está aí em cima no tanto que tu puxa na seringa, usando o frasco que tu comprou.';
-  const p = _dcParseDose(_dcCtx.doseTxt);
+  // v543: SEMPRE zera os campos antes (o modal é um só pra todos os itens: o frasco do item anterior ficava aqui e era
+  // gravado como se fosse deste)
+  ['dcConc', 'dcConcMl', 'dcTotal', 'dcAgua', 'dcDose'].forEach(function (id) { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('dcConcUn').value = 'mg'; document.getElementById('dcTotalUn').value = 'mg';
+  let tipo = 'pronto', salvo = null;
+  try { salvo = JSON.parse(localStorage.getItem(_dcFrascoKey()) || 'null'); } catch (_) { salvo = null; }
+  if (salvo) {
+    tipo = salvo.tipo === 'po' ? 'po' : 'pronto';
+    if (salvo.conc) { document.getElementById('dcConc').value = salvo.conc; document.getElementById('dcConcUn').value = salvo.concUn || 'mg'; document.getElementById('dcConcMl').value = salvo.concMl || '1'; }
+    if (salvo.total) { document.getElementById('dcTotal').value = salvo.total; document.getElementById('dcTotalUn').value = salvo.totalUn || 'mg'; }
+    if (salvo.agua) document.getElementById('dcAgua').value = salvo.agua;
+    _dcCtx.frascoSalvo = !!(salvo.conc || salvo.total);
+  }
   const dose = document.getElementById('dcDose'), doseUn = document.getElementById('dcDoseUn');
-  if (p.valor) { dose.value = p.valor; doseUn.value = p.un; } else { dose.value = ''; doseUn.value = 'mg'; }
-  document.getElementById('dcDoseHint').textContent = _dcCtx.doseTxt
-    ? ('Teu protocolo diz: "' + _dcCtx.doseTxt + '". Se esse número for o total da semana, divide pelas aplicações e põe aqui o de CADA vez.')
-    : 'Põe aqui a dose de cada aplicação, do jeito que está no teu protocolo.';
-  // preserva o frasco já informado antes (mesmo aluno, mesmo frasco na semana)
-  try {
-    const salvo = JSON.parse(localStorage.getItem('gh_dcfrasco_' + SHEET_ID + '_' + _dcCtx.nome) || 'null');
-    if (salvo) {
-      _dcTipo = salvo.tipo || 'pronto';
-      if (salvo.conc) { document.getElementById('dcConc').value = salvo.conc; document.getElementById('dcConcUn').value = salvo.concUn || 'mg'; }
-      if (salvo.total) { document.getElementById('dcTotal').value = salvo.total; document.getElementById('dcTotalUn').value = salvo.totalUn || 'mg'; }
-      if (salvo.agua) document.getElementById('dcAgua').value = salvo.agua;
-    }
-  } catch (_) {}
-  dcSetTipo(_dcTipo);
+  doseUn.value = p.un || 'mg';
+  const box = document.getElementById('dcSemanaBox'), hint = document.getElementById('dcDoseHint');
+  if (_dcCtx.semanal) {
+    // total da semana: a dose de cada aplicação só aparece depois de saber em quantas vezes a semana é dividida
+    box.style.display = '';
+    let k = (salvo && salvo.aplic) ? Number(salvo.aplic) : null;
+    if (!k) { k = _dcAplicDoProtocolo(_dcCtx.obs, _dcCtx.doseTxt); _dcCtx.deProtocolo = k != null; }
+    hint.textContent = '';
+    dcSetAplic(k, false);
+  } else {
+    box.style.display = 'none';
+    document.getElementById('dcDoseLabel').textContent = 'DOSE DE CADA APLICAÇÃO';
+    if (p.valor && !p.faixa) dose.value = _dcFmt(p.valor, 3);
+    hint.textContent = _dcCtx.doseTxt
+      ? ('Teu protocolo diz: "' + _dcCtx.doseTxt + '".' + (p.faixa ? ' Como é uma faixa, põe aqui a dose que tu vai aplicar de cada vez.' : ' Confere se é esse o número de CADA aplicação.'))
+      : 'Põe aqui a dose de cada aplicação, do jeito que está no teu protocolo.';
+  }
+  dcSetTipo(tipo, false);
   teShow('doseCalcModal');
 }
-function dcSetTipo(t) {
+// k = aplicações por semana (1, 2, 3, 3.5 = dia sim dia não, 7). null = ainda não se sabe: sem dose e sem resultado.
+function dcSetAplic(k, doUsuario) {
+  _dcCtx.aplic = (k && k > 0) ? k : null;
+  if (doUsuario) _dcCtx.deProtocolo = false;
+  document.querySelectorAll('#dcAplicSeg button').forEach(function (b) { b.classList.toggle('on', _dcCtx.aplic != null && Number(b.getAttribute('data-k')) === Number(_dcCtx.aplic)); });
+  const dose = document.getElementById('dcDose'), sh = document.getElementById('dcSemanaHint'), lab = document.getElementById('dcDoseLabel');
+  const unTxt = _dcCtx.un === 'ui' ? ' UI' : _dcCtx.un;
+  if (_dcCtx.aplic && _dcCtx.total) {
+    const cada = _dcCtx.total / _dcCtx.aplic;
+    dose.value = _dcFmt(cada, 2);
+    lab.textContent = 'DOSE DE CADA APLICAÇÃO (' + _dcFmt(_dcCtx.total, 2) + ' ÷ ' + _dcFmt(_dcCtx.aplic, 1) + ')';
+    sh.textContent = 'Teu protocolo diz "' + _dcCtx.doseTxt + '": é o total da semana.' + (_dcCtx.deProtocolo ? ' Pelo que está escrito nele, tu divide em ' + (_dcCtx.aplic === 3.5 ? 'dia sim, dia não' : (_dcCtx.aplic === 7 ? 'todo dia' : _dcFmt(_dcCtx.aplic, 0) + (_dcCtx.aplic === 1 ? ' aplicação' : ' aplicações'))) + '. Se não for isso, troca aqui.' : '') + ' Dá ' + _dcFmt(cada, 2) + unTxt + ' de cada vez.';
+  } else {
+    dose.value = '';
+    lab.textContent = 'DOSE DE CADA APLICAÇÃO';
+    sh.textContent = 'Teu protocolo diz "' + _dcCtx.doseTxt + '": é o total da semana. Escolhe em quantas vezes tu divide que eu faço a conta de cada aplicação.';
+  }
+  if (doUsuario) _dcSalvaFrasco();
+  dcCalc();
+}
+function dcSetTipo(t, doUsuario) {
   _dcTipo = t;
   document.getElementById('dcSegPronto').classList.toggle('on', t === 'pronto');
   document.getElementById('dcSegPo').classList.toggle('on', t === 'po');
   document.getElementById('dcCampoPronto').style.display = t === 'pronto' ? '' : 'none';
   document.getElementById('dcCampoPo').style.display = t === 'po' ? '' : 'none';
+  if (doUsuario) _dcSalvaFrasco();
   dcCalc();
 }
+// v543: o frasco só é gravado quando o ALUNO mexe (antes gravava ao abrir, com o que estivesse nos campos)
 function _dcSalvaFrasco() {
   try {
-    localStorage.setItem('gh_dcfrasco_' + SHEET_ID + '_' + _dcCtx.nome, JSON.stringify({
+    localStorage.setItem(_dcFrascoKey(), JSON.stringify({
       tipo: _dcTipo,
-      conc: document.getElementById('dcConc').value, concUn: document.getElementById('dcConcUn').value,
+      conc: document.getElementById('dcConc').value, concUn: document.getElementById('dcConcUn').value, concMl: document.getElementById('dcConcMl').value,
       total: document.getElementById('dcTotal').value, totalUn: document.getElementById('dcTotalUn').value,
-      agua: document.getElementById('dcAgua').value
+      agua: document.getElementById('dcAgua').value,
+      aplic: _dcCtx.aplic || ''
     }));
   } catch (_) {}
 }
+function dcInput() { _dcCtx.frascoSalvo = false; _dcSalvaFrasco(); dcCalc(); }
 function dcCalc() {
   const out = document.getElementById('dcResultado');
   if (!out) return;
-  _dcSalvaFrasco();
   const dose = _dcNum('dcDose');
   const doseUn = document.getElementById('dcDoseUn').value;
   // concentração por ml, conforme o tipo de frasco
   let concV = null, concUn = null, totalFrasco = null;
   if (_dcTipo === 'pronto') {
-    concV = _dcNum('dcConc'); concUn = document.getElementById('dcConcUn').value;
+    const qt = _dcNum('dcConc'); let vol = _dcNum('dcConcMl'); if (vol == null) vol = 1;   // campo vazio = 1 ml (rótulo "250mg/ml")
+    if (qt != null && vol > 0) { concV = qt / vol; concUn = document.getElementById('dcConcUn').value; }
   } else {
     const tot = _dcNum('dcTotal'), agua = _dcNum('dcAgua');
     totalFrasco = tot;
     if (tot != null && agua) { concV = tot / agua; concUn = document.getElementById('dcTotalUn').value; }
+  }
+  if (_dcCtx.semanal && !_dcCtx.aplic && (dose == null || dose <= 0)) {
+    out.innerHTML = '<div class="dc-pergunta">Falta só dizer em quantas aplicações tu divide a semana (ali em cima). Sem isso eu não mostro número nenhum, pra tu não puxar o total da semana numa aplicação só.</div>';
+    return;
   }
   if (dose == null || dose <= 0 || concV == null || concV <= 0) { out.innerHTML = ''; return; }
   const bd = _dcBase(dose, doseUn), bc = _dcBase(concV, concUn);
@@ -18232,39 +18340,44 @@ function dcCalc() {
   }
   const ml = bd.v / bc.v;
   const ui = ml * 100;                       // seringa de insulina: 1ml = 100 marcas
-  const pct = Math.max(2, Math.min(100, ui));
+  const oleo = _DC_OLEO.test(String(_dcCtx.nome || '').replace(/\([^)]*\)/g, ' ') + ' ' + String(_dcCtx.nome || ''));
+  const emMl = oleo || ml > 1;               // óleo, ou volume que não cabe na de insulina: o número grande é em ml
+  const porMl = bc.fam === 'ui' ? (_dcFmt(bc.v, 1) + ' UI') : (bc.v >= 1000 ? _dcFmt(bc.v / 1000, 2) + 'mg' : _dcFmt(bc.v, 1) + 'mcg');
+  const escala = emMl ? Math.max(1, Math.min(3, Math.ceil(ml))) : 1;   // barra: 1 ml (insulina) ou até 3 ml (seringa comum)
+  const pct = Math.max(2, Math.min(100, (ml / escala) * 100));
   let ticks = '';
   for (let i = 1; i < 10; i++) ticks += '<div class="dc-syr-tick" style="left:' + (i * 10) + '%"></div>';
-  const porMl = bc.fam === 'ui' ? (_dcFmt(bc.v, 1) + ' UI') : (bc.v >= 1000 ? _dcFmt(bc.v / 1000, 2) + 'mg' : _dcFmt(bc.v, 1) + 'mcg');
-  let html = `<div class="dc-out">
-    <div class="dc-out-k">TU PUXA ATÉ A MARCA</div>
-    <div class="dc-out-v">${_dcFmt(ui, Math.abs(ui - Math.round(ui)) < 0.05 ? 0 : 1)}</div>
-    <div class="dc-out-sub">na seringa de insulina</div>
-    <div class="dc-out-extra">São <b style="color:#d9d4cb;">${_dcFmt(ml, 3)} ml</b> do teu frasco${_dcTipo === 'po' ? ', que ficou com ' + porMl + ' por ml' : ''}.</div>
-  </div>
-  <div class="dc-syr">
-    <div class="dc-syr-bar"><div class="dc-syr-fill" style="width:${pct}%"></div>${ticks}</div>
-    <div class="dc-syr-scale"><span>0</span><span>50</span><span>100</span></div>
-  </div>`;
+  const marca = _dcFmt(ui, Math.abs(ui - Math.round(ui)) < 0.05 ? 0 : 1);
+  let html = '';
+  if (_dcCtx.frascoSalvo) html += '<p class="dc-hint" style="margin-top:12px;">Usei o frasco que tu informou da outra vez. Trocou de frasco? Corrige ali em cima.</p>';
+  html += '<div class="dc-out">';
+  if (emMl) {
+    html += '<div class="dc-out-k">EM CADA APLICAÇÃO TU PUXA</div><div class="dc-out-v">' + _dcFmt(ml, 2) + ' ml</div><div class="dc-out-sub">na seringa comum (a de 3 ml)</div>';
+    html += '<div class="dc-out-extra">Teu frasco tem <b style="color:#d9d4cb;">' + porMl + ' por ml</b>.' + (ml <= 1 ? ' Se tu usa seringa de insulina, é a marca <b style="color:#d9d4cb;">' + marca + '</b>.' : '') + '</div>';
+  } else {
+    html += '<div class="dc-out-k">EM CADA APLICAÇÃO TU PUXA ATÉ A MARCA</div><div class="dc-out-v">' + marca + '</div><div class="dc-out-sub">na seringa de insulina</div>';
+    html += '<div class="dc-out-extra">São <b style="color:#d9d4cb;">' + _dcFmt(ml, 3) + ' ml</b> do teu frasco, que tem ' + porMl + ' por ml.</div>';
+  }
+  html += '</div><div class="dc-syr"><div class="dc-syr-bar"><div class="dc-syr-fill" style="width:' + pct + '%"></div>' + ticks + '</div>'
+    + '<div class="dc-syr-scale">' + (emMl ? '<span>0</span><span>' + _dcFmt(escala / 2, 1) + ' ml</span><span>' + escala + ' ml</span>' : '<span>0</span><span>50</span><span>100</span>') + '</div></div>';
   // rendimento do frasco
   const aplic = _dcTipo === 'po'
     ? (totalFrasco != null ? _dcBase(totalFrasco, document.getElementById('dcTotalUn').value).v / bd.v : null)
     : (bc.v / bd.v);
   if (aplic && isFinite(aplic) && aplic >= 2) {
-    const n = Math.floor(aplic);
-    const p = _dcParseDose(_dcCtx.doseTxt);
+    const nAp = Math.floor(aplic);
     let dura = '';
-    if (p.vezes && p.periodo === 'semana') {
-      const sem = Math.floor(n / p.vezes);
-      if (sem >= 1) dura = ' Nesse ritmo, dá pra cerca de ' + sem + ' semana' + (sem > 1 ? 's' : '') + '.';
-    } else if (p.vezes && p.periodo === 'dia') {
-      const dias = Math.floor(n / p.vezes);
-      if (dias >= 1) dura = ' Nesse ritmo, dá pra cerca de ' + dias + ' dia' + (dias > 1 ? 's' : '') + '.';
+    if (_dcTipo === 'po') {   // só o frasco de pó tem total conhecido: no líquido a conta é por ml, não dá pra falar de duração
+      const p = _dcParseDose(_dcCtx.doseTxt);
+      const porSemana = _dcCtx.semanal ? _dcCtx.aplic : (p.periodo === 'semana' ? p.vezes : null);
+      if (porSemana) { const sem = Math.floor(nAp / porSemana); if (sem >= 1) dura = ' Nesse ritmo, dá pra cerca de ' + sem + ' semana' + (sem > 1 ? 's' : '') + '.'; }
+      else if (p.vezes && p.periodo === 'dia') { const dias = Math.floor(nAp / p.vezes); if (dias >= 1) dura = ' Nesse ritmo, dá pra cerca de ' + dias + ' dia' + (dias > 1 ? 's' : '') + '.'; }
     }
-    html += '<p class="dc-hint" style="margin-top:10px;">' + (_dcTipo === 'po' ? 'O frasco todo' : 'Cada 1ml') + ' rende cerca de <b style="color:#9a9389;">' + n + ' aplicaç' + (n > 1 ? 'ões' : 'ão') + '</b> nessa dose.' + dura + '</p>';
+    html += '<p class="dc-hint" style="margin-top:10px;">' + (_dcTipo === 'po' ? 'O frasco todo' : 'Cada 1 ml do frasco') + ' rende cerca de <b style="color:#9a9389;">' + nAp + ' aplicaç' + (nAp > 1 ? 'ões' : 'ão') + '</b> nessa dose.' + dura + '</p>';
   }
-  if (ui < 5) html += '<div class="dc-warn">Deu um volume bem pequeno na seringa. Confere a concentração no rótulo, e se o número seguir esquisito me chama antes de aplicar.</div>';
-  else if (ml > 1) html += '<div class="dc-warn">Passa de uma seringa de insulina cheia (marca 100). Confere o rótulo do frasco, e me chama se ficar em dúvida.</div>';
+  if (ui < 5) html += '<div class="dc-warn">Deu um volume bem pequeno na seringa. Confere o rótulo e a dose, e se o número seguir esquisito me chama antes de aplicar.</div>';
+  else if (!oleo && ml > 1) html += '<div class="dc-warn">Passa de uma seringa de insulina cheia (marca 100). Confere o rótulo do frasco, e me chama se ficar em dúvida.</div>';
+  else if (ml > 3) html += '<div class="dc-warn">Passa de 3 ml numa aplicação só. Confere o rótulo e a dose, e me chama antes de aplicar.</div>';
   out.innerHTML = html;
 }
 
@@ -18925,8 +19038,8 @@ function renderDiet() {
       'sema': '💊', 'tirze': '💊', 'ozempic': '💊'
     };
 
-    d.protocolos.forEach(p => {
-      const nameLower = p.nome.toLowerCase();
+    d.protocolos.forEach((p, _pi) => {
+      const nameLower = String(p.nome || '').toLowerCase();
       let icon = '💊';
       for (const [key, emoji] of Object.entries(icons)) {
         if (nameLower.includes(key)) { icon = emoji; break; }
@@ -18950,9 +19063,7 @@ function renderDiet() {
       // Calculadora de dose (GH 14/08): só onde faz sentido puxar seringa — item de
       // via oral (comprimido/cápsula) não ganha botão, senão vira ruído no card.
       if (p.dose && _dcDoseCalculavel(p.dose) && !_dcEhOral(p.nome, p.obs, p.dose) && !_dcDoseEhGrama(p.dose)) {
-        const _nm = String(p.nome || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-        const _ds = String(p.dose || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-        html += `<button type="button" class="proto-calc-btn" onclick="openDoseCalc('${_nm}','${_ds}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="8" y2="11"/><line x1="12" y1="11" x2="12" y2="11"/><line x1="16" y1="11" x2="16" y2="11"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="12" y1="16" x2="12" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg> Quanto dá na seringa?</button>`;
+        html += `<button type="button" class="proto-calc-btn" onclick="openDoseCalcIdx(${_pi})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="8" y2="11"/><line x1="12" y1="11" x2="12" y2="11"/><line x1="16" y1="11" x2="16" y2="11"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="12" y1="16" x2="12" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg> Quanto dá na seringa?</button>`;
       }
       html += `</div>`;
     });
@@ -20728,7 +20839,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v542';
+    var APP_SHELL_V = 'metodo-gh-v543';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
