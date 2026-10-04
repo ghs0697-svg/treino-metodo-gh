@@ -9113,7 +9113,7 @@ function openDor(di, key) {
     else nome = (typeof _exAtivo === 'function' ? _exAtivo(di, ei).name : ex.name);
   } catch (_) {}
   _dorCtx = { di: di, key: key, nome: nome, sel: {} };
-  document.getElementById('dorExLabel').textContent = nome ? nome + ' · Dia ' + (di + 1) : '';
+  document.getElementById('dorExLabel').textContent = nome ? nome + ' · Dia ' + _diaRotulo(di).n + (_diaRotulo(di).bloco ? ' (' + _diaRotulo(di).bloco + ')' : '') : '';
   document.querySelectorAll('#dorModal .dor-chips').forEach(box => {
     const g = box.getAttribute('data-g');
     box.innerHTML = _DOR_OPTS[g].map(o => `<button type="button" class="tlem-h" onclick="_dorPick('${g}', '${o}', this)">${o}</button>`).join('');
@@ -9141,7 +9141,7 @@ async function enviarDor() {
   b.disabled = true; b.textContent = 'Enviando...';
   const obs = (document.getElementById('dorObs').value || '').trim();
   const pedido = 'DOR REPORTADA PELO APP\n' +
-    'Exercício: ' + (_dorCtx.nome || '(não identificado)') + ' (Dia ' + (_dorCtx.di + 1) + ')\n' +
+    'Exercício: ' + (_dorCtx.nome || '(não identificado)') + ' (Dia ' + _diaRotulo(_dorCtx.di).n + (_diaRotulo(_dorCtx.di).bloco ? ', ' + _diaRotulo(_dorCtx.di).bloco : '') + ')\n' +
     'Onde: ' + s.onde + '\n' +
     'Desde: ' + (s.desde || 'não informado') + '\n' +
     'Intensidade: ' + s.intensidade + '\n' +
@@ -10683,7 +10683,7 @@ function showCompletionCard(di) {
   const exercises = day.exercises.filter(ex => !ex.warmup).length;
   const streak = getStreakDays();
   // Detecta grupos do dia (se classifyMuscle estiver disponível)
-  let dayName = `DIA ${di + 1}`;
+  let dayName = `DIA ${_diaRotulo(di).n}`;
   if (typeof classifyMuscle === 'function' && typeof MUSCLE_LABELS !== 'undefined') {
     const groups = new Set();
     day.exercises.forEach(ex => {
@@ -11062,6 +11062,27 @@ function setShortMode(min) {
   updateDayProgress();
   if (min > 0) _ghToast(`⏱ Modo ${min}min ligado só por hoje: essencial primeiro, descanso encurtado. Amanhã volta o treino completo.`);
 }
+// v551: número do dia DENTRO do bloco. Em protocolo com Treino A e Treino B, o "Dia 1" do B aparecia como "Dia 7 de 10" no
+// topo, "Dia 7" no modo treino e no cronômetro, e ia como "Dia 7" no relato de dor pra equipe.
+function _diaRotulo(di) {
+  try {
+    const w = WORKOUT[di]; if (!w) return { n: di + 1, total: WORKOUT.length, bloco: '' };
+    const dois = (typeof BLOCOS !== 'undefined' && BLOCOS.length >= 2);
+    const doBloco = dois ? WORKOUT.filter(x => x.bloco === w.bloco) : WORKOUT;
+    const n = doBloco.indexOf(w) + 1;
+    return { n: n > 0 ? n : di + 1, total: doBloco.length, bloco: dois ? String(w.bloco || '') : '' };
+  } catch (_) { return { n: di + 1, total: 0, bloco: '' }; }
+}
+// v551: dia FECHADO no modo "pouco tempo" fica fechado. O corte valia só na data: no dia seguinte o app voltava a exigir os
+// exercícios cortados, o dia reaparecia "5/8", o app reabria nele e a semana nunca fechava.
+function _shortFechKey(di) { return `gh_shortok_${STUDENT_ID}_w${typeof currentWeek !== 'undefined' ? currentWeek : 1}_d${di}`; }
+function _shortFechado(di) {
+  try {
+    const o = JSON.parse(localStorage.getItem(_shortFechKey(di)) || 'null');
+    if (!o || !Array.isArray(o.k) || Date.now() - (o.t || 0) > 10 * 86400000) return null;
+    return new Set(o.k);
+  } catch (_) { return null; }
+}
 function allDoneOfDay(di) {
   if (!WORKOUT[di]) return false;
   // aquecimento NÃO conta (igual ao contador "X/N" e ao total do ranking, que filtram warmup).
@@ -11069,12 +11090,15 @@ function allDoneOfDay(di) {
   // mas allDoneOfDay exigia o warmup também (que o contador nem mostra) → "dia concluído"
   // nunca disparava → LOGS vazio → ranking de treino zerado E follow-sumidos flagando ativo.
   // MODO CURTO: o dia fecha (e pontua) quando o ESSENCIAL mantido está feito (decisão GH).
-  const keep = _shortKeepSet(di);
+  const _keepHoje = _shortKeepSet(di);
+  const keep = _keepHoje || _shortFechado(di);
   const real = WORKOUT[di].exercises.map((ex, ei) => ({ ex, ei })).filter(o => !o.ex.warmup && (!keep || keep.has(o.ei)));
   if (!real.length) return false;
   // v449: pulado conta pra fechar o dia, mas o dia só fecha se o aluno FEZ pelo menos um exercício
   // (senão pular tudo daria sequência e pontos sem treino nenhum).
-  return real.every(o => isDone(di, o.ei) || isSkipped(di, o.ei)) && real.some(o => isDone(di, o.ei));
+  const _fechou = real.every(o => isDone(di, o.ei) || isSkipped(di, o.ei)) && real.some(o => isDone(di, o.ei));
+  if (_fechou && _keepHoje) { try { localStorage.setItem(_shortFechKey(di), JSON.stringify({ k: Array.from(_keepHoje), t: Date.now() })); } catch (_) {} }
+  return _fechou;
 }
 // Primeiro dia VISÍVEL (do bloco ativo) ainda NÃO concluído 100% na semana atual.
 // Abre direto nele ao carregar — ajuda o iniciante a saber qual treino fazer. Se todos
@@ -11288,9 +11312,10 @@ function renderMuscleMap() {
   const _dhT = document.getElementById('dhTitle'), _dhS = document.getElementById('dhSub');
   if (_dhT) {
     const prim = ordem.filter(g => lit.get(g) === 'p').map(g => CHIP_LBL[g] || g);
-    _dhT.textContent = prim.length ? prim.join(' + ') : ('DIA ' + (currentDay + 1));
+    _dhT.textContent = prim.length ? prim.join(' + ') : ('DIA ' + _diaRotulo(currentDay).n);
   }
-  if (_dhS) _dhS.textContent = 'Dia ' + (currentDay + 1) + (WORKOUT.length ? ' de ' + WORKOUT.length : '') + ' · Semana ' + (typeof currentWeek !== 'undefined' ? currentWeek : 1);
+  const _drH = _diaRotulo(currentDay);
+  if (_dhS) _dhS.textContent = 'Dia ' + _drH.n + (_drH.total ? ' de ' + _drH.total : '') + ' · Semana ' + (typeof currentWeek !== 'undefined' ? currentWeek : 1);
   const chips = ordem.filter(g => lit.has(g)).map(g => `<span class="mm-chip${lit.get(g) === 's' ? ' sec' : ''}">${CHIP_LBL[g] || g}</span>`).join('');
   // Palco 3D: uma figura por face, flip frente/costas no toque (mantém o lado
   // escolhido entre re-renders na mesma sessão via _mmFlipped).
@@ -12530,7 +12555,9 @@ function _focusRender() {
   if (!ex) return;
   const total = exs.length;
   const doneCount = exs.reduce((a, _, ei) => a + (isDone(_focusDi, ei) ? 1 : 0), 0);
-  document.getElementById('focusCount').textContent = `Dia ${_focusDi + 1} · Exercício ${_focusIdx + 1} de ${total} · ${doneCount} feitos`;
+  // v551: dia pelo número dentro do bloco, "1 feito" no singular, e o aviso do modo pouco tempo também aqui (o modo treino
+  // levava pro exercício cortado sem dizer nada)
+  document.getElementById('focusCount').textContent = `Dia ${_diaRotulo(_focusDi).n} · Exercício ${_focusIdx + 1} de ${total} · ${doneCount} ${doneCount === 1 ? 'feito' : 'feitos'}${_shortSkip(_focusDi, _focusIdx) ? ' · ⏳ se sobrar tempo' : ''}`;
   document.getElementById('focusBarFill').style.width = Math.round((doneCount / total) * 100) + '%';
   document.getElementById('focusPrev').disabled = _focusIdx === 0;
   document.getElementById('focusNext').disabled = _focusIdx === total - 1;
@@ -13804,7 +13831,7 @@ function _buildTreinoPrintHTML() {
     });
     daysHtml += `
       <div class="pa-day">
-        <h2 class="pa-day-title">${esc(day.day || ('Dia ' + (di + 1)))}</h2>
+        <h2 class="pa-day-title">${esc(((typeof BLOCOS !== 'undefined' && BLOCOS.length >= 2 && day.bloco) ? day.bloco + ' · ' : '') + (day.day || ('Dia ' + (di + 1))))}</h2>
         <table>
           <thead><tr>
             <th>Exercício</th><th>Séries</th><th>Reps</th><th>Intervalo</th><th>Carga (S${currentWeek})</th>
@@ -14070,7 +14097,7 @@ function renderWtCard() {
     b.innerHTML = '<button type="button" class="wt-btn start" onclick="wtStart()">▶ Iniciar treino</button>';
   } else {
     t.textContent = _wtFmt(Math.floor(_wtElapsedMs(s) / 1000));
-    l.textContent = (s.status === 'paused' ? 'Pausado · ' : '') + 'Dia ' + (Number(s.di) + 1) + ' · Semana ' + s.w
+    l.textContent = (s.status === 'paused' ? 'Pausado · ' : '') + 'Dia ' + _diaRotulo(Number(s.di)).n + ' · Semana ' + s.w
       + (_wtElapsedMs(s) > _WT_SUSPEITO_SECS * 1000 ? ' · esqueceu de finalizar? Ajusta ao finalizar' : '');   // v466
     b.innerHTML = (s.status === 'running'
       ? '<button type="button" class="wt-btn" onclick="wtPause()">⏸ Pausar</button>'
@@ -20854,6 +20881,12 @@ function _versaoMinimaChecar_(min) {
         const treinando = (fo && fo.classList.contains('show')) || (typeof _timerEndAt !== 'undefined' && _timerEndAt > Date.now());
         if (digitando || treinando) { setTimeout(tenta, 60000); return; }
         if (sessionStorage.getItem('gh_vmin_' + alvo) === '1') return;   // 1 tentativa por sessão: nunca vira loop
+        // v551: e um teto POR APARELHO. A trava de cima é por sessão: se a mínima da planilha ficar acima da versão publicada
+        // (erro de digitação, ou forçar antes de publicar), cada abertura de cada aluno fazia uma recarga pesada que nunca
+        // resolvia. Agora são 3 tentativas pra cada valor; depois disso, uma a cada 3 horas.
+        let _vt = {}; try { _vt = JSON.parse(localStorage.getItem('gh_vmin_tent') || '{}') || {}; } catch (_) { _vt = {}; }
+        if (_vt.alvo === alvo && (_vt.n || 0) >= 3 && Date.now() - (_vt.ts || 0) < 3 * 3600e3) return;
+        try { localStorage.setItem('gh_vmin_tent', JSON.stringify({ alvo: alvo, n: (_vt.alvo === alvo ? (_vt.n || 0) : 0) + 1, ts: Date.now() })); } catch (_) {}
         sessionStorage.setItem('gh_vmin_' + alvo, '1');
         try { if (typeof _flushSetsPendentes_ === 'function') _flushSetsPendentes_(true); } catch (_) {}
         forcarAtualizacaoApp();
@@ -21204,10 +21237,12 @@ async function loadFromSheet() {
   const sheetId = document.getElementById('adminSheetId').value.trim();
   if (!sheetId) { alert('Preencha o ID da planilha do aluno primeiro.'); return; }
 
-  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=DIETA&headers=0`;
+  // v551: com fura-cache, igual ao carregador do treino. Ler a dieta do cache do navegador logo depois de um reajuste e
+  // publicar por cima regravava a dieta ANTIGA.
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=DIETA&headers=0&_=${Date.now()}`;
 
   try {
-    const resp = await fetch(url);
+    const resp = await fetch(url, { cache: 'no-store' });
     if (!resp.ok) throw new Error('Planilha nao encontrada ou nao publicada');
     const text = await resp.text();
     const rows = parseCSV(text);
@@ -21604,11 +21639,9 @@ async function publishToSheet(tab) {
     });
     const text = await resp.text();
     let result;
-    try { result = JSON.parse(text); } catch(e) {
-      if (text.includes('Erro') || text.includes('Error')) throw new Error('Apps Script retornou erro');
-      result = {};
-    }
-    if (result.success === false) throw new Error(result.error || 'Erro desconhecido');
+    // v551: resposta que não é do servidor (página de login, cota, erro em HTML) virava "Publicado com sucesso" sem ter gravado nada
+    try { result = JSON.parse(text); } catch(e) { throw new Error('o servidor não confirmou a gravação (resposta inesperada). Confere a planilha antes de publicar de novo'); }
+    if (!resp.ok || !result || result.success !== true) throw new Error((result && result.error) || 'o servidor não confirmou a gravação');
     statusEl.textContent = 'Publicado com sucesso na aba ' + tab + '!';
     statusEl.style.color = '#4CAF50';
     setTimeout(() => { statusEl.style.display = 'none'; statusEl.style.color = ''; }, 5000);
@@ -21903,7 +21936,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v550';
+    var APP_SHELL_V = 'metodo-gh-v551';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -22587,7 +22620,52 @@ function _novBannerTalvez() {
 function novidadeBannerFecha() {
   try { var b = document.getElementById('novidadeBanner'); if (b && b.dataset.id) localStorage.setItem('gh_nov_banner_off_' + SHEET_ID + '_' + b.dataset.id, '1'); if (b) b.style.display = 'none'; } catch (_) {}
 }
-function teShow(id) { document.getElementById(id).classList.add('show'); }
+function teShow(id) { document.getElementById(id).classList.add('show'); try { setTimeout(_voltarSinc_, 60); } catch (_) {} }
+// ══ v551: BOTÃO VOLTAR ══
+// O app não tinha histórico de navegação: com o modo treino, um vídeo ou uma caixa aberta, o voltar do Android fechava o
+// app inteiro. Agora, enquanto existe uma camada aberta, o app mantém UMA entrada de histórico: o voltar fecha a camada de
+// cima. Sem camada aberta não há entrada nossa, e o voltar sai do app como sempre. Tela de plano bloqueado e tour ficam de
+// fora de propósito.
+const _CAMADAS_VOLTAR = [
+  ['#mealNaoMenu', el => el.remove()],
+  ['#shortModeMenu', el => el.remove()],
+  ['#rsSlotMenu.on', el => el.classList.remove('on')],
+  ['#laudoFullOverlay.on', el => el.classList.remove('on')],
+  ['#videoOverlay.show', () => closeVideo()],
+  ['#subPickerOverlay.show', () => closeSubPicker()],
+  ['.evo-overlay.show', el => el.classList.remove('show')],
+  ['#achOverlay.show', () => achClose()],
+  ['#mealPhotoModal.on', () => mealPhotoClose()],
+  ['#rsCmpOverlay.on', el => el.classList.remove('on')],
+  ['.history-modal-overlay.show', el => el.classList.remove('show')],
+  ['.te-modal-overlay.show', el => teHide(el.id)],
+  ['#pacerOverlay.show', () => closePacer()],
+  ['#timerOverlay.show', () => timerMinimize()],
+  ['#maisSheetOverlay.show', () => closeMaisSheet()],
+  ['#focusOverlay.show', () => closeFocusMode()],
+];
+function _camadaAberta_() {
+  for (let i = 0; i < _CAMADAS_VOLTAR.length; i++) { let el = null; try { el = document.querySelector(_CAMADAS_VOLTAR[i][0]); } catch (_) {} if (el) return [el, _CAMADAS_VOLTAR[i][1]]; }
+  return null;
+}
+let _voltarArmado = false, _voltarIgnora = false;
+function _voltarSinc_() {
+  try {
+    if (new URLSearchParams(location.search).get('edit') === '1') return;   // editor do treinador fica como sempre foi
+    const aberta = !!_camadaAberta_();
+    if (aberta && !_voltarArmado) { history.pushState({ ghCamada: 1 }, ''); _voltarArmado = true; }
+    else if (!aberta && _voltarArmado) { _voltarArmado = false; _voltarIgnora = true; history.back(); }   // camada fechada pelo X: tira a nossa entrada
+  } catch (_) {}
+}
+window.addEventListener('popstate', function () {
+  if (_voltarIgnora) { _voltarIgnora = false; return; }
+  if (!_voltarArmado) return;                  // não é a nossa entrada
+  _voltarArmado = false;
+  const c = _camadaAberta_();
+  if (c) { try { c[1](c[0]); } catch (_) {} }
+  setTimeout(_voltarSinc_, 90);                // ainda tem camada embaixo (vídeo por cima do modo treino): arma de novo
+});
+document.addEventListener('click', function () { setTimeout(_voltarSinc_, 90); }, true);
 function teHide(id) { document.getElementById(id).classList.remove('show'); }
 
 // ── Recado em áudio (só treinador, no editor) ──
