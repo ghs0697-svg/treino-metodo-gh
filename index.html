@@ -9020,8 +9020,8 @@ function _tlemOnoffRefresh() {
   b.classList.toggle('off', !_tlemSel.on);
 }
 async function salvarTlem() {
-  if (!_tlemSel.d.length) { alert('Escolhe pelo menos um dia da semana.'); return; }
-  if (_tlemSel.hh == null) { alert('Escolhe o horário do lembrete.'); return; }
+  if (!_tlemSel.d.length) { _ghToast('Escolhe pelo menos um dia da semana.'); return; }
+  if (_tlemSel.hh == null) { _ghToast('Escolhe o horário do lembrete.'); return; }
   _tlemSel.d.sort((a, b) => a - b);
   const pref = { d: _tlemSel.d, h: String(_tlemSel.hh).padStart(2, '0') + ':' + _tlemSel.mm, on: _tlemSel.on };
   _tlemStore(pref);
@@ -9188,7 +9188,7 @@ async function apagarNotaCaderno(ts) {
 async function salvarCaderno() {
   const el = document.getElementById('cadernoTexto');
   const texto = (el.value || '').trim();
-  if (!texto) { alert('Escreve alguma coisa antes de salvar.'); return; }
+  if (!texto) { _ghToast('Escreve alguma coisa antes de salvar.'); return; }
   const b = document.getElementById('cadernoSalvarBtn');
   b.disabled = true; b.textContent = 'Salvando...';
   const tok = localStorage.getItem('gh_trainer_token') || '';
@@ -9255,11 +9255,11 @@ function _dorPick(g, v, el) {
 }
 async function enviarDor() {
   const s = _dorCtx ? _dorCtx.sel : {};
-  if (!s.onde) { alert('Marca ONDE dói.'); return; }
-  if (!s.intensidade) { alert('Marca a intensidade.'); return; }
+  if (!s.onde) { _ghToast('Marca ONDE dói.'); return; }
+  if (!s.intensidade) { _ghToast('Marca a intensidade.'); return; }
   // "Quando dói" é o divisor da triagem da equipe (só no exercício = troca na hora;
   // fora do treino = sobe pro GH). Obrigatório desde v403 (pedido da equipe, Sala #1489).
-  if (!s.quando) { alert('Marca QUANDO dói: só neste exercício, em vários, ou também fora do treino.'); return; }
+  if (!s.quando) { _ghToast('Marca QUANDO dói: só neste exercício, em vários, ou também fora do treino.'); return; }
   const b = document.getElementById('dorEnviarBtn');
   b.disabled = true; b.textContent = 'Enviando...';
   const obs = (document.getElementById('dorObs').value || '').trim();
@@ -10439,9 +10439,19 @@ function drawCompletionContent(ctx, W, H, p) {
   ctx.font = `500 30px ${ACH_FONT}`;
   ctx.fillStyle = 'rgba(212, 167, 106, 0.85)';
   if (ctx.measureText(name).width > W - 160) {
+    // v558: a linha 2 levava TODOS os grupos menos o primeiro (dia com muitos grupos cortava nas duas bordas). Agora as
+    // duas linhas saem equilibradas, e a letra diminui se ainda assim não couber.
     const parts = name.split(' + ');
-    ctx.fillText(parts[0], W/2, 1330);
-    ctx.fillText('+ ' + parts.slice(1).join(' + '), W/2, 1368);
+    let corte = 1, melhor = Infinity;
+    for (let k = 1; k < parts.length; k++) {
+      const m = Math.max(ctx.measureText(parts.slice(0, k).join(' + ')).width, ctx.measureText('+ ' + parts.slice(k).join(' + ')).width);
+      if (m < melhor) { melhor = m; corte = k; }
+    }
+    const l1 = parts.slice(0, corte).join(' + '), l2 = parts.length > 1 ? '+ ' + parts.slice(corte).join(' + ') : '';
+    let fsM = 30;
+    while (fsM > 20 && Math.max(ctx.measureText(l1).width, ctx.measureText(l2).width) > W - 160) { fsM -= 2; ctx.font = `500 ${fsM}px ${ACH_FONT}`; }
+    ctx.fillText(l1, W/2, 1330);
+    if (l2) ctx.fillText(l2, W/2, 1368);
   } else {
     ctx.fillText(name, W/2, 1340);
   }
@@ -10486,13 +10496,17 @@ function drawPRContent(ctx, W, H, p) {
   const name = d.exerciseName || '';
   const maxW = W - 160;
   if (ctx.measureText(name).width > maxW) {
+    // v558: depois de mandar uma palavra pra linha 2, o laço continuava encaixando as seguintes na linha 1: nome comprido
+    // saía com as palavras fora de ordem. Agora a quebra é em sequência, e a letra diminui se a linha 2 passar da largura.
     const words = name.split(' ');
-    let line1 = '', line2 = '';
+    let line1 = '', line2 = '', _passou = false;
     for (const w of words) {
       const test = line1 ? line1 + ' ' + w : w;
-      if (ctx.measureText(test).width <= maxW) line1 = test;
-      else line2 += (line2 ? ' ' : '') + w;
+      if (!_passou && ctx.measureText(test).width <= maxW) line1 = test;
+      else { _passou = true; line2 += (line2 ? ' ' : '') + w; }
     }
+    let fsN = 44;
+    while (fsN > 28 && Math.max(ctx.measureText(line1).width, ctx.measureText(line2).width) > maxW) { fsN -= 2; ctx.font = `bold ${fsN}px ${ACH_FONT}`; }
     ctx.fillText(line1, W/2, 900);
     ctx.fillText(line2, W/2, 960);
   } else {
@@ -10509,7 +10523,8 @@ function drawPRContent(ctx, W, H, p) {
   // Old
   ctx.font = `300 38px ${ACH_FONT}`;
   ctx.fillStyle = '#666';
-  ctx.fillText(oldDisp + unit, W/2, 1130);
+  const _vg = n => String(n).replace('.', ',');   // v558: decimal com vírgula ("102,5kg")
+  ctx.fillText(_vg(oldDisp) + unit, W/2, 1130);
 
   // Arrow down
   ctx.font = `300 42px ${ACH_FONT}`;
@@ -10528,13 +10543,16 @@ function drawPRContent(ctx, W, H, p) {
   ctx.stroke();
   ctx.font = `bold 150px ${ACH_FONT}`;
   ctx.fillStyle = '#d4a76a';
-  ctx.fillText(animDisp + unit, W/2, boxY + 145);
+  // v558: número comprido ("1102,5lb") atravessava a caixa: a letra diminui até caber
+  let fsG = 150;
+  while (fsG > 80 && ctx.measureText(_vg(animDisp) + unit).width > boxW - 40) { fsG -= 6; ctx.font = `bold ${fsG}px ${ACH_FONT}`; }
+  ctx.fillText(_vg(animDisp) + unit, W/2, boxY + 145 - Math.round((150 - fsG) * 0.3));
 
   // Diff
   const diffDisp = Math.round((newDisp - oldDisp) * 10) / 10;
   ctx.font = `bold 58px ${ACH_FONT}`;
   ctx.fillStyle = '#4caf50';
-  ctx.fillText('+' + diffDisp + unit, W/2, 1530);
+  ctx.fillText('+' + _vg(diffDisp) + unit, W/2, 1530);
 }
 
 // ══ v491 · @ DO ALUNO (prova do compartilhamento) ══ O dobro do ranking vinha de "a janela de
@@ -12966,7 +12984,7 @@ async function renderPeso(force) {
 function registrarPeso() {
   const inp = document.getElementById('pesoInput');
   const v = parseFloat(String(inp.value || '').replace(',', '.'));
-  if (!v || v < 30 || v > 300) { alert('Coloca teu peso em kg, ex: 82,4'); return; }
+  if (!v || v < 30 || v > 300) { _ghToast('Coloca teu peso em kg, ex: 82,4'); return; }
   const body = { type: 'medidas', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(), peso: v };
   fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body), keepalive: true, redirect: 'follow' })
     .then(r => r.json()).then(j => {
@@ -14531,7 +14549,7 @@ async function baixarVideosDoDia() {
   const b = document.getElementById('vidOffBtn');
   const vids = _vidsDoDia(currentDay);
   if (!vids.size) return;
-  if (!navigator.onLine) { alert('Precisa de internet pra baixar. Depois de baixados, os vídeos tocam sem internet.'); return; }
+  if (!navigator.onLine) { _ghToast('Precisa de internet pra baixar. Depois de baixados, os vídeos tocam sem internet.'); return; }
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (_) {}
   if (_vidBaixandoDia != null) return;   // v556: um download por vez
   const _dia = currentDay;
@@ -16536,7 +16554,7 @@ function closeFeedbackOnBg(e) { if (e.target && e.target.id === 'feedbackModal' 
 async function submitFeedback() {
   const texto = (document.getElementById('feedbackTexto').value || '').trim();
   const tipo = document.getElementById('feedbackTipo').value || 'Outro';
-  if (texto.length < 3) { alert('Escreve um pouquinho mais (mínimo 3 caracteres).'); return; }
+  if (texto.length < 3) { _ghToast('Escreve um pouquinho mais (mínimo 3 caracteres).'); return; }
   const btn = document.getElementById('feedbackSubmitBtn');
   btn.disabled = true; btn.textContent = 'Enviando...';
   const studentName = (document.getElementById('infoNome')?.textContent || '').trim();
@@ -17654,7 +17672,7 @@ async function cmpShare() {
   }
   const srcL = L.local ? L.url : _cmpState.imgCache[L.fid];
   const srcR = R.local ? R.url : _cmpState.imgCache[R.fid];
-  if (!srcL || !srcR) { alert('Espera as fotos carregarem e tenta de novo.'); return; }
+  if (!srcL || !srcR) { _ghToast('Espera as fotos carregarem e tenta de novo.'); return; }
 
   const btn = document.getElementById('cmpShareBtn');
   const oldTxt = btn.textContent;
@@ -17891,9 +17909,11 @@ function _semanaResumo(off) {
   for (let i = 0; i < 7; i++) { const d = new Date(seg); d.setDate(seg.getDate() + i); dias.push(feitos.has(dk(d))); }
   let recordes = 0;
   try { recordes = JSON.parse(localStorage.getItem(_prLogKey()) || '[]').filter(p => p.d >= dk(seg) && p.d <= dk(dom)).length; } catch (_) {}
-  const freq = _freqSemanal();   // v542
+  let freq = _freqSemanal();   // v542
+  // v558: o resumo de uma semana que já passou usa a meta que valia nela
+  try { if (off) { const _vm = parseInt(localStorage.getItem('gh_metasem_' + SHEET_ID + '_' + dk(seg)), 10); if (_vm >= 1 && _vm <= 7) freq = _vm; } } catch (_) {}
   const fx = d => String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
-  return { treinos: feitos.size, alvo: freq, dias: dias, recordes: recordes, streak: _mtStreakSemanas(freq), faixa: fx(seg) + ' a ' + fx(dom) };
+  return { treinos: feitos.size, alvo: freq, dias: dias, recordes: recordes, streak: _mtStreakSemanas(_freqSemanal()), faixa: fx(seg) + ' a ' + fx(dom) };
 }
 function _semCardRender() {
   const el = document.getElementById('semCard');
@@ -18000,6 +18020,8 @@ function _metaSemanaInfo() {
       if (d >= seg && d <= hoje) dates.add(m[1] + m[2] + m[3]);
     }
     const alvo = _freqSemanal();   // v542
+    // v558: guarda a meta desta semana (a segunda como chave), pra a conta de semanas seguidas não mudar o passado
+    try { if (alvo) localStorage.setItem('gh_metasem_' + SHEET_ID + '_' + seg.getFullYear() + '-' + String(seg.getMonth() + 1).padStart(2, '0') + '-' + String(seg.getDate()).padStart(2, '0'), String(alvo)); } catch (_) {}
     return { feitos: dates.size, alvo: alvo };
   } catch (e) { return { feitos: 0, alvo: 0 }; }
 }
@@ -18193,10 +18215,14 @@ function _mtStreakSemanas(freq) {
     const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
     const segAtual = new Date(hoje); segAtual.setDate(hoje.getDate() - ((hoje.getDay() + 6) % 7));
     const diasDaSemana = ini => { let n = 0; for (let i = 0; i < 7; i++) { const d = new Date(ini); d.setDate(ini.getDate() + i); if (dias.has(dk(d))) n++; } return n; };
+    // v558: a meta de cada semana fica guardada quando a semana acontece (gh_metasem_<id>_<segunda>). Antes as semanas
+    // passadas eram julgadas com a frequência de HOJE: protocolo que passou de 3x pra 5x quebrava, de uma vez, todas as
+    // semanas seguidas que o aluno já tinha batido. Semana sem meta guardada (anterior a esta versão) segue pela de hoje.
+    const alvoDa = ini => { try { const v = parseInt(localStorage.getItem('gh_metasem_' + SHEET_ID + '_' + dk(ini)), 10); return (v >= 1 && v <= 7) ? v : freq; } catch (_) { return freq; } };
     let streak = 0;
     for (let k = 1; k <= 52; k++) {
       const ini = new Date(segAtual); ini.setDate(segAtual.getDate() - 7 * k);
-      if (diasDaSemana(ini) >= freq) streak++; else break;
+      if (diasDaSemana(ini) >= alvoDa(ini)) streak++; else break;
     }
     if (diasDaSemana(segAtual) >= freq) streak++;   // atual já fechada soma; em andamento não quebra
     return streak;
@@ -19764,7 +19790,7 @@ function rhToggleLembrete() { document.getElementById('rhToggle').classList.togg
 async function salvarRefHora() {
   if (_refHoraRi === null) { teHide('refHoraModal'); return; }
   const hh = document.getElementById('rhHora').value, mm = document.getElementById('rhMin').value;
-  if (!hh || !mm) { alert('Escolhe o horário primeiro.'); return; }
+  if (!hh || !mm) { _ghToast('Escolhe o horário primeiro.'); return; }
   const h = hh + ':' + mm;                 // já nasce em bloco de 10: nada a arredondar
   const ajustou = false;
   const querLembrete = document.getElementById('rhToggle').classList.contains('on');
@@ -21836,7 +21862,7 @@ function showAC(input, rowIdx) {
   const matches = EXERCISE_DB.filter(e => e.n.toLowerCase().includes(q)).slice(0, 8);
   if (matches.length === 0) { drop.style.display = 'none'; return; }
   drop.innerHTML = matches.map(m =>
-    `<div class="ed-ac-item" onmousedown="selectAC(${rowIdx},'${escH(m.n)}','${escH(m.v)}')">${m.n}</div>`
+    `<div class="ed-ac-item" onmousedown="selectAC(${rowIdx},'${_jsArgAttr(m.n)}','${_jsArgAttr(m.v)}')">${m.n}</div>`
   ).join('');
   drop.style.display = 'block';
 }
@@ -22282,7 +22308,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v557';
+    var APP_SHELL_V = 'metodo-gh-v558';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -22821,7 +22847,7 @@ function _novRender() {
       var partes = titulo.split(/,\s*/), princ = partes[0], sub = partes.slice(1).join(', ');
       h += '<div class="nov-card nov-hero"><img class="nov-img" src="' + _indicEsc(foto) + '" alt="" onerror="this.onerror=null;this.src=\'' + NOV_HERO_FOTO + '\';">'
         + '<div class="nov-hero-over"><div class="nov-hero-t">' + _indicEsc(princ) + (sub ? '<b>' + _indicEsc(sub) + '</b>' : '') + '</div>'
-        + '<div class="nov-hero-sub">Link no grupo dos alunos</div></div></div>';
+        + (/call|live|ao vivo|encontro/i.test(titulo + ' ' + texto) ? '<div class="nov-hero-sub">Link no grupo dos alunos</div>' : '') + '</div></div>';   // v558: o subtítulo saía em qualquer cartão fixado, mesmo de outro assunto
       h += '<div class="nov-card"><div class="nov-body">'
         + (texto ? '<div class="nov-txt">' + _indicEsc(texto) + '</div>' : '')
         + _novBotaoHtml(x) + _novLikeHtml(x) + '</div></div>';
@@ -23518,7 +23544,7 @@ function trainerSearchStudents(query) {
     return;
   }
   list.innerHTML = filtered.map(s =>
-    `<button class="trainer-student-item" onclick="pickTrainerStudent('${s.s}', '${escTrainer(s.n).replace(/'/g, "\\'")}')">
+    `<button class="trainer-student-item" onclick="pickTrainerStudent('${_jsArgAttr(s.s)}', '${_jsArgAttr(s.n)}')">
       <span>${escTrainer(s.n)}</span>
       ${s.d ? `<span class="trainer-student-meta">v ${escTrainer(s.d)}</span>` : ''}
     </button>`
@@ -23914,6 +23940,9 @@ async function renderEsforcoPanel() {
 }
 
 function escTrainer(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+// v558: texto que vai DENTRO de aspas simples num onclick escrito no HTML. Escapava só o HTML: nome com barra invertida ou
+// aspas simples quebrava o toque (o botão não fazia nada).
+function _jsArgAttr(s) { return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/\r?\n/g, ' '); }
 
 // ── Raio-X do aluno: funde os 5 sinais (carga · aparelho · adesao · duvidas/ajustes ·
 // reajuste) numa tela so + UMA acao prioritaria. Carga/aparelho/reajuste rodam 100%
