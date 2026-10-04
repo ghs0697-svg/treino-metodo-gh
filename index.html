@@ -5716,7 +5716,7 @@
   <div class="meal-photo-box">
     <h3 id="mpTitle">📸 Refeição feita!</h3>
     <p id="mpSub">Tira uma foto do prato e posta. Compartilhar conta como desempate no teu ranking.</p>
-    <input type="file" id="mpFile" accept="image/*" capture="environment" style="display:none" onchange="_onMealPhotoFile(this)">
+    <input type="file" id="mpFile" accept="image/*" style="display:none" onchange="_onMealPhotoFile(this)">
     <div class="meal-photo-pick" id="mpPick" onclick="_mealPhotoPickClick()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
       Tirar ou escolher foto
@@ -5827,7 +5827,7 @@
         <option value="TREINO">Treino (exercício, série, repetição)</option>
         <option value="DIETA">Dieta (refeição, alimento, kcal)</option>
         <option value="SUPLEMENTACAO">Suplementação</option>
-        <option value="HORMONAL">Protocolo</option>
+
         <option value="OUTRO">Outro</option>
       </select>
       <label style="color:#bbb;font-size:11px;display:block;margin-bottom:4px;">Qual o ajuste?</label>
@@ -7214,11 +7214,9 @@ function trocaMotivo(m) {
 function _trocaEnvia(p, motivo) {
   try {
     if (!p || !SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
-    fetch(LOG_ENDPOINT, {
-      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true, redirect: 'follow',
-      body: JSON.stringify({ type: 'troca', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
-        di: p.di, ei: p.ei, w: p.w, de: p.de, para: p.para, motivo: motivo || 'nao_informado' })
-    }).catch(() => {});
+    // v545: com fila de reenvio (a troca "por desconforto" é o detector de dor da equipe e se perdia em academia sem sinal)
+    _enviaComFila_('troca', { type: 'troca', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+      di: p.di, ei: p.ei, w: p.w, de: p.de, para: p.para, motivo: motivo || 'nao_informado' });
   } catch (_) {}
 }
 // Prescrição em UMA linha (eram 4 caixinhas): séries, reps, intervalo, e embaixo a cadência.
@@ -7331,7 +7329,7 @@ const SERIE_TIPO_NOME = { aq: 'aquecimento', aj: 'ajuste', pap: 'PAP', val: 'vá
 function _serieTipos(ex) {
   try {
     const raw = String((ex && ex.series) || '');
-    const segs = raw.split('/').map(s => s.trim()).filter(Boolean);
+    const segs = _serieSegs(raw);   // v545: "/", "+", "·" ou "|"
     const out = [];
     segs.forEach((s, i) => {
       const m = s.match(/(\d+)\s*[xX]\s*([a-zA-Z]*)/);
@@ -7360,9 +7358,25 @@ const SERIE_TIPO_ORDEM = ['aq', 'aj', 'pap', 'val'];
 // "10 a 12" -> "10-12" (cabe no placeholder de 52 px); texto longo ("até a falha") volta pra "reps"
 function _repsCurto(s) {
   try {
-    const t = String(s || '').trim().replace(/\s*(a|à|-|–)\s*/g, '-').replace(/\s+/g, '');
-    return (t && /\d/.test(t) && t.length <= 6) ? t : 'reps';
+    const t = String(s || '').trim();
+    if (!t || /\+/.test(t)) return 'reps';                       // drop-set ou cluster ("8+8+8"): não cabe num número só
+    const m = t.match(/^(\d+)(?:\s*(?:a|à|-|–)\s*(\d+))?/i);     // "8 a 12", "8 A 12", "8-12", "10 a 12 cada perna" -> "8-12"
+    if (!m) return 'reps';
+    const r = m[2] ? (m[1] + '-' + m[2]) : m[1];
+    return r.length <= 6 ? r : 'reps';
   } catch (_) { return 'reps'; }
+}
+// v545: o que aparece no campo de reps da linha quando não há "última vez": a faixa DAQUELA série (em pirâmide, cada linha
+// mostra a sua: 15-20, 12-15, 10-12, 8-12). Texto que não dá pra repartir por linha fica "reps".
+function _repsPh(ex, si) { try { const r = _repsDaLinha(ex, si); return /[\/|·]/.test(r) ? 'reps' : _repsCurto(r); } catch (_) { return 'reps'; } }
+// v545: repetição que o Sheets transformou em DATA: "8-8-8" (drop-set) virou 08/08/2008 e chega como "8-8-2008"
+function _repsConserta(s) {
+  const t = String(s == null ? '' : s).trim();
+  let m = t.match(/^(\d{1,2})[-\/](\d{1,2})[-\/]20(\d\d)$/);
+  if (m) return m[1] + '-' + m[2] + '-' + parseInt(m[3], 10);
+  m = t.match(/^(\d{1,2}) a (\d{1,2}) a 20(\d\d)$/i);
+  if (m) return m[1] + ' a ' + m[2] + ' a ' + parseInt(m[3], 10);
+  return t;
 }
 // v504: exercicio por TEMPO = col REPETICOES com seg/min (prancha, isometria, alongamento). "30 a 45 seg" -> "30-45".
 function _exPorTempo(ex) { try { return /\b(seg|segundos?|min|minutos?)\b/i.test(String((ex && ex.reps) || '')); } catch (_) { return false; } }
@@ -7452,7 +7466,7 @@ function _soVal(di, ei, sets) {
 function _repsSegmento(ex, seg) {
   try {
     const t = String((ex && ex.reps) || '');
-    const segs = t.split('/').map(s => s.trim()).filter(s => /\d/.test(s));
+    const segs = t.split(/[\/|·]/).map(s => s.trim()).filter(s => /\d/.test(s));   // v545: "|" e "·" também separam as faixas
     if (segs.length > 1 && segs[seg] != null) return segs[seg];
     return t;
   } catch (_) { return ''; }
@@ -7466,12 +7480,13 @@ function _repsSegmento(ex, seg) {
 function _repsDaLinha(ex, si) {
   try {
     const t = String((ex && ex.reps) || '');
-    const rs = t.split('/').map(s => s.trim()).filter(s => /\d/.test(s));
+    const rs = t.split(/[\/|·]/).map(s => s.trim()).filter(s => /\d/.test(s));
     if (rs.length <= 1) return t;
     const tp = _serieTipos(ex);
-    const nSeg = String((ex && ex.series) || '').split('/').map(s => s.trim()).filter(Boolean).length;
+    const nSeg = _serieSegs((ex && ex.series) || '').length;
     if (nSeg > 1 && rs.length === nSeg) return (tp[si] && rs[tp[si].seg] != null) ? rs[tp[si].seg] : rs[rs.length - 1];
-    return rs[si] != null ? rs[si] : rs[rs.length - 1];
+    if (rs.length === _serieCountPresc(ex)) return rs[si] != null ? rs[si] : rs[rs.length - 1];
+    return t;   // v545: o número de faixas não casa nem com os pedaços da série nem com as linhas (drop-set em etapas): vale o texto inteiro
   } catch (_) { return String((ex && ex.reps) || ''); }
 }
 function _repsAlvoDaSerie(ex, si) {
@@ -8012,15 +8027,30 @@ function _exObjAt(d, e) {
   } catch (_) { return null; }
 }
 // nº de séries prescrito ("4", "3-4", "Aquece + 3") → maior inteiro; fallback 3
+// v545: a col SÉRIES separa os pedaços com "/", e em protocolo antigo também com "+", "·" ou "|" ("1X + 2X + 2X",
+// "1X · 2X · 3X"). O app só entendia "/": nesses casos mostrava UMA linha de série onde eram cinco ou seis.
+function _serieSegs(raw) { return String(raw || '').split(/[\/+·|]/).map(s => s.trim()).filter(Boolean); }
+// v545: col SÉRIES vazia (31 protocolos antigos, com tudo escrito nas repetições): o número de linhas sai das repetições.
+// "4 | 15" = 4 séries de 15 (a série veio colada nas reps); "15-20 | 10-15 | 8-12 | 6-10" = uma linha por faixa.
+function _seriesPelasReps(ex) {
+  try {
+    const rs = String((ex && ex.reps) || '').split(/[\/|·]/).map(s => s.trim()).filter(Boolean);
+    if (!rs.every(s => /^\d+(\s*(a|à|-|–)\s*\d+)?$/i.test(s))) return 0;   // só faixa de repetição ("15-20", "8 a 12", "15"); "120BPM | 30MIN" não é
+    if (rs.length === 2 && /^\d$/.test(rs[0]) && +rs[0] >= 1 && +rs[0] <= 6) return +rs[0];
+    if (rs.length >= 2 && rs.length <= 10) return rs.length;
+  } catch (_) {}
+  return 0;
+}
 function _serieCountPresc(ex) {
   try {
     const raw = String((ex && ex.series) || '');
     // Formato série a série "1X / 1X / 1X / 1X" (usado quando as reps variam por série,
     // ex: R "20 / 15 / 12 / 12") = SOMA dos segmentos (4 linhas). Antes o parser pegava o
     // MAIOR número e seedava 1 linha só (bug pego pelo GH na Elevação Pélvica). "4X" segue = 4.
-    const segs = raw.split('/').map(s => (s.match(/\d+/) || [])[0]).filter(Boolean).map(Number);
+    const segs = _serieSegs(raw).map(s => (s.match(/\d+/) || [])[0]).filter(Boolean).map(Number);
     if (segs.length > 1) { const soma = segs.reduce((a, b) => a + b, 0); if (soma >= 1 && soma <= 10) return soma; }
     if (segs.length === 1 && segs[0] >= 1 && segs[0] <= 10) return segs[0];
+    if (!segs.length) { const n = _seriesPelasReps(ex); if (n) return n; }
   } catch (_) {}
   return 3;
 }
@@ -8219,7 +8249,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
     const _rsV = parseInt(String(s.rs || '').replace(/[^0-9]/g, ''), 10);
     const _nv = _corteOn && _rotulada && _tipo === 'val' && isFinite(_rsV) && _rsV > _alvoHi;   // v514: sobrou mais que o combinado = não valeu
     const _segR = (_rotulada && _tpG[si]) ? _tpG[si].seg : null;
-    const _phReps = (_segR != null) ? _repsCurto(_repsSegmento(_exG, _segR)) : 'reps';
+    const _phReps = _repsPh(_exG, si);   // v545: a faixa de reps DESTA linha (o v531 tinha deixado o campo só com "reps")
     const _phKg = (_rotulada && _tipo !== 'val') ? (SERIE_TIPO_CARGA[_tipo] || getUnit()) : getUnit();
     const _phTempo = _porTempo ? (_tempoCurto((_rotulada && _segR != null) ? _repsSegmento(_exG, _segR) : _exG.reps) || _tUnid) : '';   // v504
     const _antKg = (p && p.kg) ? kgToDisplay(p.kg) : '', _antPl = (p && p.pl) ? String(p.pl) : '', _antReps = (p && p.reps) ? String(p.reps) : '';   // v531: última vez dentro do campo
@@ -8227,7 +8257,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
         <button type="button" class="set-num ${_rotulada ? 't-' + _tipo : ''}" onclick="toggleSetFeita(${di},'${eiS}',${si})" title="${_rotulada ? 'Série de ' + SERIE_TIPO_NOME[_tipo] + '. ' : ''}Marcar série como feita" aria-label="Marcar série ${si + 1} como feita">${feita ? '✓' : (_rotulada ? (_nv ? 'não valeu' : _rot) : si + 1)}</button>
         <input class="set-in set-kg${_antKg ? ' ph-ant' : ''}" type="number" inputmode="decimal" placeholder="${_antKg || _phKg}" value="${kgToDisplay(s.kg)}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-pl${_antPl ? ' ph-ant' : ''}" type="number" inputmode="numeric" placeholder="${_antPl || 'pl'}" value="${s.pl || ''}" oninput="onSetField(${di},'${eiS}')">
-        <input class="set-in set-reps${_antReps ? ' ph-ant' : ''}" type="number" inputmode="numeric" placeholder="${_antReps || (_porTempo ? _tUnid : 'reps')}" title="${_porTempo ? 'Quantos ' + (_tUnid === 'min' ? 'minutos' : 'segundos') + ' tu segurou' : ''}" value="${s.reps || ''}" oninput="onSetField(${di},'${eiS}')">
+        <input class="set-in set-reps${_antReps ? ' ph-ant' : ''}" type="number" inputmode="numeric" placeholder="${_antReps || (_porTempo ? _tUnid : _phReps)}" title="${_porTempo ? 'Quantos ' + (_tUnid === 'min' ? 'minutos' : 'segundos') + ' tu segurou' : ''}" value="${s.reps || ''}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-rs" type="number" inputmode="numeric" onfocus="sobrouDica(this)" onblur="sobrouDicaSome()" placeholder="${_tipo === 'val' ? rsPh : '·'}" title="${_tipo === 'val' ? 'Quantas repetições sobraram nessa série' : 'Série de ' + SERIE_TIPO_NOME[_tipo] + ': sobrar é o esperado, não entra no alvo'}" value="${s.rs || ''}" oninput="onSetField(${di},'${eiS}')">
         ${prevTxt}
         ${(semX || si < _nPresc) ? '' : `<button type="button" class="set-del" onclick="removeSet(${di},'${eiS}',${si})" title="Remover série" aria-label="Remover série">&times;</button>`}
@@ -8413,11 +8443,8 @@ function _puladoEnvia(di, ei, acao) {
     let nome = ex.name || '';
     // grava o exercicio que o aluno ESTAVA fazendo (substituto, se trocou) e o prescrito, se forem diferentes
     try { const act = (!ex.biset && typeof _exAtivo === 'function') ? _exAtivo(di, ei) : null; if (act && act.name && act.name !== ex.name) nome = act.name + ' (no lugar de ' + ex.name + ')'; } catch (_) {}
-    fetch(LOG_ENDPOINT, {
-      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true, redirect: 'follow',
-      body: JSON.stringify({ type: 'pulado', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
-        date: todayKey(), semana: currentWeek, dia: di + 1, exIdx: ei, exercicio: nome, acao, ts: new Date().toISOString() })
-    }).catch(() => {});
+    _enviaComFila_('pulado', { type: 'pulado', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+      date: todayKey(), semana: currentWeek, dia: di + 1, exIdx: ei, exercicio: nome, acao, ts: new Date().toISOString() });   // v545: com fila de reenvio
   } catch (_) {}
 }
 // biset salva sob "2a"/"2b" mas o badge "salvo" é do card (sv-di-2) → normaliza pro badge
@@ -8578,21 +8605,40 @@ function _syncQueueClear(kind) {
 }
 
 let _syncFlushRunning = false;
+// v545: recuo por tipo de fila. Se uma rodada inteira de um tipo falha (servidor fora, cota do Sheets), a próxima tentativa
+// daquele tipo espera 1, 2, 4... até 10 minutos, em vez de todo aparelho reenviar a fila inteira a cada 30 s.
+const _syncFalhas = {}, _syncProxTent = {};
+const _SYNC_TIPOS = ['carga', 'done', 'completion', 'esforco', 'nota_serie', 'nota_aluno', 'nota_aluno_del', 'treino_lembrete', 'troca', 'pulado', 'tempo_treino', 'meal', 'cardio_reg', 'dieta_sinal', 'ajuste_request'];
 async function flushSyncQueues() {
   if (_syncFlushRunning) return;
   if (typeof LOG_ENDPOINT === 'undefined') return;
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
   _syncFlushRunning = true;
   try {
-    for (const kind of ['carga', 'done', 'completion', 'esforco', 'nota_serie', 'nota_aluno', 'nota_aluno_del', 'treino_lembrete']) {   // v479: + completion
-      const q = _syncQueueGet(kind);
+    for (const kind of _SYNC_TIPOS) {
+      if (_syncProxTent[kind] && Date.now() < _syncProxTent[kind]) continue;
+      let q = _syncQueueGet(kind);
       if (!q.length) continue;
+      // v545: item parado na fila há mais de 14 dias sai (o servidor recusa pra sempre, ou o registro já foi refeito)
+      const _lim = Date.now() - 14 * 864e5;
+      const _vivos = q.filter(p => { const t = Date.parse(p && p.ts); return !(t > 0 && t < _lim); });
+      if (_vivos.length !== q.length) {
+        try { if (_vivos.length) localStorage.setItem(_syncQueueKey(kind), JSON.stringify(_vivos)); else _syncQueueClear(kind); } catch (_) {}
+        q = _vivos;
+        if (!q.length) continue;
+      }
       // v480: a fila pode mudar durante os awaits (envio direto que falhou entra, envio direto que deu certo tira o
       // valor velho). Antes, o fim do flush regravava a FOTO do inicio: apagava o item novo ou ressuscitava o velho.
       const enviados = new Set();
+      let tentou = 0;
       for (const payload of q) {
+        // v545: item com menos de 20 s ainda pode estar no envio direto (ele entra na fila ANTES de enviar): esperar evita
+        // a mesma linha gravada duas vezes na planilha
+        const _tp = Date.parse(payload && payload.ts);
+        if (_tp > 0 && Date.now() - _tp < 20000) continue;
         const sp = JSON.stringify(payload);
         if (!_syncQueueGet(kind).some(p => JSON.stringify(p) === sp)) continue;   // saiu da fila no meio: um valor mais novo ja subiu
+        tentou++;
         try {
           const resp = await fetch(LOG_ENDPOINT, {
             method: 'POST',
@@ -8605,13 +8651,33 @@ async function flushSyncQueues() {
       }
       const _agora = _syncQueueGet(kind).filter(p => !enviados.has(JSON.stringify(p)));
       if (_agora.length) { try { localStorage.setItem(_syncQueueKey(kind), JSON.stringify(_agora)); } catch (_) {} } else _syncQueueClear(kind);
-      const remaining = _agora;
       const sent = enviados.size;
-      if (sent > 0) console.log(`[gh] Fila ${kind}: ${sent} reenviada${sent > 1 ? 's' : ''}, ${remaining.length} pendente${remaining.length === 1 ? '' : 's'}`);
+      if (sent > 0) {
+        _syncFalhas[kind] = 0; _syncProxTent[kind] = 0;
+        console.log(`[gh] Fila ${kind}: ${sent} reenviada${sent > 1 ? 's' : ''}, ${_agora.length} pendente${_agora.length === 1 ? '' : 's'}`);
+      } else if (tentou > 0) {
+        _syncFalhas[kind] = (_syncFalhas[kind] || 0) + 1;
+        _syncProxTent[kind] = Date.now() + Math.min(600000, 30000 * Math.pow(2, _syncFalhas[kind]));
+      }
     }
   } finally {
     _syncFlushRunning = false;
   }
+}
+// v545: envio com FILA DE REENVIO pro registro que era "dispara e esquece" (troca de exercício, não consegui fazer, tempo
+// de treino, refeição, dia de dieta, cardio, "não rolou", pedido de ajuste pelo chat). Entra na fila ANTES de enviar e só
+// sai com a gravação confirmada pelo servidor; sem sinal, sobe sozinho depois. Devolve uma promessa: true = gravou agora.
+function _kFilaPadrao_(p) { return [p.type, p.plano || '', p.date || '', p.day != null ? p.day : '', p.refIdx != null ? p.refIdx : '', p.shared ? 1 : 0].join('|'); }
+function _enviaComFila_(kind, payload, keyFn) {
+  try {
+    if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return Promise.resolve(false);
+    if (!payload.ts) payload.ts = new Date().toISOString();
+    const k = (typeof keyFn === 'function') ? keyFn : (p => String(p.ts));
+    _syncQueuePush(kind, payload, k);
+    return fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), keepalive: true, redirect: 'follow' })
+      .then(async resp => { const ok = await _gasGravou(resp); if (ok) _syncQueueDropAte(kind, payload, k); return ok; })
+      .catch(() => false);
+  } catch (_) { return Promise.resolve(false); }
 }
 
 function syncCargaToServer_(di, ei, w, carga, placas, sets) {
@@ -11300,8 +11366,10 @@ function parseIntervalSeconds(text) {
   const t = String(text).toLowerCase();
   const nums = t.match(/\d+/g);
   if (!nums) return 60;
+  // v545: "1 min 30 seg" = 90 s (antes: o último número vezes 60 = 30 minutos)
+  const mm = t.match(/(\d+)\s*min/), ss = t.match(/(\d+)\s*s(?:eg)?\b/);
+  if (mm) return parseInt(mm[1], 10) * 60 + (ss ? parseInt(ss[1], 10) : 0);
   const last = parseInt(nums[nums.length-1]);
-  if (t.indexOf('min') !== -1) return last * 60;
   return last;
 }
 let _timerInt = null;
@@ -13007,7 +13075,7 @@ async function loadFromSheets(injectedText) {
       bloco.days[dayNum].push({
         name: r[1] || '',
         series: r[2] || '',
-        reps: r[3] || '',
+        reps: _repsConserta(r[3] || ''),   // v545
         rest: r[4] || '',
         obs: r[5] || '',
         video: (r[6] || '').trim() || _bankVideo(r[1]),
@@ -13788,10 +13856,8 @@ function _wtCommit(di, w, secs, pausas, corrigido) {
   // registra no servidor (fire-and-forget: rede caindo não trava o aluno; o cache local segura o badge)
   try {
     const studentName = (document.getElementById('infoNome')?.textContent || '').trim();
-    fetch(LOG_ENDPOINT, {
-      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ type: 'tempo_treino', sheetId: SHEET_ID, studentName, di: di, w: w, segundos: secs, pausas: pausas || 0, corrigido: !!corrigido })
-    }).catch(() => {});
+    // v545: com fila de reenvio; o tempo mais novo do mesmo dia e semana substitui o anterior na fila (o servidor lê o mais novo)
+    _enviaComFila_('tempo_treino', { type: 'tempo_treino', sheetId: SHEET_ID, studentName, di: di, w: w, segundos: secs, pausas: pausas || 0, corrigido: !!corrigido }, p => p.di + '|' + p.w);
   } catch (_) {}
   // cache local pro badge aparecer na hora (e sobreviver até o servidor ter o dado)
   const k = di + '|' + w;
@@ -15166,24 +15232,18 @@ function _chatGuessContexto(t) {
   return 'OUTRO';
 }
 function _chatRegisterAjusteAuto(pedido, reqId, contexto) {
-  try {
-    fetch(LOG_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        type: 'ajuste_request',
-        sheetId: SHEET_ID,
-        studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
-        contexto: contexto || _chatGuessContexto(pedido),
-        pedido: pedido,
-        fotos: [],
-        reqId: reqId || '', // permite anexar foto depois SEM duplicar a linha
-        origem: 'chat'
-      }),
-      keepalive: true,
-      redirect: 'follow'
-    }).catch(() => {});
-  } catch (_) {}
+  // v545: vai pela fila de reenvio e devolve se gravou AGORA. Era dispara-e-esquece: com sinal ruim o app dizia "Anotado!"
+  // e nada entrava na fila da equipe. O reqId torna o reenvio seguro (o servidor atualiza a mesma linha, não duplica).
+  return _enviaComFila_('ajuste_request', {
+    type: 'ajuste_request',
+    sheetId: SHEET_ID,
+    studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+    contexto: contexto || _chatGuessContexto(pedido),
+    pedido: pedido,
+    fotos: [],
+    reqId: reqId || '', // permite anexar foto depois SEM duplicar a linha
+    origem: 'chat'
+  }, p => p.reqId || String(p.ts));
 }
 // Tarja preta = protocolo hormonal/peptídeo/clínico. O app NUNCA registra isso como
 // ajuste normal (regra GH #564, 2026-07-06): pega na ENTRADA, avisa o aluno pra falar
@@ -15192,7 +15252,7 @@ function _chatRegisterAjusteAuto(pedido, reqId, contexto) {
 // ajuste legítimo por engano — o que escapar, o pré-filtro da conversa Ajustes é a rede.
 function _isTarjaPreta(t) {
   const s = ' ' + String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '') + ' ';
-  return /(protocolo hormonal|\bhormon(io|al|ios)|peptideo|testosterona|enantato|cipionato|propionato|sustanon|durateston|oxandrolona|stanozolol|nandrolona|deca ?durabolin|trembolona|boldenona|masteron|primobolan|dianabol|hemogenin|oximetolona|winstrol|anavar|clembuterol|somatropina|\bhgh\b|bpc[ -]?157|tb[ -]?500|mots[ -]?c|ipamorelin|cjc[ -]?1295|sermorelin|tesamorelina|mk[ -]?677|ibutamoren|semaglutida|tirzepatida|retatrutida|ozempic|mounjaro|clomifeno|\bclomid\b|tamoxifeno|anastrozol|letrozol|\bselank\b|melanotan|aod[ -]?9604|ss[ -]?31|ghk[ -]?cu|meu ciclo|no meu ciclo)/.test(s);
+  return /(protocolo hormonal|\bhormon(io|al|ios)|peptideo|testosterona|enantato|cipionato|propionato|sustanon|durateston|oxandrolona|stanozolol|nandrolona|deca ?durabolin|trembolona|boldenona|masteron|primobolan|dianabol|hemogenin|oximetolona|winstrol|anavar|clembuterol|somatropina|\bhgh\b|bpc[ -]?157|tb[ -]?500|mots[ -]?c|ipamorelin|cjc[ -]?1295|sermorelin|tesamorelina|mk[ -]?677|ibutamoren|semaglutida|tirzepatida|retatrutida|ozempic|mounjaro|clomifeno|\bclomid\b|tamoxifeno|anastrozol|letrozol|\bselank\b|melanotan|aod[ -]?9604|ss[ -]?31|ghk[ -]?cu|meu ciclo(?! menstrual)(?! de sono))/.test(s);   // v545: "meu ciclo menstrual" é pedido de dieta comum, não vai pro suporte
 }
 function _chatTarjaPretaRedirect() {
   const box = document.getElementById('chatMsgs');
@@ -15237,7 +15297,17 @@ function _chatConfirmAjuste(pedido, contexto) {
   if (_isTarjaPreta(comp.texto)) { _chatTarjaPretaRedirect(); return; }
   const reqId = 'aj_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   const ctx = contexto || _chatGuessContexto(comp.texto);
-  _chatRegisterAjusteAuto(comp.texto, reqId, ctx);
+  const _envio = _chatRegisterAjusteAuto(comp.texto, reqId, ctx);
+  // v545: não gravou agora (sem sinal, servidor fora)? O pedido fica guardado e sobe sozinho, e o aluno fica sabendo.
+  try {
+    Promise.resolve(_envio).then(ok => {
+      if (ok) return;
+      const av = '📶 Sem conexão agora: teu pedido ficou guardado aqui no app e sobe sozinho assim que a internet voltar. Não precisa mandar de novo.';
+      const b2 = document.getElementById('chatMsgs');
+      if (b2 && _chatMode !== 'suporte') { b2.appendChild(_chatBubble('assistant', av)); _chatScrollBottom(); }
+      _chatHistory.push({ role: 'assistant', content: av }); _chatSaveHistory();
+    });
+  } catch (_) {}
   try { comp.entradas.forEach(m => { m.registrado = true; }); const u = [..._chatHistory].reverse().find(m => m.role === 'user' && String(m.content || '').trim() === String(pedido || '').trim()); if (u) u.registrado = true; } catch (_) {}
   const box = document.getElementById('chatMsgs');
   const resposta = comp.juntou
@@ -15317,7 +15387,13 @@ function _chatAutogrow(el) {
   el.style.height = Math.min(100, el.scrollHeight) + 'px';
 }
 function _chatKeydown(e) {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+  // v545: no celular o Enter QUEBRA LINHA (teclado de toque não tem Shift+Enter) e só o botão envia. Antes cada Enter
+  // enviava: no "Pedir ajuste", um pedido escrito em três linhas virava três pedidos soltos na fila da equipe.
+  if (e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
+  let toque = false;
+  try { toque = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches); } catch (_) {}
+  if (toque) return;
+  e.preventDefault(); sendChat();
 }
 // ══ ABA SUPORTE: conversa com a EQUIPE (humana) via aba SUPORTE_CHAT da mestre ══
 // Criada 2026-08-03 (número do WhatsApp de suporte suspenso; vira canal permanente).
@@ -15327,6 +15403,7 @@ function _chatKeydown(e) {
 let _supMsgs = [];
 let _supTimer = null;
 let _supBusy = false;
+let _supSeq = 0;   // v545: sobe a cada envio; consulta que saiu antes do envio é descartada
 // Interruptor remoto (AVISOS!B2 = 'on'/'off' via aviso_global): com o WhatsApp de suporte
 // no ar o GH mantém a aba DESLIGADA; numa queda é só digitar 'on' na célula, sem deploy.
 let _supEnabled = false;
@@ -15399,14 +15476,17 @@ function _supRender() {
 async function _supFetch() {
   if (typeof SHEET_ID === 'undefined' || !SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
   try {
+    const _seq = _supSeq;
     const r = await fetch(LOG_ENDPOINT + '?action=suporte_msgs&id=' + encodeURIComponent(SHEET_ID) + '&_=' + Date.now(), { cache: 'no-store' });
     const j = await r.json();
+    if (_seq !== _supSeq) return;   // v545: o aluno enviou mensagem depois que esta consulta saiu: a lista dela está velha (apagava o balão recém-enviado e ele mandava de novo)
     if (j && j.ok && Array.isArray(j.msgs)) {
-      const antes = _supMsgs.length;
+      const _ass = a => a.length + '|' + (a.length ? (a[a.length - 1].ts + '|' + a[a.length - 1].autor) : '');   // v545: compara pela última mensagem, não só pelo tamanho
+      const antes = _ass(_supMsgs);
       _supMsgs = j.msgs;
       const modalAberto = document.getElementById('chatModal')?.classList.contains('show');
       if (modalAberto && _chatMode === 'suporte') {
-        if (_supMsgs.length !== antes) _supRender();
+        if (_ass(_supMsgs) !== antes) _supRender();
         else _supMarkSeen();
       } else {
         _supBadgeUpdate();   // fora da aba: só acende/apaga a bolinha
@@ -15433,7 +15513,9 @@ async function _supSend(text, inp) {
   if (!_supMsgs.length && box) box.innerHTML = '';   // tira a saudação na primeira msg
   const msg = { ts: Date.now(), autor: 'aluno', texto: text };
   _supMsgs.push(msg);
-  if (box) { box.appendChild(_supBubble(msg)); _chatScrollBottom(); }
+  _supSeq++;
+  const _balao = _supBubble(msg);
+  if (box) { box.appendChild(_balao); _chatScrollBottom(); }
   let ok = false;
   try {
     const r = await fetch(LOG_ENDPOINT, {
@@ -15453,12 +15535,18 @@ async function _supSend(text, inp) {
     // marca que ESTE aluno usa o suporte: só a partir daqui o boot checa resposta nova
     if (ok) { try { localStorage.setItem('gh_sup_used_' + SHEET_ID, '1'); } catch (_) {} }
   } catch (_) { ok = false; }
-  if (!ok && box) {
-    const err = document.createElement('div');
-    err.className = 'chat-typing';
-    err.textContent = '⚠️ Não consegui enviar agora. Confere a internet e manda de novo.';
-    box.appendChild(err); _chatScrollBottom();
-  }
+  if (!ok) {
+    // v545: mensagem que NÃO foi sai da conversa e o texto volta pro campo. Antes o balão ficava igual ao de mensagem
+    // enviada, o texto se perdia e, na consulta seguinte, sumiam o balão e o aviso.
+    try { const i = _supMsgs.indexOf(msg); if (i >= 0) _supMsgs.splice(i, 1); _balao.remove(); } catch (_) {}
+    try { if (inp && !String(inp.value || '').trim()) { inp.value = text; _chatAutogrow(inp); } } catch (_) {}
+    if (box) {
+      const err = document.createElement('div');
+      err.className = 'chat-typing';
+      err.textContent = '⚠️ Não consegui enviar agora. Tua mensagem voltou pro campo: confere a internet e manda de novo.';
+      box.appendChild(err); _chatScrollBottom();
+    }
+  } else { _supSeq++; try { _supFetch(); } catch (_) {} }
   _supBusy = false;
   if (sendBtn) sendBtn.disabled = false;
   if (inp) inp.focus();
@@ -15489,8 +15577,8 @@ function openChatModal() {
 }
 
 async function sendChat() {
-  if (_chatBusy) return;
   const inp = document.getElementById('chatInput');
+  if (_chatBusy && _chatMode !== 'suporte') return;   // v545: a espera do assistente não trava mais a conversa com a equipe
   const text = (inp.value || '').trim();
   if (!text) return;
   if (typeof SHEET_ID === 'undefined' || !SHEET_ID) {
@@ -15579,8 +15667,12 @@ async function sendChat() {
   box.appendChild(typing);
   _chatScrollBottom();
 
+  // v545: prazo de 25 s. Sem prazo, servidor lento deixava "assistente digitando" por minutos, com o chat travado.
+  const _ctrlD = new AbortController();
+  const _toD = setTimeout(() => { try { _ctrlD.abort(); } catch (_) {} }, 25000);
   try {
     const r = await fetch(CHAT_ENDPOINT, {
+      signal: _ctrlD.signal,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -15594,12 +15686,14 @@ async function sendChat() {
     const j = await r.json().catch(() => ({}));
     const t1 = document.getElementById('chatTyping'); if (t1) t1.remove();
     const resposta = j.resposta || 'Não consegui responder agora, tenta de novo daqui a pouco 🙏';
-    box.appendChild(_chatBubble('assistant', resposta));
+    const _naAbaSup = _chatMode === 'suporte';   // v545: o aluno foi pra aba Suporte no meio da resposta: ela fica só no histórico, não cai na conversa com a equipe
+    if (!_naAbaSup) box.appendChild(_chatBubble('assistant', resposta));
     _chatHistory.push({ role: 'assistant', content: resposta });
     // MODO DÚVIDA: o bot responde. Se ele achar que é ajuste (pro_gh), NÃO auto-registra —
     // avisa que não foi marcado como ajuste e oferece registrar com 1 toque (a decisão fica
     // com o aluno, mas o palpite do bot continua valendo). pro_suporte → WhatsApp.
-    if (j.tipo === 'pro_suporte') _chatAddSupportCta();
+    if (_naAbaSup) { if (j.tipo === 'pro_gh') { try { const u = [..._chatHistory].reverse().find(m => m.role === 'user' && m.content === text); if (u) u.proGh = true; } catch (_) {} } }
+    else if (j.tipo === 'pro_suporte') _chatAddSupportCta();
     else if (j.tipo === 'pro_gh') { try { const u = [..._chatHistory].reverse().find(m => m.role === 'user' && m.content === text); if (u) u.proGh = true; _chatSaveHistory(); } catch (_) {} _chatAddAjusteNudge(text); }   // v534: marca pra entrar no registro
     _chatSaveHistory();
     _chatScrollBottom();
@@ -15622,9 +15716,17 @@ async function sendChat() {
     } catch (_) {}
   } catch (err) {
     const t2 = document.getElementById('chatTyping'); if (t2) t2.remove();
-    box.appendChild(_chatBubble('assistant', 'Falha de conexão. Confere a internet e manda de novo. 🙏'));
+    // v545: a pergunta que não foi sai da conversa e VOLTA pro campo (antes o texto se perdia)
+    try {
+      const li = _chatHistory.length - 1;
+      if (li >= 0 && _chatHistory[li].role === 'user' && _chatHistory[li].content === text) { _chatHistory.pop(); _chatSaveHistory(); }
+      if (_chatMode !== 'suporte') { const us = box.querySelectorAll('.chat-msg.user'); if (us.length) us[us.length - 1].remove(); }
+      if (!String(inp.value || '').trim()) { inp.value = text; _chatAutogrow(inp); }
+    } catch (_) {}
+    if (_chatMode !== 'suporte') box.appendChild(_chatBubble('assistant', (err && err.name === 'AbortError') ? 'Demorou demais pra responder. Deixei tua pergunta no campo: manda de novo daqui a pouco. 🙏' : 'Falha de conexão. Deixei tua pergunta no campo: confere a internet e manda de novo. 🙏'));
     _chatScrollBottom();
   } finally {
+    clearTimeout(_toD);
     _chatBusy = false;
     sendBtn.disabled = false;
     inp.focus();
@@ -15643,6 +15745,7 @@ function openAjusteModal(prefill, contexto, reqId) {
   // Reset modal pro estado inicial (form visível, success escondido)
   document.getElementById('ajusteForm').style.display = '';
   document.getElementById('ajusteSuccess').style.display = 'none';
+  try { const _av = document.getElementById('ajusteTarja'); if (_av) _av.remove(); } catch (_) {}
   const pf = (typeof prefill === 'string') ? prefill : '';
   document.getElementById('ajusteTexto').value = pf;
   document.getElementById('ajusteContexto').value = (contexto === 'DIETA' || contexto === 'OUTRO') ? contexto : 'TREINO';
@@ -15717,20 +15820,34 @@ async function submitAjuste() {
     alert('Conta um pouco mais sobre o que precisa mudar: mínimo 5 caracteres.');
     return;
   }
+  // v545: pedido hormonal ou clínico não entra na fila de ajuste (regra do GH: isso é direto com ele). O chat já barrava; o
+  // formulário aceitava, inclusive pelo assunto "Protocolo", que saiu da lista.
+  if (contexto === 'HORMONAL' || _isTarjaPreta(texto)) {
+    let av = document.getElementById('ajusteTarja');
+    if (!av) {
+      av = document.createElement('div'); av.id = 'ajusteTarja';
+      av.style.cssText = 'margin:12px 0 4px;padding:10px 12px;border:1px solid rgba(212,175,106,.45);border-radius:8px;font-size:12.5px;line-height:1.5;color:#e8d9ac;';
+      document.getElementById('ajusteSubmitBtn').insertAdjacentElement('beforebegin', av);
+    }
+    av.innerHTML = 'Esse ponto do teu protocolo é direto com o GH, não vai pela fila de ajuste. <a href="https://wa.me/555520131470?text=' + encodeURIComponent('Oi! Quero falar sobre o meu protocolo.') + '" target="_blank" rel="noopener" style="color:#D4AF6A;font-weight:700;">Falar no WhatsApp do suporte</a>';
+    return;
+  }
   const btn = document.getElementById('ajusteSubmitBtn');
   btn.disabled = true;
   btn.textContent = 'Enviando...';
   const studentName = (document.getElementById('infoNome')?.textContent || '').trim();
-  // Comprime fotos anexadas (se houver) antes de mandar — mesmo compressor do reajuste
-  let fotos = [];
+  // Comprime fotos anexadas (se houver) antes de mandar, com o mesmo compressor do reajuste
+  let fotos = [], _fotosFalha = 0;
   if (_ajustePics.length) {
     for (let i = 0; i < _ajustePics.length; i++) {
       btn.textContent = `Comprimindo foto ${i + 1}/${_ajustePics.length}…`;
       try {
         const dataUrl = await _compressFoto(_ajustePics[i], 1280, 0.8);
         fotos.push({ name: 'ajuste_' + (i + 1) + '.jpg', mime: 'image/jpeg', base64: dataUrl });
-      } catch (_) { /* pula foto que falhar, não trava o pedido */ }
+      } catch (_) { _fotosFalha++; }
     }
+    // v545: foto que o celular não consegue abrir aqui não some mais calada (a equipe recebia só "segue foto")
+    if (_fotosFalha && !confirm(_fotosFalha + (_fotosFalha === 1 ? ' foto não pôde ser lida' : ' fotos não puderam ser lidas') + ' (formato que não abre aqui; um print da foto resolve). Enviar o pedido sem ' + (_fotosFalha === 1 ? 'ela' : 'elas') + '?')) { btn.disabled = false; btn.textContent = 'Enviar pedido'; return; }
     btn.textContent = 'Enviando...';
   }
   try {
@@ -15753,12 +15870,12 @@ async function submitAjuste() {
       document.getElementById('ajusteSuccess').style.display = '';
       dismissAjusteBanner(); // já usou a função — esconde o banner por 30 dias
     } else {
-      alert('Não consegui enviar agora: ' + (result.error || 'erro desconhecido') + '. Tenta de novo em 1 minuto.');
+      alert('Não consegui enviar agora. Tenta de novo em 1 minuto.');
       btn.disabled = false;
       btn.textContent = 'Enviar pedido';
     }
   } catch (err) {
-    alert('Erro de conexão. Confere internet e tenta de novo. (' + err.message + ')');
+    alert('Sem conexão agora. Confere a internet e tenta de novo.');
     btn.disabled = false;
     btn.textContent = 'Enviar pedido';
   }
@@ -15795,11 +15912,11 @@ async function submitFeedback() {
       document.getElementById('feedbackForm').style.display = 'none';
       document.getElementById('feedbackSuccess').style.display = '';
     } else {
-      alert('Não consegui enviar agora: ' + (r.error || 'erro') + '. Tenta de novo em 1 minuto.');
+      alert('Não consegui enviar agora. Tenta de novo em 1 minuto.');
       btn.disabled = false; btn.textContent = 'Enviar';
     }
   } catch (e) {
-    alert('Erro de conexão. Confere a internet e tenta de novo. (' + e.message + ')');
+    alert('Sem conexão agora. Confere a internet e tenta de novo.');
     btn.disabled = false; btn.textContent = 'Enviar';
   }
 }
@@ -15866,12 +15983,22 @@ function dismissAjusteBanner() {
 // Estado dos 4 slots durante a sessão do modal
 const _FOTOS_ROLES = ['frente', 'costas', 'direito', 'esquerdo'];
 let _fotosPick = {}; // role → File
-let _fotosWindowOpen = false; // janela de envio aberta?
+let _fotosWindowOpen = null; // janela de envio: null = conferindo (ou não deu pra conferir), true = aberta, false = fechada
+let _fotosEnviando = false;   // v545: envio em andamento trava os espaços
+let _fotosJanelaStatus = '';  // v545: 'inicial' = fotos do começo (aluno novo)
+// v545: aluno novo, na janela das fotos do INÍCIO, lê título de início, não de reajuste
+function _fotosTextosJanela() {
+  try {
+    const h = document.querySelector('#fotosModal h3');
+    if (h && h.lastChild && h.lastChild.nodeType === 3) h.lastChild.textContent = _fotosJanelaStatus === 'inicial' ? ' Minhas fotos do início' : ' Minhas fotos do reajuste';
+  } catch (_) {}
+}
 
 async function openFotosModal() {
   document.getElementById('floatOptions').classList.remove('show');
   document.getElementById('floatBtn').classList.remove('open');
   teShow('fotosModal');
+  _fotosWindowOpen = null; _fotosWindowMsg = '';   // v545: enquanto confere, o estado é "conferindo" (antes era "fechado")
 
   // Sempre abre na aba Enviar; zera cache de comparação pra recarregar fresco
   _cmpState.loaded = false;
@@ -15907,6 +16034,7 @@ async function openFotosModal() {
     const j = await resp.json();
     _fotosWindowOpen = !!j.open;
     _fotosWindowMsg = '';
+    _fotosJanelaStatus = (j && j.status) || ''; _fotosTextosJanela();   // v545
     if (j.open) {
       status.innerHTML = `<div style="color:#4caf50;font-weight:700;margin-bottom:4px;">✅ Envio liberado</div><div style="color:#aaa;font-size:12px;">${escapeFotosTxt(j.message || '')}</div>`;
       _setFotosSlotsEnabled(true);
@@ -15921,8 +16049,9 @@ async function openFotosModal() {
       _setFotosSlotsEnabled(false);
     }
   } catch (err) {
-    _fotosWindowOpen = false;
-    status.innerHTML = `<div style="color:#c0392b;">Erro ao verificar janela: ${escapeFotosTxt(err.message)}</div>`;
+    // v545: não deu pra conferir (rede) é diferente de "fechado": diz isso em português e deixa tentar de novo
+    _fotosWindowOpen = null;
+    status.innerHTML = '<div style="color:#d4a76a;font-weight:700;margin-bottom:4px;">Não consegui conferir se o envio está liberado</div><div style="color:#aaa;font-size:12px;">Confere a internet e tenta de novo.</div><button type="button" class="te-btn ghost" style="display:block;width:100%;margin-top:10px;" onclick="openFotosModal()">Tentar de novo</button>';
     _setFotosSlotsEnabled(false);
   }
 }
@@ -15947,9 +16076,11 @@ function escapeFotosTxt(s) {
 let _fotosWindowMsg = '';
 function _fotosWaLink() { return 'https://wa.me/555520131470?text=' + encodeURIComponent('Oi! Quero mandar minhas fotos de evolução. O app diz: ' + (_fotosWindowMsg || 'envio não disponível agora')); }
 function _fotosFechadaAviso() {
-  try { _ghToast('📷 ' + (_fotosWindowMsg || 'O envio pelo app está fechado agora.') + ' As fotos entram no laudo do reajuste. Precisa mandar antes? Fala no WhatsApp do suporte (botão aqui em cima).', 6500); } catch (_) {}
+  try { _ghToast('📷 ' + escapeFotosTxt(_fotosWindowMsg || 'O envio pelo app está fechado agora.') + ' As fotos entram no laudo do reajuste. Precisa mandar antes? Fala no WhatsApp do suporte (botão aqui em cima).', 6500); } catch (_) {}
 }
 function _fotoSlotClick(role) {
+  if (_fotosEnviando) { _ghToast('Espera o envio terminar pra mexer nas fotos.'); return; }   // v545
+  if (_fotosWindowOpen === null) { _ghToast('Só um instante: estou conferindo se o envio está liberado.'); return; }   // v545: conferindo não é "fechado"
   if (!_fotosWindowOpen) { _fotosFechadaAviso(); return; }   // v539
   const slot = document.querySelector(`.foto-slot[data-role="${role}"]`);
   if (!slot) return;
@@ -15979,6 +16110,7 @@ function _onFotoSlotChange(role, input) {
 
 function _removeFotoSlot(ev, role) {
   ev.stopPropagation();
+  if (_fotosEnviando) return;   // v545
   delete _fotosPick[role];
   const slot = document.querySelector(`.foto-slot[data-role="${role}"]`);
   if (!slot) return;
@@ -15994,6 +16126,7 @@ function _removeFotoSlot(ev, role) {
 
 function _updateFotosSendBtn() {
   const sendBtn = document.getElementById('fotosSendBtn');
+  if (_fotosEnviando) return;   // v545: mexer num espaço durante o envio reabilitava o botão (dois envios, duas pastas)
   const n = Object.keys(_fotosPick).length;
   if (n === 0 || !_fotosWindowOpen) {
     sendBtn.style.display = 'none';
@@ -16213,6 +16346,8 @@ async function enviarFotos() {
     fb.innerHTML = '<span style="color:#c0392b;">Erro: aluno não identificado.</span>';
     return;
   }
+  if (_fotosEnviando) return;   // v545: um envio por vez
+  _fotosEnviando = true;
   sendBtn.disabled = true;
   fb.innerHTML = '';
 
@@ -16220,8 +16355,11 @@ async function enviarFotos() {
     const compressed = [];
     for (let i = 0; i < roles.length; i++) {
       const role = roles[i];
-      sendBtn.textContent = `Comprimindo ${i + 1}/${roles.length}…`;
-      const dataUrl = await _compressFoto(_fotosPick[role]);
+      sendBtn.textContent = `Preparando ${i + 1}/${roles.length}…`;
+      let dataUrl;
+      // v545: foto que o navegador não abre (HEIC de alguns celulares) diz QUAL é e o que fazer (antes: "Foto inválida: nome do arquivo")
+      try { dataUrl = await _compressFoto(_fotosPick[role]); }
+      catch (_) { throw new Error('Não consegui abrir a foto de ' + ({ frente: 'FRENTE', costas: 'COSTAS', direito: 'PERFIL DIREITO', esquerdo: 'PERFIL ESQUERDO' }[role] || role) + '. Se ela está num formato diferente (HEIC), tira um print dela e escolhe o print.'); }
       compressed.push({ name: role + '.jpg', mime: 'image/jpeg', base64: dataUrl, role: role });
     }
 
@@ -16240,7 +16378,9 @@ async function enviarFotos() {
       throw new Error(msg);
     }
 
-    fb.innerHTML = `<div style="background:rgba(76,175,80,0.12);border-left:3px solid #4caf50;padding:10px;border-radius:4px;color:#a5d6a7;">✅ <strong>${j.saved} foto${j.saved > 1 ? 's' : ''} enviada${j.saved > 1 ? 's' : ''}</strong> com sucesso!<br><span style="font-size:11px;color:#888;">Salva na pasta <strong>${escapeFotosTxt(j.folder)}</strong>. O GH vai analisar no próximo reajuste.</span></div>`;
+    fb.innerHTML = `<div style="background:rgba(76,175,80,0.12);border-left:3px solid #4caf50;padding:10px;border-radius:4px;color:#a5d6a7;">✅ <strong>${j.saved} foto${j.saved > 1 ? 's' : ''} enviada${j.saved > 1 ? 's' : ''}</strong> com sucesso!<br><span style="font-size:11px;color:#888;">${j.saved > 1 ? 'Salvas' : 'Salva'} na pasta <strong>${escapeFotosTxt(j.folder)}</strong>. ${_fotosJanelaStatus === 'inicial' ? 'Elas viram o "antes" da tua comparação de evolução.' : 'O GH vai analisar no próximo reajuste.'}</span></div>`;
+    // v545: mandou as quatro = o aviso da janela some (ele seguia no topo a cada abertura e o aluno reenviava)
+    try { if (roles.length >= 4) { const bn = document.getElementById('fotosBanner'); if (bn) { if (bn._startDate) localStorage.setItem(_fotosBannerKey(bn._startDate), '1'); bn.style.display = 'none'; } } } catch (_) {}
     // limpa slots
     _fotosPick = {};
     _FOTOS_ROLES.forEach(role => {
@@ -16256,10 +16396,13 @@ async function enviarFotos() {
     });
     sendBtn.style.display = 'none';
   } catch (err) {
-    fb.innerHTML = `<div style="background:rgba(192,57,43,0.12);border-left:3px solid #c0392b;padding:10px;border-radius:4px;color:#f5b7b1;">❌ ${escapeFotosTxt(err.message)}</div>`;
+    _fotosEnviando = false;
+    const _m = /failed to fetch|load failed|networkerror|unexpected token/i.test(String(err && err.message)) ? 'Sem conexão agora. Tuas fotos seguem aqui: confere a internet e toca em enviar de novo.' : String(err && err.message || 'Não consegui enviar agora.');
+    fb.innerHTML = `<div style="background:rgba(192,57,43,0.12);border-left:3px solid #c0392b;padding:10px;border-radius:4px;color:#f5b7b1;">❌ ${escapeFotosTxt(_m)}</div>`;
     sendBtn.disabled = false;
     _updateFotosSendBtn();
   }
+  _fotosEnviando = false;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -18327,7 +18470,7 @@ function logCardioRegistro() {
     ts: new Date().toISOString()
   };
   try {
-    fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), keepalive: true, redirect: 'follow' }).catch(() => {});
+    _enviaComFila_(payload.type, payload, _kFilaPadrao_);   // v545: com fila de reenvio (sem sinal, sobe sozinho depois)
   } catch (_) {}
 }
 // Espelha notifyDietCompletion: dia de cardio cumprido → log no ranking. shared=true (compartilhou a
@@ -18346,7 +18489,7 @@ function notifyCardioCompletion(shared) {
     shared: !!shared, ts: new Date().toISOString()
   };
   try {
-    fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), keepalive: true, redirect: 'follow' }).catch(() => {});
+    _enviaComFila_(payload.type, payload, _kFilaPadrao_);   // v545: com fila de reenvio (sem sinal, sobe sozinho depois)
   } catch (_) {}
 }
 // ══ DIETA SEM CULPA (GH 2026-07-29): "não rolou" vira SINAL, nunca bronca ══
@@ -18915,8 +19058,7 @@ function registrarMealNao(ri, nome, motivo) {
   _mealNotaMostra(ri);
   try {
     if (SHEET_ID && typeof LOG_ENDPOINT !== 'undefined') {
-      fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true, redirect: 'follow',
-        body: JSON.stringify({ type: 'dieta_sinal', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(), refeicao: nome, motivo: motivo, nota: nota }) });
+      _enviaComFila_('dieta_sinal', { type: 'dieta_sinal', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(), refeicao: nome, motivo: motivo, nota: nota });   // v545: com fila de reenvio
     }
   } catch (_) {}
   _ghToast(nota ? 'Anotado, sem culpa 🤝 O que tu escreveu vai junto pro Gabriel.' : 'Anotado, sem culpa 🤝 Amanhã segue o jogo. Se repetir muito, o Gabriel já ajusta essa refeição pra ti.');
@@ -18983,7 +19125,7 @@ function logMealRegistro(ri) {
     ts: new Date().toISOString()
   };
   try {
-    fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), keepalive: true, redirect: 'follow' }).catch(() => {});
+    _enviaComFila_(payload.type, payload, _kFilaPadrao_);   // v545: com fila de reenvio (sem sinal, sobe sozinho depois)
   } catch (_) {}
 }
 // Espelha notifyDayCompletion do treino, com plano:'dieta'. shared=false → cumpriu a dieta do
@@ -19002,7 +19144,7 @@ function notifyDietCompletion(shared) {
     shared: !!shared, ts: new Date().toISOString()
   };
   try {
-    fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), keepalive: true, redirect: 'follow' }).catch(() => {});
+    _enviaComFila_(payload.type, payload, _kFilaPadrao_);   // v545: com fila de reenvio (sem sinal, sobe sozinho depois)
   } catch (_) {}
 }
 
@@ -21088,7 +21230,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v544';
+    var APP_SHELL_V = 'metodo-gh-v545';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
