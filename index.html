@@ -6096,6 +6096,8 @@ if (!SHEET_ID && !TAB_NAME) {
   }
 }
 
+// v547: link pessoal sem o "&tab=" (cortado ao copiar) abre o treino do aluno. Antes caía no portão do Painel do Treinador.
+if (SHEET_ID && !TAB_NAME && !(params.has('editor') || params.has('admin') || params.get('edit') === '1')) TAB_NAME = 'TREINO';
 // Salva o aluno pra recuperar nas próximas aberturas sem link (tab opcional → default TREINO)
 if (params.get('sheet')) {
   localStorage.setItem('gh_pwa_params', JSON.stringify({ sheet: params.get('sheet'), tab: params.get('tab') || 'TREINO' }));
@@ -8380,6 +8382,7 @@ function _setNumRotulo(di, ei, si, row) {
   return String(si + 1);
 }
 function toggleSetFeita(di, ei, si) {
+  try { _treinoMexeuEm = Date.now(); } catch (_) {}
   const ok = loadSetOk(di, ei, currentWeek);
   const marcando = !ok.has(si);
   if (marcando) ok.add(si); else ok.delete(si);
@@ -8416,6 +8419,7 @@ function toggleSetFeita(di, ei, si) {
 }
 let _setTimers = {};
 function onSetField(di, ei) {
+  try { _treinoMexeuEm = Date.now(); } catch (_) {}
   const k = `s-${di}-${ei}`;
   clearTimeout(_setTimers[k]);
   _setTimers[k] = setTimeout(() => {
@@ -9324,6 +9328,7 @@ function setSkipped(di, ei, val) {
 // sync, isto separa "recém-feita" de "legado local-only de verdade".
 const _doneMarkedThisSession = new Set();
 function setDone(di, ei, val) {
+  try { _treinoMexeuEm = Date.now(); } catch (_) {}
   _doneMarkedThisSession.add(`${currentWeek}|${di}|${ei}`);   // v544: marcar E desmarcar entram: o restore que chega atrasado não desfaz o que o aluno acabou de fazer
   if (val) { localStorage.setItem(doneKey(di, ei), '1'); _diaAtivoMarca(di); }
   else localStorage.removeItem(doneKey(di, ei));
@@ -12947,9 +12952,10 @@ function _semTravessao(s) {
   if (!/[\u2013\u2014]/.test(t)) return t;
   return t.replace(/([;:,.!?])\s*[\u2013\u2014]\s*(?=\S)/g, '$1 ').replace(/[\u2013\u2014]/g, '-');
 }
-function parseCSV(text) {
+// leitura linha a linha (a de sempre): fica de reserva pro caso de aspas desencontradas no texto
+function _parseCSVLinhas(text) {
   const rows = [];
-  const lines = text.split('\n');
+  const lines = String(text == null ? '' : text).split('\n');
   for (const line of lines) {
     if (!line.trim()) continue;
     const row = [];
@@ -12972,6 +12978,34 @@ function parseCSV(text) {
   }
   return rows;
 }
+// v547: lê o texto inteiro mantendo o estado das aspas entre as linhas. Antes cortava por linha primeiro: célula com quebra
+// de linha (Alt+Enter na planilha) virava duas linhas, e a segunda aparecia como exercício sem nome ou alimento fantasma.
+function parseCSV(text) {
+  const s = String(text == null ? '' : text);
+  const rows = [];
+  let row = [], field = '', inQuotes = false, temTexto = false;
+  const fechaCampo = () => { row.push(_semTravessao(field.replace(/\s*\r?\n\s*/g, '\n').trim())); field = ''; };
+  const fechaLinha = () => { fechaCampo(); if (temTexto) rows.push(row); row = []; temTexto = false; };
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (ch === '"') {
+      temTexto = true;
+      if (inQuotes && s[i + 1] === '"') { field += '"'; i++; }
+      else { inQuotes = !inQuotes; }
+    } else if (ch === ',' && !inQuotes) {
+      temTexto = true;
+      fechaCampo();
+    } else if (ch === '\n' && !inQuotes) {
+      fechaLinha();
+    } else {
+      if (ch !== '\r' && ch !== ' ' && ch !== '\t' && ch !== '\n') temTexto = true;
+      field += ch;
+    }
+  }
+  if (inQuotes) return _parseCSVLinhas(s);   // aspas desencontradas: volta pro jeito antigo, que isola o estrago numa linha
+  if (temTexto || row.length) fechaLinha();
+  return rows;
+}
 
 // ══════════════════════════════════════════════════════════════
 // ══ CARREGAR DADOS DA GOOGLE SHEETS ══
@@ -12985,6 +13019,7 @@ function parseCSV(text) {
 async function loadFromSheets(injectedText) {
   // CSV injetado (cache/prefetch) = render imediato, SEM tela de loading nem rede.
   const fromInject = injectedText != null;
+  let _cacheDepois = null, _montou = false;   // v547
   if (!fromInject) document.getElementById('loadingScreen').style.display = 'flex';
 
   try {
@@ -13004,7 +13039,7 @@ async function loadFromSheets(injectedText) {
       if (!res.ok) throw new Error('Não foi possível acessar a planilha. Verifique se ela está compartilhada (qualquer pessoa com link = leitor).');
 
       text = await res.text();
-      _protoCacheSet({ treino: text });   // cache pra próxima abertura ser instantânea
+      _cacheDepois = text;   // v547: só vai pro cache DEPOIS de montar o treino (o cache não recebe mais planilha que não deu pra ler)
     }
     const rows = parseCSV(text);
 
@@ -13069,7 +13104,9 @@ async function loadFromSheets(injectedText) {
       // v522 (Patrícia Pizzolatto, 25/09/2026): linha de EXERCÍCIO com a col A (dia) apagada por edição manual da planilha
       // (caso conhecido: "edição manual apaga a col A") era descartada aqui: o dia aparecia pela metade (2 de 6 exercícios)
       // e o Trocar não achava o exercício. Linha com nome + séries/reps, sem dia, com um dia em curso = pertence ao dia em curso.
-      if (infoFound && (r[0] === '' || r[0] == null) && lastDayNum != null && r[1] && String(r[1]).trim() && (r[2] || r[3]) && !String(r[1]).trim().startsWith('http')) {
+      // v547: só quando a col SÉRIES é série de verdade ("3X", "1X aj / 2X val"). Orientação escrita depois dos exercícios
+      // (hipopressivo: "3 ciclos", "Todos os dias pela manhã") aparecia como exercício no último dia.
+      if (infoFound && (r[0] === '' || r[0] == null) && lastDayNum != null && r[1] && String(r[1]).trim() && /^\s*\d+\s*x/i.test(String(r[2] || '')) && !String(r[1]).trim().startsWith('http')) {
         r[0] = String(lastDayNum);
       }
       // Skip restrict row (col A stripped by gviz, not a link, not an exercise)
@@ -13088,6 +13125,13 @@ async function loadFromSheets(injectedText) {
       const dayNum = parseInt(dayRaw);
       if (isNaN(dayNum)) continue;
       lastDayNum = dayNum;   // v522
+      // v547: linha com o número do dia e sem nome. Sem série nem repetição não é exercício (não vira card em branco). Com série
+      // ou repetição é um exercício cujo nome se perdeu na planilha: fica NO LUGAR (pra não deslocar os de baixo nem esconder a
+      // carga já anotada nele), com um nome que deixa claro o que falta.
+      if (!String(r[1] || '').trim()) {
+        if (!String(r[2] || '').trim() && !String(r[3] || '').trim()) continue;
+        r[1] = 'Exercício sem nome (avisa o suporte)';
+      }
       const isBisetStart = /bi/.test(dayRaw); // ex: "1bi" marca primeiro do bi-set
 
       // Se ainda não houve marker, usa bloco anônimo (comportamento clássico)
@@ -13125,19 +13169,29 @@ async function loadFromSheets(injectedText) {
       });
     });
 
-    // WORKOUT = array plano, ordem de bloco → dia. Cada entry leva a tag .bloco.
-    try { _flushSetsPendentes_(false); } catch (_) {}   // v480: a 2a carga do boot troca o WORKOUT; grava o digitado no exercicio de antes
-    WORKOUT = [];
+    // v547: o treino novo é montado À PARTE e só substitui o que está na tela depois de conferido. Antes o WORKOUT era zerado
+    // primeiro: se a planilha viesse sem exercício (aba no meio de uma republicação), o treino bom sumia da memória e a carga
+    // digitada em seguida era gravada sem nome de exercício.
+    // Treino sem marcador junto de treino nomeado (@TREINO): o sem nome ganha o nome "Treino" (ficava inacessível ou misturado).
+    if (blocos.some(b => b.nome === '') && blocos.some(b => b.nome !== '')) { const _an = blocos.find(b => b.nome === ''); if (_an && Object.keys(_an.days).some(d => (_an.days[d] || []).length)) _an.nome = 'Treino'; }
+    const _novoW = [];
     blocos.forEach(bloco => {
       const dns = Object.keys(bloco.days).sort((a, b) => +a - +b);
       dns.forEach(d => {
-        WORKOUT.push({
+        if (!(bloco.days[d] || []).length) return;
+        _novoW.push({
           day: `DIA ${d}`,
           exercises: bloco.days[d],
           bloco: bloco.nome || ''
         });
       });
     });
+    if (_novoW.length === 0) throw new Error('Nenhum exercício encontrado na aba. Verifique o formato da planilha.');
+    // WORKOUT = array plano, ordem de bloco → dia. Cada entry leva a tag .bloco.
+    try { _flushSetsPendentes_(false); } catch (_) {}   // v480: a 2a carga do boot troca o WORKOUT; grava o digitado no exercicio de antes
+    WORKOUT = _novoW;
+    _montou = true;
+    if (_cacheDepois != null) _protoCacheSet({ treino: _cacheDepois });
 
     // BLOCOS = só os blocos NOMEADOS (anônimos viram lista vazia → toggle escondido)
     BLOCOS = blocos.map(b => b.nome).filter(n => n !== '');
@@ -13218,9 +13272,14 @@ async function loadFromSheets(injectedText) {
       const eaT = document.getElementById('esforcoAlvoTexto');
       if (eaT && STUDENT_ESFORCO_ALVO.texto) { eaT.textContent = STUDENT_ESFORCO_ALVO.texto; eaT.style.display = 'block'; }
       if (eaB) eaB.style.display = 'block';
+    } else {
+      // v547: o protocolo novo não tem mais Esforço-alvo: o selo do anterior sai (ficava na tela até fechar o app)
+      try { const _b = document.getElementById('esforcoAlvoBadge'), _t = document.getElementById('esforcoAlvoTexto'); if (_b) _b.style.display = 'none'; if (_t) _t.style.display = 'none'; } catch (_) {}
     }
 
     document.getElementById('loadingScreen').style.display = 'none';
+    try { document.getElementById('errorBox').style.display = 'none'; } catch (_) {}   // v547: carregou = a caixa de erro some
+    try { if (!hipoData) document.getElementById('hipoLevel').style.display = 'none'; } catch (_) {}
     document.getElementById('studentInfo').style.display = 'flex';
     document.getElementById('weekSelector').style.display = 'flex';
     document.getElementById('instrToggle').style.display = 'flex';
@@ -13268,10 +13327,11 @@ async function loadFromSheets(injectedText) {
     restoreDoneFromServerIfEmpty_();
     // flush das pendencias offline por ultimo (push local→servidor). Nao segura render nem restore.
     // (flushSyncQueues tem guard de reentrancia; o restore acima e if-empty, entao nao ha corrida de dado.)
-    await flushSyncQueues().catch(() => {});
+    // v547: a fila sobe SEM segurar o resto da abertura. Com 2 ou 3 itens pendentes e rede ruim, o cronômetro, o "continuar
+    // treino", as fotos e a conferência do protocolo esperavam segundos (ou minutos) por ela.
     // DEPOIS do flush: limpa a marca de "feito" local-only legada (1x por aluno).
     // Tem que ser pós-flush pra não confundir marca enfileirada (recém-subida) com legado.
-    sweepLegacyDoneLocalOnly_().catch(() => {});
+    flushSyncQueues().catch(() => {}).then(() => sweepLegacyDoneLocalOnly_().catch(() => {}));
     checkFotosBannerOnLoad();
     checkChatBannerOnLoad();
     loadRecado();   // recado em áudio do GH: roda no INIT (antes só rodava dentro do renderDiet,
@@ -13282,9 +13342,11 @@ async function loadFromSheets(injectedText) {
     _tourMaybeStart();     // 1º acesso: tour de boas-vindas (o _showNav da dieta roda cedo demais, sem WORKOUT)
     _instAvisoMaybe();     // v532: celular sem o app instalado: aviso pra instalar (nunca por cima do tour)
     setTimeout(_semanaPromptBoot, 2500);   // v539: semana inteira fechada em outra data: pergunta se passa pra próxima
+    return true;
 
   } catch (err) {
     document.getElementById('loadingScreen').style.display = 'none';
+    try { console.warn('[gh] treino: ' + (err && err.message)); } catch (_) {}
     // Se o TREINO em si PARSEOU (WORKOUT tem dias), o erro veio de um EXTRA pós-parse (render,
     // estado local corrompido do aparelho, cronômetro etc.): NÃO esconde a aba — o treino fica
     // de pé best-effort. Caso Vitor 2026-08-10: aparelho com lixo local caía aqui todo dia e a
@@ -13293,16 +13355,30 @@ async function loadFromSheets(injectedText) {
       _showNav();
       var _ntOk = document.getElementById('navTreino'); if (_ntOk) _ntOk.style.display = '';
       try { renderExercises(); } catch (_re) {}
-    } else if (dietLoaded) {
-      // Socorro "só dieta" fica reservado pra quando o DADO do treino realmente não veio.
-      _showNav();
-      var _nt = document.getElementById('navTreino'); if (_nt) _nt.style.display = 'none';
-      switchView('dieta');
-    } else {
-      document.getElementById('errorBox').style.display = 'block';
-      document.getElementById('errorMsg').textContent = err.message;
+      return _montou;   // v547: false = o texto novo não montou e o treino que já estava na tela foi mantido
     }
+    // v547: o dado do treino não veio. Mensagem em português com "tentar de novo" (o app instalado no iPhone não tem recarregar);
+    // com dieta carregada, o app abre nela e a aba Treino fica com a mensagem em vez de tela vazia.
+    _treinoErroMostra(dietLoaded && /Nenhum exerc|Planilha vazia/.test(String((err && err.message) || '')));
+    if (dietLoaded) { _showNav(); switchView('dieta'); }
+    return false;
   }
+}
+function _treinoErroMostra(semTreino) {
+  try {
+    var box = document.getElementById('errorBox'); if (!box) return;
+    // plano só de dieta ou de protocolo (a aba de treino existe e não tem exercício): não é erro de internet
+    if (semTreino) { box.innerHTML = '<h3>Teu plano atual não tem treino aqui no app</h3><p id="errorMsg">O que é teu está na aba Dieta. Se era pra ter treino, chama o suporte.</p>'; box.style.display = 'block'; return; }
+    box.innerHTML = '<h3>Não consegui carregar teu treino</h3><p id="errorMsg">Pode ser a internet. Confere a conexão e toca em tentar de novo.</p><button type="button" class="te-btn primary" style="margin-top:10px;" onclick="_treinoTentaDeNovo(this)">Tentar de novo</button>';
+    box.style.display = 'block';
+  } catch (_) {}
+}
+function _treinoTentaDeNovo(btn) {
+  try { if (btn) { btn.disabled = true; btn.textContent = 'Carregando...'; } } catch (_) {}
+  loadFromSheets().then(function (ok) {
+    if (ok) { try { _protoAplicado.treino = (_protoCacheGet() || {}).treino || _protoAplicado.treino; _protoTreinoOk = true; switchView('treino'); } catch (_) {} }
+    else { try { if (btn) { btn.disabled = false; btn.textContent = 'Tentar de novo'; } } catch (_) {} }
+  }).catch(function () {});
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -18067,12 +18143,67 @@ function retryDiet() {
 // O CSV cru de TREINO/DIETA fica no localStorage por aluno. Na abertura, se há cache,
 // o app RENDERIZA NA HORA (zero tela preta) e revalida em background: só re-renderiza
 // se o protocolo MUDOU no Google (reajuste/ajuste). Primeira visita busca em PARALELO.
+// ══ v547: CONFERÊNCIA DO PROTOCOLO COM O GOOGLE ══ Uma função só, usada na abertura e ao voltar pro app.
+// _protoAplicado = o texto que está montado na tela agora (é contra ele que se compara, não contra o cache da abertura).
+let _protoAplicado = { treino: null, dieta: null }, _protoTreinoOk = true, _protoRevalidando = false, _protoRevalidouEm = 0, _protoPendente = null, _protoAdiaT = null, _protoFalhou = null;
+let _treinoMexeuEm = 0;   // última vez que o aluno digitou série, marcou série ou marcou exercício
+// Treino em andamento (descanso rolando, modo treino aberto, campo em edição, série digitada ainda salvando): o protocolo novo
+// NÃO entra por baixo. Antes, na 1ª abertura depois de um reajuste, o aluno começava no treino velho que estava no cache e, 1 a 3 s
+// depois, o novo trocava por baixo do modo treino: o que ele digitava era gravado com o nome do exercício novo daquela posição.
+function _protoOcupado() {
+  try {
+    if (typeof _timerEndAt !== 'undefined' && _timerEndAt && _timerEndAt > Date.now()) return true;
+    const fo = document.getElementById('focusOverlay'); if (fo && fo.classList.contains('show')) return true;
+    const a = document.activeElement; if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
+    if (typeof _setTimers !== 'undefined' && Object.keys(_setTimers || {}).length) return true;
+    if (_treinoMexeuEm && Date.now() - _treinoMexeuEm < 20 * 60000) return true;   // mexeu no treino nos últimos 20 minutos: está treinando
+  } catch (_) {}
+  return false;
+}
+// dieta "de verdade" tem pelo menos 3 linhas e alguma linha de refeição, informação, suplemento, protocolo ou orientação
+function _dietaTextoBom(t) {
+  try { const s = String(t || ''); return s.split('\n').length >= 3 && /(^|\n)"?\s*(ref|info|supl|proto|orient|observacoes|regra|meta|ciclo)\s*"?,/i.test(s); } catch (_) { return false; }
+}
+async function _protoRevalida() {
+  if (_protoRevalidando || typeof SHEET_ID === 'undefined' || !SHEET_ID) return;
+  _protoRevalidando = true;
+  try {
+    const [dT, tT] = await Promise.all([_fetchCsvRaw('DIETA'), _fetchCsvRaw('TREINO')]);
+    _protoRevalidouEm = Date.now();
+    _protoPendente = { dT: dT, tT: tT };
+    await _protoAplicaPendente();
+  } catch (_) {} finally { _protoRevalidando = false; }
+}
+async function _protoAplicaPendente() {
+  const p = _protoPendente; if (!p) return;
+  let dT = p.dT; const tT = p.tT;
+  // dieta que veio vazia ou cortada (aba no meio de uma republicação) não derruba uma dieta boa: fica a da tela e do cache
+  if (dT != null && _dietaTextoBom(_protoAplicado.dieta) && !_dietaTextoBom(dT)) dT = null;
+  const dNovo = (dT != null && dT !== (_protoAplicado.dieta || ''));
+  const tNovo = (tT != null && tT !== _protoAplicado.treino && tT !== _protoFalhou);   // texto que já não montou não é tentado de novo
+  if (!dNovo && !tNovo) { _protoPendente = null; return; }
+  if (tNovo && _protoOcupado()) {   // espera o aluno terminar o que está fazendo e tenta de novo
+    clearTimeout(_protoAdiaT); _protoAdiaT = setTimeout(() => { _protoAplicaPendente(); }, 20000);
+    return;
+  }
+  _protoPendente = null;
+  if (dNovo) {   // só a parte que mudou é refeita (antes, mudar só a dieta remontava o treino inteiro: teclado fechava, voltava pro 1º treino)
+    try { await loadDietFromSheets(dT); _protoAplicado.dieta = dT; _protoCacheSet({ dieta: dT }); } catch (_) {}
+  }
+  if (tNovo) {
+    let ok = false;
+    try { ok = (await loadFromSheets(tT)) !== false; } catch (_) { ok = false; }
+    if (ok) { _protoAplicado.treino = tT; _protoTreinoOk = true; _protoFalhou = null; _protoCacheSet({ treino: tT }); }   // cache só recebe treino que MONTOU
+    else _protoFalhou = tT;
+  }
+}
 function _protoCacheKey() { return `gh_protocsv_${SHEET_ID}`; }
 function _protoCacheGet() {
   try { const j = JSON.parse(localStorage.getItem(_protoCacheKey()) || 'null'); return (j && typeof j.treino === 'string' && j.treino) ? j : null; } catch (_) { return null; }
 }
 function _protoCacheSet(patch) {
-  try { const cur = _protoCacheGet() || {}; localStorage.setItem(_protoCacheKey(), JSON.stringify(Object.assign(cur, patch, { ts: Date.now() }))); } catch (_) {}
+  // v547: parte do que está gravado, mesmo sem treino ainda (o leitor devolve vazio sem treino, e a dieta gravada antes era jogada fora)
+  try { let cur = {}; try { cur = JSON.parse(localStorage.getItem(_protoCacheKey()) || '{}') || {}; } catch (_) { cur = {}; } localStorage.setItem(_protoCacheKey(), JSON.stringify(Object.assign(cur, patch, { ts: Date.now() }))); } catch (_) {}
 }
 // fetch cru de uma aba (1 tentativa, sem retry): null em qualquer falha — quem chama decide o fallback
 async function _fetchCsvRaw(tab) {
@@ -21146,49 +21277,39 @@ if (SHEET_ID && TAB_NAME) {
     const abreDieta = () => { if (dietLoaded && TAB_NAME.toUpperCase() === 'DIETA') switchView('dieta'); };
     const cached = _protoCacheGet();
     if (cached) {
-      // 1) pinta já com o último protocolo conhecido (rastreando se o cache do treino PARSEIA:
-      // cache podre — ex. abertura no meio de uma republicação — escondia a aba TREINO pra sempre)
+      // 1) pinta já com o último protocolo conhecido (rastreando se o cache do treino MONTA: cache podre, ex. abertura no
+      // meio de uma republicação, escondia a aba TREINO pra sempre)
+      _protoAplicado = { treino: cached.treino, dieta: cached.dieta || '' };
       let cacheTreinoOk = true;
       try { await loadDietFromSheets(cached.dieta || ''); } catch (_) {}
-      try { await loadFromSheets(cached.treino); } catch (_) { cacheTreinoOk = false; }
+      try { cacheTreinoOk = (await loadFromSheets(cached.treino)) !== false; } catch (_) { cacheTreinoOk = false; }
+      _protoTreinoOk = cacheTreinoOk;
       abreDieta();
-      // 2) revalida em silêncio; re-renderiza se mudou OU se o cache veio podre
-      setTimeout(async () => {
-        try {
-          const [dT, tT] = await Promise.all([_fetchCsvRaw('DIETA'), _fetchCsvRaw('TREINO')]);
-          const dNovo = (dT != null && dT !== (cached.dieta || ''));
-          const tNovo = (tT != null && (tT !== cached.treino || !cacheTreinoOk));
-          let treinoParseou = cacheTreinoOk;
-          if (dNovo || tNovo) {
-            try { await loadDietFromSheets(dT != null ? dT : (cached.dieta || '')); } catch (_) {}
-            try {
-              await loadFromSheets(tT != null ? tT : cached.treino);
-              treinoParseou = true;
-              // o socorro só-dieta pode ter escondido a aba com o cache podre; o fresh parseou: reexibe
-              const nt = document.getElementById('navTreino'); if (nt) nt.style.display = '';
-            } catch (_) { treinoParseou = false; }
-            if (document.body.classList.contains('view-dieta') && typeof renderDiet === 'function') renderDiet();
-          }
-          // cache só recebe treino que PARSEOU (nunca mais envenenar a próxima abertura)
-          if (dT != null || tT != null) _protoCacheSet({
-            dieta: dT != null ? dT : (cached.dieta || ''),
-            treino: (tT != null && treinoParseou) ? tT : cached.treino
-          });
-        } catch (_) {}
-      }, 700);
+      // 2) confere com o Google em silêncio; só mexe na tela se mudou OU se o cache veio podre
+      setTimeout(() => { _protoRevalida(); }, 700);
     } else {
       // 1ª visita deste aparelho: prefetch PARALELO das duas abas
+      try { document.getElementById('loadingScreen').style.display = 'flex'; } catch (_) {}   // v547: sem cache não tinha indicador nenhum (tela preta depois do splash, com rede ruim)
       const [dT, tT] = await Promise.all([_fetchCsvRaw('DIETA'), _fetchCsvRaw('TREINO')]);
       // injeta quando veio; se falhou (null), cai no caminho de sempre (fetch próprio + retry)
       try { await loadDietFromSheets(dT != null ? dT : undefined); } catch (_) {}
       try {
-        await loadFromSheets(tT != null ? tT : undefined);
-        if (tT != null) _protoCacheSet({ treino: tT });
+        const okT = (await loadFromSheets(tT != null ? tT : undefined)) !== false;
+        if (okT && tT != null) _protoCacheSet({ treino: tT });
         if (dT != null) _protoCacheSet({ dieta: dT });
+        _protoAplicado = { treino: (okT && tT != null) ? tT : null, dieta: dT != null ? dT : null };
+        _protoTreinoOk = okT;
+        if (!okT && tT != null) _protoFalhou = tT;   // plano sem treino (ou planilha que não montou): não tenta o mesmo texto de novo
       } catch (_) {}
+      _protoRevalidouEm = Date.now();
       abreDieta();
     }
   })();
+  // v547: quem deixa o app aberto (o app instalado no iPhone retoma sem recarregar) também recebe o que mudou na planilha:
+  // ao voltar pra tela depois de 10 minutos, confere de novo.
+  document.addEventListener('visibilitychange', () => {
+    try { if (document.visibilityState === 'visible' && _protoRevalidouEm && Date.now() - _protoRevalidouEm > 10 * 60000) _protoRevalida(); } catch (_) {}
+  });
 } else {
   // Modo treinador — painel admin FICA ATRÁS DE LOGIN.
   // O público que apagar a URL até a raiz cai aqui: vê só o portão de senha,
@@ -21299,7 +21420,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v546';
+    var APP_SHELL_V = 'metodo-gh-v547';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
