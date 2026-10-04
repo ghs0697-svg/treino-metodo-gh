@@ -2089,6 +2089,8 @@
   }
   .gh-audio-player { width: 100%; height: 40px; display: block; }
   .gh-recado-exp { font-size: 11px; font-weight: 400; color: var(--muted); opacity: 0.8; }
+  .gh-recado-btn { display: block; width: 100%; margin-top: 8px; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--gold); background: rgba(212,175,106,.12); color: var(--gold); font-size: 14px; font-weight: 700; cursor: pointer; }
+  .gh-recado-load { font-size: 12.5px; color: #bbb; margin-top: 8px; }
   .gh-audio-fallback {
     display: inline-block; margin-top: 8px; font-size: 12px;
     color: var(--gold); text-decoration: underline; opacity: 0.85;
@@ -8153,7 +8155,7 @@ function saveSets(d, e, w, arr) {
   try { _grava(); } catch (_e1) {
     try { _liberaEspaco_(); _grava(); } catch (_e2) { _gravou = false; }
   }
-  try { if (clean.some(x => x.kg || x.pl || x.reps)) _diaAtivoMarca(d); } catch (_) {}   // v539: dia com registro conta na constância (bolinha parcial)
+  try { if (w === currentWeek && clean.some(x => x.kg || x.pl || x.reps)) _diaAtivoMarca(d); } catch (_) {}   // v539: dia com registro conta na constância (bolinha parcial); v556: só registro da semana em que o aluno está (corrigir peso antigo acendia a bolinha de hoje)
   // sync numa POST só: carga+placas da S1 (legado) + JSON das séries (novo)
   syncCargaToServer_(d, e, w, s1.kg || '', s1.pl || '', JSON.stringify(clean));
   if (!_gravou) _semEspacoAvisa();
@@ -10986,7 +10988,10 @@ function notifyDayCompletion(di, shared, diaFixo) {
   // Se o aluno desfez o pulado e fechou o dia completo, manda de novo UMA vez pro dia contar. '1' nunca repete.
   const _jaFoi = localStorage.getItem(dedupKey);
   if (_jaFoi === '1' || (_jaFoi === 'p' && _pulAgora > 0)) return;
-  localStorage.setItem(dedupKey, _pulAgora > 0 ? 'p' : '1');
+  // v556: sem proteção, aparelho com o armazenamento cheio parava aqui e o dia não era nem enviado. Agora libera espaço e,
+  // se ainda assim não couber, segue e manda o registro (a marca fica só na memória desta sessão).
+  try { localStorage.setItem(dedupKey, _pulAgora > 0 ? 'p' : '1'); }
+  catch (_eQ) { try { if (typeof _liberaEspaco_ === 'function') _liberaEspaco_(); localStorage.setItem(dedupKey, _pulAgora > 0 ? 'p' : '1'); } catch (_eQ2) { window._conclSemEspaco = window._conclSemEspaco || {}; if (window._conclSemEspaco[dedupKey]) return; window._conclSemEspaco[dedupKey] = 1; } }
 
   const total = day ? day.exercises.filter(ex => !ex.warmup).length : 0;
   const studentName = (document.getElementById('infoNome')?.textContent || '').trim();
@@ -12778,7 +12783,12 @@ function _histChartData(di, ei) {
       trendText = `⚠ Reduziu ${Math.abs(diffDisp)}${unit} da semana ${first.w} pra ${last.w}, checa se foi descanso/lesão`;
       trendCls = 'down';
     } else if (filled.every(x => val(x) === val(first))) {
-      trendText = `⏸ Mesma carga ${fmt(val(first))} em ${filled.length} semanas, hora de tentar progredir`;
+      // v556: a frase só olhava a carga. 80 kg x 8 virando 80 kg x 12 em 4 semanas saía como "hora de tentar progredir",
+      // quando é exatamente a progressão do método (fecha a faixa de repetições, depois sobe a carga).
+      let _r1 = 0, _r2 = 0;
+      try { const a = _estagBest(di, ei, first.w), b = _estagBest(di, ei, last.w); _r1 = (a && a.r) || 0; _r2 = (b && b.r) || 0; } catch (_) {}
+      if (_r1 > 0 && _r2 > _r1) { trendText = `📈 Mesma carga ${fmt(val(first))}, mas tu foi de ${_r1} pra ${_r2} repetições. Fechou a faixa? Sobe a carga.`; trendCls = 'up'; }
+      else trendText = `⏸ Mesma carga ${fmt(val(first))} em ${filled.length} semanas, hora de tentar progredir`;
     } else {
       // v548: começou e terminou igual, mas variou no meio (40, 50, 40): não é "mesma carga"
       trendText = `Voltou pra ${fmt(val(first))} depois de variar nas semanas do meio. Hora de firmar a carga mais alta.`;
@@ -14375,7 +14385,11 @@ function _attachYTListener() {
 const VID_OFF_BASE = 'https://chat.metodogh.com.br/videos/';
 const VID_CACHE = 'gh-videos-v1';
 let _vidObjUrl = null;
-function _ytidDe(url) { const m = String(url || '').match(/(?:shorts\/|watch\?v=|youtu\.be\/|embed\/)([\w-]{6,})/); return m ? m[1] : ''; }
+// v556: link com outro parâmetro antes do v= (watch?feature=share&v=ID) não era reconhecido: o vídeo nem tentava abrir aqui dentro
+function _ytidDe(url) { const u = String(url || ''); const m = u.match(/[?&]v=([\w-]{6,})/) || u.match(/(?:shorts\/|youtu\.be\/|embed\/)([\w-]{6,})/); return m ? m[1] : ''; }
+// ids dos vídeos que já estão baixados neste aparelho (conferidos a cada pintura do botão e a cada download)
+const _vidIdsLocais = new Set();
+let _vidBaixandoDia = null, _vidDiretoFalhou = false;
 function _vidOffUrl(url) { const id = _ytidDe(url); return id ? VID_OFF_BASE + id + '.mp4' : ''; }
 async function _vidCacheTem(url) {
   try { const c = await caches.open(VID_CACHE); return !!(await c.match(_vidOffUrl(url))); } catch (_) { return false; }
@@ -14397,11 +14411,17 @@ async function _vidBtnRefresh() {
   const vids = _vidsDoDia(currentDay);
   if (!vids.size) { b.style.display = 'none'; return; }
   b.style.display = '';
+  // v556: com o download DESTE dia rodando, cada "Feito" repintava o botão e o reabilitava (um segundo toque abria outro
+  // download por cima). Agora o download em andamento manda no botão.
+  const _diaRef = currentDay;
+  if (_vidBaixandoDia === _diaRef) return;
   let tem = 0;
   try { const c = await caches.open(VID_CACHE);
-    for (const id of vids.keys()) if (await c.match(VID_OFF_BASE + id + '.mp4')) tem++;
+    for (const id of vids.keys()) if (await c.match(VID_OFF_BASE + id + '.mp4')) { tem++; _vidIdsLocais.add(id); }
   } catch (_) {}
+  if (currentDay !== _diaRef || _vidBaixandoDia === _diaRef) return;   // trocou de dia (ou o download começou) enquanto conferia
   if (tem >= vids.size) { b.innerHTML = '✓ Vídeos baixados'; b.title = vids.size + ' vídeos deste treino no aparelho'; b.disabled = true; }
+  else if (_vidBaixandoDia != null) { b.innerHTML = '⬇ Vídeos (' + vids.size + ' · ' + (vids.size * 8) + 'MB)'; b.title = 'Baixando os vídeos de outro treino. Espera terminar.'; b.disabled = true; }
   else { b.innerHTML = '⬇ Vídeos (' + vids.size + ' · ' + (vids.size * 8) + 'MB)'; b.title = 'Baixar os vídeos de execução deste treino pra assistir sem internet'; b.disabled = false; }
 }
 async function baixarVideosDoDia() {
@@ -14410,24 +14430,33 @@ async function baixarVideosDoDia() {
   if (!vids.size) return;
   if (!navigator.onLine) { alert('Precisa de internet pra baixar. Depois de baixados, os vídeos tocam sem internet.'); return; }
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (_) {}
+  if (_vidBaixandoDia != null) return;   // v556: um download por vez
+  const _dia = currentDay;
+  _vidBaixandoDia = _dia;
   b.disabled = true;
-  let feitos = 0, falhas = 0;
-  const c = await caches.open(VID_CACHE);
-  for (const [id] of vids) {
-    const u = VID_OFF_BASE + id + '.mp4';
-    try {
-      if (!(await c.match(u))) {
-        const r = await fetch(u, { cache: 'no-store' });
-        if (!r.ok) throw new Error('http ' + r.status);
-        await c.put(u, r);
-      }
-      feitos++;
-    } catch (_) { falhas++; }
-    b.innerHTML = '⬇ Baixando ' + (feitos + falhas) + '/' + vids.size + '…';
-  }
-  if (falhas) b.innerHTML = '⚠ ' + falhas + ' falharam · tentar de novo';
-  else b.innerHTML = '✓ Vídeos baixados (' + feitos + ')';
-  b.disabled = !falhas;
+  b.innerHTML = '⬇ Baixando 0/' + vids.size + '…';   // o botão já diz que começou (antes só mudava quando o 1º vídeo terminava)
+  let feitos = 0, falhas = 0, semEspaco = false;
+  try {
+    let c;
+    try { c = await caches.open(VID_CACHE); }
+    catch (_) { alert('Não consegui guardar vídeos neste aparelho: o navegador bloqueou o armazenamento.'); return; }
+    for (const [id] of vids) {
+      const u = VID_OFF_BASE + id + '.mp4';
+      try {
+        if (!(await c.match(u))) {
+          const r = await fetch(u, { cache: 'no-store' });
+          if (!r.ok) throw new Error('http ' + r.status);
+          await c.put(u, r);
+        }
+        feitos++; _vidIdsLocais.add(id);
+      } catch (e) { falhas++; if (e && (e.name === 'QuotaExceededError' || /quota/i.test(String(e.message || '')))) semEspaco = true; }
+      if (currentDay === _dia) b.innerHTML = '⬇ Baixando ' + (feitos + falhas) + '/' + vids.size + '…';
+    }
+  } finally { _vidBaixandoDia = null; }
+  // v556: o resultado só é escrito no botão se o aluno ainda está no mesmo dia; senão o botão é repintado pro dia da tela
+  if (currentDay === _dia && falhas) { b.innerHTML = semEspaco ? '⚠ Sem espaço no aparelho pra guardar os vídeos' : '⚠ ' + falhas + ' falharam · tentar de novo'; b.disabled = false; }
+  else if (currentDay === _dia) { b.innerHTML = '✓ Vídeos baixados (' + feitos + ')'; b.disabled = true; }
+  else _vidBtnRefresh();
 }
 async function apagarVideosBaixados() {
   try { await caches.delete(VID_CACHE); } catch (_) {}
@@ -14436,7 +14465,7 @@ async function apagarVideosBaixados() {
 }
 function openVideo(name, url) {
   _attachYTListener();
-  _vidUrlAtual = url; _vidFallbackFeito = false;   // v458: plano B pronto pra este video
+  _vidUrlAtual = url; _vidFallbackFeito = false; _vidDiretoFalhou = false;   // v458: plano B pronto pra este video
   try {
     const h = document.getElementById('videoFallbackHint'); if (h) { h.style.display = 'none'; h.textContent = ''; }
     const mb = document.getElementById('videoFallbackBtn'); if (mb) mb.style.display = '';
@@ -14456,11 +14485,15 @@ function openVideo(name, url) {
         const c = await caches.open(VID_CACHE);
         const resp = await c.match(_vidOffUrl(url));
         const blob = await resp.blob();
+        if (_vidUrlAtual !== url) return;   // v556: o aluno já abriu outro vídeo enquanto este era lido do aparelho
         _vidObjUrl = URL.createObjectURL(blob);
+        nat.onerror = null; nat.onloadedmetadata = null;
         nat.src = _vidObjUrl; nat.style.display = 'block';
         iframe.style.display = 'none'; iframe.src = 'about:blank';
         _vidFallbackFeito = true;   // v458: ja esta no player nativo (offline), plano B nao se aplica
         try { const mb = document.getElementById('videoFallbackBtn'); if (mb) mb.style.display = 'none'; } catch (_) {}
+        try { const h = document.getElementById('videoFallbackHint'); if (h) h.style.display = 'none'; } catch (_) {}
+        try { const pl = nat.play(); if (pl && pl.catch) pl.catch(function () {}); } catch (_) {}   // v556: o vídeo baixado ficava parado esperando outro toque
       } catch (_) {}
     });
   }
@@ -14487,7 +14520,9 @@ function openVideo(name, url) {
   }
   document.getElementById("videoOverlay").classList.add("show");
   document.body.style.overflow = "hidden";
-  if (_direto) _videoFallbackNativo('direto');
+  // v556: vídeo que já está baixado no aparelho não começa pela rede. Antes tocava um instante do servidor, trocava pela
+  // cópia do aparelho, reiniciava e ficava pausado (e gastava os dados do aluno à toa).
+  if (_direto && !_vidIdsLocais.has(_ytidDe(url))) _videoFallbackNativo('direto');
   mostraAulasGhflix(name);
 }
 
@@ -14621,7 +14656,13 @@ function _vidWatchdogStart(url) {
     _vidWatchTimer = null;
     try {
       const ov = document.getElementById('videoOverlay');
-      if (!ov || !ov.classList.contains('show') || _vidYtVivo || _vidFallbackFeito || _vidUrlAtual !== url) return;
+      if (!ov || !ov.classList.contains('show') || _vidYtVivo || _vidUrlAtual !== url) return;
+      // v556: nosso servidor falhou, voltou pro YouTube e o YouTube também ficou mudo: avisa (antes ficava o quadro preto,
+      // porque o plano B já tinha sido usado e a função saía na primeira linha)
+      if (_vidFallbackFeito) {
+        if (_vidDiretoFalhou) { const h = document.getElementById('videoFallbackHint'); if (h) { h.textContent = 'Esse vídeo não abriu aqui dentro. Toca em "Abrir vídeo no YouTube".'; h.style.display = 'block'; } }
+        return;
+      }
       _videoFallbackNativo('mudo10s');
     } catch (_) {}
   }, _VID_MUDO_MS);
@@ -14653,7 +14694,12 @@ function _videoFallbackNativo(motivo) {
     if (iframe) { iframe.onload = null; iframe.src = 'about:blank'; iframe.style.display = 'none'; }
     nat.onerror = function () {
       nat.style.display = 'none'; _vidDebug('mp4_falhou_' + String(motivo || ''), src);
-      if (direto && iframe) { try { localStorage.removeItem(_YT_FALHOU_KEY); } catch (_) {} iframe.style.display = ''; iframe.src = youtubeEmbed(_vidUrlAtual); _vidWatchdogStart(_vidUrlAtual); return; }   // nosso servidor falhou: volta pro YouTube (com o vigia, que leva ao aviso + botão do YouTube)
+      if (direto && iframe) {   // nosso servidor falhou: volta pro YouTube (com o vigia, que leva ao aviso + botão do YouTube)
+        try { localStorage.removeItem(_YT_FALHOU_KEY); } catch (_) {}
+        _vidDiretoFalhou = true;   // v556
+        iframe.onload = function () { try { iframe.contentWindow.postMessage('{"event":"listening","id":"videoFrame"}', '*'); } catch (_) {} };   // v556: sem isto o YouTube nunca avisava que estava vivo
+        iframe.style.display = ''; iframe.src = youtubeEmbed(_vidUrlAtual); _vidWatchdogStart(_vidUrlAtual); return;
+      }
       avisa(falhou);
     };
     nat.onloadedmetadata = function () { if (!direto) avisa('O YouTube n\u00e3o abriu no teu aparelho. Tocando direto do servidor do M\u00e9todo GH.'); };
@@ -17023,6 +17069,38 @@ async function loadLaudos() {
     area.innerHTML = '<div class="laudo-card"><div class="laudo-h">📊 Tua evolução</div><div style="color:#bbb;font-size:12.5px;line-height:1.6;margin-top:6px;">Não consegui carregar agora. Pode ser a internet.</div><button class="cmp-share-btn" style="margin-top:10px;" onclick="loadLaudos()">Tentar de novo</button></div>';
   }
 }
+// v556: a imagem do laudo (base64, pelo Apps Script) descia a cada abertura do treino e a cada toque numa versão. Agora fica
+// guardada no aparelho por 3 dias (os 4 laudos mais novos); só vai à rede de novo se o laudo mudou de data ou o guardado
+// venceu. Mora no mesmo armazenamento dos vídeos baixados, que o app já preserva nas atualizações.
+const _laudoMem = {};
+async function _laudoImgBusca_(fid) {
+  const chave = String(fid), url = '/__laudo__/' + encodeURIComponent(chave);
+  let dataRef = '';
+  try { const l = ((typeof _laudosCache !== 'undefined' && _laudosCache) || []).find(x => x && String(x.fid) === chave); dataRef = (l && l.date) || ''; } catch (_) {}
+  if (_laudoMem[chave] && _laudoMem[chave].d === dataRef) return _laudoMem[chave].j;
+  try {
+    if (typeof caches !== 'undefined') {
+      const c = await caches.open(VID_CACHE), hit = await c.match(url);
+      if (hit) {
+        const g = await hit.json();
+        if (g && g.j && g.j.ok && Date.now() - (g.ts || 0) < 3 * 86400000 && g.d === dataRef) { _laudoMem[chave] = { d: g.d, j: g.j }; return g.j; }
+      }
+    }
+  } catch (_) {}
+  const j = await (await fetch(`${LOG_ENDPOINT}?action=comparacao_img&fid=${encodeURIComponent(fid)}&_=${Date.now()}`, { cache: 'no-store' })).json();
+  if (j && j.ok) {
+    _laudoMem[chave] = { d: dataRef, j: j };
+    try {
+      if (typeof caches !== 'undefined') {
+        const c = await caches.open(VID_CACHE);
+        await c.put(url, new Response(JSON.stringify({ ts: Date.now(), d: dataRef, j: j }), { headers: { 'Content-Type': 'application/json' } }));
+        const ks = (await c.keys()).filter(k => String(k.url || '').indexOf('/__laudo__/') !== -1);
+        for (let i = 0; i < ks.length - 4; i++) await c.delete(ks[i]);
+      }
+    } catch (_) {}
+  }
+  return j;
+}
 let _laudoReq = 0;
 async function showLaudo(fid, chipEl, versao) {
   if (chipEl) { document.querySelectorAll('.laudo-chip').forEach(c => c.classList.remove('on')); chipEl.classList.add('on'); }
@@ -17031,7 +17109,7 @@ async function showLaudo(fid, chipEl, versao) {
   img.style.display = 'none'; if (ld) { ld.style.display = 'block'; ld.textContent = 'Carregando…'; }
   const _req = ++_laudoReq;   // v550: tocar em V2 e V3 em seguida deixava o chip V3 aceso com a imagem da V2
   try {
-    const j = await (await fetch(`${LOG_ENDPOINT}?action=comparacao_img&fid=${encodeURIComponent(fid)}&_=${Date.now()}`, { cache: 'no-store' })).json();
+    const j = await _laudoImgBusca_(fid);   // v556
     if (_req !== _laudoReq) return;
     if (j && j.ok) { img.onload = () => _laudoMarcasAplica('laudoImg', fid); img.dataset.versao = versao ? String(versao) : ''; img.src = `data:${j.mime};base64,${j.b64}`; img.style.display = 'block'; if (ld) ld.style.display = 'none'; }
     else if (ld) ld.textContent = 'Não consegui carregar o laudo.';
@@ -17226,7 +17304,7 @@ async function loadLaudoDestaque() {
       <button class="cmp-share-btn" style="margin-top:9px;" onclick="_laudoBaixarPDF('laudoDestImg', ${L.versao || 0})">⬇️ Baixar em PDF</button>
       <div style="color:#8d8579;font-size:11px;margin-top:6px;text-align:center;">Fica disponível por ${LAUDO_TTL_DIAS} dias. Baixa em PDF se quiser guardar.</div>
     </div>`;
-    const ij = await (await fetch(`${LOG_ENDPOINT}?action=comparacao_img&fid=${encodeURIComponent(L.fid)}&_=${Date.now()}`, { cache: 'no-store' })).json();
+    const ij = await _laudoImgBusca_(L.fid);   // v556
     const img = document.getElementById('laudoDestImg'), ld = document.getElementById('laudoDestLoad');
     if (ij && ij.ok && img) { img.onload = () => _laudoMarcasAplica('laudoDestImg', L.fid); img.src = `data:${ij.mime};base64,${ij.b64}`; img.style.display = 'block'; if (ld) ld.style.display = 'none'; }
     else { slot.innerHTML = ''; }   // não deixa card vazio se a imagem não veio
@@ -18979,27 +19057,46 @@ async function loadRecado() {
   if (!slot) return;
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') { slot.innerHTML = ''; return; }
   try {
-    // v510: o áudio desce em base64 pelo Apps Script e o front door às vezes estoura o tempo (caso Gerson, 23/09):
-    // até 3 tentativas com 4 s de pausa. Resposta JSON "sem recado" não repete.
-    const rs = await _bootPeca_('recado_status');   // v512: sem recado no servidor, nem chama a rota do áudio
-    if (rs && rs.ok && !rs.exists) { slot.innerHTML = ''; return; }
-    let j = null;
-    for (let tent = 0; tent < 3 && !j; tent++) {
-      try { const r = await fetch(`${LOG_ENDPOINT}?action=recado&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`); j = await r.json(); }
-      catch (_) { j = null; if (tent < 2) await new Promise(res => setTimeout(res, 4000)); }
-    }
-    if (!j || !j.ok || !j.b64) { slot.innerHTML = ''; return; }
-    // Recado é sempre WAV (toca em todo lugar). Se o servidor devolver mime
-    // genérico/ausente, força audio/wav pra não quebrar o player.
-    let mime = j.mime || '';
-    if (!mime || /octet-stream|application\//i.test(mime)) mime = 'audio/wav';
-    const src = `data:${mime};base64,${j.b64}`;
-    const exp = j.daysLeft ? `<span class="gh-recado-exp">· some em ${j.daysLeft} dia${j.daysLeft === 1 ? '' : 's'}</span>` : '';
+    // v556: o áudio (base64, pelo Apps Script) descia INTEIRO a cada abertura do app, ouvindo ou não: 10 aberturas nos dias do
+    // recado = 10 downloads no 4G do aluno e na fila do servidor. Agora a abertura só pergunta se TEM recado (a resposta já
+    // vem na chamada única) e o áudio desce quando o aluno toca em ouvir.
+    let rs = await _bootPeca_('recado_status');
+    if (!rs) { try { rs = await (await fetch(`${LOG_ENDPOINT}?action=recado_status&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`)).json(); } catch (_) { rs = null; } }
+    if (!rs || !rs.ok || !rs.exists || rs.expired) { slot.innerHTML = ''; return; }
+    const exp = (!rs.permanente && rs.daysLeft) ? `<span class="gh-recado-exp">· some em ${rs.daysLeft} dia${rs.daysLeft === 1 ? '' : 's'}</span>` : '';
     slot.innerHTML = `<div class="gh-top-card gh-audio-card">
       <div class="gh-top-card-title">🎧 Recado do GH ${exp}</div>
-      <audio class="gh-audio-player" controls preload="metadata" src="${src}"></audio>
+      <div id="recadoArea"><button type="button" class="gh-recado-btn" onclick="recadoOuvir()">▶ Ouvir o recado</button></div>
     </div>`;
   } catch (e) { slot.innerHTML = ''; }
+}
+let _recadoAlunoSrc = '';
+async function recadoOuvir() {
+  const area = document.getElementById('recadoArea');
+  if (!area) return;
+  const toca = () => {
+    area.innerHTML = `<audio class="gh-audio-player" controls autoplay preload="auto" src="${_recadoAlunoSrc}"></audio>`;
+    try { const a = area.querySelector('audio'), p = a && a.play(); if (p && p.catch) p.catch(() => {}); } catch (_) {}
+  };
+  if (_recadoAlunoSrc) { toca(); return; }
+  area.innerHTML = '<div class="gh-recado-load">Baixando o recado…</div>';
+  // v510: o áudio desce em base64 pelo Apps Script e a porta do Google às vezes estoura o tempo (caso Gerson, 23/09):
+  // até 3 tentativas com 4 s de pausa. Resposta "sem recado" não repete.
+  let j = null;
+  for (let tent = 0; tent < 3 && !j; tent++) {
+    try { const r = await fetch(`${LOG_ENDPOINT}?action=recado&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`); j = await r.json(); }
+    catch (_) { j = null; if (tent < 2) await new Promise(res => setTimeout(res, 4000)); }
+  }
+  if (!document.getElementById('recadoArea')) return;
+  if (!j || !j.ok || !j.b64) {
+    area.innerHTML = '<div class="gh-recado-load">Não consegui baixar agora. Pode ser a internet.</div><button type="button" class="gh-recado-btn" onclick="recadoOuvir()">Tentar de novo</button>';
+    return;
+  }
+  // Recado é sempre WAV (toca em todo lugar). Se o servidor devolver mime genérico ou vazio, força audio/wav.
+  let mime = j.mime || '';
+  if (!mime || /octet-stream|application\//i.test(mime)) mime = 'audio/wav';
+  _recadoAlunoSrc = `data:${mime};base64,${j.b64}`;
+  toca();
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -22082,7 +22179,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v555';
+    var APP_SHELL_V = 'metodo-gh-v556';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
