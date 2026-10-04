@@ -6927,6 +6927,88 @@ function _subKeyHifenLegado(di, ei, name) {
 function _subKeyLegacy(di, name) { return `gh_sub_${STUDENT_ID}_d${di}_${_normEx(name)}`; }   // chave antiga (dia+nome): só leitura, p/ não quebrar swaps já feitos
 // {name, video} do substituto ESCOLHIDO e válido (no grupo do exercício + com vídeo no banco +
 // diferente do original); senão null (mostra o original). NÃO checa colisão de dia (isso é no resolve).
+// v557: a troca do aluno é guardada por dia + POSIÇÃO + nome do exercício original. Quando a equipe insere ou tira um
+// exercício antes dele no dia, a posição muda, a chave fica pra trás e a troca "some" (volta o original, e as cargas do
+// substituto parecem ter sumido). A cada carga do treino, a troca cujo exercício mudou de posição DENTRO DO MESMO DIA é
+// levada pra posição nova: só quando o nome aparece uma vez no dia (não tem como confundir), a posição nova ainda não tem
+// troca própria e a troca estava EM USO neste ciclo (o substituto tem série salva com carimbo do ciclo atual). Troca velha,
+// de protocolo passado, fica onde está: as chaves de troca nunca são apagadas, e sem essa conferência uma troca de meses
+// atrás voltaria a valer sozinha. Nenhuma carga é tocada aqui.
+function _subRealinhaPosicoes_() {
+  let n = 0;
+  try {
+    const pref = 'gh_sub_' + STUDENT_ID + '_d';
+    const chaves = [];
+    for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.indexOf(pref) === 0) chaves.push(k); }
+    chaves.forEach(k => {
+      const m = k.slice(pref.length).match(/^(\d+)_e(\d+)_(.+)$/);
+      if (!m) return;                                   // chave antiga (dia + nome), sem posição: segue valendo como está
+      const di = +m[1], ei = +m[2], nome = m[3];
+      const day = WORKOUT[di]; if (!day || !day.exercises) return;
+      const aqui = day.exercises[ei];
+      if (aqui && !aqui.biset && _normEx(aqui.name) === nome) return;   // o exercício segue nessa posição
+      const pos = []; day.exercises.forEach((e, j) => { if (e && !e.biset && !e.warmup && _normEx(e.name) === nome) pos.push(j); });
+      if (pos.length !== 1) return;
+      const nova = 'gh_sub_' + STUDENT_ID + '_d' + di + '_e' + pos[0] + '_' + nome;
+      if (localStorage.getItem(nova) != null) return;
+      const subN = _normEx(localStorage.getItem(k) || ''); if (!subN) return;
+      const corte = CURRENT_BLOCK_START > 0 ? CURRENT_BLOCK_START : (Date.now() - 56 * 86400000);
+      const prefB = 'gh_blk_' + STUDENT_ID + '_d' + di + '_e' + ei + '_w', sufB = '_' + subN;
+      let emUso = false;
+      for (let i = 0; i < localStorage.length && !emUso; i++) { const kb = localStorage.key(i); if (kb && kb.indexOf(prefB) === 0 && kb.slice(-sufB.length) === sufB && Number(localStorage.getItem(kb)) >= corte) emUso = true; }
+      if (!emUso) return;
+      localStorage.setItem(nova, localStorage.getItem(k)); localStorage.removeItem(k); n++;
+    });
+  } catch (_) {}
+  return n;
+}
+// v557: posição, no dia, do exercício ORIGINAL de um substituto (o do mesmo grupo de troca), quando ela não é mais a do
+// registro. null = não mexe. Quem decide, nesta ordem: (1) o exercício do dia que ESTÁ trocado por esse substituto neste
+// aparelho (a troca já foi levada pra posição nova na carga do treino); (2) sem essa pista, o registro fica onde está se
+// ali há um exercício do mesmo grupo; (3) senão, vai pro único exercício do grupo no dia. Mais de um candidato sem pista
+// = não mexe.
+function _posDoSubNoDia_(di, ei, nomeSub) {
+  try {
+    const day = WORKOUT[di]; if (!day || !day.exercises || !nomeSub) return null;
+    const ns = _normEx(nomeSub), eiN = parseInt(ei, 10);
+    const serve = e => { if (!e || e.biset || e.warmup || _normEx(e.name) === ns) return false; const g = _grupoDe(e.name); return !!(g && g.some(x => x.norm === ns)); };
+    const cand = []; day.exercises.forEach((e, j) => { if (serve(e)) cand.push(j); });
+    if (!cand.length) return null;
+    const trocadoPor = j => { try { return _normEx(localStorage.getItem(_subKey(di, j, day.exercises[j].name)) || '') === ns; } catch (_) { return false; } };
+    const comTroca = cand.filter(trocadoPor);
+    if (comTroca.length === 1) return comTroca[0] === eiN ? null : comTroca[0];
+    if (cand.indexOf(eiN) >= 0) return null;
+    return cand.length === 1 ? cand[0] : null;
+  } catch (_) { return null; }
+}
+// v557: a troca escolhida morava só no aparelho. Celular novo (ou iPhone que limpou o armazenamento): todos os exercícios
+// voltavam pro original e as cargas do substituto, que estavam salvas, ficavam invisíveis. O servidor 2026-10-04b devolve a
+// ÚLTIMA troca de cada exercício do aluno; a posição que não tem escolha nenhuma guardada neste aparelho volta a mostrar o
+// substituto. Quem já escolheu neste aparelho não é mexido, se a última ação foi voltar pro original fica o original, e só
+// vale troca feita no ciclo atual (do protocolo atual pra cá; sem essa data, dos últimos 56 dias).
+function _subReaplicaDoServidor_(trocas, atualMs) {
+  let n = 0;
+  if (!Array.isArray(trocas)) return 0;
+  const corte = (Number(atualMs) > 0 && Number(atualMs) <= Date.now()) ? Number(atualMs) : (Date.now() - 56 * 86400000);
+  trocas.forEach(t => {
+    try {
+      const di = parseInt(t && t[0], 10), de = String((t && t[1]) || ''), para = String((t && t[2]) || '');
+      if (!(Number(t && t[3]) >= corte)) return;
+      const day = WORKOUT[di]; if (!day || !day.exercises || !de) return;
+      const alvo = _normEx(de);
+      const pos = []; day.exercises.forEach((e, j) => { if (e && !e.biset && !e.warmup && _normEx(e.name) === alvo) pos.push(j); });
+      if (pos.length !== 1) return;
+      const ei = pos[0], ex = day.exercises[ei];
+      if (localStorage.getItem(_subKey(di, ei, ex.name)) != null || localStorage.getItem(_subKeyHifenLegado(di, ei, ex.name)) != null || localStorage.getItem(_subKeyLegacy(di, ex.name)) != null) return;
+      if (/voltou pro original/i.test(para)) return;
+      const g = _grupoDe(ex.name), cn = _normEx(para);
+      const m = g && g.find(x => x.norm === cn);
+      if (!m || cn === alvo || STUDENT_NAO_TROCAR.has(cn) || !_bankVideo(m.name)) return;
+      localStorage.setItem(_subKey(di, ei, ex.name), cn); n++;
+    } catch (_) {}
+  });
+  return n;
+}
 function _subEscolhidoValido(ex, di, ei) {
   if (!ex || ex.biset || ex.warmup) return null;
   const chosen = localStorage.getItem(_subKey(di, ei, ex.name))
@@ -6947,7 +7029,18 @@ function _subEscolhidoValido(ex, di, ei) {
 // Resolve os nomes ATIVOS (exibidos) de TODOS os exercícios do dia, sem duplicar: trava os
 // não-trocados no original primeiro, depois aplica as trocas só se o nome ainda não estiver em uso
 // no dia. Determinístico, sem recursão — nunca mostra o mesmo exercício 2x.
+// v557: medido em 04/10 num protocolo de 5 dias e 41 exercícios: UMA pintura do treino fazia 52 mil leituras do
+// armazenamento, quase todas daqui (cada card chama esta função dezenas de vezes e ela relê as chaves de troca do dia
+// inteiro). Agora o resultado de cada dia vale durante UMA pintura (que é síncrona: nada muda no meio) e é jogado fora
+// quando ela termina. Fora da pintura, calcula sempre fresco, como antes.
+let _rdaMemo = null;
 function _resolveDayActive(di) {
+  if (_rdaMemo && _rdaMemo[di]) return _rdaMemo[di];
+  const r = _resolveDayActiveCalc_(di);
+  if (_rdaMemo) _rdaMemo[di] = r;
+  return r;
+}
+function _resolveDayActiveCalc_(di) {
   const res = {};
   const day = WORKOUT[di];
   if (!day || !day.exercises) return res;
@@ -9259,7 +9352,8 @@ function _restoreCargasRealign(cargas, ifEmpty) {
   const _isSub = v => v === true || v === 1 || v === 'TRUE' || v === 'true' || v === 'sim';
   const items = (cargas || []).map(c => {
     // Substituto (GH 2026-06-24): slot PROPRIO na posicao do row (nome no key), SEM realign.
-    if (_isSub(c.sub)) return { c, di: c.di, ei: c.ei, suffix: c.exercicio ? '_' + _normEx(c.exercicio) : '', moved: false, sub: true };
+    // v557: se o exercício original mudou de posição no dia, a carga do substituto vai pra posição nova (antes ficava órfã na antiga)
+    if (_isSub(c.sub)) { const _pS = _posDoSubNoDia_(c.di, c.ei, c.exercicio); return { c, di: c.di, ei: _pS != null ? _pS : c.ei, suffix: c.exercicio ? '_' + _normEx(c.exercicio) : '', moved: _pS != null, sub: true }; }
     // Original (ou dado ANTIGO sem flag = comportamento de hoje): realinha por nome (cura reorg), slot legado.
     let di = c.di, ei = c.ei;
     // Biset ("2a"/"2b"): c.exercicio é o nome de UMA metade. NÃO realinhar — senão casa com um
@@ -9350,7 +9444,7 @@ async function syncCargasFromServer_() {
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
   try {
     let data = null;
-    try { const rs = await _restoreFetch_(); if (rs && Array.isArray(rs.cargas)) data = { cargas: rs.cargas }; } catch (_) {}   // v512
+    try { const rs = await _restoreFetch_(); if (rs && Array.isArray(rs.cargas)) data = { cargas: rs.cargas, trocas: rs.trocas, atual: rs.atual }; } catch (_) {}   // v512; v557: trocas
     if (!data) {
       const url = `${LOG_ENDPOINT}?action=cargas&id=${encodeURIComponent(SHEET_ID)}`;
       const res = await fetch(url, { cache: 'no-store' });
@@ -9358,8 +9452,10 @@ async function syncCargasFromServer_() {
       data = await res.json();
     }
     if (!data || !Array.isArray(data.cargas)) return;
+    let _reaplic = 0;
+    try { _reaplic = _subReaplicaDoServidor_(data.trocas, Number(data.atual) || CURRENT_BLOCK_START || 0); } catch (_) {}   // v557: aparelho sem a escolha guardada volta a mostrar o substituto do aluno
     const restored = _restoreCargasRealign(data.cargas, true); // if-empty: respeita peso local
-    if (restored > 0) {
+    if (restored > 0 || _reaplic > 0) {
       console.log(`[gh] Cargas sincronizadas do servidor: ${restored} preenchidas`);
       if (typeof renderExercises === 'function' && document.getElementById('exerciseContainer')) {
         renderExercises();
@@ -13438,6 +13534,7 @@ async function loadFromSheets(injectedText) {
     // WORKOUT = array plano, ordem de bloco → dia. Cada entry leva a tag .bloco.
     try { _flushSetsPendentes_(false); } catch (_) {}   // v480: a 2a carga do boot troca o WORKOUT; grava o digitado no exercicio de antes
     WORKOUT = _novoW;
+    try { _subRealinhaPosicoes_(); } catch (_) {}   // v557: troca do aluno segue o exercício que mudou de posição no dia
     _montou = true;
     if (_cacheDepois != null) _protoCacheSet({ treino: _cacheDepois });
 
@@ -13697,6 +13794,12 @@ function renderTabs() {
 }
 
 function renderExercises() {
+  const _donoMemo = !_rdaMemo;   // v557: memória de trocas só durante esta pintura
+  if (_donoMemo) _rdaMemo = {};
+  try { return _renderExercisesMiolo_.apply(this, arguments); }
+  finally { if (_donoMemo) _rdaMemo = null; }
+}
+function _renderExercisesMiolo_() {
   try { _flushSetsPendentes_(false); } catch (_) {}   // v447: salva série digitada antes de trocar a grade
   const c = document.getElementById("exerciseContainer");
   c.innerHTML = "";
@@ -22179,7 +22282,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v556';
+    var APP_SHELL_V = 'metodo-gh-v557';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
