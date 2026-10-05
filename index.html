@@ -837,6 +837,11 @@
   .rk-meta { font-size: 10px; color: #888; }
   /* breakdown treino/dieta — só na linha do próprio aluno */
   .rk-breakdown { grid-column: 1 / -1; display: flex; gap: 14px; margin-top: 5px; padding-top: 6px; border-top: 1px solid rgba(212,175,106,0.22); }
+  .rk-story { grid-column: 1 / -1; margin-top: 6px; padding-top: 7px; border-top: 1px dashed rgba(212,175,106,0.22); font-size: 11.5px; line-height: 1.5; color: #cfc6b4; }
+  .rk-story.ok { color: #7bc67e; }
+  .rk-story-form { display: flex; gap: 7px; margin-top: 7px; }
+  .rk-story-form input { flex: 1; min-width: 0; background: #0e0d0c; border: 1px solid #2b2620; border-radius: 9px; color: #E0DCD3; font: inherit; font-size: 14px; height: 38px; padding: 0 11px; }
+  .rk-story-form button { height: 38px; padding: 0 14px; border-radius: 9px; border: 1px solid var(--gold); background: rgba(212,175,106,.12); color: var(--gold); font-weight: 700; font-size: 13px; cursor: pointer; }
   .rk-bd { font-size: 10.5px; color: #b8b2a6; }
   .rk-bd b { color: var(--gold); font-weight: 800; }
   .rk-bd.soon { color: #8e8a82; }
@@ -4979,6 +4984,7 @@
         <input id="achIgInput" type="text" inputmode="text" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="@teuperfil" style="flex:1;min-width:0;background:#0e0d0c;border:1px solid #2b2620;border-radius:9px;color:#E0DCD3;font:inherit;font-size:14px;height:40px;padding:0 11px;">
         <button type="button" class="ach-btn secondary" style="height:40px;padding:0 15px;" onclick="achIgSalva()">Salvar</button>
       </div>
+      <button type="button" onclick="achIgNaoUso()" style="background:none;border:0;color:#8d8579;font-size:11px;text-decoration:underline;margin-top:8px;padding:0;cursor:pointer;">Não uso Instagram</button>
     </div>
     <div class="ach-actions" style="margin-top:6px;">
       <button class="ach-btn primary" onclick="achShare()" id="achShareBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Compartilhar treino</button>
@@ -9960,6 +9966,7 @@ function _preloadAchBgs() {
 
 function showAchievementCard(type, data) {
   _achData = Object.assign({ type: type }, data);
+  window._achIgAvisou = false;   // v560: o pedido do @ aparece uma vez por cartão
   _achPhoto = null; // limpa foto anterior
   _achBg = _pickAchBg(); // fundo premium dessa abertura
   const photoBtn = document.getElementById('achPhotoBtn');
@@ -10564,18 +10571,19 @@ function _achIgMostra() {
   try {
     const box = document.getElementById('achIg');
     if (!box) return;
-    const falta = !_igSalvo() && !!SHEET_ID;
+    const falta = !_igSalvo() && !!SHEET_ID && localStorage.getItem('gh_ig_nao') !== '1';   // v560: quem disse que não usa Instagram não é perguntado de novo
     box.style.display = falta ? '' : 'none';
     const inp = document.getElementById('achIgInput');
     if (inp && falta) inp.value = '';
   } catch (_) {}
 }
-async function achIgSalva() {
-  const inp = document.getElementById('achIgInput');
+// v560: serve também pro campo do ranking (inputId). Devolve true quando o @ ficou guardado.
+async function achIgSalva(inputId) {
+  const inp = document.getElementById(inputId || 'achIgInput');
   const ar = _igArroba(inp && inp.value);
-  if (!ar) { _ghToast('Escreve teu @ do Instagram, tipo @teuperfil.'); return; }
-  if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
-  const btn = document.querySelector('#achIg button');
+  if (!ar) { _ghToast('Escreve teu @ do Instagram, tipo @teuperfil.'); return false; }
+  if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return false;
+  const btn = (inp && inp.parentElement) ? inp.parentElement.querySelector('button') : null;
   if (btn) { btn.disabled = true; btn.textContent = '...'; }
   let resp = null;
   try {
@@ -10589,14 +10597,27 @@ async function achIgSalva() {
   // v492: o mesmo @ nao pode ser de dois alunos (senao a mencao de um dobra o ponto do outro).
   if (resp && resp.erro === 'em_uso') {
     _ghToast('Esse @ já está cadastrado por outro aluno. Confere se é o teu mesmo; se for, me chama no suporte que eu acerto.');
-    return;
+    return false;
   }
-  try { localStorage.setItem('gh_ig_handle', ar); } catch (_) {}
+  try { localStorage.setItem('gh_ig_handle', ar); localStorage.removeItem('gh_ig_nao'); } catch (_) {}
   const box = document.getElementById('achIg'); if (box) box.style.display = 'none';
   _ghToast(resp ? ('Anotado: @' + ar + ' 👊 Marca o @gh.scheuermann no story que os pontos dobram.')
     : ('Anotado aqui: @' + ar + '. Sem internet agora, eu confirmo contigo na próxima abertura.'));
   if (!resp) { try { localStorage.setItem('gh_ig_pend', ar); } catch (_) {} }   // sem rede: tenta de novo depois
   else { try { localStorage.removeItem('gh_ig_pend'); } catch (_) {} }
+  return true;
+}
+// v560: guarda o @ na hora e manda pro servidor por trás, sem segurar o compartilhar (a janela de compartilhar do celular
+// só abre se vier logo depois do toque). Se o @ já é de outro aluno, a resposta desfaz e avisa.
+function _igGuardaSemEsperar_(ar) {
+  try { localStorage.setItem('gh_ig_handle', ar); localStorage.setItem('gh_ig_pend', ar); localStorage.removeItem('gh_ig_nao'); } catch (_) {}
+  const box = document.getElementById('achIg'); if (box) box.style.display = 'none';
+  try { _igPendenteReenvia(); } catch (_) {}
+}
+function achIgNaoUso() {
+  try { localStorage.setItem('gh_ig_nao', '1'); } catch (_) {}
+  const box = document.getElementById('achIg'); if (box) box.style.display = 'none';
+  _ghToast('Combinado, não pergunto mais. Sem o story marcando o @gh.scheuermann o dia conta normal, só não dobra.', 6000);
 }
 // @ que ficou sem confirmacao (app offline na hora): reenvia numa abertura seguinte
 function _igPendenteReenvia() {
@@ -10607,12 +10628,34 @@ function _igPendenteReenvia() {
       method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, redirect: 'follow',
       body: JSON.stringify({ type: 'ig_handle', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(), instagram: ar })
     }).then(r => r.json()).then(j => {
-      if (j && j.erro === 'em_uso') { try { localStorage.removeItem('gh_ig_handle'); } catch (_) {} }
+      if (j && j.erro === 'em_uso') {
+        try { localStorage.removeItem('gh_ig_handle'); } catch (_) {}
+        try { _ghToast('Esse @ já está cadastrado por outro aluno. Confere se é o teu mesmo; se for, me chama no suporte que eu acerto.', 7000); } catch (_) {}   // v560: antes sumia calado
+      }
       try { localStorage.removeItem('gh_ig_pend'); } catch (_) {}
     }).catch(() => {});
   } catch (_) {}
 }
 async function achShare() {
+  // v560: (1) o aluno digitava o @ e tocava direto em Compartilhar, sem tocar em Salvar: o @ se perdia e o story dele nunca
+  // era casado. Agora o @ que está no campo é guardado aqui. (2) Sem @ nenhum, o primeiro toque pede o @ (é por ele que o
+  // story é visto); o segundo toque compartilha do mesmo jeito. Dia com exercício pulado não entra no ranking: não pede.
+  try {
+    const _hintP = document.getElementById('achPointsHint');
+    if (_achData && _achData.type === 'completion' && typeof SHEET_ID !== 'undefined' && SHEET_ID && !_igSalvo()
+        && localStorage.getItem('gh_ig_nao') !== '1' && !(_hintP && _hintP.dataset.pulado === '1')) {
+      const _inpIg = document.getElementById('achIgInput'), _boxIg = document.getElementById('achIg');
+      const _digitado = _igArroba(_inpIg && _inpIg.value);
+      if (_digitado) _igGuardaSemEsperar_(_digitado);
+      else if (_boxIg && !window._achIgAvisou) {
+        window._achIgAvisou = true;
+        _boxIg.style.display = '';
+        try { _boxIg.scrollIntoView({ block: 'center' }); _inpIg.focus(); } catch (_) {}
+        _ghToast('Antes, me diz teu <b>@ do Instagram</b> ali em cima: sem ele eu não vejo teu story e o dia não dobra. Se não quiser, toca em Compartilhar de novo.', 7000);
+        return;
+      }
+    }
+  } catch (_) {}
   const c = document.getElementById('achCanvas');
   c.toBlob(async blob => {
     if (!blob) return achSave();
@@ -18568,6 +18611,43 @@ async function renderMedidas() {
   sec2.innerHTML = html;
 }
 
+// v560: dias em que o aluno compartilhou o treino pelo app neste mês (neste aparelho). Dia fechado com exercício pulado fica
+// de fora: ele não entra no ranking, então não é "compartilhado e não confirmado".
+function _rkSharesNoMes_() {
+  const dias = new Set();
+  try {
+    const pref = 'gh_logsent_' + SHEET_ID + '_', agora = new Date(), ym = agora.getFullYear() + '-' + String(agora.getMonth() + 1).padStart(2, '0');
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k || k.indexOf(pref) !== 0) continue;
+      const m = k.slice(pref.length).match(/^(\d{4}-\d{2})-(\d{2})_d\d+_share$/);
+      if (m && m[1] === ym && localStorage.getItem(k.replace(/_share$/, '_concl')) !== 'p') dias.add(m[2]);
+    }
+  } catch (_) {}
+  return dias.size;
+}
+// v560: o aluno compartilhava, o story não era casado (sem @ cadastrado, @ errado, story sem a marcação) e ele nunca ficava
+// sabendo: só via que o ponto não dobrava. Na linha dele no ranking aparece quantos dias o story confirmou, e o campo pra
+// cadastrar ou acertar o @.
+function _rkStoryLinha_(r) {
+  try {
+    if (typeof SHEET_ID === 'undefined' || !SHEET_ID) return '';
+    const n = _rkSharesNoMes_(), m = parseInt(r && r.daysShared, 10) || 0;
+    if (n === 0 && m === 0) return '';
+    const s = k => (k === 1 ? '' : 's');
+    if (m >= n) return `<div class="rk-story ok">✅ ${m} dia${s(m)} dobrado${s(m)} pelo story este mês.</div>`;
+    const at = _igSalvo();
+    const form = `<div class="rk-story-form"><input id="rkIgInput" type="text" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="@teuperfil" value="${at ? '@' + at : ''}"><button type="button" onclick="rkIgSalva()">Salvar</button></div>`;
+    const txt = at
+      ? `📲 Tu compartilhou ${n} dia${s(n)} este mês e o story confirmou ${m}. Pro dia dobrar, o story tem que marcar o <b>@gh.scheuermann</b>. Se teu perfil é privado, a marcação pode não chegar. Confere também se o teu @ está certo:`
+      : `📲 Tu compartilhou ${n} dia${s(n)} este mês, mas eu ainda não sei teu @ do Instagram, então não consigo ver teu story. Cadastra aqui e marca o <b>@gh.scheuermann</b> que os próximos dobram:`;
+    return `<div class="rk-story">${txt}${form}</div>`;
+  } catch (_) { return ''; }
+}
+async function rkIgSalva() {
+  const ok = await achIgSalva('rkIgInput');
+  if (ok) { try { const f = document.querySelector('.rk-story-form'); if (f) f.style.display = 'none'; } catch (_) {} }
+}
 // ══ RANKING DO MÊS ══
 async function openRankingModal() {
   document.getElementById('floatOptions').classList.remove('show');
@@ -18647,7 +18727,7 @@ async function openRankingModal() {
           <span class="rk-score">${r.adherence != null ? r.adherence : (r.score || 0)}%</span>
           <span class="rk-meta">${Math.min(r.daysThisMonth || 0, r.prescritos || 0)}/${r.prescritos || 0} dias · <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-1px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> ${r.daysShared || 0}</span>
         </div>
-        ${breakdown}
+        ${breakdown}${isMe ? _rkStoryLinha_(r) : ''}
       </div>`;
     }).join('');
     // v546: quem está fora dos 50 primeiros vê a própria posição no fim da lista
@@ -18655,7 +18735,7 @@ async function openRankingModal() {
       const _meuIdx = myName ? ranking.findIndex(r => _nmRk(r.name) === myName) : -1;
       if (_meuIdx >= 50) {
         const r = ranking[_meuIdx];
-        list.insertAdjacentHTML('beforeend', `<div style="text-align:center;color:#666;font-size:11px;margin:8px 0 4px;">· · ·</div><div class="rk-row me"><div class="rk-pos">${_meuIdx + 1}º</div><div class="rk-name">${escHtml(r.name)}<span class="you">(você)</span></div><div class="rk-stats"><span class="rk-score">${r.adherence != null ? r.adherence : (r.score || 0)}%</span><span class="rk-meta">${Math.min(r.daysThisMonth || 0, r.prescritos || 0)}/${r.prescritos || 0} dias</span></div></div>`);
+        list.insertAdjacentHTML('beforeend', `<div style="text-align:center;color:#666;font-size:11px;margin:8px 0 4px;">· · ·</div><div class="rk-row me"><div class="rk-pos">${_meuIdx + 1}º</div><div class="rk-name">${escHtml(r.name)}<span class="you">(você)</span></div><div class="rk-stats"><span class="rk-score">${r.adherence != null ? r.adherence : (r.score || 0)}%</span><span class="rk-meta">${Math.min(r.daysThisMonth || 0, r.prescritos || 0)}/${r.prescritos || 0} dias</span></div>${_rkStoryLinha_(r)}</div>`);
       }
     } catch (_) {}
     renderRankPrivacy();
@@ -22355,7 +22435,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v559';
+    var APP_SHELL_V = 'metodo-gh-v560';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
