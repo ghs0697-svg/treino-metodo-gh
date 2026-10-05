@@ -537,11 +537,18 @@
     background: rgba(0, 0, 0, 0.92);
     /* Acima do modo treino focado (9500) e abaixo de histórico (10500) / timer (11000) */
     z-index: 9800;
-    justify-content: center;
+    /* v562: a janela ROLA. Antes o conteúdo era centralizado numa altura fixa: com a lista de aulas embaixo o vídeo encolhia
+       até sumir, e o que passava do topo ficava fora de alcance. O centro agora vem dos dois espaçadores (::before e
+       ::after), que somem sozinhos quando o conteúdo não cabe na tela. */
+    justify-content: flex-start;
     align-items: center;
     flex-direction: column;
     padding: 20px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
+  .video-overlay::before, .video-overlay::after { content: ''; flex: 1 0 0px; }
   .video-overlay.show { display: flex; }
   .video-overlay-header {
     width: 100%;
@@ -578,6 +585,8 @@
     max-width: 640px;
     aspect-ratio: 9/16;
     max-height: 75vh;
+    min-height: min(46vh, 360px);   /* v562: o vídeo nunca encolhe além disto, venha o que vier embaixo (aí a janela rola) */
+    position: relative;
     border-radius: 10px;
     overflow: hidden;
     border: 2px solid var(--gold);
@@ -588,6 +597,14 @@
     height: 100%;
     border: none;
   }
+  /* v562: o player do nosso servidor ocupa a moldura inteira, igual ao do YouTube. Antes ele tinha altura própria (até 70%
+     da tela): quando a moldura ficava menor que isso, o pedaço de baixo, com os controles, era cortado. */
+  .video-frame-container video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
+  .aulas-tgl { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 9px 12px; background: rgba(255,255,255,.05); border: 1px solid rgba(212,175,106,.35); border-radius: 10px; color: var(--gold, #d4a76a); font: inherit; font-size: 13px; font-weight: 700; line-height: 1.3; text-align: left; cursor: pointer; }
+  .aulas-tgl-t { flex: 1; min-width: 0; }
+  .aulas-tgl-n { flex: none; background: rgba(212,175,106,.16); border-radius: 999px; padding: 2px 9px; font-size: 12px; }
+  .aulas-tgl-s { flex: none; font-size: 13px; transition: transform .15s; }
+  .aulas-tgl.aberto .aulas-tgl-s { transform: rotate(180deg); }
 
   /* ── Ilustrações animadas do Manual ── */
   .gh-illus { background: rgba(212,175,106,.05); border: 1px solid rgba(212,175,106,.16); border-radius: 14px; padding: 14px 14px 12px; margin: 14px auto; max-width: 460px; }
@@ -998,7 +1015,16 @@
   .ind-regras .ir b { color: #eee; }
   .ind-regras .ir p { margin: 0 0 6px; }
   .sem-aviso-btn { margin-top: 10px; width: 100%; background: var(--gold); color: #0c0c0d; font-weight: 800; font-size: 13.5px; border: none; border-radius: 10px; padding: 11px; cursor: pointer; font-family: inherit; }
-  .evo-box { background: #161617; border: 1px solid #2a2a2e; border-radius: 14px; max-width: 420px; width: 100%; padding: 16px; }
+  /* v562: a caixa nunca passa da altura da tela. Antes, texto mais alto que a tela (as notas "Como ler as tuas séries" em
+     celular pequeno) ficava cortado em cima e embaixo, sem rolagem, e o botão de fechar sumia. */
+  .evo-box { background: #161617; border: 1px solid #2a2a2e; border-radius: 14px; max-width: 420px; width: 100%; padding: 16px; max-height: calc(100vh - 36px); max-height: calc(100dvh - 36px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+  /* nas janelas de texto, quem rola é o miolo: o título e o botão ficam sempre à vista. A sombra dourada em cima ou embaixo do
+     miolo avisa que tem mais texto naquela direção (some sozinha quando chega no fim). */
+  .evo-box.evo-rola { display: flex; flex-direction: column; overflow: hidden; }
+  .evo-box.evo-rola > * { flex-shrink: 0; }
+  .evo-box.evo-rola > .evo-corpo { flex: 0 1 auto; min-height: 72px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+    background: linear-gradient(#161617 35%, rgba(22,22,23,0)) top / 100% 26px no-repeat local, linear-gradient(rgba(22,22,23,0), #161617 65%) bottom / 100% 26px no-repeat local,
+                linear-gradient(rgba(212,175,106,.30), rgba(212,175,106,0)) top / 100% 10px no-repeat scroll, linear-gradient(rgba(212,175,106,0), rgba(212,175,106,.30)) bottom / 100% 10px no-repeat scroll; }
   .evo-box h4 { margin: 0 0 2px; color: var(--gold); font-size: 14px; }
   .evo-sub { color: #888; font-size: 11px; margin-bottom: 10px; }
   .evo-close { width: 100%; margin-top: 12px; background: transparent; border: 1px solid #333; color: #ccc; border-radius: 9px; padding: 9px; font-size: 13px; cursor: pointer; }
@@ -3638,9 +3664,9 @@
 </div>
 
 <div class="evo-overlay" id="placaModal" onclick="if(event.target.id==='placaModal')placaInfoClose()">
-  <div class="evo-box">
+  <div class="evo-box evo-rola">
     <h4>O que é "placa"?</h4>
-    <div style="color:#ccc;font-size:13px;line-height:1.65;">
+    <div class="evo-corpo" style="color:#ccc;font-size:13px;line-height:1.65;">
       <p style="margin:0 0 10px;">Tem máquina que não mostra o peso em quilo: a pilha é numerada, e tu escolhe onde enfiar o pino. Nesse caso anota <b style="color:var(--gold);">o número da placa</b> (ou do furo) que tu usou.</p>
       <p style="margin:0 0 10px;">Se o aparelho, a barra ou o halter mostram o peso, ignora a placa e preenche só o <b>kg</b>. <b>Preencher um dos dois já basta</b>, nunca os dois.</p>
       <p style="margin:0 0 10px;">Pra que serve: é assim que tu compara com a semana passada e é daí que o GH enxerga tua progressão pra calibrar o próximo protocolo. Ficar sem marcar é o que atrapalha.</p>
@@ -3652,17 +3678,17 @@
 
 <!-- v497: notas 'meta' do protocolo (Como ler as tuas séries, etc.). Abre do badge do cabeçalho. -->
 <div class="evo-overlay" id="metaNotasModal" onclick="if(event.target.id==='metaNotasModal')metaNotasClose()">
-  <div class="evo-box">
+  <div class="evo-box evo-rola">
     <h4 id="metaNotasModalTitulo">Como ler o teu protocolo</h4>
-    <div id="metaNotasCorpo" style="color:#ccc;font-size:13px;line-height:1.65;"></div>
+    <div id="metaNotasCorpo" class="evo-corpo" style="color:#ccc;font-size:13px;line-height:1.65;"></div>
     <button type="button" class="evo-close" onclick="metaNotasClose()">Entendi 💪</button>
   </div>
 </div>
 
 <div class="evo-overlay" id="sobrouModal" onclick="if(event.target.id==='sobrouModal')sobrouInfoClose()">
-  <div class="evo-box">
+  <div class="evo-box evo-rola">
     <h4>O que é o "sobrou"?</h4>
-    <div style="color:#ccc;font-size:13px;line-height:1.65;">
+    <div class="evo-corpo" style="color:#ccc;font-size:13px;line-height:1.65;">
       <p style="margin:0 0 10px;">Quando tu termina uma série, pensa: <b style="color:var(--gold);">quantas repetições eu AINDA conseguiria fazer</b> com técnica boa? Esse número é o sobrou.</p>
       <p style="margin:0 0 10px;">Acabou no limite, não saía mais nenhuma: <b>sobrou 0</b>. Dava pra fazer mais umas 2: <b>sobrou 2</b>.</p>
       <div id="sobrouAlvoBox" style="display:none;background:rgba(212,175,106,.08);border:1px solid rgba(212,175,106,.25);border-radius:10px;padding:10px 12px;margin:0 0 10px;">
@@ -3892,7 +3918,7 @@
     <button class="video-close" onclick="closeVideo()">&#10005;</button>
   </div>
   <div class="video-frame-container">
-    <video id="videoNative" controls playsinline style="display:none;width:100%;max-height:70vh;background:#000;border-radius:12px;"></video>
+    <video id="videoNative" controls playsinline style="display:none;"></video>
     <iframe id="videoFrame" src="" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; encrypted-media; gyroscope; fullscreen; picture-in-picture" allowfullscreen></iframe>
   </div>
   <div style="text-align:center;padding:10px 12px 16px;">
@@ -3905,13 +3931,15 @@
     <div id="videoFallbackHint" style="display:none;color:#b8b2a7;font-size:12px;line-height:1.45;margin:10px auto 0;max-width:420px;"></div>
     <button type="button" id="videoFallbackBtn" onclick="_videoFallbackNativo('manual')" style="display:block;margin:12px auto 0;background:transparent;border:1px solid rgba(212,175,106,.55);color:var(--gold,#d4a76a);font:inherit;font-size:13px;font-weight:700;border-radius:8px;cursor:pointer;padding:9px 16px;">O vídeo não abriu? Toca aqui pra assistir direto</button>
   </div>
-  <!-- aulas do GHFlix sobre ESTE exercício (acréscimo: o vídeo acima não muda) -->
-  <div id="aulasGhflix" style="display:none;padding:0 12px 22px;max-width:640px;margin:0 auto;width:100%">
-    <div style="display:flex;align-items:center;gap:8px;margin:4px 0 10px">
-      <span style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--gold,#d4a76a)">Aulas do GH sobre esse exercício</span>
-      <span style="flex:1;height:1px;background:rgba(255,255,255,.12)"></span>
-    </div>
-    <div id="aulasGhflixLista" style="display:flex;flex-direction:column;gap:8px"></div>
+  <!-- aulas do GHFlix sobre ESTE exercício (acréscimo: o vídeo acima não muda). v562: nascem RECOLHIDAS numa linha só, e
+       abertas não tiram altura do vídeo (ver aulasGhflixAlterna). -->
+  <div id="aulasGhflix" style="display:none;padding:0 12px 22px;max-width:640px;margin:0 auto;width:100%;scroll-margin-top:12px">
+    <button type="button" id="aulasGhflixBtn" class="aulas-tgl" aria-expanded="false" aria-controls="aulasGhflixLista" onclick="aulasGhflixAlterna()">
+      <span class="aulas-tgl-t">Aulas do GH sobre esse exercício</span>
+      <span class="aulas-tgl-n" id="aulasGhflixN"></span>
+      <span class="aulas-tgl-s" aria-hidden="true">&#9662;</span>
+    </button>
+    <div id="aulasGhflixLista" style="display:none;flex-direction:column;gap:8px;margin-top:10px"></div>
   </div>
 </div>
 
@@ -5274,14 +5302,14 @@
   <div class="te-modal-box" style="max-width:440px;">
     <h3 style="margin:0 0 4px;">💳 Renovar meu plano</h3>
     <p style="color:#aaa;font-size:11.5px;margin:0 0 14px;line-height:1.5;">Escolhe o plano e paga direto no checkout seguro. <b style="color:#ccc;">Protocolos adicionais</b> tu inclui dentro do próprio pagamento.</p>
-    <a class="renov-opt" href="https://payfast.greenn.com.br/redirect/277490" target="_blank" rel="noopener" onclick="_renovLogClick('anual')">
+    <a class="renov-opt" href="https://payfast.greenn.com.br/redirect/309565" target="_blank" rel="noopener" onclick="_renovLogClick('anual')">
       <div>
         <div class="renov-opt-t">Plano Anual</div>
         <div class="renov-opt-d">12 meses de acompanhamento completo</div>
       </div>
       <span class="renov-opt-go">Renovar</span>
     </a>
-    <a class="renov-opt" href="https://payfast.greenn.com.br/redirect/292660" target="_blank" rel="noopener" onclick="_renovLogClick('semestral')">
+    <a class="renov-opt" href="https://payfast.greenn.com.br/redirect/309566" target="_blank" rel="noopener" onclick="_renovLogClick('semestral')">
       <div>
         <div class="renov-opt-t">Plano Semestral</div>
         <div class="renov-opt-d">6 meses de acompanhamento completo</div>
@@ -7925,8 +7953,10 @@ function _metaNotasLido() { try { return !!localStorage.getItem(_metaNotasKey())
 function openMetaNotas() {
   try { localStorage.setItem(_metaNotasKey(), '1'); } catch (_) {}
   const nv = document.getElementById('metaNotasNovo'); if (nv) nv.style.display = 'none';
-  try { document.getElementById('metaNotasModal').classList.add('show'); } catch (_) {}
+  try { document.getElementById('metaNotasModal').classList.add('show'); _evoTopo('metaNotasModal'); } catch (_) {}
 }
+// v562: janela de explicação sempre abre no começo do texto (o miolo rola por dentro e lembrava onde tinha parado)
+function _evoTopo(id) { try { const c = document.querySelector('#' + id + ' .evo-corpo'); if (c) c.scrollTop = 0; } catch (_) {} }
 function metaNotasClose() { try { document.getElementById('metaNotasModal').classList.remove('show'); } catch (_) {} }
 function _parseEsforcoAlvo(rows) {
   for (const r of (rows || [])) {
@@ -13086,10 +13116,10 @@ function openSobrouInfo() {
     } else {
       box.style.display = 'none';
     }
-    document.getElementById('sobrouModal').classList.add('show');
+    document.getElementById('sobrouModal').classList.add('show'); _evoTopo('sobrouModal');
   } catch (e) {}
 }
-function openPlacaInfo() { try { document.getElementById('placaModal').classList.add('show'); } catch (e) {} }
+function openPlacaInfo() { try { document.getElementById('placaModal').classList.add('show'); _evoTopo('placaModal'); } catch (e) {} }
 function placaInfoClose() { try { document.getElementById('placaModal').classList.remove('show'); } catch (e) {} }
 function sobrouInfoClose() { document.getElementById('sobrouModal').classList.remove('show'); }
 
@@ -14702,11 +14732,37 @@ function _normAula(s){
   return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
     .replace(/[^a-z0-9]+/g,' ').trim();
 }
+// v562: a lista de aulas nasce recolhida. Aberta, ela NÃO tira altura do vídeo: a moldura fica travada no tamanho em que
+// estava e a janela passa a rolar. Recolhida (ou com outro vídeo aberto), a moldura volta a se ajustar sozinha à tela.
+function aulasGhflixAlterna(forca) {
+  try {
+    const ov = document.getElementById('videoOverlay'), lista = document.getElementById('aulasGhflixLista'), bt = document.getElementById('aulasGhflixBtn');
+    if (!ov || !lista || !bt) return;
+    const fr = ov.querySelector('.video-frame-container');
+    const abrir = (typeof forca === 'boolean') ? forca : lista.style.display === 'none';
+    if (abrir) {
+      if (fr) { const h = fr.getBoundingClientRect().height; if (h > 0) { fr.style.height = Math.round(h) + 'px'; fr.style.flexShrink = '0'; } }
+      lista.style.display = 'flex';
+      // desce só o que precisa pra mostrar a lista; se ela é mais alta que a tela, a linha do título fica no topo (dá pra recolher sem procurar)
+      const cx = document.getElementById('aulasGhflix');
+      try { cx.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) { try { cx.scrollIntoView(false); } catch (_e) {} }
+    } else {
+      lista.style.display = 'none';
+      if (fr) { fr.style.height = ''; fr.style.flexShrink = ''; }
+      ov.scrollTop = 0;
+    }
+    bt.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+    bt.classList.toggle('aberto', abrir);
+  } catch (_) {}
+}
+let _aulasPedido = 0;
 async function mostraAulasGhflix(nomeExercicio) {
   const box = document.getElementById('aulasGhflix');
   const lista = document.getElementById('aulasGhflixLista');
   if (!box || !lista) return;
   box.style.display = 'none'; lista.innerHTML = '';
+  aulasGhflixAlterna(false);     // v562: cada vídeo começa com a lista recolhida
+  const meuPedido = ++_aulasPedido;   // v562: se o aluno abrir outro vídeo enquanto o mapa de aulas carrega, este pedido não pinta a lista do exercício anterior
   if (_mapaAulasErro) return;
   try {
     if (!_mapaAulas) {
@@ -14730,6 +14786,7 @@ async function mostraAulasGhflix(nomeExercicio) {
       _mapaAulas.__idx = idx;
     }
   } catch (e) { _mapaAulasErro = true; return; }
+  if (meuPedido !== _aulasPedido) return;   // v562
   const ids = _mapaAulas[_normAula(nomeExercicio)] || _mapaAulas[_normAula(_normEx(nomeExercicio))];   // nome aposentado cai no titular
   if (!ids || !ids.length) return;
   const idx = _mapaAulas.__idx || {};
@@ -14750,6 +14807,8 @@ async function mostraAulasGhflix(nomeExercicio) {
   }).filter(Boolean).join('');
   if (!html) return;
   lista.innerHTML = html;
+  const cont = document.getElementById('aulasGhflixN');
+  if (cont) cont.textContent = String(lista.children.length);
   box.style.display = 'block';
 }
 /* toca a aula dentro do próprio app, na aba GHFLIX.
@@ -14886,6 +14945,8 @@ function closeVideo() {
   document.getElementById("videoOverlay").classList.remove("show");
   const ag = document.getElementById("aulasGhflix");
   if (ag) { ag.style.display = 'none'; }
+  aulasGhflixAlterna(false);   // v562: solta a moldura do vídeo e deixa a lista recolhida pro próximo
+  _aulasPedido++;              // v562: uma busca de aulas ainda em andamento não pinta mais nada
   document.body.style.overflow = "";
 }
 
@@ -20866,7 +20927,7 @@ function _renovLogClick(plano) {
         partner: 'GREENN',
         productName: 'Renovacao ' + plano,
         tag: _renovOrigem,
-        url: plano === 'anual' ? 'redirect/277490' : 'redirect/292660'
+        url: (function () { try { var a = document.querySelector('#renovModal a.renov-opt[onclick*="\'' + plano + '\'"]'); return a ? String(a.getAttribute('href') || '').replace('https://payfast.greenn.com.br/', '') : ''; } catch (_) { return ''; } })()   // v562: o link do próprio botão tocado, pra nunca mais divergir
       }),
       keepalive: true, redirect: 'follow'
     }).catch(function () {});
@@ -22465,7 +22526,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v561';
+    var APP_SHELL_V = 'metodo-gh-v562';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
