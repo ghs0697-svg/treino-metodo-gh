@@ -842,6 +842,7 @@
   .rk-story-form { display: flex; gap: 7px; margin-top: 7px; }
   .rk-story-form input { flex: 1; min-width: 0; background: #0e0d0c; border: 1px solid #2b2620; border-radius: 9px; color: #E0DCD3; font: inherit; font-size: 14px; height: 38px; padding: 0 11px; }
   .rk-story-form button { height: 38px; padding: 0 14px; border-radius: 9px; border: 1px solid var(--gold); background: rgba(212,175,106,.12); color: var(--gold); font-weight: 700; font-size: 13px; cursor: pointer; }
+  .rk-story-nao { display: inline-block; background: none; border: 0; color: #8d8579; font: inherit; font-size: 11px; text-decoration: underline; padding: 4px 0; cursor: pointer; }
   .rk-bd { font-size: 10.5px; color: #b8b2a6; }
   .rk-bd b { color: var(--gold); font-weight: 800; }
   .rk-bd.soon { color: #8e8a82; }
@@ -5612,7 +5613,7 @@
         <li><strong>Dieta</strong>: marca todas as refeições do dia (vale o dia completo).</li>
         <li><strong>Cardio</strong>: marca o cardio até bater a meta da tua semana.</li>
       </ul>
-      <div style="margin-top:8px;padding-top:7px;border-top:1px solid rgba(212,167,106,0.22);">⭐ <strong>Compartilhou? Pontua o DOBRO.</strong> Em todas as modalidades: cada treino, refeição ou cardio que você posta vale por 2. Compartilha sempre que terminar, espalha a vibe e dispara teus pontos.</div>
+      <div style="margin-top:8px;padding-top:7px;border-top:1px solid rgba(212,167,106,0.22);">⭐ <strong>Story marcando o @gh.scheuermann pontua o DOBRO.</strong> Treino: posta o story no dia do treino (ou no dia seguinte) marcando o @gh.scheuermann e o dia vale por 2. Refeição e cardio: compartilha pelo app e marca no story. Pra eu reconhecer o teu story, teu @ do Instagram precisa estar cadastrado: fica na tua linha, aqui embaixo.</div>
     </div>
     <div id="rankingList" style="flex:1;overflow-y:auto;min-height:0;"></div>
     <div id="rankPrivacy" style="margin-top:10px;padding-top:10px;border-top:1px solid #2a2a2a;"></div>
@@ -18633,20 +18634,49 @@ function _rkStoryLinha_(r) {
   try {
     if (typeof SHEET_ID === 'undefined' || !SHEET_ID) return '';
     const n = _rkSharesNoMes_(), m = parseInt(r && r.daysShared, 10) || 0;
-    if (n === 0 && m === 0) return '';
     const s = k => (k === 1 ? '' : 's');
-    if (m >= n) return `<div class="rk-story ok">✅ ${m} dia${s(m)} dobrado${s(m)} pelo story este mês.</div>`;
+    if (m > 0 && m >= n) return `<div class="rk-story ok">✅ ${m} dia${s(m)} dobrado${s(m)} pelo story este mês.</div>`;
     const at = _igSalvo();
-    const form = `<div class="rk-story-form"><input id="rkIgInput" type="text" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="@teuperfil" value="${at ? '@' + at : ''}"><button type="button" onclick="rkIgSalva()">Salvar</button></div>`;
+    const campo = escondido => `<div class="rk-story-form"${escondido ? ' style="display:none;"' : ''}><input id="rkIgInput" type="text" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="@teuperfil" value="${at ? '@' + at : ''}"><button type="button" onclick="rkIgSalva()">Salvar</button></div>`;
+    // v561: o dobro do treino passou a vir do story marcando o @gh.scheuermann, com ou sem o botão de compartilhar do app
+    // (servidor 2026-10-05a). Quem posta por fora do botão não tinha onde cadastrar o @, e quem cadastrou errado não tinha
+    // onde corrigir: a linha do aluno passa a ter sempre o convite (sem @) ou o @ dele com "trocar".
+    if (n === 0) {
+      if (at) return `<div class="rk-story" data-convite="1">📲 Story do treino marcando o <b>@gh.scheuermann</b> dobra o dia. Teu @ aqui: <b>@${at}</b> <button type="button" class="rk-story-nao" style="margin-left:4px;" onclick="rkIgTroca(this)">trocar</button>${campo(true)}</div>`;
+      let _naoUsa = false; try { _naoUsa = localStorage.getItem('gh_ig_nao') === '1'; } catch (_) {}
+      if (_naoUsa) return '';
+      return `<div class="rk-story" data-convite="1">📲 Posta teu treino no story marcando o <b>@gh.scheuermann</b> e o dia vale em dobro aqui no ranking. Me diz teu @ pra eu reconhecer teu story:${campo(false)}<button type="button" class="rk-story-nao" style="margin-top:9px;" onclick="rkIgNaoUso()">Não uso Instagram</button></div>`;
+    }
     const txt = at
       ? `📲 Tu compartilhou ${n} dia${s(n)} este mês e o story confirmou ${m}. Pro dia dobrar, o story tem que marcar o <b>@gh.scheuermann</b>. Se teu perfil é privado, a marcação pode não chegar. Confere também se o teu @ está certo:`
       : `📲 Tu compartilhou ${n} dia${s(n)} este mês, mas eu ainda não sei teu @ do Instagram, então não consigo ver teu story. Cadastra aqui e marca o <b>@gh.scheuermann</b> que os próximos dobram:`;
-    return `<div class="rk-story">${txt}${form}</div>`;
+    return `<div class="rk-story">${txt}${campo(false)}</div>`;
   } catch (_) { return ''; }
+}
+// v561: "trocar" mostra o campo do @ (quem digitou errado e não compartilha pelo botão não tinha onde corrigir)
+function rkIgTroca(btn) {
+  try {
+    const f = btn && btn.parentElement && btn.parentElement.querySelector('.rk-story-form');
+    if (f) { f.style.display = 'flex'; const i = f.querySelector('input'); if (i) { i.focus(); try { i.select(); } catch (_) {} } }
+    if (btn) btn.style.display = 'none';
+  } catch (_) {}
+}
+// v561: "Não uso Instagram" pela linha do ranking (o mesmo efeito do link do cartão do treino concluído)
+function rkIgNaoUso() {
+  try { localStorage.setItem('gh_ig_nao', '1'); } catch (_) {}
+  try { const b = document.querySelector('.rk-story'); if (b) b.style.display = 'none'; } catch (_) {}
+  _ghToast('Combinado, não pergunto mais. Sem o story marcando o @gh.scheuermann o dia conta normal, só não dobra.', 6000);
 }
 async function rkIgSalva() {
   const ok = await achIgSalva('rkIgInput');
-  if (ok) { try { const f = document.querySelector('.rk-story-form'); if (f) f.style.display = 'none'; } catch (_) {} }
+  if (ok) {
+    try {
+      const b = document.querySelector('.rk-story'), f = document.querySelector('.rk-story-form');
+      // v561: quem veio pelo convite ou pelo "trocar" fica sabendo o que fazer agora
+      if (b && b.dataset.convite === '1') b.innerHTML = '✅ Guardei teu @. Agora é só marcar o <b>@gh.scheuermann</b> no story do treino que o dia vale em dobro.';
+      else if (f) f.style.display = 'none';
+    } catch (_) {}
+  }
 }
 // ══ RANKING DO MÊS ══
 async function openRankingModal() {
@@ -22435,7 +22465,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v560';
+    var APP_SHELL_V = 'metodo-gh-v561';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
