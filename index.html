@@ -14961,23 +14961,34 @@ function _iosForaDoApp_() {
 // v549: a atualização forçada do app apaga a inscrição de notificação junto com o registro antigo, e ninguém refazia: o
 // lembrete parava de chegar com o app fechado e o app seguia achando que estava tudo ligado. Na abertura, quem tem lembrete
 // ligado e permissão dada ganha a inscrição de volta, em silêncio.
+// v559: lembrete de refeição ou de treino ligado neste aparelho (a inscrição de notificação é UMA só e serve pros três)
+function _outroLembreteLigado_() {
+  let on = false;
+  try { const mp = _refHoras(); on = Object.keys(mp).some(k => mp[k] && mp[k].on && mp[k].h); } catch (_) {}
+  if (!on) { try { const tl = _tlemLoad(); on = !!(tl && tl.on); } catch (_) {} }
+  return on;
+}
 async function _pushConfereBoot_() {
   try {
     if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window) || Notification.permission !== 'granted') return;
-    if (localStorage.getItem('gh_pushOff') === '1') return;   // foi o ALUNO que desligou (botão da água): não religa por conta
-    let querLembrete = isWaterNotifOn();
-    if (!querLembrete) { try { const mp = _refHoras(); querLembrete = Object.keys(mp).some(k => mp[k] && mp[k].on && mp[k].h); } catch (_) {} }
-    if (!querLembrete) { try { const tl = _tlemLoad(); querLembrete = !!(tl && tl.on); } catch (_) {} }   // v550: lembrete de treino também conta
-    if (!querLembrete) return;
+    // v559: o servidor de notificações passou a guardar, por inscrição, se o aluno quer a ÁGUA. A inscrição volta (ou é
+    // reenviada) quando falta, quando o servidor ainda não a conhece por este aparelho, ou quando a escolha da água mudou.
+    // Com isso: quem desligou a água e tem lembrete de refeição ou de treino volta a receber esses dois com o app fechado
+    // (antes desligar a água cancelava tudo), e quem só ligou a refeição para de receber água de hora em hora.
+    const querAgua = isWaterNotifOn();
+    if (!querAgua && !_outroLembreteLigado_()) return;   // nada ligado: não inscreve ninguém por conta
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.getSubscription();
     const salvo = localStorage.getItem('gh_pushEndpoint') || '';
-    if (sub && salvo && sub.endpoint === salvo) return;   // inscrição viva e conhecida do servidor
+    // E a cada 3 dias a inscrição é reconfirmada: o servidor guarda todas numa lista só (lê, mexe e grava de volta), e duas
+    // inscrições no mesmo instante podem fazer uma sumir. Sem a reconfirmação, o aluno ficava sem lembrete e ninguém sabia.
+    const _confirmadaEm = Number(localStorage.getItem('gh_pushTs')) || 0;
+    if (sub && salvo && sub.endpoint === salvo && localStorage.getItem('gh_pushWater') === (querAgua ? '1' : '0') && Date.now() - _confirmadaEm < 3 * 86400000) return;   // tudo em dia
     await registerPushSubscription();
   } catch (_) {}
 }
 setTimeout(function () { try { _pushConfereBoot_(); } catch (_) {} }, 15000);
-async function registerPushSubscription() {
+async function registerPushSubscription(opts) {
   if (!('serviceWorker' in navigator)) return { ok: false, reason: 'no-sw' };
   if (!('PushManager' in window)) return { ok: false, reason: 'no-pushmanager' };
   // iOS Safari só expõe push se o site estiver instalado como PWA (standalone mode)
@@ -14993,25 +15004,33 @@ async function registerPushSubscription() {
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
       });
     }
+    // v559: o nome vinha de WORKOUT[0].info, que não existe mais: a inscrição ia com o ID da planilha no lugar do nome
     const studentName = (() => {
-      try {
-        const info = WORKOUT && WORKOUT[0] && WORKOUT[0].info && WORKOUT[0].info.name;
-        return info || STUDENT_ID;
-      } catch (_) { return STUDENT_ID; }
+      try { const n = (typeof _alunoNome_ === 'function') ? _alunoNome_() : ''; return (n && n !== '-') ? n : STUDENT_ID; } catch (_) { return STUDENT_ID; }
     })();
-    const resp = await fetch(PUSH_API_BASE + '/subscribe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        studentId: SHEET_ID || STUDENT_ID,
-        studentName: studentName,
-        subscription: sub.toJSON()
-      })
+    const _aguaLigada = (opts && typeof opts.water === 'boolean') ? opts.water : isWaterNotifOn();
+    const _corpoSub = JSON.stringify({
+      studentId: SHEET_ID || STUDENT_ID,
+      studentName: studentName,
+      subscription: sub.toJSON(),
+      water: _aguaLigada   // v559: o servidor manda água só pra inscrição com water true
     });
-    if (!resp.ok) {
+    // v559: a rota de inscrição não autoriza o app a LER a resposta (falta o cabeçalho de origem cruzada no servidor de
+    // notificações). O pedido chegava e a inscrição era gravada, mas pro app a chamada "falhava": ele dizia "não consegui
+    // ligar a notificação", nunca guardava a inscrição (a planilha mostrava todo mundo como sem notificação) e, com o app
+    // aberto, o aviso chegava em dobro. Agora, se a leitura é recusada, o pedido vai de novo no modo que não lê a resposta:
+    // se ele sai do aparelho, a inscrição conta como feita. Sem rede, as duas tentativas falham e o aviso continua certo.
+    let resp = null;
+    try {
+      resp = await fetch(PUSH_API_BASE + '/subscribe', { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: _corpoSub });
+    } catch (_eLeitura) {
+      await fetch(PUSH_API_BASE + '/subscribe', { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: _corpoSub });
+    }
+    if (resp && !resp.ok) {
       const txt = await resp.text().catch(() => '');
       return { ok: false, reason: 'subscribe-server-' + resp.status + ': ' + txt.substring(0, 80) };
     }
+    try { localStorage.setItem('gh_pushWater', _aguaLigada ? '1' : '0'); localStorage.setItem('gh_pushTs', String(Date.now())); } catch (_) {}
     localStorage.setItem('gh_pushEndpoint', sub.endpoint);
     try { localStorage.removeItem('gh_pushOff'); } catch (_) {}
     return { ok: true };
@@ -15050,7 +15069,11 @@ async function toggleWaterNotif() {
   if (isWaterNotifOn()) {
     localStorage.setItem(waterNotifKey(), '0');
     if (window._waterNotifInt) { clearInterval(window._waterNotifInt); window._waterNotifInt = null; }
-    unregisterPushSubscription();
+    // v559: desligar a água cancelava a inscrição inteira, e o lembrete de refeição e o de treino paravam de chegar com o
+    // app fechado sem ninguém avisar. Com outro lembrete ligado, a inscrição fica e vai pro servidor com a água desligada.
+    let _temPerm = false; try { _temPerm = ('Notification' in window) && Notification.permission === 'granted'; } catch (_) {}
+    if (_outroLembreteLigado_() && _temPerm) registerPushSubscription({ water: false });
+    else unregisterPushSubscription();
     renderWaterToggleState();
     return;
   }
@@ -15067,7 +15090,7 @@ async function toggleWaterNotif() {
   // Se permissão concedida, registra push subscription pro servidor mandar real
   let pushResult = { ok: false, reason: 'no-permission' };
   if (nativeOk) {
-    pushResult = await registerPushSubscription();
+    pushResult = await registerPushSubscription({ water: true });   // v559: aqui a chave da água ainda não foi gravada no aparelho
   } else if (_iosForaDoApp_()) {
     pushResult = { ok: false, reason: 'ios-not-installed' };   // v549: no Safari do iPhone nem existe a permissão; a orientação de instalar nunca aparecia
   }
@@ -15078,7 +15101,7 @@ async function toggleWaterNotif() {
 
   let msg;
   if (pushResult.ok) {
-    msg = '🔔 Lembrete ativado!\n\nVai receber notificação a cada hora (8h-22h), mesmo com o app fechado.';
+    msg = '🔔 Lembrete ativado!\n\nVai receber notificação a cada hora, mesmo com o app fechado.';
   } else if (pushResult.reason === 'ios-not-installed') {
     msg = '⚠️ Pra notificação chegar com o app fechado no iPhone, primeiro instala o app:\n\n1. Toca em Compartilhar (quadrado com seta no Safari)\n2. Adicionar à Tela de Início\n3. Abre o app pelo ÍCONE da tela inicial (não pelo Safari)\n4. Ativa o lembrete de novo\n\nEnquanto isso, te aviso aqui na tela quando o app estiver aberto.';
   } else if (pushResult.reason === 'no-pushmanager') {
@@ -15095,8 +15118,8 @@ function startWaterNotif() {
   if (window._waterNotifInt) clearInterval(window._waterNotifInt);
   window._waterNotifInt = setInterval(() => {
     if (!isWaterNotifOn()) return;
-    const _hAgua = new Date().getHours();
-    if (_hAgua < 8 || _hAgua >= 22) return;   // v549: sem lembrete de madrugada (o que chega com o app fechado também é das 8h às 22h)
+    // v559: saiu a trava de horário que entrou na v549. Ela partia de um texto velho do app ("8h-22h"): a água com o app
+    // fechado roda 24 h desde 14/08, por decisão do GH, e o aviso na tela tem que seguir a mesma regra.
     showWaterReminder();
     // Notificação do sistema só pra quem NÃO tem a do app fechado registrada (com ela chegavam duas por hora)
     try {
@@ -19734,6 +19757,27 @@ async function _refHorasBoot() {
       _refHorasSync();                    // servidor passa a ver a refeição certa e o nome novo
     }
     Object.keys(rx.map).forEach(ri => _refHoraChipRefresh(parseInt(ri, 10)));
+    // v559: quem já tinha horário definido carimba o fuso uma vez (e de novo quando o fuso do aparelho mudar, em viagem)
+    try { if (!window._refTzTentou && Object.keys(rx.map).some(k => rx.map[k] && rx.map[k].h)) { window._refTzTentou = true; _refTzConfere_(); } } catch (_) {}
+  } catch (_) {}
+}
+// v559: carimba o fuso deste aparelho no registro de horários do aluno, SEM mexer nos horários. Os horários que vão junto são
+// os que o SERVIDOR já tem (ele é a cópia de recuperação): mandar os deste aparelho deixaria um segundo aparelho, com
+// horários antigos, regravar por cima do que o aluno definiu no outro. Uma consulta por sessão; depois de carimbado, nada.
+async function _refTzConfere_() {
+  try {
+    const tzA = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+    if (!tzA || localStorage.getItem('gh_refTz_' + SHEET_ID) === tzA) return;
+    const resp = await fetch(PUSH_API_BASE + '/meal-times?studentId=' + encodeURIComponent(SHEET_ID) + '&_=' + Date.now(), { cache: 'no-store' });
+    const j = await resp.json().catch(() => null);
+    const times = (j && j.ok && Array.isArray(j.times)) ? j.times : [];
+    if (!times.length) return;                     // o servidor não tem horário deste aluno: o próximo salvamento leva o fuso
+    if (j.tz !== tzA) {
+      const r = await fetch(PUSH_API_BASE + '/meal-times', { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ studentId: SHEET_ID, studentName: (typeof _alunoNome_ === 'function' ? _alunoNome_() : ''), times: times, tz: tzA }) });
+      if (!r || !r.ok) return;
+    }
+    localStorage.setItem('gh_refTz_' + SHEET_ID, tzA);
   } catch (_) {}
 }
 function _refNome(ri) {
@@ -19848,12 +19892,15 @@ function _refHorasSync() {
       uid: String(ri), h: map[ri].h, titulo: _refNome(parseInt(ri, 10)) || map[ri].nome || '', on: !!map[ri].on
     }));
     const studentName = (document.getElementById('infoNome')?.textContent || '').trim();
+    // v559: vai junto o fuso do aparelho. O "07:30" do aluno é a hora DELE: sem o fuso, quem mora em Manaus, Cuiabá ou no
+    // Acre (ou está viajando) recebia o lembrete pela hora de Brasília.
+    let tz = ''; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (_) {}
     fetch(PUSH_API_BASE + '/meal-times', {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ studentId: SHEET_ID, studentName, times }),
+      body: JSON.stringify(tz ? { studentId: SHEET_ID, studentName, times, tz } : { studentId: SHEET_ID, studentName, times }),
       keepalive: true
-    }).catch(() => {});
+    }).then(r => { try { if (r && r.ok && tz && times.length) localStorage.setItem('gh_refTz_' + SHEET_ID, tz); } catch (_) {} }).catch(() => {});
   } catch (_) {}
 }
 // Fallback com o app ABERTO: confere a cada 45s; toast sempre, Notification nativa só
@@ -22308,7 +22355,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v558';
+    var APP_SHELL_V = 'metodo-gh-v559';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
