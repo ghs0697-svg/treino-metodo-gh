@@ -1920,6 +1920,41 @@
   .mt-chip { background: #26262c; border: 1px solid #36363e; color: #d8d8da; font-size: 11.5px; border-radius: 8px; padding: 5px 10px; }
   .mt-chip.off { color: #9a9aa0; }
   .pg-sec-t { color: var(--gold); font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: .12em; margin: 0 0 10px; }
+  /* v565: SELOS. Anel em cinco pedaços (um por nível), ícone de linha no meio; sem brilho, sem festa: dourado quando o nível
+     está alcançado, cinza quando falta. O quinto nível fecha o anel e clareia o selo. */
+  #selosCard { scroll-margin-top: 12px; }
+  .sl-nota { color: #8a8a90; font-size: 10.5px; margin: -2px 0 10px; line-height: 1.45; }
+  .sl-wrap { container-type: inline-size; }
+  .sl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 4px; }
+  @container (max-width: 250px) { .sl-grid { grid-template-columns: repeat(2, 1fr); } }   /* letra no máximo em tela pequena: duas colunas */
+  .sl-it { position: relative; background: none; border: 0; padding: 6px 2px 4px; color: inherit; font: inherit; text-align: center; cursor: pointer; border-radius: 12px; -webkit-tap-highlight-color: transparent; }
+  .sl-it:active { background: rgba(255,255,255,.04); }
+  .sl-selo { width: 64px; height: 64px; display: block; margin: 0 auto; }
+  .sl-selo .fundo { fill: #141416; stroke: rgba(212,175,106,.18); stroke-width: 1; }
+  .sl-selo .seg { fill: none; stroke: #2a2a30; stroke-width: 4; stroke-linecap: round; }
+  .sl-selo .seg.on { stroke: #D4AF37; }
+  .sl-selo .ico { fill: none; stroke: #6f6a60; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+  .sl-selo.n1 .ico, .sl-selo.n2 .ico, .sl-selo.n3 .ico, .sl-selo.n4 .ico { stroke: var(--gold); }
+  .sl-selo.n5 .fundo { fill: rgba(212,175,106,.12); stroke: rgba(212,175,106,.45); }
+  .sl-selo.n5 .seg.on, .sl-selo.n5 .ico { stroke: #F0D48A; }
+  .sl-selo.sl-big { width: 96px; height: 96px; margin: 2px auto 8px; }
+  .sl-nome { color: #e4e4e6; font-size: 11.5px; font-weight: 700; margin-top: 6px; line-height: 1.25; }
+  .sl-nivel { color: #9a9389; font-size: 10px; margin-top: 2px; }
+  .sl-nivel b { color: var(--gold); font-weight: 800; }
+  .sl-barra { height: 3px; background: #26262c; border-radius: 2px; margin: 6px 10px 0; overflow: hidden; }
+  .sl-barra i { display: block; height: 100%; background: var(--gold); border-radius: 2px; }
+  .sl-prox { color: #6f6a60; font-size: 9.5px; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .sl-novo { position: absolute; top: 2px; right: 6px; font-size: 8.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #0c0c0d; background: var(--gold); border-radius: 999px; padding: 2px 6px; }
+  .sl-agora { background: rgba(212,175,106,.07); border: 1px solid rgba(212,175,106,.22); border-radius: 10px; padding: 9px 11px; color: #e8d9ac; font-size: 12px; margin: 12px 0 0; line-height: 1.45; text-align: center; }
+  .sl-txt { color: #b8b2a7; font-size: 12.5px; line-height: 1.55; margin: 10px 0 0; }
+  .sl-cam { list-style: none; margin: 4px 0 0; padding: 0; }
+  .sl-cam li { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid rgba(255,255,255,.06); color: #8d8579; font-size: 12.5px; }
+  .sl-cam li .n { flex: none; width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid #3a3a40; display: flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 800; color: #6f6a60; }
+  .sl-cam li.ok { color: #e4e4e6; }
+  .sl-cam li.ok .n { border-color: var(--gold); background: rgba(212,175,106,.14); color: var(--gold); }
+  .sl-cam li.prox { color: #e4e4e6; }
+  .sl-cam li.prox .n { border-color: var(--gold); color: var(--gold); }
+  .sl-cam li .q { margin-left: auto; font-size: 11px; color: var(--gold); white-space: nowrap; font-weight: 700; }
   .pg-sel { width: 100%; background: #26262c; border: 1px solid #36363e; color: #fff; padding: 10px 11px; border-radius: 9px; font-size: 13.5px; font-family: inherit; }
   .pg-trendline { font-size: 11.5px; color: #9a9aa0; margin-top: 8px; line-height: 1.5; }
   .pg-trendline.up { color: #4caf50; }
@@ -5184,6 +5219,13 @@
   </div>
 </div>
 
+<!-- v565: janela de um selo (o caminho inteiro, nível a nível) -->
+<div class="te-modal-overlay" id="selosModal" onclick="if(event.target.id==='selosModal')teHide('selosModal')">
+  <div class="te-modal-box" style="max-width:440px;max-height:calc(86vh / var(--fz, 1));overflow-y:auto;">
+    <div id="selosModalCorpo"></div>
+    <button class="te-btn ghost" onclick="teHide('selosModal')" style="width:100%;margin-top:14px;">Fechar</button>
+  </div>
+</div>
 <div class="te-modal-overlay" id="glossModal" onclick="if(event.target.id==='glossModal')teHide('glossModal')">
   <div class="te-modal-box" style="max-width:460px;max-height:calc(78vh / var(--fz, 1));overflow-y:auto;">
     <h3 style="margin:0 0 4px;">📖 Dicionário do treino</h3>
@@ -5467,6 +5509,9 @@
     <div class="mais-sep">FERRAMENTAS</div>
     <button type="button" class="mais-opt" onclick="closeMaisSheet(); openRankingModal()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg></span><span>Ranking</span>
+    </button>
+    <button type="button" class="mais-opt" onclick="closeMaisSheet(); abrirSelos()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-4"/></svg></span><span>Meus selos</span>
     </button>
     <button type="button" class="mais-opt" onclick="closeMaisSheet(); openFotosModal()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span><span>Minhas fotos do reajuste</span>
@@ -9828,6 +9873,7 @@ function _diaConcluidoDispara(di) {
     }
   } catch (_) {}
   updateStreakOnComplete();
+  try { setTimeout(_selosChecaNovo, 900); } catch (_) {}   // v565: treino fechado pode alcançar um nível
   // Loga a CONCLUSÃO do treino (vale 5 pts). Compartilhar depois
   // gera outro log que vale 10. Assim quem treina pontua mesmo
   // sem compartilhar — e quem compartilha ganha o dobro.
@@ -10973,6 +11019,7 @@ async function loadAndShowLastModified() {
         vBadge.style.display = 'inline';
         if (sep) sep.style.display = 'inline';
         sessionStorage.setItem(`gh_version_${SHEET_ID}`, data.version);
+        try { window._ghProtoVersao = String(data.version); localStorage.setItem('gh_proto_versao_' + SHEET_ID, String(data.version)); } catch (_) {}   // v565: o selo Jornada conta os ciclos pela versão
       }
     }
     // Badge da próxima anamnese de reajuste (col M do mestre = Protocolo Atual + 50 dias)
@@ -18275,6 +18322,213 @@ function _pgExemploSvg() {
     <text x="160" y="24" fill="#8a8579" font-size="11" font-weight="700" text-anchor="middle" letter-spacing="2">EXEMPLO</text>
   </svg>`;
 }
+// ══ SELOS (v565, GH 06/10/2026: "transformar as conquistas em selos, igual um jogo, com níveis, mostrando um caminho") ══
+// Linguagem de registro pessoal, nunca de prêmio (regra do app desde 05/07): nível, caminho, próximo passo. Tudo derivado do
+// que o aluno JÁ marca no app, nada de campo novo. O nível sobe e NUNCA desce: o maior alcançado fica guardado neste aparelho
+// (gh_selos_<id>); o número de agora (sequência, contagem) é o que mostra o caminho até o próximo nível. Aparelho novo: as
+// marcas dos últimos 75 dias voltam do servidor (concluidos) e o total de treinos fechados vem com elas.
+const SELOS_ICO = {
+  dieta: '<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/>',
+  treinos: '<path d="M6 5v14"/><path d="M18 5v14"/><path d="M3 8v8"/><path d="M21 8v8"/><path d="M6 12h12"/>',
+  constancia: '<path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="m9 16 2 2 4-4"/>',
+  cardio: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/>',
+  carga: '<path d="m22 7-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/>',
+  jornada: '<path d="M4 22V4"/><path d="M4 4h12l-2 4 2 4H4"/>'
+};
+const SELOS_DEF = [
+  { id: 'dieta', nome: 'Dieta em dia', metas: [7, 14, 30, 60, 90], un: ['dia seguido', 'dias seguidos'],
+    oque: 'Dias seguidos com todas as refeições marcadas.',
+    txt: 'A dieta funciona pela soma dos dias certos, não por um dia perfeito. Uma semana inteira mostra que o plano cabe na tua rotina. Três meses mostram que virou o teu normal.' },
+  { id: 'treinos', nome: 'Treinos', metas: [10, 30, 60, 120, 250], un: ['treino fechado', 'treinos fechados'],
+    oque: 'Treinos fechados, somando todos os protocolos.',
+    txt: 'Treino fechado é o dia em que tu marca todos os exercícios. É a conta que nunca zera: cada treino feito fica contado pra sempre.' },
+  { id: 'constancia', nome: 'Constância', metas: [2, 4, 8, 16, 26], un: ['semana seguida', 'semanas seguidas'],
+    oque: 'Semanas seguidas com todos os treinos do protocolo.',
+    txt: 'Semana em dia é a semana com todos os treinos que o teu protocolo pede. Resultado vem de semanas seguidas, não de uma semana forte e duas fracas.' },
+  { id: 'cardio', nome: 'Cardio', metas: [10, 25, 50, 100, 200], un: ['dia de cardio', 'dias de cardio'],
+    oque: 'Dias de cardio marcados.',
+    txt: 'Cada dia de cardio marcado entra aqui. É o que segura o condicionamento e faz o corte andar sem mexer na comida.' },
+  { id: 'carga', nome: 'Carga sobe', metas: null, un: ['exercício', 'exercícios'],
+    oque: 'Exercícios em que a carga já passou a da primeira semana deste bloco.',
+    txt: 'Mesmo peso e mesmas repetições em tudo é semana que não rendeu. Aqui conta cada exercício em que tu já colocou mais carga do que na primeira semana deste bloco.' },
+  { id: 'jornada', nome: 'Jornada', metas: [1, 2, 4, 6, 10], un: ['ciclo fechado', 'ciclos fechados'],
+    oque: 'Ciclos de protocolo fechados: cada reajuste fecha um.',
+    txt: 'Cada reajuste fecha um ciclo e abre o próximo, calibrado pelo que tu registrou. Ninguém transforma o corpo num ciclo só.' }
+];
+function _slChave() { return 'gh_selos_' + ((typeof STUDENT_ID !== 'undefined' && STUDENT_ID) ? STUDENT_ID : SHEET_ID); }
+function _slGuardado() { try { const j = JSON.parse(localStorage.getItem(_slChave()) || '{}'); return (j && typeof j === 'object') ? j : {}; } catch (_) { return {}; } }
+function _slGrava(j) { try { localStorage.setItem(_slChave(), JSON.stringify(j)); } catch (_) {} }
+// datas (aaaa-mm-dd) com marca de um tipo, lidas das chaves do aparelho
+function _slDatas(prefixos, re) {
+  const out = new Set();
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i) || '';
+      for (const p of prefixos) { if (k.indexOf(p) !== 0) continue; const m = k.slice(p.length).match(re); if (m) out.add(m[1] + '-' + m[2] + '-' + m[3]); }
+    }
+  } catch (_) {}
+  return out;
+}
+const _slDk = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+// sequência: dias seguidos até hoje (ou até ontem, se hoje ainda não fechou) e a mais longa de todas
+function _slSequencia(datas) {
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  const d = new Date(hoje); let atual = 0;
+  if (!datas.has(_slDk(d))) d.setDate(d.getDate() - 1);
+  while (datas.has(_slDk(d))) { atual++; d.setDate(d.getDate() - 1); }
+  let melhor = 0, corrida = 0, ant = null;
+  for (const k of [...datas].sort()) {
+    const t = new Date(k + 'T00:00:00').getTime();
+    corrida = (ant != null && Math.round((t - ant) / 864e5) === 1) ? corrida + 1 : 1;
+    ant = t; if (corrida > melhor) melhor = corrida;
+  }
+  return { atual, melhor };
+}
+// o número de cada selo, lido do que o aluno marca
+function _slMedidas() {
+  const m = {};
+  try {
+    const RD = /^(\d{4})-(\d{2})-(\d{2})_concl$/, RC = /^(\d{4})-(\d{2})-(\d{2})$/;
+    const wid = (typeof STUDENT_ID !== 'undefined' && STUDENT_ID) ? STUDENT_ID : SHEET_ID;
+    const sq = _slSequencia(_slDatas(['gh_dietlog_' + SHEET_ID + '_'], RD));
+    m.dieta = { atual: sq.atual, melhor: sq.melhor };
+    m.treinos = { atual: (getStreak().current || 0) };
+    let freq = 0; try { freq = _freqSemanal() || 0; } catch (_) {}
+    m.constancia = { atual: freq ? (_mtStreakSemanas(freq) || 0) : 0 };
+    m.cardio = { atual: _slDatas(['gh_cardio_' + wid + '_', 'gh_cardioreg_' + SHEET_ID + '_'], RC).size };
+    let total = 0, subiu = 0;
+    try {
+      (typeof WORKOUT !== 'undefined' ? WORKOUT : []).forEach(day => (day.exercises || []).forEach(ex => { total += ex.biset ? 2 : (ex.warmup ? 0 : 1); }));
+      if (typeof _progCollect === 'function') _progCollect().forEach(it => { if (it.delta > 0) subiu++; });
+    } catch (_) {}
+    m.carga = { atual: subiu, total };
+    let v = 0; try { v = parseFloat(window._ghProtoVersao || localStorage.getItem('gh_proto_versao_' + SHEET_ID) || sessionStorage.getItem('gh_version_' + SHEET_ID) || '') || 0; } catch (_) {}
+    m.jornada = { atual: v >= 1 ? Math.max(0, Math.floor(v) - 1) : 0 };
+  } catch (_) {}
+  return m;
+}
+// as cinco metas do selo "Carga sobe" acompanham o tamanho do protocolo (20, 40, 60, 80 e 100% dos exercícios)
+function _slMetas(def, med) {
+  if (def.metas) return def.metas;
+  const n = (med && med.total) || 0;
+  if (!n) return [3, 6, 10, 15, 20];
+  const out = []; [0.2, 0.4, 0.6, 0.8, 1].forEach((f, i) => { let x = Math.max(1, Math.round(n * f)); if (i && x <= out[i - 1]) x = out[i - 1] + 1; out.push(x); });
+  return out;
+}
+function _slNivelDe(metas, valor) { let n = 0; for (const x of metas) if (valor >= x) n++; return n; }
+function _slMostra(def) {
+  if (def.id === 'dieta') {
+    // a dieta pode ainda não ter sido carregada nesta abertura (o aluno foi direto ao Progresso): vale a lembrança da última
+    // carga (gh_temdieta_) e, sem ela, qualquer dia de dieta já marcado neste aparelho
+    try {
+      if (typeof _refNomesAtuais === 'function' && _refNomesAtuais().length > 0) return true;
+      const lembra = localStorage.getItem('gh_temdieta_' + SHEET_ID);
+      if (lembra === '1') return true;
+      if (lembra === '0') return false;
+      return _slDatas(['gh_dietlog_' + SHEET_ID + '_'], /^(\d{4})-(\d{2})-(\d{2})_concl$/).size > 0;
+    } catch (_) { return true; }
+  }
+  if (def.id === 'treinos' || def.id === 'constancia' || def.id === 'carga') { try { return (typeof WORKOUT !== 'undefined') && Array.isArray(WORKOUT) && WORKOUT.some(d => (d.exercises || []).length); } catch (_) { return false; } }
+  return true;
+}
+// estado de todos os selos: nível (o maior já alcançado), número de agora, melhor, metas; com guardar, grava o que subiu
+function _slEstado(guardar) {
+  const med = _slMedidas(), g = _slGuardado(), niv = Object.assign({}, g.niv || {}), melhor = Object.assign({}, g.melhor || {});
+  let mudou = false; const out = [];
+  for (const def of SELOS_DEF) {
+    if (!_slMostra(def)) continue;
+    const m = med[def.id] || { atual: 0 }, metas = _slMetas(def, m);
+    const calc = _slNivelDe(metas, m.atual || 0), antes = niv[def.id] || 0;
+    const nivel = Math.max(calc, antes);
+    const mel = Math.max(m.melhor || 0, m.atual || 0, melhor[def.id] || 0);
+    if (nivel > antes) { niv[def.id] = nivel; mudou = true; }
+    if (mel > (melhor[def.id] || 0)) { melhor[def.id] = mel; mudou = true; }
+    out.push({ def, metas, nivel, atual: m.atual || 0, melhor: mel, total: m.total || 0 });
+  }
+  if (guardar && mudou) _slGrava(Object.assign({}, g, { niv, melhor }));
+  return out;
+}
+function _slArco(cx, cy, r, a0, a1) {
+  const p = a => [cx + r * Math.cos(a * Math.PI / 180), cy + r * Math.sin(a * Math.PI / 180)];
+  const i = p(a0), f = p(a1);
+  return 'M' + i[0].toFixed(2) + ' ' + i[1].toFixed(2) + ' A' + r + ' ' + r + ' 0 0 1 ' + f[0].toFixed(2) + ' ' + f[1].toFixed(2);
+}
+// o desenho do selo: anel em cinco pedaços (um por nível) e o ícone no meio
+function _slSvg(id, nivel, cls) {
+  let segs = '';
+  for (let i = 0; i < 5; i++) segs += '<path class="seg' + (i < nivel ? ' on' : '') + '" d="' + _slArco(36, 36, 32, -90 + i * 72 + 6, -90 + (i + 1) * 72 - 6) + '"/>';
+  return '<svg class="sl-selo n' + nivel + (cls ? ' ' + cls : '') + '" viewBox="0 0 72 72" aria-hidden="true"><circle class="fundo" cx="36" cy="36" r="26"/>' + segs + '<g class="ico" transform="translate(24 24)">' + (SELOS_ICO[id] || '') + '</g></svg>';
+}
+function _slUn(def, n) { return n + ' ' + def.un[n === 1 ? 0 : 1]; }
+function _slMetaTxt(def, meta, total) { return def.id === 'carga' ? meta + ' de ' + total + ' exercícios' : _slUn(def, meta); }
+function _slNivelTxt(nivel) { return nivel ? 'Nível <b>' + nivel + '</b> de 5' : 'A caminho do nível 1'; }
+function _selosCardHtml() {
+  try {
+    if (typeof SHEET_ID === 'undefined' || !SHEET_ID) return '';
+    const lista = _slEstado(true);
+    if (!lista.length) return '';
+    // "novo" = nível alcançado desde a última vez que o aluno viu este card. Primeira vez de todas: nada é novo.
+    const g = _slGuardado(), visto = g.visto || null, vistoAgora = {};
+    lista.forEach(s => { vistoAgora[s.def.id] = s.nivel; });
+    _slGrava(Object.assign({}, g, { visto: vistoAgora }));
+    const esc = s => String(s || '').replace(/</g, '&lt;');
+    let h = '<div class="pg-card" id="selosCard"><div class="pg-sec-t">SELOS</div>' +
+      '<div class="sl-nota">Cada selo é um caminho com cinco níveis. O nível sobe com o que tu já marca no app e não desce. Toca num selo pra ver o caminho inteiro.</div><div class="sl-wrap"><div class="sl-grid">';
+    for (const s of lista) {
+      const prox = s.nivel < 5 ? s.metas[s.nivel] : null;
+      const pct = prox ? Math.min(100, Math.round(s.atual / prox * 100)) : 100;
+      const novo = visto && s.nivel > (visto[s.def.id] || 0);
+      h += '<button type="button" class="sl-it" data-selo="' + s.def.id + '" data-nivel="' + s.nivel + '" onclick="abrirSelo(\'' + s.def.id + '\')">' + (novo ? '<span class="sl-novo">novo</span>' : '') + _slSvg(s.def.id, s.nivel) +
+        '<div class="sl-nome">' + esc(s.def.nome) + '</div>' +
+        '<div class="sl-nivel">' + _slNivelTxt(s.nivel) + '</div>' +
+        '<div class="sl-barra"><i style="width:' + pct + '%"></i></div>' +
+        '<div class="sl-prox">' + (prox ? s.atual + ' de ' + prox : 'Caminho completo') + '</div></button>';
+    }
+    return h + '</div></div></div>';
+  } catch (_) { return ''; }
+}
+function abrirSelo(id) {
+  try {
+    const s = _slEstado(true).find(x => x.def.id === id); if (!s) return;
+    const esc = t => String(t || '').replace(/</g, '&lt;');
+    let cam = '<ul class="sl-cam">';
+    s.metas.forEach((m, i) => {
+      const ok = s.nivel > i, ehProx = !ok && i === s.nivel;
+      cam += '<li class="' + (ok ? 'ok' : (ehProx ? 'prox' : '')) + '"><span class="n">' + (ok ? '&#10003;' : (i + 1)) + '</span><span>Nível ' + (i + 1) + ': ' + esc(_slMetaTxt(s.def, m, s.total)) + '</span>' +
+        (ehProx ? '<span class="q">faltam ' + Math.max(0, m - s.atual) + '</span>' : '') + '</li>';
+    });
+    cam += '</ul>';
+    const agora = s.def.id === 'carga' ? 'Agora: ' + s.atual + ' de ' + s.total + ' exercícios' :
+      'Agora: ' + esc(_slUn(s.def, s.atual)) + ((s.def.id === 'dieta' || s.def.id === 'constancia') && s.melhor > s.atual ? ' &middot; melhor sequência: ' + s.melhor : '');
+    document.getElementById('selosModalCorpo').innerHTML = _slSvg(s.def.id, s.nivel, 'sl-big') +
+      '<h3 style="margin:0;text-align:center;">' + esc(s.def.nome) + '</h3>' +
+      '<div class="sl-nivel" style="text-align:center;margin-top:3px;font-size:11px;">' + _slNivelTxt(s.nivel) + '</div>' +
+      '<div class="sl-agora">' + agora + '</div>' +
+      '<p class="sl-txt"><b style="color:#e4e4e6;">' + esc(s.def.oque) + '</b> ' + esc(s.def.txt) + '</p>' +
+      '<div class="mt-sub" style="margin-top:14px;">O CAMINHO</div>' + cam;
+    teShow('selosModal');
+  } catch (_) {}
+}
+function abrirSelos() {
+  try { switchView('progresso'); setTimeout(function () { const c = document.getElementById('selosCard'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 80); } catch (_) {}
+}
+// nível alcançado agora (depois de fechar o treino, a dieta do dia ou o cardio): aviso curto, uma vez por nível
+function _selosChecaNovo() {
+  try {
+    if (typeof SHEET_ID === 'undefined' || !SHEET_ID) return;
+    const lista = _slEstado(true), g = _slGuardado();
+    if (!g.visto) { const v = {}; lista.forEach(s => { v[s.def.id] = s.nivel; }); _slGrava(Object.assign({}, g, { visto: v, avisado: Object.assign({}, v) })); return; }   // primeira vez: só anota
+    const avisado = Object.assign({}, g.avisado || g.visto || {});
+    const novos = lista.filter(s => s.nivel > (avisado[s.def.id] || 0));
+    if (!novos.length) return;
+    novos.forEach(s => { avisado[s.def.id] = s.nivel; });
+    _slGrava(Object.assign({}, g, { avisado }));   // cada nível é avisado uma vez só; a marca "novo" do card fica até o aluno ver
+    if (typeof _celebOff === 'function' && _celebOff()) return;   // quem desligou a comemoração vê só no card (o "novo" fica lá)
+    const s = novos[0];
+    _ghToast('Selo <b>' + s.def.nome.replace(/</g, '&lt;') + '</b>: nível ' + s.nivel + ' alcançado' + (novos.length > 1 ? ' (e mais ' + (novos.length - 1) + ')' : '') + '. Está em Progresso.', 5200);
+  } catch (_) {}
+}
+
 // ══ METAS DA SEMANA E DO MÊS (GH 18/08: "precisamos trabalhar com metas semanais e mensais") ══
 // Tudo derivado do que o aluno JÁ marca no app, nada de campo novo pra preencher:
 // treino concluído (gh_logsent), diário alimentar (gh_meallog), cardio (gh_cardioreg)
@@ -18454,7 +18708,7 @@ function renderProgressoScreen() {
   const unit = getUnit();
   const fmt = kg => kgToDisplay(kg) + unit;
   const items = _progCollect();
-  let html = '<div class="prog-screen">' + _metasCardHtml();
+  let html = '<div class="prog-screen">' + _metasCardHtml() + _selosCardHtml();   // v565: selos logo abaixo das metas
   if (!items.length) {
     html += `<div class="pg-card">
       <div class="pg-sec-t">EVOLUÇÃO DE CARGA</div>
@@ -19090,6 +19344,7 @@ async function loadDietFromSheets(injectedText) {
   }
   try {
     DIET_DATA = parseDietData(rows);
+    try { localStorage.setItem('gh_temdieta_' + SHEET_ID, (typeof _refNomesAtuais === 'function' && _refNomesAtuais().length) ? '1' : '0'); } catch (_) {}   // v565: o selo Dieta lembra se o aluno tem dieta
     // v549: aluno SÓ de dieta (aba TREINO sem exercício) ficava com o nome "-" no app. Refeição, dia de dieta, cardio e pedido
     // saíam sem nome, e a conclusão era descartada no servidor (nunca entrava no ranking). O nome do cabeçalho da dieta serve.
     try { const _inD = document.getElementById('infoNome'), _nmD = String((DIET_DATA.info && DIET_DATA.info.nome) || '').trim(); if (_inD && _nmD && (!_inD.textContent.trim() || _inD.textContent.trim() === '-')) _inD.textContent = _nmD; } catch (_) {}
@@ -19522,6 +19777,7 @@ function updateCardioProgress() {
 function onCardioDone() {
   if (isCardioDoneToday()) return;                 // 1 por dia
   localStorage.setItem(cardioMarkKey(todayKey()), '1');
+  try { setTimeout(_selosChecaNovo, 900); } catch (_) {}   // v565
   updateCardioProgress();
   logCardioRegistro();                             // backup granular (aba CARDIO)
   notifyCardioCompletion();                        // pontua no ranking (LOGS plano='cardio')
@@ -20302,6 +20558,7 @@ function notifyDietCompletion(shared) {
   const dedupKey = `gh_dietlog_${SHEET_ID}_${todayKey()}_${kind}`;
   if (localStorage.getItem(dedupKey) === '1') return;
   localStorage.setItem(dedupKey, '1');
+  if (!shared) { try { setTimeout(_selosChecaNovo, 900); } catch (_) {} }   // v565: dia de dieta completo pode alcançar um nível
   const payload = {
     type: 'completion', plano: 'dieta',
     sheetId: SHEET_ID,
@@ -22535,7 +22792,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v564';
+    var APP_SHELL_V = 'metodo-gh-v565';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
