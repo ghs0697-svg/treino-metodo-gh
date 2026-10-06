@@ -5381,7 +5381,7 @@
     <button type="button" class="float-opt" onclick="event.stopPropagation(); downloadPDF()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span><span id="pdfBtnLabel">Baixar treino em PDF</span>
     </button>
-    <button type="button" class="float-opt" onclick="event.stopPropagation(); openAgendaModal()">
+    <button type="button" class="float-opt" data-agenda="1" onclick="event.stopPropagation(); openAgendaModal()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span>Personal &amp; Psicóloga</span>
     </button>
 
@@ -5471,7 +5471,7 @@
     <button type="button" class="mais-opt" onclick="closeMaisSheet(); openFotosModal()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span><span>Minhas fotos do reajuste</span>
     </button>
-    <button type="button" class="mais-opt" onclick="closeMaisSheet(); openAgendaModal()">
+    <button type="button" class="mais-opt" data-agenda="1" onclick="closeMaisSheet(); openAgendaModal()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span>Personal &amp; Psicóloga</span>
     </button>
     <button type="button" class="mais-opt" onclick="closeMaisSheet(); downloadPDF()">
@@ -15785,6 +15785,9 @@ async function forceSyncFromServer() {
 // Apps Script identifica produto e dispara mensagem WhatsApp via Z-API
 // pro comprador com o contato do profissional pra marcar horário.
 // Botão secundário "Falar antes" pros indecisos abrir conversa direta.
+// v564 (GH, 06/10/2026: "desativa a opção de contratar personal e psicóloga por ora"): DESLIGADA. Os dois botões (menu
+// flutuante e Mais) somem e a janela não abre. Nada foi apagado: pra religar, AGENDA_LIGADA = true.
+const AGENDA_LIGADA = false;
 const _AGENDA_PROFS = [
   {
     id: 'vitor', name: 'Vitor Luis Rosado', spec: 'PERSONAL TRAINER',
@@ -15818,8 +15821,10 @@ const _AGENDA_PROFS = [
 ];
 
 function closeAgendaOnBg(e) { if (e.target.id === 'agendaModal') teHide('agendaModal'); }
+if (!AGENDA_LIGADA) { try { document.querySelectorAll('[data-agenda]').forEach(function (b) { b.style.display = 'none'; }); } catch (_) {} }   // v564
 
 function openAgendaModal() {
+  if (!AGENDA_LIGADA) return;   // v564: desligada por ora
   document.getElementById('floatOptions').classList.remove('show');
   document.getElementById('floatBtn').classList.remove('open');
   const c = document.getElementById('agendaContent');
@@ -22530,7 +22535,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v563';
+    var APP_SHELL_V = 'metodo-gh-v564';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
