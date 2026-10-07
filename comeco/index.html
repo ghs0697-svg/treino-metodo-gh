@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teu começo no Método GH</title>
+<meta name="description" content="O caminho dos teus primeiros dias na consultoria Método GH, passo a passo: anamnese, protocolo, app, reajuste e os combinados.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="../icon-192.png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #0f0f11; --card: #16161a; --line: rgba(212,175,106,.18); --gold: #d4af6a; --gold2: #f0d48a; --txt: #efefef; --muted: #9a9389; --dim: #6f6a60; --verde: #25D366; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--txt); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 620px; margin: 0 auto; padding: 22px 16px 60px; }
+  .marca { text-align: center; padding: 6px 0 18px; }
+  .marca .logo { font-family: 'Cinzel', 'Times New Roman', serif; font-weight: 700; font-size: 26px; letter-spacing: .14em; color: var(--gold); }
+  .marca .sub { font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+  h1 { font-size: 26px; line-height: 1.2; font-weight: 800; margin: 6px 0 10px; }
+  h1 b { color: var(--gold); }
+  .lead { color: #c9c3b6; font-size: 15px; }
+  h2 { font-family: 'Cinzel', serif; color: var(--gold); font-size: 14px; letter-spacing: .14em; text-transform: uppercase; margin: 34px 0 12px; }
+  h2 small { display: block; font-family: 'Inter', sans-serif; text-transform: none; letter-spacing: 0; color: var(--muted); font-size: 12.5px; font-weight: 400; margin-top: 2px; }
+  .video { margin: 18px 0 6px; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: #000; }
+  .video.h { aspect-ratio: 16 / 9; }
+  .video.v { aspect-ratio: 9 / 16; max-height: 72vh; margin-left: auto; margin-right: auto; }
+  .video iframe, .video video { width: 100%; height: 100%; border: 0; display: block; }
+  .video-nota { color: var(--dim); font-size: 11.5px; text-align: center; margin: 6px 0 0; }
+  .passos { list-style: none; counter-reset: p; }
+  .passo { position: relative; padding: 0 0 22px 52px; }
+  .passo::before { counter-increment: p; content: counter(p); position: absolute; left: 0; top: 0; width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--gold); color: var(--gold); font-weight: 800; font-size: 15px; display: flex; align-items: center; justify-content: center; background: var(--card); }
+  .passo::after { content: ''; position: absolute; left: 17px; top: 38px; bottom: 2px; width: 1px; background: var(--line); }
+  .passo:last-child::after { display: none; }
+  .passo h3 { font-size: 16px; font-weight: 700; margin: 6px 0 4px; }
+  .passo h3 span { color: var(--muted); font-weight: 500; font-size: 13px; }
+  .passo p { color: #c9c3b6; font-size: 14px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 11px 18px; border-radius: 11px; font-weight: 800; font-size: 14px; text-decoration: none; margin-top: 10px; }
+  .btn.gold { background: var(--gold); color: #111; }
+  .btn.ghost { border: 1px solid var(--gold); color: var(--gold); background: rgba(212,175,106,.07); }
+  .btn.zap { border: 1px solid rgba(37,211,102,.5); color: var(--verde); background: rgba(37,211,102,.07); }
+  .btn.cheio { display: flex; width: 100%; }
+  .grade { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 15px; }
+  .card h3 { font-size: 14.5px; font-weight: 800; color: var(--gold2); margin-bottom: 4px; }
+  .card p { color: #c9c3b6; font-size: 13.5px; }
+  .jornada { background: linear-gradient(160deg, rgba(212,175,106,.10), rgba(212,175,106,.03)); border: 1px solid rgba(212,175,106,.35); border-radius: 14px; padding: 16px; }
+  .jornada p { color: #e4ddcf; font-size: 14px; }
+  .jornada .fluxo { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 10px; }
+  .jornada .fluxo span { border: 1px solid var(--gold); color: var(--gold); border-radius: 999px; padding: 4px 11px; font-size: 12px; font-weight: 700; }
+  .comb { list-style: none; }
+  .comb li { padding: 9px 0 9px 26px; position: relative; border-top: 1px solid rgba(255,255,255,.06); color: #d8d2c6; font-size: 14px; }
+  .comb li::before { content: '✓'; position: absolute; left: 2px; color: var(--gold); font-weight: 800; }
+  details { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 0 15px; }
+  summary { cursor: pointer; padding: 14px 0; font-weight: 700; font-size: 14.5px; color: var(--gold2); list-style: none; display: flex; justify-content: space-between; align-items: center; }
+  summary::after { content: '▾'; color: var(--gold); }
+  details[open] summary::after { content: '▴'; }
+  details ul { list-style: none; padding: 0 0 12px; }
+  details li { padding: 7px 0 7px 22px; position: relative; color: #d8d2c6; font-size: 13.5px; border-top: 1px solid rgba(255,255,255,.05); }
+  details li::before { content: '·'; position: absolute; left: 6px; color: var(--gold); font-weight: 800; }
+  .fim { margin-top: 34px; text-align: center; }
+  .fim p { color: var(--muted); font-size: 13px; }
+  .fim .btns { display: grid; gap: 10px; margin-top: 14px; }
+  footer { margin-top: 40px; text-align: center; color: var(--dim); font-size: 11px; line-height: 1.6; }
+  footer a { color: var(--muted); }
+  @media (min-width: 560px) { .grade { grid-template-columns: 1fr 1fr; } h1 { font-size: 30px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="marca"><div class="logo">MÉTODO GH</div><div class="sub">Consultoria · teu começo</div></div>
+
+  <h1>Bem-vindo ao time. <b>Esse é o teu caminho.</b></h1>
+  <p class="lead">Aqui está tudo o que vai acontecer daqui pra frente, na ordem. Lê uma vez, guarda o link e volta sempre que bater dúvida.</p>
+
+  <div id="videoBox" class="video h" style="display:none;"></div>
+  <p id="videoNota" class="video-nota" style="display:none;">Recado do GH pra quem está chegando</p>
+
+  <h2>Os teus próximos passos<small>Do dia de hoje até o primeiro treino</small></h2>
+  <ol class="passos">
+    <li class="passo">
+      <h3>Responde a anamnese <span>· hoje</span></h3>
+      <p>É o retrato de onde tu está: rotina, treino, comida, saúde, fotos e medidas. Quanto mais completa, mais certeiro o protocolo. Leva uns 15 minutos. Fotos e medidas vão junto: é com elas que o protocolo sai certo.</p>
+      <a class="btn gold" href="https://forms.gle/kmVK8cvtqN1mu9qFA" target="_blank" rel="noopener">Responder a anamnese</a>
+    </li>
+    <li class="passo">
+      <h3>Teu protocolo chega <span>· em até 4 dias úteis</span></h3>
+      <p>Treino, dieta e o que mais o teu plano incluir, montados em cima do que tu respondeu. Chega no whats de suporte, com o link do teu app. O link é teu e é pessoal.</p>
+    </li>
+    <li class="passo">
+      <h3>Ouve o recado do GH</h3>
+      <p>Junto com o protocolo vai um áudio meu: o que eu vi no teu caso e por que o protocolo é esse. Ouve antes do primeiro treino.</p>
+    </li>
+    <li class="passo">
+      <h3>Abre o app e instala na tela inicial</h3>
+      <p>No celular, abre o link e vai em Mais, Instalar app na tela inicial. Ali está o treino com o vídeo de cada exercício, a dieta, o progresso, as aulas e o suporte.</p>
+    </li>
+    <li class="passo">
+      <h3>Primeira semana: marca tudo no app</h3>
+      <p>Cada treino fechado, cada refeição feita, cada dia de cardio e a carga de cada exercício. É assim que eu enxergo a tua adesão e calibro o próximo reajuste. E é assim que os teus selos e o ranking contam.</p>
+    </li>
+  </ol>
+
+  <h2>Como funciona o acompanhamento<small>O que acontece toda semana</small></h2>
+  <div class="grade">
+    <div class="card"><h3>Treino</h3><p>Vídeo de execução em cada exercício, séries, repetições e descanso. Anota a carga que tu usou. A regra do método é a carga subir toda semana.</p></div>
+    <div class="card"><h3>Dieta</h3><p>Refeições com opções de troca e a quantidade de cada alimento. Marca cada refeição feita. A comida se pesa pronta, do jeito que vai pro prato.</p></div>
+    <div class="card"><h3>Cardio e água</h3><p>A meta de cardio é a do teu protocolo; marca o dia feito. Água conta todo dia, e o app lembra se tu quiser.</p></div>
+    <div class="card"><h3>Dúvida ou ajuste</h3><p>Dor, aparelho que não tem, viagem, enjoou de uma comida: usa Dúvida ou ajuste no app. A troca entra no teu protocolo, sem esperar o reajuste.</p></div>
+    <div class="card"><h3>Reajuste a cada ciclo</h3><p>Perto dos 50 dias tu recebe a anamnese de reajuste, com fotos e medidas. O protocolo novo vem calibrado pelo que tu registrou. Cada reajuste fecha um ciclo.</p></div>
+    <div class="card"><h3>Suporte e lives</h3><p>Suporte humano de segunda a sexta, em horário comercial, pelo whats. Toda quinta, às 19h30, tem live pros alunos; o link vai no grupo.</p></div>
+  </div>
+
+  <h2>A tua jornada<small>Etapa, ciclos e selos</small></h2>
+  <div class="jornada">
+    <p>O teu plano é uma <b>etapa</b>. Dentro dela, cada reajuste fecha um <b>ciclo</b>. No app, os <b>selos</b> marcam o teu caminho (dieta em dia, treinos, constância, cardio, carga, jornada), e todo mês tem o ranking dos alunos.</p>
+    <div class="fluxo"><span>Anamnese</span><span>Protocolo</span><span>Ciclo 1</span><span>Reajuste</span><span>Ciclo 2</span><span>…</span><span>Próxima etapa</span></div>
+    <p>Quando a etapa termina, a próxima começa de onde tu parou: histórico, cargas e selos seguem contigo.</p>
+  </div>
+
+  <h2>O que tem no teu app</h2>
+  <details>
+    <summary>Ver a lista</summary>
+    <ul>
+      <li>Treino do dia com vídeo de cada exercício, séries, repetições, descanso e cronômetro</li>
+      <li>Registro de carga por série, com o lembrete do que tu fez nas últimas sessões</li>
+      <li>Dieta com opções de troca, refeição feita e lista de compras</li>
+      <li>Progresso: evolução de carga, metas da semana e do mês, selos, fotos e medidas</li>
+      <li>Aulas do GH sobre cada exercício e o acervo do GHFlix</li>
+      <li>Dúvida ou ajuste: chat com a equipe pra trocar exercício, comida ou tirar dúvida</li>
+      <li>Recados em áudio do GH e as novidades dos alunos</li>
+      <li>Ranking mensal e indicação de amigo</li>
+      <li>Anamnese de reajuste, no menu Mais, quando chegar a hora</li>
+    </ul>
+  </details>
+
+  <h2>Combinados que fazem diferença</h2>
+  <ul class="comb">
+    <li>Fotos e medidas na anamnese: sem elas eu monto no escuro.</li>
+    <li>Marca no app, não na memória. O que não está marcado eu não enxergo.</li>
+    <li>Ajuste é pelo app, em Dúvida ou ajuste. Não fica pra depois nem vai em comentário de story.</li>
+    <li>Tem exame? Manda na anamnese. Não tem? Não espera por ele pra começar.</li>
+    <li>O link do app é pessoal. Treino em dupla? Cada um com o seu.</li>
+  </ul>
+
+  <h2>Resultados de quem já fez esse caminho</h2>
+  <p class="lead" style="font-size:14px;">Os resultados dos alunos ficam nos destaques do Instagram, com a autorização de cada um.</p>
+  <a class="btn ghost" href="https://www.instagram.com/gh.scheuermann/" target="_blank" rel="noopener">Ver no Instagram</a>
+
+  <div class="fim">
+    <p>Primeiro passo é a anamnese. O resto é comigo.</p>
+    <div class="btns">
+      <a class="btn gold cheio" href="https://forms.gle/kmVK8cvtqN1mu9qFA" target="_blank" rel="noopener">Responder a anamnese</a>
+      <a class="btn ghost cheio" href="https://chat.whatsapp.com/FC84Vk5fC1Q4J42EIDJgaG" target="_blank" rel="noopener">Entrar no grupo dos alunos</a>
+      <a class="btn zap cheio" href="https://wa.me/555520131470?text=Oi!%20Acabei%20de%20entrar%20e%20tenho%20uma%20d%C3%BAvida%20sobre%20o%20come%C3%A7o." target="_blank" rel="noopener">Falar com o suporte</a>
+    </div>
+  </div>
+
+  <footer>Método GH · Consultoria · <a href="https://app.metodogh.com.br">app.metodogh.com.br</a></footer>
+</div>
+<script>
+  // Vídeo de boas-vindas do GH: cola o id do YouTube aqui quando ele gravar (ou testa com ?v=<id>&vert=1 na URL).
+  // Sem id, o bloco do vídeo fica escondido e a página funciona igual.
+  var VIDEO_ID = '';
+  var VIDEO_VERTICAL = true;   // gravado no celular em pé = 9 por 16
+  (function () {
+    try {
+      var q = new URLSearchParams(location.search);
+      var id = q.get('v') || VIDEO_ID;
+      var vert = q.has('vert') ? q.get('vert') !== '0' : VIDEO_VERTICAL;
+      if (!id || !/^[A-Za-z0-9_-]{6,}$/.test(id)) return;
+      var box = document.getElementById('videoBox'), nota = document.getElementById('videoNota');
+      box.className = 'video ' + (vert ? 'v' : 'h');
+      box.innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + id + '?rel=0&modestbranding=1" title="Recado do GH" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>';
+      box.style.display = ''; nota.style.display = '';
+    } catch (e) {}
+  })();
+</script>
+</body>
+</html>
