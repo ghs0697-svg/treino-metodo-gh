@@ -19,21 +19,22 @@
   :root { --gh-primary: #C9A24B; --gh-bright: #E6C76A; --gh-dark: #9C7C2E; --gh-soft: rgba(201,162,75,.10); --bg-black: #0A0A0A; --bg-card: rgba(28,28,28,.78); --text-white: #F4F4F4; --text-muted: #A4A4A4; --text-dim: #6A6A6A; --border: #2E2E2E; --wa: #25D366; --wa-dark: #1DA851; --ease-out: cubic-bezier(.16,1,.3,1); }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html { -webkit-text-size-adjust: 100%; background: var(--bg-black); }
-  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(201,162,75,.32) 0%, rgba(74,58,18,.42) 30%, transparent 70%), radial-gradient(ellipse 100% 60% at 100% 90%, rgba(201,162,75,.14), transparent 55%), linear-gradient(180deg, #181206 0%, var(--bg-black) 60%); background-attachment: fixed; color: var(--text-white); line-height: 1.5; min-height: 100vh; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
-  body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0; background-image: linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px); background-size: 32px 32px; mask-image: radial-gradient(ellipse at 50% 30%, black 30%, transparent 75%); -webkit-mask-image: radial-gradient(ellipse at 50% 30%, black 30%, transparent 75%); }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg-black); color: var(--text-white); line-height: 1.5; min-height: 100vh; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+  /* Fundo da página de obrigado antiga (brilho dourado em cima, brilho fraco embaixo à direita, quadriculado mascarado no centro), numa
+     camada presa à tela: fica igual em toda rolagem e em todo aparelho. Com background-attachment fixed o iPhone ignorava e, numa
+     página longa, o brilho esticava e sumia. */
+  .fundo { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(201,162,75,.32) 0%, rgba(74,58,18,.42) 30%, transparent 70%), radial-gradient(ellipse 100% 60% at 100% 90%, rgba(201,162,75,.14), transparent 55%), linear-gradient(180deg, #181206 0%, var(--bg-black) 60%); }
+  .fundo::after { content: ''; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px); background-size: 32px 32px; mask-image: radial-gradient(ellipse at 50% 30%, black 30%, transparent 75%); -webkit-mask-image: radial-gradient(ellipse at 50% 30%, black 30%, transparent 75%); }
   a { color: inherit; text-decoration: none; }
   .wrap { position: relative; z-index: 1; max-width: 560px; margin: 0 auto; padding: 26px 20px calc(40px + env(safe-area-inset-bottom, 0px)); }
-  .marca { text-align: center; margin-bottom: 22px; }
-  .marca img.logo { width: 140px; height: auto; display: block; margin: 0 auto 6px; filter: drop-shadow(0 10px 28px rgba(201,162,75,.35)); }
-  .marca .logo-txt { font-weight: 900; letter-spacing: .02em; font-size: 20px; }
-  .marca .logo-txt span { color: var(--gh-bright); }
-  .marca .sub { margin-top: 4px; font-size: 11.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--text-muted); }
+  .marca { text-align: center; font-weight: 900; letter-spacing: .02em; font-size: 20px; margin-bottom: 28px; }
+  .marca span { color: var(--gh-bright); }
   .check { width: 64px; height: 64px; margin: 0 auto 18px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg, var(--gh-bright), var(--gh-dark)); box-shadow: 0 0 0 8px var(--gh-soft), 0 12px 32px rgba(201,162,75,.35); color: #1A1405; font-size: 32px; font-weight: 900; animation: pop 600ms var(--ease-out) both; }
   @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .check { animation: none; } }
   h1 { text-align: center; font-weight: 900; line-height: 1.12; font-size: clamp(28px, 7.4vw, 38px); letter-spacing: -.01em; }
-  h1 .hl { color: var(--gh-bright); display: block; }
-  .lead { text-align: center; color: var(--text-muted); font-size: 16px; margin: 12px auto 22px; max-width: 440px; text-wrap: balance; }
+  h1 .hl { color: var(--gh-bright); }
+  .lead { text-align: center; color: var(--text-muted); font-size: 16px; margin: 12px auto 26px; max-width: 440px; text-wrap: balance; }
   .compra { margin: 0 0 22px; padding: 16px; border-radius: 14px; background: var(--bg-card); border: 1px solid var(--border); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); font-size: 14.5px; color: var(--text-muted); }
   .compra b { color: var(--text-white); font-weight: 700; }
   .compra .rot { font-size: 11.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--gh-bright); margin-bottom: 6px; }
@@ -103,16 +104,13 @@
 </style>
 </head>
 <body>
+<div class="fundo" aria-hidden="true"></div>
 <main class="wrap">
-  <div class="marca">
-    <img class="logo" src="gh-logo.png" alt="Método GH" width="260" height="237">
-    <div class="logo-txt">Método <span>GH</span></div>
-    <div class="sub">Consultoria · Comece por aqui</div>
-  </div>
+  <div class="marca">Método <span>GH</span></div>
 
-  <div class="check" id="selo" aria-hidden="true" style="display:none;">✓</div>
-  <h1>Comece por aqui. <span class="hl">Esse é o teu caminho.</span></h1>
-  <p class="lead">Bem-vindo ao time. Aqui está tudo o que vai acontecer daqui pra frente, na ordem. Lê uma vez, guarda o link e volta sempre que bater dúvida.</p>
+  <div class="check" aria-hidden="true">✓</div>
+  <h1>Comece por <span class="hl">aqui.</span></h1>
+  <p class="lead">Bem-vindo ao time. A partir de agora, teu shape também é responsabilidade minha. Aqui está tudo o que vai acontecer daqui pra frente, na ordem: lê uma vez, guarda o link e volta sempre que bater dúvida.</p>
 
   <div class="compra" id="compra" style="display:none;">
     <div class="rot">Compra confirmada</div>
@@ -249,9 +247,9 @@
     try { var a = ev.target && ev.target.closest ? ev.target.closest('a[data-etapa]') : null; if (a) conta(a.getAttribute('data-etapa')); } catch (e) {}
   });
 
-  // Quem chega do obrigado da Greenn (?de=pagina, ou sem ?de= vindo da Greenn) acabou de pagar: selo de compra confirmada e a
-  // nota do WhatsApp e do Pix/boleto, que eram da página de obrigado antiga. Quem chega da boas-vindas ou do app não vê isso.
-  if (ORIGEM === 'pagina') { try { document.getElementById('selo').style.display = ''; document.getElementById('compra').style.display = ''; } catch (e) {} }
+  // Quem chega do obrigado da Greenn (?de=pagina, ou sem ?de= vindo da Greenn) acabou de pagar: vê a nota "Compra confirmada" com o
+  // aviso do WhatsApp e do Pix/boleto, que era da página de obrigado antiga. Quem chega da boas-vindas, do bot ou do app não vê.
+  if (ORIGEM === 'pagina') { try { document.getElementById('compra').style.display = ''; } catch (e) {} }
 
   (function () {
     try {
