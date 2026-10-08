@@ -870,6 +870,8 @@
   .rk-champ-tr { font-size: 28px; line-height: 1; flex-shrink: 0; }
   .rk-champ-txt { flex: 1; min-width: 0; }
   .rk-champ-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.6px; color: #d4a76a; font-weight: 700; }
+  .rk-champ.rk-champ-priv { border: 1px dashed rgba(212,175,106,0.6); }   /* v567: título que só o próprio aluno invisível vê */
+  .rk-champ.rk-champ-priv .rk-champ-name { white-space: normal; }
   .rk-champ-name { font-size: 16px; font-weight: 800; color: #f1ede4; line-height: 1.2; margin-top: 1px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .rk-champ-score { font-size: 15px; font-weight: 800; color: var(--gold); flex-shrink: 0; }
@@ -5280,6 +5282,11 @@
       ⚠ Modo equipe: o que tu escrever aqui <b>o aluno lê</b>, e aparece assinado como GH. Nada de recado interno.
     </div>
     <textarea id="cadernoTexto" rows="4" maxlength="1500" placeholder="Escreve aqui..." style="width:100%;box-sizing:border-box;background:#141414;border:1px solid #333;border-radius:8px;color:#eee;padding:10px;font-size:13px;font-family:inherit;resize:vertical;"></textarea>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+      <label for="cadernoDia" style="color:#aaa;font-size:11.5px;white-space:nowrap;">Sobre o dia</label>
+      <input type="date" id="cadernoDia" style="flex:1;min-width:0;background:#141414;border:1px solid #333;border-radius:8px;color:#eee;padding:8px 10px;font-size:13px;font-family:inherit;color-scheme:dark;">
+    </div>
+    <p style="color:#777;font-size:10.5px;margin:4px 0 0;line-height:1.45;">Deixa em hoje, ou escolhe o dia que a anotação é sobre: um treino fraco, uma dor, uma refeição que não desceu.</p>
     <button type="button" id="cadernoSalvarBtn" class="tlem-save" onclick="salvarCaderno()" style="width:100%;margin-top:8px;">Salvar anotação</button>
     <div id="cadernoLista" style="margin-top:14px;"></div>
   </div>
@@ -9169,11 +9176,33 @@ function openCaderno() {
   const box = document.getElementById('cadernoAvisoEquipe');
   if (box) box.style.display = (localStorage.getItem('gh_trainer_token') || '') ? '' : 'none';
   // v550: o campo não é mais apagado ao abrir (anotação escrita e não salva sumia); salvar é que limpa
+  _cadernoDiaHoje(false);                   // v567: o dia nasce em hoje (e nunca aceita data futura); escolha já feita fica
   teShow('cadernoModal');
   _cadernoRender(_cadernoLocal());          // pinta na hora o que já está no aparelho
   _cadernoFetch();                          // e busca o do servidor por cima
 }
 function _cadernoKey() { return `gh_caderno_${STUDENT_ID}`; }
+// v567 (GH 08/10): o DIA a que a anotação se refere. Nasce em hoje, no fuso do aparelho; o aluno escolhe outro se for sobre um dia
+// específico ("baixa no desempenho do dia"). Nunca no futuro: o campo tem max = hoje e a leitura corta o que passar disso.
+function _cadernoHojeISO() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function _cadernoDiaHoje(forcar) {
+  const i = document.getElementById('cadernoDia'); if (!i) return;
+  const hoje = _cadernoHojeISO();
+  i.setAttribute('max', hoje);
+  if (forcar || !i.value || i.value > hoje) i.value = hoje;
+}
+function _cadernoDiaLido() {
+  const i = document.getElementById('cadernoDia'); const hoje = _cadernoHojeISO();
+  const v = String((i && i.value) || '').trim();
+  return (/^\d{4}-\d{2}-\d{2}$/.test(v) && v <= hoje) ? v : hoje;
+}
+function _cadernoDiaBR(iso) { return /^\d{4}-\d{2}-\d{2}$/.test(iso || '') ? iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4) : ''; }
+// "Sobre 05/10/2026 · 07/10/2026" quando a anotação é sobre outro dia; só a data da escrita quando é do próprio dia
+function _cadernoQuando(n) {
+  const e = t => String(t || '').replace(/[<>]/g, c => c === '<' ? '&lt;' : '&gt;');
+  const br = n.diaBR || _cadernoDiaBR(n.dia);
+  return (br && br !== n.data) ? 'Sobre ' + e(br) + (n.data ? ' · ' + e(n.data) : '') : e(n.data || '');
+}
 function _cadernoLocal() { try { return JSON.parse(localStorage.getItem(_cadernoKey()) || '[]'); } catch (_) { return []; } }
 function _cadernoSalvaLocal(arr) { try { localStorage.setItem(_cadernoKey(), JSON.stringify(arr.slice(0, 60))); } catch (_) {} }
 function _cadernoGrupo(ts) {
@@ -9219,11 +9248,11 @@ function _cadernoRender(notas) {
       ${aberta
         ? `<div style="font-size:12.5px;color:#ccc;line-height:1.55;white-space:pre-wrap;margin-top:7px;">${esc(n.texto)}</div>
            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:9px;">
-             <span style="font-size:11px;color:#777;">${esc(n.data || '')}${n.pendente ? ' · enviando' : ''}</span>
+             <span style="font-size:11px;color:#777;">${_cadernoQuando(n)}${n.pendente ? ' · enviando' : ''}</span>
              ${podeApagar ? `<button type="button" onclick="event.stopPropagation();apagarNotaCaderno(${Number(n.ts) || 0})" style="background:none;border:1px solid #444;border-radius:7px;color:#c96;font-size:11px;font-weight:700;padding:4px 10px;cursor:pointer;">Apagar</button>` : ''}
            </div>`
         : `<div style="display:flex;gap:7px;margin-top:3px;">
-             <span style="font-size:11px;color:#777;white-space:nowrap;">${esc(n.data || '')}${n.pendente ? ' · enviando' : ''}</span>
+             <span style="font-size:11px;color:#777;white-space:nowrap;">${_cadernoQuando(n)}${n.pendente ? ' · enviando' : ''}</span>
              <span style="font-size:11px;color:#8a8a8a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${resto}</span>
            </div>`}
     </div>`;
@@ -9276,20 +9305,23 @@ async function salvarCaderno() {
   const b = document.getElementById('cadernoSalvarBtn');
   b.disabled = true; b.textContent = 'Salvando...';
   const tok = localStorage.getItem('gh_trainer_token') || '';
+  const dia = _cadernoDiaLido();   // v567: o dia a que a anotação se refere (hoje, se o aluno não mexeu)
   const payload = {
     type: 'nota_aluno',
     sheetId: SHEET_ID,
     studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
     texto: texto,
+    dia: dia,
     token: tok,
     ts: new Date().toISOString()
   };
   // otimista: já mostra a entrada, mesmo antes do servidor confirmar
   const hoje = new Date().toLocaleDateString('pt-BR');
   // v550: a entrada nascia sem data: caía no grupo "Antigas" e não abria. E some só quando o servidor tiver ela.
-  const local = [{ ts: Date.now(), pendente: true, data: hoje, autor: tok ? 'equipe' : 'aluno', texto: texto }].concat(_cadernoLocal());
+  const local = [{ ts: Date.now(), pendente: true, data: hoje, autor: tok ? 'equipe' : 'aluno', texto: texto, dia: dia, diaBR: _cadernoDiaBR(dia) }].concat(_cadernoLocal());
   _cadernoSalvaLocal(local); _cadernoRender(local);
   el.value = '';
+  _cadernoDiaHoje(true);   // v567: a próxima anotação volta a nascer em hoje
   const enfileira = () => _syncQueuePush('nota_aluno', payload, p => String(p.ts));
   try {
     const resp = await fetch(LOG_ENDPOINT, {
@@ -19029,8 +19061,18 @@ async function openRankingModal() {
     const champHtml = (champion && champion.name)
       ? `<div class="rk-champ"><span class="rk-champ-tr">🏆</span><div class="rk-champ-txt"><div class="rk-champ-label">Campeão de ${escHtml(champion.mesNome || '')}</div><div class="rk-champ-name">${escHtml(champion.name)}</div></div><div class="rk-champ-score">${Math.round(champion.score || 0)}%</div></div>`
       : '';
+    // v567 (GH 08/10): quem está invisível vê o próprio lugar entre TODOS os alunos (meu, meuLugar e meuTotal vêm do servidor só pra
+    // ele) e, se foi o 1º de verdade no mês passado, o título em privado. Pros outros alunos o campeão exibido é o 1º visível.
+    const meu = (j && j.meu) || null, meuLugar = Number(j && j.meuLugar) || 0, meuTotal = Number(j && j.meuTotal) || 0;
+    const tituloHtml = (j && j.meuTituloOculto)
+      ? `<div class="rk-champ rk-champ-priv"><span class="rk-champ-tr">🏆</span><div class="rk-champ-txt"><div class="rk-champ-label">Teu título, só tu vês</div><div class="rk-champ-name">1º lugar em ${escHtml((champion && champion.mesNome) || _rkMesAnterior())}</div><div style="font-size:11px;color:#8d8579;margin-top:3px;line-height:1.4;">Como tu estás invisível, pros outros alunos o campeão é quem ficou em 1º na lista visível.</div></div></div>`
+      : '';
+    const meuHtml = tituloHtml + ((meu && meuLugar)
+      ? `<div class="rk-row me"><div class="rk-pos ${meuLugar === 1 ? 'gold' : (meuLugar === 2 ? 'silver' : (meuLugar === 3 ? 'bronze' : ''))}">${meuLugar}º</div><div class="rk-name">${escHtml(meu.name || '')}<span class="you">(você, invisível)</span></div><div class="rk-stats"><span class="rk-score">${meu.adherence != null ? meu.adherence : (meu.score || 0)}%</span><span class="rk-meta">${Math.min(meu.daysThisMonth || 0, meu.prescritos || 0)}/${meu.prescritos || 0} dias · de ${meuTotal} alunos</span></div></div>`
+      : '');
     if (!ranking.length) {
-      list.innerHTML = champHtml + '<p style="color:#888;text-align:center;padding:30px;font-size:13px;">Ranking ainda vazio.<br>Treina hoje pra entrar! 💪</p>';
+      list.innerHTML = champHtml + meuHtml + '<p style="color:#888;text-align:center;padding:30px;font-size:13px;">Ranking ainda vazio.<br>Treina hoje pra entrar! 💪</p>';
+      renderRankPrivacy();
       return;
     }
     // Acha o nome do aluno atual pra destacar
@@ -19058,7 +19100,7 @@ async function openRankingModal() {
     // dieta/cardio pontuam no ranking quando o servidor disser (flags acima). Já valem (rollout 21/22-jun).
     const dietaConta = incluiDietaSrv;
     const cardioConta = incluiCardioSrv;
-    list.innerHTML = champHtml + ranking.slice(0, 50).map((r, i) => {
+    list.innerHTML = champHtml + meuHtml + ranking.slice(0, 50).map((r, i) => {
       const isMe = myName && _nmRk(r.name) === myName;
       const pos = i + 1;
       let posCls = '', posTxt = pos + 'º';
@@ -19101,11 +19143,16 @@ async function openRankingModal() {
 // ── Privacidade do ranking (GH 2026-07-28): o aluno escolhe se aparece pros outros. ──
 // Escondido, ele CONTINUA pontuando e vendo o próprio ranking; só não é listado pros colegas.
 let _rankOculto = false;
+// v567: nome do mês anterior, pro título em privado quando o servidor não mandou o campeão do mês
+function _rkMesAnterior() {
+  const m = new Date().getMonth();   // 0 = janeiro
+  return ['Dezembro','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro'][m];
+}
 function renderRankPrivacy() {
   const box = document.getElementById('rankPrivacy');
   if (!box) return;
   box.innerHTML = _rankOculto
-    ? `<div style="color:#8d8579;font-size:11.5px;line-height:1.5;margin-bottom:7px;">Tu estás <b style="color:#d4a76a;">invisível</b> no ranking: os outros alunos não te veem na lista. Teus pontos continuam contando normal.</div>
+    ? `<div style="color:#8d8579;font-size:11.5px;line-height:1.5;margin-bottom:7px;">Tu estás <b style="color:#d4a76a;">invisível</b> no ranking: os outros alunos não te veem na lista. Teus pontos continuam contando normal, e teu lugar aparece só pra ti, no alto da lista.</div>
        <button class="te-btn ghost" style="width:100%;" onclick="toggleRankPrivacy(false)">Voltar a aparecer no ranking</button>`
     : `<div style="color:#8d8579;font-size:11.5px;line-height:1.5;margin-bottom:7px;">Não quer aparecer na lista pros outros alunos? Tu podes ficar invisível e seguir pontuando normal.</div>
        <button class="te-btn ghost" style="width:100%;" onclick="toggleRankPrivacy(true)">Não quero aparecer no ranking</button>`;
@@ -22792,7 +22839,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v566';
+    var APP_SHELL_V = 'metodo-gh-v567';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
