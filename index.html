@@ -277,6 +277,7 @@
     gap: 6px;
   }
   .exercise-card.has-video .exercise-name { color: var(--gold); }
+  .exercise-name .video-icon { font-size: 11.5px; font-weight: 800; letter-spacing: .2px; white-space: nowrap; }   /* v568 */
   .video-icon {
     font-size: 11px;
     background: var(--header-bg);
@@ -2376,6 +2377,8 @@
   .diet-meal-check.done { background: var(--gold); color: #0c0c0d; border-color: var(--gold); }
   .diet-meal-check.done .dm-tick { display: inline; }
   .diet-meal-check.done .dm-plus { display: none; }
+  .dm-opc { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .2px; color: #9a9389; border: 1px solid #3a3a40; border-radius: 999px; padding: 1px 7px; margin-left: 6px; vertical-align: middle; white-space: nowrap; }   /* v568 */
+  .ddp-opc { font-size: 10.5px; font-weight: 500; color: #8d8579; margin-left: 4px; }   /* v568 */
   /* barra de progresso da dieta do dia (espelha a do treino) */
   .diet-day-progress { margin: 12px 12px 0; }
   .diet-day-progress .ddp-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
@@ -7357,7 +7360,7 @@ function _nomeBlocoHtml(di, ei, act, exDone, isWarmup, hasVid) {
   return '<div class="exercise-name">' + esc(act.name)
     + (act.sub ? (act.viagem ? ' <span class="ex-sub-badge viagem">✈ LIVRE</span>' : ' <span class="ex-sub-badge">SUBST.</span>') : '')
     + (_shortSkip(di, ei) ? ' <span class="short-tag">⏳ se sobrar tempo</span>' : '')
-    + (hasVid ? ' <span class="video-icon">&#9654;</span>' : '') + '</div>';
+    + (hasVid ? ' <span class="video-icon">&#9654; ' + ((typeof _lang === 'function' && _lang() === 'en') ? 'video' : 'vídeo') + '</span>' : '') + '</div>';   // v568: "▶ vídeo", não só o triângulo
 }
 const _carTimers = {};
 // ══ v489 · ARRASTO PRÓPRIO DO CARROSSEL ══ O scroll nativo (overflow-x + scroll-snap) não pegava no
@@ -20525,16 +20528,21 @@ function registrarMealNao(ri, a, b) {
 function mealDoneKey(ri) { return `gh_meal_${STUDENT_ID}_${todayKey()}_r${ri}`; }
 function isMealDone(ri) { return localStorage.getItem(mealDoneKey(ri)) === '1'; }
 let _dietCycleIdx = 0;   // ciclo (Alto/Baixo carbo) que o aluno esta vendo; a meta do dia conta por ELE
-function dietTotalMeals() {
-  if (typeof DIET_DATA === 'undefined' || !DIET_DATA || !DIET_DATA.ciclos || !DIET_DATA.ciclos.length) return 0;
+// v568 (08/10, caso Sheila Rios): refeição OPCIONAL (doce do dia, doce da semana) não entra na conta do dia. 223 das 602 dietas no
+// ar têm uma assim cadastrada como refeição, e o dia só fechava se o aluno marcasse o doce também: a adesão de dieta nunca contava
+// no Progresso, nos selos nem no ranking. A refeição opcional segue na lista e pode ser marcada; só não é exigida pra fechar o dia.
+function _refOpcional(ref) { return /\bopcional\b|doce da semana|\(1x na semana\)|1x\/semana/i.test(String((ref && ref.nome) || '')); }
+function _dietRefsAtivas() {
+  if (typeof DIET_DATA === 'undefined' || !DIET_DATA || !DIET_DATA.ciclos || !DIET_DATA.ciclos.length) return [];
   // GH 2026-06-24: conta as refeicoes do ciclo ATIVO (nao o max entre ciclos). Dietas com
   // Alto/Baixo de tamanhos diferentes nao travam mais: o dia conta quando o aluno marca o que ve.
   const cy = DIET_DATA.ciclos[_dietCycleIdx] || DIET_DATA.ciclos[0];
-  return (cy.refeicoes || []).length;
+  return cy.refeicoes || [];
 }
+function dietTotalMeals() { return _dietRefsAtivas().filter(r => !_refOpcional(r)).length; }
 function dietMealsDone() {
-  const n = dietTotalMeals(); let c = 0;
-  for (let ri = 0; ri < n; ri++) if (isMealDone(ri)) c++;
+  const refs = _dietRefsAtivas(); let c = 0;
+  for (let ri = 0; ri < refs.length; ri++) if (!_refOpcional(refs[ri]) && isMealDone(ri)) c++;
   return c;
 }
 function allMealsDone() {
@@ -20831,9 +20839,10 @@ function renderDiet() {
 
   // Progresso da dieta do dia: refeições marcadas (reseta todo dia). Refeições são as mesmas
   // entre ciclos (Alto/Baixo carbo são variações), então conta por índice, cego ao ciclo.
-  const _nMeals = Math.max(0, ...d.ciclos.map(cy => (cy.refeicoes || []).length));
+  const _nMeals = Math.max(0, ...d.ciclos.map(cy => (cy.refeicoes || []).filter(r => !_refOpcional(r)).length));   // v568: o opcional não conta
+  const _temOpc = d.ciclos.some(cy => (cy.refeicoes || []).some(_refOpcional));
   if (_nMeals > 0) {
-    html += `<div class="diet-day-progress"><div class="ddp-label"><span>Refeições de hoje</span><span id="ddpCount">0/${_nMeals}</span></div><div class="ddp-bar"><div class="ddp-fill" id="ddpFill"></div></div></div>`;
+    html += `<div class="diet-day-progress"><div class="ddp-label"><span>Refeições de hoje${_temOpc ? ' <small class="ddp-opc">(o opcional não conta)</small>' : ''}</span><span id="ddpCount">0/${_nMeals}</span></div><div class="ddp-bar"><div class="ddp-fill" id="ddpFill"></div></div></div>`;
   }
   // (o card "Cardio da semana" + botão "Fiz o cardio hoje" vão LOGO ACIMA da aba Cardio, mais abaixo —
   //  GH 2026-06-23: botão junto da prescrição pra ficar claro quanto de cardio foi pedido)
@@ -20855,7 +20864,7 @@ function renderDiet() {
       html += `<div class="diet-meal-card">`;
       // v549: o botão "não rolou?" e a anotação existem uma vez POR CICLO (aba Alto / Baixo): saíram os ids repetidos, que
       // faziam o toque na 2ª aba atualizar só a 1ª. O nome da refeição não vai mais dentro do onclick (aspas quebravam o botão).
-      html += `<div class="diet-meal-header"><span class="dm-nome">${_dx(ref.nome)}</span>${_refHoraChipHtml(ri)}<button type="button" class="dm-nao${_mealNaoMotivo(ri) ? ' marcado' : ''}" data-nao-ri="${ri}" onclick="openMealNao(${ri})">${_mealNaoMotivo(ri) ? 'anotado 🤝' : 'não rolou?'}</button><button type="button" class="diet-meal-check${isMealDone(ri) ? ' done' : ''}" data-meal-ri="${ri}" onclick="onCheckMeal(${ri})" aria-label="Marcar refeição feita"><svg class="dm-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><svg class="dm-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span class="dm-txt">Feita</span></button></div>`;
+      html += `<div class="diet-meal-header"><span class="dm-nome">${_dx(ref.nome)}${_refOpcional(ref) ? ' <span class="dm-opc">opcional, não conta pro dia</span>' : ''}</span>${_refHoraChipHtml(ri)}<button type="button" class="dm-nao${_mealNaoMotivo(ri) ? ' marcado' : ''}" data-nao-ri="${ri}" onclick="openMealNao(${ri})">${_mealNaoMotivo(ri) ? 'anotado 🤝' : 'não rolou?'}</button><button type="button" class="diet-meal-check${isMealDone(ri) ? ' done' : ''}" data-meal-ri="${ri}" onclick="onCheckMeal(${ri})" aria-label="Marcar refeição feita"><svg class="dm-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><svg class="dm-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span class="dm-txt">Feita</span></button></div>`;
       if (_mealNota(ri)) html += `<div class="dm-nota" data-nota-ri="${ri}">📝 ${String(_mealNota(ri)).replace(/&/g, '&amp;').replace(/</g, '&lt;')}</div>`;   // v537
       if (ref.instrucao) html += `<div class="diet-meal-instruction">${_dx(ref.instrucao)}</div>`;
 
@@ -22839,7 +22848,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v567';
+    var APP_SHELL_V = 'metodo-gh-v568';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
