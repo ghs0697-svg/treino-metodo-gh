@@ -434,11 +434,29 @@
   body.fonte-ggg .set-row, body.fonte-gggg .set-row, body.fonte-ggg .set-head, body.fonte-gggg .set-head { gap: 4px; }
   body.fonte-ggg .is-inner, body.fonte-gggg .is-inner { padding: 0 6px; }
   body.fonte-gggg .is-logo { font-size: 23px; }
-  /* v569: no nível máximo o cabeçalho da grade de séries fica abreviado (KG · PL · REPS · SOBR.), senão as palavras se atropelam */
-  body.fonte-gggg .set-head > span:not(.set-num) { font-size: 7.5px; letter-spacing: -0.2px; padding-left: 0; padding-right: 0; overflow: visible; white-space: nowrap; }
-  body.fonte-gggg .set-head .sh-pl, body.fonte-gggg .set-head .sh-rs { font-size: 0; }
-  body.fonte-gggg .set-head .sh-pl::after { content: 'PL'; font-size: 7.5px; }
-  body.fonte-gggg .set-head .sh-rs::after { content: 'SOB'; font-size: 7.5px; }
+  /* v569: no nível máximo o cabeçalho da grade de séries fica abreviado (KG · PL · REPS · SOB), senão as palavras se atropelam.
+     v570: o "font-size: 0" da abreviação PERDIA pro seletor geral de cima (span:not(.set-num) pesa mais que .sh-pl), então PLACA e
+     SOBROU continuavam na tela por cima do PL e do SOB (foto da v569 a 360 px). Agora o seletor da abreviação pesa igual e vem depois.
+     No 1,45 nem a 390 px cabe SOBROU (campo de 28 px): os dois níveis altos abreviam sempre (PL e SOB, com letra de 8 px no 1,45). */
+  body.fonte-gggg .set-head > span:not(.set-num) { font-size: 7.5px; letter-spacing: -0.2px; padding-left: 0; padding-right: 0; white-space: nowrap; }
+  body.fonte-ggg .set-head > span:not(.set-num) { font-size: 8px; letter-spacing: 0; padding-left: 0; padding-right: 0; white-space: nowrap; }
+  body.fonte-ggg .set-head > span.sh-pl, body.fonte-gggg .set-head > span.sh-pl, body.fonte-ggg .set-head > span.sh-rs, body.fonte-gggg .set-head > span.sh-rs { font-size: 0; }
+  body.fonte-ggg .set-head > span.sh-pl::after, body.fonte-gggg .set-head > span.sh-pl::after { content: 'PL'; font-size: 8px; text-decoration: underline dotted; text-underline-offset: 2px; }
+  body.fonte-ggg .set-head > span.sh-rs::after, body.fonte-gggg .set-head > span.sh-rs::after { content: 'SOB'; font-size: 8px; }
+  body.fonte-gggg .set-head > span.sh-pl::after, body.fonte-gggg .set-head > span.sh-rs::after { font-size: 7.5px; }
+  /* tela de 360 px no 1,6 (campo de 18 px): REPS vira REP, senão encosta no SOB. Tela de 320 px (18 px no 1,45, 14 px no 1,6):
+     REP nos dois níveis e a letra do cabeçalho cai (7 px no 1,45, 6,5 px no 1,6). Quem tem aparelho de 320 px usa melhor o 1,45. */
+  @media (max-width: 374px) {
+    body.fonte-gggg .set-head > span.sh-reps { font-size: 0; }
+    body.fonte-gggg .set-head > span.sh-reps::after { content: 'REP'; font-size: 7.5px; }
+  }
+  @media (max-width: 349px) {
+    body.fonte-ggg .set-head > span.sh-reps { font-size: 0; }
+    body.fonte-ggg .set-head > span.sh-reps::after { content: 'REP'; font-size: 7px; }
+    body.fonte-ggg .set-head > span.sh-kg, body.fonte-ggg .set-head > span.sh-prev, body.fonte-ggg .set-head > span.sh-pl::after, body.fonte-ggg .set-head > span.sh-rs::after { font-size: 7px; }
+    body.fonte-gggg .set-head > span.sh-reps::after { font-size: 6.5px; }
+    body.fonte-gggg .set-head > span.sh-kg, body.fonte-gggg .set-head > span.sh-prev, body.fonte-gggg .set-head > span.sh-pl::after, body.fonte-gggg .set-head > span.sh-rs::after { font-size: 6.5px; }
+  }
   /* v445 (Agentes #2023): aluno perguntou "o que e PLACA?", nao achou no app e DEIXOU DE LANCAR a carga.
      O cabecalho da coluna vira tocavel (pontilhado) e abre o mesmo tipo de modal do "sobrou". Sem elemento
      novo na linha: qualquer botao extra no cabecalho desalinharia as colunas dos inputs de baixo. */
@@ -22895,7 +22913,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v569';
+    var APP_SHELL_V = 'metodo-gh-v570';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
