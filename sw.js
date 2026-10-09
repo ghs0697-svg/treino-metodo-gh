@@ -1,4 +1,4 @@
-const CACHE_NAME = 'metodo-gh-v568';
+const CACHE_NAME = 'metodo-gh-v569';
 const ASSETS = [
   './',
   './index.html',
@@ -99,6 +99,8 @@ async function _gasFetch(req) {
 }
 
 self.addEventListener('fetch', e => {
+  // v569: vídeos leves de execução (videos-lite/<id>.mp4, no Pages): só rede, nunca no cache do shell (faixas de bytes e 1 MB cada)
+  if (e.request.url.includes('/videos-lite/')) return;
   // FONTES (Google Fonts): imutáveis — cache-first, senão caíam na regra 'Google = rede
   // sempre' abaixo e eram baixadas em TODA abertura, bloqueando a primeira pintura.
   if (e.request.url.includes('fonts.googleapis.com') || e.request.url.includes('fonts.gstatic.com')) {

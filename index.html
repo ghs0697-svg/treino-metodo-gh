@@ -380,11 +380,11 @@
   .ex-presc-tbl { margin-top: 6px; }
   .ept-head, .sg-head { font-size: 9.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: rgba(212,175,106,.7); margin: 0 0 4px; }
   .sg-head { margin: 0 0 6px 2px; }
-  .ept-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #bdb5a6; line-height: 1.3; padding: 2px 0; white-space: nowrap; }
+  .ept-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #bdb5a6; line-height: 1.3; padding: 2px 0; white-space: normal; flex-wrap: wrap; }   /* v569: quebra linha em vez de passar da tela com a letra grande */
   .ept-t { display: inline-block; width: 50px; min-width: 50px; text-align: center; border: 1px solid; border-radius: 6px; font-size: 10px; font-weight: 700; padding: 2px 2px; cursor: pointer; }
   .ept-n { min-width: 56px; }
   .ept-r { min-width: 84px; color: #e8e2d6; font-weight: 600; }
-  .ept-c { color: #8f8778; white-space: normal; line-height: 1.15; }
+  .ept-c { color: #8f8778; white-space: normal; line-height: 1.15; flex: 1 1 60px; min-width: 0; }   /* v569 */
   .ept-foot { font-size: 12px; color: #9a9184; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(212,175,106,.10); white-space: normal; line-height: 1.4; }
   /* v507: painel com cabeçalho de colunas, no mesmo estilo do cabeçalho da grade (os dois blocos rimam) */
   .ept-panel { background: rgba(212,175,106,.045); border: 1px solid rgba(212,175,106,.14); border-radius: 10px; padding: 6px 10px 7px; }
@@ -429,6 +429,16 @@
   .set-in.set-kg { width: 58px; } .set-in.set-pl { width: 44px; } .set-in.set-reps { width: 52px; }
   /* "sobrou" = reps que sobraram na série (percepção de esforço, casa com o Esforço-alvo) */
   .set-head .sh-rs { width: 46px; } .set-in.set-rs { width: 46px; }
+  /* v569: com a letra nos dois níveis mais altos a tela útil tem uns 220 px; a grade de séries encolhe os campos em vez de sair da tela */
+  body.fonte-ggg .set-row .set-in, body.fonte-gggg .set-row .set-in, body.fonte-ggg .set-head > span:not(.set-num), body.fonte-gggg .set-head > span:not(.set-num) { flex: 1 1 0; width: auto; min-width: 0; padding-left: 2px; padding-right: 2px; }
+  body.fonte-ggg .set-row, body.fonte-gggg .set-row, body.fonte-ggg .set-head, body.fonte-gggg .set-head { gap: 4px; }
+  body.fonte-ggg .is-inner, body.fonte-gggg .is-inner { padding: 0 6px; }
+  body.fonte-gggg .is-logo { font-size: 23px; }
+  /* v569: no nível máximo o cabeçalho da grade de séries fica abreviado (KG · PL · REPS · SOBR.), senão as palavras se atropelam */
+  body.fonte-gggg .set-head > span:not(.set-num) { font-size: 7.5px; letter-spacing: -0.2px; padding-left: 0; padding-right: 0; overflow: visible; white-space: nowrap; }
+  body.fonte-gggg .set-head .sh-pl, body.fonte-gggg .set-head .sh-rs { font-size: 0; }
+  body.fonte-gggg .set-head .sh-pl::after { content: 'PL'; font-size: 7.5px; }
+  body.fonte-gggg .set-head .sh-rs::after { content: 'SOB'; font-size: 7.5px; }
   /* v445 (Agentes #2023): aluno perguntou "o que e PLACA?", nao achou no app e DEIXOU DE LANCAR a carga.
      O cabecalho da coluna vira tocavel (pontilhado) e abre o mesmo tipo de modal do "sobrou". Sem elemento
      novo na linha: qualquer botao extra no cabecalho desalinharia as colunas dos inputs de baixo. */
@@ -1108,7 +1118,7 @@
   .pg-streak { color: #ff7043; font-weight: 700; }
 
   /* ── Constância da semana (bolinhas seg→dom no hero do dia) ── */
-  .const-dots { display: flex; align-items: center; gap: 9px; margin: 8px 2px 0; }
+  .const-dots { display: flex; align-items: center; gap: 9px; margin: 8px 2px 0; flex-wrap: wrap; row-gap: 4px; }   /* v569 */
   .const-dot { display: flex; flex-direction: column; align-items: center; gap: 3px; }
   .const-dot span { font-size: 8.5px; font-weight: 700; letter-spacing: .4px; color: #6f6a60; }
   .const-dot i { width: 13px; height: 13px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.18); background: transparent; font-style: normal; display: flex; align-items: center; justify-content: center; font-size: 8px; color: transparent; }
@@ -1361,6 +1371,13 @@
   .focus-foot { display: flex; gap: 10px; padding: 12px 14px calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid #1d1d22; }
   .focus-nav { background: #1c1c21; border: 1px solid #2c2c33; color: #fff; font-size: 20px; width: 52px; border-radius: 10px; cursor: pointer; }
   .focus-nav:disabled { opacity: 0.3; }
+  /* v569: letra nos dois níveis mais altos em tela estreita: setas menores e rodapé mais junto, pra caber os três botões */
+  body.fonte-ggg .focus-foot, body.fonte-gggg .focus-foot { gap: 6px; padding-left: 8px; padding-right: 8px; }
+  body.fonte-ggg .focus-nav, body.fonte-gggg .focus-nav { width: 40px; flex: 0 0 40px; font-size: 18px; }
+  body.fonte-ggg .focus-main-btn, body.fonte-gggg .focus-main-btn { min-width: 0; padding-left: 4px; padding-right: 4px; }
+  body.fonte-ggg .diet-meal-header, body.fonte-gggg .diet-meal-header { flex-wrap: wrap; row-gap: 6px; }
+  body.fonte-ggg .diet-meal-header .dm-nome, body.fonte-gggg .diet-meal-header .dm-nome { flex: 1 1 100%; }
+  body.fonte-gggg .proto-progress .pp-dias { white-space: normal; }
   .focus-main-btn { flex: 1; border: none; border-radius: 10px; font-size: 15px; font-weight: 800; padding: 14px 6px; cursor: pointer; }
   .focus-main-btn.rest { background: #1c1c21; color: #fff; border: 1px solid #2c2c33; }
   .focus-main-btn.donebtn { background: var(--gold); color: #111; }
@@ -1722,9 +1739,11 @@
   body.fonte-g { zoom: 1.15; --fz: 1.15; }
   body.fonte-gg { zoom: 1.3; --fz: 1.3; }
   body.fonte-ggg { zoom: 1.45; --fz: 1.45; }   /* v537 (GH 02/10: "tem aluno que achou pequena ainda") */
+  body.fonte-gggg { zoom: 1.6; --fz: 1.6; }    /* v569 (Sheila Rios 01/10: "consigo aumentar mais a letra?"; GH 08/10: "testa sim") */
   body.fonte-ggg.view-ghflix #ghflixView { height: calc((100dvh - 96px) / 1.45 - 28px); }
   body.fonte-g.view-ghflix #ghflixView { height: calc((100dvh - 96px) / 1.15 - 12px); }   /* o cabecalho tambem cresce: desconta */
   body.fonte-gg.view-ghflix #ghflixView { height: calc((100dvh - 96px) / 1.3 - 21px); }
+  body.fonte-gggg.view-ghflix #ghflixView { height: calc((100dvh - 96px) / 1.6 - 34px); }   /* v569 */
   #ghflixView iframe { width: 100%; height: 100%; border: 0; display: block; }
   body.view-ghflix .nav-btn#navGhflix { color: var(--gold); border-bottom-color: var(--gold); }
   .nav-btn#navGhflix.locked { opacity: 0.38; }
@@ -1908,7 +1927,7 @@
   .mt-def { background: none; border: 1px solid #36363e; color: #9a9aa0; font-size: 9.5px; border-radius: 7px; padding: 2px 7px; margin-left: 4px; }
   .mt-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0 4px 0; }
   /* Anéis da semana (v381) */
-  .mt-aneis { display: flex; justify-content: space-around; align-items: flex-start; gap: 4px; margin: 8px 0 4px; }
+  .mt-aneis { display: flex; justify-content: space-around; align-items: flex-start; gap: 4px; margin: 8px 0 4px; flex-wrap: wrap; row-gap: 10px; }   /* v569: com a letra grande os anéis vão pra segunda linha, não pra fora da tela */
   .mt-anel { text-align: center; min-width: 58px; }
   .mt-anel .tr { fill: none; stroke: #26262c; stroke-width: 4.5; }
   .mt-anel .arc { fill: none; stroke: #D4AF37; stroke-width: 4.5; stroke-linecap: round; transition: stroke-dashoffset .5s; }
@@ -3008,7 +3027,7 @@
   /* Toast genérico */
   .gh-toast { position:fixed; left:50%; bottom:84px; transform:translateX(-50%); background:#1b1b1e; color:#f1ede4; border:1px solid #3a3a40; padding:11px 16px; border-radius:12px; font-size:12.5px; z-index:100050; max-width:86vw; text-align:center; line-height:1.5; box-shadow:0 6px 22px rgba(0,0,0,.5); }
   /* Cronômetro do treino */
-  .wt-card { margin-top:10px; background:rgba(201,162,75,.06); border:1px solid rgba(201,162,75,.25); border-radius:11px; padding:10px 12px; display:flex; align-items:center; gap:10px; }
+  .wt-card { margin-top:10px; background:rgba(201,162,75,.06); border:1px solid rgba(201,162,75,.25); border-radius:11px; padding:10px 12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }   /* v569: com a letra grande os botões descem uma linha, não saem da tela */
   .wt-time { font-variant-numeric:tabular-nums; font-size:22px; font-weight:700; color:var(--gold, #c9a24b); min-width:74px; letter-spacing:.5px; }
   .wt-lbl { font-size:10.5px; color:#8d8579; letter-spacing:.4px; margin-top:1px; }
   .wt-btns { margin-left:auto; display:flex; gap:7px; }
@@ -3412,7 +3431,7 @@
 </style>
 </head>
 <body>
-<script>try{var _gf=localStorage.getItem('gh_fonte');if(_gf==='g'||_gf==='gg'||_gf==='ggg')document.body.classList.add('fonte-'+_gf);}catch(e){}</script>
+<script>try{var _gf=localStorage.getItem('gh_fonte');if(_gf==='g'||_gf==='gg'||_gf==='ggg'||_gf==='gggg')document.body.classList.add('fonte-'+_gf);}catch(e){}</script>
 
 <div class="app-header">
   <div class="gh-hero-foto" aria-hidden="true"></div>
@@ -6629,7 +6648,7 @@ Object.assign(I18N_EN, {
   'Esse treino já foi concluído': 'This workout was already completed', 'Só desmarcar este exercício': 'Just uncheck this exercise', 'Recomeçar a semana': 'Restart the week',
   'Tamanho da letra': 'Text size', 'corrigir': 'fix', 'Tuas indicações': 'Your referrals',
   'O que tu comeu no lugar, ou o que aconteceu? (opcional)': 'What did you eat instead, or what happened? (optional)', 'Toca no motivo pra salvar. O que tu escreveu vai junto.': 'Tap the reason to save. Your note goes with it.',
-  '🔤 Tamanho da letra: normal (tocar pra aumentar)': '🔤 Text size: normal (tap to enlarge)', '🔤 Tamanho da letra: grande (tocar pra aumentar mais)': '🔤 Text size: large (tap to enlarge more)', '🔤 Tamanho da letra: maior (tocar pra voltar ao normal)': '🔤 Text size: larger (tap to go back to normal)'
+  '🔤 Tamanho da letra: normal (tocar pra aumentar)': '🔤 Text size: normal (tap to enlarge)', '🔤 Tamanho da letra: muito grande (tocar pra aumentar mais)': '🔤 Text size: very large (tap to enlarge more)', '🔤 Tamanho da letra: grande (tocar pra aumentar mais)': '🔤 Text size: large (tap to enlarge more)', '🔤 Tamanho da letra: maior (tocar pra voltar ao normal)': '🔤 Text size: larger (tap to go back to normal)'
 });
 const I18N_RX = [
   [/^\u00b7 (\d+) opções$/, '\u00b7 $1 options'], [/^\u00b7 1 opção$/, '\u00b7 1 option'],
@@ -6753,21 +6772,21 @@ function _langBtnRefresh() {
 // disparam ANTES do card. Preferência por aparelho (localStorage).
 function _celebOff() { try { return localStorage.getItem('gh_celeb_off') === '1'; } catch (_) { return false; } }
 // v469: tamanho da letra em 3 niveis (normal, grande, maior), so neste aparelho. Toque cicla.
-function _fonteNivel() { try { const v = localStorage.getItem('gh_fonte'); return (v === 'g' || v === 'gg' || v === 'ggg') ? v : ''; } catch (_) { return ''; } }   // v537: 4 níveis
+function _fonteNivel() { try { const v = localStorage.getItem('gh_fonte'); return (v === 'g' || v === 'gg' || v === 'ggg' || v === 'gggg') ? v : ''; } catch (_) { return ''; } }   // v537: 4 níveis; v569: 5 (gggg = 1,6)
 function _fonteAplica(nivel) {
-  document.body.classList.remove('fonte-g', 'fonte-gg', 'fonte-ggg');
+  document.body.classList.remove('fonte-g', 'fonte-gg', 'fonte-ggg', 'fonte-gggg');
   if (nivel) document.body.classList.add('fonte-' + nivel);
   try { if (nivel) localStorage.setItem('gh_fonte', nivel); else localStorage.removeItem('gh_fonte'); } catch (_) {}
   _fonteBtnRefresh();
 }
 function toggleFonte() {
   const atual = _fonteNivel();
-  _fonteAplica(atual === '' ? 'g' : (atual === 'g' ? 'gg' : (atual === 'gg' ? 'ggg' : '')));
+  _fonteAplica(atual === '' ? 'g' : (atual === 'g' ? 'gg' : (atual === 'gg' ? 'ggg' : (atual === 'ggg' ? 'gggg' : ''))));   // v569: o 5º toque volta ao normal
 }
 function _fonteBtnRefresh() {
   const el = document.getElementById('fonteToggleLabel'); if (!el) return;
   const n = _fonteNivel();
-  el.textContent = n === 'ggg' ? '🔤 Tamanho da letra: máxima (tocar pra voltar ao normal)' : (n === 'gg' ? '🔤 Tamanho da letra: maior (tocar pra aumentar mais)' : (n === 'g' ? '🔤 Tamanho da letra: grande (tocar pra aumentar mais)' : '🔤 Tamanho da letra: normal (tocar pra aumentar)'));
+  el.textContent = n === 'gggg' ? '🔤 Tamanho da letra: máxima (tocar pra voltar ao normal)' : (n === 'ggg' ? '🔤 Tamanho da letra: muito grande (tocar pra aumentar mais)' : (n === 'gg' ? '🔤 Tamanho da letra: maior (tocar pra aumentar mais)' : (n === 'g' ? '🔤 Tamanho da letra: grande (tocar pra aumentar mais)' : '🔤 Tamanho da letra: normal (tocar pra aumentar)')));   // v569
 }
 function toggleCeleb() {
   try { localStorage.setItem('gh_celeb_off', _celebOff() ? '0' : '1'); } catch (_) {}
@@ -15015,10 +15034,38 @@ function _videoFallbackNativo(motivo) {
     nat.onloadedmetadata = function () { if (!direto) avisa('O YouTube n\u00e3o abriu no teu aparelho. Tocando direto do servidor do M\u00e9todo GH.'); };
     nat.src = src; nat.style.display = 'block';
     const p = nat.play(); if (p && p.catch) p.catch(function () {});
+    _vidNatVigiaStart(nat, src, direto, iframe, avisa, falhou);   // v569: carregou mas não toca = plano B também
   } catch (_) {}
+}
+// v569: vigia do player nativo. 7 s sem o vídeo começar (currentTime parado), ou 8 s seguidos esperando dado no meio, = o mesmo
+// caminho do erro: no modo direto volta pro YouTube (com o vigia dele); no plano B avisa. Tocou (playing) = desarma; fechar = desarma.
+let _vidNatTimer = null, _vidNatEspera = null;
+function _vidNatVigiaStop() { if (_vidNatTimer) { clearTimeout(_vidNatTimer); _vidNatTimer = null; } if (_vidNatEspera) { clearTimeout(_vidNatEspera); _vidNatEspera = null; } }
+function _vidNatVigiaStart(nat, src, direto, iframe, avisa, falhou) {
+  _vidNatVigiaStop();
+  const url = _vidUrlAtual;
+  const vivo = () => { const ov = document.getElementById('videoOverlay'); return ov && ov.classList.contains('show') && _vidUrlAtual === url && nat.style.display !== 'none'; };
+  const desiste = function (tag) {
+    _vidNatVigiaStop();
+    if (!vivo()) return;
+    try { nat.pause(); } catch (_) {}
+    nat.style.display = 'none'; _vidDebug(tag, src);
+    if (direto && iframe) {
+      try { localStorage.removeItem(_YT_FALHOU_KEY); } catch (_) {}
+      _vidDiretoFalhou = true;
+      iframe.onload = function () { try { iframe.contentWindow.postMessage('{"event":"listening","id":"videoFrame"}', '*'); } catch (_) {} };
+      iframe.style.display = ''; iframe.src = youtubeEmbed(_vidUrlAtual); _vidWatchdogStart(_vidUrlAtual); return;
+    }
+    avisa(falhou);
+  };
+  nat.onplaying = function () { _vidNatVigiaStop(); };
+  nat.onwaiting = function () { if (_vidNatEspera || !vivo()) return; _vidNatEspera = setTimeout(function () { _vidNatEspera = null; if (vivo() && nat.readyState < 3 && !nat.paused) desiste('mp4_travou8s'); }, 8000); };
+  nat.oncanplay = function () { if (_vidNatEspera) { clearTimeout(_vidNatEspera); _vidNatEspera = null; } };
+  _vidNatTimer = setTimeout(function () { _vidNatTimer = null; if (vivo() && (nat.currentTime || 0) < 0.5 && nat.readyState < 3) desiste('mp4_parado7s'); }, 7000);
 }
 function closeVideo() {
   _vidWatchdogStop(); _vidBufferStop();   // v467, v535
+  _vidNatVigiaStop();   // v569
   // para e limpa o player offline (senão o áudio continua e o blob vaza memória)
   try {
     const nat = document.getElementById('videoNative');
@@ -22848,7 +22895,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v568';
+    var APP_SHELL_V = 'metodo-gh-v569';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
