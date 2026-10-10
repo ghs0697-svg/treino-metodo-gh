@@ -1396,6 +1396,29 @@
   body.fonte-ggg .diet-meal-header, body.fonte-gggg .diet-meal-header { flex-wrap: wrap; row-gap: 6px; }
   body.fonte-ggg .diet-meal-header .dm-nome, body.fonte-gggg .diet-meal-header .dm-nome { flex: 1 1 100%; }
   body.fonte-gggg .proto-progress .pp-dias { white-space: normal; }
+  /* v571 (GH 09/10/2026): fechamento do treino, pergunta "como foi" no cartão de treino concluído e linha "Hoje" das metas */
+  .ft-bloco { margin-top: 14px; padding-top: 12px; border-top: 1px solid #262626; }
+  .ft-tit { font-size: 10.5px; letter-spacing: 1.2px; color: var(--gold); text-transform: uppercase; font-weight: 800; }
+  .ft-lin { display: flex; align-items: center; justify-content: space-between; gap: 8px 10px; margin-top: 9px; flex-wrap: wrap; }
+  .ft-nome { font-size: 14px; font-weight: 600; color: #f1ede4; flex: 1 1 130px; min-width: 0; overflow-wrap: anywhere; }
+  .ft-nome small { display: block; font-size: 11.5px; color: #8e8a82; font-weight: 400; margin-top: 2px; line-height: 1.35; }
+  .ft-bts { display: flex; gap: 6px; flex: none; flex-wrap: wrap; }
+  .ft-b { font: inherit; font-size: 12.5px; font-weight: 700; border-radius: 10px; padding: 9px 11px; border: 1px solid #3a3526; background: #1d1c18; color: #cfc6b0; cursor: pointer; white-space: nowrap; }
+  .ft-b.on { background: var(--gold); border-color: var(--gold); color: #15100a; }
+  .ft-tres { display: flex; gap: 6px; margin-top: 9px; flex-wrap: wrap; }
+  .ft-tres .ft-b { flex: 1 1 88px; text-align: center; padding: 11px 4px; white-space: normal; }
+  .ft-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .ft-chips .ft-b { font-weight: 600; padding: 7px 11px; border-radius: 99px; font-size: 12px; }
+  .ft-dica { font-size: 11.5px; color: #8e8a82; margin-top: 9px; line-height: 1.4; }
+  .ft-todos { background: none; border: 0; color: var(--gold); font: inherit; font-size: 12px; font-weight: 700; text-decoration: underline; padding: 8px 0 0; cursor: pointer; }
+  #ftBtn { width: 100%; margin-top: 12px; background: var(--gold); color: #15100a; border: none; border-radius: 12px; padding: 12px; font-weight: 800; font-size: 14px; font-family: inherit; cursor: pointer; }
+  .ft-ghost { width: 100%; margin-top: 8px; background: none; border: 1px solid #333; border-radius: 10px; color: #9a9388; font: inherit; font-size: 13px; font-weight: 600; padding: 10px; cursor: pointer; }
+  .wt-fechar { background: var(--gold); color: #15100a; border: 0; border-radius: 8px; font: inherit; font-size: 12px; font-weight: 800; padding: 6px 10px; margin: 4px 0 0 4px; cursor: pointer; }
+  .ach-como { margin: 2px 0 8px; padding: 10px 11px; border: 1px solid rgba(212,175,106,.35); border-radius: 11px; background: rgba(212,175,106,.06); }
+  .ach-como .ft-tit, .ach-como .ft-dica { text-align: center; }
+  .ach-como .ft-chips { justify-content: center; }
+  .mt-hoje { font-size: 11.5px; color: #9a9388; margin: 8px 2px 0; line-height: 1.55; }
+  .mt-hoje b { color: #d8cfb8; font-weight: 600; }
   .focus-main-btn { flex: 1; border: none; border-radius: 10px; font-size: 15px; font-weight: 800; padding: 14px 6px; cursor: pointer; }
   .focus-main-btn.rest { background: #1c1c21; color: #fff; border: 1px solid #2c2c33; }
   .focus-main-btn.donebtn { background: var(--gold); color: #111; }
@@ -5094,6 +5117,7 @@
       </div>
       <button type="button" onclick="achIgNaoUso()" style="background:none;border:0;color:#8d8579;font-size:11px;text-decoration:underline;margin-top:8px;padding:0;cursor:pointer;">Não uso Instagram</button>
     </div>
+    <div class="ach-como" id="achComo" style="display:none;"></div>
     <div class="ach-actions" style="margin-top:6px;">
       <button class="ach-btn primary" onclick="achShare()" id="achShareBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Compartilhar treino</button>
       <button class="ach-btn secondary" onclick="achSave()">Salvar PNG</button>
@@ -5329,6 +5353,22 @@
     <p style="color:#777;font-size:10.5px;margin:4px 0 0;line-height:1.45;">Deixa em hoje, ou escolhe o dia que a anotação é sobre: um treino fraco, uma dor, uma refeição que não desceu.</p>
     <button type="button" id="cadernoSalvarBtn" class="tlem-save" onclick="salvarCaderno()" style="width:100%;margin-top:8px;">Salvar anotação</button>
     <div id="cadernoLista" style="margin-top:14px;"></div>
+    <div id="diarioLista"></div>
+  </div>
+</div>
+<!-- v571 (GH 09/10/2026): FECHAR O TREINO DE HOJE. Abre ao tocar em Finalizar no cronômetro com o dia ainda aberto: resolve o
+     exercício que faltou marcar, pergunta o cardio e guarda "como foi o treino" no diário. Nada além de fechar é obrigatório. -->
+<div class="te-modal-overlay" id="fechaTreinoModal" onclick="if(event.target.id==='fechaTreinoModal'&&!_temRascunho_('ftTexto'))fechaTreinoFecha()">
+  <div class="te-modal-box" style="max-width:460px;max-height:calc(88vh / var(--fz, 1));overflow-y:auto;">
+    <h3 id="ftTitulo" style="margin:0 0 2px;">Fechar o treino de hoje</h3>
+    <p id="ftSub" style="color:#aaa;font-size:12px;margin:0;line-height:1.5;"></p>
+    <div id="ftPend"></div>
+    <div id="ftCardio"></div>
+    <div id="ftComo"></div>
+    <textarea id="ftTexto" rows="2" maxlength="600" placeholder="Quer contar mais? (opcional)" style="width:100%;box-sizing:border-box;margin-top:10px;background:#141414;border:1px solid #333;border-radius:8px;color:#eee;padding:10px;font-size:13px;font-family:inherit;resize:vertical;"></textarea>
+    <button type="button" id="ftBtn" onclick="fechaTreinoSalvar()">Fechar o treino</button>
+    <button type="button" class="ft-ghost" onclick="fechaTreinoFecha()">Agora não</button>
+    <p id="ftPe" style="color:#777;font-size:10.5px;margin:10px 0 0;line-height:1.5;text-align:center;"></p>
   </div>
 </div>
 <div class="te-modal-overlay" id="dorModal" onclick="if(event.target.id==='dorModal')teHide('dorModal')">
@@ -6641,6 +6681,9 @@ const I18N_EN = {
   'Rever o tour do app': 'Replay the app tour', 'Recarregar do servidor': 'Reload from server',
   'Apagar pesos marcados': 'Clear saved weights', 'Atualizar o app agora': 'Update the app now',
   'METAS': 'GOALS', 'ESTA SEMANA': 'THIS WEEK', 'Água': 'Water',
+  'Fechar o treino de hoje': "Close today's workout", 'Fechar o treino': 'Close workout', 'Como foi o treino?': 'How was the workout?', 'Rendeu bem': 'Went well', 'Normal': 'Normal', 'Abaixo do normal': 'Below normal',
+  'O que pesou hoje?': 'What weighed on you today?', 'Cansaço': 'Tiredness', 'Dormi mal': 'Slept badly', 'Dor': 'Pain', 'Desânimo': 'Low mood', 'Estresse': 'Stress', 'Comi mal': 'Ate badly', 'Pouco tempo': 'Short on time',
+  'Cardio de hoje': "Today's cardio", 'Tu fez o cardio?': 'Did you do your cardio?', 'Fiz': 'Done', 'Não fiz hoje': 'Not today', 'Ainda não': 'Not yet', 'Agora não': 'Not now', 'Fiz todos': 'Did them all', 'Diário de treino': 'Training diary',
   'Conta sozinho pelo que tu marca no app. O cardio, tu define a tua meta.': 'Counts by itself from what you log in the app. Cardio goal is set by you.',
   'definir meta': 'set goal', 'MAIORES CARGAS': 'TOP LIFTS', '📈 Recordes pessoais': '📈 Personal records',
   'Registro pessoal do teu progresso de carga, calculado do que tu anota nos exercícios.': 'Your personal record of load progress, calculated from what you log on each exercise.',
@@ -8894,7 +8937,7 @@ let _syncFlushRunning = false;
 // v545: recuo por tipo de fila. Se uma rodada inteira de um tipo falha (servidor fora, cota do Sheets), a próxima tentativa
 // daquele tipo espera 1, 2, 4... até 10 minutos, em vez de todo aparelho reenviar a fila inteira a cada 30 s.
 const _syncFalhas = {}, _syncProxTent = {};
-const _SYNC_TIPOS = ['carga', 'done', 'completion', 'esforco', 'nota_serie', 'nota_aluno', 'nota_aluno_del', 'treino_lembrete', 'troca', 'pulado', 'tempo_treino', 'meal', 'cardio_reg', 'dieta_sinal', 'ajuste_request'];
+const _SYNC_TIPOS = ['carga', 'done', 'completion', 'esforco', 'nota_serie', 'nota_aluno', 'nota_aluno_del', 'treino_lembrete', 'troca', 'pulado', 'tempo_treino', 'meal', 'cardio_reg', 'dieta_sinal', 'ajuste_request', 'diario_treino'];   // v571
 async function flushSyncQueues() {
   if (_syncFlushRunning) return;
   if (typeof LOG_ENDPOINT === 'undefined') return;
@@ -9220,6 +9263,7 @@ function openCaderno() {
   teShow('cadernoModal');
   _cadernoRender(_cadernoLocal());          // pinta na hora o que já está no aparelho
   _cadernoFetch();                          // e busca o do servidor por cima
+  try { _diarioRender(); _diarioFetch(); } catch (_) {}   // v571: diário de treino embaixo das anotações
 }
 function _cadernoKey() { return `gh_caderno_${STUDENT_ID}`; }
 // v567 (GH 08/10): o DIA a que a anotação se refere. Nasce em hoje, no fuso do aparelho; o aluno escolhe outro se for sobre um dia
@@ -9941,7 +9985,7 @@ function _diaConcluidoDispara(di) {
     const s = (typeof _wtLoad === 'function') ? _wtLoad() : null;
     if (s && Number(s.di) === Number(di) && Number(s.w) === Number(currentWeek)) {
       const secs = Math.floor(_wtElapsedMs(s) / 1000);
-      if (secs >= 60 && secs <= _WT_SUSPEITO_SECS) _wtCommit(s.di, s.w, secs, s.pausas || 0, false);
+      if (secs >= 60 && secs <= _WT_SUSPEITO_SECS) { _ftFechando = true; try { _wtCommit(s.di, s.w, secs, s.pausas || 0, false); } finally { _ftFechando = false; } }   // v571
     }
   } catch (_) {}
   updateStreakOnComplete();
@@ -10151,6 +10195,7 @@ function showAchievementCard(type, data) {
       const _bi = document.getElementById('achIg'); if (_bi) _bi.style.display = 'none';
     }
   }
+  try { _achComoRender(type === 'completion' && data && typeof data.di === 'number' ? data.di : null); } catch (_) {}   // v571
   // Mesmo do botão "Pular": só relevante em completion
   const closeBtn = document.querySelector('button.ach-btn.ghost[onclick="achClose()"]');
   if (closeBtn) closeBtn.textContent = (type === 'completion' && !(hint && hint.dataset.pulado === '1')) ? 'Pular (treino já contou)' : 'Fechar';
@@ -14501,7 +14546,14 @@ function renderWtCard() {
   const last = document.getElementById('wtLast');
   if (last) {
     const rec = _wtServer[currentDay + '|' + currentWeek];
-    if (rec && !s) { last.style.display = 'block'; last.innerHTML = '⏱ Este treino na semana ' + currentWeek + ': ' + rec.duracao + ' <button type="button" class="wt-edit" onclick="wtCorrigir()">corrigir</button>'; }   // v466: corrigir tempo ja salvo
+    if (rec && !s) {
+      last.style.display = 'block';
+      // v571: treino cronometrado HOJE e dia ainda aberto: a linha diz isso e leva pro fechamento (antes dizia só o tempo)
+      const _sgA = _ftSegundosDoDia(currentDay), _abA = _ftPodeFechar(currentDay, currentWeek, _sgA);
+      last.innerHTML = _abA
+        ? '⏱ Tempo de hoje: ' + rec.duracao + '. O treino ainda não está fechado. <button type="button" class="wt-fechar" onclick="fechaTreinoAbrir(' + Number(currentDay) + ',\'finalizar\',' + _sgA + ')">Fechar o treino</button> <button type="button" class="wt-edit" onclick="wtCorrigir()">corrigir</button>'
+        : '⏱ Este treino na semana ' + currentWeek + ': ' + rec.duracao + ' <button type="button" class="wt-edit" onclick="wtCorrigir()">corrigir</button>';   // v466: corrigir tempo ja salvo
+    }
     else last.style.display = 'none';
   }
   if (s && s.status === 'running') {
@@ -14541,11 +14593,328 @@ function wtResume() {
 // mais nova, entao o badge e o registro passam a ser o corrigido.
 const _WT_SUSPEITO_SECS = 2 * 3600;
 let _wtEdit = null;   // { di, w, secs, pausas, modo: 'finalizar' | 'corrigir' }
+// ══ v571 (GH 09/10/2026): FECHAMENTO DO TREINO + DIÁRIO DE TREINO ══
+// O problema (Sheila Rios e "outros alunos", print do Progresso em 09/10): o dia de treino só fecha quando o aluno marca TODOS os
+// exercícios, e o "✓ Finalizar" do cronômetro respondia "Registrado!" sem fechar o dia. Em 14 dias, 199 de 1.377 treinos
+// cronometrados (14%) não contaram no Progresso, no ranking nem na constância, de 112 alunos.
+// A saída: ao finalizar o cronômetro com o dia aberto, UMA janela resolve o que faltou marcar ("Fiz" ou "Não fiz hoje", que é o
+// "não consegui fazer" que já existia), pergunta o cardio e oferece "como foi o treino" (pedido de um aluno ao GH: um campo no
+// fim do treino pra dizer como estava o dia). A anotação é opcional e vai pro DIÁRIO DE TREINO (aba própria no servidor,
+// separada das anotações do acompanhamento, que guardam o que é permanente).
+// Só ACRESCENTA marca, com a confirmação do aluno; nunca tira uma marca nem um peso que já existe. Sem retroativo (GH).
+var _FT_MIN_SECS = 600;   // menos de 10 min de cronômetro não abre o fechamento (um dia foi fechado em 3 min por engano em 07/10)
+var _FT_COMO = [['bem', 'Rendeu bem'], ['normal', 'Normal'], ['abaixo', 'Abaixo do normal']];
+var _FT_MOTIVOS = [['cansaco', 'Cansaço'], ['sono', 'Dormi mal'], ['dor', 'Dor'], ['desanimo', 'Desânimo'], ['estresse', 'Estresse'], ['comida', 'Comi mal'], ['tempo', 'Pouco tempo']];
+var _ft = null;            // a janela aberta: { di, modo: 'finalizar' | 'nota', secs, pend: { ei: 'fiz' | 'nao' | null }, temCardio, cardio, como, motivos: Set, origem }
+var _ftFechando = false;   // o dia está sendo fechado agora pelo último exercício: o cronômetro não diz "ainda não está fechado"
+function _ftEsc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+// os exercícios que contam pra fechar o dia: sem aquecimento e, no modo curto, só os mantidos (a mesma conta do allDoneOfDay)
+function _ftReais(di) {
+  const day = (typeof WORKOUT !== 'undefined' && WORKOUT) ? WORKOUT[di] : null;
+  if (!day || !Array.isArray(day.exercises)) return [];
+  let keep = null; try { keep = _shortKeepSet(di) || _shortFechado(di); } catch (_) {}
+  return day.exercises.map((ex, ei) => ({ ex, ei })).filter(o => !o.ex.warmup && (!keep || keep.has(o.ei)));
+}
+function _ftPendentes(di) { return _ftReais(di).filter(o => !isDone(di, o.ei) && !isSkipped(di, o.ei)); }
+function _ftFechadoHoje(di) { try { return !!localStorage.getItem('gh_logsent_' + SHEET_ID + '_' + todayKey() + '_d' + di + '_concl'); } catch (_) { return false; } }
+function _ftTemCarga(di, ei) { try { return (loadSets(di, ei, currentWeek) || []).some(s => s && (String(s.reps || '').trim() || String(s.kg || '').trim() || String(s.pl || '').trim())); } catch (_) { return false; } }
+function _ftNome(di, ei) {
+  const ex = (WORKOUT[di] && WORKOUT[di].exercises && WORKOUT[di].exercises[ei]) || {};
+  try { const act = (!ex.biset && typeof _exAtivo === 'function') ? _exAtivo(di, ei) : null; if (act && act.name) return act.name; } catch (_) {}
+  return ex.name || ('Exercício ' + (Number(ei) + 1));
+}
+// a última vez que o aluno FINALIZOU o cronômetro: só vale hoje, pro mesmo treino e pra semana aberta
+function _ftFimKey() { return 'gh_ftfim_' + SHEET_ID; }
+function _ftMarcaFim(di, w, secs) { try { localStorage.setItem(_ftFimKey(), JSON.stringify({ dia: todayKey(), di: Number(di), w: Number(w), s: Math.floor(Number(secs) || 0) })); } catch (_) {} }
+function _ftSegundosDoDia(di) {
+  try {
+    const m = JSON.parse(localStorage.getItem(_ftFimKey()) || 'null');
+    return (m && m.dia === todayKey() && Number(m.di) === Number(di) && Number(m.w) === Number(currentWeek)) ? (Number(m.s) || 0) : 0;
+  } catch (_) { return 0; }
+}
+// tempo gravado hoje pra este treino desta semana (serve só pra ir junto na anotação; não libera o fechamento)
+function _ftSegundosHist(di) {
+  try {
+    const h = (JSON.parse(localStorage.getItem(_wtHistKey()) || '{}') || {})[di + '|' + currentWeek];
+    if (!h || !h.ts) return 0;
+    const d = new Date(h.ts), k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    return k === todayKey() ? (Math.floor(Number(h.segundos)) || 0) : 0;
+  } catch (_) { return 0; }
+}
+function _ftPodeFechar(di, w, secs) {
+  try {
+    if (!(Number(secs) >= _FT_MIN_SECS)) return false;
+    if (Number(w) !== Number(currentWeek)) return false;
+    if (typeof WORKOUT === 'undefined' || !WORKOUT || !WORKOUT[di]) return false;
+    if (typeof params !== 'undefined' && params.get('edit')) return false;   // modo edição do treinador
+    if (typeof _tourAtivo !== 'undefined' && _tourAtivo) return false;
+    return !_ftFechadoHoje(di);
+  } catch (_) { return false; }
+}
+function _fechaTreinoDepoisDoCronometro(di, w, secs) {
+  di = Number(di);
+  if (!_ftPodeFechar(di, w, secs)) return false;
+  _ftMarcaFim(di, w, secs);
+  fechaTreinoAbrir(di, 'finalizar', secs);
+  return true;
+}
+function fechaTreinoAbrir(di, modo, secs) {
+  try {
+    di = Number(di);
+    if (typeof WORKOUT === 'undefined' || !WORKOUT || !WORKOUT[di]) return;
+    const sgHoje = _ftSegundosDoDia(di);
+    // fechar exige treino finalizado HOJE no cronômetro com o dia ainda aberto; fora disso a janela é só a anotação
+    const fin = modo === 'finalizar' && _ftPodeFechar(di, currentWeek, sgHoje);
+    const ant = _diarioDe(todayKey(), di) || {};
+    _ft = { di: di, modo: fin ? 'finalizar' : 'nota', secs: sgHoje || _ftSegundosHist(di) || Math.floor(Number(secs) || 0) || Number(ant.segundos) || 0,
+      pend: {}, temCardio: false, cardio: null, como: ant.como || '', motivos: new Set(ant.motivos || []), origem: fin ? 'finalizar' : 'nota' };
+    if (fin) _ftPendentes(di).forEach(o => { _ft.pend[o.ei] = _ftTemCarga(di, o.ei) ? 'fiz' : null; });
+    try { _ft.temCardio = !!document.getElementById('cardioWeekCard') && !isCardioDoneToday(); } catch (_) {}
+    const ta = document.getElementById('ftTexto'); if (ta) ta.value = ant.texto || '';
+    _ftRender();
+    teShow('fechaTreinoModal');
+  } catch (_) {}
+}
+function _ftRender() {
+  const f = _ft; if (!f) return;
+  const di = f.di, rot = _diaRotulo(di), fin = f.modo === 'finalizar';
+  const $ = id => document.getElementById(id);
+  const reais = _ftReais(di), marc = reais.filter(o => isDone(di, o.ei)).length;
+  $('ftTitulo').textContent = fin ? 'Fechar o treino de hoje' : 'Como foi o treino?';
+  const partes = ['Dia ' + rot.n + (rot.bloco ? ' · ' + rot.bloco : '')];
+  if (f.secs >= 60) partes.push(_wtDurTxt(f.secs));
+  if (fin) partes.push(marc + ' de ' + reais.length + (reais.length === 1 ? ' exercício marcado' : ' exercícios marcados'));
+  $('ftSub').textContent = partes.join(' · ');
+  // 1) o que faltou marcar
+  const eis = Object.keys(f.pend);
+  let h = '';
+  if (eis.length) {
+    h += '<div class="ft-bloco"><div class="ft-tit">' + (eis.length === 1 ? 'Faltou marcar 1 exercício' : 'Faltou marcar ' + eis.length + ' exercícios') + '</div>';
+    eis.forEach(k => {
+      const v = f.pend[k], ei = Number(k);
+      h += '<div class="ft-lin"><div class="ft-nome">' + _ftEsc(_ftNome(di, ei)) + (_ftTemCarga(di, ei) ? '<small>tu anotou a carga, mas não marcou como feito</small>' : '') + '</div>'
+        + '<div class="ft-bts"><button type="button" class="ft-b' + (v === 'fiz' ? ' on' : '') + '" onclick="fechaTreinoPend(' + ei + ',\'fiz\')">Fiz</button>'
+        + '<button type="button" class="ft-b' + (v === 'nao' ? ' on' : '') + '" onclick="fechaTreinoPend(' + ei + ',\'nao\')">Não fiz hoje</button></div></div>';
+    });
+    if (eis.length >= 2) h += '<button type="button" class="ft-todos" onclick="fechaTreinoPendTodos()">Fiz todos</button>';
+    if (eis.some(k => f.pend[k] === 'nao')) h += '<div class="ft-dica">Com exercício não feito o treino fica registrado, mas esse dia não entra no ranking.</div>';
+    h += '</div>';
+  }
+  $('ftPend').innerHTML = h;
+  // 2) cardio (só pra quem tem cardio no protocolo e ainda não marcou hoje)
+  h = '';
+  if (f.temCardio) {
+    let alvo = 0, na = 0; try { alvo = cardioTarget(); na = Math.min(cardioWeekCount(), alvo); } catch (_) {}
+    h = '<div class="ft-bloco"><div class="ft-tit">Cardio de hoje</div><div class="ft-lin"><div class="ft-nome">Tu fez o cardio?' + (alvo ? '<small>' + na + ' de ' + alvo + ' na semana</small>' : '') + '</div>'
+      + '<div class="ft-bts"><button type="button" class="ft-b' + (f.cardio === true ? ' on' : '') + '" onclick="fechaTreinoCardio(true)">Fiz</button>'
+      + '<button type="button" class="ft-b' + (f.cardio === false ? ' on' : '') + '" onclick="fechaTreinoCardio(false)">Ainda não</button></div></div></div>';
+  }
+  $('ftCardio').innerHTML = h;
+  // 3) como foi o treino (opcional)
+  h = '<div class="ft-bloco"><div class="ft-tit">Como foi o treino?</div><div class="ft-tres">'
+    + _FT_COMO.map(c => '<button type="button" class="ft-b' + (f.como === c[0] ? ' on' : '') + '" onclick="fechaTreinoComo(\'' + c[0] + '\')">' + c[1] + '</button>').join('') + '</div>';
+  if (f.como === 'abaixo') h += '<div class="ft-dica">O que pesou hoje?</div><div class="ft-chips">'
+    + _FT_MOTIVOS.map(m => '<button type="button" class="ft-b' + (f.motivos.has(m[0]) ? ' on' : '') + '" onclick="fechaTreinoMotivo(\'' + m[0] + '\')">' + m[1] + '</button>').join('') + '</div>';
+  h += '</div>';
+  $('ftComo').innerHTML = h;
+  $('ftBtn').textContent = fin ? 'Fechar o treino' : 'Salvar';
+  $('ftPe').textContent = fin
+    ? 'O treino entra no teu Progresso. A anotação é opcional e vai pro teu diário, com o dia de hoje: eu leio antes de montar teu próximo protocolo.'
+    : 'Vai pro teu diário, com o dia de hoje: eu leio antes de montar teu próximo protocolo.';
+}
+function fechaTreinoPend(ei, v) { if (!_ft || !(ei in _ft.pend)) return; _ft.pend[ei] = (_ft.pend[ei] === v) ? null : v; _ftRender(); }
+function fechaTreinoPendTodos() { if (!_ft) return; Object.keys(_ft.pend).forEach(k => { _ft.pend[k] = 'fiz'; }); _ftRender(); }
+function fechaTreinoCardio(v) { if (!_ft) return; _ft.cardio = (_ft.cardio === v) ? null : v; _ftRender(); }
+function fechaTreinoComo(c) { if (!_ft) return; _ft.como = (_ft.como === c) ? '' : c; if (_ft.como !== 'abaixo') _ft.motivos = new Set(); _ftRender(); }
+function fechaTreinoMotivo(m) { if (!_ft) return; if (_ft.motivos.has(m)) _ft.motivos.delete(m); else _ft.motivos.add(m); _ftRender(); }
+function fechaTreinoFecha() { _ft = null; try { teHide('fechaTreinoModal'); } catch (_) {} try { renderWtCard(); } catch (_) {} }
+// o mesmo registro do botão "Fiz o cardio hoje", sem abrir o cartão de foto por cima do fechamento
+function _ftCardioFeito() {
+  try { if (isCardioDoneToday()) return; localStorage.setItem(cardioMarkKey(todayKey()), '1'); } catch (_) { return; }
+  try { setTimeout(_selosChecaNovo, 900); } catch (_) {}
+  try { updateCardioProgress(); } catch (_) {}
+  try { logCardioRegistro(); } catch (_) {}
+  try { notifyCardioCompletion(); } catch (_) {}
+}
+function fechaTreinoSalvar() {
+  const f = _ft; if (!f) return;
+  const di = f.di, fin = f.modo === 'finalizar';
+  if (fin) {
+    if (Object.keys(f.pend).some(k => !f.pend[k])) { _ghToast('Marca "Fiz" ou "Não fiz hoje" em cada exercício que faltou.'); return; }
+    // regra do app (v449): o dia só fecha se pelo menos UM exercício foi feito de verdade
+    if (!_ftReais(di).some(o => isDone(di, o.ei) || f.pend[o.ei] === 'fiz')) { _ghToast('Pra fechar o treino, pelo menos um exercício precisa estar feito.'); return; }
+  }
+  const ta = document.getElementById('ftTexto'); const texto = String((ta && ta.value) || '').trim();
+  _ft = null;
+  try { teHide('fechaTreinoModal'); } catch (_) {}
+  if (ta) ta.value = '';
+  if (fin) {
+    try { _flushSetsPendentes_(false); } catch (_) {}
+    Object.keys(f.pend).forEach(k => {
+      const ei = Number(k);
+      if (f.pend[k] === 'fiz') { if (isSkipped(di, ei)) setSkipped(di, ei, false); if (!isDone(di, ei)) setDone(di, ei, true); }
+      else if (!isDone(di, ei) && !isSkipped(di, ei)) { setSkipped(di, ei, true); try { _puladoEnvia(di, ei, 'pulou'); } catch (_) {} }
+    });
+  }
+  if (f.cardio === true) _ftCardioFeito();
+  const anotou = _diarioSalva({ di: di, w: currentWeek, segundos: f.secs, como: f.como, motivos: f.como === 'abaixo' ? Array.from(f.motivos) : [], texto: texto, origem: f.origem });
+  let fechou = false;
+  if (fin) {
+    try { if (allDoneOfDay(di) && !_ftFechadoHoje(di)) { _diaConcluidoDispara(di); fechou = true; } } catch (_) {}
+    try { renderExercises(); } catch (_) {}
+    try { updateDayProgress(); } catch (_) {}
+  }
+  try { renderWtCard(); } catch (_) {}
+  const aviso = fin ? (fechou ? 'Treino de hoje fechado. Já entrou no teu Progresso.' : 'Marcações salvas. O treino ainda não fechou: confere os exercícios do dia.')
+    : (anotou ? 'Anotado no teu diário.' : (f.cardio === true ? 'Cardio de hoje marcado.' : ''));
+  if (aviso) _ghToast(aviso);
+}
+
+// ── DIÁRIO DE TREINO: uma anotação por dia e treino. Fica no aparelho na hora e sobe com fila de reenvio (sem sinal, ou com o
+// servidor ainda sem a rota, sobe sozinho depois). O servidor só acrescenta linha; quem lê fica com a mais nova. ──
+function _diarioKey() { return 'gh_diario_' + SHEET_ID; }
+function _diarioLocal() { try { const a = JSON.parse(localStorage.getItem(_diarioKey()) || '[]'); return Array.isArray(a) ? a.filter(Boolean) : []; } catch (_) { return []; } }
+function _diarioGuarda(arr) { try { localStorage.setItem(_diarioKey(), JSON.stringify((arr || []).slice(0, 90))); } catch (_) {} }
+function _diarioDe(dia, di) { try { return _diarioLocal().find(n => n.dia === dia && Number(n.di) === Number(di)) || null; } catch (_) { return null; } }
+function _diarioSalva(o) {
+  try {
+    if (typeof SHEET_ID === 'undefined' || !SHEET_ID || !o) return false;
+    const dia = todayKey(), di = Number(o.di);
+    if (!(di >= 0)) return false;
+    const como = _FT_COMO.some(c => c[0] === o.como) ? o.como : '';
+    const motivos = (como === 'abaixo' ? (o.motivos || []) : []).filter(m => _FT_MOTIVOS.some(x => x[0] === m));
+    const texto = String(o.texto || '').trim().slice(0, 600);
+    if (!como && !texto && !motivos.length) return false;
+    const ant = _diarioDe(dia, di) || {};
+    const seg = Math.max(0, Math.floor(Number(o.segundos) || 0)) || Number(ant.segundos) || _ftSegundosDoDia(di) || _ftSegundosHist(di) || 0;
+    const w = Number(o.w != null ? o.w : currentWeek) || 1;
+    const n = { dia: dia, di: di, w: w, segundos: seg, como: como, motivos: motivos, texto: texto, ts: Date.now(), pendente: true };
+    _diarioGuarda([n].concat(_diarioLocal().filter(x => !(x.dia === dia && Number(x.di) === di))));
+    // "diaN" = número do dia como vai na LOGS (di + 1). Nunca mandar os campos tab / rows: são os da rota de publicar protocolo.
+    const payload = { type: 'diario_treino', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+      dia: dia, w: w, di: di, diaN: di + 1, segundos: seg, como: como, motivos: motivos.join(','), texto: texto, origem: String(o.origem || ''), ts: new Date().toISOString() };
+    const p = _enviaComFila_('diario_treino', payload, q => q.dia + '|' + q.di);
+    if (p && typeof p.then === 'function') p.then(ok => { if (ok) _diarioConfirma(dia, di, n.ts); }).catch(() => {});
+    try { _diarioRender(); } catch (_) {}
+    return true;
+  } catch (_) { return false; }
+}
+function _diarioConfirma(dia, di, ts) {
+  try { const a = _diarioLocal(); const n = a.find(x => x.dia === dia && Number(x.di) === Number(di)); if (n && n.ts === ts && n.pendente) { delete n.pendente; _diarioGuarda(a); _diarioRender(a); } } catch (_) {}
+}
+async function _diarioFetch() {
+  if (typeof SHEET_ID === 'undefined' || !SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
+  try {
+    const r = await fetch(`${LOG_ENDPOINT}?action=diario_treino&id=${encodeURIComponent(SHEET_ID)}`, { redirect: 'follow' });
+    const j = await r.json();
+    if (!j || !j.ok || !Array.isArray(j.notas)) return;   // servidor ainda sem a rota: fica o que está no aparelho
+    const chave = n => n.dia + '|' + Number(n.di);
+    const por = {};
+    j.notas.forEach(s => {
+      const dn = parseInt(s.diaN, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(s.dia || '')) || !(dn >= 1)) return;
+      const n = { dia: String(s.dia), di: dn - 1, w: Number(s.w) || '', segundos: Number(s.segundos) || 0, como: String(s.como || ''), motivos: Array.isArray(s.motivos) ? s.motivos : [], texto: String(s.texto || ''), ts: Number(s.ts) || 0 };
+      if (!por[chave(n)]) por[chave(n)] = n;
+    });
+    // o que ainda não subiu (salvo sem sinal, ou refeito depois do que o servidor tem) continua valendo por até 14 dias
+    _diarioLocal().forEach(n => {
+      if (!n.pendente || Date.now() - (n.ts || 0) > 14 * 864e5) return;
+      const s = por[chave(n)];
+      if (!s || (n.ts || 0) > (s.ts || 0) + 2000) por[chave(n)] = n;
+    });
+    const junta = Object.keys(por).map(k => por[k]).sort((a, b) => a.dia < b.dia ? 1 : (a.dia > b.dia ? -1 : (b.ts || 0) - (a.ts || 0)));
+    _diarioGuarda(junta); _diarioRender(junta);
+  } catch (_) { /* sem sinal: fica o que já está no aparelho */ }
+}
+function _diarioRender(arr) {
+  const alvo = document.getElementById('diarioLista'); if (!alvo) return;
+  const lista = (arr || _diarioLocal()).slice(0, 30);
+  if (!lista.length) { alvo.innerHTML = ''; return; }
+  const cor = { bem: '#7fc06b', normal: '#b9b3a6', abaixo: '#c98b6b' };
+  let h = '<div class="tlem-sec" style="margin-top:18px;">Diário de treino</div>'
+    + '<p style="color:#777;font-size:10.5px;margin:2px 0 8px;line-height:1.45;">O que tu anota quando fecha o treino. Eu leio junto com as tuas cargas antes de mexer no teu protocolo.</p>';
+  lista.forEach(n => {
+    let rot = { n: (Number(n.di) || 0) + 1, bloco: '' };
+    try { if (typeof WORKOUT !== 'undefined' && WORKOUT && WORKOUT[n.di]) rot = _diaRotulo(Number(n.di)); } catch (_) {}
+    const como = (_FT_COMO.find(c => c[0] === n.como) || [])[1] || '';
+    const mot = (n.motivos || []).map(m => (_FT_MOTIVOS.find(x => x[0] === m) || [])[1]).filter(Boolean).join(', ').toLowerCase();
+    const sub = [n.segundos >= 60 ? _wtDurTxt(n.segundos) : '', mot, n.pendente ? 'enviando' : ''].filter(Boolean).join(' · ');
+    const dBR = /^\d{4}-\d{2}-\d{2}$/.test(n.dia || '') ? n.dia.slice(8, 10) + '/' + n.dia.slice(5, 7) : '';
+    h += '<div style="background:#1a1a1a;border:1px solid #262626;border-radius:12px;padding:10px 13px;margin-bottom:8px;">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;"><span style="font-size:13px;font-weight:700;color:#eee;">' + _ftEsc(dBR) + ' · Dia ' + _ftEsc(rot.n) + (rot.bloco ? ' · ' + _ftEsc(rot.bloco) : '') + '</span>'
+      + (como ? '<span style="font-size:11px;font-weight:800;color:' + (cor[n.como] || '#b9b3a6') + ';">' + _ftEsc(como) + '</span>' : '') + '</div>'
+      + (sub ? '<div style="font-size:11.5px;color:#8a8a8a;margin-top:3px;">' + _ftEsc(sub) + '</div>' : '')
+      + (n.texto ? '<div style="font-size:12.5px;color:#ccc;line-height:1.5;white-space:pre-wrap;margin-top:5px;">' + _ftEsc(n.texto) + '</div>' : '')
+      + '</div>';
+  });
+  alvo.innerHTML = h;
+}
+
+// ── "Como foi o treino?" no cartão de treino concluído: um toque já grava; "abaixo do normal" abre os motivos ali mesmo ──
+function _achComoRender(di) {
+  const box = document.getElementById('achComo'); if (!box) return;
+  if (di == null || !(Number(di) >= 0)) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  di = Number(di);
+  const n = _diarioDe(todayKey(), di) || {};
+  let h = '<div class="ft-tit">Como foi o treino?</div><div class="ft-tres">'
+    + _FT_COMO.map(c => '<button type="button" class="ft-b' + (n.como === c[0] ? ' on' : '') + '" onclick="achComoToca(' + di + ',\'' + c[0] + '\')">' + c[1] + '</button>').join('') + '</div>';
+  if (n.como === 'abaixo') h += '<div class="ft-dica">O que pesou hoje?</div><div class="ft-chips">'
+    + _FT_MOTIVOS.map(m => '<button type="button" class="ft-b' + ((n.motivos || []).indexOf(m[0]) >= 0 ? ' on' : '') + '" onclick="achComoMotivo(' + di + ',\'' + m[0] + '\')">' + m[1] + '</button>').join('') + '</div>';
+  h += '<div class="ft-dica">' + (n.como ? 'Anotado no teu diário.' : 'Um toque e vai pro teu diário.') + ' <button type="button" class="ft-todos" style="padding:0;" onclick="achComoMais(' + di + ')">escrever mais</button></div>';
+  box.innerHTML = h; box.style.display = '';
+}
+function achComoToca(di, como) {
+  const n = _diarioDe(todayKey(), di) || {};
+  _diarioSalva({ di: di, w: currentWeek, como: como, motivos: como === 'abaixo' ? (n.motivos || []) : [], texto: n.texto || '', origem: 'cartao' });
+  _achComoRender(di);
+}
+function achComoMotivo(di, m) {
+  const n = _diarioDe(todayKey(), di) || {};
+  const s = new Set(n.motivos || []); if (s.has(m)) s.delete(m); else s.add(m);
+  _diarioSalva({ di: di, w: currentWeek, como: 'abaixo', motivos: Array.from(s), texto: n.texto || '', origem: 'cartao' });
+  _achComoRender(di);
+}
+function achComoMais(di) { try { achClose(); } catch (_) {} setTimeout(() => fechaTreinoAbrir(di, 'nota'), 150); }
+
+// ── METAS: cardio pelas duas marcas (a do botão e a do envio), uma vez por dia; e a linha "Hoje" ──
+function _mtCardioDias(wid, ini, fim) {
+  const dias = new Set(), RC = /^(\d{4})-(\d{2})-(\d{2})$/;
+  const p1 = 'gh_cardioreg_' + SHEET_ID + '_', p2 = 'gh_cardio_' + wid + '_';
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i); if (!k) continue;
+      const resto = k.indexOf(p1) === 0 ? k.slice(p1.length) : (k.indexOf(p2) === 0 ? k.slice(p2.length) : null);
+      if (resto == null) continue;
+      const m = resto.match(RC); if (!m) continue;
+      if (k.indexOf(p2) === 0 && localStorage.getItem(k) !== '1') continue;
+      const d = new Date(+m[1], +m[2] - 1, +m[3]); d.setHours(0, 0, 0, 0);
+      if (d < ini || d > fim) continue;
+      dias.add(m[1] + m[2] + m[3]);
+    }
+  } catch (_) {}
+  return dias.size;
+}
+// o que já está marcado HOJE em cada anel, pra o aluno ver o que falta (print da Sheila: "fiz todos os dias, não aparece")
+function _mtHojeHtml(temDieta) {
+  try {
+    const p = [], pref = 'gh_logsent_' + SHEET_ID + '_' + todayKey() + '_d';
+    let trOk = false;
+    for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.indexOf(pref) === 0 && /_concl$/.test(k)) { trOk = true; break; } }
+    p.push(trOk ? 'treino <b>fechado</b>' : '<b>nenhum treino fechado</b>');
+    if (temDieta) { let t = 0, f = 0; try { t = dietTotalMeals(); f = dietMealsDone(); } catch (_) {} if (t > 0) p.push('dieta <b>' + f + ' de ' + t + '</b> refeições'); }
+    let c = 0; try { c = waterCount() || 0; } catch (_) {}
+    p.push('água <b>' + c + '</b> ' + (c === 1 ? 'copo' : 'copos') + ' (o dia conta com 10)');
+    let cd = false; try { cd = isCardioDoneToday(); } catch (_) {}
+    p.push('cardio <b>' + (cd ? 'feito' : 'não marcado') + '</b>');
+    return '<div class="mt-hoje">Hoje: ' + p.join(' · ') + '</div>';
+  } catch (_) { return ''; }
+}
 function wtFinish() {
   const s = _wtLoad(); if (!s) return;
   const secs = Math.min(_WT_CAP_SECS, Math.max(1, Math.floor(_wtElapsedMs(s) / 1000)));
   if (secs > _WT_SUSPEITO_SECS) { _wtEditOpen({ di: s.di, w: s.w, secs: secs, pausas: s.pausas || 0, modo: 'finalizar' }); return; }
   _wtCommit(s.di, s.w, secs, s.pausas || 0, false);
+  try { _fechaTreinoDepoisDoCronometro(s.di, s.w, secs); } catch (_) {}   // v571: dia ainda aberto = abre o fechamento do treino
 }
 function _wtCommit(di, w, secs, pausas, corrigido) {
   secs = Math.min(_WT_CAP_SECS, Math.max(1, Math.floor(secs)));
@@ -14568,7 +14937,15 @@ function _wtCommit(di, w, secs, pausas, corrigido) {
   if (!corrigido) localStorage.removeItem(_wtKey());   // finalizar encerra a sessao; corrigir nao tem sessao
   renderWtCard(); renderTabs();
   const last = document.getElementById('wtLast');
-  if (last) { last.style.display = 'block'; last.innerHTML = (corrigido ? '✅ Tempo corrigido pra ' : '✅ Treino finalizado em ') + dur + '. Registrado! <button type="button" class="wt-edit" onclick="wtCorrigir()">corrigir</button>'; }
+  if (last) {
+    last.style.display = 'block';
+    // v571: o "Registrado!" valia só pro TEMPO, e o aluno entendia que o treino tinha contado. Com o dia ainda aberto a linha
+    // diz a verdade e oferece o fechamento (Sheila Rios, 08 e 09/10: treinou 45 min e 1 h, faltou 1 marcação, não contou).
+    const _abC = !corrigido && !_ftFechando && _ftPodeFechar(Number(di), w, secs);
+    last.innerHTML = _abC
+      ? '⏱ Tempo registrado: ' + dur + '. O treino de hoje ainda não está fechado. <button type="button" class="wt-fechar" onclick="fechaTreinoAbrir(' + Number(di) + ',\'finalizar\',' + Math.floor(secs) + ')">Fechar o treino</button> <button type="button" class="wt-edit" onclick="wtCorrigir()">corrigir</button>'
+      : (corrigido ? '✅ Tempo corrigido pra ' : '✅ Treino finalizado em ') + dur + '. Registrado! <button type="button" class="wt-edit" onclick="wtCorrigir()">corrigir</button>';
+  }
 }
 function _wtEditOpen(cfg) {
   _wtEdit = cfg;
@@ -14589,7 +14966,7 @@ function wtEditSalvar() {
   const cfg = _wtEdit; _wtEdit = null;
   teHide('wtEditModal');
   _wtCommit(cfg.di, cfg.w, min * 60, cfg.pausas || 0, cfg.modo === 'corrigir' || min * 60 !== cfg.secs);
-  if (cfg.modo === 'finalizar') { try { localStorage.removeItem(_wtKey()); } catch (_) {} renderWtCard(); }
+  if (cfg.modo === 'finalizar') { try { localStorage.removeItem(_wtKey()); } catch (_) {} renderWtCard(); try { _fechaTreinoDepoisDoCronometro(cfg.di, cfg.w, min * 60); } catch (_) {} }   // v571
 }
 // "corrigir" no tempo ja salvo do dia/semana aberto (badge e linha vem do mesmo registro)
 function wtCorrigir() {
@@ -18749,8 +19126,10 @@ function _metasCardHtml() {
     const trM = _mtDias('gh_logsent_' + SHEET_ID + '_', RT, jm[0], jm[1]);
     const diS = _mtDias('gh_dietlog_' + SHEET_ID + '_', RD, js[0], js[1]);
     const diM = _mtDias('gh_dietlog_' + SHEET_ID + '_', RD, jm[0], jm[1]);
-    const caS = _mtDias('gh_cardioreg_' + SHEET_ID + '_', RC, js[0], js[1]);
-    const caM = _mtDias('gh_cardioreg_' + SHEET_ID + '_', RC, jm[0], jm[1]);
+    // v571: o cardio que volta do servidor num aparelho novo entra como gh_cardio_<id>_<data> (a marca do botão), e o anel só
+    // olhava gh_cardioreg_ (a marca do envio): cardio recuperado não aparecia. Agora o anel conta as duas, uma vez por dia.
+    const caS = _mtCardioDias(wid, js[0], js[1]);
+    const caM = _mtCardioDias(wid, jm[0], jm[1]);
     const agS = _mtDias('gh_water_' + wid + '_', RC, js[0], js[1], 10);
     const agM = _mtDias('gh_water_' + wid + '_', RC, jm[0], jm[1], 10);
     const cardioExtra = '<button type="button" class="mt-def" onclick="metasCardioUi(event)">' + (metaCardio ? metaCardio + 'd &middot; ' + (_cardioEscolhida > _cardioPresc ? 'minha meta' : 'do protocolo') : 'definir meta') + '</button>';
@@ -18759,7 +19138,7 @@ function _metasCardHtml() {
     const domPrev = new Date(js[0]); domPrev.setDate(js[0].getDate() - 1);
     const trP = _mtDias('gh_logsent_' + SHEET_ID + '_', RT, segPrev, domPrev);
     const diP = _mtDias('gh_dietlog_' + SHEET_ID + '_', RD, segPrev, domPrev);
-    const caP = _mtDias('gh_cardioreg_' + SHEET_ID + '_', RC, segPrev, domPrev);
+    const caP = _mtCardioDias(wid, segPrev, domPrev);
     const teveSemanaPassada = (trP + diP + caP) > 0;
     const streak = _mtStreakSemanas(freq);
     let h = '<div class="pg-card" id="metasCard"><div class="pg-sec-t">METAS</div>' +
@@ -18771,6 +19150,7 @@ function _metasCardHtml() {
       _mtAnel('&#128167;', '&Aacute;gua', agS, 7) +
       _mtAnel('&#127939;', 'Cardio', caS, metaCardio || 0, cardioExtra) +
       '</div>' +
+      _mtHojeHtml(temDieta) +   // v571
       '<div id="mtCardioChips" style="display:none;"></div>' +
       (streak >= 2 ? '<div class="mt-streak"><b>' + streak + ' semanas seguidas</b> com o treino em dia. N&atilde;o quebra agora.</div>' : '') +
       (teveSemanaPassada ? '<div class="mt-passada">Semana passada: ' + trP + (freq ? '/' + freq : '') + ' treinos' + (temDieta ? ' &middot; dieta ' + diP + '/7' : '') + (caP ? ' &middot; cardio ' + caP : '') + '</div>' : '') +
@@ -22913,7 +23293,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v570';
+    var APP_SHELL_V = 'metodo-gh-v571';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
