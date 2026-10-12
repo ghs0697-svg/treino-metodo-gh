@@ -1419,6 +1419,7 @@
   .ach-como .ft-chips { justify-content: center; }
   .mt-hoje { font-size: 11.5px; color: #9a9388; margin: 8px 2px 0; line-height: 1.55; }
   .mt-hoje b { color: #d8cfb8; font-weight: 600; }
+  .gh-obs-list .obs-dia-data { color: #8a8070; font-size: .86em; white-space: nowrap; }   /* v572 */
   .focus-main-btn { flex: 1; border: none; border-radius: 10px; font-size: 15px; font-weight: 800; padding: 14px 6px; cursor: pointer; }
   .focus-main-btn.rest { background: #1c1c21; color: #fff; border: 1px solid #2c2c33; }
   .focus-main-btn.donebtn { background: var(--gold); color: #111; }
@@ -20059,7 +20060,12 @@ function parseDietData(rows) {
         // termina em ":" é tratada como TÍTULO no render (entrega inicial usa
         // "O que observei no teu caso:", reajuste usa "O que ajustei agora:").
         const b = (r[1] || r[3] || '').trim();
-        if (b) data.observacoes.push(b);
+        // v572 (sugestão do aluno Adilson; Ajustes #3362; GH 12/10 "Pode fazer"): ajuste do DIA A DIA leva a DATA na coluna C
+        // ("ajustes | Dia 2: Remada Curvada Sentado no lugar da Remada Baixa | 12/10/2026") e aparece no quadro por 3 dias a
+        // partir dela, em qualquer dia do protocolo. Linha sem data segue a regra de sempre (só nos 2 primeiros dias).
+        const _dAj = (r[1] && typeof _ajusteData === 'function') ? _ajusteData(r[2]) : null;
+        if (b && _dAj) (data.ajustesDia = data.ajustesDia || []).push({ t: b, d: _dAj });
+        else if (b) data.observacoes.push(b);
         break;
       }
       default:
@@ -20115,17 +20121,22 @@ function _suplTimingIcon(timing) {
 // do bloco observacoes terminada em ":" é o título. Vazio se não houver bloco.
 function _renderTopCards(d) {
   let h = '';
-  if (d.observacoes && d.observacoes.length && !_obsCardExpirado()) {
-    let linhas = d.observacoes.slice();
+  // v572: ajustes do dia a dia COM DATA valem por 3 dias a partir da data, em qualquer dia do protocolo (o mais novo em cima)
+  const vivos = (d.ajustesDia || []).filter(a => _ajusteDiaVivo(a.d)).sort((a, b) => a.d < b.d ? 1 : (a.d > b.d ? -1 : 0));
+  const mostraObs = !!(d.observacoes && d.observacoes.length && !_obsCardExpirado());
+  if (mostraObs || vivos.length) {
+    let linhas = mostraObs ? d.observacoes.slice() : [];
     let titulo = 'O que ajustei agora'; // default (reajuste) se não vier título
+    let tituloEntrega = false;
     // 1ª linha terminada em ":" é o título. Inicial: "O que observei no teu caso:".
     if (linhas.length && /:\s*$/.test(linhas[0])) {
-      titulo = linhas.shift().replace(/:\s*$/, '').trim();
+      titulo = linhas.shift().replace(/:\s*$/, '').trim(); tituloEntrega = true;
     }
-    h += `<div class="gh-top-card gh-obs-card">
+    h += `<div class="gh-top-card gh-obs-card"${tituloEntrega ? ' data-titulo-entrega="1"' : ''}>
       <div class="gh-top-card-title">✨ ${titulo}</div>
       <ul class="gh-obs-list">`;
-    linhas.forEach(b => { h += `<li>${b}</li>`; });
+    linhas.forEach(b => { h += `<li class="obs-entrega">${b}</li>`; });
+    vivos.forEach(a => { h += `<li class="obs-dia">${a.t} <span class="obs-dia-data">· ${a.d.slice(8, 10)}/${a.d.slice(5, 7)}</span></li>`; });
     h += `</ul></div>`;
   }
   return h;
@@ -22014,8 +22025,41 @@ function _obsCardExpirado() {
 function _obsCardApplyTTL() {
   try {
     if (!_obsCardExpirado()) return;
-    document.querySelectorAll('.gh-obs-card').forEach(function (el) { el.remove(); });
+    // v572: vencido o prazo da nota de ENTREGA, saem só as linhas dela; ajuste do dia a dia com data ainda viva fica
+    document.querySelectorAll('.gh-obs-card').forEach(function (el) {
+      el.querySelectorAll('li:not(.obs-dia)').forEach(function (li) { li.remove(); });
+      if (!el.querySelector('li')) { el.remove(); return; }
+      var t = el.querySelector('.gh-top-card-title');
+      if (t && el.getAttribute('data-titulo-entrega') === '1') { t.textContent = '✨ O que ajustei agora'; el.removeAttribute('data-titulo-entrega'); }
+    });
   } catch (e) {}
+}
+// v572: data do ajuste do dia a dia (coluna C do bloco ajustes). Aceita 12/10/2026, 12/10/26, 12/10 e 2026-10-12; devolve
+// 'aaaa-mm-dd' ou null. Sem ano, vale o ano corrente (e o anterior, se a data cair mais de 30 dias no futuro).
+function _ajusteData(v) {
+  try {
+    var s = String(v == null ? '' : v).trim(); if (!s) return null;
+    var m, y, mo, d;
+    if ((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/))) { y = +m[1]; mo = +m[2]; d = +m[3]; }
+    else if ((m = s.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{4}|\d{2}))?$/))) {
+      d = +m[1]; mo = +m[2];
+      if (m[3]) y = m[3].length === 2 ? 2000 + (+m[3]) : +m[3];
+      else { var h = new Date(); y = h.getFullYear(); if (new Date(y, mo - 1, d).getTime() - h.getTime() > 30 * 86400000) y--; }
+    } else return null;
+    var dt = new Date(y, mo - 1, d);
+    if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d || y < 2025 || y > 2100) return null;
+    return y + '-' + String(mo).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+  } catch (e) { return null; }
+}
+// vivo = o dia do ajuste e os dois seguintes (tolera a data de amanhã: fuso ou digitação)
+function _ajusteDiaVivo(iso) {
+  try {
+    var p = String(iso || '').split('-').map(Number); if (p.length !== 3) return false;
+    var a = new Date(p[0], p[1] - 1, p[2]); a.setHours(0, 0, 0, 0);
+    var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    var dias = Math.round((hoje.getTime() - a.getTime()) / 86400000);
+    return dias >= -1 && dias < 3;
+  } catch (e) { return false; }
 }
 
 // Toque na barra: abre o Acompanhamento (sequência + recordes) e rola até ele.
@@ -23293,7 +23337,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v571';
+    var APP_SHELL_V = 'metodo-gh-v572';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
