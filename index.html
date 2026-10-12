@@ -19941,7 +19941,10 @@ function parseDietData(rows) {
           if (/\bdia\b/.test(_mcl) || /\bdi[aá]ri/.test(_mcl)) { data.macroDia.push({ label: _lab, pcg: (r[2] || '').trim(), kcal: (r[3] || '').trim() }); break; }
         }
         if (/^por que/.test(_mcl) && /(macro|n[uú]mero)/.test(_mcl)) {
-          data.macroPorque = (r[2] || '').trim() || (r[3] || '').trim();
+          // v574 (Entregas #3376): a coluna C leva a frase curta e a D a EXPLICAÇÃO, que é o texto que conta pro aluno. O card
+          // mostrava só a C (a D só se a C estivesse vazia). Agora mostra as duas, na ordem, sem repetir quando a D já traz a C.
+          const _pc = (r[2] || '').trim(), _pd = (r[3] || '').trim();
+          data.macroPorque = (!_pc || !_pd) ? (_pc || _pd) : (_pd.toLowerCase().indexOf(_pc.toLowerCase()) === 0 ? _pd : _pc + (/[.!?:;]$/.test(_pc) ? ' ' : '. ') + _pd);
           break;
         }
         data.metas.push({ campo: r[1] || '', valor: r[2] || '', detalhe: r[3] || '' });
@@ -23337,7 +23340,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v573';
+    var APP_SHELL_V = 'metodo-gh-v574';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
