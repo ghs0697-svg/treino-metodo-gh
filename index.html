@@ -1419,6 +1419,9 @@
   .ach-como .ft-chips { justify-content: center; }
   .mt-hoje { font-size: 11.5px; color: #9a9388; margin: 8px 2px 0; line-height: 1.55; }
   .mt-hoje b { color: #d8cfb8; font-weight: 600; }
+  .pg-fechar { margin-top: 9px; font-size: 12px; color: #b9b3a6; align-items: center; justify-content: space-between; gap: 6px 10px; flex-wrap: wrap; }   /* v575 */
+  .pg-fechar .wt-fechar { margin: 0; }
+  .pg-fechar-fim { margin: 6px 14px 16px; padding: 12px 14px; border: 1px solid rgba(212,175,106,.35); border-radius: 12px; background: rgba(212,175,106,.06); font-size: 13px; color: #d8cfb8; }   /* v575: o mesmo botão no fim da lista de exercícios, onde o aluno está quando termina */
   .gh-obs-list .obs-dia-data { color: #8a8070; font-size: .86em; white-space: nowrap; }   /* v572 */
   .focus-main-btn { flex: 1; border: none; border-radius: 10px; font-size: 15px; font-weight: 800; padding: 14px 6px; cursor: pointer; }
   .focus-main-btn.rest { background: #1c1c21; color: #fff; border: 1px solid #2c2c33; }
@@ -3857,6 +3860,7 @@
   <div class="day-progress" id="dayProgress" style="display:none;">
     <div class="pg-text"><span id="pgLabel">Hoje: 0/0 exercícios</span></div>
     <div class="pg-bar"><div class="pg-fill" id="pgFill" style="width:0%"></div></div>
+    <div class="pg-fechar" id="pgFechar" style="display:none;"><span>Terminou o treino de hoje?</span><button type="button" class="wt-fechar" onclick="fechaTreinoAbrir(currentDay,'finalizar')">Fechar o treino</button></div>
   </div>
   <div class="const-dots" id="constDots" style="display:none;"></div>
   <div class="sem-card" id="semCard" style="display:none;"></div>
@@ -3892,6 +3896,7 @@
 </div>
 
 <div id="exerciseContainer"></div>
+<div class="pg-fechar pg-fechar-fim" id="pgFechar2" style="display:none;"><span>Terminou o treino de hoje?</span><button type="button" class="wt-fechar" onclick="fechaTreinoAbrir(currentDay,'finalizar')">Fechar o treino</button></div>
 <!-- Cardio prescrito (GH 26/08: cardio é treino, saiu da aba Dieta). O dado segue vindo
      da linha cardio da planilha de DIETA; só o LUGAR de exibição mudou. Montado pelo
      _cardioTreinoMount quando a dieta carrega. -->
@@ -11531,6 +11536,7 @@ function updateDayProgress() {
   document.getElementById('pgLabel').textContent = `Hoje: ${done}/${total} exercícios` + (pulados ? ` · ${pulados} pulado${pulados === 1 ? '' : 's'}` : '') + (keepDP ? ' · ⏱ modo ' + _shortMin() + 'min' : '');
   _shortBtnSync();
   document.getElementById('pgFill').style.width = pct + '%';
+  try { _ftBarra(); } catch (_) {}   // v575
   bar.style.display = total > 0 ? 'block' : 'none';
   const hero = document.getElementById('dayHero');
   if (hero) hero.style.display = total > 0 ? 'block' : 'none';
@@ -13954,6 +13960,7 @@ async function loadFromSheets(injectedText) {
     _tourMaybeStart();     // 1º acesso: tour de boas-vindas (o _showNav da dieta roda cedo demais, sem WORKOUT)
     _instAvisoMaybe();     // v532: celular sem o app instalado: aviso pra instalar (nunca por cima do tour)
     setTimeout(_semanaPromptBoot, 2500);   // v539: semana inteira fechada em outra data: pergunta se passa pra próxima
+    setTimeout(_ftPromptBoot, 3400);       // v575: treino de ontem ou anteontem que ficou aberto com boa parte marcada
     return true;
 
   } catch (err) {
@@ -14564,6 +14571,7 @@ function renderWtCard() {
       else if (_wtTick) { clearInterval(_wtTick); _wtTick = null; }
     }, 1000);
   } else if (_wtTick) { clearInterval(_wtTick); _wtTick = null; }
+  try { _ftBarra(); } catch (_) {}   // v575: o botão de fechar da barra do dia acompanha o cronômetro
 }
 
 function wtStart() {
@@ -14652,6 +14660,72 @@ function _ftPodeFechar(di, w, secs) {
     return !_ftFechadoHoje(di);
   } catch (_) { return false; }
 }
+// ── v575 (CRM #3465 e #3481, pedido do GH: "tudo que ele marca ... tem que estar sempre funcionando, pra ele ter uma jornada a
+// seguir"). Medido em 13/10: em 14 dias, 490 dias com 3 ou mais exercícios marcados ou com carga NÃO fecharam (20%), de 218
+// alunos; 359 deles sem cronômetro, que a v571 não alcança. O fechamento agora também é oferecido a quem não usa o cronômetro:
+// HOJE, um botão na barra do dia quando boa parte do treino está marcada ou com carga; treino que ficou ABERTO ONTEM OU ANTEONTEM,
+// a pergunta vem na abertura do app e o treino fecha com a data em que foi feito. Sempre com a confirmação do aluno. ──
+function _ftDiaISO(n) { const d = new Date(); d.setDate(d.getDate() - n); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function _ftQuando(dia) { const h = todayKey(); if (!dia || dia === h) return 'de hoje'; if (dia === _ftDiaISO(1)) return 'de ontem'; if (dia === _ftDiaISO(2)) return 'de anteontem'; return 'de ' + String(dia).slice(8, 10) + '/' + String(dia).slice(5, 7); }
+function _ftAtivoEm(dia, di) { try { return (JSON.parse(localStorage.getItem('gh_ativo_' + SHEET_ID + '_' + dia) || '[]') || []).map(Number).indexOf(Number(di)) >= 0; } catch (_) { return false; } }
+// sinal de treino de verdade: 60% ou mais dos exercícios do dia (e pelo menos 2) feitos, pulados ou com carga anotada
+function _ftEvidencia(di) {
+  const r = _ftReais(di); let n = 0;
+  r.forEach(o => { if (isDone(di, o.ei) || isSkipped(di, o.ei) || _ftTemCarga(di, o.ei)) n++; });
+  return { n: n, total: r.length, ok: r.length > 0 && n >= 2 && n >= Math.ceil(r.length * 0.6) };
+}
+function _ftGuardas(di) {
+  if (typeof WORKOUT === 'undefined' || !WORKOUT || !WORKOUT[di]) return false;
+  if (typeof params !== 'undefined' && params.get('edit')) return false;   // modo edição do treinador
+  if (typeof _tourAtivo !== 'undefined' && _tourAtivo) return false;
+  return true;
+}
+function _ftPodeFecharHoje(di) {
+  try {
+    if (!_ftGuardas(di) || _ftFechadoHoje(di)) return false;
+    if (_ftSegundosDoDia(di) >= _FT_MIN_SECS) return true;          // v571: cronômetro finalizado hoje
+    return _ftAtivoEm(todayKey(), di) && _ftEvidencia(di).ok;       // v575: boa parte do treino marcada hoje
+  } catch (_) { return false; }
+}
+function _ftPodeFecharEm(dia, di) {
+  try {
+    if (!_ftGuardas(di)) return false;
+    if (dia !== _ftDiaISO(1) && dia !== _ftDiaISO(2)) return false;                                   // só ontem e anteontem
+    if (!_ftAtivoEm(dia, di) || _ftAtivoEm(todayKey(), di)) return false;                              // mexeu nele naquele dia e não está nele hoje
+    if (localStorage.getItem('gh_logsent_' + SHEET_ID + '_' + dia + '_d' + di + '_concl')) return false;
+    if ((_diaUltimaConclusao(di) || '') >= dia) return false;                                          // já fechou naquele dia ou depois
+    return _ftEvidencia(di).ok;
+  } catch (_) { return false; }
+}
+// botão "Fechar o treino" na barra do dia (some com o cronômetro ligado e quando a linha do cronômetro já oferece o mesmo)
+function _ftBarra() {
+  let mostra = false;
+  try { mostra = _ftPodeFecharHoje(currentDay) && !_ft && !_wtLoad() && !document.querySelector('#wtLast .wt-fechar'); } catch (_) {}
+  // dois lugares: na barra do dia (topo) e no fim da lista de exercícios, onde o aluno está quando termina
+  ['pgFechar', 'pgFechar2'].forEach(function (id) { const b = document.getElementById(id); if (b) b.style.display = mostra ? 'flex' : 'none'; });
+}
+// na abertura: treino de ontem ou de anteontem que ficou aberto com boa parte marcada. Uma pergunta por abertura, nunca por
+// cima de outra janela; "Agora não" encerra a pergunta daquele treino.
+function _ftPromptBoot() {
+  try {
+    if (typeof SHEET_ID === 'undefined' || !SHEET_ID) return;
+    if (typeof params !== 'undefined' && params.get('edit')) return;
+    if (typeof _tourAtivo !== 'undefined' && _tourAtivo) return;
+    if (typeof WORKOUT === 'undefined' || !Array.isArray(WORKOUT) || !WORKOUT.length) return;
+    if (document.querySelector('#tourOverlay.show, .evo-overlay.show, .te-modal-overlay.show, .te-modal-overlay.active, .ach-overlay.show, .focus-overlay.show, .install-modal.active, .video-overlay.show, .history-modal-overlay.show, .sub-picker-overlay.show, .timer-overlay.show')) return;
+    for (let n = 1; n <= 2; n++) {
+      const dia = _ftDiaISO(n);
+      let lista = []; try { lista = JSON.parse(localStorage.getItem('gh_ativo_' + SHEET_ID + '_' + dia) || '[]') || []; } catch (_) {}
+      for (let i = lista.length - 1; i >= 0; i--) {
+        const di = Number(lista[i]);
+        if (!(di >= 0) || !_ftPodeFecharEm(dia, di)) continue;
+        if (localStorage.getItem('gh_ftnao_' + SHEET_ID + '_' + dia + '_d' + di)) continue;
+        fechaTreinoAbrir(di, 'finalizar', 0, dia);
+        return;
+      }
+    }
+  } catch (_) {}
+}
 function _fechaTreinoDepoisDoCronometro(di, w, secs) {
   di = Number(di);
   if (!_ftPodeFechar(di, w, secs)) return false;
@@ -14659,21 +14733,27 @@ function _fechaTreinoDepoisDoCronometro(di, w, secs) {
   fechaTreinoAbrir(di, 'finalizar', secs);
   return true;
 }
-function fechaTreinoAbrir(di, modo, secs) {
+function fechaTreinoAbrir(di, modo, secs, dia) {
   try {
     di = Number(di);
     if (typeof WORKOUT === 'undefined' || !WORKOUT || !WORKOUT[di]) return;
-    const sgHoje = _ftSegundosDoDia(di);
-    // fechar exige treino finalizado HOJE no cronômetro com o dia ainda aberto; fora disso a janela é só a anotação
-    const fin = modo === 'finalizar' && _ftPodeFechar(di, currentWeek, sgHoje);
-    const ant = _diarioDe(todayKey(), di) || {};
-    _ft = { di: di, modo: fin ? 'finalizar' : 'nota', secs: sgHoje || _ftSegundosHist(di) || Math.floor(Number(secs) || 0) || Number(ant.segundos) || 0,
-      pend: {}, temCardio: false, cardio: null, como: ant.como || '', motivos: new Set(ant.motivos || []), origem: fin ? 'finalizar' : 'nota' };
+    const hoje = todayKey();
+    const alvo = (dia && /^\d{4}-\d{2}-\d{2}$/.test(String(dia)) && String(dia) !== hoje) ? String(dia) : hoje;   // v575: o dia do treino (hoje, ou o dia que ficou aberto)
+    const sgHoje = alvo === hoje ? _ftSegundosDoDia(di) : 0;
+    // fechar exige o dia ainda aberto e sinal de treino de verdade: cronômetro finalizado hoje (v571) ou boa parte dos exercícios
+    // marcada ou com carga (v575); fora disso a janela é só a anotação
+    const fin = modo === 'finalizar' && (alvo === hoje ? _ftPodeFecharHoje(di) : _ftPodeFecharEm(alvo, di));
+    const ant = _diarioDe(alvo, di) || {};
+    _ft = { di: di, dia: alvo, modo: fin ? 'finalizar' : 'nota',
+      secs: alvo === hoje ? (sgHoje || _ftSegundosHist(di) || Math.floor(Number(secs) || 0) || Number(ant.segundos) || 0) : (Number(ant.segundos) || 0),
+      pend: {}, temCardio: false, cardio: null, como: ant.como || '', motivos: new Set(ant.motivos || []),
+      origem: fin ? (alvo !== hoje ? 'dia_aberto' : (sgHoje >= _FT_MIN_SECS ? 'finalizar' : 'barra')) : 'nota' };
     if (fin) _ftPendentes(di).forEach(o => { _ft.pend[o.ei] = _ftTemCarga(di, o.ei) ? 'fiz' : null; });
-    try { _ft.temCardio = !!document.getElementById('cardioWeekCard') && !isCardioDoneToday(); } catch (_) {}
+    if (alvo === hoje) { try { _ft.temCardio = !!document.getElementById('cardioWeekCard') && !isCardioDoneToday(); } catch (_) {} }
     const ta = document.getElementById('ftTexto'); if (ta) ta.value = ant.texto || '';
     _ftRender();
     teShow('fechaTreinoModal');
+    try { _ftBarra(); } catch (_) {}
   } catch (_) {}
 }
 function _ftRender() {
@@ -14681,7 +14761,7 @@ function _ftRender() {
   const di = f.di, rot = _diaRotulo(di), fin = f.modo === 'finalizar';
   const $ = id => document.getElementById(id);
   const reais = _ftReais(di), marc = reais.filter(o => isDone(di, o.ei)).length;
-  $('ftTitulo').textContent = fin ? 'Fechar o treino de hoje' : 'Como foi o treino?';
+  $('ftTitulo').textContent = fin ? 'Fechar o treino ' + _ftQuando(f.dia) : 'Como foi o treino?';
   const partes = ['Dia ' + rot.n + (rot.bloco ? ' · ' + rot.bloco : '')];
   if (f.secs >= 60) partes.push(_wtDurTxt(f.secs));
   if (fin) partes.push(marc + ' de ' + reais.length + (reais.length === 1 ? ' exercício marcado' : ' exercícios marcados'));
@@ -14722,13 +14802,19 @@ function _ftRender() {
   $('ftPe').textContent = fin
     ? 'O treino entra no teu Progresso. A anotação é opcional e vai pro teu diário, com o dia de hoje: eu leio antes de montar teu próximo protocolo.'
     : 'Vai pro teu diário, com o dia de hoje: eu leio antes de montar teu próximo protocolo.';
+  if (f.dia && f.dia !== todayKey()) $('ftPe').textContent = $('ftPe').textContent.replace('com o dia de hoje', 'com o dia ' + _ftQuando(f.dia));   // v575
 }
 function fechaTreinoPend(ei, v) { if (!_ft || !(ei in _ft.pend)) return; _ft.pend[ei] = (_ft.pend[ei] === v) ? null : v; _ftRender(); }
 function fechaTreinoPendTodos() { if (!_ft) return; Object.keys(_ft.pend).forEach(k => { _ft.pend[k] = 'fiz'; }); _ftRender(); }
 function fechaTreinoCardio(v) { if (!_ft) return; _ft.cardio = (_ft.cardio === v) ? null : v; _ftRender(); }
 function fechaTreinoComo(c) { if (!_ft) return; _ft.como = (_ft.como === c) ? '' : c; if (_ft.como !== 'abaixo') _ft.motivos = new Set(); _ftRender(); }
 function fechaTreinoMotivo(m) { if (!_ft) return; if (_ft.motivos.has(m)) _ft.motivos.delete(m); else _ft.motivos.add(m); _ftRender(); }
-function fechaTreinoFecha() { _ft = null; try { teHide('fechaTreinoModal'); } catch (_) {} try { renderWtCard(); } catch (_) {} }
+function fechaTreinoFecha() {
+  const f = _ft; _ft = null;
+  // v575: "Agora não" num treino de outro dia encerra a pergunta daquele treino (não volta na próxima abertura)
+  try { if (f && f.modo === 'finalizar' && f.dia && f.dia !== todayKey()) localStorage.setItem('gh_ftnao_' + SHEET_ID + '_' + f.dia + '_d' + f.di, '1'); } catch (_) {}
+  try { teHide('fechaTreinoModal'); } catch (_) {} try { renderWtCard(); } catch (_) {} try { _ftBarra(); } catch (_) {}
+}
 // o mesmo registro do botão "Fiz o cardio hoje", sem abrir o cartão de foto por cima do fechamento
 function _ftCardioFeito() {
   try { if (isCardioDoneToday()) return; localStorage.setItem(cardioMarkKey(todayKey()), '1'); } catch (_) { return; }
@@ -14758,15 +14844,25 @@ function fechaTreinoSalvar() {
     });
   }
   if (f.cardio === true) _ftCardioFeito();
-  const anotou = _diarioSalva({ di: di, w: currentWeek, segundos: f.secs, como: f.como, motivos: f.como === 'abaixo' ? Array.from(f.motivos) : [], texto: texto, origem: f.origem });
+  const anotou = _diarioSalva({ di: di, dia: f.dia, w: currentWeek, segundos: f.secs, como: f.como, motivos: f.como === 'abaixo' ? Array.from(f.motivos) : [], texto: texto, origem: f.origem });
   let fechou = false;
   if (fin) {
-    try { if (allDoneOfDay(di) && !_ftFechadoHoje(di)) { _diaConcluidoDispara(di); fechou = true; } } catch (_) {}
+    try {
+      if (allDoneOfDay(di)) {
+        if (!f.dia || f.dia === todayKey()) { if (!_ftFechadoHoje(di)) { _diaConcluidoDispara(di); fechou = true; } }
+        else if (!localStorage.getItem('gh_logsent_' + SHEET_ID + '_' + f.dia + '_d' + di + '_concl')) {
+          // v575: treino de outro dia fecha com a DATA EM QUE FOI FEITO; soma um treino sem gastar o "já contou hoje" da sequência
+          try { const s = getStreak(); s.current = (s.current || 0) + 1; s.longest = s.current; s.totalDaysDone = s.current; localStorage.setItem(streakKey(), JSON.stringify(s)); } catch (_) {}
+          try { setTimeout(_selosChecaNovo, 900); } catch (_) {}
+          notifyDayCompletion(di, false, f.dia); fechou = true;
+        }
+      }
+    } catch (_) {}
     try { renderExercises(); } catch (_) {}
     try { updateDayProgress(); } catch (_) {}
   }
   try { renderWtCard(); } catch (_) {}
-  const aviso = fin ? (fechou ? 'Treino de hoje fechado. Já entrou no teu Progresso.' : 'Marcações salvas. O treino ainda não fechou: confere os exercícios do dia.')
+  const aviso = fin ? (fechou ? ('Treino ' + _ftQuando(f.dia) + ' fechado. Já entrou no teu Progresso.') : 'Marcações salvas. O treino ainda não fechou: confere os exercícios do dia.')
     : (anotou ? 'Anotado no teu diário.' : (f.cardio === true ? 'Cardio de hoje marcado.' : ''));
   if (aviso) _ghToast(aviso);
 }
@@ -14780,7 +14876,7 @@ function _diarioDe(dia, di) { try { return _diarioLocal().find(n => n.dia === di
 function _diarioSalva(o) {
   try {
     if (typeof SHEET_ID === 'undefined' || !SHEET_ID || !o) return false;
-    const dia = todayKey(), di = Number(o.di);
+    const dia = (o.dia && /^\d{4}-\d{2}-\d{2}$/.test(String(o.dia))) ? String(o.dia) : todayKey(), di = Number(o.di);   // v575: anotação do treino de outro dia leva o dia dele
     if (!(di >= 0)) return false;
     const como = _FT_COMO.some(c => c[0] === o.como) ? o.como : '';
     const motivos = (como === 'abaixo' ? (o.motivos || []) : []).filter(m => _FT_MOTIVOS.some(x => x[0] === m));
@@ -23340,7 +23436,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v574';
+    var APP_SHELL_V = 'metodo-gh-v575';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
