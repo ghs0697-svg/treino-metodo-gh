@@ -1419,6 +1419,23 @@
   .ach-como .ft-chips { justify-content: center; }
   .mt-hoje { font-size: 11.5px; color: #9a9388; margin: 8px 2px 0; line-height: 1.55; }
   .mt-hoje b { color: #d8cfb8; font-weight: 600; }
+  /* v576: cartão "Tua jornada" no topo do Progresso */
+  .jr-h { font-size: 17px; font-weight: 800; color: #fff; margin-top: 2px; line-height: 1.25; }
+  .jr-barra { height: 8px; border-radius: 99px; background: #26231c; margin-top: 10px; overflow: hidden; }
+  .jr-barra i { display: block; height: 100%; background: var(--gold); border-radius: 99px; }
+  .jr-pontas { display: flex; justify-content: space-between; gap: 4px 10px; flex-wrap: wrap; font-size: 11px; color: #8e8a82; margin-top: 6px; }
+  .jr-sec { font-size: 10.5px; letter-spacing: 1.2px; color: var(--gold); text-transform: uppercase; font-weight: 800; margin-top: 14px; padding-top: 12px; border-top: 1px solid #262626; }
+  .jr-lin { display: flex; align-items: flex-start; gap: 10px; margin-top: 10px; font-size: 13.5px; color: #e9e4d8; line-height: 1.35; }
+  .jr-lin > div { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .jr-lin b { color: #fff; font-weight: 700; }
+  .jr-lin small { display: block; font-size: 11.5px; color: #8e8a82; margin-top: 2px; }
+  .jr-ok { flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--gold); color: #15100a; font-size: 12px; font-weight: 900; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+  .jr-falta { flex: none; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid #5d5a54; margin-top: 1px; }
+  .jr-data { flex: none; min-width: 52px; text-align: center; font-size: 11px; font-weight: 800; color: var(--gold); border: 1px solid #3a3526; border-radius: 8px; padding: 5px 4px; line-height: 1.2; }
+  .jr-data span { display: block; font-size: 10px; color: #8e8a82; font-weight: 600; }
+  .jr-toca { cursor: pointer; }
+  .jr-toca small { color: var(--gold); }
+  .jr-pe { font-size: 11px; color: #7d786e; margin-top: 12px; line-height: 1.45; }
   .pg-fechar { margin-top: 9px; font-size: 12px; color: #b9b3a6; align-items: center; justify-content: space-between; gap: 6px 10px; flex-wrap: wrap; }   /* v575 */
   .pg-fechar .wt-fechar { margin: 0; }
   .pg-fechar-fim { margin: 6px 14px 16px; padding: 12px 14px; border: 1px solid rgba(212,175,106,.35); border-radius: 12px; background: rgba(212,175,106,.06); font-size: 13px; color: #d8cfb8; }   /* v575: o mesmo botão no fim da lista de exercícios, onde o aluno está quando termina */
@@ -19193,6 +19210,83 @@ function _mtStreakSemanas(freq) {
     return streak;
   } catch (_) { return 0; }
 }
+// ══ v576 (GH 13/10/2026, "Pode resolver"; o pedido veio pela CRM #3465, textual dele: "isso envolve o aluno ter um acompanhamento
+// do progresso dele ... pra ele ter uma jornada a seguir"): TUA JORNADA ══
+// Um cartão no topo do Progresso que junta o que estava espalhado: em que ponto do protocolo o aluno está, o que já fez nele e
+// o que vem (reajuste e fim da etapa). Tudo sai do que o app já sabe: data do reajuste, tamanho do ciclo, vencimento, treinos
+// fechados, recordes, dieta, cardio e diário. Linha sem dado não aparece; nenhum número é inventado.
+// Vocabulário do app: "protocolo" é o ciclo até o reajuste; "etapa" é o período do plano (a renovação é a "próxima etapa").
+function _jornadaCardHtml() {
+  try {
+    if (typeof SHEET_ID === 'undefined' || !SHEET_ID) return '';
+    if (!_proxReajusteBR || !/^\d{2}\/\d{2}\/\d{4}$/.test(_proxReajusteBR)) return '';   // sem a data do reajuste não há o que desenhar
+    const DIA = 86400000, esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const p = _proxReajusteBR.split('/').map(Number);
+    const reaj = new Date(p[2], p[1] - 1, p[0]); reaj.setHours(0, 0, 0, 0);
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    const faltam = Math.round((reaj.getTime() - hoje.getTime()) / DIA);
+    const ciclo = _cicloDias();
+    const dia = Math.max(1, Math.min(ciclo, _protoDiaDoCiclo() || 1));
+    const ini = new Date(reaj.getTime()); ini.setDate(ini.getDate() - ciclo); ini.setHours(0, 0, 0, 0);   // primeiro dia deste protocolo
+    const iniISO = ini.getFullYear() + '-' + String(ini.getMonth() + 1).padStart(2, '0') + '-' + String(ini.getDate()).padStart(2, '0');
+    const br = d => ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2);
+    const pl = (n, um, mais) => n + ' ' + (n === 1 ? um : mais);
+    let v = ''; try { v = sessionStorage.getItem('gh_version_' + SHEET_ID) || ''; } catch (_) {}
+    const nome = 'Protocolo' + (v ? ' ' + esc(v) : '');
+    let respondeu = false, suprime = false; try { respondeu = _reajRespondidoEsteCiclo(); } catch (_) {} try { suprime = _reajSuprimidoPorVenc(); } catch (_) {}
+    // fim da etapa (vencimento que o servidor manda); vitalício não tem fim
+    let venc = null, diasVenc = null;
+    try { if (_vencServidoISO && /^\d{4}-\d{2}-\d{2}/.test(_vencServidoISO) && String(_vencServidoISO) < '2099') { venc = new Date(String(_vencServidoISO).slice(0, 10) + 'T00:00:00'); if (isNaN(venc.getTime())) venc = null; else diasVenc = Math.round((venc.getTime() - hoje.getTime()) / DIA); } } catch (_) {}
+    // cabeçalho e barra
+    let titulo, direita, pct;
+    if (respondeu) { titulo = nome + ' · anamnese respondida'; direita = 'novo protocolo a caminho'; pct = 100; }
+    else if (faltam < 0) { titulo = nome + ' · ciclo de ' + ciclo + ' dias completo'; direita = 'hora de atualizar'; pct = 100; }
+    else { titulo = nome + ' · dia ' + dia + ' de ' + ciclo; direita = suprime ? (diasVenc != null && diasVenc >= 0 ? 'tua etapa termina em ' + pl(diasVenc, 'dia', 'dias') : '') : (faltam === 0 ? 'reajuste hoje' : 'reajuste em ' + pl(faltam, 'dia', 'dias')); pct = Math.round(dia / ciclo * 100); }
+    // o que já fez neste protocolo
+    const wid = (typeof STUDENT_ID !== 'undefined' && STUDENT_ID) ? STUDENT_ID : SHEET_ID;
+    const RT = /^(\d{4})-(\d{2})-(\d{2})_d\d+_concl$/, RD = /^(\d{4})-(\d{2})-(\d{2})_concl$/;
+    const treinos = _mtDias('gh_logsent_' + SHEET_ID + '_', RT, ini, hoje);
+    let freq = 0; try { freq = _freqSemanal() || 0; } catch (_) {}
+    let temDieta = false; try { temDieta = (typeof _refNomesAtuais === 'function') ? (_refNomesAtuais().length > 0) : false; } catch (_) {}
+    const dieta = temDieta ? _mtDias('gh_dietlog_' + SHEET_ID + '_', RD, ini, hoje) : 0;
+    let cardio = 0; try { cardio = _mtCardioDias(wid, ini, hoje); } catch (_) {}
+    let recs = []; try { const vistos = {}; (JSON.parse(localStorage.getItem(_prLogKey()) || '[]') || []).forEach(r => { if (!r || String(r.d || '') < iniISO) return; const k = r.n || (r.di + '.' + r.ei); if (!vistos[k]) { vistos[k] = 1; recs.push(r.n || ''); } }); } catch (_) {}
+    let notas = 0; try { notas = _diarioLocal().filter(n => String(n.dia || '') >= iniISO).length; } catch (_) {}
+    const ok = '<span class="jr-ok">&#10003;</span>', falta = '<span class="jr-falta"></span>';
+    const lin = (ic, forte, fraco, toca) => '<div class="jr-lin' + (toca ? ' jr-toca" onclick="' + toca : '') + '">' + ic + '<div><b>' + forte + '</b>' + (fraco ? '<small>' + fraco + '</small>' : '') + '</div></div>';
+    let fez = '';
+    if (treinos > 0) {
+      const ritmo = String(Math.round(treinos / (dia / 7) * 10) / 10).replace('.', ',');
+      fez += lin(ok, pl(treinos, 'treino fechado', 'treinos fechados'), (freq && dia >= 7) ? 'teu ritmo: ' + ritmo + ' por semana, a meta é ' + freq : (freq ? 'a meta é ' + freq + ' por semana' : ''));
+    } else fez += lin(falta, 'Nenhum treino fechado ainda', 'fecha o treino no fim pra ele contar aqui');
+    if (recs.length) fez += lin(ok, pl(recs.length, 'recorde de carga', 'recordes de carga'), esc(recs.filter(Boolean).slice(0, 3).join(', ')));
+    if (temDieta) fez += dieta > 0 ? lin(ok, 'Dieta: ' + pl(dieta, 'dia completo', 'dias completos'), '') : lin(falta, 'Dieta: nenhum dia completo', 'marca todas as refeições pra o dia contar');
+    if (cardio > 0) fez += lin(ok, 'Cardio: ' + pl(cardio, 'dia', 'dias'), '');
+    if (notas > 0) fez += lin(ok, pl(notas, 'anotação no diário de treino', 'anotações no diário de treino'), '');
+    // o que vem
+    const data = (cima, baixo) => '<span class="jr-data">' + cima + (baixo ? '<span>' + baixo + '</span>' : '') + '</span>';
+    let vem = '';
+    if (respondeu) vem += lin(ok, 'Anamnese de reajuste respondida', 'teu protocolo novo está a caminho');
+    else if (!suprime) {
+      const pre = (typeof REAJ_PRE_DIAS === 'number') ? REAJ_PRE_DIAS : 7;
+      if (faltam > pre) vem += lin(data(br(reaj), pl(faltam, 'dia', 'dias')), 'Anamnese de reajuste', 'eu olho tuas cargas, teu diário e tuas fotos e monto teu próximo protocolo');
+      else vem += lin(data('agora', ''), 'Anamnese de reajuste liberada', 'toca aqui pra responder', 'maisAnamnese()');
+    }
+    if (venc && diasVenc != null && diasVenc >= 0) {
+      const quando = diasVenc <= 60 ? pl(diasVenc, 'dia', 'dias') : pl(Math.round(diasVenc / 30), 'mês', 'meses');
+      const rotulo = br(venc) + (venc.getFullYear() !== hoje.getFullYear() ? '/' + String(venc.getFullYear()).slice(-2) : '');
+      vem += diasVenc <= 45 ? lin(data(rotulo, quando), 'Fim da tua etapa', 'toca aqui pra ver a próxima etapa', "openRenovModal('jornada')")
+        : lin(data(rotulo, quando), 'Fim da tua etapa', 'até lá teu protocolo é reajustado a cada ciclo');
+    }
+    return '<div class="pg-card jr-card" id="jornadaCard"><div class="pg-sec-t">TUA JORNADA</div>'
+      + '<div class="jr-h">' + titulo + '</div>'
+      + '<div class="jr-barra"><i style="width:' + pct + '%"></i></div>'
+      + '<div class="jr-pontas"><span>começou ' + br(ini) + '</span><span>' + direita + '</span></div>'
+      + '<div class="jr-sec">O que tu já fez neste protocolo</div>' + fez
+      + (vem ? '<div class="jr-sec">O que vem</div>' + vem : '')
+      + '<div class="jr-pe">Conta sozinho pelo que tu marca no app.</div></div>';
+  } catch (e) { return ''; }
+}
 function _metasCardHtml() {
   try {
     if (typeof SHEET_ID === 'undefined' || !SHEET_ID) return '';
@@ -19285,7 +19379,7 @@ function renderProgressoScreen() {
   const unit = getUnit();
   const fmt = kg => kgToDisplay(kg) + unit;
   const items = _progCollect();
-  let html = '<div class="prog-screen">' + _metasCardHtml() + _selosCardHtml();   // v565: selos logo abaixo das metas
+  let html = '<div class="prog-screen">' + _jornadaCardHtml() + _metasCardHtml() + _selosCardHtml();   // v565: selos logo abaixo das metas; v576: a jornada abre a tela
   if (!items.length) {
     html += `<div class="pg-card">
       <div class="pg-sec-t">EVOLUÇÃO DE CARGA</div>
@@ -23436,7 +23530,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v575';
+    var APP_SHELL_V = 'metodo-gh-v576';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
