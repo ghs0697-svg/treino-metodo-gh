@@ -2474,6 +2474,21 @@
   .cardio-week .cw-fill { height: 100%; background: var(--gold); width: 0; transition: width .3s; }
   .cardio-week .cw-btn { width: 100%; padding: 9px; border-radius: 9px; border: 1px solid var(--gold); background: transparent; color: var(--gold); font-size: 13px; font-weight: 700; cursor: pointer; }
   .cardio-week .cw-btn.done { background: var(--gold); color: #0c0c0d; border-color: var(--gold); }
+  .cardio-week .cw-ult { font-size: 11.5px; color: #a49d8f; margin-top: 8px; line-height: 1.55; }   /* v577: registro do cardio */
+  .cardio-week .cw-ult b { color: #e8e2d4; font-weight: 700; }
+  .cw-link { background: none; border: 0; padding: 0; font: inherit; font-weight: 700; color: var(--gold); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+  .cs-campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 8px; margin-top: 9px; }
+  .cs-campo { display: block; border: 1px solid #333; border-radius: 10px; background: #141414; padding: 7px 10px; cursor: text; min-width: 0; }
+  .cs-campo:focus-within { border-color: var(--gold); }
+  .cs-campo small { display: block; font-size: 10.5px; color: #8e8a82; font-weight: 700; }
+  .cs-campo span { display: flex; align-items: baseline; gap: 4px; }
+  #cardioSessModal .cs-campo input { width: 100%; min-width: 0; height: auto; margin: 0; background: none; border: 0; border-radius: 0; box-shadow: none; outline: none; color: #f1ede4; font: inherit; font-size: 19px; font-weight: 800; padding: 2px 0 0; }
+  .cs-campo em { font-style: normal; font-size: 11.5px; color: #8e8a82; flex: none; }
+  #csBtn { width: 100%; margin-top: 14px; background: var(--gold); color: #15100a; border: none; border-radius: 12px; padding: 12px; font-weight: 800; font-size: 14px; font-family: inherit; cursor: pointer; }
+  .ch-lin { display: grid; grid-template-columns: 46px 1fr; gap: 8px; padding: 9px 0; border-top: 1px solid #262626; font-size: 13px; color: #e8e2d4; line-height: 1.45; }
+  .ch-lin:first-child { border-top: 0; }
+  .ch-d { color: #8e8a82; font-weight: 700; }
+  .ch-up { color: #6fd08c; font-size: 11.5px; font-weight: 800; }
   /* card de foto da refeição */
   .meal-photo-modal { position: fixed; inset: 0; background: rgba(0,0,0,.82); z-index: 10003; display: none; align-items: center; justify-content: center; padding: 16px; }
   .meal-photo-modal.on { display: flex; }
@@ -5392,6 +5407,27 @@
     <button type="button" id="ftBtn" onclick="fechaTreinoSalvar()">Fechar o treino</button>
     <button type="button" class="ft-ghost" onclick="fechaTreinoFecha()">Agora não</button>
     <p id="ftPe" style="color:#777;font-size:10.5px;margin:10px 0 0;line-height:1.5;text-align:center;"></p>
+  </div>
+</div>
+<div class="te-modal-overlay" id="cardioSessModal" onclick="if(event.target.id==='cardioSessModal')cardioSessFecha()">
+  <div class="te-modal-box" style="max-width:440px;max-height:calc(88vh / var(--fz, 1));overflow-y:auto;">
+    <h3 id="csTit" style="margin:0 0 2px;">Como foi o cardio?</h3>
+    <p id="csSub" style="color:#aaa;font-size:12px;margin:0;line-height:1.5;"></p>
+    <div class="ft-bloco"><div class="ft-tit">O que tu fez</div><div class="ft-chips" id="csTipo"></div></div>
+    <div class="ft-bloco"><div class="ft-tit">Números</div><div class="cs-campos" id="csNums"></div><div class="ft-dica" id="csDica"></div></div>
+    <div class="ft-bloco"><div class="ft-tit">Intensidade</div><div class="ft-chips" id="csInt"></div><div class="ft-dica">Leve: conversa fácil. Moderado: fala frases curtas. Forte: mal consegue falar.</div></div>
+    <button type="button" id="csBtn" onclick="cardioSessSalvar()">Salvar o cardio</button>
+    <button type="button" class="ft-ghost" id="csSo" onclick="cardioSessSo()">Só marcar como feito</button>
+    <p style="color:#777;font-size:10.5px;margin:10px 0 0;line-height:1.5;text-align:center;">Marcar o dia conta no ranking do mesmo jeito. Os números ficam no teu histórico e eu vejo no reajuste.</p>
+  </div>
+</div>
+<div class="te-modal-overlay" id="cardioHistModal" onclick="if(event.target.id==='cardioHistModal')teHide('cardioHistModal')">
+  <div class="te-modal-box" style="max-width:440px;max-height:calc(88vh / var(--fz, 1));overflow-y:auto;">
+    <h3 id="chTit" style="margin:0 0 2px;">Teu cardio</h3>
+    <p id="chResumo" style="color:#aaa;font-size:12px;margin:0;line-height:1.5;"></p>
+    <div class="ft-chips" id="chTipos"></div>
+    <div id="chLista" style="margin-top:8px;"></div>
+    <button type="button" class="ft-ghost" onclick="teHide('cardioHistModal')">Fechar</button>
   </div>
 </div>
 <div class="te-modal-overlay" id="dorModal" onclick="if(event.target.id==='dorModal')teHide('dorModal')">
@@ -8960,7 +8996,7 @@ let _syncFlushRunning = false;
 // v545: recuo por tipo de fila. Se uma rodada inteira de um tipo falha (servidor fora, cota do Sheets), a próxima tentativa
 // daquele tipo espera 1, 2, 4... até 10 minutos, em vez de todo aparelho reenviar a fila inteira a cada 30 s.
 const _syncFalhas = {}, _syncProxTent = {};
-const _SYNC_TIPOS = ['carga', 'done', 'completion', 'esforco', 'nota_serie', 'nota_aluno', 'nota_aluno_del', 'treino_lembrete', 'troca', 'pulado', 'tempo_treino', 'meal', 'cardio_reg', 'dieta_sinal', 'ajuste_request', 'diario_treino'];   // v571
+const _SYNC_TIPOS = ['carga', 'done', 'completion', 'esforco', 'nota_serie', 'nota_aluno', 'nota_aluno_del', 'treino_lembrete', 'troca', 'pulado', 'tempo_treino', 'meal', 'cardio_reg', 'dieta_sinal', 'ajuste_request', 'diario_treino', 'cardio_sessao'];   // v571
 async function flushSyncQueues() {
   if (_syncFlushRunning) return;
   if (typeof LOG_ENDPOINT === 'undefined') return;
@@ -19261,7 +19297,7 @@ function _jornadaCardHtml() {
     } else fez += lin(falta, 'Nenhum treino fechado ainda', 'fecha o treino no fim pra ele contar aqui');
     if (recs.length) fez += lin(ok, pl(recs.length, 'recorde de carga', 'recordes de carga'), esc(recs.filter(Boolean).slice(0, 3).join(', ')));
     if (temDieta) fez += dieta > 0 ? lin(ok, 'Dieta: ' + pl(dieta, 'dia completo', 'dias completos'), '') : lin(falta, 'Dieta: nenhum dia completo', 'marca todas as refeições pra o dia contar');
-    if (cardio > 0) fez += lin(ok, 'Cardio: ' + pl(cardio, 'dia', 'dias'), '');
+    if (cardio > 0) { let cm = 0; try { cm = _csMinDesde(iniISO); } catch (_) {} fez += lin(ok, 'Cardio: ' + pl(cardio, 'dia', 'dias'), cm > 0 ? cm + ' min registrados' : ''); }   // v577
     if (notas > 0) fez += lin(ok, pl(notas, 'anotação no diário de treino', 'anotações no diário de treino'), '');
     // o que vem
     const data = (cima, baixo) => '<span class="jr-data">' + cima + (baixo ? '<span>' + baixo + '</span>' : '') + '</span>';
@@ -20450,7 +20486,7 @@ function _cardioTreinoMount(d, cardioFromOrient, temCardio) {
   const box = document.getElementById('cardioTreino');
   if (!box) return;
   if (!temCardio) { box.innerHTML = ''; return; }
-  let html = `<div class="cardio-week" id="cardioWeekCard"><div class="cw-row"><span class="cw-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="5" r="1.6"/><path d="M5 21l3-5 3 1 2-3"/><path d="M13 14l4 1 2 4"/><path d="M9 9l3-2 3 2 2-1"/></svg> Cardio da semana</span><span class="cw-count" id="cwCount">0/${cardioTarget()}</span></div><div class="cw-bar"><div class="cw-fill" id="cwFill"></div></div><button type="button" class="cw-btn" id="cwBtn" onclick="onCardioDone()">Fiz o cardio hoje</button></div>`;
+  let html = `<div class="cardio-week" id="cardioWeekCard"><div class="cw-row"><span class="cw-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="5" r="1.6"/><path d="M5 21l3-5 3 1 2-3"/><path d="M13 14l4 1 2 4"/><path d="M9 9l3-2 3 2 2-1"/></svg> Cardio da semana</span><span class="cw-count" id="cwCount">0/${cardioTarget()}</span></div><div class="cw-bar"><div class="cw-fill" id="cwFill"></div></div><button type="button" class="cw-btn" id="cwBtn" onclick="cardioBotao()">Fiz o cardio hoje</button><div class="cw-ult" id="cwUlt" style="display:none;"></div></div>`;
   html += `<div class="diet-section-toggle" onclick="toggleDietSection('cardio')"><span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span><span class="tog-label">Cardio</span><span class="tog-chev" id="cardioArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></div>`;
   html += `<div class="diet-section-content" id="cardioContent">`;
   if (d.aerobicos && d.aerobicos.length > 0) {
@@ -20472,6 +20508,7 @@ function updateCardioProgress() {
   if (cnt) cnt.textContent = `${Math.min(done, target)}/${target}`; // capa display (fazer +q o mínimo não vira "4/3")
   if (fill) fill.style.width = (target ? Math.min(100, done / target * 100) : 0) + '%';
   if (btn) { const t = isCardioDoneToday(); btn.classList.toggle('done', t); btn.textContent = t ? '✓ Cardio feito hoje' : 'Fiz o cardio hoje'; }
+  try { _csUltRender(); } catch (_) {}   // v577
 }
 function onCardioDone() {
   if (isCardioDoneToday()) return;                 // 1 por dia
@@ -20520,6 +20557,139 @@ function notifyCardioCompletion(shared) {
   try {
     _enviaComFila_(payload.type, payload, _kFilaPadrao_);   // v545: com fila de reenvio (sem sinal, sobe sozinho depois)
   } catch (_) {}
+}
+// ══ REGISTRO DO CARDIO (v577, GH 15/10/2026: "cardio seria interessante ter tempo, velocidade, duração, intensidade tipo os
+// registros do treino"; tempo e duração são a mesma coisa) ══
+// O botão "Fiz o cardio hoje" abre a janela do registro: o que fez, os números de cada aparelho e a intensidade, já com o último
+// registro daquele tipo. "Só marcar como feito" é o caminho de antes (onCardioDone, intocado). Marcar o dia segue sendo o que
+// conta no ranking (LOGS plano=cardio e aba CARDIO); os números vão pra aba CARDIO_SESSOES da mestre (POST cardio_sessao,
+// servidor 2026-10-15a) e ficam no aparelho em gh_cardiosess_<planilha> pro histórico. Corrigir o cardio do dia manda o mesmo id.
+const CS_TIPOS = [
+  { id: 'esteira', nome: 'Esteira', campos: ['min', 'vel', 'inc'] },
+  { id: 'bike', nome: 'Bicicleta', campos: ['min', 'nivel'] },
+  { id: 'escada', nome: 'Escada', campos: ['min', 'nivel'] },
+  { id: 'eliptico', nome: 'Elíptico', campos: ['min', 'nivel'] },
+  { id: 'rua', nome: 'Na rua', campos: ['min', 'dist'] },
+  { id: 'outro', nome: 'Outro', campos: ['min'] }
+];
+const CS_CAMPOS = {
+  min: { rot: 'Duração', un: 'min', de: 1, ate: 600, casas: 0 },
+  vel: { rot: 'Velocidade', un: 'km/h', de: 0.5, ate: 40, casas: 1 },
+  inc: { rot: 'Inclinação', un: '%', de: 0, ate: 40, casas: 1 },
+  nivel: { rot: 'Nível', un: '', de: 1, ate: 40, casas: 1 },
+  dist: { rot: 'Distância', un: 'km', de: 0.1, ate: 200, casas: 2 }
+};
+const CS_INT = [['leve', 'Leve'], ['moderado', 'Moderado'], ['forte', 'Forte']];
+const CS_DICA = { esteira: 'Velocidade e inclinação são as do painel da esteira.', bike: 'Nível é a carga que aparece no painel da bicicleta.', escada: 'Nível é a velocidade dos degraus, a do painel da escada.', eliptico: 'Nível é a carga que aparece no painel do elíptico.', rua: 'Com a distância, o app calcula o teu ritmo por km.', outro: 'Só a duração já basta.' };
+let _cs = null, _chTipo = '';
+function _csTipo(id) { return CS_TIPOS.find(t => t.id === id) || CS_TIPOS[CS_TIPOS.length - 1]; }
+function _csKey() { return 'gh_cardiosess_' + SHEET_ID; }
+function _csLista() { try { const a = JSON.parse(localStorage.getItem(_csKey()) || '[]'); return Array.isArray(a) ? a.filter(s => s && s.d && s.tipo && s.id) : []; } catch (_) { return []; } }
+function _csGrava(a) { try { localStorage.setItem(_csKey(), JSON.stringify(a.slice(-300))); } catch (_) {} }
+function _csIso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+// número digitado: aceita vírgula; vazio = null; fora da faixa ou ilegível = NaN (o app avisa)
+function _csNum(txt, c) { const t = String(txt == null ? '' : txt).trim().replace(',', '.'); if (!t) return null; const n = Number(t); if (!isFinite(n) || n < c.de || n > c.ate) return NaN; const f = Math.pow(10, c.casas); return Math.round(n * f) / f; }
+function _csF(n) { return String(Math.round(Number(n) * 100) / 100).replace('.', ','); }
+function _csRitmo(s) { if (!(s.min > 0 && s.dist > 0)) return ''; const sp = Math.round(s.min * 60 / s.dist); return Math.floor(sp / 60) + ':' + String(sp % 60).padStart(2, '0') + ' por km'; }
+function _csNums(s) {
+  const p = [];
+  if (s.min) p.push(_csF(s.min) + ' min');
+  if (s.vel) p.push(_csF(s.vel) + ' km/h');
+  if (s.inc != null && s.inc !== '') p.push('inclinação ' + _csF(s.inc) + '%');
+  if (s.nivel) p.push('nível ' + _csF(s.nivel));
+  if (s.dist) { p.push(_csF(s.dist) + ' km'); const r = _csRitmo(s); if (r) p.push('ritmo ' + r); }
+  if (s.int) p.push(((CS_INT.find(x => x[0] === s.int) || ['', s.int])[1]).toLowerCase());
+  return p.join(', ');
+}
+function _csQuando(d) {
+  const h = todayKey(); if (d === h) return 'hoje';
+  const o = new Date(); o.setDate(o.getDate() - 1); if (d === _csIso(o)) return 'ontem';
+  const dt = new Date(d + 'T12:00:00'); return ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'][dt.getDay()] + ' ' + d.slice(8, 10) + '/' + d.slice(5, 7);
+}
+function _csUltimo(tipo) { const a = _csLista(); for (let i = a.length - 1; i >= 0; i--) if (!tipo || a[i].tipo === tipo) return a[i]; return null; }
+function _csDeHoje() { const h = todayKey(), a = _csLista(); for (let i = a.length - 1; i >= 0; i--) if (a[i].d === h) return a[i]; return null; }
+// minutos de cardio registrados desde uma data (aaaa-mm-dd)
+function _csMinDesde(iniISO) { let t = 0; _csLista().forEach(s => { if (String(s.d) >= iniISO && s.min > 0) t += s.min; }); return t; }
+function _csSemanaMin() { return _csMinDesde(_csIso(_cardioWeekStart())); }
+// a linha embaixo do botão: o de hoje (com editar), o convite pra registrar os números, ou o último; os minutos da semana e o histórico
+function _csUltRender() {
+  const el = document.getElementById('cwUlt'); if (!el) return;
+  const hoje = _csDeHoje(), ult = _csUltimo(), feito = isCardioDoneToday(), sem = _csSemanaMin();
+  let h = '';
+  if (hoje) h = 'Hoje: <b>' + _csTipo(hoje.tipo).nome + ', ' + _csNums(hoje) + '</b> · <button type="button" class="cw-link" onclick="openCardioSess(\'editar\')">editar</button>';
+  else if (feito) h = '<button type="button" class="cw-link" onclick="openCardioSess(\'depois\')">Registrar os números de hoje</button>';
+  else if (ult) h = 'Último: <b>' + _csTipo(ult.tipo).nome + ', ' + _csNums(ult) + '</b> (' + _csQuando(ult.d) + ')';
+  const pe = [];
+  if (sem > 0) pe.push('Nesta semana: <b>' + sem + ' min</b>');
+  if (ult) pe.push('<button type="button" class="cw-link" onclick="openCardioHist()">ver histórico</button>');
+  if (pe.length) h += (h ? '<br>' : '') + pe.join(' · ');
+  el.innerHTML = h; el.style.display = h ? '' : 'none';
+}
+function cardioBotao() { openCardioSess(isCardioDoneToday() ? 'editar' : 'cartao'); }
+function openCardioSess(origem) {
+  if (!SHEET_ID) return;
+  const hoje = _csDeHoje(), base = hoje || _csUltimo();
+  _cs = { origem: origem || 'cartao', id: hoje ? hoje.id : '', tipo: base ? base.tipo : 'esteira', vals: {}, int: '' };
+  _csCarrega(hoje || _csUltimo(_cs.tipo));
+  _csRender(); teShow('cardioSessModal');
+}
+function _csCarrega(s) { _cs.vals = {}; _cs.int = ''; if (!s) return; ['min', 'vel', 'inc', 'nivel', 'dist'].forEach(k => { if (s[k] != null && s[k] !== '') _cs.vals[k] = _csF(s[k]); }); _cs.int = s.int || ''; }
+function cardioSessTipo(id) { if (!_cs || _cs.tipo === id) return; const minAtual = _cs.vals.min; _cs.tipo = id; _csCarrega(_csUltimo(id)); if (!_cs.vals.min && minAtual) _cs.vals.min = minAtual; _csRender(); }
+function cardioSessInt(v) { if (!_cs) return; _cs.int = (_cs.int === v) ? '' : v; _csRender(); }
+function _csIn(k, v) { if (_cs) _cs.vals[k] = v; }
+function _csRender() {
+  const f = _cs; if (!f) return; const $ = id => document.getElementById(id);
+  const t = _csTipo(f.tipo), ult = _csUltimo(f.tipo);
+  $('csTit').textContent = f.id ? 'Teu cardio de hoje' : 'Como foi o cardio?';
+  $('csSub').textContent = f.id ? 'Muda o que precisar e salva.' : (ult ? 'Já vem com o teu último registro de ' + t.nome.toLowerCase() + '. Muda só o que mudou.' : 'Coloca o que tu fez e os números do aparelho.');
+  $('csTipo').innerHTML = CS_TIPOS.map(x => '<button type="button" class="ft-b' + (x.id === f.tipo ? ' on' : '') + '" onclick="cardioSessTipo(\'' + x.id + '\')">' + x.nome + '</button>').join('');
+  $('csNums').innerHTML = t.campos.map(k => { const c = CS_CAMPOS[k]; return '<label class="cs-campo"><small>' + c.rot + '</small><span><input id="cs_' + k + '" type="text" inputmode="decimal" autocomplete="off" enterkeyhint="done" value="' + String(f.vals[k] || '').replace(/[^0-9.,]/g, '') + '" oninput="_csIn(\'' + k + '\', this.value)"' + (k === 'min' ? ' placeholder="30"' : '') + '>' + (c.un ? '<em>' + c.un + '</em>' : '') + '</span></label>'; }).join('');
+  $('csDica').textContent = CS_DICA[f.tipo] || '';
+  $('csInt').innerHTML = CS_INT.map(x => '<button type="button" class="ft-b' + (f.int === x[0] ? ' on' : '') + '" onclick="cardioSessInt(\'' + x[0] + '\')">' + x[1] + '</button>').join('');
+  $('csBtn').textContent = f.id ? 'Salvar as mudanças' : 'Salvar o cardio';
+  $('csSo').style.display = isCardioDoneToday() ? 'none' : '';
+}
+function cardioSessSalvar() {
+  const f = _cs; if (!f) return;
+  const t = _csTipo(f.tipo), s = { id: f.id || ('c' + Date.now().toString(36)), d: todayKey(), tipo: f.tipo, int: f.int || '', ts: Date.now() };
+  for (const k of t.campos) {
+    const v = _csNum(f.vals[k], CS_CAMPOS[k]);
+    if (k === 'min' && v == null) { _ghToast('Coloca quantos minutos durou o cardio.'); try { document.getElementById('cs_min').focus(); } catch (_) {} return; }
+    if (Number.isNaN(v)) { _ghToast('Confere o número de ' + CS_CAMPOS[k].rot.toLowerCase() + '.'); try { document.getElementById('cs_' + k).focus(); } catch (_) {} return; }
+    if (v != null) s[k] = v;
+  }
+  const a = _csLista().filter(x => x.id !== s.id); a.push(s); _csGrava(a);
+  const marca = !isCardioDoneToday();
+  _cs = null; try { teHide('cardioSessModal'); } catch (_) {}
+  try {
+    _enviaComFila_('cardio_sessao', { type: 'cardio_sessao', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(), dia: s.d, id: s.id, tipo: s.tipo, min: s.min, vel: s.vel ?? '', inc: s.inc ?? '', nivel: s.nivel ?? '', dist: s.dist ?? '', intensidade: s.int, origem: f.origem || '', ts: new Date().toISOString() }, _kFilaPadrao_);
+  } catch (_) {}
+  if (marca) onCardioDone();                       // marca o dia como antes: ranking, aba CARDIO e o cartão de foto
+  else { try { updateCardioProgress(); } catch (_) {} _ghToast('Cardio salvo.'); }
+}
+function cardioSessSo() { _cs = null; try { teHide('cardioSessModal'); } catch (_) {} onCardioDone(); }
+function cardioSessFecha() { _cs = null; try { teHide('cardioSessModal'); } catch (_) {} }
+// histórico por tipo, do mais novo pro mais velho, com o que subiu em relação ao cardio anterior do mesmo tipo
+function openCardioHist(tipo) { const a = _csLista(); if (!a.length) return; _chTipo = tipo || a[a.length - 1].tipo; _chRender(); teShow('cardioHistModal'); }
+function cardioHistTipo(id) { _chTipo = id; _chRender(); }
+function _chRender() {
+  const a = _csLista(), $ = id => document.getElementById(id);
+  const tipos = CS_TIPOS.filter(t => a.some(s => s.tipo === t.id));
+  if (!tipos.some(t => t.id === _chTipo)) _chTipo = (tipos[0] || {}).id || '';
+  $('chTipos').innerHTML = tipos.length > 1 ? tipos.map(t => '<button type="button" class="ft-b' + (t.id === _chTipo ? ' on' : '') + '" onclick="cardioHistTipo(\'' + t.id + '\')">' + t.nome + '</button>').join('') : '';
+  const l = a.filter(s => s.tipo === _chTipo).sort((x, y) => x.d === y.d ? (x.ts || 0) - (y.ts || 0) : (x.d < y.d ? -1 : 1));
+  const SUB = [['min', ' min'], ['vel', ' km/h'], ['inc', '% de inclinação'], ['nivel', ' de nível'], ['dist', ' km']];
+  const linhas = [];
+  for (let i = l.length - 1; i >= 0 && linhas.length < 12; i--) {
+    const s = l[i], p = l[i - 1], up = [];
+    if (p) SUB.forEach(([k, u]) => { const d = Math.round(((s[k] || 0) - (p[k] || 0)) * 100) / 100; if (s[k] != null && p[k] != null && d > 0 && up.length < 2) up.push('+' + _csF(d) + u); });
+    linhas.push('<div class="ch-lin"><span class="ch-d">' + s.d.slice(8, 10) + '/' + s.d.slice(5, 7) + '</span><span>' + _csNums(s) + (up.length ? ' <b class="ch-up">' + up.join(' · ') + '</b>' : '') + '</span></div>');
+  }
+  $('chTit').textContent = 'Teu cardio: ' + (_csTipo(_chTipo).nome || '').toLowerCase();
+  $('chLista').innerHTML = linhas.join('');
+  const c = new Date(); c.setDate(c.getDate() - 27); const ini = _csIso(c);
+  const u4 = a.filter(s => s.d >= ini), m4 = u4.reduce((t, s) => t + (s.min || 0), 0);
+  $('chResumo').textContent = u4.length ? 'Nas últimas 4 semanas: ' + u4.length + (u4.length === 1 ? ' cardio registrado' : ' cardios registrados') + ', ' + m4 + ' min no total.' : '';
 }
 // ══ DIETA SEM CULPA (GH 2026-07-29): "não rolou" vira SINAL, nunca bronca ══
 // Motivo registrado na mestre (aba DIETA_SINAIS) atrelado ao aluno; NÃO mexe em ranking
@@ -23530,7 +23700,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v576';
+    var APP_SHELL_V = 'metodo-gh-v577';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
