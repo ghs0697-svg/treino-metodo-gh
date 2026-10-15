@@ -101,6 +101,60 @@
   .rodape span { color: var(--gh-primary); font-weight: 700; }
   .rodape a { text-decoration: underline; text-underline-offset: 3px; }
   @media (min-width: 560px) { .grade { grid-template-columns: 1fr 1fr; } }
+  /* ===== Vidro líquido (14/10/2026, ordem do GH pras três páginas Comece por aqui: "mesmo padrão de playbook, tipo marca própria,
+     algo parecido com o liquid glass do quiz"). Tokens copiados do quiz (02-produtos/metodogh/quiz/index.html, bloco "Vidro
+     líquido"), sem reinventar: as três páginas têm que parecer a mesma marca. Luzes douradas atrás (body::after, entre o fundo
+     quadriculado e o conteúdo) pra transparência ter o que mostrar. Fica no fim do estilo: sobrepõe as regras de cima. ===== */
+  :root {
+    --vidro: linear-gradient(135deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.06) 45%, rgba(255,255,255,0.03) 100%);
+    --vidro-forte: linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.05) 100%);
+    --vidro-borda: rgba(255,255,255,0.20);
+    --vidro-brilho: inset 0 1px 0 rgba(255,255,255,0.34), inset 0 -1px 0 rgba(255,255,255,0.05);
+    --vidro-sombra: 0 10px 30px rgba(0,0,0,0.30);
+    --vidro-fosco: blur(18px) saturate(170%);
+  }
+  body::after {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(circle 230px at 10% 26%, rgba(230,199,106,0.34), transparent 70%),
+      radial-gradient(circle 270px at 94% 50%, rgba(201,162,75,0.28), transparent 70%),
+      radial-gradient(circle 220px at 26% 86%, rgba(156,124,46,0.30), transparent 70%);
+  }
+  .compra, .step, .card, details {
+    background: var(--vidro); border: 1px solid var(--vidro-borda); border-radius: 18px;
+    box-shadow: var(--vidro-brilho), var(--vidro-sombra);
+    -webkit-backdrop-filter: var(--vidro-fosco); backdrop-filter: var(--vidro-fosco);
+  }
+  .jornada, .suporte {
+    border-radius: 18px; box-shadow: var(--vidro-brilho), var(--vidro-sombra);
+    -webkit-backdrop-filter: var(--vidro-fosco); backdrop-filter: var(--vidro-fosco);
+  }
+  .jornada { background: linear-gradient(135deg, rgba(230,199,106,0.20), rgba(255,255,255,0.05) 55%, rgba(255,255,255,0.02)); border-color: rgba(230,199,106,0.55); }
+  .suporte { background: linear-gradient(135deg, rgba(37,211,102,0.14), rgba(255,255,255,0.05) 55%, rgba(255,255,255,0.02)); }
+  .num { border: 1px solid rgba(230,199,106,0.62); background: rgba(230,199,106,0.12); box-shadow: inset 0 1px 0 rgba(255,255,255,0.28); }
+  .jornada .fluxo span { background: rgba(255,255,255,0.06); border-color: rgba(230,199,106,0.62); box-shadow: inset 0 1px 0 rgba(255,255,255,0.22); }
+  .btn { border-radius: 18px; }
+  .btn.gold {
+    background: linear-gradient(135deg, rgba(248,226,154,0.94) 0%, rgba(216,178,90,0.86) 50%, rgba(172,136,52,0.88) 100%);
+    border: 1px solid rgba(255,244,205,0.68);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.68), inset 0 -10px 18px rgba(120,88,18,0.22), 0 12px 36px rgba(201,162,75,0.38);
+    -webkit-backdrop-filter: blur(14px) saturate(180%); backdrop-filter: blur(14px) saturate(180%);
+  }
+  .btn.ghost {
+    background: var(--vidro); border: 1px solid rgba(230,199,106,0.62); color: var(--gh-bright);
+    box-shadow: var(--vidro-brilho), var(--vidro-sombra);
+    -webkit-backdrop-filter: var(--vidro-fosco); backdrop-filter: var(--vidro-fosco);
+  }
+  .btn.ghost:hover, .btn.ghost:focus-visible { background: var(--vidro-forte); border-color: rgba(230,199,106,0.88); }
+  .btn.wa { border: 1px solid rgba(190,255,215,0.55); box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), inset 0 -10px 18px rgba(6,60,25,0.18), 0 12px 32px rgba(37,211,102,0.30); }
+  .check { box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 0 0 8px var(--gh-soft), 0 12px 32px rgba(201,162,75,0.35); }
+  /* o vídeo e as fotos dos casos: moldura de vidro SEM desfoque (imagem que mexe pesaria no celular) */
+  .video { border: 1px solid var(--vidro-borda); border-radius: 18px; box-shadow: var(--vidro-brilho), 0 14px 40px rgba(0,0,0,0.45); }
+  .video .poster .play { background: linear-gradient(135deg, rgba(248,226,154,0.96), rgba(172,136,52,0.92)); border: 1px solid rgba(255,244,205,0.7); box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), 0 0 0 8px rgba(230,199,106,0.16), 0 12px 32px rgba(201,162,75,0.4); }
+  .video .poster::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,0.55)); }
+  .video .poster .play, .video .poster span { position: relative; }
+  .video .poster .dur { position: absolute; right: 12px; bottom: 10px; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.2); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+  .cases img { border: 1px solid var(--vidro-borda); border-radius: 18px; box-shadow: var(--vidro-brilho), var(--vidro-sombra); }
 </style>
 </head>
 <body>
@@ -213,11 +267,13 @@
   <footer class="rodape"><span>Método GH</span> · Consultoria individual<br><a href="https://app.metodogh.com.br" data-etapa="link-app">app.metodogh.com.br</a></footer>
 </main>
 <script>
-  // Vídeo de boas-vindas do GH: cola o id do YouTube aqui quando ele gravar (ou testa com ?v=<id>&vert=1 na URL).
-  // Sem id, o bloco do vídeo fica escondido e a página funciona igual. O YouTube só carrega depois do toque no play,
-  // e o toque é contado como a etapa "play".
+  // Vídeo de boas-vindas do GH (gravado em 14/10/2026, deitado, 3 min): MP4 próprio com capa, servido daqui do Pages. Fica numa
+  // pasta videos-lite/ de propósito: o service worker do app deixa esse caminho só na rede (faixas de bytes, nunca no cache).
+  // Um arquivo só, 720p (33 MB de 3 min): o 1080p passava de 89 MB, perto do teto de 100 MB por arquivo do Pages. O vídeo só carrega depois do toque no play, e o toque conta como a etapa "play".
+  // Plano B: ?v=<id do YouTube> na URL (ou VIDEO_ID) troca pelo YouTube.
+  var VIDEO_MP4 = { p720: 'videos-lite/bem-vindo-metodogh-720.mp4', capa: 'bem-vindo-metodogh-poster.jpg', dur: '3 min' };
   var VIDEO_ID = '';
-  var VIDEO_VERTICAL = true;   // gravado no celular em pé = 9 por 16
+  var VIDEO_VERTICAL = false;   // gravado deitado = 16 por 9
 
   // CONTAGEM (pedido da CRM, Sala #3127): abertura por origem (?de=whats|app|bot|pagina|chat|grupo; qualquer outra coisa vira
   // "outro") e as etapas (play, link-anamnese, link-grupo, link-suporte, link-instagram, link-app). Vai pra aba CLICKS_AFILIADOS da
@@ -254,16 +310,27 @@
   (function () {
     try {
       var id = Q.get('v') || VIDEO_ID;
+      var yt = !!id && /^[A-Za-z0-9_-]{6,}$/.test(id);
+      if (!yt && !(VIDEO_MP4 && VIDEO_MP4.p720)) return;
       var vert = Q.has('vert') ? Q.get('vert') !== '0' : VIDEO_VERTICAL;
-      if (!id || !/^[A-Za-z0-9_-]{6,}$/.test(id)) return;
       var box = document.getElementById('videoBox'), nota = document.getElementById('videoNota');
       box.className = 'video ' + (vert ? 'v' : 'h');
       var poster = document.createElement('button'); poster.type = 'button'; poster.className = 'poster'; poster.setAttribute('aria-label', 'Dar play no recado do GH');
-      if (!vert) poster.style.backgroundImage = 'url(https://i.ytimg.com/vi/' + id + '/hqdefault.jpg)';   // em pé não tem capa 9 por 16 no YouTube: fica o fundo da página
-      poster.innerHTML = '<div class="play"></div><span>Dá o play no recado do GH</span>';
+      var capa = yt ? (vert ? '' : 'https://i.ytimg.com/vi/' + id + '/hqdefault.jpg') : VIDEO_MP4.capa;
+      if (capa) poster.style.backgroundImage = 'url(' + capa + ')';
+      poster.innerHTML = '<div class="play"></div><span>Dá o play no recado do GH</span>' + (!yt && VIDEO_MP4.dur ? '<b class="dur">' + VIDEO_MP4.dur + '</b>' : '');
       poster.addEventListener('click', function () {
         conta('play');
-        box.innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&playsinline=1&rel=0&modestbranding=1" title="Recado do GH" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>';
+        if (yt) {
+          box.innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&playsinline=1&rel=0&modestbranding=1" title="Recado do GH" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>';
+          return;
+        }
+        var larga = (window.innerWidth || 0) >= 700 && VIDEO_MP4.p1080;
+        var v = document.createElement('video');
+        v.src = larga ? VIDEO_MP4.p1080 : VIDEO_MP4.p720; v.poster = VIDEO_MP4.capa; v.controls = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.preload = 'auto';
+        v.setAttribute('title', 'Recado do GH');
+        box.innerHTML = ''; box.appendChild(v);
+        try { var pr = v.play(); if (pr && pr.catch) pr.catch(function () {}); } catch (e) {}
       });
       box.appendChild(poster);
       box.style.display = ''; nota.style.display = '';
