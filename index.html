@@ -19304,7 +19304,7 @@ function _jornadaCardHtml() {
     let vem = '';
     if (respondeu) vem += lin(ok, 'Anamnese de reajuste respondida', 'teu protocolo novo está a caminho');
     else if (!suprime) {
-      const pre = (typeof REAJ_PRE_DIAS === 'number') ? REAJ_PRE_DIAS : 7;
+      const pre = (typeof _reajPreDias === 'function') ? _reajPreDias() : 7;   // v578
       if (faltam > pre) vem += lin(data(br(reaj), pl(faltam, 'dia', 'dias')), 'Anamnese de reajuste', 'eu olho tuas cargas, teu diário e tuas fotos e monto teu próximo protocolo');
       else vem += lin(data('agora', ''), 'Anamnese de reajuste liberada', 'toca aqui pra responder', 'maisAnamnese()');
     }
@@ -22106,7 +22106,11 @@ function renovBannerDismiss() {
 // Driven by _proxReajusteBR (col M = Protocolo Atual + 50 dias). PRECEDÊNCIA: a renovação
 // manda; os dois nunca aparecem juntos (reajuste pula se renovBanner tá visível, e
 // renovBannerShow esconde o reajuste). Tom positivo: é sobre evoluir, não sobre problema.
-var REAJ_PRE_DIAS = 7;     // avisa até 7 dias antes
+var REAJ_PRE_DIAS = 7;     // avisa até 7 dias antes (ciclo antigo, de 55)
+// v578 (GH 17/10/2026, reajuste a cada 30 dias pra protocolo entregue a partir de 20/10, col M = E + 25): no ciclo novo a
+// anamnese abre 3 dias antes da M (dia 22 de 30, a mesma proporção do dia 43 de 55). Quem segue no ciclo antigo (M - E > 30)
+// continua com os 7 dias até o próximo protocolo. O ciclo vem do servidor (M - E da linha do ciclo atual).
+function _reajPreDias() { try { return _cicloDias() <= 30 ? 3 : REAJ_PRE_DIAS; } catch (_) { return REAJ_PRE_DIAS; } }
 var REAJ_CAP_ATRASO = 21;  // some 21 dias depois (aí é churn/follow-sumidos, não banner gentil)
 var REAJ_FORM = 'https://forms.gle/6NbYKYDQy7ANjHLM6'; // anamnese de reajuste (CTA do banner). Canal complementar ao WhatsApp dos 50 dias (automação no Make).
 function reajusteBannerShow(dias) {
@@ -22182,8 +22186,9 @@ function maisAnamnese() {
     var reaj = new Date(p[2], p[1] - 1, p[0]); reaj.setHours(0, 0, 0, 0);
     var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
     var dias = Math.round((reaj.getTime() - hoje.getTime()) / 86400000);
-    if (dias <= REAJ_PRE_DIAS) { window.open(REAJ_FORM, '_blank', 'noopener'); return; }
-    _ghToast('Teu reajuste é dia ' + _proxReajusteBR.slice(0, 5) + '. A anamnese (com fotos e medidas) abre aqui ' + REAJ_PRE_DIAS + ' dias antes, em ' + (dias - REAJ_PRE_DIAS) + (dias - REAJ_PRE_DIAS === 1 ? ' dia' : ' dias') + '. Até lá, segue o protocolo.', 6500);
+    var _pre = _reajPreDias();   // v578
+    if (dias <= _pre) { window.open(REAJ_FORM, '_blank', 'noopener'); return; }
+    _ghToast('Teu reajuste é dia ' + _proxReajusteBR.slice(0, 5) + '. A anamnese (com fotos e medidas) abre aqui ' + _pre + ' dias antes, em ' + (dias - _pre) + (dias - _pre === 1 ? ' dia' : ' dias') + '. Até lá, segue o protocolo.', 6500);
   } catch (e) {}
 }
 // "Já respondi a anamnese": dispensa DURÁVEL pra este ciclo (não re-aparece toda sessão).
@@ -22317,7 +22322,7 @@ function reajusteBannerCheck() {
     var reaj = new Date(p[2], p[1] - 1, p[0]); reaj.setHours(0, 0, 0, 0);
     var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
     var dias = Math.round((reaj.getTime() - hoje.getTime()) / 86400000);
-    if (dias <= REAJ_PRE_DIAS && dias >= -REAJ_CAP_ATRASO) reajusteBannerShow(dias);
+    if (dias <= _reajPreDias() && dias >= -REAJ_CAP_ATRASO) reajusteBannerShow(dias);   // v578
   } catch (e) {}
 }
 
@@ -23700,7 +23705,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v577';
+    var APP_SHELL_V = 'metodo-gh-v578';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
