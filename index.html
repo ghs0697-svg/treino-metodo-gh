@@ -7311,7 +7311,46 @@ function _resolveDayActiveCalc_(di) {
       used[livre.norm] = true;
     });
   }
+  try { _semanaVista_(di, exs, res); } catch (_) {}   // v579
   return res;
+}
+// v579 (Frederico Schuller, 19/10/2026: "se vc for em cada semana, nao aparece o peso que fiz naquele dia"): a troca de
+// exercicio vale pra todas as semanas, e quem alterna de aparelho (duas academias) abria uma semana passada com o exercicio
+// escolhido HOJE, cujo campo daquela semana esta vazio: o peso feito ficava no slot da outra versao. Agora, na semana aberta,
+// se o exercicio exibido nao tem numero salvo nela e outra versao do mesmo grupo tem, salvo ANTES de hoje e neste protocolo,
+// aparece essa versao com os numeros dela (o que foi feito naquela semana). O treino de hoje nao muda, e a troca feita com a
+// semana aberta ganha (_semVistaOff). So exibicao: nada e gravado, movido ou apagado.
+const _semVistaOff = {};
+function _slotDadoEm_(di, ei, w, sf) {
+  if (!sf && !_cargaValida(di, ei, w)) return { tem: false, ts: 0 };
+  let tem = false;
+  const raw = localStorage.getItem(setsKey(di, ei, w) + sf);
+  if (raw) { try { const a = JSON.parse(raw); tem = Array.isArray(a) && a.some(x => x && (String(x.kg || '').trim() || String(x.pl || '').trim() || String(x.reps || '').trim())); } catch (_) {} }
+  if (!tem) tem = !!(localStorage.getItem(storageKey(di, ei, w) + sf) || localStorage.getItem(placasKey(di, ei, w) + sf));
+  return { tem: tem, ts: tem ? (Number(localStorage.getItem(blkKey(di, ei, w) + sf)) || 0) : 0 };
+}
+function _semanaVista_(di, exs, res) {
+  if (typeof currentWeek === 'undefined' || typeof setsKey !== 'function') return;
+  const w = currentWeek, hoje0 = new Date(); hoje0.setHours(0, 0, 0, 0);
+  exs.forEach((e, ei) => {
+    const r = res[ei];
+    if (!e || e.biset || e.warmup || !r || !r.name || _semVistaOff[di + '|' + ei + '|' + w]) return;
+    const grp = _grupoDe(e.name); if (!grp) return;
+    const on = _normEx(e.name), sfDe = nome => (_normEx(nome) === on ? '' : '_' + _normEx(nome));
+    if (_slotDadoEm_(di, ei, w, sfDe(r.name)).tem) return;      // o exibido ja tem numero nesta semana: fica
+    const cands = grp.some(x => x.norm === on) ? grp : grp.concat([{ name: e.name, norm: on }]);
+    let melhor = null;
+    cands.forEach(x => {
+      if (x.norm === _normEx(r.name)) return;
+      const sd = _slotDadoEm_(di, ei, w, sfDe(x.name));
+      if (!sd.tem || !(sd.ts > 0) || sd.ts >= hoje0.getTime()) return;
+      if (CURRENT_BLOCK_START > 0 && sd.ts < CURRENT_BLOCK_START) return;   // ciclo anterior segue escondido
+      if (!melhor || sd.ts > melhor.ts) melhor = { x: x, ts: sd.ts };
+    });
+    if (!melhor) return;
+    const orig = melhor.x.norm === on;
+    res[ei] = { name: orig ? e.name : melhor.x.name, video: orig ? (e.video || '') : (_bankVideo(melhor.x.name) || ''), sub: !orig, semana: w };
+  });
 }
 // ══ Modo Viagem/Livre (GH 23/08: "tira exercícios de máquina que possam ser feitos livres") ══
 function _viagemKey() { return 'gh_viagem_' + STUDENT_ID; }
@@ -7402,6 +7441,7 @@ function escolherSub(di, ei, chosenNorm, doArrasto) {
     if (!ex) return;
     try { _flushSetsPendentes_(false); } catch (_) {}   // v480: todo pendente, no slot de antes da troca
     if (typeof flushCargaPendente_ === 'function') flushCargaPendente_(di, ei);   // salva carga digitada no slot ATUAL antes da troca mudar o sufixo (corrida 400ms)
+    try { _semVistaOff[di + '|' + ei + '|' + currentWeek] = 1; } catch (_) {}   // v579: troca feita com a semana aberta ganha da versao feita nela
     const k = _subKey(di, ei, ex.name);
     localStorage.removeItem(_subKeyLegacy(di, ex.name));   // A6: migra — limpa a chave antiga (dia+nome) ao mexer na troca
     const voltouOriginal = (!chosenNorm || _normEx(chosenNorm) === _normEx(ex.name));
@@ -14543,6 +14583,7 @@ function changeWeek(d) {
   renderExercises();
   renderTabs();        // badges de tempo por dia dependem da semana
   renderWtCard();      // linha "este treino na semana N"
+  try { updateCardioProgress(); } catch (_) {}   // v579: o cartao do cardio segue a semana aberta
   _exEnterAnim();
 }
 
@@ -19281,7 +19322,8 @@ function _jornadaCardHtml() {
     // o que já fez neste protocolo
     const wid = (typeof STUDENT_ID !== 'undefined' && STUDENT_ID) ? STUDENT_ID : SHEET_ID;
     const RT = /^(\d{4})-(\d{2})-(\d{2})_d\d+_concl$/, RD = /^(\d{4})-(\d{2})-(\d{2})_concl$/;
-    const treinos = _mtDias('gh_logsent_' + SHEET_ID + '_', RT, ini, hoje);
+    let treinos = _mtDias('gh_logsent_' + SHEET_ID + '_', RT, ini, hoje);
+    try { treinos = Math.max(treinos, _treinosFeitosNoProtocolo()); } catch (_) {}   // v579
     let freq = 0; try { freq = _freqSemanal() || 0; } catch (_) {}
     let temDieta = false; try { temDieta = (typeof _refNomesAtuais === 'function') ? (_refNomesAtuais().length > 0) : false; } catch (_) {}
     const dieta = temDieta ? _mtDias('gh_dietlog_' + SHEET_ID + '_', RD, ini, hoje) : 0;
@@ -19293,11 +19335,11 @@ function _jornadaCardHtml() {
     let fez = '';
     if (treinos > 0) {
       const ritmo = String(Math.round(treinos / (dia / 7) * 10) / 10).replace('.', ',');
-      fez += lin(ok, pl(treinos, 'treino fechado', 'treinos fechados'), (freq && dia >= 7) ? 'teu ritmo: ' + ritmo + ' por semana, a meta é ' + freq : (freq ? 'a meta é ' + freq + ' por semana' : ''));
+      fez += lin(ok, pl(treinos, 'treino feito', 'treinos feitos'), (freq && dia >= 7) ? 'teu ritmo: ' + ritmo + ' por semana, a meta é ' + freq : (freq ? 'a meta é ' + freq + ' por semana' : ''));
     } else fez += lin(falta, 'Nenhum treino fechado ainda', 'fecha o treino no fim pra ele contar aqui');
     if (recs.length) fez += lin(ok, pl(recs.length, 'recorde de carga', 'recordes de carga'), esc(recs.filter(Boolean).slice(0, 3).join(', ')));
     if (temDieta) fez += dieta > 0 ? lin(ok, 'Dieta: ' + pl(dieta, 'dia completo', 'dias completos'), '') : lin(falta, 'Dieta: nenhum dia completo', 'marca todas as refeições pra o dia contar');
-    if (cardio > 0) { let cm = 0; try { cm = _csMinDesde(iniISO); } catch (_) {} fez += lin(ok, 'Cardio: ' + pl(cardio, 'dia', 'dias'), cm > 0 ? cm + ' min registrados' : ''); }   // v577
+    if (cardio > 0) { let cm = 0, nr = 0; try { cm = _csMinDesde(iniISO); nr = new Set(_csLista().filter(x => String(x.d) >= iniISO && x.min > 0).map(x => x.d)).size; } catch (_) {} fez += lin(ok, 'Cardio: ' + pl(cardio, 'dia', 'dias'), cm > 0 ? (cardio > nr ? cm + ' min ' + (nr === 1 ? 'no 1 registrado' : 'nos ' + nr + ' registrados') + ' com os números' : cm + ' min registrados') : ''); }   // v577, v579
     if (notas > 0) fez += lin(ok, pl(notas, 'anotação no diário de treino', 'anotações no diário de treino'), '');
     // o que vem
     const data = (cima, baixo) => '<span class="jr-data">' + cima + (baixo ? '<span>' + baixo + '</span>' : '') + '</span>';
@@ -19322,6 +19364,23 @@ function _jornadaCardHtml() {
       + (vem ? '<div class="jr-sec">O que vem</div>' + vem : '')
       + '<div class="jr-pe">Conta sozinho pelo que tu marca no app.</div></div>';
   } catch (e) { return ''; }
+}
+// v579 (Frederico Schuller, 19/10/2026: "foram 23 treinos, e nao 21"): o resumo contava DATAS com treino fechado, entao dois
+// treinos no mesmo dia viravam um e o treino feito sem a ultima marca nao entrava. Conta tambem cada treino (semana e dia) com
+// pelo menos metade dos exercicios marcados neste protocolo (as marcas do ciclo velho saem no reajuste), e vale o maior.
+function _treinosFeitosNoProtocolo() {
+  if (typeof WORKOUT === 'undefined' || !WORKOUT) return 0;
+  const pref = 'gh_done_' + STUDENT_ID + '_w', re = /^(\d+)_d(\d+)_e(\d+)[ab]?$/, por = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i); if (!k || k.indexOf(pref) !== 0 || localStorage.getItem(k) !== '1') continue;
+    const m = k.slice(pref.length).match(re); if (!m) continue;
+    const day = WORKOUT[+m[2]], ex = day && day.exercises && day.exercises[+m[3]];
+    if (!ex || ex.warmup) continue;
+    const c = m[1] + '|' + m[2]; por[c] = por[c] || new Set(); por[c].add(+m[3]);
+  }
+  let n = 0;
+  Object.keys(por).forEach(c => { const real = WORKOUT[+c.split('|')[1]].exercises.filter(x => x && !x.warmup).length; if (real && por[c].size * 2 >= real) n++; });
+  return n;
 }
 function _metasCardHtml() {
   try {
@@ -20486,7 +20545,7 @@ function _cardioTreinoMount(d, cardioFromOrient, temCardio) {
   const box = document.getElementById('cardioTreino');
   if (!box) return;
   if (!temCardio) { box.innerHTML = ''; return; }
-  let html = `<div class="cardio-week" id="cardioWeekCard"><div class="cw-row"><span class="cw-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="5" r="1.6"/><path d="M5 21l3-5 3 1 2-3"/><path d="M13 14l4 1 2 4"/><path d="M9 9l3-2 3 2 2-1"/></svg> Cardio da semana</span><span class="cw-count" id="cwCount">0/${cardioTarget()}</span></div><div class="cw-bar"><div class="cw-fill" id="cwFill"></div></div><button type="button" class="cw-btn" id="cwBtn" onclick="cardioBotao()">Fiz o cardio hoje</button><div class="cw-ult" id="cwUlt" style="display:none;"></div></div>`;
+  let html = `<div class="cardio-week" id="cardioWeekCard"><div class="cw-row"><span class="cw-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="5" r="1.6"/><path d="M5 21l3-5 3 1 2-3"/><path d="M13 14l4 1 2 4"/><path d="M9 9l3-2 3 2 2-1"/></svg> <span id="cwTit">Cardio da semana</span></span><span class="cw-count" id="cwCount">0/${cardioTarget()}</span></div><div class="cw-bar"><div class="cw-fill" id="cwFill"></div></div><button type="button" class="cw-btn" id="cwBtn" onclick="cardioBotao()">Fiz o cardio hoje</button><div class="cw-ult" id="cwUlt" style="display:none;"></div></div>`;
   html += `<div class="diet-section-toggle" onclick="toggleDietSection('cardio')"><span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span><span class="tog-label">Cardio</span><span class="tog-chev" id="cardioArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></div>`;
   html += `<div class="diet-section-content" id="cardioContent">`;
   if (d.aerobicos && d.aerobicos.length > 0) {
@@ -20502,12 +20561,44 @@ function _cardioTreinoMount(d, cardioFromOrient, temCardio) {
   box.innerHTML = html;
   updateCardioProgress();
 }
+// v579 (Frederico Schuller, 19/10/2026: "teve semanas que nao fiz cardio, mas em todas as semanas aparece 4/4"): o cartao do
+// cardio fica na aba Treino e contava sempre a semana do CALENDARIO de hoje, qualquer que fosse a semana do protocolo aberta.
+// Numa semana do protocolo ja passada ele conta o cardio das semanas (segunda a domingo) em que ela foi treinada, pelas datas
+// em que os pesos foram salvos e pelo cronometro do treino. Semana sem data, ou que chega na semana de hoje: igual a antes.
+function _semanaDatas(w) {
+  const ds = [];
+  try {
+    const pb = 'gh_blk_' + STUDENT_ID + '_d', re = /^\d+_e[0-9ab]+_w(\d+)(?:_|$)/;
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i); if (!k || k.indexOf(pb) !== 0) continue;
+      const m = k.slice(pb.length).match(re); if (!m || +m[1] !== w) continue;
+      const t = Number(localStorage.getItem(k)); if (!(t > 1e12)) continue;
+      if (CURRENT_BLOCK_START > 0 && t < CURRENT_BLOCK_START) continue;
+      ds.push(t);
+    }
+    const h = JSON.parse(localStorage.getItem(_wtHistKey()) || '{}') || {};
+    Object.keys(h).forEach(k => { const p = k.split('|'); const t = h[k] && Number(h[k].ts); if (+p[1] === w && t > 1e12 && !(CURRENT_BLOCK_START > 0 && t < CURRENT_BLOCK_START)) ds.push(t); });
+  } catch (_) {}
+  return ds;
+}
+function _cardioJanelaDaSemana(w) {   // null = a semana de hoje (ou sem data): o cartao segue o calendario
+  const ds = _semanaDatas(w); if (!ds.length) return null;
+  const seg = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d; };
+  const ini = seg(Math.min.apply(null, ds)), fim = seg(Math.max.apply(null, ds)); fim.setDate(fim.getDate() + 6);
+  if (fim.getTime() >= _cardioWeekStart().getTime()) return null;
+  return { ini: ini, fim: fim };
+}
 function updateCardioProgress() {
-  const target = cardioTarget(), done = cardioWeekCount();
+  const target = cardioTarget();
+  let done = cardioWeekCount(), jan = null;
+  try { jan = (typeof currentWeek !== 'undefined') ? _cardioJanelaDaSemana(currentWeek) : null; } catch (_) { jan = null; }   // v579
+  if (jan) { try { done = _mtCardioDias(STUDENT_ID, jan.ini, jan.fim); } catch (_) {} }
+  const tit = document.getElementById('cwTit');
+  if (tit) { const br = d => ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2); tit.textContent = jan ? 'Cardio na semana ' + currentWeek + ' (' + br(jan.ini) + ' a ' + br(jan.fim) + ')' : 'Cardio da semana'; }
   const cnt = document.getElementById('cwCount'), fill = document.getElementById('cwFill'), btn = document.getElementById('cwBtn');
   if (cnt) cnt.textContent = `${Math.min(done, target)}/${target}`; // capa display (fazer +q o mínimo não vira "4/3")
   if (fill) fill.style.width = (target ? Math.min(100, done / target * 100) : 0) + '%';
-  if (btn) { const t = isCardioDoneToday(); btn.classList.toggle('done', t); btn.textContent = t ? '✓ Cardio feito hoje' : 'Fiz o cardio hoje'; }
+  if (btn) { const t = isCardioDoneToday(); btn.classList.toggle('done', t); btn.textContent = t ? '✓ Cardio feito hoje' : 'Fiz o cardio hoje'; btn.style.display = jan ? 'none' : ''; }   // v579: semana passada nao marca o cardio de hoje
   try { _csUltRender(); } catch (_) {}   // v577
 }
 function onCardioDone() {
@@ -20620,7 +20711,10 @@ function _csUltRender() {
   else if (feito) h = '<button type="button" class="cw-link" onclick="openCardioSess(\'depois\')">Registrar os números de hoje</button>';
   else if (ult) h = 'Último: <b>' + _csTipo(ult.tipo).nome + ', ' + _csNums(ult) + '</b> (' + _csQuando(ult.d) + ')';
   const pe = [];
-  if (sem > 0) pe.push('Nesta semana: <b>' + sem + ' min</b>');
+  if (sem > 0) {   // v579 (Frederico Schuller: "cardio esta 70 min e fiz 4 cardios essa semana"): os minutos sao so dos registrados com os numeros
+    let nReg = 0, nDia = 0; try { const ini = _csIso(_cardioWeekStart()); nReg = new Set(_csLista().filter(x => String(x.d) >= ini && x.min > 0).map(x => x.d)).size; nDia = cardioWeekCount(); } catch (_) {}
+    pe.push(nDia > nReg ? 'Nesta semana: ' + nDia + ' cardios, <b>' + sem + ' min</b> ' + (nReg === 1 ? 'no 1 registrado' : 'nos ' + nReg + ' registrados') + ' com os números' : 'Nesta semana: <b>' + sem + ' min</b>');
+  }
   if (ult) pe.push('<button type="button" class="cw-link" onclick="openCardioHist()">ver histórico</button>');
   if (pe.length) h += (h ? '<br>' : '') + pe.join(' · ');
   el.innerHTML = h; el.style.display = h ? '' : 'none';
@@ -20689,7 +20783,8 @@ function _chRender() {
   $('chLista').innerHTML = linhas.join('');
   const c = new Date(); c.setDate(c.getDate() - 27); const ini = _csIso(c);
   const u4 = a.filter(s => s.d >= ini), m4 = u4.reduce((t, s) => t + (s.min || 0), 0);
-  $('chResumo').textContent = u4.length ? 'Nas últimas 4 semanas: ' + u4.length + (u4.length === 1 ? ' cardio registrado' : ' cardios registrados') + ', ' + m4 + ' min no total.' : '';
+  let d4 = 0; try { const c0 = new Date(c); c0.setHours(0, 0, 0, 0); const h0 = new Date(); h0.setHours(0, 0, 0, 0); d4 = _mtCardioDias(STUDENT_ID, c0, h0); } catch (_) {}   // v579
+  $('chResumo').textContent = u4.length ? 'Nas últimas 4 semanas: ' + (d4 > u4.length ? d4 + ' dias de cardio marcados, ' + u4.length + (u4.length === 1 ? ' deles registrado' : ' deles registrados') + ' com os números, ' + m4 + ' min nesses.' : u4.length + (u4.length === 1 ? ' cardio registrado' : ' cardios registrados') + ', ' + m4 + ' min no total.') : '';
 }
 // ══ DIETA SEM CULPA (GH 2026-07-29): "não rolou" vira SINAL, nunca bronca ══
 // Motivo registrado na mestre (aba DIETA_SINAIS) atrelado ao aluno; NÃO mexe em ranking
@@ -23705,7 +23800,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v578';
+    var APP_SHELL_V = 'metodo-gh-v579';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
