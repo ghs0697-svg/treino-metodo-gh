@@ -472,6 +472,8 @@
   .set-in.ph-ant::placeholder { color: #8a8070; }
   .set-head .sh-prev { flex: 1; min-width: 0; font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left; margin-left: 2px; }
   .sg-ant-nota { font-size: 11px; color: #8a8070; margin: -2px 0 6px; }
+  .sg-melhor { font-size: 11px; color: #8a8070; margin: -2px 0 6px; }   /* v580: teu melhor, quando a última vez não foi o melhor */
+  .sg-melhor b { color: var(--gold); font-weight: 700; }
   /* v531: "+ série" confundia ("achei que estavam faltando séries"): vira "+ série extra" e só aparece depois que todas as
      séries da grade têm reps (o caminho de sempre segue no menu ··· > Adicionar uma série) */
   .sets-grid:has(.set-row .set-in.set-reps:placeholder-shown) > .set-add { display: none; }
@@ -1516,6 +1518,14 @@
   .hist-chip b { color: var(--white); }
   .hist-chip.pr { background: rgba(212,175,106,.12); border-color: rgba(212,175,106,.35); color: var(--gold); }
   .hist-chip.pr b { color: var(--gold); }
+  /* v580: o que o aluno fez no exercício antes do protocolo atual (histórico) */
+  .hist-antes { margin-top: 12px; border-top: 1px solid #2a2a2a; padding-top: 10px; }
+  .hist-antes-tit { font-size: 11px; color: #8a8579; text-transform: uppercase; letter-spacing: .5px; font-weight: 700; }
+  .hist-antes-row { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px solid #242424; font-size: 12px; color: #aaa; }
+  .hist-antes-row:last-child { border-bottom: none; }
+  .hist-antes-row b { color: var(--white); font-weight: 700; }
+  .hist-antes-row.melhor b { color: var(--gold); }
+  .hist-antes-mais { font-size: 11px; color: #777; padding-top: 6px; }
   .rec-row { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid #242424; font-size: 12px; align-items: baseline; }
   .rec-row:last-child { border-bottom: none; }
   .rec-label { color: #aaa; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -4047,6 +4057,7 @@
     <h3 id="historyTitle"></h3>
     <div class="history-bars" id="historyBars"></div>
     <div class="history-trend" id="historyTrend"></div>
+    <div id="historyAntes"></div>
     <button class="te-btn ghost" onclick="closeHistoryModal()" style="margin-top:12px;width:100%;">Fechar</button>
   </div>
 </div>
@@ -8508,6 +8519,7 @@ function saveSets(d, e, w, arr) {
   // era salvo, nada subia pro servidor e ninguém ficava sabendo. Agora tenta liberar espaço (cache de protocolo de outros
   // alunos), sobe pro servidor de qualquer jeito e avisa.
   const _grava = () => {
+    _arqAntesDeGravar_(d, e, w, sf);   // v580: grade de ciclo anterior nesta semana (reciclada) fica no arquivo antes de ser coberta
     localStorage.setItem(setsKey(d, e, w) + sf, JSON.stringify(clean));
     // carimba: salvo agora = bloco atual. Nunca atrás do início do ciclo (celular com a data atrasada salvava como "ciclo
     // anterior" e a grade sumia no repinte seguinte).
@@ -8662,6 +8674,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
   const rsPh = alvoR ? (alvoR[0] === alvoR[1] ? String(alvoR[0]) : alvoR[0] + '-' + alvoR[1]) : '?';
   const okSet = loadSetOk(di, eiS, w);
   const evo = _evolucaoChipHtml(di, ei);   // linha de evolução das últimas 3 sessões
+  const melhor = _melhorChipHtml_(di, ei, prev);   // v580: só quando a última vez ficou abaixo do melhor
   const rows = sets.map((s, si) => {
     const p = prev && prev[si];
     const prevTxt = _porTempo
@@ -8693,7 +8706,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
       <div class="sg-head">Teu registro</div>
       ${(prev && prev.length) ? '<div class="sg-ant-nota">Em cinza, o que tu fez na última vez</div>' : ''}
       ${label ? `<div class="carga-label" style="font-size:10px;margin-bottom:2px;">${label}</div>` : ''}
-      ${evo}
+      ${evo}${melhor}
       <div class="set-head"><span class="set-num"></span><span class="sh-kg" onclick="openGlossario('kg')" title="De cada lado ou o total?">${getUnit()}</span><span class="sh-pl" onclick="openPlacaInfo()" title="O que e placa?">placa</span><span class="sh-reps">${_porTempo ? _tUnid : 'reps'}</span><span class="sh-rs" title="Quantas repetições sobraram">sobrou</span><button type="button" class="rs-info-btn" onclick="openSobrouInfo()" aria-label="O que é o sobrou?">i</button><span class="sh-prev">${(prev && prev.length) ? 'última vez' : ''}</span></div>
       ${rows}
       ${noAdd ? '' : `<button type="button" class="set-add" onclick="addSet(${di},'${eiS}')" title="Série a mais, além do que foi prescrito">+ série extra</button>`}
@@ -9648,6 +9661,7 @@ function _cargaSegura(carga, setsJson) {
 }
 function _restoreCargasRealign(cargas, ifEmpty) {
   let n = 0;
+  try { _arqDoServidor_(cargas, CURRENT_BLOCK_START); } catch (_) {}   // v580: sessões de antes do protocolo atual vão pro arquivo (só leitura)
   const _isSub = v => v === true || v === 1 || v === 'TRUE' || v === 'true' || v === 'sim';
   const items = (cargas || []).map(c => {
     // Substituto (GH 2026-06-24): slot PROPRIO na posicao do row (nome no key), SEM realign.
@@ -9753,7 +9767,9 @@ async function syncCargasFromServer_() {
     if (!data || !Array.isArray(data.cargas)) return;
     let _reaplic = 0;
     try { _reaplic = _subReaplicaDoServidor_(data.trocas, Number(data.atual) || CURRENT_BLOCK_START || 0); } catch (_) {}   // v557: aparelho sem a escolha guardada volta a mostrar o substituto do aluno
+    try { _arqDoServidor_(data.cargas, Number(data.atual) || CURRENT_BLOCK_START); } catch (_) {}   // v580: com o "atual" do servidor (o global pode estar atrasado nesta abertura)
     const restored = _restoreCargasRealign(data.cargas, true); // if-empty: respeita peso local
+    try { _arqDoAparelho_(true, Number(data.atual) || CURRENT_BLOCK_START); } catch (_) {}   // v580
     if (restored > 0 || _reaplic > 0) {
       console.log(`[gh] Cargas sincronizadas do servidor: ${restored} preenchidas`);
       if (typeof renderExercises === 'function' && document.getElementById('exerciseContainer')) {
@@ -13156,6 +13172,171 @@ function _focusRender() {
   }, { passive: true });
 })();
 
+// ══ Arquivo de cargas de protocolos anteriores (v580) ══
+// v580 (Felipe França Doria, 20/10/2026: "os pesos dos treinos não mostraram o meu máximo, somente o do meu último treino
+// no qual estava machucado. Mas não consigo olhar minhas cargas anteriores"): depois do reajuste a grade do ciclo anterior
+// fica escondida do campo (certo) e o histórico só desenha as semanas do protocolo atual, então o aluno perdia de vista
+// tudo o que fez antes; o "ant:" mostra a última sessão, que pode ter sido a pior. E a semana reciclada (a semana 1 nova
+// grava por cima da semana 1 velha) tirava do aparelho o que o servidor ainda guarda. Agora cada sessão de ciclo anterior
+// que o app vê (no restore do servidor, na varredura do aparelho e antes de gravar por cima) vai pra um arquivo por NOME
+// de exercício: data, maior peso, placa e repetições dessa série. Só pra tela: o histórico ganha o bloco "Antes deste
+// protocolo" e a grade mostra "teu melhor" quando a última vez não foi o melhor. Nenhum peso é movido, apagado ou
+// escrito de volta no campo (caminho de carga é sagrado).
+function _arqKey_() { return 'gh_arq_' + STUDENT_ID; }
+let _arqMemo = null, _arqSujo = false, _arqVarrido = false;
+function _arqLe_() {
+  if (_arqMemo) return _arqMemo;
+  try { const o = JSON.parse(localStorage.getItem(_arqKey_()) || '{}'); _arqMemo = (o && typeof o === 'object' && !Array.isArray(o)) ? o : {}; } catch (_) { _arqMemo = {}; }
+  return _arqMemo;
+}
+function _arqDia_(t) { try { return new Date(t).toDateString(); } catch (_) { return ''; } }
+// topo de uma grade: maior peso (ou placa, quando não há peso) e as repetições dessa série
+function _arqTopo_(sets) {
+  let kg = 0, pl = 0, r = '';
+  try {
+    const a = typeof sets === 'string' ? JSON.parse(sets) : sets;
+    if (!Array.isArray(a)) return null;
+    a.forEach(x => {
+      if (!x) return;
+      const k = parseFloat(String(x.kg || '').replace(',', '.')), q = parseFloat(String(x.pl || '').replace(',', '.'));
+      if (isFinite(k) && k > kg && k < 2000) { kg = k; r = String(x.reps || '').trim(); }
+      if (isFinite(q) && q > pl && q < 2000) { pl = q; if (!(kg > 0)) r = String(x.reps || '').trim(); }
+    });
+  } catch (_) { return null; }
+  return (kg > 0 || pl > 0) ? { k: kg, p: pl, r: r } : null;
+}
+// Guarda UMA sessão. Mesma semana no mesmo dia = mesma sessão (fica a gravação mais nova). Devolve true se entrou algo novo.
+function _arqGuarda_(nome, t, topo, w) {
+  if (!topo || !(t > 0) || !nome) return false;
+  const n = _normEx(nome); if (!n) return false;
+  const arq = _arqLe_();
+  const lst = arq[n] || (arq[n] = []);
+  const dia = _arqDia_(t), ww = Number(w) || 0;
+  const ja = lst.find(x => x && (Number(x.w) || 0) === ww && _arqDia_(x.t) === dia);
+  if (ja) {
+    if (t > ja.t) { ja.t = t; ja.k = topo.k || 0; ja.p = topo.p || 0; ja.r = topo.r || ''; _arqSujo = true; }
+    return false;
+  }
+  lst.push({ t: t, k: topo.k || 0, p: topo.p || 0, r: topo.r || '', w: ww });
+  lst.sort((a, b) => a.t - b.t);
+  while (lst.length > 60) lst.shift();   // as 60 sessões mais novas de cada exercício
+  _arqSujo = true; return true;
+}
+function _arqSalva_() {
+  if (!_arqSujo) return;
+  try { localStorage.setItem(_arqKey_(), JSON.stringify(_arqLe_())); } catch (_) {}
+  _arqSujo = false;
+}
+// Registros do servidor (restore): entra o que é de antes do protocolo atual, pelo nome que o registro traz
+function _arqDoServidor_(cargas, atual) {
+  const ini = Number(atual) || CURRENT_BLOCK_START || 0;
+  if (!(ini > 0) || !Array.isArray(cargas)) return 0;
+  let n = 0;
+  cargas.forEach(c => {
+    try {
+      if (!c || !c.exercicio) return;
+      const t = (c.ts != null) ? (Number(c.ts) || Date.parse(c.ts) || 0) : 0;
+      if (!(t > 0) || t >= ini) return;
+      const topo = (c.sets != null && c.sets !== '') ? _arqTopo_(c.sets) : _arqTopo_([{ kg: c.carga || '', pl: c.placas || '', reps: '' }]);
+      if (_arqGuarda_(c.exercicio, t, topo, c.w)) n++;
+    } catch (_) {}
+  });
+  _arqSalva_();
+  return n;
+}
+// Varredura do aparelho: grade com carimbo de antes do protocolo atual (funciona sem servidor). Uma vez por abertura,
+// de novo quando o restore pede (forca).
+function _arqDoAparelho_(forca, ini) {
+  if (_arqVarrido && !forca) return 0;
+  const INI = Number(ini) || CURRENT_BLOCK_START || 0;   // o restore passa o "atual" do servidor: o global pode ainda não ter sido atualizado nessa abertura
+  if (!(INI > 0)) return 0;
+  _arqVarrido = true;
+  let n = 0;
+  try {
+    const pre = 'gh_sets_' + STUDENT_ID + '_d';
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i); if (!k || k.indexOf(pre) !== 0) continue;
+      const m = k.slice(pre.length).match(/^(\d+)_e(\d+[ab]?)_w(\d+)(?:_(.+))?$/); if (!m) continue;
+      const d = m[1], e = m[2], w = +m[3], sf = m[4] ? '_' + m[4] : '';
+      const b = Number(localStorage.getItem(blkKey(d, e, w) + sf)) || 0;
+      if (!(b > 0) || b >= INI) continue;
+      const nome = m[4] ? m[4] : (localStorage.getItem(exnKey(d, e, w)) || '');
+      if (!nome) continue;
+      if (_arqGuarda_(nome, b, _arqTopo_(localStorage.getItem(k)), w)) n++;
+    }
+  } catch (_) {}
+  _arqSalva_();
+  return n;
+}
+// Antes de gravar por cima de uma grade de ciclo anterior (semana reciclada), ela vai pro arquivo
+function _arqAntesDeGravar_(d, e, w, sf) {
+  try {
+    if (!(CURRENT_BLOCK_START > 0)) return;
+    const b = Number(localStorage.getItem(blkKey(d, e, w) + sf)) || 0;
+    if (!(b > 0) || b >= CURRENT_BLOCK_START) return;
+    const nome = sf ? sf.slice(1) : (localStorage.getItem(exnKey(d, e, w)) || '');
+    const raw = localStorage.getItem(setsKey(d, e, w) + sf);
+    if (nome && raw) { _arqGuarda_(nome, b, _arqTopo_(raw), w); _arqSalva_(); }
+  } catch (_) {}
+}
+// Sessões de antes do protocolo atual de um exercício (pelo nome), da mais nova pra mais antiga
+function _arqDoExercicio_(nome) {
+  const n = _normEx(nome); if (!n) return [];
+  const lst = _arqLe_()[n];
+  if (!Array.isArray(lst)) return [];
+  return lst.filter(x => x && x.t > 0 && (x.k > 0 || x.p > 0) && (!(CURRENT_BLOCK_START > 0) || x.t < CURRENT_BLOCK_START)).slice().sort((a, b) => b.t - a.t);
+}
+function _arqDiaBR_(t) { const d = new Date(t); return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2); }
+function _arqFmtKg_(k) { return String(kgToDisplay(k)).replace('.', ',') + ' ' + getUnit(); }
+// Bloco "Antes deste protocolo" do histórico: melhor de lá e as sessões, da mais nova pra mais antiga
+function _histAntesHtml_(nome) {
+  try {
+    const lst = _arqDoExercicio_(nome);
+    if (!lst.length) return '';
+    const usaKg = lst.some(x => x.k > 0);
+    const v = x => usaKg ? x.k : x.p;
+    const fmtA = x => (usaKg ? _arqFmtKg_(x.k) : x.p + ' pl') + (x.r ? ' × ' + x.r : '');
+    const melhor = lst.reduce((a, b) => v(b) > v(a) ? b : a);
+    const MOSTRA = 8;
+    const linhas = lst.slice(0, MOSTRA).map(x => `<div class="hist-antes-row${x === melhor ? ' melhor' : ''}"><span>${_arqDiaBR_(x.t)}${x.w > 0 ? ' · sem ' + x.w : ''}</span><b>${fmtA(x)}</b></div>`).join('');
+    const sobra = lst.length - MOSTRA;
+    return `<div class="hist-antes"><div class="hist-antes-tit">Antes deste protocolo</div>
+      <div class="hist-chips" style="margin:6px 0 8px;"><span class="hist-chip pr">Teu melhor <b>${fmtA(melhor)}</b> · ${_arqDiaBR_(melhor.t)}</span></div>
+      ${linhas}${sobra > 0 ? `<div class="hist-antes-mais">e mais ${sobra} ${sobra === 1 ? 'treino' : 'treinos'} antes desses</div>` : ''}</div>`;
+  } catch (_) { return ''; }
+}
+// O melhor peso que o aluno já fez neste exercício: arquivo dos ciclos anteriores + grades deste aparelho pro mesmo nome
+// (menos a semana aberta, que é o treino de agora). Só peso: placa não entra na conta.
+function _melhorDoExercicio_(di, ei) {
+  let best = null;
+  const leva = (k, r, t) => { if (!(k > 0)) return; if (!best || k > best.k) best = { k: k, r: r || '', t: t || 0 }; };
+  try { _arqDoExercicio_(_exAtivoNome_(di, ei)).forEach(x => leva(x.k, x.r, x.t)); } catch (_) {}
+  try {
+    const sf = _cargaSlotSuffix(di, ei);
+    const hi = Math.max((typeof TOTAL_WEEKS === 'number' ? TOTAL_WEEKS : 8), 24);
+    for (let ww = 1; ww <= hi; ww++) {
+      if (ww === currentWeek) continue;
+      if (!sf && !_cargaValida(di, ei, ww)) continue;
+      const raw = localStorage.getItem(setsKey(di, ei, ww) + sf); if (!raw) continue;
+      const tp = _arqTopo_(raw); if (!tp) continue;
+      leva(tp.k, tp.r, Number(localStorage.getItem(blkKey(di, ei, ww) + sf)) || 0);
+    }
+  } catch (_) {}
+  return best;
+}
+// Linha "Teu melhor aqui" da grade: só quando a última vez (o "ant:") ficou abaixo do melhor. Quem voltou de lesão ou de
+// uma semana fraca vê a meta de verdade, não só o último número. Com a última vez no melhor, o card fica como era.
+function _melhorChipHtml_(di, ei, prev) {
+  try {
+    if (_exPorTempo(_exObjAt(di, ei))) return '';
+    const best = _melhorDoExercicio_(di, ei);
+    if (!best) return '';
+    let ult = 0; (prev || []).forEach(x => { const k = parseFloat(String((x && x.kg) || '').replace(',', '.')); if (isFinite(k) && k > ult) ult = k; });
+    if (!(ult > 0) || best.k <= ult) return '';
+    return `<div class="sg-melhor">Teu melhor aqui: <b>${_arqFmtKg_(best.k)}${best.r ? ' × ' + best.r : ''}</b>${best.t > 0 ? ' · ' + _arqDiaBR_(best.t) : ''}</div>`;
+  } catch (_) { return ''; }
+}
+
 // ══ Histórico de cargas ══
 // Núcleo compartilhado: monta o gráfico e a leitura de tendência de UM exercício.
 // Usado pelo modal (showHistory) e pelo gráfico grande da tela Meu Progresso.
@@ -13248,13 +13429,17 @@ function _histChartData(di, ei) {
       trendText = `Voltou pra ${fmt(val(first))} depois de variar nas semanas do meio. Hora de firmar a carga mais alta.`;
     }
   }
-  return { name: _hnm, html, trendText, trendCls, hasData: filled.length > 0 };
+  let antesHtml = '';   // v580: o que o aluno fez neste exercício antes do protocolo atual
+  try { _arqDoAparelho_(true); antesHtml = _histAntesHtml_(_hnm); } catch (_) { antesHtml = ''; }
+  if (!filled.length && antesHtml) { html = ''; trendText = 'Ainda sem carga anotada neste protocolo. Abaixo, o que tu fez antes dele.'; trendCls = ''; }
+  return { name: _hnm, html, trendText, trendCls, hasData: filled.length > 0, antesHtml };
 }
 function showHistory(di, ei) {
   const d = _histChartData(di, ei);
   if (!d) return;
   document.getElementById('historyTitle').textContent = '📈 ' + d.name;
   document.getElementById('historyBars').innerHTML = d.html;
+  try { const ha = document.getElementById('historyAntes'); if (ha) ha.innerHTML = d.antesHtml || ''; } catch (_) {}   // v580
   const trend = document.getElementById('historyTrend');
   trend.classList.remove('up', 'down');
   if (d.trendCls) trend.classList.add(d.trendCls);
@@ -23800,7 +23985,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v579';
+    var APP_SHELL_V = 'metodo-gh-v580';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
