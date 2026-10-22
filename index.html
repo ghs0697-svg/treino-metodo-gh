@@ -443,7 +443,7 @@
   .modo-seg button { border: 0; background: transparent; color: #a39a86; font-family: inherit; font-size: 12.5px; font-weight: 700; line-height: 1; padding: 8px 13px; border-radius: 999px; cursor: pointer; }
   .modo-seg button.on { background: var(--gold); color: #15100a; }
   body:not(.has-bnav) .modo-bar, body.view-dieta .modo-bar, body.view-ghflix .modo-bar, body.view-progresso .modo-bar, body.view-novidades .modo-bar { display: none; }
-  body.modo-simples #studentInfo, body.modo-simples #protoProgress, body.modo-simples #dayHero, body.modo-simples #acaoRapida,
+  body.modo-simples #studentInfo, body.modo-simples #protoProgress, body.modo-simples #dayHero,
   body.modo-simples #esforcoAlvoBadge, body.modo-simples #metaNotasBadge,
   body.modo-simples .instructions-toggle, body.modo-simples .instructions-content,
   body.modo-simples .ex-dica-troca, body.modo-simples .musc-tag, body.modo-simples .ex-sub-pill, body.modo-simples .ex-motivo,
@@ -460,6 +460,78 @@
   body.modo-simples:not(.fonte-ggg):not(.fonte-gggg) .set-head > span.sh-rs::after { content: 'RIR'; font-size: 9px; }
   body.modo-simples .set-head > span.sh-rs::after { content: 'RIR' !important; }   /* ganha do 'SOB' da letra grande */
   @media (max-width: 380px) { .set-head .sh-rpe, .set-in.set-rpe { width: 40px; } }
+  /* v585 INTUITIVO (GH 22/10: "pode se chamar intuitivo", alunos de 55 a 60 anos, treino E dieta). A classe segue
+     body.modo-simples (nome interno da v584). Letra de leitura 15 a 17 px, campo de digitar com 17 px (iPhone não dá zoom
+     sozinho ao tocar), botões de 44 px de altura, palavras no lugar de sigla, e um "como usar" de 3 passos em cada aba. */
+  .modo-bar-d { display: none; }
+  body.view-dieta.has-bnav .modo-bar-d { display: flex; }
+  .intu-ajuda { display: none; margin: 0 14px 12px; padding: 14px 40px 14px 16px; position: relative; background: rgba(212,175,106,.07); border: 1px solid rgba(212,175,106,.35); border-radius: 14px; color: #ece6da; font-size: 15px; line-height: 1.5; }
+  .intu-ajuda b.ia-t { display: block; color: var(--gold); font-size: 15px; margin-bottom: 6px; }
+  .intu-ajuda ol { margin: 0; padding-left: 20px; }
+  .intu-ajuda li { margin: 3px 0; }
+  .intu-ajuda .ia-x { position: absolute; top: 6px; right: 6px; width: 34px; height: 34px; border: 0; background: transparent; color: #a39a86; font-size: 22px; line-height: 1; cursor: pointer; }
+  body.modo-simples.has-bnav:not(.aj-t-off):not(.view-dieta):not(.view-ghflix):not(.view-progresso):not(.view-novidades) #intuAjudaT { display: block; }
+  body.modo-simples.has-bnav:not(.aj-d-off) #intuAjudaD { display: block; }
+  /* treino */
+  body.modo-simples .exercise-name { font-size: 17px; }
+  body.modo-simples .exercise-name .video-icon { font-size: 13px; }
+  body.modo-simples .ex-presc { font-size: 14px; color: #c9c1b2; }
+  body.modo-simples .ex-presc .cad { font-size: 13px; color: #a39a86; }
+  body.modo-simples .exercise-obs { font-size: 14px; }
+  body.modo-simples .ex-check { width: 28px; height: 28px; min-width: 28px; }
+  body.modo-simples .sg-head { font-size: 12px; }
+  body.modo-simples .sg-ant-nota { font-size: 13px; }
+  body.modo-simples .set-head, body.modo-simples .set-row { gap: 6px; }
+  body.modo-simples .set-row { margin-bottom: 4px; }
+  body.modo-simples .set-row .set-in { flex: 1 1 0; width: auto; min-width: 0; height: 46px; font-size: 17px; padding: 6px 2px; }
+  body.modo-simples .set-row .set-in::placeholder { font-size: 15px; }
+  body.modo-simples .set-head > span:not(.set-num) { flex: 1 1 0; width: auto; min-width: 0; }
+  body.modo-simples .set-row button.set-num, body.modo-simples .set-head .set-num { width: 40px; min-width: 40px; height: 46px; font-size: 16px; }
+  body.modo-simples .sets-grid.rotulada .set-row button.set-num, body.modo-simples .sets-grid.rotulada .set-head .set-num { width: 58px; min-width: 58px; font-size: 12px; }
+  body.modo-simples .set-head > span, body.modo-simples .set-head > span::after { font-size: 11px !important; letter-spacing: 0 !important; text-transform: none !important; white-space: pre-line !important; line-height: 1.2; color: #c9b58a; }
+  body.modo-simples .set-head > span.sh-kg::before { content: 'Peso\A'; white-space: pre-line; }
+  body.modo-simples .sets-grid:not(.tempo) .set-head > span.sh-reps { font-size: 0 !important; }
+  body.modo-simples .sets-grid:not(.tempo) .set-head > span.sh-reps::after { content: 'Repe-\Atições'; }
+  body.modo-simples .sets-grid.tempo .set-head > span.sh-reps::before { content: 'Tempo\A'; white-space: pre-line; }
+  body.modo-simples .set-head > span.sh-pl { font-size: 0 !important; }
+  body.modo-simples .set-head > span.sh-pl::after { content: 'Placas'; }
+  body.modo-simples .set-head > span.sh-rs { font-size: 0 !important; }
+  body.modo-simples .set-head > span.sh-rs::after { content: 'Sobrou\A(RIR)' !important; }
+  body.modo-simples .set-head > span.sh-rpe { font-size: 0 !important; }
+  body.modo-simples .set-head > span.sh-rpe::after { content: 'Esforço\A(RPE)'; }
+  body.modo-simples .set-head .rs-info-btn { width: 24px; height: 24px; font-size: 12px; }
+  /* letra aumentada no máximo (ggg/gggg): a página já vem com zoom, os títulos da grade voltam pro tamanho da Completa */
+  body.modo-simples.fonte-ggg .set-head > span, body.modo-simples.fonte-ggg .set-head > span::after, body.modo-simples.fonte-ggg .set-head > span::before { font-size: 8.5px !important; }
+  body.modo-simples.fonte-gggg .set-head > span, body.modo-simples.fonte-gggg .set-head > span::after, body.modo-simples.fonte-gggg .set-head > span::before { font-size: 6.8px !important; letter-spacing: -0.2px !important; }
+  body.modo-simples.fonte-ggg .set-head > span.sh-reps, body.modo-simples.fonte-gggg .set-head > span.sh-reps,
+  body.modo-simples.fonte-ggg .set-head > span.sh-pl, body.modo-simples.fonte-gggg .set-head > span.sh-pl,
+  body.modo-simples.fonte-ggg .set-head > span.sh-rs, body.modo-simples.fonte-gggg .set-head > span.sh-rs,
+  body.modo-simples.fonte-ggg .set-head > span.sh-rpe, body.modo-simples.fonte-gggg .set-head > span.sh-rpe { font-size: 0 !important; }
+  body.modo-simples.fonte-ggg .sets-grid.tempo .set-head > span.sh-reps, body.modo-simples.fonte-gggg .sets-grid.tempo .set-head > span.sh-reps { font-size: 8px !important; }
+  body.modo-simples.fonte-ggg .set-head .rs-info-btn, body.modo-simples.fonte-gggg .set-head .rs-info-btn { width: 18px; height: 18px; min-width: 18px; font-size: 10px; }
+  body.modo-simples .set-prev, body.modo-simples .set-head .sh-prev { display: none !important; }
+  body.modo-simples .ex-actions .save-btn { flex-direction: row; gap: 6px; padding: 10px 16px; font-size: 15px; }
+  body.modo-simples .ex-actions .save-btn .ex-action-lbl { font-size: 14px; color: var(--gold); }
+  body.modo-simples .set-sug { font-size: 14px; }
+  /* dieta */
+  body.modo-simples .diet-macro-card, body.modo-simples .dm-hora, body.modo-simples .dm-nao { display: none !important; }
+  body.modo-simples .diet-meal-header { font-size: 16px; letter-spacing: .5px; }
+  body.modo-simples .diet-meal-check { font-size: 15px; padding: 11px 18px; }
+  body.modo-simples .diet-meal-check svg { width: 16px; height: 16px; }
+  body.modo-simples .diet-meal-instruction { font-size: 14px; font-style: normal; color: #c9c1b2; line-height: 1.5; padding-top: 10px; }
+  body.modo-simples .diet-option-tabs { flex-direction: column; overflow: visible; gap: 8px; }
+  body.modo-simples .diet-option-tab { flex-shrink: 1; width: 100%; text-align: left; font-size: 15px; padding: 12px 14px; border-radius: 10px; line-height: 1.35; white-space: normal; }
+  body.modo-simples .diet-food-name { font-size: 16px; }
+  body.modo-simples .diet-food-qty { font-size: 16px; }
+  body.modo-simples .diet-food-main { flex-wrap: wrap; column-gap: 8px; }
+  body.modo-simples .diet-food-name { min-width: 0; overflow-wrap: anywhere; }
+  body.modo-simples .diet-food-qty { margin-left: auto; }
+  body.modo-simples .diet-food-obs { font-size: 14px; font-style: normal; color: #b8b0a2; line-height: 1.45; margin-top: 4px; }
+  body.modo-simples .diet-info-row { flex-direction: column; gap: 2px; padding: 6px 0; }
+  body.modo-simples .diet-info-label { font-size: 12px; letter-spacing: .04em; padding-top: 0; }
+  body.modo-simples .diet-info-value { font-size: 15px; font-weight: 500; text-align: left; max-width: none; line-height: 1.45; }
+  body.modo-simples .diet-option-tab:not(.active) { color: #ddd5c4; background: #1c1c1c; }
+  body.modo-simples .ddp-label { font-size: 14px; }
   /* v569: com a letra nos dois níveis mais altos a tela útil tem uns 220 px; a grade de séries encolhe os campos em vez de sair da tela */
   body.fonte-ggg .set-row .set-in, body.fonte-gggg .set-row .set-in, body.fonte-ggg .set-head > span:not(.set-num), body.fonte-gggg .set-head > span:not(.set-num) { flex: 1 1 0; width: auto; min-width: 0; padding-left: 2px; padding-right: 2px; }
   body.fonte-ggg .set-row, body.fonte-gggg .set-row, body.fonte-ggg .set-head, body.fonte-gggg .set-head { gap: 4px; }
@@ -3623,7 +3695,7 @@
 </style>
 </head>
 <body>
-<script>try{var _mq=new URLSearchParams(location.search).get('modo');if(_mq==='simples')localStorage.setItem('gh_modo','simples');else if(_mq==='completo'||_mq==='completa')localStorage.removeItem('gh_modo');if(localStorage.getItem('gh_modo')==='simples')document.body.classList.add('modo-simples');}catch(e){}</script>
+<script>try{var _mq=new URLSearchParams(location.search).get('modo');if(_mq==='simples'||_mq==='intuitivo'){localStorage.setItem('gh_modo','intuitivo');localStorage.removeItem('gh_intu_aj_t');localStorage.removeItem('gh_intu_aj_d');}else if(_mq==='completo'||_mq==='completa')localStorage.removeItem('gh_modo');var _gm=localStorage.getItem('gh_modo');if(_gm==='simples'||_gm==='intuitivo')document.body.classList.add('modo-simples');if(localStorage.getItem('gh_intu_aj_t'))document.body.classList.add('aj-t-off');if(localStorage.getItem('gh_intu_aj_d'))document.body.classList.add('aj-d-off');}catch(e){}</script>
 <script>try{var _gf=localStorage.getItem('gh_fonte');if(_gf==='g'||_gf==='gg'||_gf==='ggg'||_gf==='gggg')document.body.classList.add('fonte-'+_gf);}catch(e){}</script>
 
 <div class="app-header">
@@ -3985,13 +4057,22 @@
   </div>
 </div>
 
-<!-- v584: Simples x Completa (GH 22/10). Só aparece com o protocolo do aluno carregado e na aba Treino. -->
+<!-- v584/v585: Intuitivo x Completo (GH 22/10). Só aparece com o protocolo do aluno carregado, nas abas Treino e Dieta. -->
 <div class="modo-bar" id="modoBar">
-  <span class="mb-lbl" id="modoLbl">Versão do app</span>
-  <div class="modo-seg" role="group" aria-label="Versão do app">
-    <button type="button" data-m="simples" onclick="modoAplica('simples')">Simples</button>
-    <button type="button" data-m="completo" class="on" onclick="modoAplica('completo')">Completa</button>
+  <span class="mb-lbl">Modo do app</span>
+  <div class="modo-seg" role="group" aria-label="Modo do app">
+    <button type="button" data-m="simples" onclick="modoAplica('simples')">Intuitivo</button>
+    <button type="button" data-m="completo" class="on" onclick="modoAplica('completo')">Completo</button>
   </div>
+</div>
+<div class="intu-ajuda" id="intuAjudaT">
+  <button type="button" class="ia-x" onclick="intuAjudaFecha('t')" aria-label="Fechar">&times;</button>
+  <b class="ia-t">Como usar o teu treino</b>
+  <ol>
+    <li>Toca em <b>▶ vídeo</b> pra ver como se faz.</li>
+    <li>Em cada série, anota o <b>peso</b> e quantas <b>repetições</b> tu fez.</li>
+    <li>Terminou a série? Toca no <b>número</b> dela. Ele fica dourado.</li>
+  </ol>
 </div>
 <div class="day-tabs" id="dayTabs"></div>
 
@@ -4216,6 +4297,22 @@
 
 <!-- ══ DIET VIEW ══ -->
 <div id="dietaView">
+  <div class="modo-bar modo-bar-d" id="modoBarD">
+    <span class="mb-lbl">Modo do app</span>
+    <div class="modo-seg" role="group" aria-label="Modo do app">
+      <button type="button" data-m="simples" onclick="modoAplica('simples')">Intuitivo</button>
+      <button type="button" data-m="completo" class="on" onclick="modoAplica('completo')">Completo</button>
+    </div>
+  </div>
+  <div class="intu-ajuda" id="intuAjudaD">
+    <button type="button" class="ia-x" onclick="intuAjudaFecha('d')" aria-label="Fechar">&times;</button>
+    <b class="ia-t">Como usar a tua dieta</b>
+    <ol>
+      <li>Cada refeição tem opções. <b>Escolhe uma</b> tocando nela.</li>
+      <li>Segue os alimentos e as <b>quantidades</b> da lista.</li>
+      <li>Comeu? Toca em <b>Feita</b>.</li>
+    </ol>
+  </div>
   <div id="dietLoading" class="loading-screen" style="display:none;">
     <div class="loading-spinner"></div>
     <div class="loading-text">Carregando dieta...</div>
@@ -5818,7 +5915,7 @@
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg></span><span id="celebToggleLabel">🎉 Comemorações: ligadas (desligar)</span>
     </button>
     <button type="button" class="mais-opt" onclick="modoAplica(_modoAtual() === 'simples' ? 'completo' : 'simples')">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="14" y1="17.5" x2="21" y2="17.5"/></svg></span><span id="modoToggleLabel">Versão do app: Completa (tocar pra Simples)</span>
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="14" y1="17.5" x2="21" y2="17.5"/></svg></span><span id="modoToggleLabel">Modo do app: Completo (tocar pra Intuitivo)</span>
     </button>
     <button type="button" class="mais-opt" onclick="toggleFonte()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg></span><span id="fonteToggleLabel">🔤 Tamanho da letra: normal (tocar pra aumentar)</span>
@@ -8981,25 +9078,31 @@ function toggleSetFeita(di, ei, si) {
 // ══ v584 VERSÃO SIMPLES / COMPLETA (GH 22/10) ══
 // Escolha por aparelho (gh_modo = 'simples'; ausente = completa). Troca só a classe do body: nenhuma tela é repintada,
 // nada do que o aluno digitou se perde e o que fica escondido continua funcionando por trás.
-function _modoAtual() { try { return localStorage.getItem('gh_modo') === 'simples' ? 'simples' : 'completo'; } catch (_) { return document.body.classList.contains('modo-simples') ? 'simples' : 'completo'; } }
+// v585: o modo se chama Intuitivo (GH 22/10). Marca nova 'intuitivo'; a 'simples' de quem escolheu na v584 vale igual.
+function _modoAtual() { try { const v = localStorage.getItem('gh_modo'); return (v === 'simples' || v === 'intuitivo') ? 'simples' : 'completo'; } catch (_) { return document.body.classList.contains('modo-simples') ? 'simples' : 'completo'; } }
 function modoAplica(m) {
-  const simples = m === 'simples';
-  try { if (simples) localStorage.setItem('gh_modo', 'simples'); else localStorage.removeItem('gh_modo'); } catch (_) {}
+  const simples = m === 'simples' || m === 'intuitivo';
+  try { if (simples) localStorage.setItem('gh_modo', 'intuitivo'); else localStorage.removeItem('gh_modo'); } catch (_) {}
   document.body.classList.toggle('modo-simples', simples);
+  // tocar em Intuitivo mostra o "como usar" de novo (é assim que quem fechou sem querer recupera)
+  if (simples) { try { localStorage.removeItem('gh_intu_aj_t'); localStorage.removeItem('gh_intu_aj_d'); } catch (_) {} document.body.classList.remove('aj-t-off', 'aj-d-off'); }
   _modoBtnRefresh();
 }
 function _modoBtnRefresh() {
   try {
     const m = document.body.classList.contains('modo-simples') ? 'simples' : 'completo';
-    document.querySelectorAll('#modoBar .modo-seg button').forEach(b => b.classList.toggle('on', b.dataset.m === m));
+    document.querySelectorAll('.modo-bar .modo-seg button').forEach(b => b.classList.toggle('on', b.dataset.m === m));
     const en = (typeof _lang === 'function' && _lang() === 'en');
     const lb = document.getElementById('modoToggleLabel');
-    if (lb) lb.textContent = en ? (m === 'simples' ? 'App version: Simple (tap for Full)' : 'App version: Full (tap for Simple)')
-                                : (m === 'simples' ? 'Versão do app: Simples (tocar pra Completa)' : 'Versão do app: Completa (tocar pra Simples)');
-    const ml = document.getElementById('modoLbl'); if (ml) ml.textContent = en ? 'App version' : 'Versão do app';
-    const bs = document.querySelectorAll('#modoBar .modo-seg button');
-    if (bs.length === 2) { bs[0].textContent = en ? 'Simple' : 'Simples'; bs[1].textContent = en ? 'Full' : 'Completa'; }
+    if (lb) lb.textContent = en ? (m === 'simples' ? 'App mode: Easy (tap for Full)' : 'App mode: Full (tap for Easy)')
+                                : (m === 'simples' ? 'Modo do app: Intuitivo (tocar pra Completo)' : 'Modo do app: Completo (tocar pra Intuitivo)');
+    document.querySelectorAll('.modo-bar .mb-lbl').forEach(x => { x.textContent = en ? 'App mode' : 'Modo do app'; });
+    document.querySelectorAll('.modo-bar .modo-seg').forEach(g => { const bs = g.querySelectorAll('button'); if (bs.length === 2) { bs[0].textContent = en ? 'Easy' : 'Intuitivo'; bs[1].textContent = en ? 'Full' : 'Completo'; } });
   } catch (_) {}
+}
+function intuAjudaFecha(qual) {
+  try { localStorage.setItem('gh_intu_aj_' + qual, '1'); } catch (_) {}
+  document.body.classList.add('aj-' + qual + '-off');
 }
 // RPE x RIR: RPE = 10 menos o RIR. Só o RIR ("sobrou") é gravado.
 function _rpeDe(rs) {
@@ -24687,7 +24790,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v584';
+    var APP_SHELL_V = 'metodo-gh-v585';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
