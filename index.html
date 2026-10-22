@@ -6434,7 +6434,11 @@ let TAB_NAME = params.get('tab');
 // bookmark ?edit=1 do GH recuperava o último aluno do aparelho e abria o editor nele (Elton).
 // Os links de recado (?edit=1&sheet=ID) seguem abrindo o aluno certo: o sheet vem da URL.
 if (!SHEET_ID && !TAB_NAME) {
-  const forceEditor = params.has('editor') || params.has('admin') || params.get('edit') === '1';
+  // v583 (GH 22/10: digitou app.metodogh.com.br e abriu o treino do Eduardo Santi Yamim): aparelho com login do
+  // Painel do Treinador (gh_trainer_token, só existe depois da senha) na raiz vai pro painel, não pro último aluno
+  // aberto nele. Aluno nunca tem esse login, então pro aluno nada muda; link com ?sheet= segue abrindo o aluno.
+  let _ehTreinador = false; try { _ehTreinador = !!localStorage.getItem('gh_trainer_token'); } catch (_) {}
+  const forceEditor = params.has('editor') || params.has('admin') || params.get('edit') === '1' || _ehTreinador;
   if (!forceEditor) {
     const saved = localStorage.getItem('gh_pwa_params');
     if (saved) {
@@ -12528,9 +12532,36 @@ function timerDone(atrasoMs) {
 // v548: UM contexto de áudio só, destravado no toque. No iPhone, som que não nasce de um toque não toca: o bip do fim do
 // descanso criava um contexto novo de dentro do temporizador (nascia suspenso) e o aluno de iPhone não ouvia nada. E cada
 // fim de descanso deixava um contexto aberto pra trás.
+// v583 (André Augusto, iPhone 17 Pro com iOS 27, 21/10/2026: "ao abrir o app agora ele pára o Spotify mesmo sem estar tocando
+// seu vídeo"): o contexto de som do bip nasce no primeiro toque (v548) e o iPhone dava a ele o modo que cala os outros apps, então
+// a música parava no primeiro toque na tela. O app passa a declarar o som dele como "de fundo" (ambient): o bip do descanso e o do
+// coach de cadência tocam por cima da música, e seguem a chave do silencioso como o som do app já seguia. Enquanto toca vídeo,
+// aula ou recado, ou o microfone está aberto, volta o modo normal (auto), pra o som do vídeo não sumir com o celular no silencioso.
+// Navegador sem navigator.audioSession (Android, iPhone antigo) segue como era.
+let _audMic = false;
+function _audTipoAgora() {
+  try {
+    if (_audMic) return 'auto';
+    const ov = document.getElementById('videoOverlay');
+    if (ov && ov.classList.contains('show')) return 'auto';
+    const toca = doc => { for (const m of doc.querySelectorAll('video, audio')) if (!m.paused && !m.ended && !m.muted) return true; return false; };
+    if (toca(document)) return 'auto';
+    for (const f of document.querySelectorAll('iframe')) { let d = null; try { d = f.contentDocument; } catch (_) {} if (d && toca(d)) return 'auto'; }   // a aula do GHFlix (mesma origem)
+  } catch (_) {}
+  return 'ambient';
+}
+function _audSessaoAjusta() {
+  try { const se = navigator.audioSession; if (!se) return; const t = _audTipoAgora(); if (se.type !== t) se.type = t; } catch (_) {}
+}
+function _audOuveMidia(doc) {
+  try { ['play', 'playing', 'pause', 'ended', 'emptied', 'volumechange'].forEach(ev => doc.addEventListener(ev, () => setTimeout(_audSessaoAjusta, 0), true)); } catch (_) {}
+}
+_audOuveMidia(document);
+_audSessaoAjusta();   // já na abertura, antes de qualquer som nascer
 let _somAC = null;
 function _somDestrava() {
   try {
+    _audSessaoAjusta();   // v583: antes de ligar o som, o modo certo
     if (!_somAC) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) _somAC = new AC(); }
     if (_somAC && _somAC.state === 'suspended') _somAC.resume();
   } catch (_) {}
@@ -12570,6 +12601,7 @@ let _pacAC = null, _pacMudo = (localStorage.getItem('gh_pacer_mudo') === '1');
 function _pacAudioInit() {
   // iOS só libera áudio dentro de um gesto do usuário: chamo isto no toque que abre o pacer.
   try {
+    _audSessaoAjusta();   // v583
     if (!_pacAC) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) _pacAC = new AC(); }
     if (_pacAC && _pacAC.state === 'suspended') _pacAC.resume();
   } catch (_) {}
@@ -15678,6 +15710,7 @@ function openVideo(name, url) {
     ytLink.href = watchUrl;
   }
   document.getElementById("videoOverlay").classList.add("show");
+  _audSessaoAjusta();   // v583: vídeo aberto, som no modo normal
   document.body.style.overflow = "hidden";
   // v556: vídeo que já está baixado no aparelho não começa pela rede. Antes tocava um instante do servidor, trocava pela
   // cópia do aparelho, reiniciava e ficava pausado (e gastava os dados do aluno à toa).
@@ -15937,6 +15970,7 @@ function closeVideo() {
   const iframe = document.getElementById("videoFrame");
   if (iframe) { iframe.onload = null; iframe.src = ""; }
   document.getElementById("videoOverlay").classList.remove("show");
+  _audSessaoAjusta();   // v583: vídeo fechado, o som do app volta a tocar junto com a música
   const ag = document.getElementById("aulasGhflix");
   if (ag) { ag.style.display = 'none'; }
   aulasGhflixAlterna(false);   // v562: solta a moldura do vídeo e deixa a lista recolhida pro próximo
@@ -22843,6 +22877,7 @@ function ensureGhflixFrame(abrirVideo) {
     (abrirVideo ? '&abrir=' + encodeURIComponent(abrirVideo) : '') +
     '" allow="autoplay; fullscreen" allowfullscreen></iframe>';
   host.dataset.loaded = '1';
+  try { const fr = host.querySelector('iframe'); fr.addEventListener('load', () => { try { _audOuveMidia(fr.contentDocument); } catch (_) {} }); } catch (_) {}   // v583
 }
 
 // Bloqueio de plano vencido (revogação): consulta o status no mestre via Apps Script.
@@ -24554,7 +24589,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v582';
+    var APP_SHELL_V = 'metodo-gh-v583';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -25380,6 +25415,7 @@ function _recadoTeardown_() {
   _recadoStopStream();
   try { if (_recadoCtx && _recadoCtx.state !== 'closed') _recadoCtx.close(); } catch (_) {}
   _recadoCtx = null;
+  _audMic = false; _audSessaoAjusta();   // v583
 }
 function _recadoFmt(s) { const m = Math.floor(s / 60); const ss = s % 60; return m + ':' + (ss < 10 ? '0' : '') + ss; }
 function recadoToggle() {
@@ -25394,8 +25430,9 @@ async function _recadoStartRec() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !AC) {
     alert('Teu navegador não suporta gravação. Tenta um Chrome ou Safari atualizado.'); return;
   }
+  _audMic = true; _audSessaoAjusta();   // v583: gravar pede o modo normal
   try { _recadoStream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
-  catch (e) { alert('Não consegui acessar o microfone. Libera a permissão e tenta de novo.'); return; }
+  catch (e) { _audMic = false; _audSessaoAjusta(); alert('Não consegui acessar o microfone. Libera a permissão e tenta de novo.'); return; }
   _recadoPCM = []; _recadoBlob = null; _recadoMime = 'audio/wav';
   _recadoCtx = new AC();
   try { if (_recadoCtx.state === 'suspended') await _recadoCtx.resume(); } catch (_) {}
