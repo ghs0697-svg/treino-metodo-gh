@@ -429,6 +429,37 @@
   .set-in.set-kg { width: 58px; } .set-in.set-pl { width: 44px; } .set-in.set-reps { width: 52px; }
   /* "sobrou" = reps que sobraram na série (percepção de esforço, casa com o Esforço-alvo) */
   .set-head .sh-rs { width: 46px; } .set-in.set-rs { width: 46px; }
+  /* v584 VERSÃO SIMPLES (GH 22/10: aluno achando o app difícil): a tela de treino fica só com o registro (carga, reps,
+     RIR e RPE). Tudo escondido por CSS com a classe body.modo-simples; nada é apagado nem deixa de salvar. O RPE é a
+     mesma informação do "sobrou" (RIR) vista do outro lado: RPE = 10 menos o RIR. Só o RIR é gravado (caminho de carga
+     intocado); digitar o RPE preenche o RIR. Na versão completa a coluna de RPE não aparece. */
+  .set-in.set-rpe, .set-head .sh-rpe { display: none; }
+  .set-head .sh-rpe, .set-in.set-rpe { width: 46px; }
+  .modo-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 10px 14px 12px; padding: 7px 7px 7px 14px; background: var(--card); border: 1px solid rgba(212,175,106,.22); border-radius: 14px; }
+  .modo-bar { flex-wrap: wrap; row-gap: 6px; }   /* letra grande: o seletor desce pra linha de baixo em vez de sair da tela */
+  .modo-bar .mb-lbl { flex: 1 1 auto; min-width: 0; font-size: 12px; color: #a39a86; font-weight: 600; line-height: 1.3; }
+  .modo-seg { max-width: 100%; }
+  .modo-seg { display: flex; flex: none; background: #0f0e0c; border: 1px solid rgba(212,175,106,.3); border-radius: 999px; padding: 3px; }
+  .modo-seg button { border: 0; background: transparent; color: #a39a86; font-family: inherit; font-size: 12.5px; font-weight: 700; line-height: 1; padding: 8px 13px; border-radius: 999px; cursor: pointer; }
+  .modo-seg button.on { background: var(--gold); color: #15100a; }
+  body:not(.has-bnav) .modo-bar, body.view-dieta .modo-bar, body.view-ghflix .modo-bar, body.view-progresso .modo-bar, body.view-novidades .modo-bar { display: none; }
+  body.modo-simples #studentInfo, body.modo-simples #protoProgress, body.modo-simples #dayHero, body.modo-simples #acaoRapida,
+  body.modo-simples #esforcoAlvoBadge, body.modo-simples #metaNotasBadge,
+  body.modo-simples .instructions-toggle, body.modo-simples .instructions-content,
+  body.modo-simples .ex-dica-troca, body.modo-simples .musc-tag, body.modo-simples .ex-sub-pill, body.modo-simples .ex-motivo,
+  body.modo-simples .evo-chip, body.modo-simples .sg-melhor, body.modo-simples .forca-chip, body.modo-simples .estag-chip,
+  body.modo-simples .prog-chip, body.modo-simples .focus-esforco,
+  body.modo-simples .ex-actions .ex-action-btn:not(.save-btn) { display: none !important; }
+  /* placa: some só de quem não usa placa NESTE exercício (nem agora, nem na última vez). :has acompanha o que o aluno digita;
+     navegador sem :has descarta a regra inteira e a coluna fica (lado seguro: carga nunca some da vista) */
+  body.modo-simples .sets-grid:not(.tem-pl):not(:has(.set-pl:not(:placeholder-shown))):not(:has(.set-pl.ph-ant)) .set-in.set-pl,
+  body.modo-simples .sets-grid:not(.tem-pl):not(:has(.set-pl:not(:placeholder-shown))):not(:has(.set-pl.ph-ant)) .sh-pl { display: none !important; }
+  body.modo-simples .set-in.set-rpe, body.modo-simples .set-head .sh-rpe { display: block; }
+  body.modo-simples .sets-grid.tempo .set-in.set-rpe, body.modo-simples .sets-grid.tempo .sh-rpe { display: none; }
+  body.modo-simples:not(.fonte-ggg):not(.fonte-gggg) .set-head > span.sh-rs { font-size: 0; }
+  body.modo-simples:not(.fonte-ggg):not(.fonte-gggg) .set-head > span.sh-rs::after { content: 'RIR'; font-size: 9px; }
+  body.modo-simples .set-head > span.sh-rs::after { content: 'RIR' !important; }   /* ganha do 'SOB' da letra grande */
+  @media (max-width: 380px) { .set-head .sh-rpe, .set-in.set-rpe { width: 40px; } }
   /* v569: com a letra nos dois níveis mais altos a tela útil tem uns 220 px; a grade de séries encolhe os campos em vez de sair da tela */
   body.fonte-ggg .set-row .set-in, body.fonte-gggg .set-row .set-in, body.fonte-ggg .set-head > span:not(.set-num), body.fonte-gggg .set-head > span:not(.set-num) { flex: 1 1 0; width: auto; min-width: 0; padding-left: 2px; padding-right: 2px; }
   body.fonte-ggg .set-row, body.fonte-gggg .set-row, body.fonte-ggg .set-head, body.fonte-gggg .set-head { gap: 4px; }
@@ -3592,6 +3623,7 @@
 </style>
 </head>
 <body>
+<script>try{var _mq=new URLSearchParams(location.search).get('modo');if(_mq==='simples')localStorage.setItem('gh_modo','simples');else if(_mq==='completo'||_mq==='completa')localStorage.removeItem('gh_modo');if(localStorage.getItem('gh_modo')==='simples')document.body.classList.add('modo-simples');}catch(e){}</script>
 <script>try{var _gf=localStorage.getItem('gh_fonte');if(_gf==='g'||_gf==='gg'||_gf==='ggg'||_gf==='gggg')document.body.classList.add('fonte-'+_gf);}catch(e){}</script>
 
 <div class="app-header">
@@ -3953,6 +3985,14 @@
   </div>
 </div>
 
+<!-- v584: Simples x Completa (GH 22/10). Só aparece com o protocolo do aluno carregado e na aba Treino. -->
+<div class="modo-bar" id="modoBar">
+  <span class="mb-lbl" id="modoLbl">Versão do app</span>
+  <div class="modo-seg" role="group" aria-label="Versão do app">
+    <button type="button" data-m="simples" onclick="modoAplica('simples')">Simples</button>
+    <button type="button" data-m="completo" class="on" onclick="modoAplica('completo')">Completa</button>
+  </div>
+</div>
 <div class="day-tabs" id="dayTabs"></div>
 
 <div class="week-selector" id="weekSelector" style="display:none;">
@@ -5776,6 +5816,9 @@
     </button>
     <button type="button" class="mais-opt" onclick="toggleCeleb()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg></span><span id="celebToggleLabel">🎉 Comemorações: ligadas (desligar)</span>
+    </button>
+    <button type="button" class="mais-opt" onclick="modoAplica(_modoAtual() === 'simples' ? 'completo' : 'simples')">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="14" y1="17.5" x2="21" y2="17.5"/></svg></span><span id="modoToggleLabel">Versão do app: Completa (tocar pra Simples)</span>
     </button>
     <button type="button" class="mais-opt" onclick="toggleFonte()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg></span><span id="fonteToggleLabel">🔤 Tamanho da letra: normal (tocar pra aumentar)</span>
@@ -8762,6 +8805,10 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
   const rsPh = alvoR ? (alvoR[0] === alvoR[1] ? String(alvoR[0]) : alvoR[0] + '-' + alvoR[1]) : '?';
   const okSet = loadSetOk(di, eiS, w);
   const evo = _evolucaoChipHtml(di, ei);   // linha de evolução das últimas 3 sessões
+  // v584: placa só aparece na versão simples se o aluno usa placa neste exercício (agora ou na última vez): esconder a
+  // coluna de quem anota em placa esconderia a carga dele
+  const _temPl = sets.some(x => x && String(x.pl || '').trim()) || (Array.isArray(prev) && prev.some(x => x && String(x.pl || '').trim()));
+  const rpePh = alvoR ? (alvoR[0] === alvoR[1] ? String(Math.max(0, 10 - alvoR[0])) : Math.max(0, 10 - alvoR[1]) + '-' + Math.max(0, 10 - alvoR[0])) : '?';
   const melhor = _melhorChipHtml_(di, ei, prev);   // v580: só quando a última vez ficou abaixo do melhor
   const rows = sets.map((s, si) => {
     const p = prev && prev[si];
@@ -8786,16 +8833,17 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
         <input class="set-in set-pl${_antPl ? ' ph-ant' : ''}" type="number" inputmode="numeric" placeholder="${_antPl || 'pl'}" value="${s.pl || ''}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-reps${_antReps ? ' ph-ant' : ''}" type="number" inputmode="numeric" placeholder="${_antReps || (_porTempo ? _tUnid : _phReps)}" title="${_porTempo ? 'Quantos ' + (_tUnid === 'min' ? 'minutos' : 'segundos') + ' tu segurou' : ''}" value="${s.reps || ''}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-rs" type="number" inputmode="numeric" onfocus="sobrouDica(this)" onblur="sobrouDicaSome()" placeholder="${_tipo === 'val' ? rsPh : '·'}" title="${_tipo === 'val' ? 'Quantas repetições sobraram nessa série' : 'Série de ' + SERIE_TIPO_NOME[_tipo] + ': sobrar é o esperado, não entra no alvo'}" value="${s.rs || ''}" oninput="onSetField(${di},'${eiS}')">
+        <input class="set-in set-rpe" type="number" inputmode="numeric" min="0" max="10" placeholder="${_tipo === 'val' ? rpePh : '·'}" title="RPE: esforço de 0 a 10 (10 = não dava mais nenhuma). É o RIR visto do outro lado: RPE 9 = sobrou 1." value="${_rpeDe(s.rs)}" oninput="_rpeDigitado(this,${di},'${eiS}')" onblur="_rpeNormaliza(this)">
         ${prevTxt}
         ${(semX || si < _nPresc) ? '' : `<button type="button" class="set-del" onclick="removeSet(${di},'${eiS}',${si})" title="Remover série" aria-label="Remover série">&times;</button>`}
       </div>`;
   }).join('');
-  return `<div class="sets-grid${_rotulada ? ' rotulada' : ''}${_porTempo ? ' tempo' : ''}" id="sets-${di}-${eiS}" data-di="${di}" data-ei="${eiS}" data-noadd="${noAdd ? '1' : ''}" data-semx="${semX ? '1' : ''}">
+  return `<div class="sets-grid${_rotulada ? ' rotulada' : ''}${_porTempo ? ' tempo' : ''}${_temPl ? ' tem-pl' : ''}" id="sets-${di}-${eiS}" data-di="${di}" data-ei="${eiS}" data-noadd="${noAdd ? '1' : ''}" data-semx="${semX ? '1' : ''}">
       <div class="sg-head">Teu registro</div>
       ${(prev && prev.length) ? '<div class="sg-ant-nota">Em cinza, o que tu fez na última vez</div>' : ''}
       ${label ? `<div class="carga-label" style="font-size:10px;margin-bottom:2px;">${label}</div>` : ''}
       ${evo}${melhor}
-      <div class="set-head"><span class="set-num"></span><span class="sh-kg" onclick="openGlossario('kg')" title="De cada lado ou o total?">${getUnit()}</span><span class="sh-pl" onclick="openPlacaInfo()" title="O que e placa?">placa</span><span class="sh-reps">${_porTempo ? _tUnid : 'reps'}</span><span class="sh-rs" title="Quantas repetições sobraram">sobrou</span><button type="button" class="rs-info-btn" onclick="openSobrouInfo()" aria-label="O que é o sobrou?">i</button><span class="sh-prev">${(prev && prev.length) ? 'última vez' : ''}</span></div>
+      <div class="set-head"><span class="set-num"></span><span class="sh-kg" onclick="openGlossario('kg')" title="De cada lado ou o total?">${getUnit()}</span><span class="sh-pl" onclick="openPlacaInfo()" title="O que e placa?">placa</span><span class="sh-reps">${_porTempo ? _tUnid : 'reps'}</span><span class="sh-rs" title="Quantas repetições sobraram">sobrou</span><span class="sh-rpe" title="Esforço de 0 a 10">RPE</span><button type="button" class="rs-info-btn" onclick="openSobrouInfo()" aria-label="O que é o sobrou?">i</button><span class="sh-prev">${(prev && prev.length) ? 'última vez' : ''}</span></div>
       ${rows}
       ${noAdd ? '' : `<button type="button" class="set-add" onclick="addSet(${di},'${eiS}')" title="Série a mais, além do que foi prescrito">+ série extra</button>`}
     </div>`;
@@ -8930,6 +8978,54 @@ function toggleSetFeita(di, ei, si) {
     }
   }
 }
+// ══ v584 VERSÃO SIMPLES / COMPLETA (GH 22/10) ══
+// Escolha por aparelho (gh_modo = 'simples'; ausente = completa). Troca só a classe do body: nenhuma tela é repintada,
+// nada do que o aluno digitou se perde e o que fica escondido continua funcionando por trás.
+function _modoAtual() { try { return localStorage.getItem('gh_modo') === 'simples' ? 'simples' : 'completo'; } catch (_) { return document.body.classList.contains('modo-simples') ? 'simples' : 'completo'; } }
+function modoAplica(m) {
+  const simples = m === 'simples';
+  try { if (simples) localStorage.setItem('gh_modo', 'simples'); else localStorage.removeItem('gh_modo'); } catch (_) {}
+  document.body.classList.toggle('modo-simples', simples);
+  _modoBtnRefresh();
+}
+function _modoBtnRefresh() {
+  try {
+    const m = document.body.classList.contains('modo-simples') ? 'simples' : 'completo';
+    document.querySelectorAll('#modoBar .modo-seg button').forEach(b => b.classList.toggle('on', b.dataset.m === m));
+    const en = (typeof _lang === 'function' && _lang() === 'en');
+    const lb = document.getElementById('modoToggleLabel');
+    if (lb) lb.textContent = en ? (m === 'simples' ? 'App version: Simple (tap for Full)' : 'App version: Full (tap for Simple)')
+                                : (m === 'simples' ? 'Versão do app: Simples (tocar pra Completa)' : 'Versão do app: Completa (tocar pra Simples)');
+    const ml = document.getElementById('modoLbl'); if (ml) ml.textContent = en ? 'App version' : 'Versão do app';
+    const bs = document.querySelectorAll('#modoBar .modo-seg button');
+    if (bs.length === 2) { bs[0].textContent = en ? 'Simple' : 'Simples'; bs[1].textContent = en ? 'Full' : 'Completa'; }
+  } catch (_) {}
+}
+// RPE x RIR: RPE = 10 menos o RIR. Só o RIR ("sobrou") é gravado.
+function _rpeDe(rs) {
+  const t = String(rs == null ? '' : rs).trim(); if (t === '') return '';
+  const n = parseInt(t.replace(/[^0-9]/g, ''), 10); return isFinite(n) ? String(Math.max(0, 10 - n)) : '';
+}
+function _rpeDigitado(el, di, ei) {
+  try {
+    const row = el.closest('.set-row'); const rs = row && row.querySelector('.set-rs'); if (!rs) return;
+    const t = String(el.value || '').trim();
+    if (t === '') rs.value = '';
+    else { let v = Math.round(parseFloat(t.replace(',', '.'))); if (!isFinite(v)) return; v = Math.max(0, Math.min(10, v)); rs.value = String(10 - v); }
+    onSetField(di, ei);
+  } catch (_) {}
+}
+function _rpeNormaliza(el) {
+  try { const rs = el.closest('.set-row').querySelector('.set-rs'); el.value = _rpeDe(rs.value); } catch (_) {}
+}
+// quem digita no RIR vê o RPE acompanhar na hora
+document.addEventListener('input', function (e) {
+  try {
+    const t = e.target; if (!t || !t.classList || !t.classList.contains('set-rs')) return;
+    const p = t.closest('.set-row') && t.closest('.set-row').querySelector('.set-rpe');
+    if (p && document.activeElement !== p) p.value = _rpeDe(t.value);
+  } catch (_) {}
+}, true);
 let _setTimers = {};
 function onSetField(di, ei) {
   try { _treinoMexeuEm = Date.now(); } catch (_) {}
@@ -12232,7 +12328,7 @@ function _tourSteps() {
     { sel: '.dia-start', t: 'Começar treino', p: 'Liga o cronômetro e abre um exercício por vez, em tela cheia. Anotou a série, o descanso cronometra sozinho.' },
     { sel: '#bottomNav', t: 'Tua navegação', p: 'Dieta, teu progresso com gráficos e o resto do app moram aqui embaixo.' },
     { sel: '#bnMais', t: 'Fala comigo', p: 'Dúvida ou quer pedir um ajuste no protocolo? Toca no card do topo ou aqui em Mais.' }
-  ];
+  ].filter(x => !(document.body.classList.contains('modo-simples') && (x.sel === '.ex-sub-pill' || x.sel === '.dia-start')));   // v584
 }
 // Rastro de uso REAL do app neste aparelho (carga salva, esforço, dia concluído,
 // cronômetro): quem tem isso é veterano e NUNCA ganha tour retroativo.
@@ -22821,6 +22917,7 @@ function _showNav() {
   var mn = document.getElementById('mainNav');
   if (mn) mn.style.display = 'flex';
   document.body.classList.add('has-bnav');
+  try { _modoBtnRefresh(); } catch (_) {}   // v584: barra Simples/Completa com a escolha do aparelho
   if (typeof _tourMaybeStart === 'function') _tourMaybeStart();
   if (typeof _liveAvisoTalvez === 'function') _liveAvisoTalvez(3200);   // v456: aviso unico da live de quarta
   // v471: banner da indicacao. Veterano (marca do tour no aparelho) ve NA HORA, sem empurrar a tela depois que ja esta
@@ -22835,6 +22932,7 @@ function openMaisSheet() {
   if (typeof updateUnitToggleLabel === 'function') updateUnitToggleLabel();
   if (typeof updatePdfButtonLabel === 'function') updatePdfButtonLabel();
   try { _fonteBtnRefresh(); } catch (_) {}   // v469
+  try { _modoBtnRefresh(); } catch (_) {}   // v584
   var mv = document.getElementById('maisVersao');
   if (mv) mv.textContent = 'Método GH · app ' + String(window.GH_APP_V || '').replace('metodo-gh-', '');
 }
@@ -24589,7 +24687,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v583';
+    var APP_SHELL_V = 'metodo-gh-v584';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
