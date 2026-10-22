@@ -8865,6 +8865,38 @@ function getPrevSets(d, e, w) {
   if (pk || pp) return [{ kg: pk || '', pl: pp || '', reps: '' }];
   return null;
 }
+// v586 (Frederico Schuller, 22/10/2026: "às vezes não aparece a sugestão do peso que foi utilizado na semana anterior"):
+// a sugestão em cinza vinha SÓ da última sessão. Quem anotou só as repetições numa série (ele no cabo: "×15" sem peso)
+// ficava sem peso sugerido nela na semana seguinte, e a grade com mais linhas que a última vez ficava sem nada nas de baixo.
+// Agora, série sem peso na última vez busca o peso (ou a placa) da MESMA série na sessão anterior mais recente que tinha,
+// pelo mesmo slot e com a mesma validação de nome da última vez. Sem nenhuma, usa o peso da série de cima da última vez.
+// Só muda o cinza de dentro do campo (placeholder) e o "ant:"; nenhum valor é gravado, movido ou apagado.
+function _prevSugComPeso(d, e, w, prev, n) {
+  if (!Array.isArray(prev) || !prev.length) return prev;
+  const tem = x => x && (String(x.kg || '').trim() || String(x.pl || '').trim());
+  const tam = Math.max(prev.length, n || 0);
+  if (Array.from({ length: tam }, (_, i) => prev[i]).every(tem)) return prev;
+  const sf = _cargaSlotSuffix(d, e);
+  const read = ww => {
+    const raw = sf ? localStorage.getItem(setsKey(d, e, ww) + sf) : (_cargaValida(d, e, ww) ? localStorage.getItem(setsKey(d, e, ww)) : null);
+    if (!raw) return null; try { const a = JSON.parse(raw); return Array.isArray(a) ? a : null; } catch (_) { return null; }
+  };
+  const ordem = []; for (let ww = w - 1; ww >= 1; ww--) ordem.push(ww);
+  const hi = Math.max((typeof TOTAL_WEEKS === 'number' ? TOTAL_WEEKS : 8), 24); for (let ww = hi; ww > w; ww--) ordem.push(ww);
+  const velhas = []; let achouUltima = false;
+  for (const ww of ordem) { const a = read(ww); if (!a) continue; if (!achouUltima && a.some(x => x && (String(x.kg || '').trim() || String(x.pl || '').trim() || String(x.reps || '').trim()))) { achouUltima = true; continue; } if (achouUltima) velhas.push(a); }
+  const out = [];
+  for (let i = 0; i < tam; i++) {
+    const p = prev[i] ? Object.assign({}, prev[i]) : { kg: '', pl: '', reps: '' };
+    if (!tem(p)) {
+      const v = velhas.map(a => a[i]).find(tem);
+      if (v) { p.kg = v.kg || ''; p.pl = v.pl || ''; }
+      else { for (let j = i - 1; j >= 0; j--) { if (tem(out[j])) { p.kg = out[j].kg || ''; p.pl = out[j].pl || ''; break; } } }
+    }
+    out.push(p);
+  }
+  return out;
+}
 // HTML da grade de séries de um exercício. ei = número (normal) ou "2a"/"2b" (biset). label opcional (A/B).
 // noAdd: suprime o "+ série" interno (o card normal o coloca no rodapé, junto dos botões de ação).
 function _setsGridHtml(di, ei, label, noAdd, semX) {
@@ -8893,7 +8925,8 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
   // v513/v514: acima de prescrito + 3 (o teto das extras automáticas, uma por série que não valeu) só sobra linha que TEM
   // dado; linha vazia além disso é resto de grade antiga e sai do render. Nunca tira linha com peso, reps ou sobrou.
   if (_nPresc) { while (sets.length > _nPresc + 3) { const u = sets[sets.length - 1] || {}; if (String(u.kg || '').trim() || String(u.pl || '').trim() || String(u.reps || '').trim() || String(u.rs || '').trim()) break; sets.pop(); } }
-  const prev = getPrevSets(di, ei, w);
+  const prevCru = getPrevSets(di, ei, w);
+  const prev = _porTempo ? prevCru : _prevSugComPeso(di, ei, w, prevCru, sets.length);   // v586: série sem peso na última vez sugere o peso de antes
   const eiS = String(ei);
   // "sobrou": quantas reps sobraram na série. O alvo prescrito (linha meta Esforço-alvo) vira
   // o placeholder, então o aluno vê o padrão pedido sem poluir a tela.
@@ -8906,7 +8939,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
   // coluna de quem anota em placa esconderia a carga dele
   const _temPl = sets.some(x => x && String(x.pl || '').trim()) || (Array.isArray(prev) && prev.some(x => x && String(x.pl || '').trim()));
   const rpePh = alvoR ? (alvoR[0] === alvoR[1] ? String(Math.max(0, 10 - alvoR[0])) : Math.max(0, 10 - alvoR[1]) + '-' + Math.max(0, 10 - alvoR[0])) : '?';
-  const melhor = _melhorChipHtml_(di, ei, prev);   // v580: só quando a última vez ficou abaixo do melhor
+  const melhor = _melhorChipHtml_(di, ei, prevCru);   // v580: só quando a última vez ficou abaixo do melhor
   const rows = sets.map((s, si) => {
     const p = prev && prev[si];
     const prevTxt = _porTempo
@@ -24790,7 +24823,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v585';
+    var APP_SHELL_V = 'metodo-gh-v586';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
