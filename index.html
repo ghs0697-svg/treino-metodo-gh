@@ -1294,7 +1294,11 @@
   .ex-vid-pill.cheio { opacity: .55; }
   .ex-vid-pill:active { transform: scale(.97); }
   body.fonte-gg .ex-vid-pill .n, body.fonte-ggg .ex-vid-pill .n, body.fonte-gggg .ex-vid-pill .n { display: none; }
-  body.modo-simples .ex-vid-pill { font-size: 13px; min-height: 34px; padding: 6px 13px; }
+  .ex-vid-pill > span { white-space: nowrap; }
+  /* v589: no Intuitivo a pill é a única da fileira (a de troca some) e com letra 13 quebrava em 3 linhas (foto da v588):
+     vira largura cheia, rótulo à esquerda e contador à direita. */
+  body.modo-simples .ex-vid-pill { display: flex; width: 100%; box-sizing: border-box; margin-right: 0; font-size: 13px; min-height: 36px; padding: 6px 13px; }
+  body.modo-simples .ex-vid-pill .n { margin-left: auto; }
   body.fonte-gg .ex-sub-pill .n, body.fonte-ggg .ex-sub-pill .n { display: none; }   /* letra maior: o card tem ~190px uteis, o contador nao cabe */
   /* ── v481 (GH 19/09: "app meio poluído, as opções têm que ficar mais óbvias") ── */
   .ex-car { overflow: hidden; touch-action: pan-y; cursor: grab; }
@@ -24905,7 +24909,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v588';
+    var APP_SHELL_V = 'metodo-gh-v589';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
