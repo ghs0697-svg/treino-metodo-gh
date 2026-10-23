@@ -1285,6 +1285,16 @@
   .ex-sub-pill.on .n { color: #3a2e14; }
   .ex-sub-pill:active { transform: scale(.97); }
   .ex-sub-pill { max-width: 100%; }
+  /* v588 (GH 22/10/2026, correção de execução pelo whats): pill "Vídeo pro GH corrigir" em cada exercício. NÃO sobe nada pelo
+     app (decisão do GH: não pesar o servidor): abre a conversa do whats de SUPORTE da consultoria com o texto pronto e o aluno
+     anexa o vídeo lá. Contador local "N de 5 na semana" (conta toques, sem servidor). Aparece também no modo Intuitivo. */
+  .ex-vid-pill { display: inline-flex; align-items: center; gap: 5px; min-height: 28px; max-width: 100%; margin: 6px 6px 0 0; padding: 4px 11px; background: transparent; border: 1px solid rgba(255,255,255,.16); border-radius: 999px; color: #d8d2c6; font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit; text-decoration: none; line-height: 1.2; }
+  .ex-vid-pill svg { width: 13px; height: 13px; flex-shrink: 0; color: var(--gold); }
+  .ex-vid-pill .n { color: #9a9389; font-weight: 600; }
+  .ex-vid-pill.cheio { opacity: .55; }
+  .ex-vid-pill:active { transform: scale(.97); }
+  body.fonte-gg .ex-vid-pill .n, body.fonte-ggg .ex-vid-pill .n, body.fonte-gggg .ex-vid-pill .n { display: none; }
+  body.modo-simples .ex-vid-pill { font-size: 13px; min-height: 34px; padding: 6px 13px; }
   body.fonte-gg .ex-sub-pill .n, body.fonte-ggg .ex-sub-pill .n { display: none; }   /* letra maior: o card tem ~190px uteis, o contador nao cabe */
   /* ── v481 (GH 19/09: "app meio poluído, as opções têm que ficar mais óbvias") ── */
   .ex-car { overflow: hidden; touch-action: pan-y; cursor: grab; }
@@ -8233,6 +8243,51 @@ function _subPillHtml(di, ei, act, subAlts) {
     return '<button type="button" class="ex-sub-pill ' + (act.sub ? 'on' : '') + '" onclick="event.stopPropagation(); ' + acao + '" title="Trocar exercício"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>' + rot + '</button>';
   } catch (_) { return ''; }
 }
+// v588 (GH 22/10/2026): "Vídeo pro GH corrigir". Combinado semanal: 1 vídeo por semana é a tarefa, 5 é o teto. O toque abre o
+// whats de SUPORTE da consultoria (nunca número pessoal) já com o texto "Vídeo de execução: <exercício>, Treino N (<aluno>)";
+// o vídeo vai pelo whats, nada passa pelo app nem pelo servidor. O contador é só deste aparelho e zera toda segunda.
+const VID_WHATS_SUPORTE = '555520131470';
+const VID_TETO_SEMANA = 5;
+function _vidSemana() {
+  const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7));   // segunda desta semana
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function _vidKey() { return 'gh_vidsem_' + STUDENT_ID; }
+function _vidLer() {
+  try { const o = JSON.parse(localStorage.getItem(_vidKey()) || 'null'); if (o && o.sem === _vidSemana() && Array.isArray(o.itens)) return o; } catch (_) {}
+  return { sem: _vidSemana(), itens: [] };
+}
+function _vidTexto(di, ei, nome) {
+  const r = _diaRotulo(di);
+  const aluno = (document.getElementById('infoNome')?.textContent || '').trim();
+  return 'Vídeo de execução: ' + nome + ', Treino ' + r.n + (r.bloco ? ' (bloco ' + r.bloco + ')' : '') + (aluno ? ' (' + aluno + ')' : '') + '. Segue o vídeo pra corrigir.';
+}
+function _vidHref(di, ei, nome) { return 'https://wa.me/' + VID_WHATS_SUPORTE + '?text=' + encodeURIComponent(_vidTexto(di, ei, nome)); }
+function _vidContadorHtml(n) { return '&nbsp;\u00b7 ' + n + ' de ' + VID_TETO_SEMANA + ' na semana'; }
+function _vidClique(ev, di, ei) {
+  try { ev.stopPropagation(); } catch (_) {}
+  const o = _vidLer();
+  if (o.itens.length >= VID_TETO_SEMANA) {
+    try { ev.preventDefault(); } catch (_) {}
+    _ghToast('Teto da semana: ' + VID_TETO_SEMANA + ' vídeos. Na segunda abre de novo.');
+    return false;
+  }
+  try { o.itens.push({ di: di, ei: String(ei), ts: Date.now() }); localStorage.setItem(_vidKey(), JSON.stringify(o)); } catch (_) {}
+  try { _vidPillRefresh(); } catch (_) {}
+  return true;   // o link abre o whats
+}
+function _vidPillHtml(di, ei, nome) {
+  try {
+    const n = _vidLer().itens.length;
+    return '<a class="ex-vid-pill' + (n >= VID_TETO_SEMANA ? ' cheio' : '') + '" href="' + _vidHref(di, ei, nome) + '" target="_blank" rel="noopener" onclick="return _vidClique(event, ' + di + ', \'' + String(ei) + '\')" title="Grava um vídeo fazendo este exercício e manda pro GH corrigir pelo WhatsApp">'
+      + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>'
+      + '<span>V\u00eddeo pro GH corrigir</span><span class="n">' + _vidContadorHtml(n) + '</span></a>';
+  } catch (_) { return ''; }
+}
+function _vidPillRefresh() {
+  const n = _vidLer().itens.length;
+  document.querySelectorAll('.ex-vid-pill').forEach(a => { a.classList.toggle('cheio', n >= VID_TETO_SEMANA); const s = a.querySelector('.n'); if (s) s.innerHTML = _vidContadorHtml(n); });
+}
 function _dicaTrocaKey() { return 'gh_dica_troca_v1'; }
 function _dicaTrocaHtml(di) {
   try {
@@ -14751,6 +14806,7 @@ function _renderExercisesMiolo_() {
                 <div class="exercise-name">${a.name}${hasA ? ' <span class="video-icon">&#9654;</span>' : ''}</div>
                 <div class="exercise-details">${tagsA.join('')}</div>
                 ${a.obs ? `<div class="exercise-obs">${_glossWrap(a.obs)}</div>` : ''}
+                ${_vidPillHtml(di, ei + 'a', a.name)}
               </div>
             </div>
             <div class="biset-connector">&#8595; SEM DESCANSO &#8595;</div>
@@ -14759,6 +14815,7 @@ function _renderExercisesMiolo_() {
                 <div class="exercise-name">${b.name}${hasB ? ' <span class="video-icon">&#9654;</span>' : ''}</div>
                 ${tagsB.length ? `<div class="exercise-details">${tagsB.join('')}</div>` : ''}
                 ${b.obs ? `<div class="exercise-obs">${_glossWrap(b.obs)}</div>` : ''}
+                ${_vidPillHtml(di, ei + 'b', b.name)}
               </div>
             </div>
             <div class="carga-section" style="flex-direction:column;align-items:stretch;gap:10px;">
@@ -14803,6 +14860,7 @@ function _renderExercisesMiolo_() {
               <div class="ex-presc">${_prescLinha(ex, isWarmup)}</div>
               ${ex.obs ? `<div class="exercise-obs">${_glossWrap(ex.obs)}</div>` : ''}
               ${!isWarmup && !exDone ? _subPillHtml(di, ei, act, subAlts) : ''}
+              ${!isWarmup ? _vidPillHtml(di, ei, act.name) : ''}
               ${_trocaMotivoHtml(di, ei)}
               ${!isWarmup && exSkip ? `<button type="button" class="ex-skip-btn on" onclick="event.stopPropagation(); onSkipExercise(${di}, ${ei})">⤼ Pulado hoje · desfazer</button>` : ''}
             </div>
@@ -24847,7 +24905,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v587';
+    var APP_SHELL_V = 'metodo-gh-v588';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
