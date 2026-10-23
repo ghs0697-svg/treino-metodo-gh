@@ -10077,7 +10077,9 @@ async function syncCargasFromServer_() {
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
   try {
     let data = null;
-    try { const rs = await _restoreFetch_(); if (rs && Array.isArray(rs.cargas)) data = { cargas: rs.cargas, trocas: rs.trocas, atual: rs.atual }; } catch (_) {}   // v512; v557: trocas
+    try { const rs = await _restoreFetch_(); if (rs && Array.isArray(rs.cargas)) data = { cargas: rs.cargas, trocas: rs.trocas, atual: rs.atual };
+      try { if (rs && Array.isArray(rs.cardio_sessoes)) { const nc = _csDoServidor_(rs.cardio_sessoes); if (nc) console.log('[gh] v587: ' + nc + ' cardio(s) do servidor entraram no aparelho'); } } catch (_) {}   // v587
+    } catch (_) {}   // v512; v557: trocas
     if (!data) {
       const url = `${LOG_ENDPOINT}?action=cargas&id=${encodeURIComponent(SHEET_ID)}`;
       const res = await fetch(url, { cache: 'no-store' });
@@ -21691,6 +21693,28 @@ const CS_DICA = { esteira: 'Velocidade e inclinação são as do painel da estei
 let _cs = null, _chTipo = '';
 function _csTipo(id) { return CS_TIPOS.find(t => t.id === id) || CS_TIPOS[CS_TIPOS.length - 1]; }
 function _csKey() { return 'gh_cardiosess_' + SHEET_ID; }
+// v587 (Frederico Schuller, 22/10/2026): as sessões de cardio voltam do servidor. O "último cardio", os números do formulário e
+// o histórico viviam só no aparelho que gravou: no app instalado e no navegador do mesmo celular, um não via o do outro
+// ("às vezes não aparece"). O restore (.gs 2026-10-22a) traz a CARDIO_SESSOES do aluno e o que falta aqui entra; sessão com o
+// mesmo id que já existe no aparelho fica como está (o que o aluno digitou aqui nunca é trocado pela cópia do servidor).
+function _csDoServidor_(lista) {
+  if (!Array.isArray(lista) || !lista.length) return 0;
+  const a = _csLista(); const ids = new Set(a.map(s => s.id)); let n = 0;
+  for (const r of lista) {
+    if (!r || !r.id || !r.d || !r.tipo || ids.has(String(r.id))) continue;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(r.d))) continue;
+    const min = Number(r.min); if (!isFinite(min) || min <= 0) continue;
+    const s = { id: String(r.id), d: String(r.d), tipo: String(r.tipo), int: String(r.int || ''), ts: Number(r.ts) || 0, min: min };
+    for (const k of ['vel', 'inc', 'nivel', 'dist']) { if (r[k] === '' || r[k] == null) continue; const v = Number(r[k]); if (isFinite(v) && v > 0) s[k] = v; }
+    a.push(s); ids.add(s.id); n++;
+  }
+  if (!n) return 0;
+  a.sort((x, y) => x.d === y.d ? (x.ts || 0) - (y.ts || 0) : (x.d < y.d ? -1 : 1));
+  _csGrava(a);
+  try { _csUltRender(); } catch (_) {}
+  try { updateCardioProgress(); } catch (_) {}
+  return n;
+}
 function _csLista() { try { const a = JSON.parse(localStorage.getItem(_csKey()) || '[]'); return Array.isArray(a) ? a.filter(s => s && s.d && s.tipo && s.id) : []; } catch (_) { return []; } }
 function _csGrava(a) { try { localStorage.setItem(_csKey(), JSON.stringify(a.slice(-300))); } catch (_) {} }
 function _csIso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
@@ -24823,7 +24847,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v586';
+    var APP_SHELL_V = 'metodo-gh-v587';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
