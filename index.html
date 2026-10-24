@@ -1292,6 +1292,10 @@
   .ex-vid-pill svg { width: 13px; height: 13px; flex-shrink: 0; color: var(--gold); }
   .ex-vid-pill .n { color: #9a9389; font-weight: 600; }
   .ex-vid-pill.cheio { opacity: .55; }
+  /* v590: o combinado virou UM TREINO por semana (GH 23/10): fora do treino escolhido a pill fica apagada; exercício já mandado ganha o visto */
+  .ex-vid-pill.fora { opacity: .5; color: #9a9389; }
+  .ex-vid-pill.fora svg { color: #9a9389; }
+  .ex-vid-pill.feito .n { color: var(--gold); }
   .ex-vid-pill:active { transform: scale(.97); }
   body.fonte-gg .ex-vid-pill .n, body.fonte-ggg .ex-vid-pill .n, body.fonte-gggg .ex-vid-pill .n { display: none; }
   .ex-vid-pill > span { white-space: nowrap; }
@@ -8247,50 +8251,68 @@ function _subPillHtml(di, ei, act, subAlts) {
     return '<button type="button" class="ex-sub-pill ' + (act.sub ? 'on' : '') + '" onclick="event.stopPropagation(); ' + acao + '" title="Trocar exercício"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>' + rot + '</button>';
   } catch (_) { return ''; }
 }
-// v588 (GH 22/10/2026): "Vídeo pro GH corrigir". Combinado semanal: 1 vídeo por semana é a tarefa, 5 é o teto. O toque abre o
-// whats de SUPORTE da consultoria (nunca número pessoal) já com o texto "Vídeo de execução: <exercício>, Treino N (<aluno>)";
-// o vídeo vai pelo whats, nada passa pelo app nem pelo servidor. O contador é só deste aparelho e zera toda segunda.
+// v588 (GH 22/10/2026): "Vídeo pro GH corrigir". O toque abre o whats de SUPORTE da consultoria (nunca número pessoal) já com o
+// texto "Vídeo de execução: <exercício>, Treino N (k de T) (<aluno>)"; o vídeo vai pelo whats, nada passa pelo app nem pelo servidor.
+// v590 (GH 23/10): o combinado é UM TREINO POR SEMANA, com os exercícios dele (4 ou 5). O primeiro toque da semana escolhe o
+// treino; nos outros dias a pill fica apagada e não abre o whats. Zera toda segunda. Tudo só neste aparelho.
 const VID_WHATS_SUPORTE = '555520131470';
-const VID_TETO_SEMANA = 5;
 function _vidSemana() {
   const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7));   // segunda desta semana
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 function _vidKey() { return 'gh_vidsem_' + STUDENT_ID; }
 function _vidLer() {
-  try { const o = JSON.parse(localStorage.getItem(_vidKey()) || 'null'); if (o && o.sem === _vidSemana() && Array.isArray(o.itens)) return o; } catch (_) {}
-  return { sem: _vidSemana(), itens: [] };
+  try { const o = JSON.parse(localStorage.getItem(_vidKey()) || 'null'); if (o && o.sem === _vidSemana() && Array.isArray(o.itens)) { if (typeof o.dia !== 'number') o.dia = o.itens.length ? Number(o.itens[0].di) : null; return o; } } catch (_) {}
+  return { sem: _vidSemana(), dia: null, itens: [] };
+}
+// exercícios do dia que podem ir em vídeo (sem aquecimento; bi-set conta A e B), na ordem do treino
+function _vidOrdem(di) {
+  const out = [];
+  try { (WORKOUT[di] && WORKOUT[di].exercises || []).forEach((ex, ei) => { if (!ex) return; if (ex.biset) { out.push(ei + 'a', ei + 'b'); return; } if (ex.warmup) return; out.push(String(ei)); }); } catch (_) {}
+  return out;
 }
 function _vidTexto(di, ei, nome) {
   const r = _diaRotulo(di);
+  const ord = _vidOrdem(di); const k = ord.indexOf(String(ei)) + 1;
   const aluno = (document.getElementById('infoNome')?.textContent || '').trim();
-  return 'Vídeo de execução: ' + nome + ', Treino ' + r.n + (r.bloco ? ' (bloco ' + r.bloco + ')' : '') + (aluno ? ' (' + aluno + ')' : '') + '. Segue o vídeo pra corrigir.';
+  return 'Vídeo de execução: ' + nome + ', Treino ' + r.n + (r.bloco ? ' (bloco ' + r.bloco + ')' : '') + (k ? ' (' + k + ' de ' + ord.length + ')' : '') + (aluno ? ' (' + aluno + ')' : '') + '. Segue o vídeo pra corrigir.';
 }
 function _vidHref(di, ei, nome) { return 'https://wa.me/' + VID_WHATS_SUPORTE + '?text=' + encodeURIComponent(_vidTexto(di, ei, nome)); }
-function _vidContadorHtml(n) { return '&nbsp;\u00b7 ' + n + ' de ' + VID_TETO_SEMANA + ' na semana'; }
+// estado da pill: fora (outro treino já é o da semana), feito (este exercício já foi), aberto
+function _vidEstado(di, ei) {
+  const o = _vidLer();
+  if (o.dia != null && Number(o.dia) !== Number(di)) return { cls: 'fora', rot: 'V\u00eddeo da semana: Treino ' + _diaRotulo(Number(o.dia)).n, n: '&nbsp;\u00b7 segunda abre' };
+  const feito = o.itens.some(x => Number(x.di) === Number(di) && String(x.ei) === String(ei));
+  if (feito) return { cls: 'feito', rot: 'V\u00eddeo pro GH corrigir', n: '&nbsp;\u00b7 \u2713 mandado' };
+  return { cls: '', rot: 'V\u00eddeo pro GH corrigir', n: '&nbsp;\u00b7 treino da semana' };
+}
 function _vidClique(ev, di, ei) {
   try { ev.stopPropagation(); } catch (_) {}
   const o = _vidLer();
-  if (o.itens.length >= VID_TETO_SEMANA) {
+  if (o.dia != null && Number(o.dia) !== Number(di)) {
     try { ev.preventDefault(); } catch (_) {}
-    _ghToast('Teto da semana: ' + VID_TETO_SEMANA + ' vídeos. Na segunda abre de novo.');
+    _ghToast('Esta semana o v\u00eddeo \u00e9 do Treino ' + _diaRotulo(Number(o.dia)).n + '. Na segunda abre de novo.');
     return false;
   }
-  try { o.itens.push({ di: di, ei: String(ei), ts: Date.now() }); localStorage.setItem(_vidKey(), JSON.stringify(o)); } catch (_) {}
+  try { if (o.dia == null) o.dia = Number(di); o.itens.push({ di: Number(di), ei: String(ei), ts: Date.now() }); localStorage.setItem(_vidKey(), JSON.stringify(o)); } catch (_) {}
   try { _vidPillRefresh(); } catch (_) {}
   return true;   // o link abre o whats
 }
 function _vidPillHtml(di, ei, nome) {
   try {
-    const n = _vidLer().itens.length;
-    return '<a class="ex-vid-pill' + (n >= VID_TETO_SEMANA ? ' cheio' : '') + '" href="' + _vidHref(di, ei, nome) + '" target="_blank" rel="noopener" onclick="return _vidClique(event, ' + di + ', \'' + String(ei) + '\')" title="Grava um vídeo fazendo este exercício e manda pro GH corrigir pelo WhatsApp">'
+    const e = _vidEstado(di, ei);
+    return '<a class="ex-vid-pill ' + e.cls + '" data-di="' + di + '" data-ei="' + String(ei) + '" href="' + _vidHref(di, ei, nome) + '" target="_blank" rel="noopener" onclick="return _vidClique(event, ' + di + ', \'' + String(ei) + '\')" title="Grava um v\u00eddeo fazendo este exerc\u00edcio e manda pro GH corrigir pelo WhatsApp. Um treino por semana, com os exerc\u00edcios dele.">'
       + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>'
-      + '<span>V\u00eddeo pro GH corrigir</span><span class="n">' + _vidContadorHtml(n) + '</span></a>';
+      + '<span class="rot">' + e.rot + '</span><span class="n">' + e.n + '</span></a>';
   } catch (_) { return ''; }
 }
 function _vidPillRefresh() {
-  const n = _vidLer().itens.length;
-  document.querySelectorAll('.ex-vid-pill').forEach(a => { a.classList.toggle('cheio', n >= VID_TETO_SEMANA); const s = a.querySelector('.n'); if (s) s.innerHTML = _vidContadorHtml(n); });
+  document.querySelectorAll('.ex-vid-pill').forEach(a => {
+    const e = _vidEstado(Number(a.getAttribute('data-di')), a.getAttribute('data-ei'));
+    a.classList.remove('fora', 'feito', 'cheio'); if (e.cls) a.classList.add(e.cls);
+    const r = a.querySelector('.rot'); if (r) r.textContent = e.rot;
+    const n = a.querySelector('.n'); if (n) n.innerHTML = e.n;
+  });
 }
 function _dicaTrocaKey() { return 'gh_dica_troca_v1'; }
 function _dicaTrocaHtml(di) {
@@ -24909,7 +24931,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v589';
+    var APP_SHELL_V = 'metodo-gh-v590';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
