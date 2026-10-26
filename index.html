@@ -350,7 +350,7 @@
   .set-head { padding: 0 2px; }
   .set-head span { font-size: 9px; font-weight: 700; color: #8a7a52; text-transform: uppercase; letter-spacing: .4px; text-align: center; }
   .set-head .sh-kg { width: 58px; } .set-head .sh-pl { width: 44px; } .set-head .sh-reps { width: 52px; }
-  .set-num { width: 20px; min-width: 20px; text-align: center; font-size: 12px; font-weight: 700; color: #4d4d52; transition: color .25s; }
+  .set-num { width: 20px; min-width: 20px; text-align: center; font-size: 12px; font-weight: 700; color: #7a7a82; transition: color .25s; }
   /* número da série é BOTÃO: toque marca a série como feita (Vitor 14/08) */
   button.set-num { background: transparent; border: 1px solid rgba(255, 255, 255, .14); border-radius: 7px; height: 24px; width: 24px; min-width: 24px; padding: 0; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; }
   .set-row.feita button.set-num { background: var(--gold); border-color: var(--gold); color: #15100a; font-weight: 800; }
@@ -425,7 +425,7 @@
     transition: border-color .25s, background .25s;
   }
   .set-in:focus { border-color: var(--gold); box-shadow: 0 0 6px rgba(212, 175, 55, 0.2); }
-  .set-in::placeholder { color: #444; }
+  .set-in::placeholder { color: #777; }   /* v592: a sugestão em cinza era quase invisível (#444 no fundo escuro) */
   .set-in.set-kg { width: 58px; } .set-in.set-pl { width: 44px; } .set-in.set-reps { width: 52px; }
   /* "sobrou" = reps que sobraram na série (percepção de esforço, casa com o Esforço-alvo) */
   .set-head .sh-rs { width: 46px; } .set-in.set-rs { width: 46px; }
@@ -1253,7 +1253,8 @@
   .const-dots .cd-lbl { font-size: 9.5px; color: #8d8579; font-weight: 600; margin-left: 4px; }
 
   /* ── Checkbox de exercício ── */
-  .ex-check { width: 22px; height: 22px; min-width: 22px; border: 1.5px solid rgba(255, 255, 255, 0.22); border-radius: 7px; background: transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+  .ex-check::before { content: ''; position: absolute; inset: -9px; }   /* v592: área de toque de 40 px sem mudar o desenho */
+  .ex-check { position: relative; width: 22px; height: 22px; min-width: 22px; border: 1.5px solid rgba(255, 255, 255, 0.22); border-radius: 7px; background: transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
   .ex-check:hover { border-color: var(--gold); }
   .ex-check.done { background: var(--gold); border-color: var(--gold); }
   .ex-check.done::after { content: '✓'; color: var(--dark); font-weight: 800; font-size: 14px; }
@@ -1273,7 +1274,7 @@
   .ex-action-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.10); color: var(--gold); padding: 5px 7px 4px; border-radius: 8px; font-size: 13px; cursor: pointer; line-height: 1; display: inline-flex; flex-direction: column; align-items: center; gap: 3px; }
   .ex-action-btn:hover { background: var(--gold-dim); }
   /* rótulo embaixo do ícone (GH 2026-08-13: "ícone sem nome é adivinhação") */
-  .ex-action-lbl { font-size: 8px; font-weight: 600; letter-spacing: .2px; color: #9a9389; line-height: 1; white-space: nowrap; }
+  .ex-action-lbl { font-size: 9.5px; font-weight: 600; letter-spacing: .2px; color: #9a9389; line-height: 1; white-space: nowrap; }
   .ex-action-btn.sub-btn.sub-on .ex-action-lbl { color: #0c0c0d; }
   /* v478 (GH 18/09: "opcao de trocar exercicio ta muito escondida"): o botao de troca sai da fileira de icones
      miudos do rodape e vira um pill dourado logo abaixo do nome, ao lado de "Nao consegui fazer", com o numero de
@@ -2259,6 +2260,7 @@
   @keyframes ghSkel { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
   /* cartões de estatística com ícone e respiro */
   .pg-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+  @media (max-width: 359px) { .pg-stats { grid-template-columns: repeat(2, 1fr); } }   /* v592: celular estreito: 2 por linha */
   .pg-stat { background: linear-gradient(165deg, rgba(212, 175, 106, .07), rgba(255, 255, 255, .02)); border: 1px solid rgba(212, 175, 106, .13); border-radius: 12px; padding: 12px 6px 10px; text-align: center; }
   .pg-stat svg { width: 15px; height: 15px; color: rgba(212, 175, 106, .75); margin-bottom: 5px; }
   .pg-stat .v { color: var(--gold); font-size: 20px; font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; }
@@ -3170,7 +3172,7 @@
     max-height: calc(90vh / var(--fz, 1)); overflow-y: auto;
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), var(--hairline);
   }
-  .te-modal-box h3 { color: var(--gold); margin: 0 0 12px; font-size: 16px; letter-spacing: 0.01em; }
+  .te-modal-box h3 { color: var(--gold); margin: 0 0 12px; font-size: 17px; letter-spacing: 0.01em; }
 
   /* ── Fotos do reajuste: grid 2x2 de slots ── */
   .fotos-grid {
@@ -3771,7 +3773,7 @@
     <div style="width:30px;height:30px;border-radius:9px;background:var(--gold-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--gold);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;vertical-align:-2px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
     <div style="flex:1;min-width:0;">
       <div style="color:var(--gold);font-weight:700;font-size:13px;margin-bottom:3px;" id="fotosBannerTit">Janela de fotos do reajuste aberta</div>
-      <div style="color:#ccc;font-size:12px;line-height:1.4;" id="fotosBannerMsg">Se você não conseguiu anexar suas fotos na anamnese de reajuste, mande aqui pelo app.</div>
+      <div style="color:#ccc;font-size:12px;line-height:1.4;" id="fotosBannerMsg">Se tu não conseguiu anexar as fotos na anamnese de reajuste, manda aqui pelo app.</div>
       <div style="display:flex;gap:6px;margin-top:9px;flex-wrap:wrap;">
         <button class="te-btn primary" type="button" onclick="openFotosModal()" style="padding:7px 12px;font-size:12px;">Enviar agora</button>
         <button class="te-btn ghost" type="button" onclick="dismissFotosBanner()" style="padding:7px 12px;font-size:12px;">Já enviei na anamnese</button>
@@ -4930,23 +4932,32 @@
   <p style="color:#888;font-size:11px;margin:0 0 12px;">Pra termos de execução do treino (séries, cadência, técnicas como bi-set, cluster, drop-set), abre o <strong>Manual de Execução</strong>.</p>
 
   <h3>Composição Corporal</h3>
-  <p><span class="hl">BF% (Body Fat):</span> Percentual de gordura corporal. &lt;15% atlético, 15-20% normal, &gt;20% sobrepeso.</p>
+  <p><span class="hl">BF% (gordura corporal):</span> Percentual de gordura do corpo. Homem: abaixo de 15% atlético, 15 a 20% normal, acima de 20% sobrepeso. Mulher tem outra régua: abaixo de 22% atlética, 22 a 30% normal, acima de 30% sobrepeso.</p>
   <p><span class="hl">Massa Magra:</span> Tudo que não é gordura, músculo, osso, água, órgãos.</p>
   <p><span class="hl">Recomposição:</span> Perder gordura E ganhar massa magra ao mesmo tempo. Possível pra iniciante ou em retorno.</p>
 
   <div class="gh-illus">
     <div class="gh-il-t">BF% · gordura corporal</div>
-    <svg viewBox="0 0 340 78" width="100%" role="img" aria-label="Faixas de gordura: abaixo de 15 atlético, 15 a 20 normal, acima de 20 sobrepeso">
-      <rect x="20" y="20" width="100" height="20" fill="#63991f"/>
-      <rect x="120" y="20" width="100" height="20" fill="#D4AF6A"/>
-      <rect x="220" y="20" width="100" height="20" fill="#BA7517"/>
-      <rect x="20" y="20" width="300" height="20" rx="6" fill="none" stroke="rgba(255,255,255,.08)"/>
-      <text x="70" y="34" fill="#10240a" font-size="11" font-weight="600" text-anchor="middle">&lt;15%</text>
-      <text x="170" y="34" fill="#3a2e10" font-size="11" font-weight="600" text-anchor="middle">15-20%</text>
-      <text x="270" y="34" fill="#2a1805" font-size="11" font-weight="600" text-anchor="middle">&gt;20%</text>
-      <text x="70" y="58" fill="#9a9389" font-size="10.5" text-anchor="middle">atlético</text>
-      <text x="170" y="58" fill="#9a9389" font-size="10.5" text-anchor="middle">normal</text>
-      <text x="270" y="58" fill="#9a9389" font-size="10.5" text-anchor="middle">sobrepeso</text>
+    <svg viewBox="0 0 340 124" width="100%" role="img" aria-label="Faixas de gordura. Homem: abaixo de 15 atlético, 15 a 20 normal, acima de 20 sobrepeso. Mulher: abaixo de 22 atlética, 22 a 30 normal, acima de 30 sobrepeso">
+      <text x="20" y="13" fill="#9a9389" font-size="9.5" font-weight="700" letter-spacing=".06em">HOMEM</text>
+      <rect x="20" y="18" width="100" height="20" fill="#63991f"/>
+      <rect x="120" y="18" width="100" height="20" fill="#D4AF6A"/>
+      <rect x="220" y="18" width="100" height="20" fill="#BA7517"/>
+      <rect x="20" y="18" width="300" height="20" rx="6" fill="none" stroke="rgba(255,255,255,.08)"/>
+      <text x="70" y="32" fill="#10240a" font-size="11" font-weight="600" text-anchor="middle">&lt;15%</text>
+      <text x="170" y="32" fill="#3a2e10" font-size="11" font-weight="600" text-anchor="middle">15-20%</text>
+      <text x="270" y="32" fill="#2a1805" font-size="11" font-weight="600" text-anchor="middle">&gt;20%</text>
+      <text x="20" y="63" fill="#9a9389" font-size="9.5" font-weight="700" letter-spacing=".06em">MULHER</text>
+      <rect x="20" y="68" width="100" height="20" fill="#63991f"/>
+      <rect x="120" y="68" width="100" height="20" fill="#D4AF6A"/>
+      <rect x="220" y="68" width="100" height="20" fill="#BA7517"/>
+      <rect x="20" y="68" width="300" height="20" rx="6" fill="none" stroke="rgba(255,255,255,.08)"/>
+      <text x="70" y="82" fill="#10240a" font-size="11" font-weight="600" text-anchor="middle">&lt;22%</text>
+      <text x="170" y="82" fill="#3a2e10" font-size="11" font-weight="600" text-anchor="middle">22-30%</text>
+      <text x="270" y="82" fill="#2a1805" font-size="11" font-weight="600" text-anchor="middle">&gt;30%</text>
+      <text x="70" y="108" fill="#9a9389" font-size="10.5" text-anchor="middle">atlético</text>
+      <text x="170" y="108" fill="#9a9389" font-size="10.5" text-anchor="middle">normal</text>
+      <text x="270" y="108" fill="#9a9389" font-size="10.5" text-anchor="middle">sobrepeso</text>
     </svg>
   </div>
   <h3>Calorias e Macros</h3>
@@ -5049,7 +5060,7 @@
 
   <div class="partner-card">
     <div class="partner-card-head"><span class="partner-name">Thermo Caps 90 cáps (cafeína)</span><span class="partner-discount" style="background:#3a2e1f;color:#ffa726;">SHOPEE 67% OFF</span></div>
-    <div class="partner-desc">Termogênico com cafeína. R$29,00. Auxilia gasto calórico e disposição em fase cutting.</div>
+    <div class="partner-desc">Termogênico com cafeína. R$29,00. Auxilia gasto calórico e disposição na fase de definição.</div>
     <a class="partner-link" href="https://s.shopee.com.br/8KmGtSOAoq?share_channel_code=1" target="_blank" rel="noopener">Acessar →</a>
   </div>
 
@@ -5075,7 +5086,7 @@
 
   <div class="partner-card">
     <div class="partner-card-head"><span class="partner-name">Coenzima Q10 100mg 30 cáps</span><span class="partner-discount" style="background:#3a2e1f;color:#ffa726;">SHOPEE 66% OFF</span></div>
-    <div class="partner-desc">Antioxidante mitocondrial. R$38,70. Energia celular, recuperação cardíaca, anti-aging.</div>
+    <div class="partner-desc">Antioxidante mitocondrial. R$38,70. Energia celular, recuperação cardíaca, antienvelhecimento.</div>
     <a class="partner-link" href="https://s.shopee.com.br/7KtjhUeYqM?share_channel_code=1" target="_blank" rel="noopener">Acessar →</a>
   </div>
 
@@ -5097,7 +5108,7 @@
   <span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span><span class="tog-label">Acessórios Recomendados</span><span class="tog-chev" id="acessoriosArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span>
 </div>
 <div class="instructions-content" id="acessoriosContent">
-  <p style="color:var(--gray);font-size:12px;margin:0 0 14px;">Itens que o GH recomenda, links YangFit (cupom <b style="color:#fff">GH15</b> no checkout) e Shopee.</p>
+  <p style="color:var(--gray);font-size:12px;margin:0 0 14px;">Itens que o GH recomenda, links YangFit (cupom <b style="color:#fff">GH15</b> na hora de pagar) e Shopee.</p>
 
   <h3 style="color:var(--gold);margin:14px 0 8px;font-size:13px;">🏋️ Treino na academia (YangFit 15%)</h3>
 
@@ -5229,7 +5240,7 @@
       <span class="partner-name">👕 AlphaCo</span>
       <span class="partner-discount">5% OFF</span>
     </div>
-    <div class="partner-desc">Linha de roupas esportivas. Pelo link o desconto já entra; se pedir código no checkout, usa o cupom abaixo.</div>
+    <div class="partner-desc">Linha de roupas esportivas. Pelo link o desconto já entra; se pedir código na hora de pagar, usa o cupom abaixo.</div>
     <div class="partner-cupom"><span class="lbl">🎟️ Cupom:</span><span class="cup">GH</span><button class="cp" onclick="_cupomCopia('GH', this)">Copiar</button></div>
     <a class="partner-link" href="https://usealphaco.com.br/discount/GH" target="_blank" rel="noopener">Acessar com desconto →</a>
   </div>
@@ -5239,7 +5250,7 @@
       <span class="partner-name">🏋️ YangFit</span>
       <span class="partner-discount">15% OFF</span>
     </div>
-    <div class="partner-desc">Equipamentos e acessórios de musculação. Entra pelo link e usa o cupom abaixo no checkout.</div>
+    <div class="partner-desc">Equipamentos e acessórios de musculação. Entra pelo link e usa o cupom abaixo na hora de pagar.</div>
     <div class="partner-cupom"><span class="lbl">🎟️ Cupom:</span><span class="cup">GH15</span><button class="cp" onclick="_cupomCopia('GH15', this)">Copiar</button></div>
     <a class="partner-link" href="https://yangfit.com.br/?utm_source=instagram&utm_medium=GH&utm_campaign=afiliado&utm_content=parceiro%3D7865" target="_blank" rel="noopener">Acessar com desconto →</a>
   </div>
@@ -5281,7 +5292,7 @@
 
   <div class="install-section">
     <h2>INSTALAR NA TELA INICIAL</h2>
-    <p>Acesse seu treino e dieta com um toque, direto da tela do celular.</p>
+    <p>Abre teu treino e tua dieta com um toque, direto da tela do celular.</p>
   </div>
 
   <hr class="install-divider">
@@ -5291,15 +5302,15 @@
     <div class="install-steps">
       <div class="install-step">
         <div class="step-num">1</div>
-        <div class="step-text">Abra o link do treino exclusivamente no <strong>Safari</strong>.</div>
+        <div class="step-text">Abre o teu link no <strong>Safari</strong> (só nele dá pra instalar).</div>
       </div>
       <div class="install-step">
         <div class="step-num">2</div>
-        <div class="step-text">Toque no botao de <strong>Compartilhar</strong> na barra inferior.</div>
+        <div class="step-text">Toca no botão <strong>Compartilhar</strong> na barra de baixo.</div>
       </div>
       <div class="install-step">
         <div class="step-num">3</div>
-        <div class="step-text">Role o menu e toque em <strong>"Adicionar a Tela de Inicio"</strong>.</div>
+        <div class="step-text">Rola o menu e toca em <strong>"Adicionar à Tela de Início"</strong>.</div>
       </div>
     </div>
   </div>
@@ -5311,15 +5322,15 @@
     <div class="install-steps">
       <div class="install-step">
         <div class="step-num">1</div>
-        <div class="step-text">Abra o link do treino no <strong>Google Chrome</strong>.</div>
+        <div class="step-text">Abre o teu link no <strong>Google Chrome</strong>.</div>
       </div>
       <div class="install-step">
         <div class="step-num">2</div>
-        <div class="step-text">O Chrome deve mostrar um aviso automaticamente. Se nao aparecer, toque nos <strong>3 pontinhos</strong> no canto superior.</div>
+        <div class="step-text">O Chrome costuma mostrar um aviso sozinho. Se não aparecer, toca nos <strong>3 pontinhos</strong> no canto de cima.</div>
       </div>
       <div class="install-step">
         <div class="step-num">3</div>
-        <div class="step-text">Toque em <strong>"Instalar app"</strong> ou <strong>"Adicionar a tela inicial"</strong>.</div>
+        <div class="step-text">Toca em <strong>"Instalar app"</strong> ou <strong>"Adicionar à tela inicial"</strong>.</div>
       </div>
     </div>
   </div>
@@ -5327,32 +5338,32 @@
   <hr class="install-divider">
 
   <div class="install-section">
-    <h3>Conhecendo seu Protocolo</h3>
+    <h3>Conhecendo o teu protocolo</h3>
     <div class="install-feature">
-      <strong>Meta Semanal</strong>
-      <span>O plano macro sempre visivel no topo.</span>
+      <strong>Semana do protocolo</strong>
+      <span>Fica sempre à vista no topo: é por ela que o app conta a tua evolução.</span>
     </div>
     <div class="install-feature">
-      <strong>Navegacao de Ciclo</strong>
-      <span>Alterne entre os dias da sua divisao.</span>
+      <strong>Dias de treino</strong>
+      <span>Troca entre os dias da tua divisão com um toque.</span>
     </div>
     <div class="install-feature">
-      <strong>Blocos de Acao</strong>
-      <span>Seu protocolo do dia, organizado por ordem exata de execucao.</span>
+      <strong>Exercícios do dia</strong>
+      <span>O teu treino do dia, na ordem exata de execução.</span>
     </div>
   </div>
 
   <hr class="install-divider">
 
   <div class="install-section">
-    <h3>Registro de Carga</h3>
-    <p>Anote a carga da <strong>ultima serie</strong> (a serie de falha total). Essa sera sua meta exata para quebrar no proximo treino.</p>
+    <h3>Registro de carga</h3>
+    <p>Anota o peso e as repetições de <strong>todas as séries</strong>, e na caixinha <strong>Sobrou</strong> quantas repetições ainda dava pra fazer. É por isso que o GH ajusta a tua carga e o app te sugere o próximo peso.</p>
   </div>
 
   <hr class="install-divider">
 
   <div class="install-section">
-    <p style="color:var(--gold);font-size:15px;font-weight:600;">Toque no icone dourado. Bom treino.</p>
+    <p style="color:var(--gold);font-size:15px;font-weight:600;">Toca no ícone dourado. Bom treino.</p>
   </div>
 </div>
 
@@ -5376,11 +5387,11 @@
       <select id="feedbackTipo" style="width:100%;padding:10px;background:#222;border:1px solid var(--gold-dim);color:var(--white);border-radius:6px;font-size:13px;margin-bottom:12px;">
         <option value="Sugestão">Sugestão / ideia</option>
         <option value="Elogio">Elogio</option>
-        <option value="Problema">Problema / bug</option>
+        <option value="Problema">Problema ou erro</option>
         <option value="Outro">Outro</option>
       </select>
       <label style="color:#bbb;font-size:11px;display:block;margin-bottom:4px;">Tua mensagem</label>
-      <textarea id="feedbackTexto" rows="5" maxlength="1500" placeholder="Ex: Seria massa ter um cronômetro de descanso entre as séries.&#10;&#10;Ex: Adorei poder marcar os treinos, ficou top!" oninput="document.getElementById('feedbackCharCount').textContent=this.value.length+' / 1500'" style="width:100%;padding:10px;background:#222;border:1px solid var(--gold-dim);color:var(--white);border-radius:6px;font-size:13px;font-family:inherit;line-height:1.4;box-sizing:border-box;resize:vertical;min-height:110px;"></textarea>
+      <textarea id="feedbackTexto" rows="5" maxlength="1500" placeholder="Ex: Queria ver o histórico de carga direto no exercício.&#10;&#10;Ex: Adorei poder marcar os treinos, ficou top!" oninput="document.getElementById('feedbackCharCount').textContent=this.value.length+' / 1500'" style="width:100%;padding:10px;background:#222;border:1px solid var(--gold-dim);color:var(--white);border-radius:6px;font-size:13px;font-family:inherit;line-height:1.4;box-sizing:border-box;resize:vertical;min-height:110px;"></textarea>
       <div id="feedbackCharCount" style="color:#666;font-size:10px;text-align:right;margin-top:4px;">0 / 1500</div>
       <div style="display:flex;gap:8px;margin-top:14px;">
         <button class="te-btn" onclick="submitFeedback()" id="feedbackSubmitBtn" style="flex:1;">Enviar</button>
@@ -5618,7 +5629,7 @@
       <div class="gloss-it" data-g="amplitude"><b>Amplitude máxima</b>Usar o percurso inteiro do movimento: alonga tudo, contrai tudo.</div>
       <div class="gloss-it" data-g="parciais"><b>Parciais</b>Repetições de propósito mais curtas, só no pedaço do movimento que ainda sai. Quando a ficha pede "parciais no final", é depois que as completas acabaram.</div>
       <div class="gloss-it" data-g="kg"><b>Kg: de cada lado ou o total?</b>Do jeito que tu preferir, mas sempre o mesmo critério. Eu anoto de cada lado: assim não preciso ficar calculando quanto colocar nos outros treinos.</div>
-      <div class="gloss-it" data-g="sobrou"><b>Sobrou (a caixinha do app)</b>Quantas repetições tu ainda aguentaria na última série. É como o Gabriel enxerga se a tua carga está certa.</div>
+      <div class="gloss-it" data-g="sobrou"><b>Sobrou (a caixinha do app)</b>Quantas repetições tu ainda aguentaria na última série. É como o GH enxerga se a tua carga está certa.</div>
       <div class="gloss-it" data-g="falha"><b>Falha</b>O ponto em que não sai nem mais uma repetição com execução boa.</div>
       <div class="gloss-it" data-g="roubadas"><b>Roubadas</b>Repetições depois da falha usando um impulso proposital pra completar o movimento. Só onde a ficha pede, e sempre freando a descida.</div>
       <div class="gloss-it" data-g="unilateral"><b>Unilateral</b>Um lado de cada vez: faz um lado, emenda o outro, e os dois juntos contam como UMA série. O descanso escrito na ficha vale DEPOIS de fazer os dois lados.</div>
@@ -5755,7 +5766,7 @@
 <div class="te-modal-overlay" id="renovModal" style="z-index:100002;" onclick="if(event.target.id==='renovModal')teHide('renovModal')">
   <div class="te-modal-box" style="max-width:440px;">
     <h3 style="margin:0 0 4px;">Próxima etapa</h3>
-    <p style="color:#aaa;font-size:11.5px;margin:0 0 14px;line-height:1.5;">A próxima etapa começa de onde tu parou: teu histórico, tuas cargas e teus selos seguem contigo. Escolhe a duração e paga direto no checkout seguro. <b style="color:#ccc;">Protocolos adicionais</b> tu inclui dentro do próprio pagamento.</p>
+    <p style="color:#aaa;font-size:11.5px;margin:0 0 14px;line-height:1.5;">A próxima etapa começa de onde tu parou: teu histórico, tuas cargas e teus selos seguem contigo. Escolhe a duração e paga direto, em página segura. <b style="color:#ccc;">Protocolos adicionais</b> tu inclui dentro do próprio pagamento.</p>
     <a class="renov-opt" href="https://payfast.greenn.com.br/redirect/309565" target="_blank" rel="noopener" onclick="_renovLogClick('anual')">
       <div>
         <div class="renov-opt-t">Etapa de 12 meses</div>
@@ -6091,8 +6102,8 @@
   <div class="te-modal-box" style="max-width:560px;max-height:calc(88vh / var(--fz, 1));display:flex;flex-direction:column;">
     <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg> Ranking <span id="rankingMonth" style="color:#888;font-weight:400;font-size:13px;"></span></h3>
     <p style="color:#aaa;font-size:11px;margin:0 0 8px;line-height:1.4;">
-      Ranking por <strong>adesão</strong>: o <strong>%</strong> do teu plano que você cumpriu no mês.
-      Quem treina <strong>3x</strong> e quem treina <strong>6x</strong> competem de igual: vale o quanto você seguiu o <em>teu</em> protocolo. Zera todo dia 1º.
+      Ranking por <strong>adesão</strong>: o <strong>%</strong> do teu plano que tu cumpriu no mês.
+      Quem treina <strong>3x</strong> e quem treina <strong>6x</strong> competem de igual: vale o quanto tu seguiu o <em>teu</em> protocolo. Zera todo dia 1º.
     </p>
     <div style="background:rgba(212,167,106,0.10);border-left:3px solid var(--gold);padding:8px 10px;margin:0 0 12px;border-radius:4px;font-size:11px;color:#d4a76a;line-height:1.5;">
       <strong>Como pontuar:</strong>
@@ -6298,7 +6309,7 @@
   <div class="te-modal-box" style="max-width:560px;max-height:calc(90vh / var(--fz, 1));display:flex;flex-direction:column;">
     <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Personal &amp; Psicóloga</h3>
     <p style="color:#aaa;font-size:11px;margin:0 0 14px;line-height:1.45;">
-      Atendimento online ao vivo com a equipe oficial. Após o pagamento você recebe o WhatsApp do profissional pra combinar o horário.
+      Atendimento online ao vivo com a equipe oficial. Depois do pagamento tu recebe o WhatsApp do profissional pra combinar o horário.
     </p>
     <div id="agendaContent" style="flex:1;overflow-y:auto;min-height:0;"></div>
     <button class="te-btn ghost" onclick="teHide('agendaModal')" style="width:100%;margin-top:12px;">Fechar</button>
@@ -6311,7 +6322,7 @@
     <h3 style="margin:0 0 4px;display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> <span id="chatTitulo">Assistente de IA do GH</span></h3>
     <p id="chatIntro" style="color:#aaa;font-size:11px;margin:0 0 10px;line-height:1.5;border-bottom:1px solid #222;padding-bottom:8px;">
       Sou um <b>assistente de IA</b>, treinado pelo GH pra tirar tuas dúvidas rápidas de <b>treino, dieta e suplementação</b>. Conheço o <b>teu protocolo</b>.<br>
-      <b>Exames e protocolo</b> não passam por aqui. Esses são só no <a href="https://wa.me/555520131470" target="_blank" rel="noopener" style="color:#25D366;text-decoration:underline;font-weight:600;">WhatsApp de suporte</a>, onde o GH valida e te orienta direto. Foto pra avaliar ou dúvida mais robusta, também por lá <b>(de segunda à sexta, em horário comercial)</b>.
+      <b>Exames e protocolo</b> não passam por aqui. Esses são só no <a href="https://wa.me/555520131470" target="_blank" rel="noopener" style="color:#25D366;text-decoration:underline;font-weight:600;">WhatsApp de suporte</a>, onde o GH valida e te orienta direto. Foto pra avaliar ou dúvida mais robusta, também por lá <b>(de segunda a sexta, em horário comercial)</b>.
     </p>
     <div class="chat-msgs" id="chatMsgs"></div>
     <div class="chat-mode-tabs" id="chatModeTabs">
@@ -6355,7 +6366,7 @@
       <textarea id="ajusteTexto" rows="6" maxlength="2000" placeholder="Ex: Minha academia não tem Cadeira Flexora, posso fazer Mesa Flexora no lugar?&#10;&#10;Ex: O Tríceps Testa tá doendo no cotovelo, tem alternativa?" style="width:100%;padding:10px;background:#222;border:1px solid var(--gold-dim);color:var(--white);border-radius:6px;font-size:13px;font-family:inherit;line-height:1.4;box-sizing:border-box;resize:vertical;min-height:120px;"></textarea>
       <div id="ajusteCharCount" style="color:#666;font-size:10px;text-align:right;margin-top:4px;">0 / 2000</div>
       <div style="margin-top:14px;">
-        <label style="color:#bbb;font-size:11px;display:block;margin-bottom:6px;">📎 Anexar fotos <span style="color:#666;">(opcional, ex: as máquinas que você tem em casa)</span></label>
+        <label style="color:#bbb;font-size:11px;display:block;margin-bottom:6px;">📎 Anexar fotos <span style="color:#666;">(opcional, ex: as máquinas que tu tem em casa)</span></label>
         <div id="ajusteFotosRow" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
         <input type="file" id="ajusteFotoInput" accept="image/*" multiple style="display:none" onchange="_ajusteOnFotoPick(this)">
         <div style="color:#666;font-size:10px;margin-top:5px;">Até 4 fotos. Servem só pra esse pedido e são apagadas depois.</div>
@@ -6587,6 +6598,42 @@
 <script src="editor-data.js?v=138"></script>
 <script src="substitutos.js?v=5"></script>
 <script>
+// ══ v592 (auditoria 26/10): rede com teto de tempo ══
+// Toda chamada ao Apps Script que não traz o próprio sinal ganha 60 s de limite. Antes uma rede que caía no meio deixava o
+// botão em "Enviando…" pra sempre e o app sem resposta. Quem precisa de mais tempo (fotos, recado em áudio) manda o seu sinal.
+(function () {
+  try {
+    if (!window.fetch || !window.AbortController) return;
+    var _fetchNativo = window.fetch;
+    window.fetch = function (u, o) {
+      try {
+        if (typeof u === 'string' && u.indexOf('script.google.com/macros/') >= 0 && !(o && o.signal)) {
+          var ac = new AbortController();
+          var tm = setTimeout(function () { try { ac.abort(); } catch (_) {} }, 60000);
+          var o2 = Object.assign({}, o || {}, { signal: ac.signal });
+          return _fetchNativo.call(window, u, o2).then(function (r) { clearTimeout(tm); return r; }, function (e) { clearTimeout(tm); throw e; });
+        }
+      } catch (_) {}
+      return _fetchNativo.call(window, u, o);
+    };
+  } catch (_) {}
+})();
+// v592: escapes pra texto que vem da planilha ou do servidor. _h = texto ou atributo HTML; _hj = string dentro de onclick="f('…')"
+function _h(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function _hj(s) { return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/\r?\n/g, ' '); }
+// v592: a planilha (gviz) sem resposta deixava o app no "carregando" sem fim. Teto por tentativa e, se pedido, uma repetição.
+async function _fetchPlanilha_(url, opts, tentativas) {
+  let ultimo = null;
+  const vezes = Math.max(1, tentativas || 2);
+  for (let i = 0; i < vezes; i++) {
+    const ac = window.AbortController ? new AbortController() : null;
+    const tm = ac ? setTimeout(() => { try { ac.abort(); } catch (_) {} }, i ? 25000 : 20000) : null;
+    try { return await fetch(url, Object.assign({}, opts || {}, ac ? { signal: ac.signal } : {})); }
+    catch (e) { ultimo = e; }
+    finally { if (tm) clearTimeout(tm); }
+  }
+  throw ultimo || new Error('planilha sem resposta');
+}
 // ══════════════════════════════════════════════════════════════
 // ══ CONFIGURAÇÃO — lê parâmetros da URL ══
 // ══════════════════════════════════════════════════════════════
@@ -7002,7 +7049,7 @@ const I18N_EN = {
   'No ponto final do movimento, aperta o músculo com força total por um instante, como se estivesse posando pra foto. Não é só chegar lá: é contrair.': "At the end of the movement, squeeze the muscle hard for an instant, like posing for a photo. It's not just getting there: it's squeezing.",
   'Usar o percurso inteiro do movimento: alonga tudo, contrai tudo.': 'Use the full path of the movement: full stretch, full squeeze.',
   'Repetições de propósito mais curtas, só no pedaço do movimento que ainda sai. Quando a ficha pede "parciais no final", é depois que as completas acabaram.': 'Deliberately shortened reps, only in the part of the movement you can still perform. When the plan asks for "partials at the end", it means after full reps are done.',
-  'Quantas repetições tu ainda aguentaria na última série. É como o Gabriel enxerga se a tua carga está certa.': 'How many reps you had left on your last set. It\'s how Gabriel sees if your load is right.',
+  'Quantas repetições tu ainda aguentaria na última série. É como o GH enxerga se a tua carga está certa.': 'How many reps you had left on your last set. It\'s how GH sees if your load is right.',
   'O ponto em que não sai nem mais uma repetição com execução boa.': 'The point where not even one more clean rep comes out.',
   'Repetições depois da falha usando um impulso proposital pra completar o movimento. Só onde a ficha pede, e sempre freando a descida.': 'Reps after failure using deliberate momentum to complete the movement. Only where the plan asks, and always braking the way down.',
   'Um lado de cada vez: faz um lado, emenda o outro, e os dois juntos contam como UMA série. O descanso escrito na ficha vale DEPOIS de fazer os dois lados.': 'One side at a time: do one side, go straight to the other, and both together count as ONE set. The rest on the plan applies AFTER both sides.',
@@ -7712,7 +7759,7 @@ function _ghToast(txt, ms) {
   try {
     try { document.querySelectorAll('.gh-toast').forEach(x => x.remove()); } catch (_) {}   // v533: uma confirmação por vez, a nova substitui a anterior
     const t = document.createElement('div');
-    t.className = 'gh-toast'; t.innerHTML = txt;
+    t.className = 'gh-toast'; t.innerHTML = txt; t.setAttribute('role', 'status'); t.setAttribute('aria-live', 'polite');   // v592: leitor de tela anuncia o aviso
     document.body.appendChild(t);
     setTimeout(() => { try { t.remove(); } catch (_) {} }, ms || 4200);
   } catch (_) {}
@@ -7932,10 +7979,10 @@ function _prescLinha(ex, isWarmup) {
     if (_rotP) return _prescTabelaHtml(ex, _tp, isWarmup);   // v506: bloco "Prescrição" espelhando a grade
     {
       if (ex.series) { const _ns = String(ex.series).replace(/\s*[xX]\s*$/, ''); p.push(_ns + (/^\s*0?1\s*$/.test(_ns) ? ' série' : ' séries')); }   // v553: "1 série"
-      if (ex.reps) p.push((/seg|min|\bs\b/i.test(String(ex.reps)) || !/\d\s*$/.test(String(ex.reps))) ? ex.reps : (ex.reps + ' reps'));   // "20 seg" nao vira "20 seg reps"; v555: só ganha "reps" o texto que TERMINA em número ("até a falha" e "10 / até a falha" ficam como estão)
+      if (ex.reps) p.push((/seg|min|\bs\b/i.test(String(ex.reps)) || !/\d\s*$/.test(String(ex.reps))) ? _dx(ex.reps) : (_dx(ex.reps) + ' reps'));   // "20 seg" nao vira "20 seg reps"; v555: só ganha "reps" o texto que TERMINA em número ("até a falha" e "10 / até a falha" ficam como estão)
     }
     // v499: com chips, o intervalo vai sem o "·" (a borda do chip já separa) e não quebra no meio da frase
-    if (ex.rest) p.push('<span class="gl' + (_rotP ? ' tp-int' : '') + '" onclick="event.stopPropagation();openGlossario(\'intervalo\')">' + ex.rest + ' de descanso</span>');   // v531 (Rodrigo Müller): "de intervalo" do lado do tempo da prancha confundia tempo com descanso
+    if (ex.rest) p.push('<span class="gl' + (_rotP ? ' tp-int' : '') + '" onclick="event.stopPropagation();openGlossario(\'intervalo\')">' + _dx(ex.rest) + ' de descanso</span>');   // v531 (Rodrigo Müller): "de intervalo" do lado do tempo da prancha confundia tempo com descanso
     let out = p.join(' · ');
     if (!isWarmup && !_exPorTempo(ex)) {   // v531: prancha, isometria e alongamento não têm subida e descida
       const c = parseCadencia(ex.obs);
@@ -8099,7 +8146,7 @@ function _serieFraseHtml(ex, tp) {
       let txt = g.n + ' <span class="gl" onclick="event.stopPropagation();openGlossario(\'' + t + '\')">' + nome + '</span>';
       if (t === 'val') {
         const reps = String(_repsSegmento(ex, g.seg) || '').trim();
-        if (reps) txt += (/\d/.test(reps) ? ' de ' : ' ') + reps + ((/seg|min|\bs\b/i.test(reps) || !/\d\s*$/.test(reps)) ? '' : ' reps');   // v555: "2 válidas até a falha" (saía "de até a falha reps")
+        if (reps) txt += (/\d/.test(reps) ? ' de ' : ' ') + _dx(reps) + ((/seg|min|\bs\b/i.test(reps) || !/\d\s*$/.test(reps)) ? '' : ' reps');   // v555: "2 válidas até a falha" (saía "de até a falha reps")
       }
       return txt;
     }).join(' + ');
@@ -8124,10 +8171,10 @@ function _prescTabelaHtml(ex, tp, isWarmup) {
       if (reps && /\d\s*$/.test(reps) && !/seg|min|\bs\b/i.test(reps)) reps += (reps === '1' ? ' rep' : ' reps');   // PAP: "1 rep"; v555: só ganha "reps" o texto que termina em número ("até a falha" fica como está)
       const extra = t === 'val' ? (_exPorTempo(ex) ? 'segurar firme' : esf) : (SERIE_TIPO_CARGA[t] || '');   // v531: prancha não tem "sobrar"
       return '<div class="ept-row"><span class="ept-t t-' + t + '" onclick="event.stopPropagation();openGlossario(\'' + t + '\')" title="' + SERIE_TIPO_NOME[t] + '">' + SERIE_TIPO_CURTO[t] + '</span>'
-        + '<span class="ept-n">' + g.n + (g.n === 1 ? ' série' : ' séries') + '</span><span class="ept-r">' + reps + '</span><span class="ept-c">' + extra + '</span></div>';
+        + '<span class="ept-n">' + g.n + (g.n === 1 ? ' série' : ' séries') + '</span><span class="ept-r">' + _dx(reps) + '</span><span class="ept-c">' + extra + '</span></div>';
     }).join('');
     const foot = [];
-    if (ex.rest) foot.push('<span class="gl" onclick="event.stopPropagation();openGlossario(\'intervalo\')">' + ex.rest + ' de descanso</span>');
+    if (ex.rest) foot.push('<span class="gl" onclick="event.stopPropagation();openGlossario(\'intervalo\')">' + _dx(ex.rest) + ' de descanso</span>');
     if (!isWarmup && !_exPorTempo(ex)) { const c = parseCadencia(ex.obs); foot.push('<span class="gl" onclick="event.stopPropagation();openGlossario(\'cadencia\')">Pos ' + fmtSec(c.conc) + 's · Iso ' + fmtSec(c.iso) + 's · Neg ' + fmtSec(c.exc) + 's</span>'); }
     const hdr = '<div class="ept-row ept-hdr"><span class="ept-t">tipo</span><span class="ept-n">séries</span><span class="ept-r">' + (_exPorTempo(ex) ? 'tempo' : 'reps') + '</span><span class="ept-c">como</span></div>';
     return '<div class="ex-presc-tbl"><div class="ept-head">Prescrição</div><div class="ept-panel">' + hdr + rows + (foot.length ? '<div class="ept-foot">' + foot.join(' · ') + '</div>' : '') + '</div></div>';   // v509: intervalo e cadência dentro do painel
@@ -8150,7 +8197,7 @@ function _serieChipsHtml(ex, tp) {
       const reps = String(_repsSegmento(ex, g.seg) || '').trim();
       const nome = t === 'val' ? (g.n === 1 ? 'válida' : 'válidas') : SERIE_TIPO_NOME[t];
       return '<span class="tp-chip t-' + t + '" onclick="event.stopPropagation();openGlossario(\'' + t + '\')" title="Série de ' + SERIE_TIPO_NOME[t] + '">'
-        + nome + ' <b>' + g.n + '×' + (reps || '?') + '</b></span>';
+        + nome + ' <b>' + g.n + '×' + (_dx(reps) || '?') + '</b></span>';
     }).join(' ');
   } catch (_) { return ''; }
 }
@@ -8321,14 +8368,19 @@ function _vidClique(ev, di, ei) {
     _ghToast('Esta semana o v\u00eddeo \u00e9 do Treino ' + _diaRotulo(Number(o.dia)).n + '. Na segunda abre de novo.');
     return false;
   }
-  try { if (o.dia == null) o.dia = Number(di); o.itens.push({ di: Number(di), ei: String(ei), ts: Date.now() }); localStorage.setItem(_vidKey(), JSON.stringify(o)); } catch (_) {}
+  try {
+    if (o.dia == null) o.dia = Number(di);
+    if (!o.itens.some(x => Number(x.di) === Number(di) && String(x.ei) === String(ei))) o.itens.push({ di: Number(di), ei: String(ei), ts: Date.now() });   // v592: segundo toque no mesmo exercício não duplica
+    localStorage.setItem(_vidKey(), JSON.stringify(o));
+  } catch (_) {}
+  try { const a = ev && ev.currentTarget; const nm = (a && a.getAttribute) ? a.getAttribute('data-nome') : ''; if (a && nm) a.href = _vidHref(di, ei, nm); } catch (_) {}   // v592: texto do whats montado na hora (nome do aluno e ordem já carregados)
   try { _vidPillRefresh(); } catch (_) {}
   return true;   // o link abre o whats
 }
 function _vidPillHtml(di, ei, nome) {
   try {
     const e = _vidEstado(di, ei);
-    return '<a class="ex-vid-pill ' + e.cls + '" data-di="' + di + '" data-ei="' + String(ei) + '" href="' + _vidHref(di, ei, nome) + '" target="_blank" rel="noopener" onclick="return _vidClique(event, ' + di + ', \'' + String(ei) + '\')" title="Grava um v\u00eddeo fazendo este exerc\u00edcio e manda pro GH corrigir pelo WhatsApp. Um treino por semana, com os exerc\u00edcios dele.">'
+    return '<a class="ex-vid-pill ' + e.cls + '" data-di="' + di + '" data-ei="' + String(ei) + '" data-nome="' + _h(nome) + '" href="' + _vidHref(di, ei, nome) + '" target="_blank" rel="noopener" onclick="return _vidClique(event, ' + di + ', \'' + String(ei) + '\')" title="Grava um v\u00eddeo fazendo este exerc\u00edcio e manda pro GH corrigir pelo WhatsApp. Um treino por semana, com os exerc\u00edcios dele.">'
       + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>'
       + '<span class="rot">' + e.rot + '</span><span class="n">' + e.n + '</span></a>';
   } catch (_) { return ''; }
@@ -8361,10 +8413,10 @@ function openSubFallback(di, ei) {
   if (m) m.remove();
   m = document.createElement('div');
   m.id = 'subFallbackMenu'; m.className = 'rs-menu on';
-  const nome = String(ex.name || '').replace(/</g, '&lt;');
+  const nome = _h(ex.name);   // v592
   m.innerHTML = `<div class="rs-menu-sheet">
     <div style="color:#a9a49b;font-size:12.5px;line-height:1.55;padding:2px 6px 4px;"><b style="color:#f1ede4;">${nome}</b> ainda não tem troca pronta no app. Pede pro Gabriel que ele resolve direto no teu protocolo.</div>
-    <button onclick="document.getElementById('subFallbackMenu').remove(); openAjusteModal('Trocar o exercício ${nome.replace(/'/g, '\\&#39;')}: ', 'TREINO')">🔧 Pedir a troca pro Gabriel</button>
+    <button onclick="document.getElementById('subFallbackMenu').remove(); openAjusteModal('Trocar o exercício ${_hj(ex.name)}: ', 'TREINO')">🔧 Pedir a troca pro Gabriel</button>
     <button class="rs-menu-cancel" onclick="document.getElementById('subFallbackMenu').remove()">Cancelar</button>
   </div>`;
   m.addEventListener('click', e => { if (e.target === m) m.remove(); });
@@ -8601,7 +8653,7 @@ function setUnit(u) {
 // kg armazenado → string formatada na unidade atual de display
 function kgToDisplay(kgVal) {
   if (kgVal === '' || kgVal == null) return '';
-  const n = parseFloat(kgVal);
+  const n = parseFloat(String(kgVal).replace(',', '.'));   // v592: "12,5" guardado virava 12
   if (isNaN(n)) return String(kgVal);
   if (getUnit() === 'lb') {
     const lb = n * LB_PER_KG;
@@ -8613,7 +8665,7 @@ function kgToDisplay(kgVal) {
 // input do usuário (na unidade atual) → string kg pra salvar
 function displayToKg(displayVal) {
   if (displayVal === '' || displayVal == null) return '';
-  const n = parseFloat(displayVal);
+  const n = parseFloat(String(displayVal).replace(',', '.'));   // v592
   if (isNaN(n)) return String(displayVal);
   if (getUnit() === 'lb') {
     const kg = n / LB_PER_KG;
@@ -9067,11 +9119,11 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
     const _antKg = (p && p.kg) ? kgToDisplay(p.kg) : '', _antPl = (p && p.pl) ? String(p.pl) : '', _antReps = (p && p.reps) ? String(p.reps) : '';   // v531: última vez dentro do campo
     return `<div class="set-row ${feita ? 'feita' : ''} ${_rotulada ? 't-' + _tipo : ''} ${_nv ? 'nv' : ''}" data-si="${si}" data-tipo="${_tipo}">
         <button type="button" class="set-num ${_rotulada ? 't-' + _tipo : ''}" onclick="toggleSetFeita(${di},'${eiS}',${si})" title="${_rotulada ? 'Série de ' + SERIE_TIPO_NOME[_tipo] + '. ' : ''}Marcar série como feita" aria-label="Marcar série ${si + 1} como feita">${feita ? '✓' : (_rotulada ? (_nv ? 'não valeu' : _rot) : si + 1)}</button>
-        <input class="set-in set-kg${_antKg ? ' ph-ant' : ''}" type="number" inputmode="decimal" placeholder="${_antKg || _phKg}" value="${kgToDisplay(s.kg)}" oninput="onSetField(${di},'${eiS}')">
-        <input class="set-in set-pl${_antPl ? ' ph-ant' : ''}" type="number" inputmode="numeric" placeholder="${_antPl || 'pl'}" value="${s.pl || ''}" oninput="onSetField(${di},'${eiS}')">
-        <input class="set-in set-reps${_antReps ? ' ph-ant' : ''}" type="number" inputmode="numeric" placeholder="${_antReps || (_porTempo ? _tUnid : _phReps)}" title="${_porTempo ? 'Quantos ' + (_tUnid === 'min' ? 'minutos' : 'segundos') + ' tu segurou' : ''}" value="${s.reps || ''}" oninput="onSetField(${di},'${eiS}')">
-        <input class="set-in set-rs" type="number" inputmode="numeric" onfocus="sobrouDica(this)" onblur="sobrouDicaSome()" placeholder="${_tipo === 'val' ? rsPh : '·'}" title="${_tipo === 'val' ? 'Quantas repetições sobraram nessa série' : 'Série de ' + SERIE_TIPO_NOME[_tipo] + ': sobrar é o esperado, não entra no alvo'}" value="${s.rs || ''}" oninput="onSetField(${di},'${eiS}')">
-        <input class="set-in set-rpe" type="number" inputmode="numeric" min="0" max="10" placeholder="${_tipo === 'val' ? rpePh : '·'}" title="RPE: esforço de 0 a 10 (10 = não dava mais nenhuma). É o RIR visto do outro lado: RPE 9 = sobrou 1." value="${_rpeDe(s.rs)}" oninput="_rpeDigitado(this,${di},'${eiS}')" onblur="_rpeNormaliza(this)">
+        <input class="set-in set-kg${_antKg ? ' ph-ant' : ''}" type="number" aria-label="Peso, série ${si + 1}" inputmode="decimal" placeholder="${_antKg || _phKg}" value="${kgToDisplay(s.kg)}" oninput="onSetField(${di},'${eiS}')">
+        <input class="set-in set-pl${_antPl ? ' ph-ant' : ''}" type="number" aria-label="Placas, série ${si + 1}" inputmode="numeric" placeholder="${_antPl || 'pl'}" value="${s.pl || ''}" oninput="onSetField(${di},'${eiS}')">
+        <input class="set-in set-reps${_antReps ? ' ph-ant' : ''}" type="number" aria-label="Repetições, série ${si + 1}" inputmode="numeric" placeholder="${_antReps || (_porTempo ? _tUnid : _phReps)}" title="${_porTempo ? 'Quantos ' + (_tUnid === 'min' ? 'minutos' : 'segundos') + ' tu segurou' : ''}" value="${s.reps || ''}" oninput="onSetField(${di},'${eiS}')">
+        <input class="set-in set-rs" type="number" aria-label="Sobrou, série ${si + 1}" inputmode="numeric" onfocus="sobrouDica(this)" onblur="sobrouDicaSome()" placeholder="${_tipo === 'val' ? rsPh : '·'}" title="${_tipo === 'val' ? 'Quantas repetições sobraram nessa série' : 'Série de ' + SERIE_TIPO_NOME[_tipo] + ': sobrar é o esperado, não entra no alvo'}" value="${s.rs || ''}" oninput="onSetField(${di},'${eiS}')">
+        <input class="set-in set-rpe" type="number" aria-label="RPE, série ${si + 1}" inputmode="numeric" min="0" max="10" placeholder="${_tipo === 'val' ? rpePh : '·'}" title="RPE: esforço de 0 a 10 (10 = não dava mais nenhuma). É o RIR visto do outro lado: RPE 9 = sobrou 1." value="${_rpeDe(s.rs)}" oninput="_rpeDigitado(this,${di},'${eiS}')" onblur="_rpeNormaliza(this)">
         ${prevTxt}
         ${(semX || si < _nPresc) ? '' : `<button type="button" class="set-del" onclick="removeSet(${di},'${eiS}',${si})" title="Remover série" aria-label="Remover série">&times;</button>`}
       </div>`;
@@ -9252,6 +9304,7 @@ function _rpeDe(rs) {
 }
 function _rpeDigitado(el, di, ei) {
   try {
+    if (el.validity && el.validity.badInput) return;   // v592: vírgula ou letra no campo não apaga o "sobrou"
     const row = el.closest('.set-row'); const rs = row && row.querySelector('.set-rs'); if (!rs) return;
     const t = String(el.value || '').trim();
     if (t === '') rs.value = '';
@@ -9835,7 +9888,7 @@ function _cadernoRender(notas) {
     const linhas = String(n.texto || '').split('\n');
     const titulo = esc(linhas[0].slice(0, 42) + (linhas[0].length > 42 ? '...' : ''));
     const resto = esc(linhas.slice(1).join(' ').trim() || linhas[0].slice(42).trim());
-    const aberta = _cadernoAberta === n.ts;
+    const aberta = _cadernoAberta === (Number(n.ts) || 0);   // v592: o toque manda Number(ts); nota com ts em texto nunca abria
     const podeApagar = n.ts && !n.pendente && (souEquipe || !eq);
     html += `<div onclick="_cadernoToggle(${Number(n.ts) || 0})" style="background:#1a1a1a;border:1px solid #262626;border-radius:12px;padding:11px 13px;margin-bottom:8px;cursor:pointer;">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
@@ -9888,7 +9941,7 @@ async function apagarNotaCaderno(ts) {
     });
     const j = await r.json().catch(() => ({}));
     if (!j || !j.success) {
-      alert((j && j.error) || 'Não consegui apagar agora. Tenta de novo.');
+      _ghToast(_h((j && j.error) || 'Não consegui apagar agora. Tenta de novo.'), 6000);
     }
   } catch (_) {
     _syncQueuePush('nota_aluno_del', payload, p => 'del' + p.ts);   // offline: apaga quando voltar
@@ -10004,7 +10057,7 @@ async function enviarDor() {
     document.getElementById('dorOk').style.display = '';
     setTimeout(() => teHide('dorModal'), 3500);
   } catch (e) {
-    alert('Não consegui enviar agora. Confere a internet e tenta de novo.');
+    _ghToast('Não consegui enviar agora. Confere a internet e tenta de novo.', 6000);
     b.disabled = false; b.textContent = 'Enviar pra equipe';
   }
 }
@@ -10296,6 +10349,7 @@ function _auxCicloFaxina_(atualMs) {
 async function syncDoneFromServer_() {
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
   try {
+    const _pendAntes = new Set(); try { _syncQueueGet('done').forEach(p => _pendAntes.add(String(p.w) + '|' + String(p.di) + '|' + String(p.ei))); } catch (_) {}   // v592: o que estava na fila ANTES da busca não é apagado pela resposta (a fila pode subir enquanto a resposta viaja)
     let data = null;
     try { const rs = await _restoreFetch_(); if (rs && Array.isArray(rs.done)) data = { done: rs.done, atual: rs.atual }; } catch (_) {}   // v512
     if (!data) {
@@ -10379,7 +10433,7 @@ async function syncDoneFromServer_() {
       // (o restore abaixo nunca re-adiciona marca anterior ao corte).
       // v544: o que o aluno marcou ou desmarcou AGORA (nesta sessão, ou ainda na fila de envio) ganha de qualquer linha do
       // servidor. Antes essa conferência vinha depois do corte: a linha velha do mesmo exercício apagava a marca recém-feita.
-      if (_donePendenteLocal_(d.w, d.di, d.ei)) return;
+      if (_donePendenteLocal_(d.w, d.di, d.ei) || _pendAntes.has(String(d.w) + '|' + String(d.di) + '|' + String(d.ei))) return;   // v592
       const _t = Number(d.ts) || 0; // ts ausente/inválido = idade desconhecida → trata como antiga
       if (_t < cutoff) {
         if (localStorage.getItem(key)) { localStorage.removeItem(key); cleared++; }
@@ -10504,6 +10558,12 @@ function _diaConcluidoDispara(di) {
     if (s && Number(s.di) === Number(di) && Number(s.w) === Number(currentWeek)) {
       const secs = Math.floor(_wtElapsedMs(s) / 1000);
       if (secs >= 60 && secs <= _WT_SUSPEITO_SECS) { _ftFechando = true; try { _wtCommit(s.di, s.w, secs, s.pausas || 0, false); } finally { _ftFechando = false; } }   // v571
+      else if (secs < 60) { try { localStorage.removeItem(_wtKey()); } catch (_) {} try { renderWtCard(); } catch (_) {} }   // v592: menos de 1 min não vira registro, mas o cronômetro não fica ligado pro dia seguinte
+      else {   // v592: mais de 2 h ligado: em vez de seguir rodando calado, pergunta quanto o treino durou (depois do card de conclusão)
+        try { localStorage.removeItem(_wtKey()); } catch (_) {} try { renderWtCard(); } catch (_) {}
+        const _cfgF = { di: s.di, w: s.w, secs: secs, pausas: s.pausas || 0, modo: 'fechou' };
+        if (_celebOff()) setTimeout(() => { try { _wtEditOpen(_cfgF); } catch (_) {} }, 700); else window._wtPendFechou = _cfgF;
+      }
     }
   } catch (_) {}
   updateStreakOnComplete();
@@ -10514,6 +10574,7 @@ function _diaConcluidoDispara(di) {
   notifyDayCompletion(di, false);
   // ✨ Card shareable (pontos/streak já contaram acima; card desligável pelo aluno)
   if (!_celebOff()) setTimeout(() => showCompletionCard(di), 250);
+  else { try { _ghToast('Treino de hoje fechado e registrado.'); } catch (_) {} }   // v592: quem desligou o card também fica sabendo que fechou
 }
 // ══ v470 (Rafael Paiva Ferraz via GH, 17/09/2026: "os treinos nao marcam como feito, mesmo marcando cada exercicio") ══
 // A semana do app e MANUAL (seletor Semana N). Quem nao avanca a semana encontra, na 2a passada do mesmo treino, tudo
@@ -10729,7 +10790,7 @@ function showAchievementCard(type, data) {
 function achDesfazerPR() {
   try {
     if (_achData && _achData.type === 'pr' && _achData.prDi !== undefined) {
-      localStorage.setItem(prKey(_achData.prDi, _achData.prEi), String(_achData.oldKg || 0));
+      localStorage.setItem(prKey(_achData.prDi, _achData.prEi), JSON.stringify({ kg: Number(_achData.oldKg) || 0, ignora: Number(_achData.newKg) || 0, ignoraDia: todayKey() }));   // v592: o valor desfeito fica anotado; a grade com o número errado não reabre o card
       _prLogRemove(_achData.prDi, _achData.prEi, _achData.newKg);   // recorde desfeito sai da conta da semana
     }
   } catch (_) {}
@@ -10741,6 +10802,7 @@ function achClose() {
   document.body.style.overflow = '';
   _achData = null;
   _achPhoto = null;
+  try { if (window._wtPendFechou) { const _c = window._wtPendFechou; window._wtPendFechou = null; setTimeout(() => _wtEditOpen(_c), 350); } } catch (_) {}   // v592: cronômetro de mais de 2 h: a pergunta vem depois do card
 }
 
 // ── Upload de foto do pump ──
@@ -11560,6 +11622,7 @@ function checkPR(di, ei, newKg, w) {
   if (w == null) w = currentWeek;
   const k = prKey(di, ei);
   let cur = _prLe(di, ei);
+  if (cur && cur.ignora && cur.ignoraDia === todayKey() && newKg >= cur.ignora) return;   // v592: recorde desfeito hoje ("digitei errado") não volta enquanto o número errado estiver na grade
   if (!cur) { const s = _prSemente(di, ei, w); if (s > 0) cur = { kg: s }; }
   const stored = cur ? cur.kg : 0;
   if (newKg > stored) {
@@ -11995,7 +12058,7 @@ function setShortMode(min) {
         const keep = _shortKeepSet(currentDay) || new Set();
         const tot = (WORKOUT[currentDay] ? WORKOUT[currentDay].exercises.length : 0);
         fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true, redirect: 'follow',
-          body: JSON.stringify({ type: 'modo_curto', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(), di: currentDay, w: currentWeek, minutos: min, mantidos: keep.size, cortados: Math.max(0, tot - keep.size) }) });
+          body: JSON.stringify({ type: 'modo_curto', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(), di: currentDay, w: currentWeek, minutos: min, mantidos: keep.size, cortados: Math.max(0, tot - keep.size) }) }).catch(() => {});   // v592: sem rede não vira erro solto
       }
     }
   } catch (_) {}
@@ -12383,6 +12446,8 @@ function _rvScan(root) {
 }
 (function () {
   window.addEventListener('scroll', _rvTick, { passive: true });
+  window.addEventListener('resize', () => setTimeout(_rvTick, 300), { passive: true });   // v592: girar o celular ou abrir o teclado também revela
+  window.addEventListener('orientationchange', () => setTimeout(_rvTick, 300));
   ['exerciseContainer', 'dietContent', 'instructionsContent', 'accompContent'].forEach(id => {
     const el = document.getElementById(id);
     if (el && 'MutationObserver' in window) new MutationObserver(() => _rvScan(el)).observe(el, { childList: true });
@@ -12419,6 +12484,13 @@ function parseIntervalSeconds(text) {
   const nums = t.match(/\d+/g);
   if (!nums) return 60;
   // v545: "1 min 30 seg" = 90 s (antes: o último número vezes 60 = 30 minutos)
+  // v592: "1'30", "1:30", "1min30", "1 min 30" = 90 s; "2'" = 120 s; "1,5 min" = 90 s (antes: 1'30 virava 30 s e 2' virava 2 s)
+  const md = t.match(/(\d+)[.,](\d)\s*min/);
+  if (md) return parseInt(md[1], 10) * 60 + parseInt(md[2], 10) * 6;
+  const ms = t.match(/(\d+)\s*(?:'|min\.?|:)\s*(\d{1,2})(?!\d)/);
+  if (ms) return parseInt(ms[1], 10) * 60 + parseInt(ms[2], 10);
+  const mo = t.match(/^\s*(\d+)\s*'\s*$/);
+  if (mo) return parseInt(mo[1], 10) * 60;
   const mm = t.match(/(\d+)\s*min/), ss = t.match(/(\d+)\s*s(?:eg)?\b/);
   if (mm) return parseInt(mm[1], 10) * 60 + (ss ? parseInt(ss[1], 10) : 0);
   const last = parseInt(nums[nums.length-1]);
@@ -13267,7 +13339,7 @@ function focusRest() {
   const base = ex.biset ? ex.a : ex;
   startTimer(base.name || 'Descanso', parseIntervalSeconds(base.rest));
 }
-function _focusEsc(s) { return String(s || '').replace(/'/g, "\\'"); }
+function _focusEsc(s) { return _hj(s); }   // v592: escape completo
 function _focusCargaBlock(di, key, label) {
   return `<div class="focus-carga">
     <div class="focus-carga-label">${label}</div>
@@ -13569,9 +13641,9 @@ function _focusRender() {
     const t = [];
     const _rF = _serieTemRotulo(o);   // v513: rotulado mostra "2 válidas" e as reps da válida, não a coluna crua
     const _sV = _rF ? ((_serieTipos(o).find(x => x.tipo === 'val') || {}).seg) : null;
-    if (o.series) t.push(`<span class="focus-tag"><b>Séries</b>${_rF ? _serieResumoCurto(o) : o.series}</span>`);
-    if (o.reps) t.push(`<span class="focus-tag"><b>Reps</b>${(_rF && _sV != null) ? (_repsSegmento(o, _sV) || o.reps) : o.reps}</span>`);
-    if (o.rest) t.push(`<span class="focus-tag"><b>Interv</b>${o.rest}</span>`);
+    if (o.series) t.push(`<span class="focus-tag"><b>Séries</b>${_dx(_rF ? _serieResumoCurto(o) : o.series)}</span>`);
+    if (o.reps) t.push(`<span class="focus-tag"><b>Reps</b>${_dx((_rF && _sV != null) ? (_repsSegmento(o, _sV) || o.reps) : o.reps)}</span>`);
+    if (o.rest) t.push(`<span class="focus-tag"><b>Interv</b>${_dx(o.rest)}</span>`);
     return t.join('');
   };
   const vidBtn = (o) => (o.video && o.video.length)
@@ -13580,13 +13652,13 @@ function _focusRender() {
   let html = '';
   if (ex.biset) {
     html += `<span class="focus-badge">BI-SET: sem descanso entre A e B</span>`;
-    html += `<div class="focus-name">${ex.a.name}</div>${vidBtn(ex.a)}<div class="focus-tags">${tags(ex.a)}</div>`;
-    if (ex.a.obs) html += `<div class="focus-obs">${_glossWrap(ex.a.obs)}</div>`;
+    html += `<div class="focus-name">${_dx(ex.a.name)}</div>${vidBtn(ex.a)}<div class="focus-tags">${tags(ex.a)}</div>`;
+    if (ex.a.obs) html += `<div class="focus-obs">${_glossWrap(_dx(ex.a.obs))}</div>`;
     if (!_exPorTempo(ex.a)) html += `<button class="focus-sub-btn" onclick="openPacer(_focusDi, _focusIdx)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Treinar no ritmo</button>`;
     html += _focusCargaBlock(_focusDi, `${_focusIdx}a`, 'Carga A');
     html += `<div style="text-align:center;color:var(--gold);font-size:11px;font-weight:700;margin:10px 0;">↓ SEM DESCANSO ↓</div>`;
-    html += `<div class="focus-name" style="font-size:20px;">${ex.b.name}</div>${vidBtn(ex.b)}`;
-    if (ex.b.obs) html += `<div class="focus-obs">${_glossWrap(ex.b.obs)}</div>`;
+    html += `<div class="focus-name" style="font-size:20px;">${_dx(ex.b.name)}</div>${vidBtn(ex.b)}`;
+    if (ex.b.obs) html += `<div class="focus-obs">${_glossWrap(_dx(ex.b.obs))}</div>`;
     html += _focusCargaBlock(_focusDi, `${_focusIdx}b`, 'Carga B');
     html += _focusEsforcoBlock(_focusDi, String(_focusIdx));
   } else {
@@ -13594,10 +13666,10 @@ function _focusRender() {
     // respeita o substituto ativo (se o aluno trocou na lista, o player mostra o substituto) + botão próprio
     const _fact = (typeof _exAtivo === 'function') ? _exAtivo(_focusDi, _focusIdx) : { name: ex.name, video: ex.video, sub: false };
     const _falts = (typeof _alternativasNoDia === 'function') ? _alternativasNoDia(_focusDi, _focusIdx) : null;
-    html += `<div class="focus-name">${_fact.name}${_fact.sub ? (_fact.viagem ? ' <span class="ex-sub-badge viagem">✈ LIVRE</span>' : ' <span class="ex-sub-badge">SUBST.</span>') : ''}</div>${vidBtn(_fact)}`;
+    html += `<div class="focus-name">${_dx(_fact.name)}${_fact.sub ? (_fact.viagem ? ' <span class="ex-sub-badge viagem">✈ LIVRE</span>' : ' <span class="ex-sub-badge">SUBST.</span>') : ''}</div>${vidBtn(_fact)}`;
     if (_falts) html += `<button class="focus-sub-btn" onclick="openSubPicker(${_focusDi}, ${_focusIdx})">🔄 Trocar exercício</button>`;
     html += `<div class="focus-tags">${tags(ex)}</div>`;
-    if (ex.obs) html += `<div class="focus-obs">${_glossWrap(ex.obs)}</div>`;
+    if (ex.obs) html += `<div class="focus-obs">${_glossWrap(_dx(ex.obs))}</div>`;
     if (!ex.warmup && !_exPorTempo(ex)) html += `<button class="focus-sub-btn" onclick="openPacer(_focusDi, _focusIdx)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Treinar no ritmo</button>`;
     if (!ex.warmup) { try { html += _progChipHtml(_focusDi, _focusIdx, _fact.name); } catch (_) {} }   // v548: a dica "hoje tenta X" também aparece no modo treino
     if (!ex.warmup) html += _focusCargaBlock(_focusDi, String(_focusIdx), 'Carga de hoje');
@@ -13948,7 +14020,7 @@ async function renderPeso(force) {
     try {
       const r = await fetch(`${LOG_ENDPOINT}?action=medidas&id=${encodeURIComponent(SHEET_ID)}`, { redirect: 'follow' });
       const j = await r.json().catch(() => ({}));
-      _pesoPts = (j && j.ok && Array.isArray(j.pontos)) ? j.pontos.filter(p => p && p.peso > 0) : [];
+      _pesoPts = (j && j.ok && Array.isArray(j.pontos)) ? j.pontos.map(p => (p && typeof p === 'object') ? Object.assign({}, p, { peso: Number(String(p.peso).replace(',', '.')) }) : null).filter(p => p && p.peso > 0) : [];   // v592: peso "82,5" em texto entrava como 0 e sumia do gráfico
     } catch (_) { _pesoPts = []; }
   }
   const porDia = {};
@@ -13985,7 +14057,7 @@ function registrarPeso() {
       inp.value = '';
       renderPeso();
     })
-    .catch(() => alert('Não consegui salvar agora. Confere a internet e tenta de novo.'));
+    .catch(() => _ghToast('Não consegui salvar agora. Confere a internet e tenta de novo.', 6000));
 }
 
 // ══ "O que é o sobrou?" (ⓘ da grade de séries) ══
@@ -14388,7 +14460,7 @@ async function loadFromSheets(injectedText) {
       // ele ainda está vendo. A DIETA já tinha essa proteção (comentário do Safari iOS
       // logo abaixo); o TREINO tinha ficado de fora.
       const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=TREINO&headers=0&_=${Date.now()}`;
-      const res = await fetch(url, { cache: 'no-store' });
+      const res = await _fetchPlanilha_(url, { cache: 'no-store' }, 2);   // v592: 20 s + 1 repetição (antes podia pendurar pra sempre)
 
       if (!res.ok) throw new Error('Não foi possível acessar a planilha. Verifique se ela está compartilhada (qualquer pessoa com link = leitor).');
 
@@ -14494,7 +14566,7 @@ async function loadFromSheets(injectedText) {
       if (!bloco.days[dayNum]) bloco.days[dayNum] = [];
       const isWarmup = _ehAquecReal(r[7], r[1], r[3], r[2]);
       bloco.days[dayNum].push({
-        name: r[1] || '',
+        name: String(r[1] || '').replace(/\s*\r?\n\s*/g, ' ').trim(),   // v592: quebra de linha dentro do nome (célula com Enter) vira espaço; a chave de carga usa _normEx, que já colapsava espaços
         series: r[2] || '',
         reps: _repsConserta(r[3] || ''),   // v545
         rest: r[4] || '',
@@ -14667,11 +14739,11 @@ async function loadFromSheets(injectedText) {
       hipoEl.innerHTML = `
         <div style="color:var(--gold);font-weight:700;font-size:14px;margin-bottom:6px;">Seu Protocolo Atual</div>
         <div style="color:var(--gray);font-size:13px;line-height:1.8;">
-          <span style="color:var(--white);font-weight:600;">${hipoData.nivel}</span><br>
-          ${hipoData.series ? `S\u00e9ries: <span style="color:var(--white)">${hipoData.series}</span><br>` : ''}
-          ${hipoData.tempo ? `Tempo: <span style="color:var(--white)">${hipoData.tempo}</span><br>` : ''}
-          ${hipoData.freq ? `Frequ\u00eancia: <span style="color:var(--white)">${hipoData.freq}</span><br>` : ''}
-          ${hipoData.obs ? `<span style="color:var(--muted);font-style:italic">${hipoData.obs}</span>` : ''}
+          <span style="color:var(--white);font-weight:600;">${_dx(hipoData.nivel)}</span><br>
+          ${hipoData.series ? `S\u00e9ries: <span style="color:var(--white)">${_dx(hipoData.series)}</span><br>` : ''}
+          ${hipoData.tempo ? `Tempo: <span style="color:var(--white)">${_dx(hipoData.tempo)}</span><br>` : ''}
+          ${hipoData.freq ? `Frequ\u00eancia: <span style="color:var(--white)">${_dx(hipoData.freq)}</span><br>` : ''}
+          ${hipoData.obs ? `<span style="color:var(--muted);font-style:italic">${_dx(hipoData.obs)}</span>` : ''}
         </div>`;
     }
 
@@ -14712,6 +14784,7 @@ async function loadFromSheets(injectedText) {
     _ok_('tempos', () => loadTempoTreino());     // durações registradas → badges nos dias
     _ok_('tour', () => _tourMaybeStart());     // 1º acesso: tour de boas-vindas (o _showNav da dieta roda cedo demais, sem WORKOUT)
     _ok_('instalar', () => _instAvisoMaybe());     // v532: celular sem o app instalado: aviso pra instalar (nunca por cima do tour)
+    _ok_('posicao', () => _posSave());     // v592: a posição restaurada fica gravada com a assinatura atual, mesmo sem trocar de dia
     setTimeout(_semanaPromptBoot, 2500);   // v539: semana inteira fechada em outra data: pergunta se passa pra próxima
     setTimeout(_ftPromptBoot, 3400);       // v575: treino de ontem ou anteontem que ficou aberto com boa parte marcada
     return true;
@@ -14837,24 +14910,21 @@ function _renderExercisesMiolo_() {
       // ── BI-SET ──
       if (ex.biset) {
         const a = ex.a, b = ex.b;
-        const aVid = (a.video || '').replace(/'/g, "\\'");
-        const bVid = (b.video || '').replace(/'/g, "\\'");
-        const aName = a.name.replace(/'/g, "\\'");
-        const bName = b.name.replace(/'/g, "\\'");
+        const aVid = _hj(a.video), bVid = _hj(b.video), aName = _hj(a.name), bName = _hj(b.name);   // v592: escape completo (aspas, <, >, &)
         const hasA = a.video && a.video.length > 0;
         const hasB = b.video && b.video.length > 0;
         // Série/reps/intervalo compartilhados (usa do A; se B tiver diferente, mostra como badge)
         const tagsA = [];
-        if (a.series) tagsA.push(`<span class="exercise-tag"><span class="tl">Séries</span>${a.series}</span>`);
-        if (a.reps)   tagsA.push(`<span class="exercise-tag"><span class="tl">Reps</span>${a.reps}</span>`);
-        if (a.rest)   tagsA.push(`<span class="exercise-tag" onclick="event.stopPropagation();openGlossario('intervalo')"><span class="tl">Interv</span>${a.rest}</span>`);
+        if (a.series) tagsA.push(`<span class="exercise-tag"><span class="tl">Séries</span>${_dx(a.series)}</span>`);
+        if (a.reps)   tagsA.push(`<span class="exercise-tag"><span class="tl">Reps</span>${_dx(a.reps)}</span>`);
+        if (a.rest)   tagsA.push(`<span class="exercise-tag" onclick="event.stopPropagation();openGlossario('intervalo')"><span class="tl">Interv</span>${_dx(a.rest)}</span>`);
         tagsA.push(cadenciaTag(a.obs));
         const sameParams = (a.series === b.series && a.reps === b.reps && a.rest === b.rest);
         const tagsB = [];
         if (!sameParams) {
-          if (b.series) tagsB.push(`<span class="exercise-tag"><span class="tl">Séries</span>${b.series}</span>`);
-          if (b.reps)   tagsB.push(`<span class="exercise-tag"><span class="tl">Reps</span>${b.reps}</span>`);
-          if (b.rest)   tagsB.push(`<span class="exercise-tag" onclick="event.stopPropagation();openGlossario('intervalo')"><span class="tl">Interv</span>${b.rest}</span>`);
+          if (b.series) tagsB.push(`<span class="exercise-tag"><span class="tl">Séries</span>${_dx(b.series)}</span>`);
+          if (b.reps)   tagsB.push(`<span class="exercise-tag"><span class="tl">Reps</span>${_dx(b.reps)}</span>`);
+          if (b.rest)   tagsB.push(`<span class="exercise-tag" onclick="event.stopPropagation();openGlossario('intervalo')"><span class="tl">Interv</span>${_dx(b.rest)}</span>`);
         }
         // Cadência B: mostra sempre se for diferente da A (ex: A normal, B com excêntrica 5s)
         const cadA = parseCadencia(a.obs), cadB = parseCadencia(b.obs);
@@ -14873,18 +14943,18 @@ function _renderExercisesMiolo_() {
             </div>
             <div class="biset-sub ${hasA ? 'has-video' : ''}" ${hasA ? `onclick="openVideo('${aName}', '${aVid}')"` : ''}>
               <div class="exercise-info">
-                <div class="exercise-name">${a.name}${hasA ? ' <span class="video-icon">&#9654;</span>' : ''}</div>
+                <div class="exercise-name">${_dx(a.name)}${hasA ? ' <span class="video-icon">&#9654;</span>' : ''}</div>
                 <div class="exercise-details">${tagsA.join('')}</div>
-                ${a.obs ? `<div class="exercise-obs">${_glossWrap(a.obs)}</div>` : ''}
+                ${a.obs ? `<div class="exercise-obs">${_glossWrap(_dx(a.obs))}</div>` : ''}
                 ${_vidPillHtml(di, ei + 'a', a.name)}
               </div>
             </div>
             <div class="biset-connector">&#8595; SEM DESCANSO &#8595;</div>
             <div class="biset-sub ${hasB ? 'has-video' : ''}" ${hasB ? `onclick="openVideo('${bName}', '${bVid}')"` : ''}>
               <div class="exercise-info">
-                <div class="exercise-name">${b.name}${hasB ? ' <span class="video-icon">&#9654;</span>' : ''}</div>
+                <div class="exercise-name">${_dx(b.name)}${hasB ? ' <span class="video-icon">&#9654;</span>' : ''}</div>
                 ${tagsB.length ? `<div class="exercise-details">${tagsB.join('')}</div>` : ''}
-                ${b.obs ? `<div class="exercise-obs">${_glossWrap(b.obs)}</div>` : ''}
+                ${b.obs ? `<div class="exercise-obs">${_glossWrap(_dx(b.obs))}</div>` : ''}
                 ${_vidPillHtml(di, ei + 'b', b.name)}
               </div>
             </div>
@@ -14904,19 +14974,18 @@ function _renderExercisesMiolo_() {
       const tags = [];
       const _rotT = _serieTemRotulo(ex);   // v513: rotulado mostra "2 válidas", não "2X val" (aluno leu como bug)
       const _segVT = _rotT ? ((_serieTipos(ex).find(x => x.tipo === 'val') || {}).seg) : null;
-      if (ex.series) tags.push(`<span class="exercise-tag"><span class="tl">Séries</span>${_rotT ? _serieResumoCurto(ex) : ex.series}</span>`);
-      if (ex.reps) tags.push(`<span class="exercise-tag"><span class="tl">Reps</span>${(_rotT && _segVT != null) ? (_repsSegmento(ex, _segVT) || ex.reps) : ex.reps}</span>`);
-      if (ex.rest) tags.push(`<span class="exercise-tag" onclick="event.stopPropagation();openGlossario('intervalo')"><span class="tl">Interv</span>${ex.rest}</span>`);
+      if (ex.series) tags.push(`<span class="exercise-tag"><span class="tl">Séries</span>${_dx(_rotT ? _serieResumoCurto(ex) : ex.series)}</span>`);
+      if (ex.reps) tags.push(`<span class="exercise-tag"><span class="tl">Reps</span>${_dx((_rotT && _segVT != null) ? (_repsSegmento(ex, _segVT) || ex.reps) : ex.reps)}</span>`);
+      if (ex.rest) tags.push(`<span class="exercise-tag" onclick="event.stopPropagation();openGlossario('intervalo')"><span class="tl">Interv</span>${_dx(ex.rest)}</span>`);
       if (!isWarmup) tags.push(cadenciaTag(ex.obs));
 
       // Escape single quotes — usa o exercício ATIVO (substituto ou original) pra vídeo+label.
       // Carga/cronômetro/histórico seguem por POSIÇÃO (di,ei), não pelo nome, então a troca não os afeta.
-      const safeName = act.name.replace(/'/g, "\\'");
-      const safeVideo = (act.video || '').replace(/'/g, "\\'");
+      const safeName = _hj(act.name), safeVideo = _hj(act.video);   // v592: escape completo
 
       const exDone = isDone(di, ei);
       const exSkip = !exDone && !isWarmup && isSkipped(di, ei);
-      const safeRest = (ex.rest || '').replace(/'/g, "\\'");
+      const safeRest = _hj(ex.rest);   // v592
       // v523: botão "+ série" de volta na grade do card (GH 25/09); o × por linha segue fora. v525: o comentário disso
       // estava DENTRO do template e apareceu como texto no card do aluno (print do GH, Pedro Sousa).
 
@@ -14928,7 +14997,7 @@ function _renderExercisesMiolo_() {
               ${_nomeBlocoHtml(di, ei, act, exDone, isWarmup, hasVid)}
               ${!isWarmup ? _muscTag(act.name) : ''}
               <div class="ex-presc">${_prescLinha(ex, isWarmup)}</div>
-              ${ex.obs ? `<div class="exercise-obs">${_glossWrap(ex.obs)}</div>` : ''}
+              ${ex.obs ? `<div class="exercise-obs">${_glossWrap(_dx(ex.obs))}</div>` : ''}
               ${!isWarmup && !exDone ? _subPillHtml(di, ei, act, subAlts) : ''}
               ${!isWarmup ? _vidPillHtml(di, ei, act.name) : ''}
               ${_trocaMotivoHtml(di, ei)}
@@ -14944,7 +15013,7 @@ function _renderExercisesMiolo_() {
             <div class="ex-actions">
               <button class="ex-action-btn save-btn" onclick="event.stopPropagation(); saveSetsManual(${di}, '${ei}', this)" title="Salvar as séries agora (o app já salva sozinho enquanto tu digita; isto manda pro servidor na hora)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span class="ex-action-lbl">salvar</span></button>
               <button class="ex-action-btn"${_exPorTempo(ex) ? ' style="display:none"' : ''} onclick="event.stopPropagation(); openPacer(${di}, ${ei})" title="Treinar no ritmo (coach de cadência)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="ex-action-lbl">ritmo</span></button>
-              <button class="ex-action-btn" onclick="event.stopPropagation(); startTimer('${safeName}', parseIntervalSeconds('${safeRest}'))" title="Cronômetro de descanso (${ex.rest || 'auto'})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="ex-action-lbl">descanso</span></button>
+              <button class="ex-action-btn" onclick="event.stopPropagation(); startTimer('${safeName}', parseIntervalSeconds('${safeRest}'))" title="Cronômetro de descanso (${_h(ex.rest || 'auto')})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="ex-action-lbl">descanso</span></button>
               <button class="ex-action-btn" onclick="event.stopPropagation(); showHistory(${di}, ${ei})" title="Histórico de cargas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg><span class="ex-action-lbl">histórico</span></button>
               <button class="ex-action-btn ex-mais" onclick="event.stopPropagation(); exMaisMenu(${di}, '${ei}')" title="Mais opções" aria-label="Mais opções deste exercício"><span style="font-size:15px;line-height:14px;letter-spacing:1px;">&#183;&#183;&#183;</span><span class="ex-action-lbl">mais</span></button>
             </div>
@@ -15185,7 +15254,7 @@ function downloadPDF() {
   const isDieta = document.body.classList.contains('view-dieta');
   const html = isDieta ? _buildDietaPrintHTML() : _buildTreinoPrintHTML();
   if (!html) {
-    alert((isDieta ? 'Dieta' : 'Treino') + ' ainda não carregou. Tenta de novo em alguns segundos.');
+    _ghToast((isDieta ? 'Dieta' : 'Treino') + ' ainda não carregou. Tenta de novo em alguns segundos.', 5000);
     return;
   }
   document.getElementById('printArea').innerHTML = html;
@@ -15232,6 +15301,7 @@ function selectDay(i) {
   _posSave();
   _vidBtnRefresh();
   _exEnterAnim();
+  try { setTimeout(_rvTick, 60); } catch (_) {}   // v592: card que já estava na tela ao trocar de dia aparece sem precisar rolar
 }
 // v426: a lista do dia entra com fade + deslize curto quando o aluno troca de dia ou semana
 function _exEnterAnim() {
@@ -15690,7 +15760,7 @@ async function _diarioFetch() {
     });
     // o que ainda não subiu (salvo sem sinal, ou refeito depois do que o servidor tem) continua valendo por até 14 dias
     _diarioLocal().forEach(n => {
-      if (!n.pendente || Date.now() - (n.ts || 0) > 14 * 864e5) return;
+      if (!n.pendente) return;   // v592: nota que ainda não subiu não some mais depois de 14 dias
       const s = por[chave(n)];
       if (!s || (n.ts || 0) > (s.ts || 0) + 2000) por[chave(n)] = n;
     });
@@ -15824,7 +15894,9 @@ function _wtEditOpen(cfg) {
   const txt = document.getElementById('wtEditTxt'), inp = document.getElementById('wtEditMin');
   if (txt) txt.textContent = cfg.modo === 'finalizar'
     ? 'O cronômetro marcou ' + _wtDurTxt(cfg.secs) + '. Se tu esqueceu de finalizar, coloca aqui quanto o treino durou de verdade.'
-    : 'Registrado ' + _wtDurTxt(cfg.secs) + ' neste treino. Coloca o tempo certo e salva.';
+    : cfg.modo === 'fechou'
+      ? 'O cronômetro ficou ligado por ' + _wtDurTxt(cfg.secs) + ', mais do que um treino. Coloca quanto o treino de hoje durou de verdade.'   // v592
+      : 'Registrado ' + _wtDurTxt(cfg.secs) + ' neste treino. Coloca o tempo certo e salva.';
   if (inp) inp.value = String(Math.max(1, Math.min(360, Math.round(cfg.secs / 60))));
   teShow('wtEditModal');
   try { setTimeout(() => { inp && inp.focus(); inp && inp.select(); }, 120); } catch (_) {}
@@ -16004,7 +16076,7 @@ async function baixarVideosDoDia() {
   try {
     let c;
     try { c = await caches.open(VID_CACHE); }
-    catch (_) { alert('Não consegui guardar vídeos neste aparelho: o navegador bloqueou o armazenamento.'); return; }
+    catch (_) { _ghToast('Não consegui guardar vídeos neste aparelho: o navegador bloqueou o armazenamento.', 7000); return; }
     for (const [id] of vids) {
       const u = VID_OFF_BASE + id + '.mp4';
       try {
@@ -16026,7 +16098,7 @@ async function baixarVideosDoDia() {
 async function apagarVideosBaixados() {
   try { await caches.delete(VID_CACHE); } catch (_) {}
   try { _vidIdsLocais.clear(); } catch (_) {}   // v591: o player abria preto depois de apagar (achava que o video ainda estava no aparelho)
-  alert('Vídeos baixados apagados. O espaço foi liberado; baixa de novo quando quiser.');
+  _ghToast('Vídeos baixados apagados. O espaço foi liberado, baixa de novo quando quiser.', 5000);
   _vidBtnRefresh();
 }
 function openVideo(name, url) {
@@ -16166,9 +16238,9 @@ async function mostraAulasGhflix(nomeExercicio) {
   const idx = _mapaAulas.__idx || {};
   const html = ids.map(id => {
     const v = idx[id]; if (!v || !v.drive_id) return '';
-    const nome = (v.nome || '').replace(/[<>]/g, '');
-    const sub = v.sub_tipo ? v.sub_tipo : '';
-    return `<button onclick="abreAulaGhflix('${id}')" style="display:flex;gap:10px;align-items:center;
+    const nome = _h(v.nome || '');   // v592: escape completo
+    const sub = _h(v.sub_tipo || '');
+    return `<button onclick="abreAulaGhflix('${_hj(id)}')" style="display:flex;gap:10px;align-items:center;
         background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;
         padding:8px;text-align:left;cursor:pointer;color:inherit;font:inherit;width:100%">
       <img src="ghflix/thumbs/${v.drive_id}.jpg" alt="" loading="lazy" onerror="this.onerror=null;this.src='https://drive.google.com/thumbnail?id=${v.drive_id}&sz=w420'"
@@ -17021,7 +17093,7 @@ async function copyShoppingList() {
     ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
     document.body.appendChild(ta); ta.select();
     try { document.execCommand('copy'); btn.textContent = '✅ Copiado!'; setTimeout(() => btn.textContent = '📋 Copiar', 1800); }
-    catch (_) { alert('Não consegui copiar. Seleciona o texto e copia na mão.'); }
+    catch (_) { _ghToast('Não consegui copiar. Seleciona o texto e copia na mão.', 6000); }
     document.body.removeChild(ta);
   }
 }
@@ -17109,6 +17181,13 @@ async function forceSyncFromServer() {
   if (!ok) return;
   Object.keys(_setTimers || {}).forEach(k => { clearTimeout(_setTimers[k]); delete _setTimers[k]; });   // v480
   try { await flushSyncQueues(); } catch (_) {}   // v480: o que estava na fila sobe ANTES de buscar o servidor
+  // v592: o que ficou agendado ou em memória depois do flush não pode subir DEPOIS do recarregar, e o app esquece "a última coisa
+  // que enviou" (senão redigitar os mesmos números não era enviado). Mesma limpeza do "apagar pesos" (v544).
+  try {
+    Object.keys(_cargaSyncTimers).forEach(k => { clearTimeout(_cargaSyncTimers[k]); delete _cargaSyncTimers[k]; });
+    Object.keys(_cargaSyncPend).forEach(k => delete _cargaSyncPend[k]);
+    Object.keys(_cargaSyncUltimo).forEach(k => delete _cargaSyncUltimo[k]);
+  } catch (_) {}
 
   let totalCargas = 0, totalDone = 0, falhas = 0;
   try {
@@ -17770,7 +17849,7 @@ async function sendChat() {
   const text = (inp.value || '').trim();
   if (!text) return;
   if (typeof SHEET_ID === 'undefined' || !SHEET_ID) {
-    alert('Abre o app pelo teu link pessoal pra usar o assistente.');
+    _ghToast('Abre o app pelo teu link pessoal pra usar o assistente.', 6000);
     return;
   }
   if (_chatMode === 'suporte') { _supSend(text, inp); return; }   // conversa com a EQUIPE, caminho próprio
@@ -18009,7 +18088,7 @@ async function submitAjuste() {
   const texto = (document.getElementById('ajusteTexto').value || '').trim();
   const contexto = document.getElementById('ajusteContexto').value || 'OUTRO';
   if (texto.length < 5) {
-    alert('Conta um pouco mais sobre o que precisa mudar: mínimo 5 caracteres.');
+    _ghToast('Conta um pouco mais sobre o que precisa mudar: mínimo 5 caracteres.', 5000);
     return;
   }
   // v545: pedido hormonal ou clínico não entra na fila de ajuste (regra do GH: isso é direto com ele). O chat já barrava; o
@@ -18043,8 +18122,9 @@ async function submitAjuste() {
     btn.textContent = 'Enviando...';
   }
   try {
+    const _acAj = new AbortController(); setTimeout(() => { try { _acAj.abort(); } catch (_) {} }, 90000);   // v592: 90 s (pedido pode levar fotos); o pedido de dor, sem foto, fica no teto geral de 60 s
     const resp = await fetch(LOG_ENDPOINT, {
-      method: 'POST',
+      method: 'POST', signal: _acAj.signal,
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
         type: 'ajuste_request',
@@ -18062,12 +18142,12 @@ async function submitAjuste() {
       document.getElementById('ajusteSuccess').style.display = '';
       dismissAjusteBanner(); // já usou a função — esconde o banner por 30 dias
     } else {
-      alert('Não consegui enviar agora. Tenta de novo em 1 minuto.');
+      _ghToast('Não consegui enviar agora. Tenta de novo em 1 minuto.', 6000);
       btn.disabled = false;
       btn.textContent = 'Enviar pedido';
     }
   } catch (err) {
-    alert('Sem conexão agora. Confere a internet e tenta de novo.');
+    _ghToast('Sem conexão agora. Confere a internet e tenta de novo.', 6000);
     btn.disabled = false;
     btn.textContent = 'Enviar pedido';
   }
@@ -18105,11 +18185,11 @@ async function submitFeedback() {
       document.getElementById('feedbackForm').style.display = 'none';
       document.getElementById('feedbackSuccess').style.display = '';
     } else {
-      alert('Não consegui enviar agora. Tenta de novo em 1 minuto.');
+      _ghToast('Não consegui enviar agora. Tenta de novo em 1 minuto.', 6000);
       btn.disabled = false; btn.textContent = 'Enviar';
     }
   } catch (e) {
-    alert('Sem conexão agora. Confere a internet e tenta de novo.');
+    _ghToast('Sem conexão agora. Confere a internet e tenta de novo.', 6000);
     btn.disabled = false; btn.textContent = 'Enviar';
   }
 }
@@ -18144,7 +18224,7 @@ async function checkFotosBannerOnLoad() {
         if (msg) msg.textContent = 'Manda aqui pelo app, da galeria ou da câmera: frente, costas e os dois perfis. Elas viram o "antes" da tua comparação de evolução.' + (j.daysLeft ? ' Faltam ' + j.daysLeft + (j.daysLeft === 1 ? ' dia.' : ' dias.') : ' Hoje é o último dia.');
       } else if (msg && j.daysLeft) {
         if (tit) tit.textContent = 'Janela de fotos do reajuste aberta';
-        msg.textContent = `Se você não conseguiu anexar suas fotos na anamnese de reajuste, mande aqui pelo app. Faltam ${j.daysLeft} dia${j.daysLeft === 1 ? '' : 's'} pra janela fechar.`;
+        msg.textContent = `Se tu não conseguiu anexar as fotos na anamnese de reajuste, manda aqui pelo app. Faltam ${j.daysLeft} dia${j.daysLeft === 1 ? '' : 's'} pra janela fechar.`;
       }
       banner._startDate = j.startDate; // guarda pra usar no dismiss
       banner.style.display = 'block';
@@ -18351,18 +18431,22 @@ function _compressFoto(file, maxDim, quality) {
   maxDim = maxDim || 1280;
   quality = quality || 0.85;
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error('Falha ao ler ' + file.name));
-    reader.onload = () => {
-      const img = new Image();
-      img.onerror = () => reject(new Error('Foto inválida: ' + file.name));
-      img.onload = () => {
+    // v592: foto de 40 MB (RAW/ProRAW, câmera de 48 MP) estourava a memória do navegador antes de chegar no canvas; e a
+    // leitura vai por URL de objeto (não copia o arquivo inteiro pra memória em base64), com FileReader só de reserva
+    if (file && file.size > 25 * 1024 * 1024) return reject(new Error('Foto muito grande (' + Math.round(file.size / 1048576) + ' MB): tira de novo pela câmera, sem modo RAW ou ProRAW.'));
+    const img = new Image();
+    let objUrl = null;
+    const limpa = () => { if (objUrl) { try { URL.revokeObjectURL(objUrl); } catch (_) {} objUrl = null; } };
+    img.onerror = () => { limpa(); reject(new Error('Foto inválida: ' + file.name)); };
+    img.onload = () => {
+      try {
         let w = img.width, h = img.height;
         if (w > h && w > maxDim) { h = Math.round(h * maxDim / w); w = maxDim; }
         else if (h >= w && h > maxDim) { w = Math.round(w * maxDim / h); h = maxDim; }
         const canvas = document.createElement('canvas');
         canvas.width = w; canvas.height = h;
         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        limpa();
         canvas.toBlob(blob => {
           if (!blob) return reject(new Error('Falha na compressão'));
           const r2 = new FileReader();
@@ -18370,9 +18454,14 @@ function _compressFoto(file, maxDim, quality) {
           r2.onerror = () => reject(new Error('Falha ao codificar'));
           r2.readAsDataURL(blob);
         }, 'image/jpeg', quality);
-      };
-      img.src = reader.result;
+      } catch (e) { limpa(); reject(e); }
     };
+    try {
+      if (window.URL && URL.createObjectURL) { objUrl = URL.createObjectURL(file); img.src = objUrl; return; }
+    } catch (_) { objUrl = null; }
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Falha ao ler ' + file.name));
+    reader.onload = () => { img.src = reader.result; };
     reader.readAsDataURL(file);
   });
 }
@@ -18455,7 +18544,8 @@ async function enviarRegistroSemanal() {
       files.push({ name: roles[i] + '.jpg', mime: 'image/jpeg', base64: dataUrl, role: roles[i] });
     }
     btn.textContent = 'Registrando…';
-    const resp = await fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ type: 'registro_semanal', sheetId: SHEET_ID, files }), redirect: 'follow' });
+    const _acR = new AbortController(); setTimeout(() => { try { _acR.abort(); } catch (_) {} }, 90000);   // v592: 90 s pra subir as fotos
+    const resp = await fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ type: 'registro_semanal', sheetId: SHEET_ID, files }), redirect: 'follow', signal: _acR.signal });
     const j = await resp.json();
     if (!j.ok) throw new Error(j.error || 'falha');
     fb.innerHTML = `<div style="background:rgba(76,175,80,0.12);border-left:3px solid #4caf50;padding:9px;border-radius:4px;color:#a5d6a7;font-size:12px;">✅ ${j.saved} foto${j.saved > 1 ? 's' : ''} registrada${j.saved > 1 ? 's' : ''} (${escapeFotosTxt(j.date)}). Já entra no teu histórico aqui embaixo.</div>`;
@@ -18930,7 +19020,7 @@ async function _laudoMkSalva() {
     const fid = _laudoMk.fid, imgId = _laudoMk.imgId; _laudoMkFim(); _laudoMarcasAplica(imgId, fid);
     ['laudoImg', 'laudoDestImg'].forEach(id => { if (id !== imgId) { const o = document.getElementById(id); if (o && o.dataset.fid === fid && o.src) _laudoMarcasAplica(id, fid); } });
   } catch (e) {
-    alert('Não consegui salvar as marcações: ' + (e && e.message || e));
+    _ghToast(_h('Não consegui salvar as marcações: ' + (e && e.message || e)), 7000);
     _laudoMkRender();
   }
 }
@@ -19059,8 +19149,8 @@ function _cmpDefaultPick(idx) {
 async function _cmpLoadImg(fid, imgId) {
   // v550: a resposta só entra se o lado AINDA está nessa foto (trocar de foto antes de a anterior chegar deixava a foto antiga
   // com a etiqueta e a data da nova), e falha deixa de ficar em "carregando…" pra sempre
-  const poe = uri => { const el = document.getElementById(imgId); if (el && (!el.dataset.fid || el.dataset.fid === String(fid))) el.src = uri; };
-  const falhou = () => { const el = document.getElementById(imgId); const ld = el && el.previousElementSibling; if (el && el.dataset.fid === String(fid) && ld && ld.classList.contains('cmp-photo-loading')) ld.textContent = 'Não consegui carregar essa foto. Toca em "Trocar foto" e escolhe de novo.'; };
+  const poe = uri => { const el = document.getElementById(imgId); if (el && (!el.dataset.fid || el.dataset.fid === String(fid))) { el.onerror = () => falhou(); el.src = uri; } };   // v592: imagem que não decodifica também sai do "carregando…"
+  const falhou = () => { const el = document.getElementById(imgId); const ld = el && el.previousElementSibling; if (el && (!el.dataset.fid || el.dataset.fid === String(fid)) && ld && ld.classList.contains('cmp-photo-loading')) ld.textContent = 'Não consegui carregar essa foto. Toca em "Trocar foto" e escolhe de novo.'; };
   if (_cmpState.imgCache[fid]) { poe(_cmpState.imgCache[fid]); return; }
   try {
     const resp = await fetch(`${LOG_ENDPOINT}?action=foto_img&fid=${encodeURIComponent(fid)}&w=1280&_=${Date.now()}`, { cache:'no-store' });   // v554: foto de vários MB vinha inteira; agora vem na largura da tela
@@ -19236,7 +19326,7 @@ let _cmpShareImgs = { L: null, R: null };
 async function cmpShare() {
   const L = _cmpState.sel.L, R = _cmpState.sel.R;
   if (!L || !R || L.error || R.error || L.loading || R.loading) {
-    alert('Escolhe duas fotos válidas pros dois lados antes de compartilhar.');
+    _ghToast('Escolhe duas fotos válidas pros dois lados antes de compartilhar.', 5000);
     return;
   }
   const srcL = L.local ? L.url : _cmpState.imgCache[L.fid];
@@ -19257,7 +19347,7 @@ async function cmpShare() {
     teShow('cmpShareModal');
     _cmpDrawShare();
   } catch (e) {
-    alert('Não consegui carregar as fotos: ' + e.message);
+    _ghToast(_h('Não consegui carregar as fotos: ' + e.message), 7000);
   } finally {
     btn.disabled = false; btn.textContent = oldTxt;
   }
@@ -19325,7 +19415,7 @@ async function cmpShareExport() {
   btn.disabled = true; btn.textContent = '⏳ Gerando...';
   c.toBlob(async blob => {
     btn.disabled = false; btn.textContent = oldTxt;
-    if (!blob) { alert('Não consegui gerar a imagem.'); return; }
+    if (!blob) { _ghToast('Não consegui gerar a imagem.', 5000); return; }
     const file = new File([blob], 'evolucao-metodo-gh.png', { type: 'image/png' });
     try {
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -19617,10 +19707,12 @@ function _fdBuscaTalvez_() {
     if (Object.keys(_fdMapa_()).length) return;
     const kb = 'gh_fd_busca_' + SHEET_ID;
     if (localStorage.getItem(kb) === todayKey()) return;
-    localStorage.setItem(kb, todayKey());
+    if (Date.now() - (window._fdBuscaUlt || 0) < 600000) return;   // v592: falhou agora há pouco: espera 10 min
+    window._fdBuscaUlt = Date.now();
     _fdBuscando = true;
     fetch(`${LOG_ENDPOINT}?action=fechar_dia&id=${encodeURIComponent(SHEET_ID)}`, { redirect: 'follow' }).then(r => r.json()).then(j => {
       if (!j || !j.ok || !Array.isArray(j.dias)) return;   // servidor ainda sem a rota
+      localStorage.setItem(kb, todayKey());   // v592: só conta como "buscado hoje" quando a resposta chegou
       const m = _fdMapa_(); let mudou = false;
       const n5 = v => { const x = Math.floor(Number(v)); return (x >= 1 && x <= 5) ? x : 0; };
       j.dias.forEach(sv => {
@@ -20756,7 +20848,7 @@ function _progBodyHtml(items, fmt) {
   prs.forEach(it => {
     html += `<div style="display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid #26262c;">
       <div style="flex:1;min-width:0;">
-        <div style="color:#fff;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${it.name}</div>
+        <div style="color:#fff;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_dx(it.name)}</div>
         <div style="color:#7a7a82;font-size:10px;">Dia ${it.dia}</div>
       </div>
       ${it.isNewPR ? '<span style="background:var(--gold);color:#111;font-size:9px;font-weight:800;padding:2px 7px;border-radius:8px;">NOVO!</span>' : ''}
@@ -20774,7 +20866,7 @@ function _progBodyHtml(items, fmt) {
       html += `<div${click} class="prog-row">
         <div style="display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid #26262c;">
           <div style="flex:1;min-width:0;">
-            <div style="color:#fff;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${it.name}</div>
+            <div style="color:#fff;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_dx(it.name)}</div>
             <div style="color:#7a7a82;font-size:10px;">Dia ${it.dia} · ${fmtIt(it, it.vals.filter(v => v > 0)[0])} → ${fmtIt(it, it.vals.filter(v => v > 0).pop())}</div>
           </div>
           ${_progSpark(it.vals, cor)}
@@ -21268,7 +21360,7 @@ function _protoCacheSet(patch) {
 // fetch cru de uma aba (1 tentativa, sem retry): null em qualquer falha — quem chama decide o fallback
 async function _fetchCsvRaw(tab) {
   try {
-    const r = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}&headers=0&_=${Date.now()}`, { cache: 'no-store' });
+    const r = await _fetchPlanilha_(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}&headers=0&_=${Date.now()}`, { cache: 'no-store' }, 1);   // v592
     if (!r.ok) return null;
     return await r.text();
   } catch (_) { return null; }
@@ -21279,7 +21371,7 @@ async function loadDietFromSheets(injectedText) {
   // serve resposta cacheada/parcial na 1ª req pós-relaunch.
   const tryFetch = async (bust) => {
     const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('DIETA')}&headers=0${bust ? '&_=' + Date.now() : ''}`;
-    const res = await fetch(url, bust ? { cache: 'no-store' } : undefined);
+    const res = await _fetchPlanilha_(url, bust ? { cache: 'no-store' } : undefined, 1);   // v592: teto de 20 s (quem repete é o tryFetch)
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const text = await res.text();
     const rows = parseCSV(text);
@@ -21614,10 +21706,10 @@ function _renderTopCards(d) {
       titulo = linhas.shift().replace(/:\s*$/, '').trim(); tituloEntrega = true;
     }
     h += `<div class="gh-top-card gh-obs-card"${tituloEntrega ? ' data-titulo-entrega="1"' : ''}>
-      <div class="gh-top-card-title">✨ ${titulo}</div>
+      <div class="gh-top-card-title">✨ ${_dx(titulo)}</div>
       <ul class="gh-obs-list">`;
-    linhas.forEach(b => { h += `<li class="obs-entrega">${b}</li>`; });
-    vivos.forEach(a => { h += `<li class="obs-dia">${a.t} <span class="obs-dia-data">· ${a.d.slice(8, 10)}/${a.d.slice(5, 7)}</span></li>`; });
+    linhas.forEach(b => { h += `<li class="obs-entrega">${_dx(b)}</li>`; });
+    vivos.forEach(a => { h += `<li class="obs-dia">${_dx(a.t)} <span class="obs-dia-data">· ${a.d.slice(8, 10)}/${a.d.slice(5, 7)}</span></li>`; });
     h += `</ul></div>`;
   }
   return h;
@@ -22587,7 +22679,7 @@ function _faxinaChavesDiarias_() {
     const hoje = todayKey();
     if (localStorage.getItem('gh_faxina_dia') === hoje) return;
     localStorage.setItem('gh_faxina_dia', hoje);
-    const corte = Date.now() - 70 * 86400000;
+    const corte = Date.now() - 130 * 86400000;   // v592: 70 dias apagava marca diária que o Progresso (3 meses) ainda mostra
     const re = /^gh_(?:meal|meallog|mealnao|mealnota|dietlog|dietciclo|dietshare|refnotif|water|cardio|cardioreg|cardiolog)_.*?_(\d{4})-(\d{1,2})-(\d{1,2})(?:_|$)/;
     const apagar = [];
     for (let i = 0; i < localStorage.length; i++) {
@@ -22606,7 +22698,7 @@ function _refToast(titulo, texto) {
   t = document.createElement('div');
   t.id = 'refToast';
   t.className = 'water-toast show';
-  t.innerHTML = `<span class="wt-icon">🍽</span><div class="wt-text"><strong>${titulo}</strong><span>${texto}</span></div><button class="wt-close" onclick="this.parentElement.remove()" aria-label="Fechar">×</button>`;
+  t.innerHTML = `<span class="wt-icon">🍽</span><div class="wt-text"><strong>${_h(titulo)}</strong><span>${_h(texto)}</span></div><button class="wt-close" onclick="this.parentElement.remove()" aria-label="Fechar">×</button>`;
   document.body.appendChild(t);
   setTimeout(() => { try { t.remove(); } catch (_) {} }, 9000);
 }
@@ -22823,8 +22915,10 @@ function _mealPhotoPickClick() { document.getElementById('mpFile').click(); }
 function _onMealPhotoFile(input) {
   const f = input.files && input.files[0]; if (!f) return;
   const reader = new FileReader();
+  reader.onerror = () => { _ghToast('Não consegui abrir essa foto. Tenta outra ou tira de novo pela câmera.', 6000); };   // v592
   reader.onload = e => {
     const img = new Image();
+    img.onerror = () => { _ghToast('Não consegui abrir essa foto. Tenta outra ou tira de novo pela câmera.', 6000); };   // v592: HEIC que o navegador não abre não ficava mudo
     img.onload = () => {
       _mealPhotoDataUrl = drawMealCard(img);   // card 1080×1920 caprichado (mesmo padrão do treino)
       const prev = document.getElementById('mpPrev');
@@ -22944,9 +23038,9 @@ function renderDiet() {
   // saíam como "Calorias: (V4.0)". Marca de versão sozinha nem aparece.
   const _tkc = _infoKcalTipo(d.info.kcal), kcalEhNumero = _tkc === 'kcal';
   if (d.info.kcal && _tkc !== 'oculta') html += `<div class="diet-info-row"><span class="diet-info-label">${kcalEhNumero ? 'Calorias:' : 'Objetivo:'}</span><span class="diet-info-value">${_dx(d.info.kcal)}</span></div>`;
-  if (d.info.objetivo && (kcalEhNumero || String(d.info.objetivo).trim().toLowerCase() !== String(d.info.kcal || '').trim().toLowerCase())) html += `<div class="diet-info-row"><span class="diet-info-label">Objetivo:</span><span class="diet-info-value">${d.info.objetivo}</span></div>`;
+  if (d.info.objetivo && (kcalEhNumero || String(d.info.objetivo).trim().toLowerCase() !== String(d.info.kcal || '').trim().toLowerCase())) html += `<div class="diet-info-row"><span class="diet-info-label">Objetivo:</span><span class="diet-info-value">${_dx(d.info.objetivo)}</span></div>`;
   d.metas.forEach(m => {
-    html += `<div class="diet-info-row"><span class="diet-info-label">${m.campo}:</span><span class="diet-info-value">${m.valor}${m.detalhe ? ' · ' + m.detalhe : ''}</span></div>`;
+    html += `<div class="diet-info-row"><span class="diet-info-label">${_dx(m.campo)}:</span><span class="diet-info-value">${_dx(m.valor)}${m.detalhe ? ' · ' + _dx(m.detalhe) : ''}</span></div>`;
   });
   html += `</div>`;
 
@@ -22966,7 +23060,7 @@ function renderDiet() {
     html += `<div class="diet-section-toggle" onclick="toggleDietSection('regras')"><span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><polyline points="3 5.5 4 6.5 6 4.5"/><polyline points="3 11.5 4 12.5 6 10.5"/><polyline points="3 17.5 4 18.5 6 16.5"/></svg></span><span class="tog-label">Regras Gerais</span><span class="tog-chev" id="regrasArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></div>`;
     html += `<div class="diet-section-content" id="regrasContent">`;
     d.regras.forEach(r => {
-      html += `<div class="diet-rule"><span class="diet-rule-name">${r.nome}:</span><span class="diet-rule-value">${r.valor || ''}${r.detalhe ? ' · ' + r.detalhe : ''}</span></div>`;
+      html += `<div class="diet-rule"><span class="diet-rule-name">${_dx(r.nome)}:</span><span class="diet-rule-value">${_dx(r.valor || '')}${r.detalhe ? ' · ' + _dx(r.detalhe) : ''}</span></div>`;
     });
     html += `</div>`;
   }
@@ -22980,11 +23074,11 @@ function renderDiet() {
     suplTimings.forEach(timing => {
       const items = d.supls[timing] || [];
       if (!items.length) return; // section vazia (separator sem suplementos depois)
-      html += `<div class="diet-supl-group"><div class="diet-supl-timing">${_suplTimingIcon(timing)}${timing}</div>`;
+      html += `<div class="diet-supl-group"><div class="diet-supl-timing">${_suplTimingIcon(timing)}${_dx(timing)}</div>`;
       items.forEach(s => {
-        const obs = s.obs ? `<span class="diet-supl-obs" style="display:block;font-size:11px;opacity:0.7;margin-top:2px;">${s.obs}</span>` : '';
+        const obs = s.obs ? `<span class="diet-supl-obs" style="display:block;font-size:11px;opacity:0.7;margin-top:2px;">${_dx(s.obs)}</span>` : '';
         const _dz = _doseOuPadrao(s.dose, s.nome);
-        html += `<div class="diet-supl-item"><span class="diet-supl-name">${s.nome}${obs}</span><span class="diet-supl-dose${String(s.dose || '').trim() ? '' : ' conv'}">${_dz}</span></div>`;
+        html += `<div class="diet-supl-item"><span class="diet-supl-name">${_dx(s.nome)}${obs}</span><span class="diet-supl-dose${String(s.dose || '').trim() ? '' : ' conv'}">${_dx(_dz)}</span></div>`;
       });
       html += `</div>`;
     });
@@ -23085,7 +23179,7 @@ function renderDiet() {
       const m = String(o.categoria || '').match(/^(receitas?\s*\d*)\s*[·.:]?\s*(.*)$/i);
       const chip = m ? m[1].trim() : 'Receita';
       const nome = m && m[2] ? m[2].trim() : '';
-      html += `<div class="recipe-card"><div class="recipe-head"><span class="recipe-badge">${chip}</span>${nome ? `<span class="recipe-name">${nome}</span>` : ''}</div><div class="recipe-text">${o.texto}</div></div>`;
+      html += `<div class="recipe-card"><div class="recipe-head"><span class="recipe-badge">${_dx(chip)}</span>${nome ? `<span class="recipe-name">${_dx(nome)}</span>` : ''}</div><div class="recipe-text">${_dx(o.texto)}</div></div>`;
     });
     html += `</div>`;
   }
@@ -23131,16 +23225,16 @@ function renderDiet() {
       // sem ícone de pílula nem nome em destaque (16/08: "Aferir a pressão 2x na semana..."
       // virava card de remédio no app do João Márcio).
       if (!p.dose && !p.obs && String(p.nome || '').length > 45) {
-        html += `<div class="proto-nota">${p.nome}</div>`;
+        html += `<div class="proto-nota">${_dx(p.nome)}</div>`;
         return;
       }
       html += `<div class="proto-card">`;
       html += `<div class="proto-card-header">`;
       html += `<div class="proto-icon">${icon}</div>`;
-      html += `<div><div class="proto-name">${p.nome}</div></div>`;
+      html += `<div><div class="proto-name">${_dx(p.nome)}</div></div>`;
       html += `</div>`;
-      if (p.dose) html += `<div class="proto-detail-row"><span class="proto-detail-label">Dose</span><span class="proto-detail-value">${p.dose}</span></div>`;
-      if (p.obs) html += `<div class="proto-obs">${p.obs}</div>`;
+      if (p.dose) html += `<div class="proto-detail-row"><span class="proto-detail-label">Dose</span><span class="proto-detail-value">${_dx(p.dose)}</span></div>`;
+      if (p.obs) html += `<div class="proto-obs">${_dx(p.obs)}</div>`;
       // Calculadora de dose (GH 14/08): só onde faz sentido puxar seringa — item de
       // via oral (comprimido/cápsula) não ganha botão, senão vira ruído no card.
       if (p.dose && _dcDoseCalculavel(p.dose) && !_dcEhOral(p.nome, p.obs, p.dose) && !_dcDoseEhGrama(p.dose)) {
@@ -23188,14 +23282,14 @@ function _infoKcalTipo(k) {
 function _renderMacroDia(d) {
   let h = `<div class="diet-macro-card"><div class="diet-macro-title">Meta de macros do dia</div>`;
   (d.macroDia || []).forEach(m => {
-    if (m.label) h += `<div class="diet-macro-cyclabel">${m.label}</div>`;
+    if (m.label) h += `<div class="diet-macro-cyclabel">${_dx(m.label)}</div>`;
     // v549: linha de macros sem as calorias (31 dietas) deixava a casa "kcal" vazia: com uma linha só, vale a caloria do cabeçalho
     h += _macroStatsGrid(m.pcg, m.kcal || (((d.macroDia || []).length === 1 && d.info && /\d[\d.]*\s*kcal/i.test(String(d.info.kcal || ''))) ? String(d.info.kcal) : ''));
     if (m.extra) h += `<div class="diet-macro-porque">${_dx(m.extra)}</div>`;   // v549: o que veio escrito junto dos macros
   });
   if (d.macroPorque) {
     const txt = String(d.macroPorque).replace(/^por que esses macros[:\s]*/i, '').trim();
-    h += `<div class="diet-macro-porque"><b>Por que esses macros:</b> ${txt}</div>`;
+    h += `<div class="diet-macro-porque"><b>Por que esses macros:</b> ${_dx(txt)}</div>`;
   }
   h += `</div>`;
   return h;
@@ -23213,9 +23307,9 @@ function _macroStatsGrid(pcg, kcal) {
   const kdisp = k ? k.replace(/\s*kcal/ig, '').trim() : '';
   if (!(map.P || map.C || map.G)) {           // parse falhou: mostra o texto cru (sem grid)
     const raw = [pcg, kcal].filter(Boolean).join(' · ');
-    return `<div class="diet-macro-rawline">${raw}</div>`;
+    return `<div class="diet-macro-rawline">${_dx(raw)}</div>`;
   }
-  const cell = (v, l, cls) => `<div class="diet-macro-stat"><div class="v${cls ? ' ' + cls : ''}">${v || ''}</div><div class="l">${l}</div></div>`;
+  const cell = (v, l, cls) => `<div class="diet-macro-stat"><div class="v${cls ? ' ' + cls : ''}">${_dx(v || '')}</div><div class="l">${l}</div></div>`;
   return `<div class="diet-macro-stats">${cell(map.P, 'Proteína')}${cell(map.C, 'Carbo')}${cell(map.G, 'Gordura')}${kdisp ? cell(kdisp, 'kcal', 'kcal') : ''}</div>`;   // v549: sem caloria conhecida, a casa "kcal" não aparece vazia
 }
 // v532 (GH 30/09/2026, Rodrigo Müller abre todo dia pelo Safari sem instalar): aviso pra instalar "pra otimizar o uso".
@@ -24613,7 +24707,7 @@ function showAC(input, rowIdx) {
   const matches = EXERCISE_DB.filter(e => e.n.toLowerCase().includes(q)).slice(0, 8);
   if (matches.length === 0) { drop.style.display = 'none'; return; }
   drop.innerHTML = matches.map(m =>
-    `<div class="ed-ac-item" onmousedown="selectAC(${rowIdx},'${_jsArgAttr(m.n)}','${_jsArgAttr(m.v)}')">${m.n}</div>`
+    `<div class="ed-ac-item" onmousedown="selectAC(${rowIdx},'${_jsArgAttr(m.n)}','${_jsArgAttr(m.v)}')">${escH(m.n)}</div>`
   ).join('');
   drop.style.display = 'block';
 }
@@ -24797,7 +24891,7 @@ function generateLink() {
 
 // Copia o link do protocolo do aluno a partir do editor (nome do sheet + aba atual).
 function teCopyProtoLink(btn) {
-  const url = `https://app.metodogh.com.br/?sheet=${trainerSheetId}&tab=${currentEditMode === 'dieta' ? 'DIETA' : 'TREINO'}`;
+  const url = `https://app.metodogh.com.br/?sheet=${encodeURIComponent(trainerSheetId)}&tab=${currentEditMode === 'dieta' ? 'DIETA' : 'TREINO'}`;
   const label = btn ? btn.textContent : '';
   const done = () => { if (btn) { btn.textContent = '✅ copiado'; setTimeout(() => { btn.textContent = label; }, 1600); } };
   const fallback = () => {
@@ -25059,7 +25153,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v591';
+    var APP_SHELL_V = 'metodo-gh-v592';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -25794,7 +25888,7 @@ window.addEventListener('popstate', function () {
   setTimeout(_voltarSinc_, 90);                // ainda tem camada embaixo (vídeo por cima do modo treino): arma de novo
 });
 document.addEventListener('click', function () { setTimeout(_voltarSinc_, 90); }, true);
-function teHide(id) { document.getElementById(id).classList.remove('show'); }
+function teHide(id) { document.getElementById(id).classList.remove('show'); try { setTimeout(_voltarSinc_, 60); } catch (_) {} }   // v592: modal fechado por código (sem toque) também devolve o botão Voltar
 
 // ── Recado em áudio (só treinador, no editor) ──
 // Grava voz no navegador → base64 → POST type:'recado' pro Apps Script, que
@@ -26122,8 +26216,9 @@ async function recadoSend() {
       fr.onerror = rej;
       fr.readAsDataURL(_recadoBlob);
     });
+    const _acRec = new AbortController(); setTimeout(() => { try { _acRec.abort(); } catch (_) {} }, 180000);   // v592: áudio grande, 3 min
     const resp = await fetch(TRAINER_APPS_SCRIPT, {
-      method: 'POST', redirect: 'follow',
+      method: 'POST', redirect: 'follow', signal: _acRec.signal,
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ type: 'recado', sheetId: trainerSheetId, base64: b64, mime: _recadoMime, permanente: _recadoPerm, token: localStorage.getItem('gh_trainer_token') || '' })   // v479: .gs 19a exige
     });
@@ -26393,7 +26488,7 @@ function renderEditorTopBar() {
   // Link do protocolo do aluno: abrir (nova aba) + copiar (pra mandar no zap).
   // No mobile a barra quebra e essa linha fica inteira visível (antes era espremida
   // a zero pelas abas/botões e o link sumia — GH 2026-07-06).
-  const protoUrl = `https://app.metodogh.com.br/?sheet=${trainerSheetId}&tab=${currentEditMode === 'dieta' ? 'DIETA' : 'TREINO'}`;
+  const protoUrl = `https://app.metodogh.com.br/?sheet=${encodeURIComponent(trainerSheetId)}&tab=${currentEditMode === 'dieta' ? 'DIETA' : 'TREINO'}`;
   document.getElementById('trainerStudentInfo').innerHTML =
     `<span class="te-info-name"><strong>${escTrainer(studentName)}</strong>${meta ? ' · ' + escTrainer(meta) : ''}</span>` +
     `<span class="te-info-link">` +
