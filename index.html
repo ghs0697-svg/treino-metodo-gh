@@ -194,8 +194,8 @@
     background: transparent;
     border: 1px solid rgba(255, 255, 255, 0.12);
     color: var(--gray);
-    width: 32px;
-    height: 32px;
+    width: 38px;   /* v591: alvo de toque */
+    height: 38px;
     border-radius: 50%;
     font-size: 16px;
     cursor: pointer;
@@ -416,8 +416,8 @@
   .ex-presc .tp-chip.t-pap { color: var(--c-ink); border-color: var(--c-pap); background: var(--c-pap); }
   .ex-presc .tp-chip.t-val { color: var(--c-ink); border-color: var(--c-val); background: var(--c-val); }
   .ex-presc .tp-chip.t-pap b, .ex-presc .tp-chip.t-val b { color: var(--c-ink); }
-  .set-row.feita .set-in { opacity: .38; }
-  .set-row.feita .set-prev { opacity: .38; }
+  .set-row.feita .set-in { opacity: .55; }   /* v591: .38 apagava o numero logo depois de marcar a serie */
+  .set-row.feita .set-prev { opacity: .5; }
   .set-head .set-num { width: 24px; min-width: 24px; }
   .set-in {
     background: #222; border: 1px solid var(--gold-dim); border-radius: 6px;
@@ -1331,6 +1331,7 @@
   .set-sug .und { background: none; border: none; color: #c9bf9f; font-family: inherit; font-size: 11.5px; text-decoration: underline; cursor: pointer; padding: 3px 0 0; }
   .dia-start { width: 100%; border: none; border-radius: 14px; padding: 16px; margin-top: 6px; background: linear-gradient(180deg, var(--gold-bright) 0%, #C79F52 100%); color: #120F0A; font-family: inherit; font-size: 16px; font-weight: 800; cursor: pointer; box-shadow: 0 8px 22px rgba(212,175,106,.22); }
   .dia-start:active { transform: scale(.99); }
+  .dia-start.fechado { background: transparent; color: var(--gold); border: 1px solid var(--gold-dim); }   /* v591 */
   .dia-lista { display: block; margin: 9px auto 2px; background: none; border: none; color: var(--muted); font-family: inherit; font-size: 12.5px; text-decoration: underline; cursor: pointer; padding: 4px; }
   .ex-dica-troca { display: flex; align-items: center; gap: 10px; background: rgba(212,175,106,.08); border: 1px solid rgba(212,175,106,.3); border-radius: 12px; padding: 10px 12px; margin: 0 0 12px; color: #d9d4cb; font-size: 12px; line-height: 1.5; }
   .ex-dica-troca b { color: var(--gold); }
@@ -1365,7 +1366,8 @@
   .sub-picker-close { width: 100%; margin-top: 6px; background: transparent; border: 1px solid #3a3a42; color: #b8b8c0; padding: 12px; border-radius: 11px; font-size: 14px; font-weight: 600; cursor: pointer; }
 
   /* ── Timer overlay ── */
-  .timer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 11000; }
+  .timer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 11000; overflow-y: auto; padding: 16px 0 calc(16px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; }
+  .timer-ring svg { width: min(230px, 58vw); height: auto; }   /* v591: com a letra grande o anel passava da tela e os botoes sumiam */
   .timer-overlay.show { display: flex; }
   .timer-name { color: var(--gold); font-size: 16px; font-weight: 700; margin-bottom: 20px; max-width: 320px; text-align: center; padding: 0 12px; }
   .timer-display { color: var(--white); font-size: 110px; font-weight: 800; font-family: 'Courier New', monospace; line-height: 1; }
@@ -1414,7 +1416,7 @@
   .renov-banner.diary b { color: #ffe9b8; }
   .renov-banner-txt { flex: 1; min-width: 0; }
   .renov-banner-cta { background: #25D366; color: #07310f; font-weight: 800; padding: 6px 13px; border-radius: 999px; text-decoration: none; white-space: nowrap; flex-shrink: 0; }
-  .renov-banner-x { background: none; border: none; color: inherit; opacity: 0.7; font-size: 18px; line-height: 1; cursor: pointer; padding: 0 2px; flex-shrink: 0; }
+  .renov-banner-x { background: none; border: none; color: inherit; opacity: 0.7; font-size: 20px; line-height: 1; cursor: pointer; padding: 8px 10px; margin: -8px -6px -8px 0; flex-shrink: 0; }   /* v591: alvo de toque */
   .renov-banner-done { background: none; border: none; color: inherit; opacity: 0.85; font-size: 11.5px; font-weight: 600; text-decoration: underline; cursor: pointer; padding: 0 2px; flex-shrink: 0; white-space: nowrap; font-family: inherit; }
 
   /* ── Aviso de reajuste/ajuste no protocolo ── */
@@ -1536,7 +1538,7 @@
   .ft-todos { background: none; border: 0; color: var(--gold); font: inherit; font-size: 12px; font-weight: 700; text-decoration: underline; padding: 8px 0 0; cursor: pointer; }
   #ftBtn { width: 100%; margin-top: 12px; background: var(--gold); color: #15100a; border: none; border-radius: 12px; padding: 12px; font-weight: 800; font-size: 14px; font-family: inherit; cursor: pointer; }
   .ft-ghost { width: 100%; margin-top: 8px; background: none; border: 1px solid #333; border-radius: 10px; color: #9a9388; font: inherit; font-size: 13px; font-weight: 600; padding: 10px; cursor: pointer; }
-  .wt-fechar { background: var(--gold); color: #15100a; border: 0; border-radius: 8px; font: inherit; font-size: 12px; font-weight: 800; padding: 6px 10px; margin: 4px 0 0 4px; cursor: pointer; }
+  .wt-fechar { background: var(--gold); color: #15100a; border: 0; border-radius: 9px; font: inherit; font-size: 13px; font-weight: 800; padding: 9px 13px; margin: 4px 0 0 4px; cursor: pointer; }   /* v591: e a acao principal do dia, era o menor botao da tela */
   .ach-como { margin: 2px 0 8px; padding: 10px 11px; border: 1px solid rgba(212,175,106,.35); border-radius: 11px; background: rgba(212,175,106,.06); }
   .ach-como .ft-tit, .ach-como .ft-dica { text-align: center; }
   .ach-como .ft-chips { justify-content: center; }
@@ -2171,7 +2173,7 @@
   .tlem-days { display: flex; gap: 6px; flex-wrap: wrap; }
   .tlem-day { flex: 1; min-width: 38px; padding: 9px 0; border-radius: 10px; border: 1px solid #33302a; background: #171613; color: #b6ae9e; font-weight: 800; font-size: 12px; cursor: pointer; }
   .tlem-day.on { background: var(--gold); border-color: var(--gold); color: #141310; }
-  .tlem-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .tlem-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 6px; }   /* v591: em tela de 320 px cada hora tinha 30 px */
   .tlem-min { grid-template-columns: repeat(6, 1fr); margin-top: 6px; }
   .tlem-h { padding: 8px 0; border-radius: 8px; border: 1px solid #33302a; background: #171613; color: #b6ae9e; font-weight: 700; font-size: 11.5px; cursor: pointer; }
   .tlem-h.on { background: var(--gold); border-color: var(--gold); color: #141310; }
@@ -3444,8 +3446,23 @@
   .te-btn {
     background: var(--gold); color: #15100a; border: none;
     padding: 10px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; margin-right: 6px;
-    transition: background 0.15s;
+    transition: background 0.15s; font: inherit; font-size: 14px; font-weight: 700; min-height: 42px;   /* v591: fonte do app, nao a do navegador */
   }
+  .te-btn:disabled, .mp-share:disabled, .wt-fechar:disabled, #csBtn:disabled { opacity: .45; cursor: default; }   /* v591: botao desligado parece desligado */
+  .tlem-save { width: 100%; background: var(--gold); color: #15100a; border: none; border-radius: 12px; padding: 12px; font-weight: 800; font-size: 14px; font-family: inherit; cursor: pointer; }   /* v591: "Salvar anotacao" saia como botao cru do navegador */
+  @supports (height: 1dvh) { .te-modal-box { max-height: calc(90dvh / var(--fz, 1) - env(safe-area-inset-bottom, 0px)) !important; } }   /* v591: no Safari a barra de baixo cobria o fim da caixa (Fechar/Enviar) */
+  @media (hover: none) {   /* v591: no celular o botao ficava "preso" no estado dourado depois do toque */
+    .ex-action-btn:hover { background: rgba(255, 255, 255, 0.05); }
+    .water-btn:hover { background: transparent; color: inherit; }
+    .ex-check:hover { border-color: rgba(255, 255, 255, 0.25); }
+    .timer-btn:hover { background: #2a2a2a; }
+    .timer-btn.primary:hover { background: var(--gold); }
+    .cmp-chip:hover, .cmp-swap-sides button:hover, .diet-action-btn:hover { border-color: #3a3a40; color: inherit; }
+  }
+  @media (pointer: coarse) {   /* v591: campo abaixo de 16 px faz o Safari dar zoom na pagina a cada toque */
+    .te-modal-box input[type="text"], .te-modal-box input[type="password"], .te-modal-box textarea, .te-modal-box select, .pg-sel { font-size: max(16px, 1em) !important; }   /* !important: os textarea dos modais trazem 13px no style inline */   /* a grade de series fica em 14 px (desenho aprovado, v584) */
+  }
+  body.has-bnav .gh-toast { bottom: calc(104px + env(safe-area-inset-bottom, 0px)); }   /* v591: o aviso caia em cima da barra de baixo */
   .te-btn.ghost { background: transparent; color: var(--gray); border: 1px solid rgba(255, 255, 255, 0.14); }
   .te-btn.danger { background: #c0392b; color: #fff; }
 
@@ -5635,7 +5652,7 @@
       <input type="date" id="cadernoDia" style="flex:1;min-width:0;background:#141414;border:1px solid #333;border-radius:8px;color:#eee;padding:8px 10px;font-size:13px;font-family:inherit;color-scheme:dark;">
     </div>
     <p style="color:#777;font-size:10.5px;margin:4px 0 0;line-height:1.45;">Deixa em hoje, ou escolhe o dia que a anotação é sobre: um treino fraco, uma dor, uma refeição que não desceu.</p>
-    <button type="button" id="cadernoSalvarBtn" class="tlem-save" onclick="salvarCaderno()" style="width:100%;margin-top:8px;">Salvar anotação</button>
+    <button type="button" id="cadernoSalvarBtn" class="tlem-save" onclick="salvarCaderno()" style="margin-top:8px;">Salvar anotação</button>
     <div id="cadernoLista" style="margin-top:14px;"></div>
     <div id="diarioLista"></div>
   </div>
@@ -5664,6 +5681,7 @@
     <div class="ft-bloco"><div class="ft-tit">Intensidade</div><div class="ft-chips" id="csInt"></div><div class="ft-dica">Leve: conversa fácil. Moderado: fala frases curtas. Forte: mal consegue falar.</div></div>
     <button type="button" id="csBtn" onclick="cardioSessSalvar()">Salvar o cardio</button>
     <button type="button" class="ft-ghost" id="csSo" onclick="cardioSessSo()">Só marcar como feito</button>
+    <button type="button" class="ft-ghost" id="csFechar" onclick="cardioSessFecha()" style="display:none;">Fechar sem salvar</button>
     <p style="color:#777;font-size:10.5px;margin:10px 0 0;line-height:1.5;text-align:center;">Marcar o dia conta no ranking do mesmo jeito. Os números ficam no teu histórico e eu vejo no reajuste.</p>
   </div>
 </div>
@@ -6137,7 +6155,7 @@
     <div id="fotosWindowStatus" style="background:#222;border-radius:6px;padding:12px;margin:0 0 14px;font-size:13px;line-height:1.5;">
       <span style="color:#888;">Verificando janela de envio…</span>
     </div>
-    <div id="fotosUploadArea" style="display:none;flex:1;overflow-y:auto;min-height:0;">
+    <div id="fotosUploadArea" style="display:none;flex:0 0 auto;">
       <div class="fotos-grid" id="fotosGrid">
         <div class="foto-slot" data-role="frente" onclick="_fotoSlotClick('frente')">
           <input type="file" accept="image/*" data-role="frente" onchange="_onFotoSlotChange('frente', this)" style="display:none;">
@@ -6164,7 +6182,12 @@
           <button type="button" class="foto-slot-remove" onclick="_removeFotoSlot(event, 'esquerdo')" style="display:none;">×</button>
         </div>
       </div>
-      <button class="te-btn primary" type="button" id="fotosSendBtn" onclick="enviarFotos()" style="width:100%;margin-top:12px;display:none;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Enviar</button>
+    </div>
+    <!-- v591: o botao Enviar ficava DENTRO da area rolavel, abaixo das 4 fotos: em celular pequeno o aluno escolhia as fotos,
+         nao via o botao e fechava achando que tinha mandado ("nao consegui mandar pelo app", 3 alunos). Agora fica fixo embaixo. -->
+    <div id="fotosRodape" style="display:none;position:sticky;bottom:0;background:#161513;padding:10px 0 2px;margin-top:4px;border-top:1px solid rgba(255,255,255,.08);flex-shrink:0;">
+      <div id="fotosRodapeTxt" style="font-size:12px;color:#c9b58a;margin:0 0 6px;text-align:center;line-height:1.4;"></div>
+      <button class="te-btn primary" type="button" id="fotosSendBtn" onclick="enviarFotos()" style="width:100%;margin:0;display:none;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Enviar</button>
     </div>
     <div id="fotosFeedback" style="margin-top:8px;font-size:13px;"></div>
     </div><!-- /fotosPaneEnviar -->
@@ -6205,7 +6228,7 @@
       </div>
     </div><!-- /fotosPaneComparar -->
 
-    <button class="te-btn ghost" onclick="teHide('fotosModal')" style="width:100%;margin-top:12px;">Fechar</button>
+    <button class="te-btn ghost" onclick="fotosFechar()" style="width:100%;margin-top:12px;">Fechar</button>
   </div>
 </div>
 
@@ -7578,6 +7601,8 @@ function _resolveDayActiveCalc_(di) {
 // aparece essa versao com os numeros dela (o que foi feito naquela semana). O treino de hoje nao muda, e a troca feita com a
 // semana aberta ganha (_semVistaOff). So exibicao: nada e gravado, movido ou apagado.
 const _semVistaOff = {};
+function _semVistaOffKey_(di, ei, w) { let c = '0'; try { c = localStorage.getItem('gh_done_atual_' + STUDENT_ID) || '0'; } catch (_) {} return 'gh_semvoff_' + STUDENT_ID + '_' + di + '_' + ei + '_w' + w + '_' + c; }
+function _semVistaOffSalvo_(di, ei, w) { try { return localStorage.getItem(_semVistaOffKey_(di, ei, w)) === '1'; } catch (_) { return false; } }
 function _slotDadoEm_(di, ei, w, sf) {
   if (!sf && !_cargaValida(di, ei, w)) return { tem: false, ts: 0 };
   let tem = false;
@@ -7591,7 +7616,7 @@ function _semanaVista_(di, exs, res) {
   const w = currentWeek, hoje0 = new Date(); hoje0.setHours(0, 0, 0, 0);
   exs.forEach((e, ei) => {
     const r = res[ei];
-    if (!e || e.biset || e.warmup || !r || !r.name || _semVistaOff[di + '|' + ei + '|' + w]) return;
+    if (!e || e.biset || e.warmup || !r || !r.name || _semVistaOff[di + '|' + ei + '|' + w] || _semVistaOffSalvo_(di, ei, w)) return;
     const grp = _grupoDe(e.name); if (!grp) return;
     const on = _normEx(e.name), sfDe = nome => (_normEx(nome) === on ? '' : '_' + _normEx(nome));
     if (_slotDadoEm_(di, ei, w, sfDe(r.name)).tem) return;      // o exibido ja tem numero nesta semana: fica
@@ -7699,8 +7724,10 @@ function escolherSub(di, ei, chosenNorm, doArrasto) {
     try { _flushSetsPendentes_(false); } catch (_) {}   // v480: todo pendente, no slot de antes da troca
     if (typeof flushCargaPendente_ === 'function') flushCargaPendente_(di, ei);   // salva carga digitada no slot ATUAL antes da troca mudar o sufixo (corrida 400ms)
     try { _semVistaOff[di + '|' + ei + '|' + currentWeek] = 1; } catch (_) {}   // v579: troca feita com a semana aberta ganha da versao feita nela
+    try { localStorage.setItem(_semVistaOffKey_(di, ei, currentWeek), '1'); } catch (_) {}   // v591: ...e segue ganhando depois de fechar o app (Patricia 25/09: "a troca volta sozinha")
     const k = _subKey(di, ei, ex.name);
     localStorage.removeItem(_subKeyLegacy(di, ex.name));   // A6: migra — limpa a chave antiga (dia+nome) ao mexer na troca
+    try { localStorage.removeItem(_subKeyHifenLegado(di, ei, ex.name)); } catch (_) {}   // v591: "voltar pro original" deixava a chave do hifen e a troca reaparecia
     const voltouOriginal = (!chosenNorm || _normEx(chosenNorm) === _normEx(ex.name));
     if (voltouOriginal) localStorage.removeItem(k);
     else localStorage.setItem(k, _normEx(chosenNorm));
@@ -8809,7 +8836,7 @@ function loadSets(d, e, w) {
   const sf = _cargaSlotSuffix(d, e);
   let raw = sf ? localStorage.getItem(setsKey(d, e, w) + sf)
               : (_cargaValida(d, e, w) ? localStorage.getItem(setsKey(d, e, w)) : null);
-  if (raw) { try { const a = JSON.parse(raw); if (Array.isArray(a) && a.length) return a; } catch (_) {} }
+  if (raw) { try { const a = JSON.parse(raw); if (Array.isArray(a)) { const b = a.filter(x => x && typeof x === 'object'); if (b.length) return b; } } catch (_) {} }   // v591: item nulo na grade (aparelho com lixo) derrubava o render do dia inteiro
   // retrocompat: sem grade, mas com carga/placa única antiga → Série 1 = valor antigo
   const kg = loadCarga(d, e, w), pl = loadPlacas(d, e, w);
   if (kg || pl) return [{ kg: kg || '', pl: pl || '', reps: '', rs: '' }];
@@ -9425,7 +9452,7 @@ function _syncQueueDropAte(kind, payload, dedupKeyFn) {
 // devolve HTML e o .gs 19a devolve success:false quando o Sheets falha)
 async function _gasGravou(resp) {
   if (!resp || !resp.ok) return false;
-  try { const j = await resp.json(); return !!j && j.success !== false; } catch (_) { return false; }
+  try { const j = await resp.json(); return !!j && j.success !== false && j.ok !== false; } catch (_) { return false; }   // v591: {ok:false} tambem e "nao gravou"
 }
 function _syncQueuePush(kind, payload, dedupKeyFn) {
   try {
@@ -9624,16 +9651,7 @@ function syncEsforcoToServer_(di, ei, w, esforco, aparelho) {
     aparelho: aparelho || '',
     ts: new Date().toISOString()
   };
-  const enfileira = () => _syncQueuePush('esforco', payload, p => `${p.di}|${p.ei}|${p.w}`);
-  try {
-    fetch(LOG_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload),
-      keepalive: true,
-      redirect: 'follow'
-    }).then(async resp => { if (!(await _gasGravou(resp))) enfileira(); }).catch(enfileira);   // v480: HTTP 200 nao prova gravacao
-  } catch (_) { enfileira(); }
+  _enviaComFila_('esforco', payload, p => `${p.di}|${p.ei}|${p.w}`);   // v591: na fila antes de tentar (app fechado no meio do envio nao perde)
 }
 
 // Espelha o syncEsforcoToServer_. Fire-and-forget + fila offline: o aluno anota na academia
@@ -9651,16 +9669,7 @@ function syncNotaToServer_(di, ei, w, nota) {
     nota: nota || '',
     ts: new Date().toISOString()
   };
-  const enfileira = () => _syncQueuePush('nota_serie', payload, p => `${p.di}|${p.ei}|${p.w}`);
-  try {
-    fetch(LOG_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload),
-      keepalive: true,
-      redirect: 'follow'
-    }).then(async resp => { if (!(await _gasGravou(resp))) enfileira(); }).catch(enfileira);   // v480: HTTP 200 nao prova gravacao
-  } catch (_) { enfileira(); }
+  _enviaComFila_('nota_serie', payload, p => `${p.di}|${p.ei}|${p.w}`);   // v591: na fila antes de tentar
 }
 
 // ══ Lembrete "hoje tem treino" (GH 23/08): dias da semana + horário escolhidos
@@ -9749,16 +9758,7 @@ function syncTreinoLembreteToServer_() {
     dias: (p.d || []).join(','), hora: p.h || '', ligado: !!p.on,
     ts: new Date().toISOString()
   };
-  const enfileira = () => _syncQueuePush('treino_lembrete', payload, () => 'pref');
-  try {
-    fetch(LOG_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload),
-      keepalive: true,
-      redirect: 'follow'
-    }).then(async resp => { if (!(await _gasGravou(resp))) enfileira(); }).catch(enfileira);   // v480: HTTP 200 nao prova gravacao
-  } catch (_) { enfileira(); }
+  _enviaComFila_('treino_lembrete', payload, () => 'pref');   // v591: na fila antes de tentar
 }
 // ══ CADERNO DE BORDO (GH 29/08) ══
 // Um bloco por aluno com os PARÂMETROS PERMANENTES dele. Motivo, nas palavras do GH: aluno
@@ -10617,7 +10617,7 @@ function _semanaPromptBoot() {
     if (!u) return;
     const k = 'gh_sem_boot_' + SHEET_ID + '_' + todayKey() + '_w' + currentWeek;
     if (localStorage.getItem(k)) return;
-    if (document.querySelector('.evo-overlay.show, .te-modal-overlay.active, .install-modal.active, #focusOverlay.show')) return;
+    if (document.querySelector('.evo-overlay.show, .te-modal-overlay.show, .te-modal-overlay.active, .install-modal.active, #focusOverlay.show')) return;   // v591: .show e a classe das caixas
     localStorage.setItem(k, '1');
     _semanaPromptAbrir(currentDay, null, u);
   } catch (_) {}
@@ -11512,17 +11512,41 @@ function _prSemente(di, ei, w) {
     const nomeAgora = _normEx(_exNameAt(di, ei));
     let posConfiavel = !sf;
     const hi = Math.max((typeof TOTAL_WEEKS === 'number' ? TOTAL_WEEKS : 8), 24);
+    const topo = (raw, soVal) => { try { const a = JSON.parse(raw); (soVal ? _soVal(di, ei, a) : a).forEach(s => { const v = parseFloat(String((s && s.kg) || '').replace(',', '.')); if (isFinite(v) && v > max && v < 2000) max = v; }); } catch (_) {} };
     for (let ww = 1; ww <= hi; ww++) {
       if (!sf) { const exn = localStorage.getItem(exnKey(di, ei, ww)); if (exn && _normEx(exn) !== nomeAgora) { posConfiavel = false; continue; } }
       if (ww === w) continue;
       const raw = localStorage.getItem(setsKey(di, ei, ww) + sf);
       if (raw) {
-        try { _soVal(di, ei, JSON.parse(raw)).forEach(s => { const v = parseFloat(String((s && s.kg) || '').replace(',', '.')); if (isFinite(v) && v > max && v < 2000) max = v; }); } catch (_) {}
+        topo(raw, true);
       } else if (!sf) {
         const leg = parseFloat(localStorage.getItem(storageKey(di, ei, ww)) || '0');
         if (leg > max && leg < 2000) max = leg;
       }
     }
+    // v591: o MESMO exercicio em outra posicao (reajuste que mudou o dia, troca que o pos como substituto) e o arquivo por nome
+    // entram no ponto de partida. Antes so a posicao atual contava: 1a semana do protocolo novo, 2a sessao um pouco mais pesada,
+    // saia "NOVO RECORDE" pra quem ja tinha levantado mais meses antes (Luisao, 14/10).
+    try {
+      const nomeAtivo = _normEx(_exAtivoNome_(di, ei) || '') || nomeAgora;
+      if (nomeAtivo) {
+        const pEx = 'gh_exn_' + STUDENT_ID + '_d', pSets = 'gh_sets_' + STUDENT_ID + '_d';
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i); if (!k) continue;
+          if (k.indexOf(pEx) === 0) {
+            if (_normEx(localStorage.getItem(k) || '') !== nomeAtivo) continue;
+            const m = k.slice(pEx.length).match(/^(\d+)_e([0-9ab]+)_w(\d+)$/); if (!m) continue;
+            if (+m[1] === di && String(m[2]) === String(ei)) continue;   // a posicao atual ja foi lida acima
+            const raw = localStorage.getItem(setsKey(+m[1], m[2], +m[3])); if (raw) topo(raw, false);
+          } else if (k.indexOf(pSets) === 0 && k.slice(-(nomeAtivo.length + 1)) === '_' + nomeAtivo) {
+            const m = k.slice(pSets.length).match(/^(\d+)_e([0-9ab]+)_w(\d+)_/); if (!m) continue;
+            if (+m[1] === di && String(m[2]) === String(ei)) continue;
+            const raw = localStorage.getItem(k); if (raw) topo(raw, false);
+          }
+        }
+        if (typeof _arqDoExercicio_ === 'function') _arqDoExercicio_(nomeAtivo).forEach(x => { const v = Number(x && x.k) || 0; if (v > max && v < 2000) max = v; });
+      }
+    } catch (_) {}
     if (posConfiavel) {
       const pre = setsKey(di, ei, '');   // gh_sets_<id>_d<di>_e<ei>_w
       for (let i = 0; i < localStorage.length && posConfiavel; i++) { const k = localStorage.key(i); if (k && k.indexOf(pre) === 0 && /^\d+_./.test(k.slice(pre.length))) posConfiavel = false; }   // já teve substituto aqui
@@ -12110,6 +12134,10 @@ function confirmWeekReset() {
       const k = localStorage.key(i);
       if (k && k.indexOf(pref) === 0 && k.endsWith(suf)) localStorage.removeItem(k);
     }
+  } catch (_) {}
+  try {   // v591: a marca de "treino curto fechado" desta semana zera junto (senao o dia seguia fechado no modo curto)
+    const pref2 = `gh_shortok_${STUDENT_ID}_w${currentWeek}_d`;
+    for (let i = localStorage.length - 1; i >= 0; i--) { const k = localStorage.key(i); if (k && k.indexOf(pref2) === 0) localStorage.removeItem(k); }
   } catch (_) {}
   closeWeekReset();
   if (navigator.vibrate) navigator.vibrate(30);
@@ -13155,6 +13183,8 @@ function _focusEntryBtn(di) {
 let _focusOpenedAt = 0;
 // v481: um comeco so (o cronometro e o modo treino eram dois botoes disputando o inicio do dia).
 function comecarTreino() {
+  // v591: dia ja fechado nesta semana e sem cronometro vivo: avisa e mostra a lista, em vez de abrir o modo treino por cima
+  try { if (typeof allDoneOfDay === 'function' && allDoneOfDay(currentDay) && !(typeof _wtLoad === 'function' && _wtLoad())) { _ghToast('Esse treino já está fechado nesta semana. Pra repetir, passa pra próxima semana ou escolhe outro dia.', 5200); verListaDoDia(); return; } } catch (_) {}
   try { if (typeof wtStart === 'function') wtStart(); } catch (_) {}
   try { openFocusMode(currentDay); } catch (_) {}
 }
@@ -14536,7 +14566,12 @@ async function loadFromSheets(injectedText) {
     // Em protocolo multi-bloco só restaura a semana (o dia depende do bloco ativo).
     try {
       const _pos = JSON.parse(localStorage.getItem(_posKey()) || 'null');
-      const _sigAtual = TOTAL_WEEKS + 'x' + WORKOUT.length + 'x' + (localStorage.getItem(`gh_done_atual_${STUDENT_ID}`) || '0');
+      // v591: a assinatura da posicao nao leva mais o numero de dias. Trocar de bloco (Normal 6x / Viagem 3x) ou um ajuste que
+      // poe ou tira um dia mudava a assinatura e o app voltava pra semana 1 ("resetou pra mais 50 dias", L Theisen 29/09;
+      // "sumiu os treinos e reiniciou as semanas", Jefferson 24/09). Protocolo novo de verdade muda a data (col E), e ai reseta.
+      const _atualPos = (localStorage.getItem(`gh_done_atual_${STUDENT_ID}`) || '0');
+      const _sigAtual = TOTAL_WEEKS + 'x' + _atualPos;
+      const _sigVelhas = [TOTAL_WEEKS + 'x' + WORKOUT.length + 'x' + _atualPos, TOTAL_WEEKS + 'x' + WORKOUT.length];
       // Teto pelo CALENDÁRIO: semanas possíveis desde o início do protocolo atual. Protocolo
       // de 26/08 aberto em 01/09 não pode estar na semana 8 (caso Sergio Valões, 01/09).
       let _tetoW = WEEK_MAX;   // v539
@@ -14546,11 +14581,11 @@ async function loadFromSheets(injectedText) {
           _tetoW = Math.max(1, Math.min(WEEK_MAX, Math.ceil((Date.now() - _ini) / 604800000) || 1));
         }
       } catch (_) {}
-      if (_pos && (_pos.sig === _sigAtual || _pos.sig === TOTAL_WEEKS + 'x' + WORKOUT.length)) {
+      if (_pos && (_pos.sig === _sigAtual || _sigVelhas.indexOf(_pos.sig) !== -1)) {
         // v544: posição salva JÁ neste protocolo (a assinatura leva a data dele) vale como está. O teto pelo calendário
         // devolvia pra semana anterior, a cada abertura, quem fechou a semana antes do tempo e passou pra próxima (e ele
         // digitava de novo por cima das cargas da semana). O teto segue só pra posição antiga, sem a data na assinatura.
-        if (_pos.w >= 1 && _pos.w <= WEEK_MAX) currentWeek = (_pos.sig === _sigAtual) ? _pos.w : Math.min(_pos.w, _tetoW);
+        if (_pos.w >= 1 && _pos.w <= WEEK_MAX) currentWeek = (_pos.sig === _sigAtual || _pos.sig === _sigVelhas[0]) ? _pos.w : Math.min(_pos.w, _tetoW);
         // v548: com a semana restaurada, o dia de abertura é o 1º ainda não fechado NELA; o dia salvo só volta se foi mexido há
         // pouco (3 h) ou se ainda não fechou. Antes o app abria sempre no treino de ontem, já concluído, com o convite de "ir
         // pra próxima semana", e o aluno pulava a semana em vez de ir pro treino seguinte.
@@ -14580,7 +14615,7 @@ async function loadFromSheets(injectedText) {
     // prescrição numérica de cardio, cardioTarget cai no fallback = freq de treino — que só existe
     // AGORA (infoFreq/WORKOUT acabaram de ser setados). Resincroniza a barra com a meta correta
     // antes do loadingScreen sumir (no-op se a dieta nem renderizou o card).
-    if (typeof updateCardioProgress === 'function') updateCardioProgress();
+    try { if (typeof updateCardioProgress === 'function') updateCardioProgress(); } catch (_e) { try { console.warn('[gh] cardio na abertura: ' + (_e && _e.message)); } catch (_) {} }   // v591: isolado
 
     // Esforco-alvo (RIR): badge no topo + valor global pro Modo Focado mostrar do lado do esforco
     STUDENT_ESFORCO_ALVO = _parseEsforcoAlvo(rows);
@@ -14640,12 +14675,15 @@ async function loadFromSheets(injectedText) {
         </div>`;
     }
 
-    renderTreinoBlocoTabs();
-    renderTabs();
-    migrateLegacyDoneKeys_();
-    if (typeof _renderProtoAviso === 'function') _renderProtoAviso(); // mostra aviso salvo na hora (antes do fetch)
-    loadAndShowLastModified();
-    updateUnitToggleLabel();
+    // v591: cada extra da abertura isolado. Um que falhava (estado local estranho, aba nova no servidor) pulava tudo que vinha
+    // depois, inclusive o render dos exercicios, e caia no catch generico.
+    const _ok_ = (nome, f) => { try { return f(); } catch (_e) { try { console.warn('[gh] abertura, ' + nome + ': ' + (_e && _e.message)); } catch (_) {} } };
+    _ok_('blocos', () => renderTreinoBlocoTabs());
+    _ok_('tabs', () => renderTabs());
+    _ok_('migra', () => migrateLegacyDoneKeys_());
+    _ok_('aviso', () => { if (typeof _renderProtoAviso === 'function') _renderProtoAviso(); }); // mostra aviso salvo na hora (antes do fetch)
+    _ok_('lastmod', () => loadAndShowLastModified());
+    _ok_('unidade', () => updateUnitToggleLabel());
     renderExercises();   // render IMEDIATO dos exercicios (do local) — NAO espera rede. Senao um flush numa rede ruim segurava os cards do dia em branco.
     // v427 (05/09/2026, caso Andres Oliveira): a navegação (barra de baixo + menu) só era ligada
     // quando a DIETA carregava; aba DIETA VAZIA (aluno novo sem dieta publicada, ou só treino)
@@ -14663,17 +14701,17 @@ async function loadFromSheets(injectedText) {
     // treino", as fotos e a conferência do protocolo esperavam segundos (ou minutos) por ela.
     // DEPOIS do flush: limpa a marca de "feito" local-only legada (1x por aluno).
     // Tem que ser pós-flush pra não confundir marca enfileirada (recém-subida) com legado.
-    flushSyncQueues().catch(() => {}).then(() => sweepLegacyDoneLocalOnly_().catch(() => {}));
-    checkFotosBannerOnLoad();
-    checkChatBannerOnLoad();
-    loadRecado();   // recado em áudio do GH: roda no INIT (antes só rodava dentro do renderDiet,
+    _ok_('fila', () => flushSyncQueues().catch(() => {}).then(() => sweepLegacyDoneLocalOnly_().catch(() => {})));
+    _ok_('fotos', () => checkFotosBannerOnLoad());
+    _ok_('chat', () => checkChatBannerOnLoad());
+    _ok_('recado', () => loadRecado());   // recado em áudio do GH: roda no INIT (antes só rodava dentro do renderDiet,
                     // então quem ficava na aba TREINO nunca via o recado)
-    loadLaudoDestaque();   // antes-e-depois do reajuste em destaque na página principal (fora do modal)
-    renderWtCard();        // cronômetro do treino (retoma sessão viva se o app foi fechado no meio)
-    _descansoRetoma();     // v548: descanso que estava rodando quando o sistema fechou o app
-    loadTempoTreino();     // durações registradas → badges nos dias
-    _tourMaybeStart();     // 1º acesso: tour de boas-vindas (o _showNav da dieta roda cedo demais, sem WORKOUT)
-    _instAvisoMaybe();     // v532: celular sem o app instalado: aviso pra instalar (nunca por cima do tour)
+    _ok_('laudo', () => loadLaudoDestaque());   // antes-e-depois do reajuste em destaque na página principal (fora do modal)
+    _ok_('cronometro', () => renderWtCard());        // cronômetro do treino (retoma sessão viva se o app foi fechado no meio)
+    _ok_('descanso', () => _descansoRetoma());     // v548: descanso que estava rodando quando o sistema fechou o app
+    _ok_('tempos', () => loadTempoTreino());     // durações registradas → badges nos dias
+    _ok_('tour', () => _tourMaybeStart());     // 1º acesso: tour de boas-vindas (o _showNav da dieta roda cedo demais, sem WORKOUT)
+    _ok_('instalar', () => _instAvisoMaybe());     // v532: celular sem o app instalado: aviso pra instalar (nunca por cima do tour)
     setTimeout(_semanaPromptBoot, 2500);   // v539: semana inteira fechada em outra data: pergunta se passa pra próxima
     setTimeout(_ftPromptBoot, 3400);       // v575: treino de ontem ou anteontem que ficou aberto com boa parte marcada
     return true;
@@ -14780,6 +14818,12 @@ function renderExercises() {
   try { return _renderExercisesMiolo_.apply(this, arguments); }
   finally { if (_donoMemo) _rdaMemo = null; }
 }
+// v591: card que nao conseguiu ser montado (dado local corrompido, formato inesperado): aviso no lugar, o resto do dia fica
+function _cardFalhaHtml_(ex, di, ei) {
+  let nome = 'Exercício ' + (ei + 1); try { nome = (ex && (ex.name || (ex.a && ex.a.name))) || nome; } catch (_) {}   // o proprio nome pode ser o que falhou
+  const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return `<div class="exercise-card" data-ei="${ei}"><div class="exercise-header"><div class="exercise-name">${esc(nome)}</div></div><div class="exercise-obs" style="color:#d4a76a;">Não consegui montar a grade deste exercício neste aparelho. Toca em "Atualizar o app" na aba Mais; se seguir assim, fala no suporte.</div></div>`;
+}
 function _renderExercisesMiolo_() {
   try { _flushSetsPendentes_(false); } catch (_) {}   // v447: salva série digitada antes de trocar a grade
   const c = document.getElementById("exerciseContainer");
@@ -14789,7 +14833,7 @@ function _renderExercisesMiolo_() {
     const div = document.createElement("div");
     div.className = `day-content ${di === currentDay ? 'active' : ''}`;
     div.setAttribute('data-di', String(di));
-    div.innerHTML = day.exercises.map((ex, ei) => {
+    div.innerHTML = day.exercises.map((ex, ei) => { try { return (() => {   // v591: um card que falha nao some com o dia inteiro
       // ── BI-SET ──
       if (ex.biset) {
         const a = ex.a, b = ex.b;
@@ -14912,12 +14956,13 @@ function _renderExercisesMiolo_() {
           ${_progChipHtml(di, ei, act.name)}
           ${_focusEsforcoBlock(di, ei, true)}` : ''}
         </div>`;
-    }).join("");
+    })(); } catch (_e) { try { console.error('[gh] card ' + di + '/' + ei, _e); } catch (_) {} return _cardFalhaHtml_(ex, di, ei); } }).join("");
     try { const _sa = _semanaAvisoHtml(di); if (_sa) div.insertAdjacentHTML('afterbegin', _sa); } catch (_) {}   // v470
     try { const _dt = _dicaTrocaHtml(di); if (_dt) div.insertAdjacentHTML('afterbegin', _dt); } catch (_) {}     // v478
     c.appendChild(div);
   });
   updateDayProgress();
+  try { _diaStartBtnRefresh_(); } catch (_) {}   // v591: o botao do dia acompanha o dia fechado/aberto (so o rotulo; a linha do cronometro fica)
   try { _carSync(); } catch (_) {}   // v481: carrossel do nome volta pro exercicio ativo
   if (typeof _vidBtnRefresh === "function") _vidBtnRefresh();
   try { if (!window._igPendJaFoi) { window._igPendJaFoi = 1; setTimeout(_igPendenteReenvia, 4000); } } catch (_) {}   // v492
@@ -15169,7 +15214,7 @@ function _posSave() {
   try {
     localStorage.setItem(_posKey(), JSON.stringify({
       w: currentWeek, di: currentDay,
-      sig: (typeof TOTAL_WEEKS !== 'undefined' ? TOTAL_WEEKS : 0) + 'x' + (typeof WORKOUT !== 'undefined' && WORKOUT ? WORKOUT.length : 0) + 'x' + (localStorage.getItem(`gh_done_atual_${STUDENT_ID}`) || '0'),
+      sig: (typeof TOTAL_WEEKS !== 'undefined' ? TOTAL_WEEKS : 0) + 'x' + (localStorage.getItem(`gh_done_atual_${STUDENT_ID}`) || '0'),   // v591: sem o numero de dias
       ts: Date.now()
     }));
   } catch (_) {}
@@ -15247,6 +15292,18 @@ function _wtDurTxt(secs) {   // espelho do _duracaoTxt_ do .gs: "1h 15min" | "45
   return h ? (h + 'h' + (mm ? ' ' + mm + 'min' : '')) : (mm + 'min');
 }
 
+// v591: o botao do dia ("Comecar treino") diz "Treino fechado" quando o dia ja fechou e nao ha sessao viva (28/09). Fica numa
+// funcao propria porque o miolo da lista chama so ela: chamar o renderWtCard inteiro ali apagava a linha "Registrado!" do cronometro.
+function _diaStartBtnRefresh_(s) {
+  try {
+    const _db = document.getElementById('diaStartBtn');
+    if (!_db) return;
+    if (s === undefined) s = _wtLoad();
+    let _fechado = false; try { _fechado = !s && typeof allDoneOfDay === 'function' && typeof currentDay !== 'undefined' && allDoneOfDay(currentDay); } catch (_) {}
+    _db.innerHTML = s ? '▶&nbsp; Continuar treino' : (_fechado ? '✓&nbsp; Treino fechado' : '▶&nbsp; Começar treino');
+    _db.classList.toggle('fechado', _fechado);
+  } catch (_) {}
+}
 function renderWtCard() {
   const card = document.getElementById('wtCard');
   if (!card || typeof STUDENT_ID === 'undefined') return;
@@ -15255,8 +15312,7 @@ function renderWtCard() {
   card.classList.toggle('running', !!s && s.status === 'running');
   card.classList.toggle('paused', !!s && s.status === 'paused');
   card.style.display = s ? '' : 'none';   // v481: sem treino rolando, o cronômetro não ocupa o topo
-  const _db = document.getElementById('diaStartBtn');
-  if (_db) _db.innerHTML = s ? '▶&nbsp; Continuar treino' : '▶&nbsp; Começar treino';
+  _diaStartBtnRefresh_(s);
   if (!s) {
     t.textContent = '00:00';
     l.textContent = 'Cronômetro do treino';
@@ -15969,6 +16025,7 @@ async function baixarVideosDoDia() {
 }
 async function apagarVideosBaixados() {
   try { await caches.delete(VID_CACHE); } catch (_) {}
+  try { _vidIdsLocais.clear(); } catch (_) {}   // v591: o player abria preto depois de apagar (achava que o video ainda estava no aparelho)
   alert('Vídeos baixados apagados. O espaço foi liberado; baixa de novo quando quiser.');
   _vidBtnRefresh();
 }
@@ -18061,7 +18118,7 @@ async function submitFeedback() {
 // Aluno manda fotos pelo app → app comprime no celular → POST pro Apps Script
 // → salva direto na pasta do Drive dele em "Fotos NN" (próximo número).
 // Servidor só aceita upload dentro da janela (col M até col M + 7 dias).
-function closeFotosOnBg(e) { if (e.target.id === 'fotosModal') teHide('fotosModal'); }
+function closeFotosOnBg(e) { if (e.target.id === 'fotosModal') fotosFechar(); }
 
 // Banner topo da tela: aparece automaticamente quando a janela está aberta
 // E o aluno ainda não dispensou pra essa janela. Botão "Já enviei na anamnese"
@@ -18118,6 +18175,9 @@ function dismissAjusteBanner() {
 
 // Estado dos 4 slots durante a sessão do modal
 const _FOTOS_ROLES = ['frente', 'costas', 'direito', 'esquerdo'];
+// v591: camera/galeria aberta (qualquer input de arquivo do app): o vigia de versao nao recarrega por 2 min (ver _treinoRolando)
+document.addEventListener('click', function (e) { try { const t = e.target; if (t && t.tagName === 'INPUT' && t.type === 'file') window._ghArquivoAbertoEm = Date.now(); } catch (_) {} }, true);
+document.addEventListener('change', function (e) { try { const t = e.target; if (t && t.tagName === 'INPUT' && t.type === 'file') window._ghArquivoAbertoEm = 0; } catch (_) {} }, true);
 let _fotosPick = {}; // role → File
 let _fotosWindowOpen = null; // janela de envio: null = conferindo (ou não deu pra conferir), true = aberta, false = fechada
 let _fotosEnviando = false;   // v545: envio em andamento trava os espaços
@@ -18134,6 +18194,7 @@ async function openFotosModal() {
   document.getElementById('floatOptions').classList.remove('show');
   document.getElementById('floatBtn').classList.remove('open');
   teShow('fotosModal');
+  _fotosEnviando = false;   // v591: envio que ficou pendurado (rede caiu no meio) travava o botao ate fechar o app
   _fotosWindowOpen = null; _fotosWindowMsg = '';   // v545: enquanto confere, o estado é "conferindo" (antes era "fechado")
 
   // Sempre abre na aba Enviar; zera cache de comparação pra recarregar fresco
@@ -18166,7 +18227,9 @@ async function openFotosModal() {
   status.innerHTML = '<span style="color:#888;">Verificando janela de envio…</span>';
 
   try {
-    const resp = await fetch(`${LOG_ENDPOINT}?action=foto_window&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`, { cache: 'no-store' });
+    const _acW = new AbortController(); const _tmW = setTimeout(() => { try { _acW.abort(); } catch (_) {} }, 12000);   // v591: 12 s, senao "Verificando..." pra sempre
+    const resp = await fetch(`${LOG_ENDPOINT}?action=foto_window&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`, { cache: 'no-store', signal: _acW.signal });
+    clearTimeout(_tmW);
     const j = await resp.json();
     _fotosWindowOpen = !!j.open;
     _fotosWindowMsg = '';
@@ -18261,16 +18324,24 @@ function _removeFotoSlot(ev, role) {
 }
 
 function _updateFotosSendBtn() {
-  const sendBtn = document.getElementById('fotosSendBtn');
+  const sendBtn = document.getElementById('fotosSendBtn'), rod = document.getElementById('fotosRodape'), rt = document.getElementById('fotosRodapeTxt');
   if (_fotosEnviando) return;   // v545: mexer num espaço durante o envio reabilitava o botão (dois envios, duas pastas)
   const n = Object.keys(_fotosPick).length;
   if (n === 0 || !_fotosWindowOpen) {
     sendBtn.style.display = 'none';
+    if (rod) rod.style.display = 'none';
     return;
   }
+  if (rod) rod.style.display = '';
+  if (rt) rt.textContent = n + ' de 4 escolhida' + (n > 1 ? 's' : '') + '. Falta tocar em Enviar pra elas subirem.';   // v591
   sendBtn.style.display = '';
   sendBtn.disabled = false;
   sendBtn.textContent = `Enviar ${n} foto${n > 1 ? 's' : ''}`;
+}
+// v591: fechar com foto escolhida e nao enviada avisa (o aluno fechava achando que tinha mandado)
+function fotosFechar() {
+  try { if (!_fotosEnviando && Object.keys(_fotosPick).length && !confirm('Tuas fotos ainda NÃO foram enviadas. Fechar mesmo assim?')) return; } catch (_) {}
+  teHide('fotosModal');
 }
 
 // Comprime imagem no celular (1280px max, JPEG q=0.85) antes de mandar.
@@ -18505,20 +18576,32 @@ async function enviarFotos() {
 
     sendBtn.textContent = `Enviando ${compressed.length} foto${compressed.length > 1 ? 's' : ''}…`;
     const studentName = (document.getElementById('infoNome')?.textContent || '').trim();
-    const resp = await fetch(LOG_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ type: 'foto', sheetId: SHEET_ID, studentName: studentName, files: compressed }),
-      redirect: 'follow'
-    });
-    const j = await resp.json();
-    if (!j.ok) {
-      let msg = j.error || 'Falha desconhecida';
-      if (j.error === 'janela_fechada' && j.window && j.window.message) msg = j.window.message;
+    // v591: tempo limite de 90 s (sem ele o botao ficava em "Enviando..." pra sempre numa rede que caiu no meio)
+    const _ac = new AbortController(); const _tm = setTimeout(() => { try { _ac.abort(); } catch (_) {} }, 90000);
+    let resp;
+    try {
+      resp = await fetch(LOG_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ type: 'foto', sheetId: SHEET_ID, studentName: studentName, files: compressed }),
+        redirect: 'follow',
+        signal: _ac.signal
+      });
+    } finally { clearTimeout(_tm); }
+    // v591: resposta que nao e JSON (pagina de erro do Google, cota) era tratada como "sem conexao"
+    const _txt = await resp.text(); let j;
+    try { j = JSON.parse(_txt); } catch (_) { throw new Error(resp.ok ? 'O servidor respondeu de um jeito inesperado. Espera um minuto e toca em Enviar de novo.' : 'O servidor não respondeu (' + resp.status + '). Tenta de novo em alguns minutos.'); }
+    if (!j || !j.ok) {
+      let msg = (j && j.error) || 'Falha desconhecida';
+      if (j && j.error === 'janela_fechada' && j.window && j.window.message) msg = j.window.message;
       throw new Error(msg);
     }
+    // v591: o servidor diz quantas gravou; antes "ok" com 2 de 4 gravadas saia como sucesso total
+    const _saved = Number(j.saved) || 0;
+    if (_saved <= 0) throw new Error('Nenhuma foto subiu: elas podem estar grandes demais ou num formato que o app não abre. Tira um print de cada uma e envia os prints.');
+    const _faltou = compressed.length - _saved;
 
-    fb.innerHTML = `<div style="background:rgba(76,175,80,0.12);border-left:3px solid #4caf50;padding:10px;border-radius:4px;color:#a5d6a7;">✅ <strong>${j.saved} foto${j.saved > 1 ? 's' : ''} enviada${j.saved > 1 ? 's' : ''}</strong> com sucesso!<br><span style="font-size:11px;color:#888;">${j.saved > 1 ? 'Salvas' : 'Salva'} na pasta <strong>${escapeFotosTxt(j.folder)}</strong>. ${_fotosJanelaStatus === 'inicial' ? 'Elas viram o "antes" da tua comparação de evolução.' : 'O GH vai analisar no próximo reajuste.'}</span></div>`;
+    fb.innerHTML = (_faltou > 0 ? `<div style="background:rgba(212,167,106,0.12);border-left:3px solid #d4a76a;padding:10px;border-radius:4px;color:#f0d9a8;margin-bottom:6px;">⚠️ <strong>${_faltou} foto${_faltou > 1 ? 's' : ''} não subi${_faltou > 1 ? 'ram' : 'u'}</strong> (grande demais ou num formato que o app não abre). Escolhe de novo a que faltou e envia; se repetir, tira um print dela e envia o print.</div>` : '') + `<div style="background:rgba(76,175,80,0.12);border-left:3px solid #4caf50;padding:10px;border-radius:4px;color:#a5d6a7;">✅ <strong>${_saved} foto${_saved > 1 ? 's' : ''} enviada${_saved > 1 ? 's' : ''}</strong> com sucesso!<br><span style="font-size:11px;color:#888;">${j.saved > 1 ? 'Salvas' : 'Salva'} na pasta <strong>${escapeFotosTxt(j.folder)}</strong>. ${_fotosJanelaStatus === 'inicial' ? 'Elas viram o "antes" da tua comparação de evolução.' : 'O GH vai analisar no próximo reajuste.'}</span></div>`;
     // v545: mandou as quatro = o aviso da janela some (ele seguia no topo a cada abertura e o aluno reenviava)
     try { if (roles.length >= 4) { const bn = document.getElementById('fotosBanner'); if (bn) { if (bn._startDate) localStorage.setItem(_fotosBannerKey(bn._startDate), '1'); bn.style.display = 'none'; } } } catch (_) {}
     // limpa slots
@@ -18535,9 +18618,12 @@ async function enviarFotos() {
       if (rm) rm.style.display = 'none';
     });
     sendBtn.style.display = 'none';
+    try { const _rd = document.getElementById('fotosRodape'); if (_rd) _rd.style.display = 'none'; } catch (_) {}
   } catch (err) {
     _fotosEnviando = false;
-    const _m = /failed to fetch|load failed|networkerror|unexpected token/i.test(String(err && err.message)) ? 'Sem conexão agora. Tuas fotos seguem aqui: confere a internet e toca em enviar de novo.' : String(err && err.message || 'Não consegui enviar agora.');
+    const _abortou = !!(err && (err.name === 'AbortError' || /abort/i.test(String(err.message))));
+    const _m = _abortou ? 'Demorou demais pra subir (conexão lenta). Tuas fotos seguem aqui: tenta de novo com um sinal melhor, ou pelo Wi-Fi.'
+      : (/failed to fetch|load failed|networkerror/i.test(String(err && err.message)) ? 'Sem conexão agora. Tuas fotos seguem aqui: confere a internet e toca em enviar de novo.' : String(err && err.message || 'Não consegui enviar agora.'));
     fb.innerHTML = `<div style="background:rgba(192,57,43,0.12);border-left:3px solid #c0392b;padding:10px;border-radius:4px;color:#f5b7b1;">❌ ${escapeFotosTxt(_m)}</div>`;
     sendBtn.disabled = false;
     _updateFotosSendBtn();
@@ -18928,6 +19014,10 @@ async function loadFotosCompare() {
     _cmpState.loaded = true;
     if (!_cmpState.rounds.length) {
       status.innerHTML = 'Tu ainda não tem fotos enviadas.<br><span style="font-size:11px;color:#777;">Manda tuas fotos na aba <b>Enviar</b> que elas aparecem aqui pra comparar.</span>';
+      return;
+    }
+    if (_cmpState.rounds.length === 1) {   // v591: com uma rodada so, saia a MESMA foto dos dois lados como se fosse antes e depois
+      status.innerHTML = 'Tu tem uma rodada de fotos por enquanto. A comparação lado a lado aparece quando tu mandar a próxima, no reajuste.<br><span style="font-size:11px;color:#777;">Elas já estão guardadas na tua pasta.</span>';
       return;
     }
     // padrão: ANTES = primeiro round, DEPOIS = último
@@ -19554,7 +19644,7 @@ function _fdEnvia_(dia, n, origem) {
 let _fdEst = null;
 function fdAbre() {
   const h = _fdMapa_()[_fdDiaRef_()] || {};
-  _fdEst = { modo: 'fechar', humor: h.humor || 0, fome: h.fome || 0, estresse: h.estresse || 0, seguiu: h.seguiu || '', gat: (h.gat || []).slice(0, 2), salvo: false };
+  _fdEst = { modo: 'fechar', dia: _fdDiaRef_(), humor: h.humor || 0, fome: h.fome || 0, estresse: h.estresse || 0, seguiu: h.seguiu || '', gat: (h.gat || []).slice(0, 2), salvo: false };   // v591: dia fixado ao abrir
   _fdPinta_();
   document.getElementById('fdModal').classList.add('show');
 }
@@ -19577,7 +19667,7 @@ function _fdPlanoDe_(g) {
 function _fdPronto_() { const e = _fdEst; return !!(e && e.humor && e.fome && e.estresse && e.seguiu && (e.seguiu === 'sim' || e.gat.length)); }
 function fdSalva() {
   if (!_fdPronto_()) return;
-  const e = _fdEst, dia = _fdDiaRef_(), m = _fdMapa_(), ant = m[dia] || {};
+  const e = _fdEst, dia = e.dia || _fdDiaRef_(), m = _fdMapa_(), ant = m[dia] || {};
   const n = { seguiu: e.seguiu, humor: e.humor, fome: e.fome, estresse: e.estresse, gat: e.gat.slice(0, 2), dificil: ant.dificil ? 1 : 0, ts: Date.now(), pendente: true };
   m[dia] = n; _fdGuarda_(m);
   _fdEnvia_(dia, n, 'fechar');
@@ -20370,6 +20460,7 @@ function _evoLocais() {
 }
 // semanas de segunda a domingo, da mais antiga com algum registro até a atual (no máximo 26). Meta do treino de cada semana: a
 // frequência que foi pro servidor naquela semana, senão a guardada no aparelho (gh_metasem_), senão a de hoje.
+function _evoTemTreino_() { try { return typeof WORKOUT !== 'undefined' && Array.isArray(WORKOUT) && WORKOUT.length > 0; } catch (_) { return false; } }
 function _evoSemanas() {
   const loc = _evoLocais(), hoje = new Date(); hoje.setHours(0, 0, 0, 0);
   const hojeIso = _evoIso(hoje);
@@ -20391,7 +20482,7 @@ function _evoSemanas() {
       if (String(s.c || '').charAt(i) === '1' || loc.c.has(iso)) c++;
     }
     let ms = 0; try { ms = parseInt(localStorage.getItem('gh_metasem_' + SHEET_ID + '_' + key), 10) || 0; } catch (_) {}
-    const ft = (s.f >= 1 && s.f <= 7) ? s.f : ((ms >= 1 && ms <= 7) ? ms : (freqHoje || 3));
+    const ft = (s.f >= 1 && s.f <= 7) ? s.f : ((ms >= 1 && ms <= 7) ? ms : (freqHoje || (_evoTemTreino_() ? 3 : 0)));   // v591: so dieta = sem meta de treino
     const fc = (s.mc >= 1 && s.mc <= 7) ? s.mc : cardioHoje;
     const fim = new Date(ini); fim.setDate(ini.getDate() + 6);
     out.push({ key, ini, fim, t, d, c, ft, fc, atual: k === 0 });
@@ -20418,7 +20509,7 @@ function _evoBarrasSvg(sem, comDieta, dIni, selKey) {
   sem.forEach((w, i) => {
     const x0 = PL + gw * i, cx = x0 + gw / 2;
     if (w.key === selKey) g += '<rect x="' + (x0 + 0.5).toFixed(1) + '" y="0" width="' + Math.max(1, gw - 1).toFixed(1) + '" height="' + (y0 + 1) + '" rx="3" class="ev-selbg"/>';
-    const tp = Math.min(1, w.t / w.ft), at = w.atual ? ' ev-at' : '';
+    const tp = w.ft ? Math.min(1, w.t / w.ft) : 0, at = w.atual ? ' ev-at' : '';   // v591: meta 0 (so dieta) nao divide por zero
     if (comDieta && i >= dIni) { g += bar(cx - bw - 0.6, tp, 'ev-bt' + at); g += bar(cx + 0.6, Math.min(1, w.d / 7), 'ev-bd' + at); }
     else g += bar(cx - bw / 2, tp, 'ev-bt' + at);
   });
@@ -20447,7 +20538,7 @@ function _evoConstanciaHtml(sem, temDieta) {
   h += '<div class="ev-leg"><span><i class="ev-bt"></i>treino</span>' + (comDieta ? '<span><i class="ev-bd"></i>dieta</span>' : '') + '<span class="ev-leg-m">a linha de cima é a meta da semana</span></div>';
   const i = sem.findIndex(w => w.key === selKey), w = sem[i];
   const pl = (n, um, mais) => n + ' ' + (n === 1 ? um : mais);
-  const partes = ['treino <b>' + w.t + ' de ' + w.ft + '</b>'];
+  const partes = []; if (w.ft || w.t) partes.push('treino <b>' + w.t + (w.ft ? ' de ' + w.ft : '') + '</b>');   // v591: so dieta nao mostra "treino 0 de 3"
   if (comDieta && i >= dIni) partes.push('dieta <b>' + w.d + ' de 7</b> dias completos');
   if (w.fc) partes.push('cardio <b>' + w.c + ' de ' + w.fc + '</b>');
   else if (w.c) partes.push('cardio <b>' + pl(w.c, 'dia', 'dias') + '</b>');
@@ -21683,6 +21774,22 @@ function _semanaDatas(w) {
   } catch (_) {}
   return ds;
 }
+// v591: a semana w ja passou? (tem peso ou treino com data numa semana DEPOIS dela, neste ciclo)
+function _semanaTemDataDepois_(w) {
+  try {
+    const pb = 'gh_blk_' + STUDENT_ID + '_d', re = /^\d+_e[0-9ab]+_w(\d+)(?:_|$)/;
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i); if (!k || k.indexOf(pb) !== 0) continue;
+      const m = k.slice(pb.length).match(re); if (!m || +m[1] <= w) continue;
+      const t = Number(localStorage.getItem(k)); if (!(t > 1e12)) continue;
+      if (CURRENT_BLOCK_START > 0 && t < CURRENT_BLOCK_START) continue;
+      return true;
+    }
+    const h = JSON.parse(localStorage.getItem(_wtHistKey()) || '{}') || {};
+    for (const k of Object.keys(h)) { const p = k.split('|'); const t = h[k] && Number(h[k].ts); if (+p[1] > w && t > 1e12 && !(CURRENT_BLOCK_START > 0 && t < CURRENT_BLOCK_START)) return true; }
+  } catch (_) {}
+  return false;
+}
 function _cardioJanelaDaSemana(w) {   // null = a semana de hoje (ou sem data): o cartao segue o calendario
   const ds = _semanaDatas(w); if (!ds.length) return null;
   const seg = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d; };
@@ -21692,16 +21799,19 @@ function _cardioJanelaDaSemana(w) {   // null = a semana de hoje (ou sem data): 
 }
 function updateCardioProgress() {
   const target = cardioTarget();
-  let done = cardioWeekCount(), jan = null;
+  let done = cardioWeekCount(), jan = null, semData = false;
   try { jan = (typeof currentWeek !== 'undefined') ? _cardioJanelaDaSemana(currentWeek) : null; } catch (_) { jan = null; }   // v579
+  // v591: semana do protocolo ja passada (tem registro com data numa semana depois dela) e sem nenhuma data propria: o cartao
+  // dizia "Cardio da semana 0/3" com a contagem da semana de HOJE (Frederico, 25/10). Agora diz que nao tem data.
+  try { if (!jan && typeof currentWeek !== 'undefined' && _semanaTemDataDepois_(currentWeek)) semData = true; } catch (_) {}
   if (jan) { try { done = _mtCardioDias(STUDENT_ID, jan.ini, jan.fim); } catch (_) {} }
   const tit = document.getElementById('cwTit');
-  if (tit) { const br = d => ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2); tit.textContent = jan ? 'Cardio na semana ' + currentWeek + ' (' + br(jan.ini) + ' a ' + br(jan.fim) + ')' : 'Cardio da semana'; }
+  if (tit) { const br = d => ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2); tit.textContent = jan ? 'Cardio na semana ' + currentWeek + ' (' + br(jan.ini) + ' a ' + br(jan.fim) + ')' : (semData ? 'Cardio na semana ' + currentWeek : 'Cardio da semana'); }
   const cnt = document.getElementById('cwCount'), fill = document.getElementById('cwFill'), btn = document.getElementById('cwBtn');
-  if (cnt) cnt.textContent = `${Math.min(done, target)}/${target}`; // capa display (fazer +q o mínimo não vira "4/3")
-  if (fill) fill.style.width = (target ? Math.min(100, done / target * 100) : 0) + '%';
-  if (btn) { const t = isCardioDoneToday(); btn.classList.toggle('done', t); btn.textContent = t ? '✓ Cardio feito hoje' : 'Fiz o cardio hoje'; btn.style.display = jan ? 'none' : ''; }   // v579: semana passada nao marca o cardio de hoje
-  try { _csUltRender(); } catch (_) {}   // v577
+  if (cnt) cnt.textContent = semData ? 'sem data' : `${Math.min(done, target)}/${target}`; // capa display (fazer +q o mínimo não vira "4/3")
+  if (fill) fill.style.width = semData ? '0%' : ((target ? Math.min(100, done / target * 100) : 0) + '%');
+  if (btn) { const t = isCardioDoneToday(); btn.classList.toggle('done', t); btn.textContent = t ? '✓ Cardio feito hoje' : 'Fiz o cardio hoje'; btn.style.display = (jan || semData) ? 'none' : ''; }   // v579: semana passada nao marca o cardio de hoje
+  try { _csUltRender(jan, semData); } catch (_) {}   // v577
 }
 function onCardioDone() {
   if (isCardioDoneToday()) return;                 // 1 por dia
@@ -21783,18 +21893,23 @@ function _csKey() { return 'gh_cardiosess_' + SHEET_ID; }
 // mesmo id que já existe no aparelho fica como está (o que o aluno digitou aqui nunca é trocado pela cópia do servidor).
 function _csDoServidor_(lista) {
   if (!Array.isArray(lista) || !lista.length) return 0;
-  const a = _csLista(); const ids = new Set(a.map(s => s.id)); let n = 0;
+  const a = _csLista(); const ids = new Set(a.map(s => s.id)); let n = 0, marcas = 0;
+  const hojeK = todayKey();
   for (const r of lista) {
-    if (!r || !r.id || !r.d || !r.tipo || ids.has(String(r.id))) continue;
+    if (!r || !r.id || !r.d || !r.tipo) continue;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(String(r.d))) continue;
+    // v591: a sessao que veio do servidor e um dia de cardio FEITO (no aparelho que gravou, o dia foi marcado junto). Antes so a
+    // sessao entrava, o dia nao: aparelho novo, ou o navegador ao lado do app instalado, mostrava "Cardio na semana 0/3" com as
+    // tres sessoes logo embaixo (Frederico Schuller, 25/10: "divergencias de dados de treino e cardio").
+    try { if (String(r.d) <= hojeK && localStorage.getItem(cardioMarkKey(String(r.d))) == null) { localStorage.setItem(cardioMarkKey(String(r.d)), '1'); marcas++; } } catch (_) {}
+    if (ids.has(String(r.id))) continue;
     const min = Number(r.min); if (!isFinite(min) || min <= 0) continue;
     const s = { id: String(r.id), d: String(r.d), tipo: String(r.tipo), int: String(r.int || ''), ts: Number(r.ts) || 0, min: min };
     for (const k of ['vel', 'inc', 'nivel', 'dist']) { if (r[k] === '' || r[k] == null) continue; const v = Number(r[k]); if (isFinite(v) && v > 0) s[k] = v; }
     a.push(s); ids.add(s.id); n++;
   }
-  if (!n) return 0;
-  a.sort((x, y) => x.d === y.d ? (x.ts || 0) - (y.ts || 0) : (x.d < y.d ? -1 : 1));
-  _csGrava(a);
+  if (n) { a.sort((x, y) => x.d === y.d ? (x.ts || 0) - (y.ts || 0) : (x.d < y.d ? -1 : 1)); _csGrava(a); }
+  if (!n && !marcas) return 0;
   try { _csUltRender(); } catch (_) {}
   try { updateCardioProgress(); } catch (_) {}
   return n;
@@ -21827,8 +21942,18 @@ function _csDeHoje() { const h = todayKey(), a = _csLista(); for (let i = a.leng
 function _csMinDesde(iniISO) { let t = 0; _csLista().forEach(s => { if (String(s.d) >= iniISO && s.min > 0) t += s.min; }); return t; }
 function _csSemanaMin() { return _csMinDesde(_csIso(_cardioWeekStart())); }
 // a linha embaixo do botão: o de hoje (com editar), o convite pra registrar os números, ou o último; os minutos da semana e o histórico
-function _csUltRender() {
+function _csUltRender(jan, semData) {
   const el = document.getElementById('cwUlt'); if (!el) return;
+  if (jan === undefined && semData === undefined) {
+    try { jan = (typeof currentWeek !== 'undefined') ? _cardioJanelaDaSemana(currentWeek) : null; } catch (_) { jan = null; }
+    try { semData = !jan && typeof currentWeek !== 'undefined' && _semanaTemDataDepois_(currentWeek); } catch (_) { semData = false; }
+  }
+  if (jan || semData) {   // v591: semana do protocolo ja passada: nada de "hoje" nem dos minutos da semana do calendario
+    const pe = [];
+    if (jan) { let m = 0; try { const a = _csIso(jan.ini), b = _csIso(jan.fim); _csLista().forEach(s => { if (String(s.d) >= a && String(s.d) <= b && s.min > 0) m += s.min; }); } catch (_) {} if (m > 0) pe.push('Nessa semana: <b>' + m + ' min</b> registrados'); }
+    if (_csUltimo()) pe.push('<button type="button" class="cw-link" onclick="openCardioHist()">ver histórico</button>');
+    const hh = pe.join(' · '); el.innerHTML = hh; el.style.display = hh ? '' : 'none'; return;
+  }
   const hoje = _csDeHoje(), ult = _csUltimo(), feito = isCardioDoneToday(), sem = _csSemanaMin();
   let h = '';
   if (hoje) h = 'Hoje: <b>' + _csTipo(hoje.tipo).nome + ', ' + _csNums(hoje) + '</b> · <button type="button" class="cw-link" onclick="openCardioSess(\'editar\')">editar</button>';
@@ -21866,10 +21991,12 @@ function _csRender() {
   $('csInt').innerHTML = CS_INT.map(x => '<button type="button" class="ft-b' + (f.int === x[0] ? ' on' : '') + '" onclick="cardioSessInt(\'' + x[0] + '\')">' + x[1] + '</button>').join('');
   $('csBtn').textContent = f.id ? 'Salvar as mudanças' : 'Salvar o cardio';
   $('csSo').style.display = isCardioDoneToday() ? 'none' : '';
+  try { $('csFechar').style.display = isCardioDoneToday() ? '' : 'none'; } catch (_) {}   // v591: editando, tinha que achar o fundo pra fechar
 }
 function cardioSessSalvar() {
   const f = _cs; if (!f) return;
-  const t = _csTipo(f.tipo), s = { id: f.id || ('c' + Date.now().toString(36)), d: todayKey(), tipo: f.tipo, int: f.int || '', ts: Date.now() };
+  const _ant = f.id ? _csLista().find(x => x.id === f.id) : null;   // v591: editar nao muda a data da sessao (virada de meia-noite)
+  const t = _csTipo(f.tipo), s = { id: f.id || ('c' + Date.now().toString(36)), d: (_ant && _ant.d) || todayKey(), tipo: f.tipo, int: f.int || '', ts: Date.now() };
   for (const k of t.campos) {
     const v = _csNum(f.vals[k], CS_CAMPOS[k]);
     if (k === 'min' && v == null) { _ghToast('Coloca quantos minutos durou o cardio.'); try { document.getElementById('cs_min').focus(); } catch (_) {} return; }
@@ -23304,6 +23431,7 @@ function _renovLogClick(plano) {
 function renovBannerShow(tipo, dias) {
   try {
     if (sessionStorage.getItem('renovBannerOff') === '1') return; // fechou nesta sessão
+    try { var _rOff = Number(localStorage.getItem('gh_renov_off_' + SHEET_ID)) || 0; if (_rOff && Date.now() - _rOff < 86400000) return; } catch (_) {}   // v591: fechou ha menos de 24 h
     var b = document.getElementById('renovBanner'); if (!b) return;
     var txt = document.getElementById('renovBannerTxt'), cta = document.getElementById('renovBannerCta');
     b.classList.remove('prevenc', 'carencia');
@@ -23325,7 +23453,7 @@ function renovBannerShow(tipo, dias) {
   } catch (e) {}
 }
 function renovBannerDismiss() {
-  try { sessionStorage.setItem('renovBannerOff', '1'); var b = document.getElementById('renovBanner'); if (b) b.classList.remove('show'); } catch (e) {}
+  try { sessionStorage.setItem('renovBannerOff', '1'); try { localStorage.setItem('gh_renov_off_' + SHEET_ID, String(Date.now())); } catch (_) {} var b = document.getElementById('renovBanner'); if (b) b.classList.remove('show'); } catch (e) {}
 }
 
 // ── Lembrete proativo de reajuste (espelha o de renovação) ──
@@ -23371,6 +23499,7 @@ function _reajRespondidoEsteCiclo() {
 function _maisPlanoRender(j) {
   try {
     var el = document.getElementById('maisPlanoTxt'); if (!el) return;
+    if (j && j.error) { el.textContent = 'não consegui ler agora, abre de novo mais tarde'; return; }   // v591: erro de leitura nao e "sem data"
     if (!j || !j.found || !j.vencimento) { el.textContent = 'sem data no cadastro, fala no suporte'; return; }
     if (j.vitalicio || String(j.vencimento) >= '2099') { el.textContent = 'acesso vitalício'; return; }
     var st = String(j.status || '');
@@ -23804,7 +23933,7 @@ function _ghflixPecaOk_(g) {
   try { return !!(g && (g.liberado || /^(sem id nem email|cortesia vencida|aluno nao encontrado|assinatura vencida|sem assinatura ativa)$/.test(String(g.motivo || '')))); } catch (_) { return false; }
 }
 async function _bootPeca_(k) { try { const b = await _bootPromise; return (b && b[k] != null && !b[k].error) ? b[k] : null; } catch (_) { return null; } }
-_bootPromise.then(function (b) { planBlockGate(b && b.planstatus); ghflixTabState((b && _ghflixPecaOk_(b.ghflix)) ? b.ghflix : null); _versaoMinimaChecar_(b && b.versaoMinima); });
+_bootPromise.then(function (b) { planBlockGate((b && b.planstatus && !b.planstatus.error) ? b.planstatus : null); ghflixTabState((b && _ghflixPecaOk_(b.ghflix)) ? b.ghflix : null); _versaoMinimaChecar_(b && b.versaoMinima); });
 // v554: aparelho novo abria com o número de treinos, a meta da semana e do mês, a constância e os anéis ZERADOS, mesmo com
 // meses de treino registrados no servidor (essas marcas moravam só no aparelho). Quando este aparelho não tem NENHUMA marca
 // de dia concluído deste aluno, o app pede ao servidor os dias concluídos (treino, dieta, cardio) dos últimos 70 dias e
@@ -23813,14 +23942,13 @@ async function _conclRestaura_(b) {
   try {
     if (!b || String(b.build || '') < '2026-10-04b') return;
     if (typeof SHEET_ID === 'undefined' || !SHEET_ID) return;
-    const feito = 'gh_concl_rest_' + SHEET_ID;
+    // v591: antes, QUALQUER marca local fazia o app desistir ("tinha") e nunca mais pedir: o aparelho usado de vez em quando
+    // (o navegador ao lado do app instalado) ficava so com o que foi marcado nele. Agora o servidor entra dia a dia, so onde
+    // este aparelho nao tem marca (o que foi marcado aqui nunca e trocado). Uma vez por aparelho, com chave nova.
+    const feito = 'gh_concl_rest2_' + SHEET_ID;
     if (localStorage.getItem(feito)) return;
     const wid = (typeof STUDENT_ID !== 'undefined' && STUDENT_ID) ? STUDENT_ID : SHEET_ID;
     const pT = 'gh_logsent_' + SHEET_ID + '_', pD = 'gh_dietlog_' + SHEET_ID + '_', pC = 'gh_cardio_' + wid + '_';
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i) || '';
-      if (((k.indexOf(pT) === 0 || k.indexOf(pD) === 0) && /_concl$/.test(k)) || k.indexOf(pC) === 0) { localStorage.setItem(feito, 'tinha'); return; }
-    }
     const r = await fetch(LOG_ENDPOINT + '?action=concluidos&id=' + encodeURIComponent(SHEET_ID) + '&_=' + Date.now(), { cache: 'no-store' });
     const j = await r.json();
     if (!j || !j.ok) return;                       // não deu agora: tenta na próxima abertura
@@ -23856,7 +23984,7 @@ function _versaoMinimaChecar_(min) {
       try {
         const a = document.activeElement, digitando = a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
         const fo = document.getElementById('focusOverlay');
-        const treinando = (fo && fo.classList.contains('show')) || (typeof _timerEndAt !== 'undefined' && _timerEndAt > Date.now());
+        const treinando = (fo && fo.classList.contains('show')) || (typeof _timerEndAt !== 'undefined' && _timerEndAt > Date.now()) || (typeof window._ghTreinoRolando === 'function' && window._ghTreinoRolando());   // v591: caixa aberta ou foto no meio tambem espera
         if (digitando || treinando) { setTimeout(tenta, 60000); return; }
         if (sessionStorage.getItem('gh_vmin_' + alvo) === '1') return;   // 1 tentativa por sessão: nunca vira loop
         // v551: e um teto POR APARELHO. A trava de cima é por sessão: se a mínima da planilha ficar acima da versão publicada
@@ -24931,7 +25059,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v590';
+    var APP_SHELL_V = 'metodo-gh-v591';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     var jaRecarregou = false;
@@ -24951,9 +25079,14 @@ if ('serviceWorker' in navigator) {
         if (typeof _timerEndAt !== 'undefined' && _timerEndAt && _timerEndAt > Date.now()) return true;
         var fo = document.getElementById('focusOverlay');
         if (fo && fo.classList.contains('show')) return true;
+        // v591: caixa aberta (foto da refeicao, fotos do reajuste, cardio, anotacao, historico, video) ou camera/galeria chamada ha
+        // menos de 2 min: recarregar aqui derrubava a foto no meio ("piscou e sumiu", L Theisen 29/09; Thiba 25/09; Andre Kaze 22/10).
+        if (document.querySelector('.te-modal-overlay.show, .meal-photo-modal.on, .history-modal-overlay.show, #achOverlay.show, #videoOverlay.show, .evo-overlay.show')) return true;
+        if (window._ghArquivoAbertoEm && Date.now() - window._ghArquivoAbertoEm < 120000) return true;
       } catch (_) {}
       return false;
     }
+    window._ghTreinoRolando = _treinoRolando;
     function tentaRecarregar() {
       if (jaRecarregou) return;
       var a = document.activeElement;
