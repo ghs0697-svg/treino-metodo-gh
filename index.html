@@ -2685,7 +2685,7 @@
   .cs-campo span { display: flex; align-items: baseline; gap: 4px; }
   #cardioSessModal .cs-campo input { width: 100%; min-width: 0; height: auto; margin: 0; background: none; border: 0; border-radius: 0; box-shadow: none; outline: none; color: #f1ede4; font: inherit; font-size: 19px; font-weight: 800; padding: 2px 0 0; }
   .cs-campo em { font-style: normal; font-size: 11.5px; color: #8e8a82; flex: none; }
-  #csBtn { width: 100%; margin-top: 14px; background: var(--gold); color: #15100a; border: none; border-radius: 12px; padding: 12px; font-weight: 800; font-size: 14px; font-family: inherit; cursor: pointer; }
+  #csBtn, #fmBtn { width: 100%; margin-top: 14px; background: var(--gold); color: #15100a; border: none; border-radius: 12px; padding: 12px; font-weight: 800; font-size: 14px; font-family: inherit; cursor: pointer; }
   .ch-lin { display: grid; grid-template-columns: 46px 1fr; gap: 8px; padding: 9px 0; border-top: 1px solid #262626; font-size: 13px; color: #e8e2d4; line-height: 1.45; }
   .ch-lin:first-child { border-top: 0; }
   .ch-d { color: #8e8a82; font-weight: 700; }
@@ -4174,9 +4174,9 @@
 <div class="day-tabs" id="dayTabs"></div>
 
 <div class="week-selector" id="weekSelector" style="display:none;">
-  <button class="week-btn" onclick="changeWeek(-1)">&#8249;</button>
+  <button class="week-btn" onclick="_fmTrocaSemana(-1)">&#8249;</button>
   <span class="week-label" id="weekLabel">Semana 1</span>
-  <button class="week-btn" onclick="changeWeek(1)">&#8250;</button>
+  <button class="week-btn" onclick="_fmTrocaSemana(1)">&#8250;</button>
 </div>
 
 <!-- ══ HERO DO DIA ══ -->
@@ -5743,6 +5743,16 @@
     <button type="button" id="ftBtn" onclick="fechaTreinoSalvar()">Fechar o treino</button>
     <button type="button" class="ft-ghost" onclick="fechaTreinoFecha()">Agora não</button>
     <p id="ftPe" style="color:#777;font-size:10.5px;margin:10px 0 0;line-height:1.5;text-align:center;"></p>
+  </div>
+</div>
+<!-- v595 (GH 26/10/2026, caso Frederico: "É bom o app avisar"): exercício com carga anotada e sem marcar deixa o dia aberto e o
+     treino não conta. Aviso ao sair do treino; quem fecha é a janela de fechamento (v571/v575), com a confirmação do aluno. -->
+<div class="te-modal-overlay" id="faltaMarcarModal" onclick="if(event.target.id==='faltaMarcarModal')faltaMarcarDepois()">
+  <div class="te-modal-box" style="max-width:420px;">
+    <h3 style="margin:0 0 8px;">Faltou marcar</h3>
+    <p id="fmTexto" style="color:#ccc;font-size:13.5px;margin:0;line-height:1.55;"></p>
+    <button type="button" id="fmBtn" onclick="faltaMarcarFechar()">Marcar e fechar o treino</button>
+    <button type="button" class="ft-ghost" id="fmDepois" onclick="faltaMarcarDepois()">Ainda vou fazer</button>
   </div>
 </div>
 <div class="te-modal-overlay" id="cardioSessModal" onclick="if(event.target.id==='cardioSessModal')cardioSessFecha()">
@@ -14836,6 +14846,7 @@ async function loadFromSheets(injectedText) {
     _ok_('posicao', () => _posSave());     // v592: a posição restaurada fica gravada com a assinatura atual, mesmo sem trocar de dia
     setTimeout(_semanaPromptBoot, 2500);   // v539: semana inteira fechada em outra data: pergunta se passa pra próxima
     setTimeout(_ftPromptBoot, 3400);       // v575: treino de ontem ou anteontem que ficou aberto com boa parte marcada
+    setTimeout(_fmBoot, 4200);             // v595: treino de hoje com exercício com carga e sem marcar, app reaberto 45 min depois
     return true;
 
   } catch (err) {
@@ -14930,7 +14941,7 @@ function renderTabs() {
     // badge do cronômetro: tempo registrado deste dia NESTA semana (se houver)
     const _wt = (typeof _wtServer !== 'undefined') && _wtServer[i + '|' + currentWeek];
     const badge = _wt ? `<span class="wt-badge">⏱ ${_wt.duracao}</span>` : '';
-    return `<div class="day-tab ${i === currentDay ? 'active' : ''}" onclick="selectDay(${i})">${w.day}${badge}</div>`;
+    return `<div class="day-tab ${i === currentDay ? 'active' : ''}" onclick="_fmTrocaDia(${i})">${w.day}${badge}</div>`;
   }).join("");
 }
 
@@ -15619,6 +15630,90 @@ function _ftPromptBoot() {
       }
     }
   } catch (_) {}
+}
+// ══ v595 (GH 26/10/2026, "É bom o app avisar"): FALTOU MARCAR ══
+// Caso Frederico Schuller (L1168): dois treinos com carga anotada ficaram com 1 ou 2 exercícios sem marcar, o dia nunca fechou e
+// não contaram na constância nem no total (16/09 e 18/10; ele contou 23 treinos e o app 21). A janela de fechamento (v571/v575)
+// já resolve, mas só aparecia com o cronômetro, num botão da barra ou na abertura do dia seguinte. Agora o app AVISA quando o
+// aluno sai do treino: troca de dia ou de semana, logo depois de marcar o cardio e quando volta pro app 45 min ou mais depois.
+// Só avisa com o dia aberto e boa parte do treino feita (a mesma regra do fechamento) e com pelo menos um exercício COM CARGA e
+// sem marcar. "Ainda vou fazer" segue o que o aluno ia fazer; no máximo 2 avisos por treino por dia, 90 min entre eles. Nunca
+// marca nada sozinho: "Marcar e fechar o treino" abre a janela de fechamento, que já vem com "Fiz" nos exercícios com carga.
+var _fm = null;   // o aviso aberto: { di, depois }
+var _FM_VOLTA = 45 * 60000, _FM_ENTRE = 90 * 60000;
+function _fmKey(di) { return 'gh_fmaviso_' + SHEET_ID + '_' + todayKey() + '_d' + Number(di) + '_w' + currentWeek; }
+function _fmFalta(di) {
+  try {
+    di = Number(di);
+    if (!(di >= 0) || !_ftPodeFecharHoje(di)) return [];
+    return _ftPendentes(di).filter(o => _ftTemCarga(di, o.ei));
+  } catch (_) { return []; }
+}
+function _fmPodeAvisar(di) {
+  try { const a = JSON.parse(localStorage.getItem(_fmKey(di)) || 'null'); if (!a) return true; return (Number(a.n) || 0) < 2 && Date.now() - (Number(a.ts) || 0) >= _FM_ENTRE; } catch (_) { return true; }
+}
+function _fmAlgoAberto() {
+  try { return !!document.querySelector('#tourOverlay.show, .evo-overlay.show, .te-modal-overlay.show, .te-modal-overlay.active, .ach-overlay.show, .focus-overlay.show, .install-modal.active, .video-overlay.show, .history-modal-overlay.show, .sub-picker-overlay.show, .timer-overlay.show, #mealPhotoModal.on, #achOverlay.show') || (function () { const q = document.getElementById('quemAbriu'); return !!q && q.style.display !== 'none'; })(); } catch (_) { return false; }
+}
+// mostra o aviso do treino di (na semana aberta) e devolve true; depois = o que o aluno ia fazer (trocar de dia ou de semana)
+function _fmAvisa(di, depois) {
+  try {
+    if (typeof SHEET_ID === 'undefined' || !SHEET_ID) return false;
+    if (_fmAlgoAberto() || !_fmPodeAvisar(di)) return false;
+    const falta = _fmFalta(di); if (!falta.length) return false;
+    const nomes = falta.map(o => '<b>' + _ftEsc(_ftNome(di, o.ei)) + '</b>');
+    const lista = nomes.length === 1 ? nomes[0] : nomes.slice(0, -1).join(', ') + ' e ' + nomes[nomes.length - 1];
+    const um = falta.length === 1, outros = _ftPendentes(di).length - falta.length;
+    let rot = null; try { rot = _diaRotulo(di); } catch (_) {}
+    document.getElementById('fmTexto').innerHTML = 'No treino ' + (rot && rot.n ? 'do Dia ' + _ftEsc(rot.n) + ' ' : '') + 'tu anotou carga em ' + lista + ', mas '
+      + (um ? 'ele não está marcado como feito' : 'eles não estão marcados como feitos') + '. Sem marcar, o treino de hoje não fecha e não conta na tua semana.'
+      + (outros > 0 ? '<br><br>Ainda ' + (outros === 1 ? 'falta 1 exercício' : 'faltam ' + outros + ' exercícios') + ' sem nada anotado.' : '');
+    let a = {}; try { a = JSON.parse(localStorage.getItem(_fmKey(di)) || 'null') || {}; } catch (_) {}
+    try { localStorage.setItem(_fmKey(di), JSON.stringify({ n: (Number(a.n) || 0) + 1, ts: Date.now() })); } catch (_) {}
+    _fm = { di: Number(di), depois: typeof depois === 'function' ? depois : null };
+    teShow('faltaMarcarModal');
+    return true;
+  } catch (_) { return false; }
+}
+function faltaMarcarFechar() {
+  const f = _fm; _fm = null;
+  try { teHide('faltaMarcarModal'); } catch (_) {}
+  if (f) { try { fechaTreinoAbrir(f.di, 'finalizar', 0); } catch (_) {} }
+}
+function faltaMarcarDepois() {
+  const f = _fm; _fm = null;
+  try { teHide('faltaMarcarModal'); } catch (_) {}
+  if (f && f.depois) { try { f.depois(); } catch (_) {} }
+}
+// troca de dia ou de semana pelo toque do aluno: avisa do treino que ele está deixando; a troca acontece no "Ainda vou fazer"
+function _fmAntesDeSair(acao) {
+  let avisou = false; try { avisou = _fmAvisa(currentDay, acao); } catch (_) {}
+  if (!avisou) acao();
+}
+function _fmTrocaDia(i) { if (Number(i) === Number(currentDay)) { selectDay(i); return; } _fmAntesDeSair(function () { selectDay(i); }); }
+function _fmTrocaSemana(d) { const n = currentWeek + d; if (n < 1 || n > WEEK_MAX) { changeWeek(d); return; } _fmAntesDeSair(function () { changeWeek(d); }); }
+// depois do cardio e na volta pro app: avisa do treino mexido hoje, esperando a tela ficar livre (até 2 min)
+function _fmTentaHoje(origem) {
+  let n = 0;
+  (function tenta() {
+    try {
+      if (typeof WORKOUT === 'undefined' || !Array.isArray(WORKOUT) || !WORKOUT.length) return;
+      if (_fmAlgoAberto()) { if (++n < 60) setTimeout(tenta, 2000); return; }
+      let lista = []; try { lista = JSON.parse(localStorage.getItem('gh_ativo_' + SHEET_ID + '_' + todayKey()) || '[]') || []; } catch (_) {}
+      for (let i = lista.length - 1; i >= 0; i--) { if (_fmAvisa(Number(lista[i]))) return; }
+    } catch (_) {}
+  })();
+}
+function _fmSaiuKey() { return 'gh_fmsaiu_' + (typeof SHEET_ID !== 'undefined' && SHEET_ID ? SHEET_ID : ''); }
+document.addEventListener('visibilitychange', function () {
+  try {
+    if (document.visibilityState === 'hidden') { localStorage.setItem(_fmSaiuKey(), String(Date.now())); return; }
+    const t = parseInt(localStorage.getItem(_fmSaiuKey()), 10) || 0;
+    if (t && Date.now() - t >= _FM_VOLTA) setTimeout(function () { _fmTentaHoje('volta'); }, 1500);
+  } catch (_) {}
+});
+function _fmBoot() {
+  try { const t = parseInt(localStorage.getItem(_fmSaiuKey()), 10) || 0; if (t && Date.now() - t >= _FM_VOLTA) _fmTentaHoje('abertura'); } catch (_) {}
 }
 function _fechaTreinoDepoisDoCronometro(di, w, secs) {
   di = Number(di);
@@ -21947,6 +22042,7 @@ function onCardioDone() {
   logCardioRegistro();                             // backup granular (aba CARDIO)
   notifyCardioCompletion();                        // pontua no ranking (LOGS plano='cardio')
   setTimeout(() => showCardioPhotoCard(), 120);    // card de foto pra compartilhar (opcional)
+  setTimeout(function () { try { _fmTentaHoje('cardio'); } catch (_) {} }, 900);   // v595: faltou marcar exercício com carga no treino de hoje
 }
 // Backup granular de cada dia de cardio (aba CARDIO), igual logMealRegistro é da dieta. Dedup 1/dia.
 // NÃO pontua sozinho (o ranking conta via notifyCardioCompletion); é lastro de auditoria.
@@ -25190,7 +25286,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v594';
+    var APP_SHELL_V = 'metodo-gh-v595';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
