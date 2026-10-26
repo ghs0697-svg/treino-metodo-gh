@@ -606,6 +606,12 @@
   /* v532: aviso de instalar (celular sem o app instalado; uma vez, e de novo só depois de 14 dias, no máximo 3) */
   .inst-aviso { position: fixed; left: 12px; right: 12px; bottom: 16px; z-index: 8950; background: rgba(18,17,14,.98); border: 1px solid rgba(212,175,106,.45); border-radius: 14px; padding: 12px 13px; box-shadow: 0 10px 30px rgba(0,0,0,.6); display: flex; flex-direction: column; gap: 9px; }
   .inst-aviso[hidden] { display: none; }
+  /* v593: faixa de versão nova pronta */
+  .upd-pill { position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; z-index: 8940; background: #16150f; color: #e7e2d8; border: 1px solid rgba(212,175,106,.55); border-radius: 999px; padding: 9px 14px; font-size: 12.5px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,.55); cursor: pointer; max-width: 92vw; white-space: nowrap; font-family: inherit; }
+  .upd-pill b { color: var(--gold); }
+  .upd-pill[hidden] { display: none; }
+  body.has-bnav .upd-pill { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+  #instAgora[hidden] { display: none !important; }
   body.has-bnav .inst-aviso { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
   .inst-aviso-tx { display: flex; flex-direction: column; gap: 3px; color: #e7e2d8; font-size: 13px; line-height: 1.45; }
   .inst-aviso-tx span { color: #a39a86; font-size: 12px; }
@@ -3730,6 +3736,74 @@
     #pgFill, #ddpFill, #focusBarFill, .proto-progress .pp-fill, .mt-barra .mt-fill, .mt-anel .arc { transition: none; }
   }
 </style>
+<script>
+// ══ v593 (auditoria 26/10): dois guardas que NÃO dependem do script principal (ES5 puro, primeiro script da página) ══
+// 1. Vigia de vida: se o script principal não terminou de rodar em 10 s (erro de sintaxe, shell quebrado: o caso da v517), derruba
+//    o service worker e os caches e recarrega da rede, 1 vez por dia por sessão. O vigia de tela branca que já existe mora DENTRO
+//    do script principal, então um shell que nem roda ficava sem cura até o navegador reconferir o sw.js sozinho (até 24 h).
+// 2. Erros de JS: guarda os últimos 12 em window.__ghErros e manda até 2 por sessão pro servidor (aba ERROS_APP da mestre), sem o
+//    ruído conhecido (rede, ResizeObserver, "Script error.") e nunca mais de 5 por aparelho por dia, 1 por mensagem.
+(function () {
+  try {
+    window.__ghErros = [];
+    var _ruido = /ResizeObserver|^Script error|Failed to fetch|Load failed|NetworkError|AbortError|operation was aborted|QuotaExceeded|play\(\) request|NotAllowedError|signal is aborted/i;
+    var _enviados = 0;
+    function _manda(reg) {
+      try {
+        if (_enviados >= 2) return;
+        if (!/^https?:$/.test(location.protocol)) return;
+        var dia = new Date().toISOString().slice(0, 10), kDia = 'gh_erros_dia';
+        var q = {}; try { q = JSON.parse(localStorage.getItem(kDia) || '{}') || {}; } catch (_) { q = {}; }
+        if (q.dia !== dia) q = { dia: dia, n: 0, msgs: [] };
+        if ((q.n || 0) >= 5) return;
+        var chave = String(reg.msg || '').slice(0, 80);
+        if ((q.msgs || []).indexOf(chave) >= 0) return;   // mesma mensagem no mesmo dia: 1 vez
+        q.n = (q.n || 0) + 1; q.msgs = (q.msgs || []).concat([chave]).slice(-20);
+        try { localStorage.setItem(kDia, JSON.stringify(q)); } catch (_) {}
+        _enviados++;
+        var sp = new URLSearchParams(location.search);
+        var corpo = JSON.stringify({ type: 'erro_app', sheetId: sp.get('sheet') || '', v: String(window.GH_APP_V || ''), msg: String(reg.msg || '').slice(0, 300), onde: String(reg.onde || '').slice(0, 200), stack: String(reg.stack || '').slice(0, 600), ua: String(navigator.userAgent || '').slice(0, 140), vivo: !!window.__ghVivo, ts: new Date().toISOString() });
+        var url = 'https://script.google.com/macros/s/AKfycby0Kej7V7Gi2gIDKorBookSLofBMHOF50UFWq4Q1fTmstCD8ed8O9XLyCaZo8QIeUPfeQ/exec';
+        fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: corpo, keepalive: true, redirect: 'follow' })['catch'](function () {});
+      } catch (_) {}
+    }
+    function _guarda(msg, onde, stack) {
+      try {
+        var reg = { ts: Date.now(), msg: String(msg || '').slice(0, 300), onde: String(onde || '').slice(0, 200), stack: String(stack || '').slice(0, 600) };
+        window.__ghErros.push(reg); if (window.__ghErros.length > 12) window.__ghErros.shift();
+        if (_ruido.test(reg.msg)) return;
+        setTimeout(function () { _manda(reg); }, 1500);
+      } catch (_) {}
+    }
+    window.addEventListener('error', function (ev) {
+      try {
+        if (ev && ev.target && ev.target !== window && !ev.error) return;   // recurso que não carregou (img/script): não é erro de código
+        var e = ev && ev.error;
+        _guarda((e && e.message) || (ev && ev.message) || 'erro', ((ev && ev.filename) || '') + ':' + ((ev && ev.lineno) || 0), e && e.stack);
+      } catch (_) {}
+    }, true);
+    window.addEventListener('unhandledrejection', function (ev) {
+      try { var r = ev && ev.reason; _guarda((r && r.message) || String(r || 'promise'), 'promise', r && r.stack); } catch (_) {}
+    });
+    function _vigia() {
+      try {
+        if (window.__ghVivo) return;
+        var dia = new Date().toISOString().slice(0, 10);
+        if (sessionStorage.getItem('gh_vigia_' + dia) === '1') return;
+        sessionStorage.setItem('gh_vigia_' + dia, '1');
+        if (!/^https?:$/.test(location.protocol)) return;
+        var fim = function () { try { var u = new URL(location.href); u.searchParams.set('atualiza', String(Date.now())); location.replace(u.toString()); } catch (_) { try { location.reload(); } catch (__) {} } };
+        var limpa = function () { try { return (window.caches && caches.keys) ? caches.keys().then(function (ks) { return Promise.all(ks.filter(function (k) { return k !== 'gh-videos-v1'; }).map(function (k) { return caches['delete'](k); })); }) : Promise.resolve(); } catch (_) { return Promise.resolve(); } };
+        if ('serviceWorker' in navigator && navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+          Promise.resolve().then(function () { return navigator.serviceWorker.getRegistrations(); }).then(function (rs) { return Promise.all((rs || []).map(function (r) { return Promise.resolve(r.unregister())['catch'](function () {}); })); }).then(limpa, limpa).then(fim, fim);
+        } else { limpa().then(fim, fim); }
+      } catch (_) {}
+    }
+    window.__ghVigia = _vigia;   // o teste chama direto
+    setTimeout(_vigia, 10000);
+  } catch (_) {}
+})();
+</script>
 </head>
 <body>
 <script>try{var _mq=new URLSearchParams(location.search).get('modo');if(_mq==='simples'||_mq==='intuitivo'){localStorage.setItem('gh_modo','intuitivo');localStorage.removeItem('gh_intu_aj_t');localStorage.removeItem('gh_intu_aj_d');}else if(_mq==='completo'||_mq==='completa')localStorage.removeItem('gh_modo');var _gm=localStorage.getItem('gh_modo');if(_gm==='simples'||_gm==='intuitivo')document.body.classList.add('modo-simples');if(localStorage.getItem('gh_intu_aj_t'))document.body.classList.add('aj-t-off');if(localStorage.getItem('gh_intu_aj_d'))document.body.classList.add('aj-d-off');}catch(e){}</script>
@@ -5285,6 +5359,7 @@
   <div class="inst-aviso-tx"><b>📲 Pra otimizar o uso, instala o app na tela de início.</b><span>Abre com um toque, roda mais liso e te avisa na hora do treino.</span></div>
   <div class="inst-aviso-bt"><button type="button" class="ia-ok" onclick="instAvisoVer()">Ver como instalar</button><button type="button" class="ia-nao" onclick="instAvisoFecha()">Agora não</button></div>
 </div>
+<button type="button" class="upd-pill" id="updPill" hidden aria-live="polite">Versão nova do app pronta · <b>Atualizar</b></button>
 
 <!-- ══ INSTALL GUIDE MODAL ══ -->
 <div class="install-modal" id="installModal">
@@ -6084,14 +6159,15 @@
     <h3>📱 Instalar o app na tela inicial</h3>
     <p style="color:#aaa;font-size:12px;margin:0 0 10px;">Acesso rápido sem precisar abrir o navegador toda vez.</p>
     <div style="background:rgba(212,167,106,0.10);border-left:3px solid var(--gold);border-radius:4px;padding:8px 10px;margin:0 0 12px;font-size:12px;color:#d4a76a;line-height:1.5;">Abriu o link pelo <strong>WhatsApp</strong> ou pelo <strong>Instagram</strong>? Lá dentro a opção de instalar não aparece. Toca nos <strong>···</strong> (ou no ícone do navegador) e escolhe <strong>Abrir no Safari</strong> ou <strong>Abrir no Chrome</strong>. Aí segue os passos abaixo.</div>
-    <div style="background:#161616;border:1px solid #2a2a2a;border-radius:6px;padding:12px;margin-bottom:10px;">
+    <div id="instIos" style="background:#161616;border:1px solid #2a2a2a;border-radius:6px;padding:12px;margin-bottom:10px;">
       <p style="color:var(--gold);font-weight:700;font-size:12px;margin:0 0 6px;">📱 iPhone (Safari)</p>
       <p style="color:#ccc;font-size:12px;line-height:1.5;margin:0;">1. Toca no ícone <strong>Compartilhar</strong> (quadrado com seta pra cima) na barra inferior<br>2. Rola e toca em <strong>"Adicionar à Tela de Início"</strong><br>3. Confirma "Adicionar"</p>
     </div>
-    <div style="background:#161616;border:1px solid #2a2a2a;border-radius:6px;padding:12px;margin-bottom:10px;">
+    <div id="instAndroid" style="background:#161616;border:1px solid #2a2a2a;border-radius:6px;padding:12px;margin-bottom:10px;">
       <p style="color:var(--gold);font-weight:700;font-size:12px;margin:0 0 6px;">Android (Chrome)</p>
       <p style="color:#ccc;font-size:12px;line-height:1.5;margin:0;">1. Toca nos <strong>3 pontinhos</strong> no canto superior direito<br>2. Toca em <strong>"Adicionar à tela inicial"</strong> ou <strong>"Instalar app"</strong><br>3. Confirma</p>
     </div>
+    <button type="button" id="instAgora" class="te-btn primary" hidden style="width:100%;margin:0 0 10px;" onclick="instAgora()">Instalar agora</button>
     <p style="color:var(--gold);font-size:13px;font-weight:700;text-align:center;margin:12px 0 4px;">Toca no ícone dourado. Bom treino.</p>
     <button class="te-btn ghost" onclick="teHide('installModalV2')" style="width:100%;margin-top:8px;">Fechar</button>
   </div>
@@ -19454,9 +19530,27 @@ function toggleFloatMenu() {
 function showInstallInstructions() {
   document.getElementById('floatOptions').classList.remove('show');
   document.getElementById('floatBtn').classList.remove('open');
+  // v593: só o passo a passo do aparelho do aluno (no computador, os dois) e o botão nativo quando o Chrome oferece a instalação
+  try {
+    var ua = navigator.userAgent || '', ios = /iPad|iPhone|iPod/.test(ua), and = /Android/i.test(ua);
+    var bi = document.getElementById('instIos'), ba = document.getElementById('instAndroid'), bt = document.getElementById('instAgora');
+    if (bi) bi.hidden = and && !ios; if (ba) ba.hidden = ios && !and;
+    if (bt) bt.hidden = !window._ghInstallPrompt;
+  } catch (_) {}
   teShow('installModalV2');
 }
 function closeInstallOnBg(e) { if (e.target.id === 'installModalV2') teHide('installModalV2'); }
+// v593: Android/Chrome oferece o pedido nativo de instalação: guarda o evento e o guia ganha o botão "Instalar agora"
+window._ghInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', function (e) { try { e.preventDefault(); window._ghInstallPrompt = e; var b = document.getElementById('instAgora'); if (b) b.hidden = false; } catch (_) {} });
+window.addEventListener('appinstalled', function () { try { window._ghInstallPrompt = null; var b = document.getElementById('instAgora'); if (b) b.hidden = true; var ia = document.getElementById('instAviso'); if (ia) ia.hidden = true; teHide('installModalV2'); } catch (_) {} });
+function instAgora() {
+  try {
+    var p = window._ghInstallPrompt; if (!p) return;
+    p.prompt();
+    Promise.resolve(p.userChoice).then(function (r) { try { if (r && r.outcome === 'accepted') { window._ghInstallPrompt = null; var b = document.getElementById('instAgora'); if (b) b.hidden = true; } } catch (_) {} }).catch(function () {});
+  } catch (_) {}
+}
 function closeRankingOnBg(e) { if (e.target.id === 'rankingModal') teHide('rankingModal'); }
 function closeProgressoOnBg(e) { if (e.target.id === 'progressoModal') teHide('progressoModal'); }
 
@@ -23405,6 +23499,17 @@ function openMaisSheet() {
 // cache-bust na URL — atualização garantida na hora, sem ritual, em qualquer aparelho.
 async function forcarAtualizacaoApp() {
   closeMaisSheet();
+  // v593: sem rede não derruba nada. Antes, "Atualizar o app agora" offline apagava o service worker e os caches e recarregava pra
+  // uma página de erro do navegador: o aluno ficava sem app até a internet voltar. Agora confere a rede primeiro (sw.js, até 8 s).
+  try {
+    var _ok = false;
+    if (navigator.onLine !== false) {
+      var _ac = (typeof AbortController === 'function') ? new AbortController() : null, _tm = _ac ? setTimeout(function () { try { _ac.abort(); } catch (_) {} }, 8000) : null;
+      try { var _r = await fetch('sw.js?_=' + Date.now(), { cache: 'no-store', signal: _ac ? _ac.signal : undefined }); _ok = !!(_r && _r.ok); } catch (_) { _ok = false; }
+      if (_tm) clearTimeout(_tm);
+    }
+    if (!_ok) { try { _ghToast('Sem internet agora. Tenta de novo quando a conexão voltar.', 4000); } catch (_) {} return; }
+  } catch (_) {}
   try {
     if ('serviceWorker' in navigator) {
       var regs = await navigator.serviceWorker.getRegistrations();
@@ -25117,23 +25222,27 @@ async function painelGateSubmit() {
 
 // PWA: manifest dinâmico com start_url incluindo parâmetros do aluno
 (function() {
-  const startUrl = SHEET_ID && TAB_NAME
+  // v593: o manifest vai num blob: URL relativa não resolve a partir dele (o Chrome descartava start_url e ícones e não oferecia
+  // "Instalar app", só o atalho). Tudo absoluto a partir da página.
+  const _abs = u => { try { return new URL(u, location.href).href; } catch (_) { return u; } };
+  const startUrl = _abs(SHEET_ID && TAB_NAME
     ? './index.html?sheet=' + encodeURIComponent(SHEET_ID) + '&tab=' + encodeURIComponent(TAB_NAME)
-    : './index.html';
+    : './index.html');
   const manifest = {
     name: 'Treino | Método GH',
     short_name: 'Método GH',
     description: 'Protocolo de Treino · Método GH',
     start_url: startUrl,
+    scope: _abs('./'),
     display: 'standalone',
     background_color: '#0D0D0D',
     theme_color: '#0D0D0D',
     orientation: 'portrait',
     icons: [
-      { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-      { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-      { src: 'icon-192-maskable.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
-      { src: 'icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+      { src: _abs('icon-192.png'), sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: _abs('icon-512.png'), sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: _abs('icon-192-maskable.png'), sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+      { src: _abs('icon-512-maskable.png'), sizes: '512x512', type: 'image/png', purpose: 'maskable' }
     ]
   };
   const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
@@ -25153,9 +25262,11 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v592';
+    var APP_SHELL_V = 'metodo-gh-v593';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
+    // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
+    try { if (/[?&]atualiza=/.test(location.search) && history.replaceState) { var _u = new URL(location.href); _u.searchParams.delete('atualiza'); history.replaceState(history.state, '', _u.toString()); } } catch (_) {}
     var jaRecarregou = false;
     // v488 (GH 20/09: "queria que tu forçasse a atualização de todos, vi um aluno na 467"): o corte
     // antigo era o RELÓGIO (1 min de sessão), então quem deixa o app aberto o dia todo nunca recarregava
@@ -25206,7 +25317,9 @@ if ('serviceWorker' in navigator) {
         if (!ctrl) return;
         var mc = new MessageChannel();
         mc.port1.onmessage = function (ev) {
-          if (ev.data && ev.data !== APP_SHELL_V) tentaRecarregar();
+          // v593: só recarrega quando o SW é MAIS NOVO que o shell. Shell mais novo que o SW acontece de passagem a cada publicação
+          // (a revalidação já trouxe o index novo e o sw.js novo ainda baixa): recarregar aí gastava a única tentativa da sessão à toa.
+          if (ev.data && ev.data !== APP_SHELL_V) { var _nS = _versaoNumLocal_(ev.data), _nA = _versaoNumLocal_(APP_SHELL_V); if (!_nS || !_nA || _nS > _nA) tentaRecarregar(); }
         };
         ctrl.postMessage('gh_versao', [mc.port2]);
       } catch (_) {}
@@ -25280,7 +25393,7 @@ if ('serviceWorker' in navigator) {
               // na tela, só marca a versão nova como pendente. Aplica quando o aluno sai (tela apagada, outro app) ou quando
               // volta depois de 30 s fora, que é quando o app parece estar abrindo de novo. Versão abaixo da mínima segue
               // forçando na hora pelo caminho da AVISOS!E2.
-              if (document.visibilityState === 'visible') { _autoUpPend = alvo; return; }
+              if (document.visibilityState === 'visible') { _autoUpPend = alvo; _updPillMostra(alvo); return; }   // v593: faixa discreta em vez de esperar em silêncio
               sessionStorage.setItem('gh_autoup_' + alvo, '1');
               try { if (typeof _flushSetsPendentes_ === 'function') _flushSetsPendentes_(true); } catch (_) {}
               if (typeof forcarAtualizacaoApp === 'function') forcarAtualizacaoApp();
@@ -25292,6 +25405,24 @@ if ('serviceWorker' in navigator) {
       } catch (_) {}
     }
     var _autoUpPend = 0, _autoUpTenta = null, _autoUpSaiu = 0;
+    // v593: com o app na tela, a versão nova fica numa faixa discreta (antes só aplicava quando o aluno saía e voltava depois de 30 s)
+    function _updPillMostra(alvo) {
+      try {
+        var el = document.getElementById('updPill'); if (!el) return;
+        el.hidden = false;
+        el.onclick = function () {
+          try {
+            var a = document.activeElement, digitando = a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
+            if (digitando || _treinoRolando()) { if (typeof _ghToast === 'function') _ghToast('Termina o que está fazendo e toca de novo: a atualização recarrega o app.', 3500); return; }
+            el.hidden = true; _autoUpPend = 0;
+            try { sessionStorage.setItem('gh_autoup_' + alvo, '1'); } catch (_) {}
+            try { if (typeof _flushSetsPendentes_ === 'function') _flushSetsPendentes_(true); } catch (_) {}
+            if (typeof forcarAtualizacaoApp === 'function') forcarAtualizacaoApp();
+          } catch (_) {}
+        };
+      } catch (_) {}
+    }
+    window._updPillMostra = _updPillMostra;
     setTimeout(_autoUpdateSemSW, 8000);
     document.addEventListener('visibilitychange', function () {
       try {
@@ -28056,6 +28187,7 @@ function diDragEnd() {
 document.getElementById('trainerPwdInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') authTrainer(); });
 document.getElementById('trainerSheetIdInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') trainerLoadSheet(); });
 document.getElementById('swapSearchInput')?.addEventListener('input', swapSearch);
+window.__ghVivo = true;   // v593: o script principal rodou até o fim (o vigia de vida no <head> só age quando isto não aconteceu)
 </script>
 </body>
 </html>

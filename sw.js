@@ -1,4 +1,4 @@
-const CACHE_NAME = 'metodo-gh-v592';
+const CACHE_NAME = 'metodo-gh-v593';
 const ASSETS = [
   './',
   './index.html',
@@ -139,15 +139,20 @@ self.addEventListener('fetch', e => {
   // protocolo não passa por aqui (gviz/script.google.com = network direto, mais o cache de CSV do
   // próprio app que revalida sozinho), então protocolo novo continua aparecendo na hora.
   if (e.request.url.includes('index.html') || e.request.url.includes('editor-data.js') || e.request.url.includes('substitutos.js') || e.request.mode === 'navigate') {
+    // v593: UMA chave por arquivo, sem a query (?sheet=...&tab=..., ?v=N, ?atualiza=...): a página fica em /index.html (a mesma
+    // entrada que o precache grava), cada navegação pra outra pasta (calc/, comeco/) fica na sua. Antes cada variação de URL virava
+    // uma cópia do shell no cache e o match com ignoreSearch devolvia a cópia mais ANTIGA (a da ativação) até trocar de versão:
+    // o shell novo que a revalidação baixava nunca era o servido.
+    const chave = (() => { try { const u = new URL(e.request.url); let pth = u.pathname; if (pth.endsWith('/')) pth += 'index.html'; return u.origin + pth; } catch (_) { return e.request.url; } })();
     e.respondWith(_semNull_(
-      caches.match(e.request, { ignoreSearch: true }).then(cached => {
+      caches.match(chave).then(cached => {
         // no-cache: revalida com a origem (ETag) em vez de confiar no cache HTTP de
         // 10min do Pages — a atualização em background pegava shell requentado.
         // v440: fetch pela URL (string), nunca pelo Request de navegacao com init (WebKit antigo lancava TypeError).
         const net = fetch(e.request.url, { cache: 'no-cache', credentials: 'same-origin' }).then(resp => {
           if (resp && resp.ok && e.request.method === 'GET') {
             const clone = resp.clone();
-            caches.open(CACHE_NAME).then(c => c.put(e.request, clone)).catch(() => {});
+            caches.open(CACHE_NAME).then(c => c.put(chave, clone)).catch(() => {});
           }
           return resp;
         }).catch(() => null);
