@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0D0D0D">
@@ -47,16 +47,20 @@
 
   body {
     font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
-    background:
-      radial-gradient(ellipse 92% 52% at 50% 0%, rgba(212, 175, 106, 0.11) 0%, rgba(90, 68, 26, 0.06) 34%, transparent 70%),
-      linear-gradient(180deg, #120F0A 0%, var(--dark) 58%);
     background-color: var(--dark);
-    background-attachment: fixed;
     color: var(--white);
     min-height: 100vh;
     padding-bottom: 80px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+  /* v594: o degradê do fundo mora num ::before fixo. background-attachment: fixed no body é ignorado no iOS (o degradê
+     rolava junto com a página) e pesa no Android (repinta o fundo inteiro a cada rolagem). O body fica só com a cor sólida. */
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background:
+      radial-gradient(ellipse 92% 52% at 50% 0%, rgba(212, 175, 106, 0.11) 0%, rgba(90, 68, 26, 0.06) 34%, transparent 70%),
+      linear-gradient(180deg, #120F0A 0%, var(--dark) 58%);
   }
 
   /* ── Header ── */
@@ -954,30 +958,12 @@
   .streak-stat .num { font-size: 22px; font-weight: 800; color: var(--gold); }
   .streak-stat .lbl { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
 
-  /* ── Menu flutuante (Install + WhatsApp) ── */
-  #floatMenu { position: fixed; bottom: 18px; right: 18px; z-index: 9000; display: none; flex-direction: column; align-items: flex-end; gap: 10px; }
-  #floatMenu.show { display: flex; }
-  .float-btn { width: 56px; height: 56px; border-radius: 50%; background: var(--gold); color: var(--dark); border: none; font-size: 26px; box-shadow: 0 4px 14px rgba(0,0,0,0.6); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; }
-  .float-btn:hover { transform: scale(1.05); }
-  .float-btn.open { transform: rotate(45deg); }
-  .float-options { display: none; flex-direction: column; gap: 8px; align-items: flex-end; max-height: calc(calc(100vh / var(--fz, 1)) - 150px); overflow-y: auto; overscroll-behavior: contain; padding-top: 4px; }
-  /* grupo "Mais opções": itens raros/destrutivos ficam recolhidos fora do caminho do dia a dia */
-  #floatMoreGroup { display: none; flex-direction: column; gap: 8px; align-items: flex-end; }
-  #floatMoreGroup.open { display: flex; }
+  /* v594: o menu flutuante (#floatMenu, 12 botões) saiu do app: estava escondido por regra geral desde a barra inferior (v424)
+     e a aba Mais faz tudo que ele fazia. */
   /* desktop: modo aluno centrado (o editor ?edit=1 marca body.wide-mode e segue full width) */
   @media (min-width: 900px) {
     body:not(.wide-mode) { max-width: 600px; margin-left: auto; margin-right: auto; }
   }
-  .float-options.show { display: flex; }
-  .float-opt { background: #161513; border: 1px solid rgba(255,255,255,0.10); color: var(--white); padding: 10px 16px 10px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; letter-spacing: 0.01em; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,0.55); display: flex; align-items: center; gap: 10px; text-decoration: none; white-space: nowrap; transition: all 0.15s; }
-  .float-opt:hover, .float-opt:active { background: #211f1b; border-color: rgba(212,175,106,0.45); }
-  .float-opt .ic { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--gold-soft); color: var(--gold); flex-shrink: 0; }
-  .float-opt .ic svg { width: 14px; height: 14px; }
-  /* Únicas exceções de cor: WhatsApp (verde no ícone) e Instalar (CTA dourado) */
-  .float-opt.whatsapp .ic { background: rgba(37,211,102,0.14); color: #4ade80; }
-  .float-opt.install { background: var(--gold); border-color: var(--gold); color: #15100a; font-weight: 800; }
-  .float-opt.install .ic { background: rgba(0,0,0,0.14); color: #15100a; }
-  .float-opt.install:hover { background: var(--gold-bright); border-color: var(--gold-bright); }
 
   /* Ranking */
   .rk-row { display: grid; grid-template-columns: 44px 1fr auto; gap: 10px; align-items: center; padding: 9px 10px; border-radius: 10px; margin-bottom: 6px; background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.06); transition: background 0.12s; }
@@ -1801,6 +1787,7 @@
   #printArea { display: none; }
   @media print {
     body { background: #fff !important; }
+    body::before { display: none !important; }
     /* Esconde TUDO que não for printArea (UI, partners, suplementos
        recomendados, parceiros, modais, menus flutuantes, etc) */
     body > *:not(#printArea) { display: none !important; visibility: hidden !important; }
@@ -2292,7 +2279,6 @@
   #bottomNav .bn-item.locked { opacity: 0.45; }
   body.has-bnav .main-nav { display: none !important; }
   body.has-bnav { padding-bottom: max(calc(66px + env(safe-area-inset-bottom, 0px)), 93px); }
-  body.has-bnav #floatMenu { bottom: max(calc(82px + env(safe-area-inset-bottom, 0px)), 109px); }
   body.has-bnav #timerPill { bottom: max(calc(150px + env(safe-area-inset-bottom, 0px)), 177px); }
   /* installBtn flutuante antigo ficava METADE atrás da barra (print GH 14/08 01:37);
      instalar o app agora é o item destacado da aba Mais — o flutuante sai de cena */
@@ -3698,8 +3684,6 @@
   .set-del { width: 28px; min-width: 28px; height: 32px; font-size: 17px; }
   #chatBanner button[title="Fechar"] { padding: 6px 9px !important; font-size: 17px !important; line-height: 1 !important; top: 1px !important; right: 3px !important; }
   #chatBanner > div:last-child { font-size: 11.5px !important; }
-  .float-btn { width: 52px; height: 52px; }
-  body.typing #floatBtn { opacity: 0; pointer-events: none; transition: opacity .15s; }
   #cadernoSalvarBtn { background: var(--gold); color: #15100a; border: none; border-radius: 12px; padding: 12px; font-weight: 800; font-size: 14px; font-family: inherit; cursor: pointer; }
   #cadernoSalvarBtn:disabled { opacity: .6; cursor: default; }
   #maisSheetOverlay { background: rgba(0, 0, 0, .78); }
@@ -3711,7 +3695,6 @@
   body.view-dieta #esforcoAlvoBadge { display: none !important; }
   body.view-progresso #lastModBadge, body.view-progresso #proxReajusteBadge, body.view-progresso #esforcoAlvoBadge,
   body.view-ghflix #lastModBadge, body.view-ghflix #proxReajusteBadge, body.view-ghflix #esforcoAlvoBadge { display: none !important; }
-  #floatMenu, #floatMenu.show { display: none !important; }
   .exercise-tag .tl { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; opacity: .85; margin-right: 4px; }
   .focus-tag b { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
   #bnMais { position: relative; }
@@ -3729,7 +3712,7 @@
   @keyframes arcIn { from { stroke-dashoffset: 125.7; } }
   .mt-anel .arc { animation: arcIn .7s cubic-bezier(.22, .61, .36, 1); }
   .bn-item:active, .day-tab:active, .sub-opt:active, .mais-opt:active, .ex-action-btn:active, .cmp-share-btn:active,
-  #cadernoSalvarBtn:active, .float-opt:active, .esf-chip:active, .diet-option-tab:active, .diet-cycle-tab:active,
+  #cadernoSalvarBtn:active, .esf-chip:active, .diet-option-tab:active, .diet-cycle-tab:active,
   .set-del:active, .rs-info-btn:active, .te-btn:active, .chat-mode-tab:active, .week-nav:active, .exercise-tag[onclick]:active { transform: scale(.96); transition: transform .08s ease; }
   @media (prefers-reduced-motion: reduce) {
     .set-row button.set-num.pop, #exerciseContainer.ex-enter .day-content.active, .mt-barra .mt-fill, .mt-anel .arc { animation: none; }
@@ -3775,6 +3758,9 @@
         setTimeout(function () { _manda(reg); }, 1500);
       } catch (_) {}
     }
+    // v594: aviso do app (não é erro de JS) pelo mesmo caminho e com os mesmos tetos: planilha quebrada que o app consertou
+    // sozinho, pra equipe arrumar antes do aluno notar. Chamado pelo script principal.
+    window.__ghAvisa = function (msg, onde) { try { _guarda(msg, onde || 'aviso', ''); } catch (_) {} };
     window.addEventListener('error', function (ev) {
       try {
         if (ev && ev.target && ev.target !== window && !ev.error) return;   // recurso que não carregou (img/script): não é erro de código
@@ -5360,6 +5346,7 @@
   <div class="inst-aviso-bt"><button type="button" class="ia-ok" onclick="instAvisoVer()">Ver como instalar</button><button type="button" class="ia-nao" onclick="instAvisoFecha()">Agora não</button></div>
 </div>
 <button type="button" class="upd-pill" id="updPill" hidden aria-live="polite">Versão nova do app pronta · <b>Atualizar</b></button>
+<button type="button" class="upd-pill" id="quemPill" hidden aria-live="polite"></button>
 
 <!-- ══ INSTALL GUIDE MODAL ══ -->
 <div class="install-modal" id="installModal">
@@ -5879,73 +5866,6 @@
   <button class="renov-banner-x" onclick="dietBannerDismiss()" aria-label="Fechar">&times;</button>
 </div>
 
-<!-- Botão flutuante combinado: instala app + abre WhatsApp -->
-<div id="floatMenu">
-  <div class="float-options" id="floatOptions">
-    <!-- Menu abre pra cima: itens no TOPO do HTML aparecem em CIMA na tela,
-         os do FINAL ficam perto do botão flutuante (ao alcance do dedo).
-         Ordem do HTML segue ordem de leitura visual (cima → baixo). -->
-
-    <!-- TOPO (mais longe do dedo) — raros/destrutivos recolhidos em "Mais opções" -->
-    <div id="floatMoreGroup">
-      <button type="button" class="float-opt" onclick="event.stopPropagation(); toggleUnit()">
-        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></span><span id="unitToggleLabel">Unidade: kg (trocar pra lb)</span>
-      </button>
-      <button type="button" class="float-opt" onclick="event.stopPropagation(); forceSyncFromServer()">
-        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span><span>Recarregar do servidor</span>
-      </button>
-      <button type="button" class="float-opt" onclick="event.stopPropagation(); apagarPesosMarcados()">
-        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span><span>Apagar pesos marcados</span>
-      </button>
-    <button type="button" class="mais-opt" onclick="apagarVideosBaixados()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>
-      Apagar vídeos baixados
-    </button>
-    </div>
-    <button type="button" class="float-opt" id="floatMoreToggle" onclick="event.stopPropagation(); toggleFloatMore()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></span><span id="floatMoreLabel">Mais opções</span>
-    </button>
-    <button type="button" class="float-opt" onclick="event.stopPropagation(); openRankingModal()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg></span><span>Ranking</span>
-    </button>
-    <button type="button" class="float-opt" onclick="event.stopPropagation(); openProgressoModal()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span><span>Meu progresso</span>
-    </button>
-    <!-- NOTA (2026-07-02): biblioteca de exercícios e 2ª calculadora de 1RM foram construídas e
-         RETIRADAS no mesmo dia: a biblioteca o GH descartou em 2026-06-23 (entrega o método +
-         vídeos baixáveis) e a 1RM já existe DENTRO do "Meu progresso" (aprovada em 2026-06-24).
-         Código completo no commit f091a63, se o GH um dia quiser reativar a biblioteca. -->
-
-    <button type="button" class="float-opt" onclick="event.stopPropagation(); downloadPDF()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span><span id="pdfBtnLabel">Baixar treino em PDF</span>
-    </button>
-    <button type="button" class="float-opt" data-agenda="1" onclick="event.stopPropagation(); openAgendaModal()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span>Personal &amp; Psicóloga</span>
-    </button>
-
-    <!-- MEIO — grupo "ações do aluno" -->
-    <button type="button" class="float-opt" onclick="event.stopPropagation(); openRenovModal('menu')">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span><span>Próxima etapa</span>
-    </button>
-    <a class="float-opt whatsapp" href="https://wa.me/555520131470" target="_blank" rel="noopener">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span><span>Suporte no WhatsApp</span>
-    </a>
-    <button type="button" class="float-opt" onclick="event.stopPropagation(); openFotosModal()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span><span>Minhas fotos do reajuste</span>
-    </button>
-    <button type="button" class="float-opt" style="position:relative;" onclick="event.stopPropagation(); openChatModal()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></span><span id="floatChatLabel">Tirar dúvida ou pedir ajuste</span><span class="sup-dot" id="supDotOpt" style="top:50%;transform:translateY(-50%);right:10px;"></span>
-    </button>
-
-    <!-- BASE (perto do dedo) — Instalar app destacado. Recarregar/Apagar subiram pro
-         grupo "Mais opções" (destrutivo/raro fora do alcance do toque reflexo). -->
-    <button type="button" class="float-opt install" onclick="event.stopPropagation(); showInstallInstructions()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span><span>Instalar app na tela inicial</span>
-    </button>
-  </div>
-  <button class="float-btn" id="floatBtn" onclick="openChatModal()" title="Tirar dúvida ou pedir ajuste" style="position:relative;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/></svg><span class="sup-dot" id="supDotFab" style="top:4px;right:4px;"></span></button>
-</div>
-
 <!-- ══ BARRA DE NAVEGAÇÃO INFERIOR (Treino · Dieta · Progresso · GHFlix · Mais) ══ -->
 <div id="bottomNav">
   <button type="button" class="bn-item active" id="bnTreino" onclick="switchView('treino')">
@@ -6050,6 +5970,9 @@
     </button>
     <button type="button" class="mais-opt" onclick="closeMaisSheet(); apagarPesosMarcados()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span><span>Apagar pesos marcados</span>
+    </button>
+    <button type="button" class="mais-opt" onclick="closeMaisSheet(); apagarVideosBaixados()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span><span>Apagar vídeos baixados</span>
     </button>
     <button type="button" class="mais-opt" onclick="forcarAtualizacaoApp()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></span><span>Atualizar o app agora</span>
@@ -6750,6 +6673,7 @@ if (!SHEET_ID && !TAB_NAME) {
         const p = JSON.parse(saved);
         SHEET_ID = p.sheet || SHEET_ID;
         TAB_NAME = p.tab || TAB_NAME;
+        if (p.sheet) window._ghSemLink = true;   // v594: abriu sem o link pessoal, pelo aluno guardado no aparelho (contrato R2, aparelho compartilhado)
       } catch (e) {}
     }
   }
@@ -8750,7 +8674,7 @@ function displayToKg(displayVal) {
   }
   return String(n);
 }
-// Toggle chamado pelo botão flutuante
+// Toggle chamado pela aba Mais
 function toggleUnit() {
   try { _flushSetsPendentes_(false); } catch (_) {}   // v480: grava o pendente na unidade em que foi digitado
   const next = getUnit() === 'kg' ? 'lb' : 'kg';
@@ -8758,18 +8682,61 @@ function toggleUnit() {
   updateUnitToggleLabel();
   // Re-render tudo que mostra cargas
   if (typeof renderExercises === 'function') renderExercises();
-  // Fecha o menu
-  const fm = document.getElementById('floatMenu');
-  fm && fm.classList.remove('open');
-  const fo = document.getElementById('floatOptions');
-  fo && fo.classList.remove('show');
 }
 function updateUnitToggleLabel() {
   const txt = `Unidade: ${getUnit() === 'kg' ? 'kg (trocar pra lb)' : 'lb (trocar pra kg)'}`;
-  ['unitToggleLabel', 'unitToggleLabelMais'].forEach(id => {
+  ['unitToggleLabelMais'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.textContent = txt;
   });
+}
+
+// ══ v594: ABRIU SEM O LINK PESSOAL (contrato R2, aparelho compartilhado) ══
+// Sem ?sheet= na URL o app abre o último aluno guardado no aparelho. Casal que divide o celular podia treinar e marcar carga
+// no treino um do outro sem perceber. Agora uma faixa diz de quem é o treino por 10 s; "Não é tu?" abre a pergunta, e só o
+// "Não sou eu" esquece o aluno guardado (a faixa sozinha não apaga nada: toque por engano não tira o treino de ninguém).
+function _quemAbriuMostra() {
+  try {
+    if (!window._ghSemLink) return;
+    const el = document.getElementById('quemPill'); if (!el) return;
+    const up = document.getElementById('updPill'); if (up && !up.hidden) return;   // a faixa de versão nova tem prioridade (mesmo lugar)
+    const nome = _quemAbriuNome_(); if (!nome) return;
+    el.innerHTML = 'Abrindo como <b>' + _h(nome) + '</b> · Não é tu? Toca aqui';
+    el.hidden = false;
+    el.onclick = function () { el.hidden = true; _quemAbriuPergunta_(); };
+    setTimeout(function () { el.hidden = true; }, 10000);
+  } catch (_) {}
+}
+function _quemAbriuNome_() {
+  // v594: nome e sobrenome; "de", "da", "do", "dos", "das", "di", "del", "van", "von" no meio não fecham o nome ("João da Silva", não "João da")
+  try {
+    const s = String((document.getElementById('infoNome') || {}).textContent || '').trim();
+    if (!s || s === 'Aluno') return '';
+    const w = s.split(/\s+/);
+    const n = (w.length > 2 && /^(de|da|do|dos|das|di|del|van|von)$/i.test(w[1])) ? 3 : 2;
+    return w.slice(0, n).join(' ');
+  } catch (_) { return ''; }
+}
+function _quemAbriuPergunta_() {
+  try {
+    const nome = _quemAbriuNome_() || 'este aluno';
+    let dv = document.getElementById('quemAbriu');
+    if (!dv) {
+      dv = document.createElement('div'); dv.id = 'quemAbriu';
+      dv.setAttribute('style', 'position:fixed;inset:0;z-index:2147483000;background:rgba(12,12,13,.97);color:#eee;display:flex;align-items:center;justify-content:center;padding:28px;text-align:center;font:15px/1.55 -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;');
+      document.body.appendChild(dv);
+    }
+    dv.innerHTML = '<div style="max-width:340px"><div style="font-size:19px;font-weight:800;color:#D4AF6A;margin-bottom:12px">Este treino é de ' + _h(nome) + '</div>O app abriu sem o teu link pessoal e usou o último aluno que treinou neste aparelho.<br><br>'
+      + '<button type="button" id="quemSouEu" style="display:block;width:100%;margin:0 0 10px;padding:13px;border:0;border-radius:12px;background:#D4AF6A;color:#15100a;font:inherit;font-weight:800;cursor:pointer">Sou eu, voltar pro treino</button>'
+      + '<button type="button" id="quemNaoSouEu" style="display:block;width:100%;padding:13px;border:1px solid rgba(212,175,106,.5);border-radius:12px;background:transparent;color:#e7e2d8;font:inherit;font-weight:700;cursor:pointer">Não sou eu</button></div>';
+    dv.style.display = 'flex';
+    document.getElementById('quemSouEu').onclick = function () { dv.style.display = 'none'; };
+    document.getElementById('quemNaoSouEu').onclick = function () {
+      try { localStorage.removeItem('gh_pwa_params'); } catch (_) {}
+      window._ghSemLink = false;
+      dv.innerHTML = '<div style="max-width:340px"><div style="font-size:19px;font-weight:800;color:#D4AF6A;margin-bottom:12px">Pronto, esqueci esse aluno aqui</div>Fecha o app e abre pelo <b>teu link pessoal</b>, o que chegou no WhatsApp junto com o teu protocolo. Abrindo por ele uma vez, o app passa a lembrar de ti neste aparelho.<br><br>Não acha o link? <a href="https://wa.me/555520131470" target="_blank" rel="noopener" style="color:#D4AF6A;font-weight:700">Chama o suporte no WhatsApp</a>.</div>';
+    };
+  } catch (_) {}
 }
 
 // ══ localStorage helpers ══
@@ -9351,8 +9318,12 @@ function toggleSetFeita(di, ei, si) {
 function _modoAtual() { try { const v = localStorage.getItem('gh_modo'); return (v === 'simples' || v === 'intuitivo') ? 'simples' : 'completo'; } catch (_) { return document.body.classList.contains('modo-simples') ? 'simples' : 'completo'; } }
 function modoAplica(m) {
   const simples = m === 'simples' || m === 'intuitivo';
+  const eraSimples = document.body.classList.contains('modo-simples');
   try { if (simples) localStorage.setItem('gh_modo', 'intuitivo'); else localStorage.removeItem('gh_modo'); } catch (_) {}
   document.body.classList.toggle('modo-simples', simples);
+  // v594: o chip "sobrou 3+" não é montado no Intuitivo; ao voltar pro Completo a grade repinta (mesmo caminho da troca de
+  // unidade) pra ele aparecer. Com um campo em foco não repinta: o chip vem na próxima pintura.
+  if (eraSimples && !simples) { try { const a = document.activeElement; if (!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) && typeof renderExercises === 'function' && typeof WORKOUT !== 'undefined' && Array.isArray(WORKOUT) && WORKOUT.length) renderExercises(); } catch (_) {} }
   // tocar em Intuitivo mostra o "como usar" de novo (é assim que quem fechou sem querer recupera)
   if (simples) { try { localStorage.removeItem('gh_intu_aj_t'); localStorage.removeItem('gh_intu_aj_d'); } catch (_) {} document.body.classList.remove('aj-t-off', 'aj-d-off'); }
   _modoBtnRefresh();
@@ -12836,7 +12807,7 @@ function tourNext() {
   if (!el) { tourNext(); return; }
   // Elemento fixo (barra inferior, botão flutuante) não precisa nem PODE rolar:
   // scrollIntoView nele salta pro fim do body e desenquadra tudo.
-  const _fixo = getComputedStyle(el).position === 'fixed' || !!el.closest('#bottomNav, #floatMenu');
+  const _fixo = getComputedStyle(el).position === 'fixed' || !!el.closest('#bottomNav');
   // 'instant' fura o scroll-behavior:smooth do html — medir no MEIO da animação
   // era o que desenhava o spotlight um elemento fora do lugar (bug do GH 14/08).
   if (!_fixo) { try { el.scrollIntoView({ block: 'center', behavior: 'instant' }); } catch (_) { el.scrollIntoView(); } }
@@ -13507,6 +13478,7 @@ function _forcaChipHtml(di, ei) {
 }
 // Chip no card do exercício: só aparece quando há algo ÚTIL a dizer (sobe ou segura).
 function _progChipHtml(di, ei, nomeEx) {
+  if (document.body.classList.contains('modo-simples')) return '';   // v594: o Intuitivo esconde o chip pelo CSS; não vale ler até 24 semanas de carga por exercício à toa
   const reg = _progUltReg(di, ei);
   if (!reg) return '';
   const sug = _progSugestao(nomeEx, reg.base, reg.esf);
@@ -14610,6 +14582,7 @@ async function loadFromSheets(injectedText) {
       // (hipopressivo: "3 ciclos", "Todos os dias pela manhã") aparecia como exercício no último dia.
       if (infoFound && (r[0] === '' || r[0] == null) && lastDayNum != null && r[1] && String(r[1]).trim() && /^\s*\d+\s*x/i.test(String(r[2] || '')) && !String(r[1]).trim().startsWith('http')) {
         r[0] = String(lastDayNum);
+        try { if (window.__ghAvisa) window.__ghAvisa('planilha: exercício sem número de dia, colado no dia ' + lastDayNum + ': ' + String(r[1]).trim().slice(0, 60), 'parser v522'); } catch (_) {}   // v594
       }
       // Skip restrict row (col A stripped by gviz, not a link, not an exercise)
       if (infoFound && (r[0] === '' || r[0] == null) && isNaN(parseInt(r[0])) && !(r[1] && r[1].toString().startsWith('http'))) {
@@ -14803,7 +14776,7 @@ async function loadFromSheets(injectedText) {
     document.getElementById('suplementosToggle').style.display = 'flex';
     document.getElementById('acessoriosToggle').style.display = 'flex';
     document.getElementById('parceirosToggle').style.display = 'flex';
-    document.getElementById('floatMenu').classList.add('show');
+    _quemAbriuMostra();   // v594: abriu sem o link pessoal? a faixa diz de quem é o treino
     if (isWaterNotifOn()) startWaterNotif();
     document.getElementById('hipoToggle').style.display = 'flex';
     document.getElementById('installBtn').style.display = 'block';
@@ -15342,7 +15315,7 @@ function updatePdfButtonLabel() {
   const txt = document.body.classList.contains('view-dieta')
     ? 'Baixar dieta em PDF'
     : 'Baixar treino em PDF';
-  ['pdfBtnLabel', 'pdfBtnLabelMais'].forEach(id => {
+  ['pdfBtnLabelMais'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.textContent = txt;
   });
@@ -16172,6 +16145,7 @@ async function baixarVideosDoDia() {
   else _vidBtnRefresh();
 }
 async function apagarVideosBaixados() {
+  if (!confirm('Apagar os vídeos baixados neste aparelho? Dá pra baixar de novo quando quiser.')) return;   // v594: agora está na aba Mais (antes só existia dentro do menu escondido)
   try { await caches.delete(VID_CACHE); } catch (_) {}
   try { _vidIdsLocais.clear(); } catch (_) {}   // v591: o player abria preto depois de apagar (achava que o video ainda estava no aparelho)
   _ghToast('Vídeos baixados apagados. O espaço foi liberado, baixa de novo quando quiser.', 5000);
@@ -17200,8 +17174,6 @@ function closeShoppingOnBg(e) { if (e.target.id === 'shoppingListModal') teHide(
 // Limpa LOCAL (cargas+placas+companheiro de nome) E o backup do servidor — senão o
 // syncCargasFromServer_ no próximo load traz tudo de volta. NÃO toca treino/feito/histórico.
 async function apagarPesosMarcados() {
-  document.getElementById('floatOptions').classList.remove('show');
-  document.getElementById('floatBtn').classList.remove('open');
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
   // Destrutivo de verdade (local + servidor) e já causou incidente com toque acidental.
   // Confirmação FORTE: digitar APAGAR (um "OK" no reflexo não passa).
@@ -17245,8 +17217,6 @@ async function apagarPesosMarcados() {
 }
 
 async function forceSyncFromServer() {
-  document.getElementById('floatOptions').classList.remove('show');
-  document.getElementById('floatBtn').classList.remove('open');
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
   const ok = confirm(
     'Recarregar tudo do servidor?\n\n' +
@@ -17379,8 +17349,6 @@ if (!AGENDA_LIGADA) { try { document.querySelectorAll('[data-agenda]').forEach(f
 
 function openAgendaModal() {
   if (!AGENDA_LIGADA) return;   // v564: desligada por ora
-  document.getElementById('floatOptions').classList.remove('show');
-  document.getElementById('floatBtn').classList.remove('open');
   const c = document.getElementById('agendaContent');
   c.innerHTML = _AGENDA_PROFS.map(p => {
     const waUrl = `https://wa.me/${p.phone}?text=${encodeURIComponent(p.waText)}`;
@@ -17735,13 +17703,13 @@ function _supSetEnabled(on) {
   const tab = document.getElementById('chatModeSuporte');
   if (tab) tab.style.display = _supEnabled ? '' : 'none';
   // rótulo do menu acompanha: só fala em "suporte" quando a aba existe de verdade
-  ['floatChatLabel', 'maisChatLabel'].forEach(id => {
+  ['maisChatLabel'].forEach(id => {
     const l = document.getElementById(id);
     if (l) l.textContent = _supEnabled ? 'Dúvida, ajuste ou suporte' : 'Tirar dúvida ou pedir ajuste';
   });
   if (!_supEnabled) {
     _supPollStop();
-    ['supDotTab', 'supDotOpt', 'supDotFab', 'supDotMais', 'supDotBn'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('on'); });
+    ['supDotTab', 'supDotMais', 'supDotBn'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('on'); });
     if (_chatMode === 'suporte') setChatMode('duvida');
   } else {
     // ligou: confere se tem resposta esperando. v550: UMA vez por abertura (esta função roda duas vezes na abertura, pelo
@@ -17767,7 +17735,7 @@ function _supMarkSeen() {
 }
 function _supBadgeUpdate() {
   const on = _supHasUnread();
-  ['supDotTab', 'supDotOpt', 'supDotFab', 'supDotMais', 'supDotBn'].forEach(id => {
+  ['supDotTab', 'supDotMais', 'supDotBn'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.toggle('on', on);
   });
@@ -17908,8 +17876,6 @@ function dismissChatBanner() {
 }
 
 function openChatModal() {
-  document.getElementById('floatOptions').classList.remove('show');
-  document.getElementById('floatBtn').classList.remove('open');
   if (!_chatLoaded) { _chatLoadHistory(); _chatLoaded = true; }
   _chatRenderAll();
   // abre em "tirar dúvida", EXCETO se a equipe respondeu no suporte (aí cai direto na resposta)
@@ -18084,8 +18050,6 @@ async function sendChat() {
 function closeAjusteOnBg(e) { if (e.target.id === 'ajusteModal' && !_temRascunho_('ajusteTexto')) teHide('ajusteModal'); }
 
 function openAjusteModal(prefill, contexto, reqId) {
-  document.getElementById('floatOptions').classList.remove('show');
-  document.getElementById('floatBtn').classList.remove('open');
   // v550: rascunho que NÃO foi enviado fica (abrir de novo pelo menu apagava o que o aluno tinha escrito)
   const _ajEnviado = document.getElementById('ajusteSuccess').style.display !== 'none';
   const _ajRasc = _ajEnviado ? '' : String(document.getElementById('ajusteTexto').value || '');
@@ -18347,8 +18311,6 @@ function _fotosTextosJanela() {
 }
 
 async function openFotosModal() {
-  document.getElementById('floatOptions').classList.remove('show');
-  document.getElementById('floatBtn').classList.remove('open');
   teShow('fotosModal');
   _fotosEnviando = false;   // v591: envio que ficou pendurado (rede caiu no meio) travava o botao ate fechar o app
   _fotosWindowOpen = null; _fotosWindowMsg = '';   // v545: enquanto confere, o estado é "conferindo" (antes era "fechado")
@@ -19520,16 +19482,7 @@ function renderStreakPanel() {
   document.getElementById('streakTotal').textContent = _noMes;
 }
 
-// ══ Menu flutuante (Install + WhatsApp) ══
-function toggleFloatMenu() {
-  const o = document.getElementById('floatOptions');
-  const b = document.getElementById('floatBtn');
-  o.classList.toggle('show');
-  b.classList.toggle('open');
-}
 function showInstallInstructions() {
-  document.getElementById('floatOptions').classList.remove('show');
-  document.getElementById('floatBtn').classList.remove('open');
   // v593: só o passo a passo do aparelho do aluno (no computador, os dois) e o botão nativo quando o Chrome oferece a instalação
   try {
     var ua = navigator.userAgent || '', ios = /iPad|iPhone|iPod/.test(ua), and = /Android/i.test(ua);
@@ -21148,8 +21101,6 @@ async function rkIgSalva() {
 }
 // ══ RANKING DO MÊS ══
 async function openRankingModal() {
-  document.getElementById('floatOptions').classList.remove('show');
-  document.getElementById('floatBtn').classList.remove('open');
   teShow('rankingModal');
 
   document.getElementById('rankingMonth').textContent = '· ' + ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][new Date().getMonth()];
@@ -21287,16 +21238,6 @@ async function toggleRankPrivacy(oculto) {
     if (box) box.innerHTML = '<p style="color:#c0392b;font-size:12px;text-align:center;margin:0;">Não consegui salvar agora. Tenta de novo.</p>';
   }
 }
-document.addEventListener('click', e => {
-  // Fecha o menu flutuante ao clicar fora
-  const fm = document.getElementById('floatMenu');
-  if (!fm) return;
-  if (!fm.contains(e.target)) {
-    document.getElementById('floatOptions').classList.remove('show');
-    document.getElementById('floatBtn').classList.remove('open');
-  }
-});
-
 function _irParaMinhaSuplementacao() {
   try { switchView('dieta'); } catch (_) {}
   setTimeout(() => {
@@ -21520,7 +21461,6 @@ async function loadDietFromSheets(injectedText) {
     document.getElementById('suplementosToggle').style.display = 'flex';
     document.getElementById('acessoriosToggle').style.display = 'flex';
     document.getElementById('parceirosToggle').style.display = 'flex';
-    document.getElementById('floatMenu').classList.add('show');
     if (isWaterNotifOn()) startWaterNotif();
     renderDiet();
     // banner da novidade de dieta: agora que DIET_DATA existe, re-avalia (o 1º check pode
@@ -23581,8 +23521,6 @@ function openGlossario(key) {
 function openRenovModal(origem) {
   _renovOrigem = origem || 'menu';
   _renovLogOpen(_renovOrigem);
-  var fo = document.getElementById('floatOptions'); if (fo) fo.classList.remove('show');
-  var fb = document.getElementById('floatBtn'); if (fb) fb.classList.remove('open');
   teShow('renovModal');
 }
 // Abertura do modal. Ate 18/08 so o clique NO PLANO era registrado, entao o funil tinha um
@@ -23814,16 +23752,6 @@ function _bannersLayout() {
     _bannersLayout(); // estado inicial (algum banner pode já estar .show no boot)
   } catch (_) {}
 })();
-
-// ── "Mais opções" do float menu (raros/destrutivos recolhidos) ──
-function toggleFloatMore() {
-  try {
-    var g = document.getElementById('floatMoreGroup');
-    var lbl = document.getElementById('floatMoreLabel');
-    var open = g.classList.toggle('open');
-    if (lbl) lbl.textContent = open ? 'Menos opções' : 'Mais opções';
-  } catch (_) {}
-}
 
 
 // Regra do GH (2026-07-06, registrada com a Reajustes): aluno vencido ou perto de
@@ -25262,7 +25190,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v593';
+    var APP_SHELL_V = 'metodo-gh-v594';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
@@ -25410,6 +25338,7 @@ if ('serviceWorker' in navigator) {
       try {
         var el = document.getElementById('updPill'); if (!el) return;
         el.hidden = false;
+        try { var qp = document.getElementById('quemPill'); if (qp) qp.hidden = true; } catch (_) {}   // v594: a faixa "abrindo como" usa o mesmo lugar
         el.onclick = function () {
           try {
             var a = document.activeElement, digitando = a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
