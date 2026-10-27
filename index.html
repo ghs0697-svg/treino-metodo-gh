@@ -8838,8 +8838,47 @@ function _exAtivoSub_(d, e) {
 let CURRENT_BLOCK_START = (function () {   // ms; 0 = desconhecido → não filtra (seguro)
   // v513: parte do último "Protocolo Atual" que o sync viu (gh_carga_atual_), senão o 1º render (antes do restore
   // voltar) mostrava a grade do ciclo velho, o aluno digitava nela e ela virava "atual" com carimbo novo.
-  try { return Number(localStorage.getItem('gh_carga_atual_' + STUDENT_ID)) || 0; } catch (_) { return 0; }
+  try {
+    const a = Number(localStorage.getItem('gh_carga_atual_' + STUDENT_ID)) || 0;
+    const ef = JSON.parse(localStorage.getItem('gh_blk_ef_' + STUDENT_ID) || 'null');   // v596
+    return (a > 0 && ef && Number(ef.a) === a && Number(ef.ef) > a) ? Number(ef.ef) : a;
+  } catch (_) { return 0; }
 })();
+// v596 (Leonardo Henrique, Sala #3881, 27/10/2026): a data do "Protocolo atual" vem sem hora (meia-noite). O treino do protocolo
+// ANTIGO feito na manhã da entrega (semana 8 dele, 23/10 06:21 a 06:57) caía depois do corte e virava ciclo novo: cartão do
+// cardio "sem data" e marca/peso dessa manhã na mesma semana do protocolo novo. Começo efetivo = 1 ms depois do último registro
+// de semana 3 ou mais nas 48 h seguintes à data (o ciclo novo não chega na semana 3 em 2 dias); se algum registro de semana 1 ou
+// 2 cair antes dele, fica a data crua (não arrisca esconder treino novo). Guardado por data crua: a mesma abertura e as próximas usam.
+function _blocoEfCalcula_(atualMs, rs) {
+  const a = Number(atualMs) || 0;
+  if (!(a > 0)) return a;
+  const J = a + 2 * 86400000, regs = [];
+  const add = (w, t) => { w = Number(w); t = Number(t); if (w > 0 && t >= a && t < J) regs.push({ w: w, t: t }); };
+  try { ((rs && rs.cargas) || []).forEach(c => add(c && c.w, c && c.ts)); } catch (_) {}
+  try { ((rs && rs.done) || []).forEach(c => add(c && c.w, c && c.ts)); } catch (_) {}
+  try {
+    const pb = 'gh_blk_' + STUDENT_ID + '_d', re = /^\d+_e[0-9ab]+_w(\d+)(?:_|$)/;
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i); if (!k || k.indexOf(pb) !== 0) continue;
+      const m = k.slice(pb.length).match(re); if (m) add(m[1], localStorage.getItem(k));
+    }
+    const h = JSON.parse(localStorage.getItem(_wtHistKey()) || '{}') || {};
+    Object.keys(h).forEach(k => add(k.split('|')[1], h[k] && h[k].ts));
+  } catch (_) {}
+  let lim = 0;
+  regs.forEach(x => { if (x.w >= 3 && x.t >= lim) lim = x.t + 1; });
+  let ef = a;
+  if (lim > a && !regs.some(x => x.w <= 2 && x.t < lim)) ef = lim;
+  try {
+    const k = 'gh_blk_ef_' + STUDENT_ID;
+    const ant = JSON.parse(localStorage.getItem(k) || 'null');
+    if (ef > a) localStorage.setItem(k, JSON.stringify({ a: a, ef: ef }));
+    else if (ant && Number(ant.a) === a) {
+      if (Number(ant.ef) > a) return Number(ant.ef);   // registro que sumiu do aparelho não desfaz o que já foi visto pra essa data
+    } else localStorage.removeItem(k);
+  } catch (_) {}
+  return ef;
+}
 function blkKey(d, e, w) { return `gh_blk_${STUDENT_ID}_d${d}_e${e}_w${w}`; }
 function _cargaBlocoAntigo(d, e, w) {
   if (!(CURRENT_BLOCK_START > 0)) return false;                 // sem blockStart → não esconde
@@ -10268,7 +10307,7 @@ async function syncCargasFromServer_() {
   if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
   try {
     let data = null;
-    try { const rs = await _restoreFetch_(); if (rs && Array.isArray(rs.cargas)) data = { cargas: rs.cargas, trocas: rs.trocas, atual: rs.atual };
+    try { const rs = await _restoreFetch_(); if (rs && Array.isArray(rs.cargas)) data = { cargas: rs.cargas, trocas: rs.trocas, atual: (Number(rs.atualEf) > Number(rs.atual) ? rs.atualEf : rs.atual) };   // v596: começo efetivo
       try { if (rs && Array.isArray(rs.cardio_sessoes)) { const nc = _csDoServidor_(rs.cardio_sessoes); if (nc) console.log('[gh] v587: ' + nc + ' cardio(s) do servidor entraram no aparelho'); } } catch (_) {}   // v587
     } catch (_) {}   // v512; v557: trocas
     if (!data) {
@@ -10408,7 +10447,7 @@ async function syncDoneFromServer_() {
   try {
     const _pendAntes = new Set(); try { _syncQueueGet('done').forEach(p => _pendAntes.add(String(p.w) + '|' + String(p.di) + '|' + String(p.ei))); } catch (_) {}   // v592: o que estava na fila ANTES da busca não é apagado pela resposta (a fila pode subir enquanto a resposta viaja)
     let data = null;
-    try { const rs = await _restoreFetch_(); if (rs && Array.isArray(rs.done)) data = { done: rs.done, atual: rs.atual }; } catch (_) {}   // v512
+    try { const rs = await _restoreFetch_(); if (rs && Array.isArray(rs.done)) data = { done: rs.done, atual: rs.atual, atualEf: rs.atualEf }; } catch (_) {}   // v512; v596: atualEf
     if (!data) {
       const url = `${LOG_ENDPOINT}?action=progresso&id=${encodeURIComponent(SHEET_ID)}`;
       const res = await fetch(url, { cache: 'no-store' });
@@ -10428,7 +10467,10 @@ async function syncDoneFromServer_() {
     // no bloco novo. NUNCA deleta: o peso segue no localStorage e no lembrete "Ant". Baseline-guard:
     // não carimba no 1º load (cargaSeen vazio), só quando a col E muda de fato.
     const _blkAntes = CURRENT_BLOCK_START;   // v513
-    if (atualMs) CURRENT_BLOCK_START = atualMs;
+    // v596: começo efetivo (registro do protocolo antigo na manhã da entrega não é ciclo novo); 0 ou menor = a data crua
+    let atualEf = atualMs;
+    if (atualMs) { const e = Number(data.atualEf); atualEf = (e > atualMs && e < atualMs + 2 * 86400000) ? e : _blocoEfCalcula_(atualMs, data); }
+    if (atualMs) CURRENT_BLOCK_START = atualEf;
     const cargaEpochKey = `gh_carga_atual_${STUDENT_ID}`;
     const cargaSeen = Number(localStorage.getItem(cargaEpochKey)) || 0;
     if (atualMs && cargaSeen && atualMs > cargaSeen) {
@@ -10479,8 +10521,8 @@ async function syncDoneFromServer_() {
       }
     }
     if (atualMs) localStorage.setItem(epochKey, String(atualMs));
-    try { _auxCicloFaxina_(atualMs); } catch (_) {}   // v544
-    const cutoff = Math.max(atualMs, Date.now() - DONE_KEEP_MS);
+    try { _auxCicloFaxina_(atualEf); } catch (_) {}   // v544; v596: começo efetivo
+    const cutoff = Math.max(atualEf, Date.now() - DONE_KEEP_MS);
     let restored = 0, cleared = 0;
     data.done.forEach(d => {
       const key = `gh_done_${STUDENT_ID}_w${d.w}_d${d.di}_e${d.ei}`;
@@ -10511,7 +10553,7 @@ async function syncDoneFromServer_() {
         restored++;
       }
     });
-    if (restored > 0 || cleared > 0 || wiped > 0 || (atualMs && atualMs !== _blkAntes)) {   // v513: ciclo mudou = re-render
+    if (restored > 0 || cleared > 0 || wiped > 0 || (atualMs && atualEf !== _blkAntes)) {   // v513: ciclo mudou = re-render (v596: pelo começo efetivo)
       console.log(`[gh] Treino marcado sincronizado: +${restored} / −${cleared}${wiped ? ' / reajuste limpou ' + wiped : ''} (corte ${new Date(cutoff).toISOString().slice(0,10)})`);
       if (typeof renderExercises === 'function' && document.getElementById('exerciseContainer')) {
         renderExercises();
@@ -24233,6 +24275,7 @@ function _restoreFetch_() {
       if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return null;
       const r = await fetch(`${LOG_ENDPOINT}?action=restore&id=${encodeURIComponent(SHEET_ID)}&_=${Date.now()}`, { cache: 'no-store' });
       const j = await r.json();
+      if (j && j.ok) { try { j.atualEf = _blocoEfCalcula_(Number(j.atual) > 0 && Number(j.atual) <= Date.now() ? Number(j.atual) : 0, j); } catch (_) {} }   // v596
       return (j && j.ok) ? j : null;
     } catch (_) { return null; }
   })();
@@ -25286,7 +25329,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v595';
+    var APP_SHELL_V = 'metodo-gh-v596';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
