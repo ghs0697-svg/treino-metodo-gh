@@ -10357,11 +10357,18 @@ function setSkipped(di, ei, val) {
 // em voo pro servidor, ainda não confirmadas no PROGRESSO). Junto com a fila de
 // sync, isto separa "recém-feita" de "legado local-only de verdade".
 const _doneMarkedThisSession = new Set();
+// v597 (Jose Marcelo L1286 via GH, 28/10/2026: "depois que ele finaliza e tira as fotos, as séries ficam abertas"): o DIA em que cada
+// exercício foi marcado, numa chave ao lado (a marca segue '1'). Quem não passa a semana refaz o treino com as marcas da vez anterior,
+// e o toque que era pra "fiz hoje" desmarcava. Marca sem data (legado, só no aparelho) = data desconhecida, segue o comportamento antigo.
+function doneAtKey(w, di, ei) { return `gh_doneat_${STUDENT_ID}_w${w}_d${di}_e${ei}`; }
+function _doneAt(di, ei) { try { return localStorage.getItem(doneAtKey(currentWeek, di, ei)) || ''; } catch (_) { return ''; } }
+function _doneAtGrava(w, di, ei, ymd) { try { const k = doneAtKey(w, di, ei); if (ymd && ymd > (localStorage.getItem(k) || '')) localStorage.setItem(k, ymd); } catch (_) {} }
+function _ymdDe(ms) { const d = new Date(ms); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 function setDone(di, ei, val) {
   try { _treinoMexeuEm = Date.now(); } catch (_) {}
   _doneMarkedThisSession.add(`${currentWeek}|${di}|${ei}`);   // v544: marcar E desmarcar entram: o restore que chega atrasado não desfaz o que o aluno acabou de fazer
-  if (val) { localStorage.setItem(doneKey(di, ei), '1'); _diaAtivoMarca(di); }
-  else localStorage.removeItem(doneKey(di, ei));
+  if (val) { localStorage.setItem(doneKey(di, ei), '1'); try { localStorage.setItem(doneAtKey(currentWeek, di, ei), todayKey()); } catch (_) {} _diaAtivoMarca(di); }   // v597: data da marca
+  else { localStorage.removeItem(doneKey(di, ei)); try { localStorage.removeItem(doneAtKey(currentWeek, di, ei)); } catch (_) {} }
   syncDoneToServer_(di, ei, val);
 }
 
@@ -10552,6 +10559,7 @@ async function syncDoneFromServer_() {
         localStorage.setItem(key, '1');
         restored++;
       }
+      if (d.feito && localStorage.getItem(key)) _doneAtGrava(d.w, d.di, d.ei, _ymdDe(_t));   // v597: data da marca pelo servidor (a mais recente)
     });
     if (restored > 0 || cleared > 0 || wiped > 0 || (atualMs && atualEf !== _blkAntes)) {   // v513: ciclo mudou = re-render (v596: pelo começo efetivo)
       console.log(`[gh] Treino marcado sincronizado: +${restored} / −${cleared}${wiped ? ' / reajuste limpou ' + wiped : ''} (corte ${new Date(cutoff).toISOString().slice(0,10)})`);
@@ -10704,10 +10712,40 @@ function _diaFechadoEmOutraData(di) {
     return (u && u < todayKey()) ? u : '';
   } catch (_) { return ''; }
 }
+// v597: exercício marcado em OUTRA data nesta semana ('AAAA-MM-DD'), ou ''
+function _marcaDeOutraData(di, ei) {
+  try {
+    if (typeof params !== 'undefined' && params.get('edit')) return '';
+    if (!isDone(di, ei)) return '';
+    const a = _doneAt(di, ei);
+    return (a && a < todayKey()) ? a : '';
+  } catch (_) { return ''; }
+}
+// v597: o treino tem marca de outra data e NENHUMA de hoje (o aluno vai refazer um treino da semana aberta): a data mais recente, ou ''
+function _diaMarcasVelhas(di) {
+  try {
+    if (typeof params !== 'undefined' && params.get('edit')) return '';
+    const hoje = todayKey(); let ult = '';
+    const exs = (WORKOUT[di] && WORKOUT[di].exercises) || [];
+    for (let ei = 0; ei < exs.length; ei++) {
+      if (!isDone(di, ei)) continue;
+      const a = _doneAt(di, ei);
+      if (a >= hoje) return '';
+      if (a > ult) ult = a;
+    }
+    return ult;
+  } catch (_) { return ''; }
+}
 function _semanaEhUltima() { return currentWeek >= WEEK_MAX; }   // v539: só a última possível recomeça; antes travava na 8
 function _semanaAvisoHtml(di) {
   const u = _diaFechadoEmOutraData(di);
-  if (!u) return '';
+  if (!u) {   // v597: treino pela metade com marcas de outra data: o mesmo convite, sem dizer que fechou
+    const v = _diaMarcasVelhas(di);
+    if (!v || _semanaEhUltima()) return '';
+    return '<div class="sem-aviso"><div class="sem-aviso-t">Os exercícios marcados aqui são de ' + v.slice(8, 10) + '/' + v.slice(5, 7) + ' (Semana ' + currentWeek + ').</div>'
+      + '<div class="sem-aviso-p">Vai repetir este treino hoje? Passa pra Semana ' + (currentWeek + 1) + ': os exercícios voltam desmarcados e tuas cargas ficam de referência.</div>'
+      + '<button type="button" class="sem-aviso-btn" onclick="semanaProxima()">Ir pra Semana ' + (currentWeek + 1) + ' →</button></div>';
+  }
   const dBR = u.slice(8, 10) + '/' + u.slice(5, 7);
   const ult = _semanaEhUltima();
   return '<div class="sem-aviso"><div class="sem-aviso-t">\u2705 Tu j\u00e1 concluiu este treino na Semana ' + currentWeek + ' (' + dBR + ').</div>'
@@ -10736,7 +10774,7 @@ function _semanaPromptAbrir(di, ei, u) {
   const dBR = u.slice(8, 10) + '/' + u.slice(5, 7), ult = _semanaEhUltima();
   const txt = document.getElementById('semanaModalTxt'), prim = document.getElementById('semanaModalPrim'), so = document.getElementById('semanaModalSo'), tit = document.getElementById('semanaModalTit');
   if (tit) tit.textContent = boot ? 'Semana ' + currentWeek + ' já fechada' : 'Esse treino já foi concluído';
-  if (so) so.style.display = boot ? 'none' : '';
+  if (so) { so.style.display = boot ? 'none' : ''; so.textContent = 'S\u00f3 desmarcar este exerc\u00edcio'; }   // v597: o convite do come\u00e7o troca o texto
   if (txt) txt.innerHTML = (boot
       ? 'Tu já fechou <b style="color:var(--gold);">todos os treinos da Semana ' + currentWeek + '</b> (o último em ' + dBR + '), por isso os exerc\u00edcios aparecem marcados e o toque <b>desmarca</b>.<br><br>'
       : 'Tu fechou este treino na <b style="color:var(--gold);">Semana ' + currentWeek + '</b> em ' + dBR + ', ent\u00e3o os exerc\u00edcios j\u00e1 aparecem marcados e o toque <b>desmarca</b>.<br><br>')
@@ -10748,14 +10786,16 @@ function _semanaPromptAbrir(di, ei, u) {
 }
 function semanaModalFecha() { try { document.getElementById('semanaModal').classList.remove('show'); } catch (_) {} _semanaCtx = null; }
 function semanaModalPrimario() {
-  const boot = !!(_semanaCtx && _semanaCtx.boot);
+  const boot = !!(_semanaCtx && _semanaCtx.boot), ini = !!(_semanaCtx && _semanaCtx.inicio);
   semanaModalFecha();
   if (_semanaEhUltima()) { openWeekReset(); return; }
   semanaProxima();
   if (boot) { try { selectDay(_primeiroDiaIncompleto()); } catch (_) {} }   // v539: semana nova começa no primeiro dia
+  if (ini) _comecarTreinoSegue();   // v597: veio do "Começar treino": a semana nova já abre no modo treino
 }
 function semanaSoDesmarcar() {
   const c = _semanaCtx; semanaModalFecha();
+  if (c && c.inicio) { _semanaLog('inicio_continuar'); _comecarTreinoSegue(); return; }   // v597: "Continuar na Semana N"
   if (!c || c.ei === null || c.ei === undefined) return;
   _semanaLog('so_desmarcar');
   _semanaSoDesmarca = true;
@@ -10782,9 +10822,44 @@ function _semanaPromptBoot() {
     _semanaPromptAbrir(currentDay, null, u);
   } catch (_) {}
 }
+// v597: "Começar treino" num treino que já tem marcas de outra data nesta semana (e nenhuma de hoje): pergunta ANTES de começar se
+// passa pra próxima semana. Antes de começar, nada foi digitado ainda: as cargas de hoje já nascem na semana certa.
+function _inicioPromptAbrir(di, v) {
+  _semanaCtx = { di: di, ei: null, inicio: true };
+  const dBR = v.slice(8, 10) + '/' + v.slice(5, 7);
+  const reais = ((WORKOUT[di] && WORKOUT[di].exercises) || []).map((ex, ei) => ({ ex, ei })).filter(o => !o.ex.warmup);
+  const feitos = reais.filter(o => isDone(di, o.ei)).length;
+  const txt = document.getElementById('semanaModalTxt'), prim = document.getElementById('semanaModalPrim'), so = document.getElementById('semanaModalSo'), tit = document.getElementById('semanaModalTit');
+  if (tit) tit.textContent = 'Esse treino j\u00e1 tem marcas de ' + dBR;
+  if (txt) txt.innerHTML = 'Na <b style="color:var(--gold);">Semana ' + currentWeek + '</b>, ' + feitos + ' de ' + reais.length + ' exerc\u00edcios deste treino j\u00e1 est\u00e3o marcados, de ' + dBR + '.<br><br>'
+    + 'Vai fazer o treino inteiro hoje? Passa pra <b>Semana ' + (currentWeek + 1) + '</b>: tudo volta desmarcado, tuas cargas ficam de refer\u00eancia e o treino de hoje \u00e9 registrado.';
+  if (prim) prim.textContent = 'Ir pra Semana ' + (currentWeek + 1) + ' \u2192';
+  if (so) { so.style.display = ''; so.textContent = 'Continuar na Semana ' + currentWeek; }
+  document.getElementById('semanaModal').classList.add('show');
+  _semanaLog('abriu_inicio');
+}
+// v597: toque num exercício marcado em OUTRA data (semana que não foi passada) = "fiz hoje": a marca fica, ganha a data de hoje e vai de
+// novo pro servidor. Antes desmarcava, e o treino refeito nunca fechava (Jose Marcelo, 21 e 22/10). Se foi engano, o toque seguinte
+// desmarca (a marca agora é de hoje). Com todos os exercícios do dia marcados hoje e sem conclusão hoje, o treino fecha.
+function _marcaVelhaContaHoje(di, ei, u) {
+  setDone(di, ei, true);
+  try {
+    const exs = WORKOUT[di].exercises;
+    let velha = false;
+    for (let i = 0; i < exs.length; i++) if (!exs[i].warmup && _marcaDeOutraData(di, i)) { velha = true; break; }
+    if (!velha && allDoneOfDay(di) && _diaUltimaConclusao(di) < todayKey()) _diaConcluidoDispara(di);
+  } catch (_) {}
+  renderExercises();
+  try { if (navigator.vibrate) navigator.vibrate(25); } catch (_) {}
+  try { _ghToast('Esse estava marcado de ' + u.slice(8, 10) + '/' + u.slice(5, 7) + ' e agora conta como feito hoje. Se foi engano, toca de novo.' + (_semanaEhUltima() ? '' : ' Pra repetir um treino, passa pra Semana ' + (currentWeek + 1) + ' antes de come\u00e7ar.'), 6500); } catch (_) {}
+  _semanaLog('marca_velha_hoje');
+}
 function onCheckExercise(di, ei) {
   const newVal = !isDone(di, ei);
-  if (!newVal && !_semanaSoDesmarca) { const _u = _diaFechadoEmOutraData(di); if (_u) { _semanaPromptAbrir(di, ei, _u); return; } }   // v470
+  if (!newVal && !_semanaSoDesmarca) {
+    const _u = _diaFechadoEmOutraData(di); if (_u) { _semanaPromptAbrir(di, ei, _u); return; }   // v470
+    const _m = _marcaDeOutraData(di, ei); if (_m) { _marcaVelhaContaHoje(di, ei, _m); return; }   // v597
+  }
   if (newVal && isSkipped(di, ei)) setSkipped(di, ei, false);   // v449: fez de verdade, deixa de ser pulado
   setDone(di, ei, newVal);
   if (newVal && allDoneOfDay(di)) _diaConcluidoDispara(di);
@@ -13356,6 +13431,15 @@ let _focusOpenedAt = 0;
 function comecarTreino() {
   // v591: dia ja fechado nesta semana e sem cronometro vivo: avisa e mostra a lista, em vez de abrir o modo treino por cima
   try { if (typeof allDoneOfDay === 'function' && allDoneOfDay(currentDay) && !(typeof _wtLoad === 'function' && _wtLoad())) { _ghToast('Esse treino já está fechado nesta semana. Pra repetir, passa pra próxima semana ou escolhe outro dia.', 5200); verListaDoDia(); return; } } catch (_) {}
+  // v597: marcas de outra data neste treino e nenhuma de hoje: pergunta se passa a semana antes de começar (uma vez por dia por treino)
+  try {
+    const v = _diaMarcasVelhas(currentDay);
+    const k = 'gh_sem_ini_' + SHEET_ID + '_' + todayKey() + '_w' + currentWeek + '_d' + currentDay;
+    if (v && !_semanaEhUltima() && !(typeof _wtLoad === 'function' && _wtLoad()) && !localStorage.getItem(k)) { localStorage.setItem(k, '1'); _inicioPromptAbrir(currentDay, v); return; }
+  } catch (_) {}
+  _comecarTreinoSegue();
+}
+function _comecarTreinoSegue() {
   try { if (typeof wtStart === 'function') wtStart(); } catch (_) {}
   try { openFocusMode(currentDay); } catch (_) {}
 }
@@ -13408,7 +13492,12 @@ function focusNav(dir) {
 }
 function focusToggleDone() {
   _flushFocoPendente();          // se marcou "feito" com série digitada e ainda no debounce, salva antes
-  onCheckExercise(_focusDi, _focusIdx);
+  // v597 (Jose Marcelo, 28/10): o botão grande só MARCA. Exercício já marcado hoje: segue pro próximo (antes desmarcava, e quem
+  // reabria o treino e tocava "Feito" em cada um apagava o treino). Marca de outra data ou treino fechado em outra data: igual ao toque
+  // na lista (conta como feito hoje / pergunta da semana). Pra desmarcar: "Desmarcar este exercício", embaixo.
+  const _ja = isDone(_focusDi, _focusIdx);
+  if (!_ja || _diaFechadoEmOutraData(_focusDi) || _marcaDeOutraData(_focusDi, _focusIdx)) onCheckExercise(_focusDi, _focusIdx);
+  else if (!allDoneOfDay(_focusDi)) { try { _ghToast('Esse j\u00e1 est\u00e1 marcado. Pra desmarcar, toca em "Desmarcar este exerc\u00edcio", embaixo.', 3800); } catch (_) {} }
   if (isDone(_focusDi, _focusIdx) && navigator.vibrate) navigator.vibrate(35);
   if (allDoneOfDay(_focusDi)) { setTimeout(closeFocusMode, 350); return; }
   const exs = WORKOUT[_focusDi].exercises;
@@ -13418,6 +13507,12 @@ function focusToggleDone() {
     while (n < exs.length && (isDone(_focusDi, n) || isSkipped(_focusDi, n))) n++;
     if (n < exs.length) _focusIdx = n;
   }
+  _focusRender();
+}
+function focusDesmarcar() {   // v597: desmarcar no modo treino é pedido explícito (o botão grande não desmarca mais)
+  _flushFocoPendente();
+  _semanaSoDesmarca = true;
+  try { if (isDone(_focusDi, _focusIdx)) onCheckExercise(_focusDi, _focusIdx); } finally { _semanaSoDesmarca = false; }
   _focusRender();
 }
 function focusSkip() {
@@ -13777,6 +13872,7 @@ function _focusRender() {
     // v548: "não consegui fazer" dentro do modo treino (aparelho quebrado, sem tempo). Antes só dava pra passar com a seta e o dia nunca fechava.
     if (!ex.warmup && !isDone(_focusDi, _focusIdx)) html += `<button type="button" class="focus-sub-btn" style="margin-top:12px;" onclick="focusSkip()">${isSkipped(_focusDi, _focusIdx) ? 'Desfazer o "não consegui fazer"' : 'Não consegui fazer este exercício'}</button>`;
   }
+  if (isDone(_focusDi, _focusIdx)) html += `<button type="button" class="focus-sub-btn" style="margin-top:12px;" onclick="focusDesmarcar()">Desmarcar este exercício</button>`;   // v597
   document.getElementById('focusBody').innerHTML = html;
   document.getElementById('focusBody').scrollTop = 0;
 
@@ -17396,7 +17492,8 @@ async function forceSyncFromServer() {
       `gh_sets_${STUDENT_ID}_d`,    // grade de séries (peso+reps por série)
       `gh_placas_${STUDENT_ID}_d`,  // placas
       `gh_exn_${STUDENT_ID}_d`,     // companheiro nome-do-exercício (re-carimbado pelo servidor)
-      `gh_done_${STUDENT_ID}_`      // checkbox
+      `gh_done_${STUDENT_ID}_`,     // checkbox
+      `gh_doneat_${STUDENT_ID}_`    // v597: dia da marca (volta pelo ts do servidor)
     ];
     const toDelete = [];
     for (let i = 0; i < localStorage.length; i++) {
@@ -17421,6 +17518,7 @@ async function forceSyncFromServer() {
       (data2.done || []).forEach(d => {
         if (d.feito && (Number(d.ts) || 0) >= _corte2) {
           localStorage.setItem(`gh_done_${STUDENT_ID}_w${d.w}_d${d.di}_e${d.ei}`, '1');
+          _doneAtGrava(d.w, d.di, d.ei, _ymdDe(Number(d.ts)));   // v597
           totalDone++;
         }
       });
@@ -25329,7 +25427,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v596';
+    var APP_SHELL_V = 'metodo-gh-v597';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
