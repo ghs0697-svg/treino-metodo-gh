@@ -3919,6 +3919,24 @@
 </div>
 
 <!-- ══ PORTÃO DE LOGIN DO PAINEL (raiz sem ?sheet) ══ -->
+<!-- ══ v598: CONTA DO APP DA LOJA (só com a chave _LOJA) ══ -->
+<div id="contaLoja" style="display:none;position:fixed;inset:0;z-index:99999;background:#0D0D0D;overflow:auto;">
+  <div style="min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;box-sizing:border-box;">
+    <div style="font-family:'Cinzel',serif;font-size:32px;letter-spacing:6px;color:var(--gold);font-weight:700;">MÉTODO GH</div>
+    <div id="clSub" style="color:#888;font-size:13px;letter-spacing:1px;margin:6px 0 18px;text-align:center;"></div>
+    <div id="clCorpo" style="width:100%;max-width:340px;display:flex;flex-direction:column;gap:10px;"></div>
+    <div id="clErr" style="color:#e74c3c;font-size:13px;min-height:18px;margin-top:10px;text-align:center;max-width:340px;"></div>
+    <button type="button" onclick="contaEquipe()" style="margin-top:28px;background:none;border:none;color:#555;font-size:11px;cursor:pointer;">Sou da equipe</button>
+  </div>
+</div>
+<style>
+  #contaLoja input{width:100%;box-sizing:border-box;padding:14px;border-radius:8px;border:1px solid var(--gold-dim);background:#1a1a1a;color:#fff;font-size:16px;}
+  #contaLoja label{color:#bbb;font-size:12px;margin-bottom:-6px;}
+  #contaLoja .cl-btn{width:100%;padding:14px;border-radius:8px;border:none;background:var(--gold);color:var(--dark);font-size:15px;font-weight:700;cursor:pointer;}
+  #contaLoja .cl-btn[disabled]{opacity:.6;}
+  #contaLoja .cl-link{background:none;border:none;color:var(--gold);font-size:14px;cursor:pointer;padding:8px;}
+  #contaLoja .cl-txt{color:#ccc;font-size:14px;line-height:1.55;text-align:center;}
+</style>
 <div id="painelGate" style="display:none;position:fixed;inset:0;z-index:99999;background:#0D0D0D;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:14px;text-align:center;">
   <div style="font-family:'Cinzel',serif;font-size:34px;letter-spacing:6px;color:var(--gold);font-weight:700;">MÉTODO GH</div>
   <div style="color:#888;font-size:13px;letter-spacing:2px;margin-bottom:8px;">PAINEL DO TREINADOR</div>
@@ -5987,6 +6005,12 @@
     <button type="button" class="mais-opt" onclick="forcarAtualizacaoApp()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></span><span>Atualizar o app agora</span>
     </button>
+    <button type="button" class="mais-opt conta-opt" style="display:none" onclick="closeMaisSheet(); contaSair()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span><span>Sair da conta</span>
+    </button>
+    <button type="button" class="mais-opt conta-opt" style="display:none" onclick="closeMaisSheet(); contaExcluirPede()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></span><span>Excluir minha conta</span>
+    </button>
     <div id="maisVersao" style="text-align:center;color:#6f6a60;font-size:10.5px;font-weight:600;letter-spacing:.5px;margin-top:10px;"></div>
   </div>
 </div>
@@ -6658,6 +6682,10 @@ try { localStorage.getItem('gh_teste_armazenamento'); } catch (_eArm) {
   } catch (_) {}
 }
 const params = new URLSearchParams(window.location.search);
+// v598: APP DA LOJA (App Store e Play Store). Só com ?loja=1 (a casca nativa abre assim) ou dentro do Capacitor: quem abre
+// sem link pessoal e sem aluno guardado vê o login da conta em vez do portão do treinador. Sem a chave, nada muda.
+var _LOJA = false; try { _LOJA = params.get('loja') === '1' || !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()); } catch (_) {}
+var _cl = { tela: 'entrar', dados: {} };   // estado da tela de conta (aqui em cima: initContaLoja roda antes do bloco da conta)
 let SHEET_ID = params.get('sheet');
 let TAB_NAME = params.get('tab');
 
@@ -25328,8 +25356,204 @@ if (SHEET_ID && TAB_NAME) {
   const savedUrl = getScriptUrl();
   const _edU = document.getElementById('edScriptUrl'); if (savedUrl && _edU) _edU.value = savedUrl;   // v459: o campo pode nao existir
   // Mostra o portão (e tenta revalidar token salvo em silêncio)
-  initPainelGate();
+  // v598: no app da loja, quem não é da equipe vê o login da conta (Primeiro acesso / Entrar)
+  var _lojaEquipe = params.has('editor') || params.has('admin') || params.get('edit') === '1';
+  try { if (localStorage.getItem('gh_trainer_token')) _lojaEquipe = true; } catch (_) {}
+  if (_LOJA && !_lojaEquipe) initContaLoja();
+  else initPainelGate();
 }
+
+// ══ v598: CONTA DO APP DA LOJA ══
+// Rotas conta_* do .gs (2026-10-28a). Entrou e tem protocolo = grava o aluno no aparelho (gh_pwa_params) e abre pelo
+// mesmo caminho do link pessoal; daí pra frente é o app de sempre. Sem protocolo ainda = tela de espera com a anamnese.
+// gh_conta = { email, sessao } (a sessão só vale no servidor como hash).
+function _clEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function _clConta() { try { return JSON.parse(localStorage.getItem('gh_conta') || 'null'); } catch (_) { return null; } }
+function _clErro(cod) {
+  var m = {
+    email: 'Confere o e-mail.', cpf: 'Confere o CPF, ele não está batendo.', telefone: 'Confere o WhatsApp com DDD.',
+    nome: 'Escreve teu nome completo.', senha: 'A senha precisa ter pelo menos 6 caracteres.',
+    ja_existe: 'Esse e-mail já tem conta. Toca em Entrar.', codigo_errado: 'Código errado. Confere no teu e-mail.',
+    codigo_expirado: 'O código venceu. Pede um novo.', muitos_codigos: 'Muitos códigos pedidos. Tenta de novo daqui a uma hora.',
+    login: 'E-mail ou senha não conferem.', muitas_tentativas: 'Muitas tentativas. Espera 15 minutos e tenta de novo.',
+    sessao: 'Entra de novo com teu e-mail e senha.', cota: 'Não consegui mandar o e-mail agora. Tenta de novo amanhã ou fala com o suporte.',
+    rede: 'Sem conexão com o servidor. Confere a internet e tenta de novo.'
+  };
+  return m[cod] || 'Não deu certo agora. Tenta de novo em instantes.';
+}
+async function _clPost(body) {
+  try {
+    var resp = await fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body), redirect: 'follow' });
+    return await resp.json();
+  } catch (_) { return { ok: false, erro: 'rede' }; }
+}
+function _clVal(id) { var el = document.getElementById(id); return el ? String(el.value || '').trim() : ''; }
+function _clCampo(id, rotulo, tipo, extra) {
+  return '<label for="' + id + '">' + rotulo + '</label><input id="' + id + '" type="' + tipo + '" ' + (extra || '') + ' value="' + _clEsc(_cl.dados[id] || '') + '">';
+}
+function _clGuarda() { ['clEmail', 'clNome', 'clCpf', 'clTel'].forEach(function (id) { var v = _clVal(id); if (v) _cl.dados[id] = v; }); }
+function contaTela(tela) {
+  _clGuarda();
+  _cl.tela = tela;
+  var sub = document.getElementById('clSub'), c = document.getElementById('clCorpo'), h = '';
+  document.getElementById('clErr').textContent = '';
+  if (tela === 'entrar') {
+    sub.textContent = 'Entrar na tua conta';
+    h = _clCampo('clEmail', 'E-mail', 'email', 'autocomplete="email" inputmode="email" autocapitalize="off"') +
+        _clCampo('clSenha', 'Senha', 'password', 'autocomplete="current-password"') +
+        '<button class="cl-btn" id="clBtn" onclick="contaEntrar()">Entrar</button>' +
+        '<button class="cl-link" onclick="contaTela(\'criar\')">Primeiro acesso? Cria tua conta</button>' +
+        '<button class="cl-link" style="color:#888;font-size:13px" onclick="contaTela(\'senha\')">Esqueci a senha</button>';
+  } else if (tela === 'criar') {
+    sub.textContent = 'Primeiro acesso';
+    h = '<div class="cl-txt" style="margin-bottom:4px">Usa o mesmo CPF e WhatsApp que tu passou na compra. É por eles que a gente acha o teu protocolo.</div>' +
+        _clCampo('clNome', 'Nome completo', 'text', 'autocomplete="name"') +
+        _clCampo('clEmail', 'E-mail', 'email', 'autocomplete="email" inputmode="email" autocapitalize="off"') +
+        _clCampo('clCpf', 'CPF', 'text', 'inputmode="numeric" autocomplete="off" maxlength="14" oninput="contaMascaraCpf(this)"') +
+        _clCampo('clTel', 'WhatsApp com DDD', 'tel', 'autocomplete="tel" inputmode="tel"') +
+        _clCampo('clSenha', 'Crie uma senha (6 ou mais caracteres)', 'password', 'autocomplete="new-password"') +
+        '<button class="cl-btn" id="clBtn" onclick="contaPedeCodigo(\'criar\')">Continuar</button>' +
+        '<button class="cl-link" onclick="contaTela(\'entrar\')">Já tenho conta</button>';
+  } else if (tela === 'criar_codigo' || tela === 'senha_codigo') {
+    sub.textContent = 'Confirma teu e-mail';
+    h = '<div class="cl-txt">Mandei um código de 6 números pro <b>' + _clEsc(_cl.dados.clEmail) + '</b>. Se não chegar em 2 minutos, olha no spam.</div>' +
+        _clCampo('clCodigo', 'Código', 'text', 'inputmode="numeric" autocomplete="one-time-code" maxlength="6"') +
+        (tela === 'senha_codigo' ? _clCampo('clSenha', 'Senha nova (6 ou mais caracteres)', 'password', 'autocomplete="new-password"') : '') +
+        '<button class="cl-btn" id="clBtn" onclick="' + (tela === 'criar_codigo' ? 'contaCriar()' : 'contaNovaSenha()') + '">Confirmar</button>' +
+        '<button class="cl-link" onclick="contaPedeCodigo(\'' + (tela === 'criar_codigo' ? 'criar' : 'senha') + '\', true)">Mandar outro código</button>' +
+        '<button class="cl-link" style="color:#888;font-size:13px" onclick="contaTela(\'' + (tela === 'criar_codigo' ? 'criar' : 'entrar') + '\')">Voltar</button>';
+  } else if (tela === 'senha') {
+    sub.textContent = 'Trocar a senha';
+    h = _clCampo('clEmail', 'E-mail da conta', 'email', 'autocomplete="email" inputmode="email" autocapitalize="off"') +
+        '<button class="cl-btn" id="clBtn" onclick="contaPedeCodigo(\'senha\')">Mandar código</button>' +
+        '<button class="cl-link" onclick="contaTela(\'entrar\')">Voltar</button>';
+  } else if (tela === 'carregando') {
+    sub.textContent = '';
+    h = '<div class="cl-txt">Abrindo…</div>';
+  } else if (tela === 'espera') {
+    var r = _cl.resp || {}, nome = String(r.nome || '').split(' ')[0];
+    sub.textContent = nome ? 'Oi, ' + nome + '!' : 'Tua conta está pronta';
+    if (r.situacao === 'sem protocolo') {
+      h = '<div class="cl-txt">O próximo passo é a anamnese. É com ela que eu monto o teu protocolo. Já deixei teus dados preenchidos.</div>' +
+          '<button class="cl-btn" onclick="contaAnamnese()">Responder a anamnese</button>' +
+          '<div class="cl-txt" style="font-size:13px;color:#999">Depois de responder, o teu protocolo fica pronto em até 4 dias úteis e aparece aqui quando tu abrir o app.</div>';
+    } else {
+      h = '<div class="cl-txt">Estamos conferindo o teu cadastro pra liberar o teu protocolo aqui. Se tiver pressa, chama o suporte.</div>' +
+          '<button class="cl-btn" onclick="contaSuporte()">Falar com o suporte</button>';
+    }
+    h += '<button class="cl-link" onclick="contaAtualiza()">Já está pronto? Atualizar</button>' +
+         '<button class="cl-link" style="color:#888;font-size:13px" onclick="contaSair()">Sair</button>' +
+         '<button class="cl-link" style="color:#666;font-size:12px" onclick="contaExcluirPede()">Excluir minha conta</button>';
+  }
+  c.innerHTML = h;
+  var prim = c.querySelector('input'); if (prim && !prim.value) setTimeout(function () { try { prim.focus(); } catch (_) {} }, 120);
+  c.querySelectorAll('input').forEach(function (inp) { inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { var b = document.getElementById('clBtn'); if (b) b.click(); } }); });
+}
+function contaMascaraCpf(el) {
+  var d = String(el.value || '').replace(/\D/g, '').slice(0, 11), o = d;
+  if (d.length > 9) o = d.slice(0, 3) + '.' + d.slice(3, 6) + '.' + d.slice(6, 9) + '-' + d.slice(9);
+  else if (d.length > 6) o = d.slice(0, 3) + '.' + d.slice(3, 6) + '.' + d.slice(6);
+  else if (d.length > 3) o = d.slice(0, 3) + '.' + d.slice(3);
+  el.value = o;
+}
+function _clOcupado(sim) { var b = document.getElementById('clBtn'); if (b) { b.disabled = !!sim; if (sim) { b.dataset.t = b.textContent; b.textContent = 'Um instante…'; } else if (b.dataset.t) b.textContent = b.dataset.t; } }
+function _clCpfOk(raw) {
+  var d = String(raw || '').replace(/\D/g, '');
+  if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false;
+  for (var t = 9; t < 11; t++) { var soma = 0; for (var i = 0; i < t; i++) soma += Number(d.charAt(i)) * (t + 1 - i); var dv = (soma * 10) % 11; if (dv === 10) dv = 0; if (dv !== Number(d.charAt(t))) return false; }
+  return true;
+}
+async function contaPedeCodigo(motivo, reenvio) {
+  _clGuarda();
+  var err = document.getElementById('clErr'), email = _cl.dados.clEmail || '';
+  if (motivo === 'criar' && !reenvio) {
+    if (String(_cl.dados.clNome || '').length < 3) { err.textContent = _clErro('nome'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(email)) { err.textContent = _clErro('email'); return; }
+    if (!_clCpfOk(_cl.dados.clCpf)) { err.textContent = _clErro('cpf'); return; }
+    if (String(_cl.dados.clTel || '').replace(/\D/g, '').length < 10) { err.textContent = _clErro('telefone'); return; }
+    if (_clVal('clSenha').length < 6) { err.textContent = _clErro('senha'); return; }
+    _cl.senha = _clVal('clSenha');
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(email)) { err.textContent = _clErro('email'); return; }
+  _clOcupado(true);
+  var r = await _clPost({ type: 'conta_codigo', email: email, motivo: motivo });
+  _clOcupado(false);
+  if (!r || !r.ok) { document.getElementById('clErr').textContent = _clErro(r && r.erro); return; }
+  if (reenvio) { document.getElementById('clErr').textContent = 'Mandei um código novo.'; return; }
+  contaTela(motivo === 'criar' ? 'criar_codigo' : 'senha_codigo');
+}
+function _clEntrou(r, email) {
+  if (r.sessao) { try { localStorage.setItem('gh_conta', JSON.stringify({ email: email, sessao: r.sessao })); } catch (_) {} }
+  if (r.sheet) { contaAbreProtocolo(r.sheet, r.tab); return; }
+  _cl.resp = r; contaTela('espera');
+}
+function contaAbreProtocolo(sheet, tab) {
+  try { localStorage.setItem('gh_pwa_params', JSON.stringify({ sheet: sheet, tab: tab || 'TREINO' })); } catch (_) {}
+  location.replace(location.pathname + '?sheet=' + encodeURIComponent(sheet) + '&tab=' + encodeURIComponent(tab || 'TREINO') + '&loja=1');
+}
+async function contaCriar() {
+  var cod = _clVal('clCodigo').replace(/\D/g, '');
+  if (cod.length !== 6) { document.getElementById('clErr').textContent = _clErro('codigo_errado'); return; }
+  _clOcupado(true);
+  var d = _cl.dados;
+  var r = await _clPost({ type: 'conta_criar', email: d.clEmail, codigo: cod, nome: d.clNome, cpf: d.clCpf, telefone: d.clTel, senha: _cl.senha || '' });
+  _clOcupado(false);
+  if (!r || !r.ok) { document.getElementById('clErr').textContent = _clErro(r && r.erro); return; }
+  _cl.senha = '';
+  _clEntrou(r, String(d.clEmail).toLowerCase());
+}
+async function contaEntrar() {
+  var email = _clVal('clEmail').toLowerCase(), senha = _clVal('clSenha');
+  if (!email || !senha) { document.getElementById('clErr').textContent = _clErro('login'); return; }
+  _clOcupado(true);
+  var r = await _clPost({ type: 'conta_entrar', email: email, senha: senha });
+  _clOcupado(false);
+  if (!r || !r.ok) { document.getElementById('clErr').textContent = _clErro(r && r.erro); return; }
+  _clEntrou(r, email);
+}
+async function contaNovaSenha() {
+  var cod = _clVal('clCodigo').replace(/\D/g, ''), senha = _clVal('clSenha'), email = String(_cl.dados.clEmail || '').toLowerCase();
+  if (senha.length < 6) { document.getElementById('clErr').textContent = _clErro('senha'); return; }
+  _clOcupado(true);
+  var r = await _clPost({ type: 'conta_nova_senha', email: email, codigo: cod, senha: senha });
+  _clOcupado(false);
+  if (!r || !r.ok) { document.getElementById('clErr').textContent = _clErro(r && r.erro); return; }
+  _clEntrou(r, email);
+}
+async function contaAtualiza() {
+  var c = _clConta();
+  if (!c) { contaTela('entrar'); return; }
+  contaTela('carregando');
+  var r = await _clPost({ type: 'conta_sessao', email: c.email, sessao: c.sessao });
+  if (r && r.ok) { _clEntrou(r, c.email); return; }
+  if (r && r.erro === 'sessao') { try { localStorage.removeItem('gh_conta'); } catch (_) {} contaTela('entrar'); return; }
+  if (_cl.resp) contaTela('espera'); else contaTela('entrar');
+  document.getElementById('clErr').textContent = _clErro(r && r.erro);
+}
+function contaAnamnese() { var u = (_cl.resp && _cl.resp.anamneseUrl) || 'https://forms.gle/kmVK8cvtqN1mu9qFA'; window.open(u, '_blank'); }
+function contaSuporte() { window.open('https://wa.me/555520131470?text=' + encodeURIComponent('Oi! Criei minha conta no app do Método GH e o protocolo ainda não apareceu.'), '_blank'); }
+function contaEquipe() { var g = document.getElementById('contaLoja'); if (g) g.style.display = 'none'; initPainelGate(); }
+function contaSair() {
+  try { localStorage.removeItem('gh_conta'); localStorage.removeItem('gh_pwa_params'); } catch (_) {}
+  location.replace(location.pathname + '?loja=1');
+}
+async function contaExcluirPede() {
+  var c = _clConta();
+  if (!c) return;
+  var senha = window.prompt('Pra excluir a tua conta, digita a tua senha. Teus dados de acesso são apagados. O teu protocolo e o histórico da consultoria seguem com a equipe, como manda o contrato.');
+  if (!senha) return;
+  var r = await _clPost({ type: 'conta_excluir', email: c.email, sessao: c.sessao, senha: senha });
+  if (r && r.ok) { window.alert('Conta excluída.'); contaSair(); return; }
+  window.alert(_clErro(r && r.erro));
+}
+function initContaLoja() {
+  var gate = document.getElementById('painelGate'); if (gate) gate.style.display = 'none';
+  var panel = document.getElementById('adminPanel'); if (panel) panel.style.display = 'none';
+  var tela = document.getElementById('contaLoja'); if (tela) tela.style.display = 'block';
+  if (_clConta()) contaAtualiza(); else contaTela('entrar');
+}
+// "Sair" e "Excluir minha conta" no Mais só pra quem entrou por conta
+try { if (localStorage.getItem('gh_conta')) document.querySelectorAll('.conta-opt').forEach(function (b) { b.style.display = ''; }); } catch (_) {}
 
 // ── Portão de login do Painel do Treinador ──
 function _revelaPainel_() {
@@ -25427,7 +25651,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v597';
+    var APP_SHELL_V = 'metodo-gh-v598';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
