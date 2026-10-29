@@ -15476,6 +15476,143 @@ function _buildDietaPrintHTML() {
   return html;
 }
 
+// v599 (Jorge Elias Pinheiro Pereira L964, 27 e 28/10/2026: "aperto em baixar PDF do treino, vai pra página de treinos mas não faz
+// o download"): o PDF era o "imprimir" do navegador, que no app instalado (iPhone e Android) não abre nada. Agora o app monta o
+// arquivo PDF ele mesmo, em texto, com as mesmas seções da versão impressa (os geradores de HTML seguem a fonte única), e entrega
+// pela folha de compartilhar no celular (Salvar em Arquivos, WhatsApp, Drive) ou pelo download no computador. O "imprimir" ficou
+// só de último recurso, se a montagem falhar.
+var _pdfUltimo = null;   // último PDF montado (nome e bytes): a suíte de teste lê daqui
+function _pdfDocDeHtml_(html) {   // lê o HTML da impressão e vira um documento simples: título, linhas de cabeçalho, seções com tabela
+  const dv = document.createElement('div'); dv.innerHTML = html;
+  const tx = el => (el ? String(el.textContent || '') : '').replace(/\s+/g, ' ').trim().replace(/^[·•]\s*/, '');   // o separador " · " sem o valor antes vira ponto solto
+  const doc = { titulo: tx(dv.querySelector('.pa-header h1')) || 'PROTOCOLO', sub: tx(dv.querySelector('.pa-sub')), meta: [], secoes: [], rodape: [] };
+  dv.querySelectorAll('.pa-meta > div').forEach(d => doc.meta.push(tx(d)));
+  dv.querySelectorAll('.pa-day').forEach(sec => {
+    const S = { titulo: tx(sec.querySelector('.pa-day-title')), notas: [], cab: [], linhas: [] };
+    sec.querySelectorAll(':scope > .pa-obs').forEach(o => { const t = tx(o); if (t) S.notas.push(t); });
+    const tb = sec.querySelector('table');
+    if (tb) {
+      tb.querySelectorAll('thead th').forEach(th => S.cab.push(tx(th)));
+      tb.querySelectorAll('tr').forEach(tr => {
+        const tds = [...tr.querySelectorAll('td')]; if (!tds.length) return;
+        const cels = tds.map(td => {
+          const c = td.cloneNode(true); const obs = [...c.querySelectorAll('.pa-obs')].map(tx).filter(Boolean); c.querySelectorAll('.pa-obs').forEach(x => x.remove());
+          const neg = td.querySelector('b, strong'); const t = tx(c);
+          return { t: t, obs: obs, neg: !!neg && tx(neg) === t };
+        });
+        const unico = tds.length === 1;
+        S.linhas.push({ cels: cels, aq: /pa-warm/.test(tr.className), sub: unico && !!tds[0].getAttribute('colspan') && cels[0].neg, nota: unico && /pa-obs/.test(tds[0].className), larga: unico });
+      });
+    }
+    doc.secoes.push(S);
+  });
+  dv.querySelectorAll('.pa-legenda, .pa-foot').forEach(x => { const t = tx(x); if (t) doc.rodape.push(t); });
+  return doc;
+}
+function _pdfBytes_(doc) {   // PDF 1.4 em texto (Helvetica, WinAnsi): A4, cabeçalho, seções e tabelas com quebra de página
+  const W = 595.28, H = 841.89, M = 40, LH = 11, F = 8.5, FS = 7.3, LARG = W - 2 * M;
+  const MAPA = { 8216: 145, 8217: 146, 8220: 147, 8221: 148, 8211: 150, 8212: 151, 8226: 149, 8230: 133, 8364: 128, 8594: 62, 10003: 118, 10004: 118 };
+  const enc = s => { let o = ''; for (const ch of String(s == null ? '' : s)) { let c = ch.codePointAt(0); if (c > 255) c = MAPA[c] || 63; if (c < 32) c = 32; o += String.fromCharCode(c); } return o; };
+  const esc = s => s.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+  const larg = (s, size) => s.length * size * 0.53;
+  const quebra = (s, size, max) => {   // quebra em linhas pela largura estimada (um pouco folgada: nunca estoura a coluna)
+    const out = []; String(s || '').split(/\n/).forEach(par => {
+      let lin = ''; par.split(' ').forEach(p => {
+        while (larg(p, size) > max && p.length > 1) { const n = Math.max(1, Math.floor(max / (size * 0.53))); if (lin) { out.push(lin); lin = ''; } out.push(p.slice(0, n)); p = p.slice(n); }
+        const t = lin ? lin + ' ' + p : p;
+        if (larg(t, size) > max && lin) { out.push(lin); lin = p; } else lin = t;
+      });
+      out.push(lin);
+    });
+    return out.length ? out : [''];
+  };
+  const pags = []; let c = '', y = 0;
+  const txt = (x, yy, s, size, neg, cor) => { c += 'BT ' + (cor || '0 g') + ' /F' + (neg ? 2 : 1) + ' ' + size + ' Tf ' + x.toFixed(1) + ' ' + yy.toFixed(1) + ' Td (' + esc(enc(s)) + ') Tj ET\n'; };
+  const linha = (x1, yy, x2, cinza) => { c += (cinza || '0.8') + ' G 0.5 w ' + x1.toFixed(1) + ' ' + yy.toFixed(1) + ' m ' + x2.toFixed(1) + ' ' + yy.toFixed(1) + ' l S\n'; };
+  const caixa = (x, yy, w, h, cinza) => { c += cinza + ' g ' + x.toFixed(1) + ' ' + yy.toFixed(1) + ' ' + w.toFixed(1) + ' ' + h.toFixed(1) + ' re f 0 g\n'; };
+  const novaPag = () => { if (c) pags.push(c); c = ''; y = H - M; };
+  const precisa = h => { if (y - h < M + 14) novaPag(); };
+  novaPag();
+  txt(M, y - 14, doc.titulo, 15, true); y -= 20;
+  if (doc.sub) { txt(M, y - 8, doc.sub, 8, false, '0.45 g'); y -= 12; }
+  linha(M, y - 2, W - M, '0.6'); y -= 8;
+  doc.meta.forEach(m => { txt(M, y - 8, m, F); y -= LH; });
+  y -= 6;
+  doc.secoes.forEach(S => {
+    precisa(44);
+    txt(M, y - 11, S.titulo, 11, true); y -= 14; linha(M, y - 1, W - M, '0.75'); y -= 7;
+    S.notas.forEach(n => { quebra(n, FS, LARG).forEach(l => { precisa(LH); txt(M, y - 7, l, FS, false, '0.35 g'); y -= LH - 1; }); y -= 3; });
+    if (!S.linhas.length) { y -= 4; return; }
+    let nCol = S.cab.length; S.linhas.forEach(l => { if (!l.larga && l.cels.length > nCol) nCol = l.cels.length; }); nCol = Math.max(1, nCol);
+    const pesos = nCol === 5 ? [2.7, 0.85, 0.95, 0.9, 1.0] : (nCol === 2 ? [1.25, 2.2] : Array(nCol).fill(1));
+    const soma = pesos.reduce((a, b) => a + b, 0), cw = pesos.map(p => LARG * p / soma), cx = [M]; cw.forEach((w, i) => cx.push(cx[i] + w));
+    const cabecalho = () => { if (!S.cab.length) return; precisa(14); caixa(M, y - 13, LARG, 13, '0.92'); S.cab.forEach((h, i) => { if (i < nCol) txt(cx[i] + 3, y - 9.5, h, 8, true); }); y -= 13; linha(M, y, W - M, '0.6'); };
+    cabecalho();
+    S.linhas.forEach(L => {
+      if (L.larga) {
+        const size = L.nota ? FS : F, ls = quebra(L.cels[0].t, size, LARG - 6), h = ls.length * (LH - 1) + 6;
+        if (y - h < M + 14) { novaPag(); cabecalho(); }
+        if (L.sub) caixa(M, y - h, LARG, h, '0.96');
+        ls.forEach((l, i) => txt(M + 3, y - 9 - i * (LH - 1), l, size, L.sub, L.nota ? '0.35 g' : '0 g'));
+        y -= h; linha(M, y, W - M, L.sub ? '0.6' : '0.85'); return;
+      }
+      const cols = L.cels.slice(0, nCol).map((ce, i) => ({ ls: quebra(ce.t, F, cw[i] - 6), obs: [].concat(...ce.obs.map(o => quebra(o, FS, cw[i] - 6))), neg: ce.neg }));
+      const h = Math.max.apply(null, cols.map(co => co.ls.length * LH + co.obs.length * (LH - 2))) + 6;
+      if (y - h < M + 14) { novaPag(); cabecalho(); }
+      cols.forEach((co, i) => {
+        let yy = y - 9; co.ls.forEach(l => { txt(cx[i] + 3, yy, l, F, co.neg, L.aq ? '0.4 g' : '0 g'); yy -= LH; });
+        co.obs.forEach(l => { txt(cx[i] + 3, yy + 1, l, FS, false, '0.4 g'); yy -= LH - 2; });
+      });
+      y -= h; linha(M, y, W - M, '0.85');
+    });
+    y -= 10;
+  });
+  if (doc.rodape.length) { y -= 4; doc.rodape.forEach(r => { quebra(r, FS, LARG).forEach(l => { precisa(LH); txt(M, y - 7, l, FS, false, '0.45 g'); y -= LH - 1; }); }); }
+  pags.push(c);
+  const n = pags.length;
+  const objs = []; const add = b => { objs.push(b); return objs.length; };
+  add('<< /Type /Catalog /Pages 2 0 R >>'); add('');
+  add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
+  add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+  const kids = [];
+  pags.forEach((pc, i) => {
+    const rod = 'BT 0.5 g /F1 7 Tf ' + (W - M - 60).toFixed(1) + ' ' + (M - 14).toFixed(1) + ' Td (' + esc(enc('Página ' + (i + 1) + ' de ' + n)) + ') Tj ET\n';
+    const corpo = pc + rod;
+    const k = objs.length + 1; kids.push(k + ' 0 R');
+    add('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + W + ' ' + H + '] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ' + (k + 1) + ' 0 R >>');
+    add('<< /Length ' + corpo.length + ' >>\nstream\n' + corpo + '\nendstream');
+  });
+  objs[1] = '<< /Type /Pages /Kids [' + kids.join(' ') + '] /Count ' + n + ' >>';
+  let out = '%PDF-1.4\n%\xE2\xE3\xCF\xD3\n'; const off = [];
+  objs.forEach((b, i) => { off.push(out.length); out += (i + 1) + ' 0 obj\n' + b + '\nendobj\n'; });
+  const xr = out.length;
+  out += 'xref\n0 ' + (objs.length + 1) + '\n0000000000 65535 f \n' + off.map(o => String(o).padStart(10, '0') + ' 00000 n \n').join('') + 'trailer\n<< /Size ' + (objs.length + 1) + ' /Root 1 0 R >>\nstartxref\n' + xr + '\n%%EOF';
+  const u = new Uint8Array(out.length); for (let i = 0; i < out.length; i++) u[i] = out.charCodeAt(i) & 255;
+  return u;
+}
+function _pdfBaixaLink_(blob, nome) {   // computador e navegadores sem folha de compartilhar: download direto
+  try {
+    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = nome;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => { try { URL.revokeObjectURL(url); } catch (_) {} }, 8000);
+    try { _ghToast('PDF pronto: ' + nome, 4000); } catch (_) {}
+    return 'link';
+  } catch (_) { return ''; }
+}
+function _pdfEntrega_(bytes, nome) {   // celular: folha de compartilhar (Salvar em Arquivos, WhatsApp, Drive); senão download
+  const blob = new Blob([bytes], { type: 'application/pdf' });
+  _pdfUltimo = { nome: nome, bytes: bytes, modo: '' };
+  let movel = false; try { movel = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '') || (window.matchMedia && matchMedia('(pointer: coarse)').matches); } catch (_) {}
+  try {
+    if (movel && navigator.share && navigator.canShare && typeof File === 'function') {
+      const f = new File([blob], nome, { type: 'application/pdf' });
+      if (navigator.canShare({ files: [f] })) {
+        navigator.share({ files: [f], title: nome.replace(/\.pdf$/i, '').replace(/_/g, ' ') }).catch(e => { if (!/abort/i.test(String(e && e.name))) _pdfBaixaLink_(blob, nome); });
+        _pdfUltimo.modo = 'share'; return 'share';
+      }
+    }
+  } catch (_) {}
+  _pdfUltimo.modo = _pdfBaixaLink_(blob, nome); return _pdfUltimo.modo;
+}
 function downloadPDF() {
   const isDieta = document.body.classList.contains('view-dieta');
   const html = isDieta ? _buildDietaPrintHTML() : _buildTreinoPrintHTML();
@@ -15483,7 +15620,13 @@ function downloadPDF() {
     _ghToast((isDieta ? 'Dieta' : 'Treino') + ' ainda não carregou. Tenta de novo em alguns segundos.', 5000);
     return;
   }
-  document.getElementById('printArea').innerHTML = html;
+  let modo = '';
+  try {
+    const aluno = String((document.getElementById('infoNome') || {}).textContent || '').trim().split(/\s+/)[0].normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]/g, '');
+    modo = _pdfEntrega_(_pdfBytes_(_pdfDocDeHtml_(html)), (isDieta ? 'Dieta' : 'Treino') + '_MetodoGH' + (aluno ? '_' + aluno : '') + '.pdf');
+  } catch (e) { modo = ''; }
+  if (modo) return;
+  document.getElementById('printArea').innerHTML = html;   // último recurso: o "imprimir" do navegador
   setTimeout(() => { window.print(); }, 100);
 }
 
@@ -22163,23 +22306,35 @@ function _semanaDatas(w) {
   } catch (_) {}
   return ds;
 }
-// v591: a semana w ja passou? (tem peso ou treino com data numa semana DEPOIS dela, neste ciclo)
-function _semanaTemDataDepois_(w) {
+// v599 (Guilherme Amaral, Vitor Sanromã, André, Felipe De Paula, Silmara L1055, 26 a 29/10/2026: "sumiu o marcador do cardio",
+// "cardio da semana sem data"): o treino do protocolo ANTIGO feito no dia da entrega (semana 7 ou 8 dele) ficava carimbado
+// depois da data do protocolo novo, e o app achava que a semana 1 ou 2 do protocolo novo "já tinha passado": cartão "sem data"
+// e botão "Fiz o cardio hoje" escondido. Agora um registro de semana posterior só conta se veio DEPOIS do último registro da
+// semana olhada E depois das 48 h seguintes à data do protocolo (o ciclo novo não chega na semana 3 em 2 dias). A semana em que
+// o aluno está segue o calendário sempre, mesmo sem registro ainda nesta semana (o botão sumia na segunda-feira, antes do 1º peso).
+function _cicloRegs_() {   // registros (semana, ms) deste aparelho no ciclo atual: carimbo de cada carga e cronômetro de cada treino
+  const rs = [];
   try {
     const pb = 'gh_blk_' + STUDENT_ID + '_d', re = /^\d+_e[0-9ab]+_w(\d+)(?:_|$)/;
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i); if (!k || k.indexOf(pb) !== 0) continue;
-      const m = k.slice(pb.length).match(re); if (!m || +m[1] <= w) continue;
-      const t = Number(localStorage.getItem(k)); if (!(t > 1e12)) continue;
-      if (CURRENT_BLOCK_START > 0 && t < CURRENT_BLOCK_START) continue;
-      return true;
+      const m = k.slice(pb.length).match(re); if (!m) continue;
+      const t = Number(localStorage.getItem(k)); if (t > 1e12) rs.push({ w: +m[1], t: t });
     }
     const h = JSON.parse(localStorage.getItem(_wtHistKey()) || '{}') || {};
-    for (const k of Object.keys(h)) { const p = k.split('|'); const t = h[k] && Number(h[k].ts); if (+p[1] > w && t > 1e12 && !(CURRENT_BLOCK_START > 0 && t < CURRENT_BLOCK_START)) return true; }
+    Object.keys(h).forEach(k => { const w = +k.split('|')[1], t = h[k] && Number(h[k].ts); if (w > 0 && t > 1e12) rs.push({ w: w, t: t }); });
   } catch (_) {}
-  return false;
+  return rs.filter(x => !(CURRENT_BLOCK_START > 0 && x.t < CURRENT_BLOCK_START));
+}
+// a semana w já passou? Só se tem registro de semana POSTERIOR feito depois do último registro dela e fora das 48 h da entrega
+function _semanaTemDataDepois_(w) {
+  const rs = _cicloRegs_(); let corte = 0;
+  rs.forEach(x => { if (x.w === w && x.t > corte) corte = x.t; });
+  try { const a = Number(localStorage.getItem('gh_carga_atual_' + STUDENT_ID)) || 0; if (a > 0 && a + 2 * 86400000 > corte) corte = a + 2 * 86400000; } catch (_) {}
+  return rs.some(x => x.w > w && x.t > corte);
 }
 function _cardioJanelaDaSemana(w) {   // null = a semana de hoje (ou sem data): o cartao segue o calendario
+  if (!_semanaTemDataDepois_(w)) return null;   // v599: semana vigente (nada registrado depois dela) segue o calendário, mesmo que o último peso seja da semana passada
   const ds = _semanaDatas(w); if (!ds.length) return null;
   const seg = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d; };
   const ini = seg(Math.min.apply(null, ds)), fim = seg(Math.max.apply(null, ds)); fim.setDate(fim.getDate() + 6);
@@ -22199,7 +22354,7 @@ function updateCardioProgress() {
   const cnt = document.getElementById('cwCount'), fill = document.getElementById('cwFill'), btn = document.getElementById('cwBtn');
   if (cnt) cnt.textContent = semData ? 'sem data' : `${Math.min(done, target)}/${target}`; // capa display (fazer +q o mínimo não vira "4/3")
   if (fill) fill.style.width = semData ? '0%' : ((target ? Math.min(100, done / target * 100) : 0) + '%');
-  if (btn) { const t = isCardioDoneToday(); btn.classList.toggle('done', t); btn.textContent = t ? '✓ Cardio feito hoje' : 'Fiz o cardio hoje'; btn.style.display = (jan || semData) ? 'none' : ''; }   // v579: semana passada nao marca o cardio de hoje
+  if (btn) { const t = isCardioDoneToday(); btn.classList.toggle('done', t); btn.textContent = t ? '✓ Cardio feito hoje' : 'Fiz o cardio hoje'; btn.style.display = ''; }   // v599: o botão fica SEMPRE (a marca é pela data de hoje, vale em qualquer semana aberta); v579 escondia e 6 alunos ficaram sem marcar
   try { _csUltRender(jan, semData); } catch (_) {}   // v577
 }
 function onCardioDone() {
@@ -25406,7 +25561,7 @@ function contaTela(tela) {
         '<button class="cl-link" style="color:#888;font-size:13px" onclick="contaTela(\'senha\')">Esqueci a senha</button>';
   } else if (tela === 'criar') {
     sub.textContent = 'Primeiro acesso';
-    h = '<div class="cl-txt" style="margin-bottom:4px">Usa o mesmo CPF e WhatsApp que tu passou na compra. É por eles que a gente acha o teu protocolo.</div>' +
+    h = '<div class="cl-txt" style="margin-bottom:4px">Usa o mesmo e-mail, CPF e WhatsApp que tu passou na compra. É por eles que a gente acha o teu protocolo.</div>' +
         _clCampo('clNome', 'Nome completo', 'text', 'autocomplete="name"') +
         _clCampo('clEmail', 'E-mail', 'email', 'autocomplete="email" inputmode="email" autocapitalize="off"') +
         _clCampo('clCpf', 'CPF', 'text', 'inputmode="numeric" autocomplete="off" maxlength="14" oninput="contaMascaraCpf(this)"') +
@@ -25651,7 +25806,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v598';
+    var APP_SHELL_V = 'metodo-gh-v599';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
