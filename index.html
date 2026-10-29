@@ -3477,8 +3477,9 @@
   .te-link-copy:active { background: var(--gold-dim); }
   /* Mobile: a barra quebra e o info (nome + link + copiar) ganha a linha inteira,
      senão as abas/botões espremem o link a zero e ele some (GH 2026-07-06). */
-  @media (max-width: 760px) {
+  @media (max-width: 900px) {   /* v600: era 760; no iPad em pé (820) o nome e o link sumiam */
     .te-top-bar { flex-wrap: wrap; }
+    .te-mode-tabs { flex-basis: 100%; }   /* v600: abas numa linha, botões na outra (senão Salvar e ✕ caíam numa 3ª) */
     .te-top-info { flex-basis: 100%; order: -1; overflow: visible; white-space: normal; text-overflow: clip; flex-wrap: wrap; }
     .te-info-name { flex: 1 1 auto; }
   }
@@ -3489,6 +3490,33 @@
   .te-mode-tab:disabled { opacity: 0.3; cursor: not-allowed; }
   .te-tpl-btn { background: #2a2a2a; border: 1px solid var(--gold-dim); color: var(--gold); padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; }
   .te-tpl-btn:hover { background: var(--gold-dim); }
+
+  /* ══ v600: editor no toque (iPhone e iPad). A alça de arrastar vira ▲▼; no mouse nada muda. ══ */
+  .te-mv { display: none; flex-direction: column; gap: 3px; flex: none; letter-spacing: 0; }
+  .te-mv-b { width: 32px; height: 24px; line-height: 1; border-radius: 5px; border: 1px solid var(--gold-dim); background: #2a2a2a; color: var(--gold); font-size: 11px; font-family: inherit; cursor: pointer; padding: 0; letter-spacing: 0; }
+  .te-mv-b:active { background: var(--gold); color: var(--dark); }
+  .te-day-header .te-mv { flex-direction: row; }
+  .te-day-header .te-mv-b { background: rgba(0,0,0,.25); border-color: rgba(0,0,0,.4); color: #1a1a1a; }
+  .te-mv-pisca { outline: 2px solid var(--gold); outline-offset: 1px; }
+  @media (pointer: coarse) {
+    .te-dots { display: none; }
+    .te-mv { display: inline-flex; }
+    #trainerEditor .te-drag-handle, #trainerEditor .te-day-drag-handle { background: transparent; border-color: transparent; padding: 0; cursor: default; letter-spacing: 0; display: inline-flex; align-items: center; transform: none; }
+  }
+  @media (pointer: coarse) { .te-ex-row { grid-template-columns: 34px 1fr 44px 60px 52px 28px; } }
+  @media (pointer: coarse) and (max-width: 600px) { .te-ex-row { grid-template-columns: 34px 1fr 42px 58px 50px 26px; } }
+  @media (pointer: coarse) { .di-row { grid-template-columns: 34px 1fr 80px 1fr 28px; } }
+  @media (pointer: coarse) { .di-obs-row { grid-template-columns: 34px 1fr 28px; } }
+  /* v600: no celular a barra do editor ocupava metade da tela (4 linhas de botão grande) */
+  @media (max-width: 480px) {
+    .te-top-bar { padding: 8px 10px; gap: 6px; }
+    .te-top-info { font-size: 12px; }
+    .te-mode-tabs { flex-basis: 100%; gap: 4px; }
+    .te-mode-tab { flex: 1; padding: 8px 2px; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+    .te-top-info { flex: 1 1 0; flex-basis: 0; min-width: 0; }
+    .te-top-bar > .te-btn:last-child { order: -1; flex: 0 0 auto; padding: 6px 10px; }   /* o ✕ sobe pra linha do nome, senão abre uma 3ª linha de botão */
+    .te-top-bar > .te-btn, .te-top-bar > .te-tpl-btn { padding: 7px 6px; font-size: 12px; min-height: 36px; margin-right: 0; flex: 1 1 auto; }
+  }
   .tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 6px; margin: 8px 0; }
   .tpl-pill { background: #222; border: 1px solid #333; color: #ccc; padding: 7px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; text-align: center; }
   .tpl-pill:hover { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
@@ -25806,7 +25834,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v599';
+    var APP_SHELL_V = 'metodo-gh-v600';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
@@ -27606,7 +27634,7 @@ function renderTrainerEditor() {
     html += `<div class="te-day" data-day="${d}"
         ondragover="teDayDragOver(event)" ondragleave="teDayDragLeave(event)" ondrop="teDayDrop(${d}, event)">
       <div class="te-day-header">
-        <span class="te-day-drag-handle" draggable="true" ondragstart="teDayDragStart(${d}, event)" ondragend="teDayDragEnd()" title="Arraste pra trocar este dia com outro">⋮⋮</span>
+        <span class="te-day-drag-handle" draggable="true" ondragstart="teDayDragStart(${d}, event)" ondragend="teDayDragEnd()" title="Arraste pra trocar este dia com outro"><i class="te-dots">⋮⋮</i><span class="te-mv"><button type="button" class="te-mv-b" onclick="event.stopPropagation();teMoveDay(${d},-1)" aria-label="Subir" title="Subir">▲</button><button type="button" class="te-mv-b" onclick="event.stopPropagation();teMoveDay(${d},1)" aria-label="Descer" title="Descer">▼</button></span></span>
         <span class="te-day-title">DIA ${d}</span>
         <button class="te-day-trash" onclick="removeDay(${d})" title="Excluir este DIA inteiro">🗑 DIA</button>
       </div>
@@ -27619,7 +27647,7 @@ function renderTrainerEditor() {
       html += `<div class="te-ex" data-idx="${e.idx}" style="border-left-color:${color}"
           ondragover="teDragOver(event)" ondragleave="teDragLeave(event)" ondrop="teDrop(${e.idx}, event)">
         <div class="te-ex-row">
-          <span class="te-drag-handle" draggable="true" ondragstart="teDragStart(${e.idx}, event)" ondragend="teDragEnd()" title="Arraste pra reordenar">⋮⋮</span>
+          <span class="te-drag-handle" draggable="true" ondragstart="teDragStart(${e.idx}, event)" ondragend="teDragEnd()" title="Arraste pra reordenar"><i class="te-dots">⋮⋮</i><span class="te-mv"><button type="button" class="te-mv-b" onclick="event.stopPropagation();teMoveEx(${e.idx},-1)" aria-label="Subir" title="Subir">▲</button><button type="button" class="te-mv-b" onclick="event.stopPropagation();teMoveEx(${e.idx},1)" aria-label="Descer" title="Descer">▼</button></span></span>
           <button class="te-ex-name" style="background:${color};color:${tc};border-color:${color};" onclick="openSwapModal(${e.idx})" title="${MUSCLE_LABELS[g] || g}, clica pra trocar">${icon} ${escTrainer(e.name)}</button>
           <input class="te-input" value="${escTrainer(e.series)}" oninput="_teUpdate(this,2)" placeholder="S">
           <input class="te-input" value="${escTrainer(e.reps)}" oninput="_teUpdate(this,3)" placeholder="Reps">
@@ -28019,6 +28047,53 @@ function teDrop(targetIdx, e) {
   renderTrainerEditor();
 }
 
+// ══ v600 (GH 29/10: "quero usar pelo iPhone, pelo iPad e pelo Mac"): no toque não dá pra arrastar; cada alça ganha ▲▼ que fazem a
+// MESMA mudança de dados do arrastar (exercício muda de dia ao cruzar a borda, bi-set guarda o sufixo, dia troca com o vizinho).
+// No mouse os botões ficam escondidos (CSS pointer: coarse) e o arrastar segue igual.
+function _teOrdemEx_() { const days = {}; trainerData.forEach((r, i) => { const d = parseInt(r[0]); if (isNaN(d)) return; (days[d] = days[d] || []).push(i); }); return Object.keys(days).sort((a, b) => +a - +b).reduce((a, d) => a.concat(days[d]), []); }
+function teMoveEx(idx, dir) {
+  const ordem = _teOrdemEx_(), p = ordem.indexOf(idx); if (p < 0) return;
+  const viz = ordem[p + dir]; if (viz == null) return;
+  teSnapshot();
+  const bi = /bi$/i.test(String(trainerData[idx][0] || '').trim()) ? 'bi' : '';
+  const diaIdx = parseInt(trainerData[idx][0]), diaViz = parseInt(trainerData[viz][0]);
+  const moving = trainerData.splice(idx, 1)[0];
+  const v = viz > idx ? viz - 1 : viz;   // índice do vizinho depois de tirar o que se move
+  moving[0] = String(diaViz) + bi;
+  // mesmo dia: troca de lugar com o vizinho (sobe = fica antes dele, desce = depois dele)
+  // dia diferente: só cruza a borda (sobe = vira o último do dia de cima, desce = o primeiro do dia de baixo)
+  const antes = (diaIdx === diaViz) ? (dir < 0) : (dir > 0);
+  const novo = antes ? v : v + 1;
+  trainerData.splice(novo, 0, moving);
+  renderTrainerEditor();
+  try { const c = document.querySelector('.te-ex[data-idx="' + novo + '"]'); if (c) { c.scrollIntoView({ block: 'nearest' }); c.classList.add('te-mv-pisca'); setTimeout(() => c.classList.remove('te-mv-pisca'), 500); } } catch (_) {}
+}
+function _teTrocaDias_(src, tgt) {
+  trainerData.forEach((r, i) => { if (i === 0) return; const m = String(r[0] || '').trim().match(/^(\d+)(bi)?$/i); if (!m) return; if (m[1] === src) r[0] = tgt + (m[2] || ''); else if (m[1] === tgt) r[0] = src + (m[2] || ''); });
+}
+function teMoveDay(day, dir) {
+  const dias = []; trainerData.forEach(r => { const d = parseInt(r[0]); if (!isNaN(d) && dias.indexOf(d) < 0) dias.push(d); }); dias.sort((a, b) => a - b);
+  const p = dias.indexOf(+day), viz = dias[p + dir]; if (p < 0 || viz == null) return;
+  teSnapshot(); _teTrocaDias_(String(day), String(viz)); renderTrainerEditor();
+  try { const c = document.querySelector('.te-day[data-day="' + viz + '"]'); if (c) c.scrollIntoView({ block: 'nearest' }); } catch (_) {}
+}
+function diMove(idx, dir) {
+  const ordem = [...document.querySelectorAll('#trainerEditor [data-idx] > .te-drag-handle')].map(h => +h.parentElement.getAttribute('data-idx')).filter(n => !isNaN(n));
+  const p = ordem.indexOf(idx), viz = ordem[p + dir]; if (p < 0 || viz == null) return;
+  const chave = i => { const el = document.querySelector('#trainerEditor [data-idx="' + i + '"]'), b = el && el.closest('.di-block'); return b ? (b.getAttribute('data-key') || '') : ''; };
+  const kI = chave(idx), kV = chave(viz), ehRef = k => /^ref-/.test(k);
+  if (kI !== kV && !(ehRef(kI) && ehRef(kV))) return;   // só anda dentro do mesmo bloco, ou de uma refeição pra vizinha (alimento e obs)
+  const tipo = k => String(dietaData[k] && dietaData[k][0] || '').toLowerCase().trim();
+  for (let k = Math.min(idx, viz) + 1; k < Math.max(idx, viz); k++) { const t = tipo(k); if (t && t !== 'ref') return; }   // entre os dois só cabe cabeçalho de refeição ou linha em branco
+  const moving = dietaData.splice(idx, 1)[0];
+  const v = viz > idx ? viz - 1 : viz;
+  const antes = (kI === kV) ? (dir < 0) : (dir > 0);   // mesmo bloco troca com o vizinho; refeição diferente só cruza o cabeçalho
+  const novo = antes ? v : v + 1;
+  dietaData.splice(novo, 0, moving);
+  renderDietaEditor();
+  try { const c = document.querySelector('#trainerEditor [data-idx="' + novo + '"]'); if (c) { c.scrollIntoView({ block: 'nearest' }); c.classList.add('te-mv-pisca'); setTimeout(() => c.classList.remove('te-mv-pisca'), 500); } } catch (_) {}
+}
+
 function teDragEnd() {
   teDragSrc = null;
   teStopAutoScroll();
@@ -28390,7 +28465,7 @@ function renderDietaSimpleRow(it, placeholders) {
           ondragstart="diDragStart(${it.idx}, event)"
           ondragend="diDragEnd()"
           ondragover="diDragOver(event)"
-          ondrop="diDrop(${it.idx}, event)">⋮⋮</span>
+          ondrop="diDrop(${it.idx}, event)"><i class="te-dots">⋮⋮</i><span class="te-mv"><button type="button" class="te-mv-b" onclick="event.stopPropagation();diMove(${it.idx},-1)" aria-label="Subir" title="Subir">▲</button><button type="button" class="te-mv-b" onclick="event.stopPropagation();diMove(${it.idx},1)" aria-label="Descer" title="Descer">▼</button></span></span>
     <input type="text" value="${escTrainer(r[1])}" oninput="dietaData[${it.idx}][1]=this.value" placeholder="${placeholders[0]}">
     <input type="text" value="${escTrainer(r[2])}" oninput="dietaData[${it.idx}][2]=this.value" placeholder="${placeholders[1]}">
     <input type="text" value="${escTrainer(r[3])}" oninput="dietaData[${it.idx}][3]=this.value" placeholder="${placeholders[2]}">
@@ -28466,7 +28541,7 @@ function renderDietaItem(it) {
             ondragstart="diDragStart(${it.idx}, event)"
             ondragend="diDragEnd()"
             ondragover="diDragOver(event)"
-            ondrop="diDrop(${it.idx}, event)">⋮⋮</span>
+            ondrop="diDrop(${it.idx}, event)"><i class="te-dots">⋮⋮</i><span class="te-mv"><button type="button" class="te-mv-b" onclick="event.stopPropagation();diMove(${it.idx},-1)" aria-label="Subir" title="Subir">▲</button><button type="button" class="te-mv-b" onclick="event.stopPropagation();diMove(${it.idx},1)" aria-label="Descer" title="Descer">▼</button></span></span>
       <input type="text" value="${escTrainer(r[3] || r[1] || '')}" oninput="dietaSetObs(${it.idx},this.value)" placeholder="Observação...">
       <button class="te-trash" onclick="dietaRemove(${it.idx})" title="Remover">🗑</button>
     </div>`;
@@ -28477,7 +28552,7 @@ function renderDietaItem(it) {
           ondragstart="diDragStart(${it.idx}, event)"
           ondragend="diDragEnd()"
           ondragover="diDragOver(event)"
-          ondrop="diDrop(${it.idx}, event)">⋮⋮</span>
+          ondrop="diDrop(${it.idx}, event)"><i class="te-dots">⋮⋮</i><span class="te-mv"><button type="button" class="te-mv-b" onclick="event.stopPropagation();diMove(${it.idx},-1)" aria-label="Subir" title="Subir">▲</button><button type="button" class="te-mv-b" onclick="event.stopPropagation();diMove(${it.idx},1)" aria-label="Descer" title="Descer">▼</button></span></span>
     <input type="text" value="${escTrainer(r[1])}" oninput="dietaSetFoodName(${it.idx}, this)" onfocus="dietaSetFoodName(${it.idx}, this)" onblur="setTimeout(hideFoodSuggest, 250)" placeholder="Alimento (digita 2+ letras pra sugestões)">
     <input type="text" value="${escTrainer(r[2])}" oninput="dietaData[${it.idx}][2]=this.value" placeholder="Qtd">
     <input type="text" value="${escTrainer(r[3])}" oninput="dietaData[${it.idx}][3]=this.value" placeholder="Obs">
