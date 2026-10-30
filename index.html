@@ -581,9 +581,13 @@
   .sg-ant-nota { font-size: 11px; color: #8a8070; margin: -2px 0 6px; }
   .sg-melhor { font-size: 11px; color: #8a8070; margin: -2px 0 6px; }   /* v580: teu melhor, quando a última vez não foi o melhor */
   .sg-melhor b { color: var(--gold); font-weight: 700; }
-  /* v531: "+ série" confundia ("achei que estavam faltando séries"): vira "+ série extra" e só aparece depois que todas as
-     séries da grade têm reps (o caminho de sempre segue no menu ··· > Adicionar uma série) */
-  .sets-grid:has(.set-row .set-in.set-reps:placeholder-shown) > .set-add { display: none; }
+  /* v531 escondia o "+ série extra" até todas as séries terem reps. v601 (GH 29/10: "botar de volta a opção de aumentar séries,
+     por conta do aluno, só pra válidas"): o botão fica sempre visível, no Completo e no Intuitivo, e a linha que ele abre é
+     SEMPRE válida (o rótulo é posicional: tudo que passa do prescrito conta como válida, entra no volume e no "sobrou").
+     O × existe SÓ na linha extra, pra desfazer o toque; linha prescrita nunca sai. */
+  .set-row.extra .set-del { color: #7a6a4a; }
+  body.modo-simples .set-add { min-height: 44px; font-size: 15px; padding: 8px 16px; border-radius: 10px; }
+  body.modo-simples .set-row.extra .set-del { width: 32px; min-width: 32px; height: 46px; font-size: 22px; color: #9a8a6a; }
   /* TELA ESTREITA (Vitor 02/09, alunos reclamando): a linha da serie somava ~350px e o card
      tem overflow:hidden, entao a coluna "ant:" (a ultima) sumia pela direita em celular de
      360-375px. Encolhe campos/gaps/padding so aqui embaixo de 430px; acima nada muda. */
@@ -4598,7 +4602,7 @@
     <div class="ts-row"><span class="ts-pill t-aq">aquecimento</span><div class="tec-body"><b>Carga leve, 10 repetições.</b> Serve pra lubrificar a articulação que vai trabalhar, não pra cansar. É normal sobrar muito. Ela só aparece quando o exercício traz uma articulação que ainda não trabalhou no dia.</div></div>
     <div class="ts-row"><span class="ts-pill t-aj">ajuste</span><div class="tec-body"><b>Carga média, 6 repetições.</b> Serve pra avisar o teu sistema nervoso que vem esforço pesado, sem gastar energia. Também sobra muito, de propósito. Aparece quando o movimento muda de direção ou de ângulo, mesmo com a articulação já quente.</div></div>
     <div class="ts-row"><span class="ts-pill t-pap">PAP</span><div class="tec-body"><b>Uma repetição só, com carga acima do ajuste.</b> É um estímulo máximo pro sistema nervoso antes da série válida. Não é pra falhar. Só entra em quem já tem experiência, e só quando eu coloco.</div></div>
-    <div class="ts-row"><span class="ts-pill t-val">válida</span><div class="tec-body"><b>É a série que constrói músculo.</b> Vai até a falha ou fica a uma repetição dela. É a única onde tu anota o "sobrou", e a única que conta como volume na semana. <span class="corte-on">Sobrou 3 ou mais? Então essa não valeu: o app abre outra série pra tu fazer.</span><span class="corte-off">No teu protocolo o esforço-alvo é maior de propósito: toda série tua conta, e o app não abre série a mais.</span></div></div>
+    <div class="ts-row"><span class="ts-pill t-val">válida</span><div class="tec-body"><b>É a série que constrói músculo.</b> Vai até a falha ou fica a uma repetição dela. É a única onde tu anota o "sobrou", e a única que conta como volume na semana. <span class="corte-on">Sobrou 3 ou mais? Então essa não valeu: o app abre outra série pra tu fazer.</span><span class="corte-off">No teu protocolo o esforço-alvo é maior de propósito: toda série tua conta, e o app não abre série a mais.</span> Por tua conta, tu também pode abrir uma válida a mais: é o botão "+ válida extra" embaixo do teu registro.</div></div>
     <div class="tec-body ts-why"><b>Por que alguns exercícios não têm aquecimento nem ajuste?</b> Porque a articulação e a direção do movimento já vieram prontas do exercício anterior. Barra fixa depois da puxada alta vai direto na válida: mesma direção, mesma articulação. Remada depois delas ajusta de novo, porque a direção mudou. Repetir aquecimento numa articulação que já está quente é série perdida.</div>
     <div class="tec-body ts-why"><b>Panturrilha, abdômen e lombar</b> levam só ajuste, porque os outros exercícios já usaram eles pra estabilizar. <b>Prancha e isometria</b> vão direto, porque não é carga a calibrar.</div>
   </div>
@@ -5727,7 +5731,7 @@
       <div class="gloss-it" data-g="aq"><b><span class="gl-cor t-aq">aquec.</span> Aquecimento</b>Carga leve, 10 repetições. Serve pra lubrificar a articulação que vai trabalhar, não pra cansar. É normal sobrar muito. Ela só aparece quando o exercício traz uma articulação que ainda não trabalhou no dia.</div>
       <div class="gloss-it" data-g="aj"><b><span class="gl-cor t-aj">ajuste</span> Ajuste</b>Carga média, 6 repetições. Serve pra avisar o teu sistema nervoso que vem esforço pesado, sem gastar energia. Também sobra muito, de propósito. Aparece quando o movimento muda de direção ou de ângulo, mesmo com a articulação já quente.</div>
       <div class="gloss-it" data-g="pap"><b><span class="gl-cor t-pap">PAP</span> PAP</b>Uma repetição só, com carga acima do ajuste. É um estímulo máximo pro sistema nervoso antes da série válida. Não é pra falhar. Só entra em quem já tem experiência, e só quando eu coloco.</div>
-      <div class="gloss-it" data-g="val"><b><span class="gl-cor t-val">válida</span> Válida</b>É a série que constrói músculo. Vai até a falha ou fica a uma repetição dela. É a única onde tu anota o "sobrou", e a única que conta como volume na semana. <span class="corte-on">Sobrou 3 ou mais? Então essa não valeu: o app abre outra série pra tu fazer.</span><span class="corte-off">No teu protocolo o esforço-alvo é maior de propósito: toda série tua conta, e o app não abre série a mais.</span> Exercício sem cor na grade é só de válidas.</div>
+      <div class="gloss-it" data-g="val"><b><span class="gl-cor t-val">válida</span> Válida</b>É a série que constrói músculo. Vai até a falha ou fica a uma repetição dela. É a única onde tu anota o "sobrou", e a única que conta como volume na semana. <span class="corte-on">Sobrou 3 ou mais? Então essa não valeu: o app abre outra série pra tu fazer.</span><span class="corte-off">No teu protocolo o esforço-alvo é maior de propósito: toda série tua conta, e o app não abre série a mais.</span> Por tua conta, tu também pode abrir uma válida a mais: é o botão "+ válida extra" embaixo do teu registro. Exercício sem cor na grade é só de válidas.</div>
       <div class="gloss-it" data-g="semaq"><b>Por que alguns exercícios não têm aquecimento nem ajuste?</b>Porque a articulação e a direção do movimento já vieram prontas do exercício anterior. Barra fixa depois da puxada alta vai direto na válida: mesma direção, mesma articulação. Remada depois delas ajusta de novo, porque a direção mudou. Repetir aquecimento numa articulação que já está quente é série perdida. Panturrilha, abdômen e lombar levam só ajuste, porque os outros exercícios já usaram eles pra estabilizar. Prancha e isometria vão direto, porque não é carga a calibrar.</div>
       <div class="gloss-it" data-g="cadencia"><b>Cadência (Pos · Iso · Neg)</b>A velocidade de cada fase do movimento. Pos = subir. Iso = segurar parado. Neg = descer controlando. "Neg 3s" = descer em 3 segundos. O botão "ritmo" marca isso pra ti com som e bolinha.</div>
       <div class="gloss-it" data-g="concentrica"><b>Concêntrica (positiva)</b>A fase de vencer o peso, subindo.</div>
@@ -7046,7 +7050,7 @@ const I18N_EN = {
   '✈️ Viagem/Livre': '✈️ Travel/Free', '✈️ Viagem/Livre ligado': '✈️ Travel/Free ON',
   '✓ Vídeos baixados': '✓ Videos downloaded', 'Apagar vídeos baixados': 'Delete downloaded videos',
   'salvar': 'save', 'ritmo': 'tempo', 'descanso': 'rest', 'histórico': 'history', 'trocar': 'swap',
-  '+ série': '+ set', 'PLACA': 'PLATE', 'SOBROU': 'LEFT', '✓ salvo': '✓ saved',
+  '+ série': '+ set', '+ série extra': '+ extra set', '+ válida extra': '+ extra working set', 'PLACA': 'PLATE', 'SOBROU': 'LEFT', '✓ salvo': '✓ saved',
   'SUBST.': 'SWAPPED', '✈ LIVRE': '✈ FREE', '⏳ se sobrar tempo': '⏳ if time allows',
   'FORÇA ESTIMADA': 'ESTIMATED STRENGTH', 'referência, não é pra testar': 'reference, not a test target',
   'Última série: como foi?': 'Last set: how did it go?',
@@ -9265,7 +9269,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
     const _phKg = (_rotulada && _tipo !== 'val') ? (SERIE_TIPO_CARGA[_tipo] || getUnit()) : getUnit();
     const _phTempo = _porTempo ? (_tempoCurto((_rotulada && _segR != null) ? _repsSegmento(_exG, _segR) : _exG.reps) || _tUnid) : '';   // v504
     const _antKg = (p && p.kg) ? kgToDisplay(p.kg) : '', _antPl = (p && p.pl) ? String(p.pl) : '', _antReps = (p && p.reps) ? String(p.reps) : '';   // v531: última vez dentro do campo
-    return `<div class="set-row ${feita ? 'feita' : ''} ${_rotulada ? 't-' + _tipo : ''} ${_nv ? 'nv' : ''}" data-si="${si}" data-tipo="${_tipo}">
+    return `<div class="set-row ${feita ? 'feita' : ''} ${_rotulada ? 't-' + _tipo : ''} ${_nv ? 'nv' : ''} ${si >= _nPresc ? 'extra' : ''}" data-si="${si}" data-tipo="${_tipo}">
         <button type="button" class="set-num ${_rotulada ? 't-' + _tipo : ''}" onclick="toggleSetFeita(${di},'${eiS}',${si})" title="${_rotulada ? 'Série de ' + SERIE_TIPO_NOME[_tipo] + '. ' : ''}Marcar série como feita" aria-label="Marcar série ${si + 1} como feita">${feita ? '✓' : (_rotulada ? (_nv ? 'não valeu' : _rot) : si + 1)}</button>
         <input class="set-in set-kg${_antKg ? ' ph-ant' : ''}" type="number" aria-label="Peso, série ${si + 1}" inputmode="decimal" placeholder="${_antKg || _phKg}" value="${kgToDisplay(s.kg)}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-pl${_antPl ? ' ph-ant' : ''}" type="number" aria-label="Placas, série ${si + 1}" inputmode="numeric" placeholder="${_antPl || 'pl'}" value="${s.pl || ''}" oninput="onSetField(${di},'${eiS}')">
@@ -9273,7 +9277,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
         <input class="set-in set-rs" type="number" aria-label="Sobrou, série ${si + 1}" inputmode="numeric" onfocus="sobrouDica(this)" onblur="sobrouDicaSome()" placeholder="${_tipo === 'val' ? rsPh : '·'}" title="${_tipo === 'val' ? 'Quantas repetições sobraram nessa série' : 'Série de ' + SERIE_TIPO_NOME[_tipo] + ': sobrar é o esperado, não entra no alvo'}" value="${s.rs || ''}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-rpe" type="number" aria-label="RPE, série ${si + 1}" inputmode="numeric" min="0" max="10" placeholder="${_tipo === 'val' ? rpePh : '·'}" title="RPE: esforço de 0 a 10 (10 = não dava mais nenhuma). É o RIR visto do outro lado: RPE 9 = sobrou 1." value="${_rpeDe(s.rs)}" oninput="_rpeDigitado(this,${di},'${eiS}')" onblur="_rpeNormaliza(this)">
         ${prevTxt}
-        ${(semX || si < _nPresc) ? '' : `<button type="button" class="set-del" onclick="removeSet(${di},'${eiS}',${si})" title="Remover série" aria-label="Remover série">&times;</button>`}
+        ${(si < _nPresc) ? '' : `<button type="button" class="set-del" onclick="removeSet(${di},'${eiS}',${si})" title="Tirar esta série extra" aria-label="Tirar a série extra ${si + 1}">&times;</button>`}
       </div>`;
   }).join('');
   return `<div class="sets-grid${_rotulada ? ' rotulada' : ''}${_porTempo ? ' tempo' : ''}${_temPl ? ' tem-pl' : ''}" id="sets-${di}-${eiS}" data-di="${di}" data-ei="${eiS}" data-noadd="${noAdd ? '1' : ''}" data-semx="${semX ? '1' : ''}">
@@ -9283,7 +9287,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
       ${evo}${melhor}
       <div class="set-head"><span class="set-num"></span><span class="sh-kg" onclick="openGlossario('kg')" title="De cada lado ou o total?">${getUnit()}</span><span class="sh-pl" onclick="openPlacaInfo()" title="O que e placa?">placa</span><span class="sh-reps">${_porTempo ? _tUnid : 'reps'}</span><span class="sh-rs" title="Quantas repetições sobraram">sobrou</span><span class="sh-rpe" title="Esforço de 0 a 10">RPE</span><button type="button" class="rs-info-btn" onclick="openSobrouInfo()" aria-label="O que é o sobrou?">i</button><span class="sh-prev">${(prev && prev.length) ? 'última vez' : ''}</span></div>
       ${rows}
-      ${noAdd ? '' : `<button type="button" class="set-add" onclick="addSet(${di},'${eiS}')" title="Série a mais, além do que foi prescrito">+ série extra</button>`}
+      ${(noAdd || sets.length >= _nPresc + 3 || sets.length >= 12) ? '' : `<button type="button" class="set-add" onclick="addSet(${di},'${eiS}')" title="Abre uma série VÁLIDA a mais, além do que foi prescrito (por tua conta)">${_rotulada ? '+ válida extra' : '+ série extra'}</button>`}
     </div>`;
 }
 // Resolve a grade CERTA de (di,ei). O modo foco ("um exercício por vez") renderiza a MESMA grade
@@ -9553,9 +9557,13 @@ function addSet(di, ei) {
   _flushSetLocal_(di, ei);
   const arr = _setsBase(di, ei);
   if (arr.length >= 12) return;                 // teto de sanidade
+  try { if (arr.length >= _serieCountPresc(_exObjAt(di, ei)) + 3) return; } catch (_) {}   // v601: até 3 extras (o render só mostra linha vazia até prescrito + 3; além disso ficava gravada e invisível)
+  // v601: já tem uma extra VAZIA esperando? Não abre outra (toque repetido no botão empilhava linhas vazias); só mostra a que está lá.
+  try { const n = _serieCountPresc(_exObjAt(di, ei)), u = arr[arr.length - 1] || {}; if (arr.length > n && !String(u.kg || '').trim() && !String(u.pl || '').trim() && !String(u.reps || '').trim() && !String(u.rs || '').trim()) { const rs = _gridEl(di, ei).querySelectorAll('.set-row'); const l = rs[rs.length - 1]; if (l) { l.scrollIntoView({ block: 'nearest' }); l.classList.add('te-mv-pisca'); setTimeout(() => l.classList.remove('te-mv-pisca'), 500); } return; } } catch (_) {}
   arr.push({ kg: '', pl: '', reps: '', rs: '' });
   saveSets(di, ei, currentWeek, arr);
   _reRenderSetsGrid(di, ei);
+  try { const rs = _gridEl(di, ei).querySelectorAll('.set-row'); const u = rs[rs.length - 1]; if (u) u.scrollIntoView({ block: 'nearest' }); } catch (_) {}   // v601
 }
 function removeSet(di, ei, si) {
   _flushSetLocal_(di, ei);
@@ -25834,7 +25842,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v600';
+    var APP_SHELL_V = 'metodo-gh-v601';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
