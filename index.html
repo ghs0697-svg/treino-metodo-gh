@@ -7050,7 +7050,7 @@ const I18N_EN = {
   '✈️ Viagem/Livre': '✈️ Travel/Free', '✈️ Viagem/Livre ligado': '✈️ Travel/Free ON',
   '✓ Vídeos baixados': '✓ Videos downloaded', 'Apagar vídeos baixados': 'Delete downloaded videos',
   'salvar': 'save', 'ritmo': 'tempo', 'descanso': 'rest', 'histórico': 'history', 'trocar': 'swap',
-  '+ série': '+ set', '+ série extra': '+ extra set', '+ válida extra': '+ extra working set', 'PLACA': 'PLATE', 'SOBROU': 'LEFT', '✓ salvo': '✓ saved',
+  '+ série': '+ set', '+ série extra': '+ extra set', '+ válida extra': '+ extra working set', 'Em cinza, o que tu fez na última vez': 'In gray, what you did last time', 'PLACA': 'PLATE', 'SOBROU': 'LEFT', '✓ salvo': '✓ saved',
   'SUBST.': 'SWAPPED', '✈ LIVRE': '✈ FREE', '⏳ se sobrar tempo': '⏳ if time allows',
   'FORÇA ESTIMADA': 'ESTIMATED STRENGTH', 'referência, não é pra testar': 'reference, not a test target',
   'Última série: como foi?': 'Last set: how did it go?',
@@ -7168,6 +7168,7 @@ Object.assign(I18N_EN, {
   '🔤 Tamanho da letra: normal (tocar pra aumentar)': '🔤 Text size: normal (tap to enlarge)', '🔤 Tamanho da letra: muito grande (tocar pra aumentar mais)': '🔤 Text size: very large (tap to enlarge more)', '🔤 Tamanho da letra: grande (tocar pra aumentar mais)': '🔤 Text size: large (tap to enlarge more)', '🔤 Tamanho da letra: maior (tocar pra voltar ao normal)': '🔤 Text size: larger (tap to go back to normal)'
 });
 const I18N_RX = [
+  [/^Em cinza, a última vez que tu fez este exercício( \(.+\))?$/, 'In gray, the last time you did this exercise$1'],
   [/^\u00b7 (\d+) opções$/, '\u00b7 $1 options'], [/^\u00b7 1 opção$/, '\u00b7 1 option'],
   [/^Ir pra Semana (\d+) →$/, 'Go to Week $1 →'], [/^🔤 Tamanho da letra: (.+)$/, '🔤 Text size: $1'],
   [/^Dia (\d+) de (\d+) · Semana (\d+)$/, 'Day $1 of $2 · Week $3'],
@@ -9161,6 +9162,39 @@ function _evolucaoChipHtml(di, ei) {
        + `<span class="evo-nums">${txt}${un}</span>`
        + `<span class="evo-lbl">últimos ${h.length} treinos · ${frase}</span></div>`;
 }
+// v602 (Devlin Ricardo, 30/10/2026: "nos reajustes os pesos tão sumindo pros mesmos exercícios"): a sugestão em cinza era
+// achada SÓ pela posição (dia, ordem) e validada pelo nome. Exercício que mudou de dia ou de ordem no reajuste (no caso dele,
+// metade do protocolo) perdia a última vez: grade nova sem cinza, sem "ant:" e sem "Teu melhor". Agora, sem nada válido na
+// posição, o app procura a última grade do MESMO exercício (nome igual, normalizado) em qualquer posição do aparelho, inclusive
+// de ciclo anterior e de slot de substituto. SÓ LEITURA: nada é gravado, movido ou apagado; o campo segue vazio, só o cinza muda.
+let _spnCache = { t: 0, nome: '', lst: null };
+function _slotsPorNome_(d, e) {
+  let nome = '';
+  try { nome = _normEx(_exAtivoNome_(d, e)); } catch (_) { nome = ''; }
+  if (!nome) return [];
+  const sfAqui = _cargaSlotSuffix(d, e), dAqui = String(d), eAqui = String(e);
+  const foraDaqui = x => !(x.d === dAqui && x.e === eAqui && x.sf === sfAqui);
+  const agora = Date.now();
+  if (_spnCache.lst && _spnCache.nome === nome && agora - _spnCache.t < 1500) return _spnCache.lst.filter(foraDaqui);
+  const out = [];
+  try {
+    const pre = 'gh_sets_' + STUDENT_ID + '_d';
+    const temDado = a => Array.isArray(a) && a.some(x => x && (String(x.kg || '').trim() || String(x.pl || '').trim() || String(x.reps || '').trim()));
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i); if (!k || k.indexOf(pre) !== 0) continue;
+      const m = k.slice(pre.length).match(/^(\d+)_e(\d+[ab]?)_w(\d+)(?:_(.+))?$/); if (!m) continue;
+      const sf = m[4] ? '_' + m[4] : '';
+      const nm = m[4] ? m[4] : _normEx(localStorage.getItem(exnKey(m[1], m[2], m[3])) || '');
+      if (!nm || nm !== nome) continue;
+      let a = null; try { a = JSON.parse(localStorage.getItem(k) || 'null'); } catch (_) { a = null; }
+      if (!temDado(a)) continue;
+      out.push({ sets: a, t: Number(localStorage.getItem(blkKey(m[1], m[2], m[3]) + sf)) || 0, w: +m[3], d: m[1], e: m[2], sf: sf });
+    }
+  } catch (_) {}
+  out.sort((a, b) => (b.t - a.t) || (b.w - a.w));
+  _spnCache = { t: agora, nome: nome, lst: out };
+  return out.filter(foraDaqui);
+}
 function getPrevSets(d, e, w) {
   const sf = _cargaSlotSuffix(d, e);
   const read = ww => {
@@ -9173,6 +9207,7 @@ function getPrevSets(d, e, w) {
   for (let ww = w - 1; ww >= 1; ww--) { const v = read(ww); if (v) return v; }
   const hi = Math.max((typeof TOTAL_WEEKS === 'number' ? TOTAL_WEEKS : 8), 24);
   for (let ww = hi; ww > w; ww--) { const v = read(ww); if (v) return v; }
+  try { const _pn = _slotsPorNome_(d, e)[0]; if (_pn) { const a = _pn.sets.map(x => Object.assign({}, x)); Object.defineProperty(a, '_origem', { value: { t: _pn.t, w: _pn.w, d: _pn.d, e: _pn.e }, enumerable: false }); return a; } } catch (_) {}   // v602: mesmo exercício em outra posição
   const pk = getPrevCarga(d, e, w), pp = getPrevPlacas(d, e, w);   // fallback: carga única antiga como 1 série
   if (pk || pp) return [{ kg: pk || '', pl: pp || '', reps: '' }];
   return null;
@@ -9197,6 +9232,7 @@ function _prevSugComPeso(d, e, w, prev, n) {
   const hi = Math.max((typeof TOTAL_WEEKS === 'number' ? TOTAL_WEEKS : 8), 24); for (let ww = hi; ww > w; ww--) ordem.push(ww);
   const velhas = []; let achouUltima = false;
   for (const ww of ordem) { const a = read(ww); if (!a) continue; if (!achouUltima && a.some(x => x && (String(x.kg || '').trim() || String(x.pl || '').trim() || String(x.reps || '').trim()))) { achouUltima = true; continue; } if (achouUltima) velhas.push(a); }
+  try { const _o = prev._origem; _slotsPorNome_(d, e).forEach(x => { if (_o && x.d === _o.d && x.e === _o.e && x.w === _o.w) return; velhas.push(x.sets); }); } catch (_) {}   // v602: o mesmo exercício em outras posições também é fonte
   const out = [];
   for (let i = 0; i < tam; i++) {
     const p = prev[i] ? Object.assign({}, prev[i]) : { kg: '', pl: '', reps: '' };
@@ -9282,7 +9318,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
   }).join('');
   return `<div class="sets-grid${_rotulada ? ' rotulada' : ''}${_porTempo ? ' tempo' : ''}${_temPl ? ' tem-pl' : ''}" id="sets-${di}-${eiS}" data-di="${di}" data-ei="${eiS}" data-noadd="${noAdd ? '1' : ''}" data-semx="${semX ? '1' : ''}">
       <div class="sg-head">Teu registro</div>
-      ${(prev && prev.length) ? '<div class="sg-ant-nota">Em cinza, o que tu fez na última vez</div>' : ''}
+      ${(prev && prev.length) ? '<div class="sg-ant-nota">' + ((prevCru && prevCru._origem) ? 'Em cinza, a última vez que tu fez este exercício' + (prevCru._origem.t > 0 ? ' (' + _arqDiaBR_(prevCru._origem.t) + ')' : '') : 'Em cinza, o que tu fez na última vez') + '</div>' : ''}
       ${label ? `<div class="carga-label" style="font-size:10px;margin-bottom:2px;">${label}</div>` : ''}
       ${evo}${melhor}
       <div class="set-head"><span class="set-num"></span><span class="sh-kg" onclick="openGlossario('kg')" title="De cada lado ou o total?">${getUnit()}</span><span class="sh-pl" onclick="openPlacaInfo()" title="O que e placa?">placa</span><span class="sh-reps">${_porTempo ? _tUnid : 'reps'}</span><span class="sh-rs" title="Quantas repetições sobraram">sobrou</span><span class="sh-rpe" title="Esforço de 0 a 10">RPE</span><button type="button" class="rs-info-btn" onclick="openSobrouInfo()" aria-label="O que é o sobrou?">i</button><span class="sh-prev">${(prev && prev.length) ? 'última vez' : ''}</span></div>
@@ -25842,7 +25878,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v601';
+    var APP_SHELL_V = 'metodo-gh-v602';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
