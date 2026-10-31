@@ -5884,19 +5884,21 @@
 
 <!-- ══ MODAL DE RENOVAÇÃO<!-- ══ MODAL DE RENOVAÇÃO (self-service: checkout Greenn; hormonal/peptídeos são
      order bumps DENTRO do checkout, decisão GH 2026-08-04). z-index acima do
-     planBlockOverlay (99999) pra funcionar também na tela de plano vencido. ══ -->
+     planBlockOverlay (99999) pra funcionar também na tela de plano vencido.
+     v603 (GH 31/10/2026): anual R$ 2.247 e semestral R$ 1.597, preço de quem já é aluno. Os de 2.997 e 2.247 são da call e NÃO entram aqui.
+     Os redirects antigos 309565 e 309566 seguem ligados na Greenn pra honrar quem já recebeu aquele preço. ══ -->
 <div class="te-modal-overlay" id="renovModal" style="z-index:100002;" onclick="if(event.target.id==='renovModal')teHide('renovModal')">
   <div class="te-modal-box" style="max-width:440px;">
     <h3 style="margin:0 0 4px;">Próxima etapa</h3>
     <p style="color:#aaa;font-size:11.5px;margin:0 0 14px;line-height:1.5;">A próxima etapa começa de onde tu parou: teu histórico, tuas cargas e teus selos seguem contigo. Escolhe a duração e paga direto, em página segura. <b style="color:#ccc;">Protocolos adicionais</b> tu inclui dentro do próprio pagamento.</p>
-    <a class="renov-opt" href="https://payfast.greenn.com.br/redirect/309565" target="_blank" rel="noopener" onclick="_renovLogClick('anual')">
+    <a class="renov-opt" href="https://payfast.greenn.com.br/124888/offer/5PozHM?ch_id=21679&amp;b_id_1=120433&amp;b_offer_1=A4laNh&amp;b_id_2=168168&amp;b_offer_2=LNEse1" target="_blank" rel="noopener" onclick="_renovLogClick('anual')">
       <div>
         <div class="renov-opt-t">Etapa de 12 meses</div>
         <div class="renov-opt-d">Um ano inteiro de acompanhamento, com todos os reajustes</div>
       </div>
       <span class="renov-opt-go">Avançar</span>
     </a>
-    <a class="renov-opt" href="https://payfast.greenn.com.br/redirect/309566" target="_blank" rel="noopener" onclick="_renovLogClick('semestral')">
+    <a class="renov-opt" href="https://payfast.greenn.com.br/120446/offer/S3jAla?ch_id=21679&amp;b_id_1=120433&amp;b_offer_1=A4laNh&amp;b_id_2=168168&amp;b_offer_2=LNEse1" target="_blank" rel="noopener" onclick="_renovLogClick('semestral')">
       <div>
         <div class="renov-opt-t">Etapa de 6 meses</div>
         <div class="renov-opt-d">Seis meses de acompanhamento, com todos os reajustes</div>
@@ -25878,7 +25880,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v602';
+    var APP_SHELL_V = 'metodo-gh-v603';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
