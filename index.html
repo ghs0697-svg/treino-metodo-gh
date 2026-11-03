@@ -3463,6 +3463,33 @@
   body.has-bnav .gh-toast { bottom: calc(104px + env(safe-area-inset-bottom, 0px)); }   /* v591: o aviso caia em cima da barra de baixo */
   .te-btn.ghost { background: transparent; color: var(--gray); border: 1px solid rgba(255, 255, 255, 0.14); }
   .te-btn.danger { background: #c0392b; color: #fff; }
+  /* v605 FANTASMA: versao anterior do protocolo por cima do editor (so o treinador ve) */
+  .fant-ov { position: fixed; inset: 0; z-index: 9700; background: rgba(8, 8, 8, 0.62); display: flex; align-items: flex-start; justify-content: center; padding: 14px; overflow-y: auto; }
+  .fant-box { width: 100%; max-width: 980px; background: rgba(22, 21, 19, 0.96); border: 1px dashed rgba(201, 168, 76, 0.55); border-radius: 16px; padding: 14px 16px 18px; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6); }
+  .fant-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .fant-top b { color: var(--gold); font-size: 15px; }
+  .fant-top select { background: #222; color: var(--white); border: 1px solid var(--gold-dim); border-radius: 8px; padding: 7px 8px; font: inherit; font-size: 13px; max-width: 100%; }
+  .fant-top label { color: var(--gray); font-size: 12px; display: flex; align-items: center; gap: 5px; cursor: pointer; }
+  .fant-x { margin-left: auto; background: transparent; color: var(--gray); border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 8px; padding: 6px 12px; font: inherit; font-size: 14px; cursor: pointer; min-height: 34px; }
+  .fant-leg { color: #8a8a8a; font-size: 11px; margin: 8px 0 4px; }
+  .fant-resumo { color: var(--white); font-size: 13px; margin: 2px 0 10px; }
+  .fant-msg { color: var(--gray); font-size: 13px; padding: 26px 6px; text-align: center; }
+  .fant-dias { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+  .fant-dia { border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 8px 10px; background: rgba(255, 255, 255, 0.02); }
+  .fant-dia h4 { margin: 0 0 6px; font-size: 12px; color: var(--gold); letter-spacing: .04em; }
+  .fant-ex { font-size: 12.5px; line-height: 1.35; padding: 5px 0; border-top: 1px solid rgba(255, 255, 255, 0.05); color: var(--white); }
+  .fant-ex:first-of-type { border-top: 0; }
+  .fant-ex .fant-det { color: #9a9a9a; font-size: 11.5px; }
+  .fant-igual { opacity: .55; }
+  .fant-saiu { text-decoration: line-through; opacity: .5; color: #e07b7b; }
+  .fant-saiu .fant-det { color: #b06a6a; }
+  .fant-foi { opacity: .45; font-style: italic; }
+  .fant-selo { display: inline-block; font-size: 10px; font-weight: 800; border-radius: 6px; padding: 1px 6px; margin-left: 6px; vertical-align: 1px; text-decoration: none; }
+  .fant-selo.novo { background: #2e7d4f; color: #fff; }
+  .fant-selo.veio { background: #3a4f7a; color: #fff; }
+  .fant-selo.mudou { background: rgba(201, 168, 76, 0.22); color: var(--gold); }
+  .fant-era { color: var(--gold); font-size: 11px; margin-left: 4px; }
+  .fant-sec { color: #777; font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; margin-right: 6px; }
 
   #trainerEditor {
     position: fixed; inset: 0; background: var(--dark); z-index: 9600;
@@ -3520,6 +3547,8 @@
     .te-top-info { flex: 1 1 0; flex-basis: 0; min-width: 0; }
     .te-top-bar > .te-btn:last-child { order: -1; flex: 0 0 auto; padding: 6px 10px; }   /* o ✕ sobe pra linha do nome, senão abre uma 3ª linha de botão */
     .te-top-bar > .te-btn, .te-top-bar > .te-tpl-btn { padding: 7px 6px; font-size: 12px; min-height: 36px; margin-right: 0; flex: 1 1 auto; }
+    #teRecadoBtn .te-lbl, #teFantasmaBtn .te-lbl { display: none; }   /* v605: no celular Recado e Antes ficam só no ícone, senão a fila de botões abre uma 3ª linha */
+    #teRecadoBtn, #teFantasmaBtn { flex: 0 0 auto; padding: 7px 10px; }
   }
   .tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 6px; margin: 8px 0; }
   .tpl-pill { background: #222; border: 1px solid #333; color: #ccc; padding: 7px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; text-align: center; }
@@ -6507,7 +6536,8 @@
     <div class="te-mode-tabs" id="teModeTabs"></div>
     <button class="te-btn ghost" id="teUndoBtn" onclick="undoTrainerAction()" disabled title="Desfazer última ação (Ctrl+Z)">↶ Desfazer</button>
     <button class="te-tpl-btn" id="trainerTplBtn" onclick="openTrainerTemplateModal()" style="display:none;" title="Carregar template oficial (substitui exercícios mantendo info do aluno)">📋 Template</button>
-    <button class="te-btn ghost" id="teRecadoBtn" onclick="openRecadoModal()" title="Gravar recado em áudio pro aluno (entrega inicial). Some em 2 dias.">🎙 Recado</button>
+    <button class="te-btn ghost" id="teRecadoBtn" onclick="openRecadoModal()" title="Gravar recado em áudio pro aluno (entrega inicial). Some em 2 dias.">🎙<span class="te-lbl"> Recado</span></button>
+    <button class="te-btn ghost" id="teFantasmaBtn" onclick="teFantasmaAbrir()" title="Ver por cima como este protocolo estava antes (versão anterior). Só a equipe vê.">👻<span class="te-lbl"> Antes</span></button>
     <button class="te-btn" id="trainerSaveBtn" onclick="trainerSave()">💾 Salvar</button>
     <button class="te-btn ghost" onclick="trainerExit()">✕</button>
   </div>
@@ -25887,7 +25917,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v604';
+    var APP_SHELL_V = 'metodo-gh-v605';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
@@ -27195,6 +27225,7 @@ async function trainerLoadSheet(presetSid) {
   if (m) sid = m[1];
   if (!sid) { alert('Cola o ID, a URL do Drive OU a URL do site (?sheet=...)'); return; }
   trainerSheetId = sid;
+  try { teFantasmaFechar(); } catch (_) {}   // v605
   try {
     const stamp = Date.now();
     // headers=0 evita o gviz mesclar linhas similares (info/meta/regra/supl) numa única —
@@ -27263,6 +27294,7 @@ function renderEditorTopBar() {
 }
 
 function switchEditMode(mode) {
+  try { teFantasmaFechar(); } catch (_) {}   // v605: o fantasma é de uma aba só
   currentEditMode = mode;
   renderEditorTopBar();
   renderCurrentEditor();
@@ -27271,6 +27303,235 @@ function switchEditMode(mode) {
   if (tb) tb.style.display = mode === 'treino' ? 'inline-block' : 'none';
   // Atualiza estado do botão "Desfazer" pro modo atual
   if (typeof teUpdateUndoBtn === 'function') teUpdateUndoBtn();
+}
+
+// ── FANTASMA do protocolo (v605, GH 30/10): botão "Antes" do editor mostra por cima como o TREINO ou a DIETA estava.
+// As versões vêm do .gs (build 2026-11-03a): a captura de antes de cada publicação (uma por rodada de 6 h) e o aluno nas
+// cópias mensais de protocolos. Só leitura: nada aqui grava na planilha. Versão igual à de agora ou repetida não entra na lista.
+let _teFant = null;
+
+function _fantNorm(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+
+function _fantLinhas(rows, n) {
+  return (rows || []).map(r => { const o = (r || []).slice(0, n).map(c => String(c == null ? '' : c).trim()); while (o.length < n) o.push(''); return o; });
+}
+
+function _fantTreinoDias(rows) {
+  const dias = {};
+  _fantLinhas(rows, 8).forEach(r => {
+    const d = parseInt(r[0]);
+    if (isNaN(d) || (!r[1] && !r[2] && !r[3])) return;
+    (dias[d] = dias[d] || []).push({ nome: r[1] || 'Exercício sem nome', k: _fantNorm(r[1]), series: r[2], reps: r[3], rest: r[4], obs: r[5] });
+  });
+  return Object.keys(dias).sort((a, b) => a - b).map(d => ({ dia: +d, exs: dias[d] }));
+}
+
+function _fantDietaItens(rows) {
+  return _fantLinhas(rows, 4)
+    .filter(r => (r[0] || r[1] || r[2] || r[3]) && _fantNorm(r[0]) !== 'secao')
+    .map(r => ({ a: r[0], b: r[1], c: r[2], d: r[3], k: _fantNorm(r[0]) + '|' + _fantNorm(r[1]) }));
+}
+
+function _fantAssinatura(tab, rows) {
+  if (tab === 'TREINO') return _fantTreinoDias(rows).map(d => d.dia + ':' + d.exs.map(e => [e.k, _fantNorm(e.series), _fantNorm(e.reps), _fantNorm(e.rest), _fantNorm(e.obs)].join('|')).join(';')).join('#');
+  return _fantDietaItens(rows).map(x => x.k + '|' + _fantNorm(x.c) + '|' + _fantNorm(x.d)).join('#');
+}
+
+function _fantQuando(ms) {
+  const d = new Date(ms), z = n => ('0' + n).slice(-2);
+  return z(d.getDate()) + '/' + z(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + z(d.getHours()) + 'h' + z(d.getMinutes());
+}
+
+function _fantVersoes(j, tab) {
+  const lista = [];
+  (j.versoes || []).forEach(v => {
+    if (!v || v.tab !== tab || !Array.isArray(v.rows)) return;
+    lista.push({ ms: +v.ms || 0, rotulo: 'Como estava até ' + _fantQuando(+v.ms || 0), rows: v.rows });
+  });
+  (j.mensais || []).forEach(m => {
+    const csv = tab === 'TREINO' ? m.treinoCsv : m.dietaCsv;
+    const p = String(m.data || '').split('-');
+    if (!csv || p.length !== 3) return;
+    lista.push({ ms: new Date(+p[0], +p[1] - 1, +p[2], 5).getTime(), rotulo: 'Como estava em ' + p[2] + '/' + p[1] + '/' + p[0] + ' (cópia do mês)', rows: parseCSV(csv) });
+  });
+  lista.sort((a, b) => b.ms - a.ms);
+  const atual = tab === 'TREINO' ? trainerData : dietaData;
+  const vistas = new Set([_fantAssinatura(tab, atual)]);
+  return lista.filter(v => { const sg = _fantAssinatura(tab, v.rows); if (vistas.has(sg)) return false; vistas.add(sg); return true; });
+}
+
+function _fantDiffTreino(antes, agora) {
+  const A = _fantTreinoDias(antes), B = _fantTreinoDias(agora);
+  // reajuste costuma trocar os dias de lugar: cada dia de agora casa com o dia de antes que tem mais exercícios em comum
+  const pares = [];
+  B.forEach(b => A.forEach(a => { const ka = new Set(a.exs.map(e => e.k)); const n = b.exs.filter(e => ka.has(e.k)).length; if (n) pares.push({ b: b.dia, a: a.dia, n }); }));
+  pares.sort((x, y) => y.n - x.n || (x.b === x.a ? -1 : 0) || (y.b === y.a ? 1 : 0));
+  const eraDia = new Map(), virou = new Map();
+  pares.forEach(p => { if (!eraDia.has(p.b) && !virou.has(p.a)) { eraDia.set(p.b, p.a); virou.set(p.a, p.b); } });
+  B.forEach(b => { if (!eraDia.has(b.dia) && A.some(a => a.dia === b.dia) && !virou.has(b.dia)) { eraDia.set(b.dia, b.dia); virou.set(b.dia, b.dia); } });
+  const usado = new Set(), par = new Map();
+  const tenta = (e, dia, mesmoDia) => {
+    const alvo = eraDia.has(dia) ? eraDia.get(dia) : null;
+    for (const d of A) {
+      if (mesmoDia ? d.dia !== alvo : d.dia === alvo) continue;
+      for (let i = 0; i < d.exs.length; i++) {
+        const ch = d.dia + ':' + i;
+        if (!usado.has(ch) && d.exs[i].k === e.k) { usado.add(ch); par.set(e, { dia: d.dia, i, e: d.exs[i] }); return true; }
+      }
+    }
+    return false;
+  };
+  B.forEach(d => d.exs.forEach(e => tenta(e, d.dia, true)));
+  B.forEach(d => d.exs.forEach(e => { if (!par.has(e)) tenta(e, d.dia, false); }));
+  const destino = new Map();
+  B.forEach(d => d.exs.forEach(e => { const p = par.get(e); if (p) destino.set(p.dia + ':' + p.i, d.dia); }));
+  const cont = { novo: 0, saiu: 0, mudou: 0, veio: 0 };
+  const dias = B.map(d => ({ dia: d.dia, de: eraDia.has(d.dia) ? eraDia.get(d.dia) : null }))
+    .concat(A.filter(a => !virou.has(a.dia)).map(a => ({ dia: null, de: a.dia })));
+  const blocos = dias.map(({ dia, de }) => {
+    const atual = dia == null ? [] : (B.find(d => d.dia === dia) || { exs: [] }).exs;
+    const velho = de == null ? [] : (A.find(d => d.dia === de) || { exs: [] }).exs;
+    const itens = atual.map(e => {
+      const p = par.get(e);
+      if (!p) { cont.novo++; return { s: 'novo', e, pos: -1 }; }
+      const mesmo = p.dia === de;
+      const mud = [];
+      [['series', 'séries'], ['reps', 'repetições'], ['rest', 'descanso']].forEach(([c]) => { if (_fantNorm(e[c]) !== _fantNorm(p.e[c])) mud.push(c); });
+      const obsMudou = _fantNorm(e.obs) !== _fantNorm(p.e.obs);
+      if (mud.length || obsMudou) cont.mudou++;
+      if (!mesmo) cont.veio++;
+      return { s: !mesmo ? 'veio' : (mud.length || obsMudou ? 'mudou' : 'igual'), e, v: p.e, deDia: p.dia, mud, obsMudou, pos: mesmo ? p.i : -1 };
+    });
+    velho.forEach((ev, i) => {
+      if (usado.has(de + ':' + i) && dia != null && destino.get(de + ':' + i) === dia) return;
+      const foiPra = usado.has(de + ':' + i) ? destino.get(de + ':' + i) : null;
+      if (foiPra == null) cont.saiu++;
+      const it = { s: foiPra == null ? 'saiu' : 'foi', e: ev, praDia: foiPra, pos: i };
+      let k = 0;
+      for (let j = 0; j < itens.length; j++) if (itens[j].pos >= 0 && itens[j].pos < i) k = j + 1;
+      itens.splice(k, 0, it);
+    });
+    return { dia, de, itens };
+  });
+  return { blocos, cont };
+}
+
+function _fantDiffDieta(antes, agora) {
+  const A = _fantDietaItens(antes), B = _fantDietaItens(agora), n = A.length, m = B.length;
+  const L = Array.from({ length: n + 1 }, () => new Int32Array(m + 1));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) L[i][j] = A[i].k === B[j].k ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  const out = [], cont = { novo: 0, saiu: 0, mudou: 0 };
+  let i = 0, j = 0;
+  while (i < n || j < m) {
+    if (i < n && j < m && A[i].k === B[j].k) {
+      const igual = _fantNorm(A[i].c) === _fantNorm(B[j].c) && _fantNorm(A[i].d) === _fantNorm(B[j].d);
+      if (!igual) cont.mudou++;
+      out.push({ s: igual ? 'igual' : 'mudou', a: A[i], b: B[j] }); i++; j++;
+    } else if (j >= m || (i < n && L[i + 1][j] >= L[i][j + 1])) { cont.saiu++; out.push({ s: 'saiu', a: A[i++] }); }
+    else { cont.novo++; out.push({ s: 'novo', b: B[j++] }); }
+  }
+  return { itens: out, cont };
+}
+
+function _fantHtmlTreino(dif, so) {
+  const c = dif.cont;
+  const resumo = c.novo + c.saiu + c.mudou + c.veio === 0 ? 'Mesmos exercícios, séries e repetições.' :
+    [c.novo ? c.novo + (c.novo === 1 ? ' exercício entrou' : ' exercícios entraram') : '', c.saiu ? c.saiu + (c.saiu === 1 ? ' saiu' : ' saíram') : '', c.veio ? c.veio + (c.veio === 1 ? ' mudou de dia' : ' mudaram de dia') : '', c.mudou ? c.mudou + ' com série, repetição, descanso ou observação diferente' : ''].filter(Boolean).join(', ') + '.';
+  const det = (e, v, mud) => ['series', 'reps', 'rest'].map(k => {
+    if (!e[k] && !(v && v[k])) return '';
+    const muda = mud && mud.includes(k);
+    return escTrainer(e[k] || '(vazio)') + (muda ? ' <span class="fant-era">era ' + escTrainer(v[k] || '(vazio)') + '</span>' : '');
+  }).filter(Boolean).join(' · ');
+  const dias = dif.blocos.map(b => {
+    const itens = b.itens.filter(it => !so || it.s !== 'igual').map(it => {
+      if (it.s === 'saiu') return '<div class="fant-ex fant-saiu">' + escTrainer(it.e.nome) + '<div class="fant-det">' + det(it.e) + '</div></div>';
+      if (it.s === 'foi') return '<div class="fant-ex fant-foi">' + escTrainer(it.e.nome) + ' <span class="fant-det">foi pro dia ' + it.praDia + '</span></div>';
+      const selo = it.s === 'novo' ? ' <span class="fant-selo novo">NOVO</span>' : it.s === 'veio' ? ' <span class="fant-selo veio">veio do dia ' + it.deDia + '</span>' : it.s === 'mudou' ? ' <span class="fant-selo mudou">mudou</span>' : '';
+      const obs = it.obsMudou ? '<div class="fant-det" title="' + escTrainer('Antes: ' + (it.v.obs || '(sem observação)')) + '">observação mudou, antes: ' + escTrainer(it.v.obs || '(sem observação)') + '</div>' : '';
+      return '<div class="fant-ex' + (it.s === 'igual' ? ' fant-igual' : '') + '">' + escTrainer(it.e.nome) + selo + '<div class="fant-det">' + det(it.e, it.v, it.mud) + '</div>' + obs + '</div>';
+    }).join('');
+    if (!itens) return '';
+    const tit = b.dia == null ? 'DIA ' + b.de + ' DE ANTES (não existe mais)' : 'DIA ' + b.dia + (b.de == null ? ' (dia novo)' : b.de !== b.dia ? ', era o dia ' + b.de : '');
+    return '<div class="fant-dia"><h4>' + tit + '</h4>' + itens + '</div>';
+  }).join('');
+  return { resumo, corpo: dias ? '<div class="fant-dias">' + dias + '</div>' : '<div class="fant-msg">Nada mudou no treino.</div>' };
+}
+
+function _fantHtmlDieta(dif, so) {
+  const c = dif.cont;
+  const resumo = c.novo + c.saiu + c.mudou === 0 ? 'Mesma dieta.' : [c.novo ? c.novo + (c.novo === 1 ? ' linha entrou' : ' linhas entraram') : '', c.saiu ? c.saiu + (c.saiu === 1 ? ' saiu' : ' saíram') : '', c.mudou ? c.mudou + ' com quantidade ou observação diferente' : ''].filter(Boolean).join(', ') + '.';
+  const linha = (x, v, cls, selo) => {
+    const era = (k) => v && _fantNorm(v[k]) !== _fantNorm(x[k]) ? ' <span class="fant-era">era ' + escTrainer(v[k] || '(vazio)') + '</span>' : '';
+    const det = [x.c ? escTrainer(x.c) + era('c') : (v && v.c ? '(vazio)' + era('c') : ''), x.d ? escTrainer(x.d) + era('d') : (v && v.d ? '(vazio)' + era('d') : '')].filter(Boolean).join(' · ');
+    return '<div class="fant-ex ' + cls + '"><span class="fant-sec">' + escTrainer(x.a) + '</span> ' + escTrainer(x.b) + selo + (det ? '<div class="fant-det">' + det + '</div>' : '') + '</div>';
+  };
+  const corpo = dif.itens.filter(it => !so || it.s !== 'igual').map(it => {
+    if (it.s === 'saiu') return linha(it.a, null, 'fant-saiu', '');
+    if (it.s === 'novo') return linha(it.b, null, '', ' <span class="fant-selo novo">NOVO</span>');
+    if (it.s === 'mudou') return linha(it.b, it.a, '', ' <span class="fant-selo mudou">mudou</span>');
+    return linha(it.b, null, 'fant-igual', '');
+  }).join('');
+  return { resumo, corpo: corpo ? '<div class="fant-dia">' + corpo + '</div>' : '<div class="fant-msg">Nada mudou na dieta.</div>' };
+}
+
+function _fantPainel(html) {
+  let ov = document.getElementById('teFantasma');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'teFantasma'; ov.className = 'fant-ov';
+    ov.addEventListener('click', e => { if (e.target === ov) teFantasmaFechar(); });
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML = '<div class="fant-box">' + html + '</div>';
+  ov.style.display = 'flex';
+  return ov;
+}
+
+function teFantasmaFechar() { const ov = document.getElementById('teFantasma'); if (ov) ov.style.display = 'none'; }
+
+function _fantTopo(tab, extra) {
+  return '<div class="fant-top"><b>👻 Antes: ' + (tab === 'TREINO' ? 'treino' : 'dieta') + '</b>' + (extra || '') + '<button type="button" class="fant-x" onclick="teFantasmaFechar()">✕ Fechar</button></div>';
+}
+
+function teFantasmaRender() {
+  if (!_teFant || !_teFant.lista) return;
+  const { tab, lista } = _teFant;
+  const sel = Math.min(_teFant.sel || 0, lista.length - 1);
+  const v = lista[sel];
+  const atual = tab === 'TREINO' ? trainerData : dietaData;
+  const r = tab === 'TREINO' ? _fantHtmlTreino(_fantDiffTreino(v.rows, atual), _teFant.so) : _fantHtmlDieta(_fantDiffDieta(v.rows, atual), _teFant.so);
+  const opts = lista.map((x, i) => '<option value="' + i + '"' + (i === sel ? ' selected' : '') + '>' + escTrainer(x.rotulo) + '</option>').join('');
+  _fantPainel(_fantTopo(tab, '<select id="fantSel" onchange="_teFant.sel=+this.value;teFantasmaRender()">' + opts + '</select>' +
+    '<label><input type="checkbox" id="fantSo"' + (_teFant.so ? ' checked' : '') + ' onchange="_teFant.so=this.checked;teFantasmaRender()"> só o que mudou</label>') +
+    '<div class="fant-leg">Comparando com o que está no editor agora. Riscado: saiu. NOVO: entrou. "era": como estava antes.</div>' +
+    '<div class="fant-resumo">' + escTrainer(r.resumo) + '</div>' + r.corpo);
+}
+
+async function teFantasmaAbrir() {
+  if (currentEditMode !== 'treino' && currentEditMode !== 'dieta') switchEditMode(trainerData ? 'treino' : 'dieta');
+  const tab = currentEditMode === 'dieta' ? 'DIETA' : 'TREINO';
+  if (!(tab === 'TREINO' ? trainerData : dietaData) || !trainerSheetId) return;
+  const sid = trainerSheetId;
+  if (!_teFant || _teFant.sid !== sid || !_teFant.j) {
+    _fantPainel(_fantTopo(tab) + '<div class="fant-msg">Buscando as versões anteriores deste aluno…</div>');
+    const tok = _trainerToken_();
+    if (!tok) { teFantasmaFechar(); return; }
+    let j = null;
+    try {
+      const resp = await fetch(LOG_ENDPOINT + '?action=versoes&id=' + encodeURIComponent(sid) + '&token=' + encodeURIComponent(tok) + '&_=' + Date.now(), { cache: 'no-store' });
+      j = await resp.json();
+    } catch (e) { j = null; }
+    if (trainerSheetId !== sid) return;
+    if (!j) { _fantPainel(_fantTopo(tab) + '<div class="fant-msg">Não consegui buscar as versões agora. Confere a internet e toca em Antes de novo.</div>'); return; }
+    if (j.error === 'unauthorized') { try { localStorage.removeItem('gh_trainer_token'); } catch (e) {} _fantPainel(_fantTopo(tab) + '<div class="fant-msg">A senha do treinador não confere. Toca em Antes de novo e digita a senha.</div>'); return; }
+    if (!Array.isArray(j.versoes) && !Array.isArray(j.mensais)) { _fantPainel(_fantTopo(tab) + '<div class="fant-msg">O servidor ainda não tem o fantasma. Falta publicar o .gs novo (build 2026-11-03a).</div>'); return; }
+    _teFant = { sid, j, so: false };
+  }
+  _teFant.tab = tab;
+  _teFant.lista = _fantVersoes(_teFant.j, tab);
+  _teFant.sel = 0;
+  if (!_teFant.lista.length) { _fantPainel(_fantTopo(tab) + '<div class="fant-msg">Não tem versão anterior diferente desta guardada pra este aluno. A partir de agora, toda publicação guarda como estava antes.</div>'); return; }
+  teFantasmaRender();
 }
 
 // ── Template loader no Modo Treinador ──
@@ -28329,6 +28590,7 @@ async function trainerSave() {
     let ok = false, errMsg = '';
     try { const j = JSON.parse(txt); ok = j.success; errMsg = j.error || ''; } catch (_) { errMsg = txt.slice(0, 300); }
     btn.textContent = ok ? '✅ Salvo' : '❌ Falhou';
+    if (ok) _teFant = null;   // v605: a publicação guardou uma versão nova, o fantasma busca de novo
     if (!ok) alert('Apps Script retornou erro:\n\n' + errMsg);
     setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2500);
   } catch (e) {
@@ -28345,6 +28607,8 @@ function trainerExit() {
   trainerData = null;
   dietaData = null;
   trainerSheetId = null;
+  try { teFantasmaFechar(); } catch (_) {}   // v605
+  _teFant = null;
 }
 
 // ══════════════════════════════════════════════════════════════
