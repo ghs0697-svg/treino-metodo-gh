@@ -6212,9 +6212,10 @@
       <strong>Como pontuar:</strong>
       <ul style="margin:5px 0 0;padding-left:17px;">
         <li><strong>Treino</strong>: marca cada dia de treino que fizer.</li>
-        <li><strong>Dieta</strong>: marca todas as refeições do dia (vale o dia completo).</li>
+        <li><strong>Dieta</strong>: marca cada refeição na hora que comer. O dia com todas marcadas vale 1 dia; marcadas todas de uma vez, vale meio dia.</li>
         <li><strong>Cardio</strong>: marca o cardio até bater a meta da tua semana.</li>
       </ul>
+      <div style="margin-top:6px;">Empatou na nota? Fica no mesmo lugar.</div>
       <div style="margin-top:8px;padding-top:7px;border-top:1px solid rgba(212,167,106,0.22);">⭐ <strong>Story marcando o @gh.scheuermann pontua o DOBRO.</strong> Treino: posta o story no dia do treino (ou no dia seguinte) marcando o @gh.scheuermann e o dia vale por 2. Refeição e cardio: compartilha pelo app e marca no story. Pra eu reconhecer o teu story, teu @ do Instagram precisa estar cadastrado: fica na tua linha, aqui embaixo.</div>
     </div>
     <div id="rankingList" style="flex:1;overflow-y:auto;min-height:0;"></div>
@@ -21680,9 +21681,12 @@ async function openRankingModal() {
     // dieta/cardio pontuam no ranking quando o servidor disser (flags acima). Já valem (rollout 21/22-jun).
     const dietaConta = incluiDietaSrv;
     const cardioConta = incluiCardioSrv;
+    // v606 (GH 03/11): empate na nota = mesmo lugar (1º, 1º, 3º). A ordem dentro do empate segue a do servidor.
+    const _rkNota = r => Number(r.adherence != null ? r.adherence : (r.score || 0)) || 0;
+    const _rkLugar = i => { const n = _rkNota(ranking[i]); let l = 1; for (let k = 0; k < ranking.length; k++) if (_rkNota(ranking[k]) > n) l++; return l; };
     list.innerHTML = champHtml + meuHtml + ranking.slice(0, 50).map((r, i) => {
       const isMe = myName && _nmRk(r.name) === myName;
-      const pos = i + 1;
+      const pos = _rkLugar(i);
       let posCls = '', posTxt = pos + 'º';
       if (pos === 1) { posCls = 'gold'; posTxt = '1º'; }
       else if (pos === 2) { posCls = 'silver'; posTxt = '2º'; }
@@ -21695,6 +21699,9 @@ async function openRankingModal() {
         if (dietaConta) spans.push(`<span class="rk-bd">Dieta <b>${r.dietaAdesao || 0}%</b></span>`);
         if (cardioConta) spans.push(`<span class="rk-bd">Cardio <b>${r.cardioAdesao || 0}%</b></span>`);
         breakdown = `<div class="rk-breakdown">${spans.join('')}</div>`;
+        // v606: dia de dieta com as refeições marcadas todas de uma vez vale meio dia (o servidor manda quantos foram)
+        const meio = Number(r.dietaMeio) || 0;
+        if (dietaConta && meio > 0) breakdown += `<div class="rk-meio" style="font-size:11px;color:#a89a84;margin-top:4px;line-height:1.4;">${meio === 1 ? '1 dia de dieta foi marcado' : meio + ' dias de dieta foram marcados'} de uma vez e ${meio === 1 ? 'valeu' : 'valeram'} meio. Marca cada refeição quando comer.</div>`;
       }
       return `<div class="rk-row${isMe ? ' me' : ''}">
         <div class="rk-pos ${posCls}">${posTxt}</div>
@@ -21711,7 +21718,7 @@ async function openRankingModal() {
       const _meuIdx = myName ? ranking.findIndex(r => _nmRk(r.name) === myName) : -1;
       if (_meuIdx >= 50) {
         const r = ranking[_meuIdx];
-        list.insertAdjacentHTML('beforeend', `<div style="text-align:center;color:#666;font-size:11px;margin:8px 0 4px;">· · ·</div><div class="rk-row me"><div class="rk-pos">${_meuIdx + 1}º</div><div class="rk-name">${escHtml(r.name)}<span class="you">(você)</span></div><div class="rk-stats"><span class="rk-score">${r.adherence != null ? r.adherence : (r.score || 0)}%</span><span class="rk-meta">${Math.min(r.daysThisMonth || 0, r.prescritos || 0)}/${r.prescritos || 0} dias</span></div>${_rkStoryLinha_(r)}</div>`);
+        list.insertAdjacentHTML('beforeend', `<div style="text-align:center;color:#666;font-size:11px;margin:8px 0 4px;">· · ·</div><div class="rk-row me"><div class="rk-pos">${_rkLugar(_meuIdx)}º</div><div class="rk-name">${escHtml(r.name)}<span class="you">(você)</span></div><div class="rk-stats"><span class="rk-score">${r.adherence != null ? r.adherence : (r.score || 0)}%</span><span class="rk-meta">${Math.min(r.daysThisMonth || 0, r.prescritos || 0)}/${r.prescritos || 0} dias</span></div>${_rkStoryLinha_(r)}</div>`);
       }
     } catch (_) {}
     renderRankPrivacy();
@@ -25917,7 +25924,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v605';
+    var APP_SHELL_V = 'metodo-gh-v606';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
