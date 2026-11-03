@@ -3321,6 +3321,10 @@
   .wt-last { font-size:11px; color:#8d8579; margin-top:6px; }
   .wt-edit { background:none; border:1px solid rgba(201,162,75,.35); color:var(--gold, #c9a24b); border-radius:7px; padding:3px 8px; font-size:11px; font-weight:700; cursor:pointer; margin-left:6px; min-height:24px; }   /* v466 */
   .day-tab .wt-badge { display:block; font-size:9px; color:#9a8f7c; font-weight:500; margin-top:2px; letter-spacing:.2px; }
+  .day-tab.feito { border-color:rgba(127,192,107,.55); color:#9fd08e; background:rgba(127,192,107,.08); }   /* v607: dia fechado na semana */
+  .day-tab.feito .wt-badge { color:#7fc06b; font-weight:700; }
+  .day-tab.active.feito { background:var(--gold); color:#15100a; border-color:#7fc06b; box-shadow:0 0 0 1px #7fc06b inset; }
+  .day-tab.active.feito .wt-badge { color:#2f5a22; }
   .cmp-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .cmp-col { display:flex; flex-direction:column; }
   .cmp-label { text-align:center; font-size:11px; font-weight:700; padding:6px;
@@ -12401,7 +12405,7 @@ function _shortFechado(di) {
     return new Set(o.k);
   } catch (_) { return null; }
 }
-function allDoneOfDay(di) {
+function allDoneOfDay(di, soConsulta) {   // v607: soConsulta = só pergunta, não grava o essencial do modo curto
   if (!WORKOUT[di]) return false;
   // aquecimento NÃO conta (igual ao contador "X/N" e ao total do ranking, que filtram warmup).
   // Sem isto o dia nunca fechava: o aluno marcava todos os exercícios reais (contador cheio),
@@ -12415,7 +12419,7 @@ function allDoneOfDay(di) {
   // v449: pulado conta pra fechar o dia, mas o dia só fecha se o aluno FEZ pelo menos um exercício
   // (senão pular tudo daria sequência e pontos sem treino nenhum).
   const _fechou = real.every(o => isDone(di, o.ei) || isSkipped(di, o.ei)) && real.some(o => isDone(di, o.ei));
-  if (_fechou && _keepHoje) { try { localStorage.setItem(_shortFechKey(di), JSON.stringify({ k: Array.from(_keepHoje), t: Date.now() })); } catch (_) {} }
+  if (_fechou && _keepHoje && !soConsulta) { try { localStorage.setItem(_shortFechKey(di), JSON.stringify({ k: Array.from(_keepHoje), t: Date.now() })); } catch (_) {} }
   return _fechou;
 }
 // Primeiro dia VISÍVEL (do bloco ativo) ainda NÃO concluído 100% na semana atual.
@@ -12450,6 +12454,7 @@ function updateDayProgress() {
   _shortBtnSync();
   document.getElementById('pgFill').style.width = pct + '%';
   try { _ftBarra(); } catch (_) {}   // v575
+  try { renderTabs(); } catch (_) {}   // v607: o dia que acabou de fechar fica verde no botão
   bar.style.display = total > 0 ? 'block' : 'none';
   const hero = document.getElementById('dayHero');
   if (hero) hero.style.display = total > 0 ? 'block' : 'none';
@@ -15213,14 +15218,25 @@ function selectTreinoBloco(idx) {
   if (typeof updateProgressBar === 'function') updateProgressBar();
 }
 
+// v607 (aluno via Vitor, 03/11: "o relógio aparece mas às vezes não, acho que quando não registro o início ... uma cor diferente"):
+// o tempo só existe quando o aluno usou o cronômetro. Agora o dia FECHADO nesta semana (mesma regra do "Treino fechado") fica
+// verde com ✓, com o tempo quando houver e "feito" quando não houver. Repinta a cada marcação, então só troca o HTML se mudou.
+let _tabsHtmlUlt = null;
 function renderTabs() {
-  document.getElementById("dayTabs").innerHTML = WORKOUT.map((w, i) => {
+  const el = document.getElementById("dayTabs");
+  if (!el) return;
+  const html = WORKOUT.map((w, i) => {
     if (!_isVisibleDay(w)) return '';
     // badge do cronômetro: tempo registrado deste dia NESTA semana (se houver)
     const _wt = (typeof _wtServer !== 'undefined') && _wtServer[i + '|' + currentWeek];
-    const badge = _wt ? `<span class="wt-badge">⏱ ${_wt.duracao}</span>` : '';
-    return `<div class="day-tab ${i === currentDay ? 'active' : ''}" onclick="_fmTrocaDia(${i})">${w.day}${badge}</div>`;
+    let _feito = false; try { _feito = allDoneOfDay(i, true); } catch (_) {}
+    const badge = _feito ? `<span class="wt-badge">✓ ${_wt ? _wt.duracao : 'feito'}</span>` : (_wt ? `<span class="wt-badge">⏱ ${_wt.duracao}</span>` : '');
+    return `<div class="day-tab${i === currentDay ? ' active' : ''}${_feito ? ' feito' : ''}" onclick="_fmTrocaDia(${i})">${w.day}${badge}</div>`;
   }).join("");
+  if (html === _tabsHtmlUlt && el.innerHTML) return;
+  const sl = el.scrollLeft;
+  el.innerHTML = html; _tabsHtmlUlt = html;
+  el.scrollLeft = sl;
 }
 
 function renderExercises() {
@@ -25924,7 +25940,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v606';
+    var APP_SHELL_V = 'metodo-gh-v607';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
