@@ -2155,6 +2155,76 @@
   .td-hora { width: 48px; flex-shrink: 0; color: #a39a8a; font-variant-numeric: tabular-nums; }
   .td-plano { padding: 8px 0; border-bottom: 1px solid #1f1f1f; font-size: 13px; color: #e7e2d8; line-height: 1.5; }
   .td-plano b { color: #D4AF6A; }
+  /* v608 planta do dia */
+  .tdp-seg { display: flex; gap: 4px; background: #141312; border: 1px solid #2a2620; border-radius: 10px; padding: 3px; margin: 8px 0; }
+  .tdp-seg button { flex: 1; border: 0; background: none; border-radius: 8px; padding: 8px 4px; font-size: 12.5px; font-weight: 800; color: #8a8377; font-family: inherit; }
+  .tdp-seg button.on { background: #1f1c17; color: #F1D69E; box-shadow: inset 0 0 0 1px #3d3524; }
+  .tdp-sw { display: flex; width: 100%; align-items: center; justify-content: space-between; margin: 0 0 10px; padding: 9px 12px; background: #141312; border: 1px solid #2a2620; border-radius: 10px; font-size: 12.5px; color: #e7e2d8; font-family: inherit; }
+  .tdp-sw i { width: 34px; height: 19px; border-radius: 19px; background: #3a3428; position: relative; flex-shrink: 0; }
+  .tdp-sw i::after { content: ""; position: absolute; top: 2px; left: 2px; width: 15px; height: 15px; border-radius: 50%; background: #e7e2d8; transition: transform .2s; }
+  .tdp-sw.on i { background: #D4AF6A; } .tdp-sw.on i::after { transform: translateX(15px); background: #15100a; }
+  .tdp-tl { position: relative; padding-left: 52px; display: flex; flex-direction: column; gap: 7px; }
+  .tdp-tl::before { content: ""; position: absolute; left: 44px; top: 6px; bottom: 6px; width: 2px; background: #2a2620; }
+  .tdp-it { position: relative; background: #141312; border: 1px solid #2a2620; border-radius: 12px; padding: 9px 11px; }
+  .tdp-it.toca { cursor: pointer; } .tdp-it.toca:active { border-color: #5a4f38; }
+  .tdp-it::before { content: ""; position: absolute; left: -12px; top: 14px; width: 10px; height: 10px; border-radius: 50%; background: #0a0a0a; border: 2px solid #5a4f38; }
+  .tdp-it.novo::before { background: #D4AF6A; border-color: #D4AF6A; } .tdp-it.ajuste::before { border-color: #D4AF6A; } .tdp-it.fica::before { background: #7fc06b; border-color: #7fc06b; }
+  .tdp-it.prox { border-color: #D4AF6A; box-shadow: 0 0 0 1px #D4AF6A inset; }
+  .tdp-h { position: absolute; left: -52px; top: 10px; width: 38px; text-align: right; font-size: 11.5px; color: #a39a8a; font-variant-numeric: tabular-nums; line-height: 1.2; }
+  .tdp-row { display: flex; gap: 9px; align-items: flex-start; }
+  .tdp-n { flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 800; }
+  .tdp-n.novo { background: #D4AF6A; color: #15100a; } .tdp-n.ajuste { border: 1.5px solid #D4AF6A; color: #F1D69E; } .tdp-n.fica { background: rgba(127,192,107,.15); color: #7fc06b; } .tdp-n.se { border: 1.5px dashed #8a8377; color: #8a8377; font-size: 9.5px; }
+  .tdp-t { font-weight: 700; font-size: 13.5px; color: #F4F2ED; line-height: 1.35; }
+  .tdp-tag { font-size: 11px; color: #8a8377; margin-top: 1px; }
+  .tdp-antes { display: flex; gap: 7px; align-items: baseline; font-size: 12px; color: #a39a8a; border-top: 1px dashed #2a2620; padding-top: 6px; margin-top: 7px; line-height: 1.4; }
+  .tdp-antes b { font-weight: 600; }
+  .tdp-k { font-size: 9.5px; font-weight: 800; letter-spacing: .5px; padding: 1px 5px; border-radius: 4px; text-transform: uppercase; flex-shrink: 0; }
+  .tdp-k.funciona { color: #7fc06b; background: rgba(127,192,107,.12); } .tdp-k.fragil { color: #8fa8d8; background: rgba(143,168,216,.12); } .tdp-k.faltava { color: #e2b04a; background: rgba(226,176,74,.12); } .tdp-k.atrapalha { color: #e0715c; background: rgba(224,113,92,.12); }
+  .tdp-now { position: relative; height: 0; margin: 3px 0; }
+  .tdp-now::before { content: ""; position: absolute; left: -12px; right: 0; top: 0; border-top: 1.5px solid #e0715c; }
+  .tdp-now span { position: absolute; left: -52px; top: -8px; width: 38px; text-align: right; font-size: 10.5px; color: #e0715c; font-weight: 800; }
+  .tdp-now em { position: absolute; right: 0; top: -9px; font-style: normal; font-size: 9.5px; color: #e0715c; background: #0a0a0a; padding: 0 4px; letter-spacing: .6px; text-transform: uppercase; font-weight: 800; }
+  .tdp-dica { font-size: 11.5px; color: #8a8377; text-align: center; margin: 8px 0 2px; }
+  .tdp-se { background: #141312; border: 1px solid #2a2620; border-radius: 12px; padding: 9px 11px; font-size: 12.5px; color: #e7e2d8; line-height: 1.5; margin-bottom: 6px; }
+  .tdp-se b { color: #F1D69E; }
+  .tdp-min { background: linear-gradient(135deg, #1d180f, #141312); border: 1px solid #3d3524; border-radius: 12px; padding: 11px; }
+  .tdp-mi { display: flex; gap: 8px; align-items: center; font-size: 13px; color: #e7e2d8; padding: 3px 0; }
+  .tdp-mi::before { content: ""; width: 13px; height: 13px; border-radius: 4px; border: 1.5px solid #D4AF6A; flex-shrink: 0; }
+  .tdp-pct { display: flex; justify-content: space-between; font-size: 12.5px; color: #e7e2d8; margin-top: 6px; } .tdp-pct b { color: #F1D69E; }
+  .tdp-ov { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 9000; display: none; align-items: flex-end; justify-content: center; }
+  .tdp-ov.show { display: flex; }
+  .tdp-sheet { width: 100%; max-width: 560px; background: #17140f; border-top: 1px solid #4a4029; border-radius: 22px 22px 0 0; padding: 14px 18px calc(20px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 6px; max-height: 80vh; overflow: auto; }
+  .tdp-sheet h4 { margin: 0 0 6px; font-size: 16.5px; color: #F4F2ED; line-height: 1.3; }
+  .tdp-sheet p { margin: 0 0 8px; font-size: 13.5px; color: #d8d1c1; line-height: 1.5; }
+  .tdp-grab { width: 40px; height: 4px; border-radius: 4px; background: #4a4029; align-self: center; margin-bottom: 6px; }
+  .tdp-lab { font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase; color: #D4AF6A; font-weight: 800; }
+  .tdp-veio { font-size: 12px; color: #a39a8a; border-top: 1px solid #2a2620; padding-top: 8px; line-height: 1.45; }
+  .tdp-x { margin-top: 8px; border: 1px solid #3d3524; background: #141312; border-radius: 10px; padding: 11px; font-weight: 800; color: #F4F2ED; font-family: inherit; }
+  /* v608 editor da planta */
+  .pl-wrap { padding: 12px; color: #e7e2d8; }
+  .pl-head { display: flex; flex-direction: column; gap: 2px; margin-bottom: 12px; } .pl-head b { font-size: 17px; color: #F1D69E; } .pl-head span { font-size: 12.5px; color: #a39a8a; }
+  .pl-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; align-items: start; }
+  @media (max-width: 900px) { .pl-grid { grid-template-columns: minmax(0, 1fr); } }
+  .pl-main { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .pl-tipo { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+  .pl-tipo-in { flex: 1; background: transparent; border: 0; border-bottom: 1px solid #3d3524; color: #D4AF6A; font-weight: 800; font-size: 13px; letter-spacing: .6px; text-transform: uppercase; padding: 4px 0; font-family: inherit; min-width: 0; }
+  .pl-row { background: #141312; border: 1px solid #2a2620; border-radius: 12px; padding: 9px; display: flex; flex-direction: column; gap: 6px; }
+  .pl-row.vazio { border-color: rgba(226,176,74,.5); }
+  .pl-l1 { display: grid; grid-template-columns: 74px minmax(0, 1fr) 56px 32px; gap: 6px; }
+  .pl-l2 { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 6px; }
+  @media (max-width: 520px) { .pl-l2 { grid-template-columns: minmax(0, 1fr); } }
+  .pl-row input, .pl-row select, .pl-row textarea { width: 100%; min-width: 0; background: #0a0a0a; border: 1px solid #2a2620; border-radius: 8px; color: #F4F2ED; padding: 7px 8px; font: inherit; font-size: 13px; }
+  .pl-row .pl-texto { font-weight: 700; } .pl-row .pl-veio { font-size: 12px; color: #c9c2b4; }
+  .pl-row textarea { min-height: 50px; resize: vertical; margin-top: 4px; }
+  .pl-row summary { cursor: pointer; font-size: 12px; color: #D4AF6A; font-weight: 700; }
+  .pl-del { border: 1px solid #2a2620; background: #0a0a0a; color: #8a8377; border-radius: 8px; cursor: pointer; }
+  .pl-side { position: sticky; top: 8px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .pl-side-t { font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #D4AF6A; margin-top: 4px; }
+  .pl-av { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 6px; padding: 7px 9px; border-radius: 8px; font-size: 12.5px; line-height: 1.4; margin-bottom: 4px; }
+  .pl-av.ok { background: rgba(127,192,107,.1); color: #b9dcae; } .pl-av.warn { background: rgba(226,176,74,.1); color: #ecd29a; } .pl-av.bad { background: rgba(224,113,92,.12); color: #f0b3a6; }
+  .pl-prev { background: #0a0a0a; border: 1px solid #2a2620; border-radius: 16px; padding: 10px; max-height: 70vh; overflow: auto; }
+  .pl-vazio { padding: 20px; text-align: center; color: #a39a8a; font-size: 13px; line-height: 1.6; }
+  .pl-nota { font-size: 11.5px; color: #8a8377; margin: 4px 0 0; }
   .sem-card { margin: 12px 0 4px; padding: 14px; border-radius: 14px; background: linear-gradient(160deg, #1a1712, #12100c); border: 1px solid rgba(212,175,106,.3); }
   .sem-t { font-size: 10px; font-weight: 800; letter-spacing: 1.2px; color: #D4AF6A; margin-bottom: 10px; }
   .sem-stats { display: flex; gap: 8px; }
@@ -20201,18 +20271,120 @@ function _teuDiaLinha_(data, cat, r) {
     if (/^dia m[ií]nimo\b/i.test(c)) { const t = [C, Dd].filter(Boolean).join(' · '); if (t) td.minimo.push(t); return true; }
     if (/^teu dia\b/i.test(c)) {
       const tipo = c.replace(/^teu dia\s*[·.:|\-]?\s*/i, '').trim();
-      if (C || Dd) td.rotina.push({ tipo: tipo || 'Teu dia', hora: Dd ? C : '', texto: Dd || C });
+      if (C || Dd) td.rotina.push(Object.assign({ tipo: tipo || 'Teu dia', hora: Dd ? C : '' }, _tdMetaCheio_(Dd || C)));   // v608
       return true;
     }
   } catch (_) {}
   return false;
 }
+// v608 PLANTA DO DIA (GH 04/11): a coluna D da linha "Teu dia · <tipo>" carrega, depois do texto, os campos separados por ‖:
+//   <texto> ‖ hábito: novo 2 ‖ antes: atrapalha · <como era> ‖ por que: <...> ‖ se não der: <...> ‖ veio de: <...>
+// hábito = novo N | ajuste N | fica | se acontecer; antes = funciona | frágil | faltava | atrapalha. Tudo opcional: linha sem ‖
+// segue igual à v581. Fica tudo nas 4 colunas porque o editor e a publicação gravam a DIETA com 4 colunas.
+const _TD_G = { funciona: 'funciona', fragil: 'frágil', faltava: 'faltava', atrapalha: 'atrapalha' };
+function _tdSemAc_(x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim(); }
+function _tdMeta_(D) {
+  const partes = String(D == null ? '' : D).split(/\s*‖\s*/);
+  const o = { texto: (partes.shift() || '').trim(), hab: '', n: 0, antesG: '', antes: '', porque: '', senao: '', veio: '' };
+  partes.forEach(pt => {
+    const m = /^([^:]{2,24}):\s*([\s\S]*)$/.exec(pt); if (!m) return;
+    const k = _tdSemAc_(m[1]), v = m[2].trim();
+    if (k === 'habito') { const h = /^(novo|ajuste|fica|se acontecer)\s*(\d+)?/i.exec(v); if (h) { o.hab = _tdSemAc_(h[1]); o.n = h[2] ? parseInt(h[2], 10) : 0; } }
+    else if (k === 'antes') { const a = /^(funciona|fr[aá]gil|faltava|atrapalha)\b\s*[·.:\-]?\s*([\s\S]*)$/i.exec(v); if (a) { o.antesG = _tdSemAc_(a[1]); o.antes = a[2].trim(); } else o.antes = v; }
+    else if (k === 'por que' || k === 'porque') o.porque = v;
+    else if (k === 'se nao der') o.senao = v;
+    else if (k === 'veio de') o.veio = v;
+  });
+  return o;
+}
+function _tdMetaCheio_(D) { const m = _tdMeta_(D), o = { texto: m.texto }; Object.keys(m).forEach(k => { if (k !== 'texto' && m[k]) o[k] = m[k]; }); return o; }   // linha sem campo novo fica igual à v581
+function _tdMontaD_(o) {
+  const lp = x => String(x == null ? '' : x).replace(/‖/g, ' ').trim();
+  const hab = o.hab ? 'hábito: ' + o.hab + ((o.hab === 'novo' || o.hab === 'ajuste') && o.n ? ' ' + o.n : '') : '';
+  const antes = (o.antesG || lp(o.antes)) ? 'antes: ' + [o.antesG ? _TD_G[o.antesG] : '', lp(o.antes)].filter(Boolean).join(' · ') : '';
+  return [lp(o.texto), hab, antes, lp(o.porque) ? 'por que: ' + lp(o.porque) : '', lp(o.senao) ? 'se não der: ' + lp(o.senao) : '', lp(o.veio) ? 'veio de: ' + lp(o.veio) : ''].filter(Boolean).join(' ‖ ');
+}
+function _tdEsc_(x) { return String(x == null ? '' : x).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function _tdHoraMin_(h) { const m = /^(\d{1,2})(?::|h)(\d{2})?$/i.exec(String(h || '').trim()); if (!m) return null; const H = +m[1], M = +(m[2] || 0); return (H > 23 || M > 59) ? null : H * 60 + M; }
+const _TD_FDS = /fim de semana|s[aá]bado|domingo|folga/i;
+function _tdTipoHoje_(tipos) {
+  const fds = [0, 6].indexOf(new Date().getDay()) >= 0;
+  const t = tipos.find(x => fds ? _TD_FDS.test(x) : !_TD_FDS.test(x));
+  return t || tipos[0];
+}
+const _TDS = { a: { tipo: '', antes: null }, e: { tipo: '', antes: null } };
+let _tdSheetItens = [];
+function _tdDados_(sc) { return sc === 'e' ? _plParse_() : _fdTeuDia_(); }
+function _tdPlantaInner_(t, sc) {
+  if (!t) return '';
+  const st = _TDS[sc];
+  const tipos = []; t.rotina.forEach(x => { if (tipos.indexOf(x.tipo) < 0) tipos.push(x.tipo); });
+  const temMeta = t.rotina.some(x => x.hab || x.antes || x.antesG || x.porque || x.veio);
+  if (st.antes == null) { let v = '1'; try { v = localStorage.getItem('gh_td_antes') || '1'; } catch (_) {} st.antes = v === '1'; }
+  const hoje = _tdTipoHoje_(tipos);
+  if (!st.tipo || tipos.indexOf(st.tipo) < 0) st.tipo = hoje;
+  let h = '';
+  if (tipos.length > 1) h += `<div class="tdp-seg">${tipos.map(tp => `<button type="button" class="${tp === st.tipo ? 'on' : ''}" onclick="_tdTipo_('${sc}', ${tipos.indexOf(tp)})">${_tdEsc_(tp)}</button>`).join('')}</div>`;
+  const itens = t.rotina.filter(x => x.tipo === st.tipo);
+  const temAntes = itens.some(x => x.antes || x.antesG);
+  if (temAntes) h += `<button type="button" class="tdp-sw${st.antes ? ' on' : ''}" onclick="_tdAntes_('${sc}')"><span>Mostrar como era antes</span><i></i></button>`;
+  const agora = (sc === 'a' && st.tipo === hoje && tipos.length >= 1) ? (new Date().getHours() * 60 + new Date().getMinutes()) : null;
+  const prox = agora == null ? null : itens.find(x => { const m = _tdHoraMin_(x.hora); return m != null && m > agora; });
+  const algumaHora = itens.some(x => _tdHoraMin_(x.hora) != null);
+  let linha = !(agora != null && algumaHora);
+  h += `<div class="tdp-tl">`;
+  itens.forEach((x, i) => {
+    const m = _tdHoraMin_(x.hora);
+    if (!linha && m != null && m > agora) { const H = new Date(); h += `<div class="tdp-now"><span>${String(H.getHours()).padStart(2, '0')}:${String(H.getMinutes()).padStart(2, '0')}</span><em>agora</em></div>`; linha = true; }
+    const cls = x.hab === 'fica' ? 'fica' : (x.hab === 'se acontecer' ? 'se' : (x.hab || ''));
+    const bd = x.hab === 'fica' ? '<b class="tdp-n fica">✓</b>' : (x.hab === 'se acontecer' ? '<b class="tdp-n se">se</b>' : ((x.hab === 'novo' || x.hab === 'ajuste') ? `<b class="tdp-n ${x.hab}">${x.n || '•'}</b>` : ''));
+    const tag = x.hab === 'novo' ? 'Hábito novo' : x.hab === 'ajuste' ? 'Ajuste' : x.hab === 'fica' ? 'Já fazia, fica' : x.hab === 'se acontecer' ? 'Se acontecer' : '';
+    const tem = !!(x.porque || x.senao || x.veio || x.antes);
+    h += `<div class="tdp-it ${cls}${x === prox ? ' prox' : ''}${tem ? ' toca' : ''}"${tem ? ` role="button" tabindex="0" onclick="_tdAbre_('${sc}', ${t.rotina.indexOf(x)})"` : ''}><span class="tdp-h">${_tdEsc_(x.hora)}</span>` +
+      `<div class="tdp-row">${bd}<div><div class="tdp-t">${_tdEsc_(x.texto)}</div>${(tag || x === prox) ? `<div class="tdp-tag">${x === prox ? 'Próximo · ' : ''}${tag}</div>` : ''}</div></div>` +
+      ((st.antes && (x.antes || x.antesG)) ? `<div class="tdp-antes">${x.antesG ? `<span class="tdp-k ${x.antesG}">${_TD_G[x.antesG]}</span>` : ''}<span>Antes: <b>${_tdEsc_(x.antes)}</b></span></div>` : '') + `</div>`;
+  });
+  if (!linha) { const H = new Date(); h += `<div class="tdp-now"><span>${String(H.getHours()).padStart(2, '0')}:${String(H.getMinutes()).padStart(2, '0')}</span><em>agora</em></div>`; }
+  h += `</div>`;
+  if (temMeta) h += `<div class="tdp-dica">Toca num item pra ver o porquê.</div>`;
+  if (t.planos.length) {
+    h += `<div class="td-tipo">Se acontecer, eu faço</div>`;
+    t.planos.forEach(p => { h += `<div class="tdp-se"><b>${_tdEsc_(p.rotulo || '')}</b><br>${_tdEsc_(p.se)} ${_tdEsc_(p.entao)}</div>`; });
+  }
+  if (t.minimo.length) {
+    h += `<div class="td-tipo">Dia mínimo</div><div class="tdp-min"><div class="fd-mut" style="margin:0 0 6px;">No dia que quebrou, só isto. Amanhã segue normal, sem compensar.</div>`;
+    t.minimo.forEach(m => { h += `<div class="tdp-mi">${_tdEsc_(m)}</div>`; });
+    h += `</div>`;
+  }
+  if (sc === 'a') { try { const s7 = _fdSemana_(); if (s7.fechados) h += `<div class="td-tipo">Tua semana</div>${_fdSemanaHtml_()}<div class="tdp-pct"><span>Número da semana</span><b>${s7.pct}%</b></div>`; } catch (_) {} }
+  return h;
+}
+function _tdRepinta_(sc) { const el = document.getElementById('tdPlanta_' + sc); if (el) el.innerHTML = _tdPlantaInner_(_tdDados_(sc), sc); }
+function _tdTipo_(sc, i) { const t = _tdDados_(sc); if (!t) return; const tipos = []; t.rotina.forEach(x => { if (tipos.indexOf(x.tipo) < 0) tipos.push(x.tipo); }); _TDS[sc].tipo = tipos[i] || ''; _tdRepinta_(sc); }
+function _tdAntes_(sc) { _TDS[sc].antes = !_TDS[sc].antes; try { localStorage.setItem('gh_td_antes', _TDS[sc].antes ? '1' : '0'); } catch (_) {} _tdRepinta_(sc); }
+function _tdAbre_(sc, i) {
+  const t = _tdDados_(sc); const x = t && t.rotina[i]; if (!x) return;
+  const tag = x.hab === 'novo' ? 'Hábito novo' : x.hab === 'ajuste' ? 'Ajuste' : x.hab === 'fica' ? 'Já fazia, fica' : x.hab === 'se acontecer' ? 'Se acontecer' : 'Teu dia';
+  let ov = document.getElementById('tdSheet');
+  if (!ov) { ov = document.createElement('div'); ov.id = 'tdSheet'; ov.className = 'tdp-ov'; ov.addEventListener('click', e => { if (e.target === ov) _tdFecha_(); }); document.body.appendChild(ov); }
+  ov.innerHTML = `<div class="tdp-sheet" role="dialog" aria-modal="true"><div class="tdp-grab"></div><div class="tdp-lab">${tag}${x.n && (x.hab === 'novo' || x.hab === 'ajuste') ? ' · ' + x.n : ''}${x.hora ? ' · ' + _tdEsc_(x.hora) : ''}</div><h4>${_tdEsc_(x.texto)}</h4>` +
+    (x.porque ? `<div class="tdp-lab">Por que</div><p>${_tdEsc_(x.porque)}</p>` : '') +
+    (x.senao ? `<div class="tdp-lab">Se não der</div><p>${_tdEsc_(x.senao)}</p>` : '') +
+    ((x.antes || x.antesG) ? `<div class="tdp-lab">Como era</div><p>${x.antesG ? `<span class="tdp-k ${x.antesG}">${_TD_G[x.antesG]}</span> ` : ''}${_tdEsc_(x.antes)}</p>` : '') +
+    (x.veio ? `<div class="tdp-veio">Veio de: ${_tdEsc_(x.veio)}</div>` : '') +
+    `<button type="button" class="tdp-x" onclick="_tdFecha_()">Fechar</button></div>`;
+  ov.classList.add('show');
+}
+function _tdFecha_() { const ov = document.getElementById('tdSheet'); if (ov) ov.classList.remove('show'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') _tdFecha_(); });
 function _teuDiaTem_(d) { const t = d && d.teuDia; return !!(t && (t.rotina.length || t.planos.length || t.minimo.length)); }
 function _teuDiaHtml_(d) {
   if (!_teuDiaTem_(d)) return '';
   const t = d.teuDia;
-  let h = `<div class="diet-section-toggle" onclick="toggleDietSection('teudia')"><span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg></span><span class="tog-label">Teu dia</span><span class="tog-chev" id="teudiaArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></div>`;
-  h += `<div class="diet-section-content" id="teudiaContent">`;
+  const _pl = t.rotina.some(x => x.hab || x.antes || x.antesG || x.porque || x.veio);   // v608
+  let h = `<div class="diet-section-toggle" onclick="toggleDietSection('teudia')"><span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg></span><span class="tog-label">${_pl ? 'Teu dia, hora a hora' : 'Teu dia'}</span><span class="tog-chev${_pl ? ' open' : ''}" id="teudiaArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></div>`;
+  h += `<div class="diet-section-content${_pl ? ' show' : ''}" id="teudiaContent">`;
+  if (_pl) return h + `<div id="tdPlanta_a">${_tdPlantaInner_(t, 'a')}</div></div>`;   // v608: planta do dia (sem os campos novos, segue o Teu dia da v581)
   const tipos = [];
   t.rotina.forEach(x => { if (tipos.indexOf(x.tipo) < 0) tipos.push(x.tipo); });
   tipos.forEach(tp => {
@@ -25478,7 +25650,7 @@ function generateLink() {
 
 // Copia o link do protocolo do aluno a partir do editor (nome do sheet + aba atual).
 function teCopyProtoLink(btn) {
-  const url = `https://app.metodogh.com.br/?sheet=${encodeURIComponent(trainerSheetId)}&tab=${currentEditMode === 'dieta' ? 'DIETA' : 'TREINO'}`;
+  const url = `https://app.metodogh.com.br/?sheet=${encodeURIComponent(trainerSheetId)}&tab=${(currentEditMode === 'dieta' || currentEditMode === 'planta') ? 'DIETA' : 'TREINO'}`;
   const label = btn ? btn.textContent : '';
   const done = () => { if (btn) { btn.textContent = '✅ copiado'; setTimeout(() => { btn.textContent = label; }, 1600); } };
   const fallback = () => {
@@ -25940,7 +26112,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v607';
+    var APP_SHELL_V = 'metodo-gh-v608';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
@@ -26660,6 +26832,7 @@ function teShow(id) { document.getElementById(id).classList.add('show'); try { s
 // fora de propósito.
 const _CAMADAS_VOLTAR = [
   ['#mealNaoMenu', el => el.remove()],
+  ['#tdSheet.show', () => _tdFecha_()],   // v608
   ['#shortModeMenu', el => el.remove()],
   ['#rsSlotMenu.on', el => el.classList.remove('on')],
   ['#laudoFullOverlay.on', el => el.classList.remove('on')],
@@ -27299,7 +27472,7 @@ function renderEditorTopBar() {
   // Link do protocolo do aluno: abrir (nova aba) + copiar (pra mandar no zap).
   // No mobile a barra quebra e essa linha fica inteira visível (antes era espremida
   // a zero pelas abas/botões e o link sumia — GH 2026-07-06).
-  const protoUrl = `https://app.metodogh.com.br/?sheet=${encodeURIComponent(trainerSheetId)}&tab=${currentEditMode === 'dieta' ? 'DIETA' : 'TREINO'}`;
+  const protoUrl = `https://app.metodogh.com.br/?sheet=${encodeURIComponent(trainerSheetId)}&tab=${(currentEditMode === 'dieta' || currentEditMode === 'planta') ? 'DIETA' : 'TREINO'}`;
   document.getElementById('trainerStudentInfo').innerHTML =
     `<span class="te-info-name"><strong>${escTrainer(studentName)}</strong>${meta ? ' · ' + escTrainer(meta) : ''}</span>` +
     `<span class="te-info-link">` +
@@ -27310,6 +27483,7 @@ function renderEditorTopBar() {
   const tabs = `
     <button class="te-mode-tab${currentEditMode === 'treino' ? ' active' : ''}" ${trainerData ? `onclick="switchEditMode('treino')"` : 'disabled'}>📋 TREINO</button>
     <button class="te-mode-tab${currentEditMode === 'dieta' ? ' active' : ''}" ${dietaData ? `onclick="switchEditMode('dieta')"` : 'disabled'}>🍽 DIETA</button>
+    <button class="te-mode-tab${currentEditMode === 'planta' ? ' active' : ''}" ${dietaData ? `onclick="switchEditMode('planta')"` : 'disabled'}>🕒 PLANTA</button>
     <button class="te-mode-tab${currentEditMode === 'esforco' ? ' active' : ''}" ${trainerData ? `onclick="switchEditMode('esforco')"` : 'disabled'}>📊 ESFORÇO</button>
     <button class="te-mode-tab${currentEditMode === 'raiox' ? ' active' : ''}" ${trainerData ? `onclick="switchEditMode('raiox')"` : 'disabled'}>🩻 RAIO-X</button>
   `;
@@ -27692,6 +27866,7 @@ function renderCurrentEditor() {
   if (currentEditMode === 'treino') renderTrainerEditor();
   else if (currentEditMode === 'esforco') renderEsforcoPanel();
   else if (currentEditMode === 'raiox') renderRaioXPanel();
+  else if (currentEditMode === 'planta') renderPlantaPanel();   // v608
   else renderDietaEditor();
 }
 
@@ -28090,9 +28265,9 @@ let teUndoStack = [];
 const TE_UNDO_MAX = 30;
 
 function teSnapshot() {
-  if (currentEditMode === 'dieta') {
+  if (currentEditMode === 'dieta' || currentEditMode === 'planta') {   // v608: a planta mora na DIETA
     if (!Array.isArray(dietaData)) return;
-    teUndoStack.push({ mode: 'dieta', data: JSON.parse(JSON.stringify(dietaData)) });
+    teUndoStack.push({ mode: currentEditMode, data: JSON.parse(JSON.stringify(dietaData)) });
   } else {
     if (typeof trainerData === 'undefined' || !Array.isArray(trainerData)) return;
     teUndoStack.push({ mode: 'treino', data: JSON.parse(JSON.stringify(trainerData)) });
@@ -28109,9 +28284,10 @@ function undoTrainerAction() {
   }
   if (lastIdx === -1) return;
   const snap = teUndoStack.splice(lastIdx, 1)[0];
-  if (snap.mode === 'dieta') {
+  if (snap.mode === 'dieta' || snap.mode === 'planta') {
     dietaData = snap.data;
-    if (typeof renderDietaEditor === 'function') renderDietaEditor();
+    if (snap.mode === 'planta') renderPlantaPanel();
+    else if (typeof renderDietaEditor === 'function') renderDietaEditor();
   } else {
     trainerData = snap.data;
     renderTrainerEditor();
@@ -28632,6 +28808,107 @@ function trainerExit() {
   trainerSheetId = null;
   try { teFantasmaFechar(); } catch (_) {}   // v605
   _teFant = null;
+}
+
+// ══════════════════════════════════════════════════════════════
+// ══ PLANTA DO DIA (v608, GH 04/11): quem monta é a Entregas e a Reajustes; aqui o GH confere e ajusta. Mexe nas linhas
+// "Teu dia · <tipo>" da DIETA (formato em _tdMeta_) e salva pelo mesmo 💾 Salvar da DIETA.
+// ══════════════════════════════════════════════════════════════
+function _plEhLinha_(r) { const a = String((r && r[0]) || '').toLowerCase().trim(); return (a === 'orient' || a === 'dica') && /^teu dia\b/i.test(String(r[1] || '').trim()); }
+function _plTipoDe_(r) { return String(r[1] || '').trim().replace(/^teu dia\s*[·.:|\-]?\s*/i, '').trim() || 'Teu dia'; }
+function _plParse_() {
+  const o = {};
+  (dietaData || []).forEach(r => { const a = String((r && r[0]) || '').toLowerCase().trim(); if (a === 'orient' || a === 'dica') _teuDiaLinha_(o, String(r[1] || '').trim(), r); });
+  return o.teuDia || { rotina: [], planos: [], minimo: [] };
+}
+function _plItens_() { const out = []; (dietaData || []).forEach((r, i) => { if (_plEhLinha_(r)) out.push({ i: i, tipo: _plTipoDe_(r), hora: String(r[2] || ''), m: _tdMeta_(r[3]) }); }); return out; }
+function _plConf_() {
+  const it = _plItens_(), av = [];
+  const novos = new Set(it.filter(x => x.m.hab === 'novo').map(x => x.m.n || x.m.texto));
+  av.push(novos.size > 3 ? ['bad', novos.size + ' hábitos novos. O teto é 3 por ciclo de 30 dias: troca algum por ajuste ou deixa pro reajuste.'] : ['ok', novos.size + ' de 3 hábitos novos no ciclo.']);
+  const semVeio = it.filter(x => x.m.texto && !x.m.veio).length;
+  av.push(semVeio ? ['warn', semVeio + ' item sem "veio de". O aluno vê de onde veio: tem que ser algo que ele respondeu, falou no suporte ou marcou no app.'] : ['ok', 'Todo item tem origem.']);
+  const jarg = it.filter(x => /\b\d{2,3}\.\d\b|\bQ\d{1,3}\b|\bL\d{3,4}\b|\bforms\b|\bplanilha\b|\bmestre\b/i.test(x.m.veio)).length;
+  if (jarg) av.push(['bad', jarg + ' "veio de" com número de pergunta ou termo interno. O aluno lê isso: escreve como ele falou ("Tu contou no suporte em 28/10...").']);
+  const semAntes = it.filter(x => (x.m.hab === 'novo' || x.m.hab === 'ajuste') && !x.m.antes && !x.m.antesG).length;
+  if (semAntes) av.push(['warn', semAntes + ' hábito sem o "antes". Fica sem a comparação na tela dele.']);
+  const semHora = it.filter(x => x.m.texto && !x.hora.trim()).length;
+  if (semHora) av.push(['warn', semHora + ' item sem hora.']);
+  const vazio = it.filter(x => !x.m.texto).length;
+  if (vazio) av.push(['warn', vazio + ' item vazio (não aparece pro aluno).']);
+  if (it.some(x => /[—–]/.test(_tdMontaD_(x.m) + x.hora))) av.push(['bad', 'Tem travessão em algum item.']);
+  const t = _plParse_();
+  av.push(t.minimo.length ? ['ok', 'Dia mínimo: ' + t.minimo.length + ' item.'] : ['warn', 'Sem Dia mínimo.']);
+  return av;
+}
+function _plConfHtml_() { return _plConf_().map(a => `<div class="pl-av ${a[0]}"><span>${a[0] === 'ok' ? '✓' : '!'}</span><span>${_tdEsc_(a[1])}</span></div>`).join(''); }
+function _plAtualizaLado_() { const c = document.getElementById('plConf'); if (c) c.innerHTML = _plConfHtml_(); _tdRepinta_('e'); }
+let _plSnapCampo = null;
+function _plCampo_(i, f, el) {
+  const r = dietaData[i]; if (!r) return;
+  if (_plSnapCampo !== i + f) { teSnapshot(); _plSnapCampo = i + f; }
+  if (f === 'hora') { r[2] = el.value; _plAtualizaLado_(); return; }
+  const m = _tdMeta_(r[3]);
+  if (f === 'n') m.n = parseInt(el.value, 10) || 0; else m[f] = el.value;
+  r[3] = _tdMontaD_(m);
+  if (f === 'hab' || f === 'antesG') { renderPlantaPanel(); return; }
+  _plAtualizaLado_();
+}
+function _plOrdena_(tipo) {   // hora mudou: reordena as linhas daquele tipo de dia nos mesmos lugares da DIETA
+  _plSnapCampo = null;
+  const idx = []; dietaData.forEach((r, i) => { if (_plEhLinha_(r) && _plTipoDe_(r) === tipo) idx.push(i); });
+  const chave = r => { const m = _tdHoraMin_(r[2]); if (m != null) return m; const k = /(\d{1,2})(?::|h)(\d{2})?/i.exec(String(r[2] || '')); return k ? 2000 + (+k[1]) * 60 + (+(k[2] || 0)) : 9999; };
+  const linhas = idx.map(i => dietaData[i]).slice().sort((a, b) => chave(a) - chave(b));
+  idx.forEach((i, j) => { dietaData[i] = linhas[j]; });
+  renderPlantaPanel();
+}
+function _plProxNum_() { let m = 0; _plItens_().forEach(x => { if (x.m.n > m) m = x.m.n; }); return m + 1; }
+function _plAdd_(tipo) {
+  teSnapshot();
+  let at = -1; dietaData.forEach((r, i) => { if (_plEhLinha_(r) && _plTipoDe_(r) === tipo) at = i; });
+  if (at < 0) { dietaData.forEach((r, i) => { if (_plEhLinha_(r)) at = i; }); }
+  if (at < 0) { dietaData.forEach((r, i) => { const a = String((r && r[0]) || '').toLowerCase().trim(); if (a === 'orient' || a === 'dica') at = i; }); }
+  const nova = ['dica', 'Teu dia · ' + tipo, '', ''];
+  if (at < 0) dietaData.push(nova); else dietaData.splice(at + 1, 0, nova);
+  renderPlantaPanel();
+}
+function _plNovoTipo_() { const n = prompt('Nome do tipo de dia (ex.: Dia de semana, Fim de semana, Dia de plantão):'); if (n && n.trim()) _plAdd_(n.trim().replace(/‖/g, ' ')); }
+function _plRenomeia_(velho, el) {
+  const novo = String(el.value || '').trim().replace(/‖/g, ' '); if (!novo || novo === velho) return;
+  teSnapshot(); dietaData.forEach(r => { if (_plEhLinha_(r) && _plTipoDe_(r) === velho) r[1] = 'Teu dia · ' + novo; });
+  _TDS.e.tipo = novo; renderPlantaPanel();
+}
+function _plDel_(i) { teSnapshot(); dietaData.splice(i, 1); renderPlantaPanel(); }
+function _plNovoHab_(i, el) { const r = dietaData[i]; if (!r) return; teSnapshot(); const m = _tdMeta_(r[3]); m.hab = el.value; if ((m.hab === 'novo' || m.hab === 'ajuste') && !m.n) m.n = _plProxNum_(); r[3] = _tdMontaD_(m); renderPlantaPanel(); }
+function renderPlantaPanel() {
+  const c = document.getElementById('trainerDaysContainer');
+  if (!dietaData) { c.innerHTML = '<p style="color:#888;text-align:center;padding:30px;">Aba DIETA não encontrada.</p>'; return; }
+  _plSnapCampo = null;
+  const it = _plItens_(); const tipos = []; it.forEach(x => { if (tipos.indexOf(x.tipo) < 0) tipos.push(x.tipo); });
+  const ea = x => _tdEsc_(x);
+  let h = `<div class="pl-wrap"><div class="pl-head"><b>Planta do dia</b><span>Quem monta é a Entregas e a Reajustes. Aqui tu confere e ajusta; depois é só o 💾 Salvar lá em cima (grava na DIETA).</span></div><div class="pl-grid"><div class="pl-main">`;
+  if (!it.length) h += `<div class="pl-vazio">Este aluno ainda não tem Planta do dia. Ela vem montada na entrega ou no reajuste.<br><button class="di-add-btn" onclick="_plAdd_('Dia de semana')">+ Começar uma planta</button></div>`;
+  tipos.forEach(tp => {
+    h += `<div class="pl-tipo"><input class="pl-tipo-in" value="${ea(tp)}" onchange="_plRenomeia_(this.defaultValue, this)" aria-label="Tipo de dia"><button class="di-add-btn" onclick="_plAdd_(this.dataset.t)" data-t="${ea(tp)}">+ Item</button></div>`;
+    it.filter(x => x.tipo === tp).forEach(x => {
+      const m = x.m, i = x.i;
+      h += `<div class="pl-row${m.texto ? '' : ' vazio'}">
+        <div class="pl-l1"><input class="pl-hora" value="${ea(x.hora)}" placeholder="20:30" oninput="_plCampo_(${i},'hora',this)" onchange="_plOrdena_(this.dataset.t)" data-t="${ea(tp)}" aria-label="Hora">
+        <select onchange="_plNovoHab_(${i},this)" aria-label="Tipo do item"><option value=""${m.hab ? '' : ' selected'}>Sem marca</option><option value="novo"${m.hab === 'novo' ? ' selected' : ''}>Hábito novo</option><option value="ajuste"${m.hab === 'ajuste' ? ' selected' : ''}>Ajuste</option><option value="fica"${m.hab === 'fica' ? ' selected' : ''}>Já fazia, fica</option><option value="se acontecer"${m.hab === 'se acontecer' ? ' selected' : ''}>Se acontecer</option></select>
+        ${(m.hab === 'novo' || m.hab === 'ajuste') ? `<input class="pl-n" type="number" min="1" max="20" value="${m.n || ''}" oninput="_plCampo_(${i},'n',this)" aria-label="Número do hábito">` : '<span></span>'}
+        <button class="pl-del" onclick="_plDel_(${i})" title="Apagar item" aria-label="Apagar item">✕</button></div>
+        <input class="pl-texto" value="${ea(m.texto)}" placeholder="O que fazer nesse horário" oninput="_plCampo_(${i},'texto',this)" aria-label="O que fazer">
+        <div class="pl-l2"><select onchange="_plCampo_(${i},'antesG',this)" aria-label="Como era antes"><option value=""${m.antesG ? '' : ' selected'}>Antes: sem grupo</option>${Object.keys(_TD_G).map(k => `<option value="${k}"${m.antesG === k ? ' selected' : ''}>Antes: ${_TD_G[k]}</option>`).join('')}</select>
+        <input value="${ea(m.antes)}" placeholder="Como era antes" oninput="_plCampo_(${i},'antes',this)" aria-label="Como era antes"></div>
+        <input class="pl-veio" value="${ea(m.veio)}" placeholder="Veio de (o que ele respondeu, falou no suporte ou marcou no app)" oninput="_plCampo_(${i},'veio',this)" aria-label="Veio de">
+        <details${(m.porque || m.senao) ? '' : ''}><summary>Por que e se não der</summary><textarea placeholder="Por que" oninput="_plCampo_(${i},'porque',this)" aria-label="Por que">${ea(m.porque)}</textarea><textarea placeholder="Se não der..." oninput="_plCampo_(${i},'senao',this)" aria-label="Se não der">${ea(m.senao)}</textarea></details>
+      </div>`;
+    });
+  });
+  if (it.length) h += `<button class="di-add-btn" onclick="_plNovoTipo_()">+ Tipo de dia</button>`;
+  h += `<p class="pl-nota">Se acontecer e Dia mínimo seguem na aba DIETA, em Orientações.</p></div>`;
+  h += `<aside class="pl-side"><div class="pl-side-t">Conferência</div><div id="plConf">${_plConfHtml_()}</div><div class="pl-side-t">Como o aluno vê</div><div class="pl-prev" id="tdPlanta_e">${_tdPlantaInner_(_plParse_(), 'e')}</div></aside></div></div>`;
+  c.innerHTML = h;
 }
 
 // ══════════════════════════════════════════════════════════════
