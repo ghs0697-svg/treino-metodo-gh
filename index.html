@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>/* v612: só no iPhone/iPad, maximum-scale=1 tira o zoom ao tocar num campo (Barbara); a pinça segue, o iPhone ignora essa trava pra ela */try{if(/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)){var _vp=document.querySelector('meta[name="viewport"]');if(_vp)_vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0');}}catch(e){}</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#F1EFE9">
@@ -5450,6 +5451,23 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   .sets-grid.rotulada:has(.set-pl:not(:placeholder-shown)) .set-in.set-reps, .sets-grid.rotulada:has(.set-pl:not(:placeholder-shown)) .set-head .sh-reps,
   .sets-grid.rotulada:has(.set-pl.ph-ant) .set-in.set-reps, .sets-grid.rotulada:has(.set-pl.ph-ant) .set-head .sh-reps { width: 46px; min-width: 0; }
 
+
+  /* ══ v612 (GH 05/11) ══ */
+  /* 1) Zoom (Barbara: "dá zoom em qualquer click"): toque duplo não amplia (manipulation deixa rolar e pinçar, tira só o zoom
+     do toque duplo), e o texto não é reescalado pelo iPhone ao virar a tela. A pinça segue livre (v594); o zoom ao tocar num
+     campo no iPhone sai pelo maximum-scale=1 que o script do cabeçalho põe só no iPhone/iPad. */
+  html, body { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  * { touch-action: manipulation; }   /* em cada elemento também: campo, botão, lista; o #rOverlay (id) segue com none pra arrastar */
+  /* 2) Janela do lembrete de água (André Kaze) */
+  .water-janela-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; font-size: 12px; color: var(--fg-3); }
+  .water-janela-row .wj-sel { width: auto; padding: 6px 8px; border-radius: 8px; font-size: 14px !important; }
+  .water-janela-row .wj-nota { flex-basis: 100%; font-size: 11px; color: var(--fg-3); }
+  .water-janela-row.off { opacity: .55; }
+  /* 3) Chavinha da água no tema claro: a regra do claro (v609) pintava a chavinha de vidro com ou sem "on", e a ligada sumia no card */
+  html[data-theme="light"] .water-toggle { background: var(--glass-line); }
+  html[data-theme="light"] .water-toggle.on { background: var(--gold); }
+  html[data-theme="light"] .water-toggle::after { box-shadow: 0 1px 2px rgba(0, 0, 0, .25); }
+
 </style>
 <div id="painelGate" style="display:none;position:fixed;inset:0;z-index:99999;background:#0D0D0D;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:14px;text-align:center;">
   <div style="font-family:'Cinzel',serif;font-size:34px;letter-spacing:6px;color:var(--gold);font-weight:700;">MÉTODO GH</div>
@@ -6461,6 +6479,13 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
     <div class="water-toggle-row">
       <div class="water-toggle" id="waterNotifToggle" onclick="toggleWaterNotif()"></div>
       <span>Lembrar de beber a cada 1h (notificação)</span>
+    </div>
+    <div class="water-janela-row" id="waterJanelaRow">
+      <span class="wj-lb">Avisar das</span>
+      <select class="pg-sel wj-sel" id="waterIni" onchange="waterJanelaMudou()" aria-label="início dos lembretes de água"></select>
+      <span class="wj-lb">às</span>
+      <select class="pg-sel wj-sel" id="waterFim" onchange="waterJanelaMudou()" aria-label="fim dos lembretes de água"></select>
+      <span class="wj-nota" id="waterJanelaNota"></span>
     </div>
   </div>
 
@@ -8508,6 +8533,7 @@ const EX_EN_ALIAS = {
 // protocolo de gringo é montado em inglês pela equipe e passa direto.
 function _lang() { try { return localStorage.getItem('gh_lang') === 'en' ? 'en' : 'pt'; } catch (_) { return 'pt'; } }
 const I18N_EN = {
+  'Avisar das': 'Remind from', 'às': 'to',   // v612: janela da água
   'Treino': 'Workout', 'Dieta': 'Diet', 'Progresso': 'Progress', 'Mais': 'More',
   'PROTOCOLO DE TREINO': 'TRAINING PROTOCOL', 'MÚSCULOS DE HOJE': "TODAY'S MUSCLES",
   'Músculos de hoje': "Today's muscles", 'TOCA PRA GIRAR': 'TAP TO ROTATE', 'Toca pra girar': 'Tap to rotate', 'toca pra girar': 'tap to rotate', 'frente': 'front', 'costas': 'back',
@@ -18794,6 +18820,7 @@ function waterNotifKey() { return `gh_water_notif_${STUDENT_ID}`; }
 function isWaterNotifOn() { return localStorage.getItem(waterNotifKey()) === '1'; }
 function renderWaterToggleState() {
   document.getElementById('waterNotifToggle').classList.toggle('on', isWaterNotifOn());
+  try { renderWaterJanela(); } catch (_) {}
 }
 // ── Web Push: registra subscription no servidor pra mandar push real ──
 const PUSH_API_BASE = 'https://crm-roan-one.vercel.app/api/push';
@@ -18836,7 +18863,7 @@ async function _pushConfereBoot_() {
     // E a cada 3 dias a inscrição é reconfirmada: o servidor guarda todas numa lista só (lê, mexe e grava de volta), e duas
     // inscrições no mesmo instante podem fazer uma sumir. Sem a reconfirmação, o aluno ficava sem lembrete e ninguém sabia.
     const _confirmadaEm = Number(localStorage.getItem('gh_pushTs')) || 0;
-    if (sub && salvo && sub.endpoint === salvo && localStorage.getItem('gh_pushWater') === (querAgua ? '1' : '0') && Date.now() - _confirmadaEm < 3 * 86400000) return;   // tudo em dia
+    if (sub && salvo && sub.endpoint === salvo && localStorage.getItem('gh_pushWater') === (querAgua ? '1' : '0') && localStorage.getItem('gh_pushJanela') === _waterJanelaStamp_() && Date.now() - _confirmadaEm < 3 * 86400000) return;   // tudo em dia
     await registerPushSubscription();
   } catch (_) {}
 }
@@ -18866,7 +18893,8 @@ async function registerPushSubscription(opts) {
       studentId: SHEET_ID || STUDENT_ID,
       studentName: studentName,
       subscription: sub.toJSON(),
-      water: _aguaLigada   // v559: o servidor manda água só pra inscrição com water true
+      water: _aguaLigada,   // v559: o servidor manda água só pra inscrição com water true
+      ..._waterJanelaCorpo_()   // v612: janela do aluno (waterIni, waterFim) e fuso do aparelho (tz); servidor manda água só dentro dela
     });
     // v559: a rota de inscrição não autoriza o app a LER a resposta (falta o cabeçalho de origem cruzada no servidor de
     // notificações). O pedido chegava e a inscrição era gravada, mas pro app a chamada "falhava": ele dizia "não consegui
@@ -18883,7 +18911,7 @@ async function registerPushSubscription(opts) {
       const txt = await resp.text().catch(() => '');
       return { ok: false, reason: 'subscribe-server-' + resp.status + ': ' + txt.substring(0, 80) };
     }
-    try { localStorage.setItem('gh_pushWater', _aguaLigada ? '1' : '0'); localStorage.setItem('gh_pushTs', String(Date.now())); } catch (_) {}
+    try { localStorage.setItem('gh_pushWater', _aguaLigada ? '1' : '0'); localStorage.setItem('gh_pushJanela', _waterJanelaStamp_()); localStorage.setItem('gh_pushTs', String(Date.now())); } catch (_) {}
     localStorage.setItem('gh_pushEndpoint', sub.endpoint);
     try { localStorage.removeItem('gh_pushOff'); } catch (_) {}
     return { ok: true };
@@ -18967,10 +18995,51 @@ async function toggleWaterNotif() {
   }
   alert(msg);
 }
+// v612 (André Kaze no suporte, 04/11: "não dar alertas na madrugada, talvez entre 23 e 7h"): janela do lembrete de água,
+// escolhida pelo aluno e guardada por aluno. Vale pro aviso com o app aberto e vai pro servidor na inscrição (waterIni,
+// waterFim e tz, hora LOCAL do aparelho). Padrão 7h às 23h. fim 24 = meia-noite; fim menor que ini = janela que vira a noite.
+function waterJanelaKey() { return 'gh_waterJanela_' + STUDENT_ID; }
+function _waterJanela() {
+  let j = null; try { j = JSON.parse(localStorage.getItem(waterJanelaKey()) || 'null'); } catch (_) {}
+  const ini = (j && Number.isInteger(j.ini) && j.ini >= 0 && j.ini <= 23) ? j.ini : 7;
+  const fim = (j && Number.isInteger(j.fim) && j.fim >= 1 && j.fim <= 24) ? j.fim : 23;
+  return { ini, fim };
+}
+function _waterNaJanela(d) {
+  const { ini, fim } = _waterJanela(); const hr = (d || new Date()).getHours();
+  if (ini === 0 && fim === 24) return true;
+  return ini < fim ? (hr >= ini && hr < fim) : (hr >= ini || hr < fim);
+}
+function _waterTz_() { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (_) { return ''; } }
+function _waterJanelaCorpo_() { const { ini, fim } = _waterJanela(); return { waterIni: ini, waterFim: fim, tz: _waterTz_() }; }
+function _waterJanelaStamp_() { const { ini, fim } = _waterJanela(); return ini + '-' + fim + '-' + _waterTz_(); }
+function _hTxt_(x) { return (x === 24 || x === 0) ? '0h' : x + 'h'; }
+function renderWaterJanela() {
+  const si = document.getElementById('waterIni'), sf = document.getElementById('waterFim'), row = document.getElementById('waterJanelaRow'); if (!si || !sf) return;
+  const { ini, fim } = _waterJanela();
+  if (!si.options.length) { for (let x = 0; x <= 23; x++) si.add(new Option(_hTxt_(x), String(x))); for (let x = 1; x <= 24; x++) sf.add(new Option(_hTxt_(x), String(x))); }
+  si.value = String(ini); sf.value = String(fim);
+  const nota = document.getElementById('waterJanelaNota');
+  if (nota) nota.textContent = (ini === 0 && fim === 24) ? 'o dia todo, de hora em hora' : ('sem aviso das ' + _hTxt_(fim) + ' às ' + _hTxt_(ini));
+  if (row) row.classList.toggle('off', !isWaterNotifOn());
+}
+function waterJanelaMudou() {
+  const si = document.getElementById('waterIni'), sf = document.getElementById('waterFim');
+  let ini = parseInt(si.value, 10), fim = parseInt(sf.value, 10);
+  if (!(ini >= 0 && ini <= 23)) ini = 7; if (!(fim >= 1 && fim <= 24)) fim = 23;
+  if (ini === fim) fim = ini + 1;   // "das 7h às 7h" não existe: vira 7h às 8h
+  try { localStorage.setItem(waterJanelaKey(), JSON.stringify({ ini, fim })); } catch (_) {}
+  renderWaterJanela();
+  // a inscrição do servidor leva a janela: reenvia quando este aparelho já está inscrito
+  try { if (localStorage.getItem('gh_pushEndpoint')) registerPushSubscription(); } catch (_) {}
+}
 function startWaterNotif() {
   if (window._waterNotifInt) clearInterval(window._waterNotifInt);
-  window._waterNotifInt = setInterval(() => {
+  window._waterNotifInt = setInterval(() => _waterTick_(), 60 * 60 * 1000); // 1 hora
+}
+function _waterTick_(d) {
     if (!isWaterNotifOn()) return;
+    if (!_waterNaJanela(d)) return;   // v612: fora da janela do aluno (padrão 7h às 23h) nem aviso na tela nem do sistema
     // v559: saiu a trava de horário que entrou na v549. Ela partia de um texto velho do app ("8h-22h"): a água com o app
     // fechado roda 24 h desde 14/08, por decisão do GH, e o aviso na tela tem que seguir a mesma regra.
     showWaterReminder();
@@ -18980,7 +19049,6 @@ function startWaterNotif() {
         new Notification('💧 Hora da água!', { body: 'Já tomou água? Marca +1 copo no app.', icon: 'icon-192.png' });
       }
     } catch (_) {}
-  }, 60 * 60 * 1000); // 1 hora
 }
 
 // Banner in-app — fallback que funciona em qualquer navegador,
