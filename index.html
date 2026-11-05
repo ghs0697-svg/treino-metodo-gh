@@ -5418,6 +5418,38 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   #contaLoja .cl-btn[disabled]{opacity:.6;}
   #contaLoja .cl-link{background:none;border:none;color:var(--gold);font-size:14px;cursor:pointer;padding:8px;}
   #contaLoja .cl-txt{color:#ccc;font-size:14px;line-height:1.55;text-align:center;}
+
+  /* ══ v611 (revisão do protocolo da Barbara, GH 05/11) ══ */
+  /* Mínimos em min(px, %) de propósito: na grade de 364 px valem os px; na grade espremida (320 px com letra máxima, zoom 1,6) encolhem junto com os outros campos, como na v610 (Z6-320). */
+  /* 1) Grade com META (aquecimento, ajuste, válida): no modo Completo sobravam 24 px pra coluna "última vez" e ela virava "60...".
+     Agora ela quebra em duas linhas (peso em cima, repetições embaixo), o título também, a META encolhe 4 px e a placa que ninguém
+     usa NESTE exercício encolhe (continua na tela pra quem quiser digitar; nada some do caminho de carga). */
+  .sets-grid.rotulada .set-prev { white-space: normal; overflow: visible; text-overflow: clip; font-size: 10px; line-height: 1.1; text-align: center; min-width: min(36px, 10%); margin-left: 0; }
+  .sets-grid.rotulada .set-prev .sp-lb { display: none; }
+  .sets-grid.rotulada .set-head .sh-prev { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.05; text-align: center; min-width: min(36px, 10%); margin-left: 0; }
+  .sets-grid.rotulada .sh-meta, .sets-grid.rotulada .set-meta { width: 44px; min-width: min(44px, 12%); }
+  .sets-grid.rotulada:not(.tem-pl):not(:has(.set-pl:not(:placeholder-shown))):not(:has(.set-pl.ph-ant)) .set-in.set-pl,
+  .sets-grid.rotulada:not(.tem-pl):not(:has(.set-pl:not(:placeholder-shown))):not(:has(.set-pl.ph-ant)) .set-head .sh-pl { width: 34px; min-width: 0; padding-left: 2px; padding-right: 2px; }
+  /* 2) Dieta: linha meta com explicação longa vira parágrafo embaixo do rótulo (antes: espremida na coluna da direita, 62 %, alinhada à direita) */
+  .diet-info-row.longa { flex-direction: column; align-items: flex-start; gap: 3px; padding: 8px 0; }
+  .diet-info-row.longa .diet-info-value { text-align: left; max-width: none; font-weight: 400; font-size: 14px; line-height: 1.45; color: var(--fg-2); }
+  .diet-info-row.longa .diet-info-value b { font-weight: 600; color: var(--fg); }
+  body.modo-simples .diet-info-row.longa .diet-info-value { font-weight: 400; }
+  /* 1b) Mesma grade com placa em uso (última vez em placa ou placa digitada hoje): a placa fica no tamanho normal e, pra tudo caber nos 364 px
+     da grade sem rolagem lateral, a META e o SOBROU cedem 4 px cada. Nada some do caminho de carga. */
+  .sets-grid.rotulada.tem-pl .sh-meta, .sets-grid.rotulada.tem-pl .set-meta,
+  .sets-grid.rotulada:has(.set-pl:not(:placeholder-shown)) .sh-meta, .sets-grid.rotulada:has(.set-pl:not(:placeholder-shown)) .set-meta,
+  .sets-grid.rotulada:has(.set-pl.ph-ant) .sh-meta, .sets-grid.rotulada:has(.set-pl.ph-ant) .set-meta { width: 40px; min-width: min(40px, 11%); }
+  .sets-grid.rotulada.tem-pl .set-in.set-rs, .sets-grid.rotulada.tem-pl .set-head .sh-rs,
+  .sets-grid.rotulada:has(.set-pl:not(:placeholder-shown)) .set-in.set-rs, .sets-grid.rotulada:has(.set-pl:not(:placeholder-shown)) .set-head .sh-rs,
+  .sets-grid.rotulada:has(.set-pl.ph-ant) .set-in.set-rs, .sets-grid.rotulada:has(.set-pl.ph-ant) .set-head .sh-rs { width: 38px; min-width: 0; padding-left: 2px; padding-right: 2px; }
+  .sets-grid.rotulada.tem-pl .set-in.set-kg, .sets-grid.rotulada.tem-pl .set-head .sh-kg,
+  .sets-grid.rotulada:has(.set-pl:not(:placeholder-shown)) .set-in.set-kg, .sets-grid.rotulada:has(.set-pl:not(:placeholder-shown)) .set-head .sh-kg,
+  .sets-grid.rotulada:has(.set-pl.ph-ant) .set-in.set-kg, .sets-grid.rotulada:has(.set-pl.ph-ant) .set-head .sh-kg { width: 52px; min-width: 0; }
+  .sets-grid.rotulada.tem-pl .set-in.set-reps, .sets-grid.rotulada.tem-pl .set-head .sh-reps,
+  .sets-grid.rotulada:has(.set-pl:not(:placeholder-shown)) .set-in.set-reps, .sets-grid.rotulada:has(.set-pl:not(:placeholder-shown)) .set-head .sh-reps,
+  .sets-grid.rotulada:has(.set-pl.ph-ant) .set-in.set-reps, .sets-grid.rotulada:has(.set-pl.ph-ant) .set-head .sh-reps { width: 46px; min-width: 0; }
+
 </style>
 <div id="painelGate" style="display:none;position:fixed;inset:0;z-index:99999;background:#0D0D0D;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:14px;text-align:center;">
   <div style="font-family:'Cinzel',serif;font-size:34px;letter-spacing:6px;color:var(--gold);font-weight:700;">MÉTODO GH</div>
@@ -7471,16 +7503,16 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></span><span id="unitToggleLabelMais">Unidade: kg (trocar pra lb)</span>
     </button>
     <button type="button" class="mais-opt" onclick="toggleLang()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span><span id="langToggleLabel">🌐 Language: English</span>
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span><span id="langToggleLabel">Language: English</span>
     </button>
     <button type="button" class="mais-opt" onclick="toggleCeleb()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg></span><span id="celebToggleLabel">🎉 Comemorações: ligadas (desligar)</span>
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg></span><span id="celebToggleLabel">Comemorações: ligadas (desligar)</span>
     </button>
     <button type="button" class="mais-opt" onclick="modoAplica(_modoAtual() === 'simples' ? 'completo' : 'simples')">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="14" y1="17.5" x2="21" y2="17.5"/></svg></span><span id="modoToggleLabel">Modo do app: Completo (tocar pra Intuitivo)</span>
     </button>
     <button type="button" class="mais-opt" onclick="toggleFonte()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg></span><span id="fonteToggleLabel">🔤 Tamanho da letra: normal (tocar pra aumentar)</span>
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg></span><span id="fonteToggleLabel">Tamanho da letra: normal (tocar pra aumentar)</span>
     </button>
     <button type="button" class="mais-opt" onclick="closeMaisSheet(); reverTutorial()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><span>Rever o tour do app</span>
@@ -8627,12 +8659,12 @@ Object.assign(I18N_EN, {
   'Esse treino já foi concluído': 'This workout was already completed', 'Só desmarcar este exercício': 'Just uncheck this exercise', 'Recomeçar a semana': 'Restart the week',
   'Tamanho da letra': 'Text size', 'corrigir': 'fix', 'Tuas indicações': 'Your referrals',
   'O que tu comeu no lugar, ou o que aconteceu? (opcional)': 'What did you eat instead, or what happened? (optional)', 'Toca no motivo pra salvar. O que tu escreveu vai junto.': 'Tap the reason to save. Your note goes with it.',
-  '🔤 Tamanho da letra: normal (tocar pra aumentar)': '🔤 Text size: normal (tap to enlarge)', '🔤 Tamanho da letra: muito grande (tocar pra aumentar mais)': '🔤 Text size: very large (tap to enlarge more)', '🔤 Tamanho da letra: grande (tocar pra aumentar mais)': '🔤 Text size: large (tap to enlarge more)', '🔤 Tamanho da letra: maior (tocar pra voltar ao normal)': '🔤 Text size: larger (tap to go back to normal)'
+  'Tamanho da letra: normal (tocar pra aumentar)': 'Text size: normal (tap to enlarge)', 'Tamanho da letra: muito grande (tocar pra aumentar mais)': 'Text size: very large (tap to enlarge more)', 'Tamanho da letra: grande (tocar pra aumentar mais)': 'Text size: large (tap to enlarge more)', 'Tamanho da letra: maior (tocar pra voltar ao normal)': 'Text size: larger (tap to go back to normal)'
 });
 const I18N_RX = [
   [/^Em cinza, a última vez que tu fez este exercício( \(.+\))?$/, 'In gray, the last time you did this exercise$1'],
   [/^\u00b7 (\d+) opções$/, '\u00b7 $1 options'], [/^\u00b7 1 opção$/, '\u00b7 1 option'],
-  [/^Ir pra Semana (\d+) →$/, 'Go to Week $1 →'], [/^🔤 Tamanho da letra: (.+)$/, '🔤 Text size: $1'],
+  [/^Ir pra Semana (\d+) →$/, 'Go to Week $1 →'], [/^Tamanho da letra: (.+)$/, 'Text size: $1'],
   [/^Dia (\d+) de (\d+) · Semana (\d+)$/, 'Day $1 of $2 · Week $3'],
   [/^▶\s*Iniciar treino$/, '▶ Start workout'],
   [/^⏸\s*Pausar$/, '⏸ Pause'],
@@ -8744,7 +8776,7 @@ function toggleLang() {
 }
 function _langBtnRefresh() {
   const el = document.getElementById('langToggleLabel');
-  if (el) el.textContent = _lang() === 'en' ? '🌐 Idioma: Português' : '🌐 Language: English';
+  if (el) el.textContent = _lang() === 'en' ? 'Idioma: Português' : 'Language: English';
 }
 // ══ Comemorações (recorde + treino concluído) — desligável (pedido de aluno, 28/08:
 // "tem alguma opção pra desativar isso?"). Desliga SÓ os cards de celebração; pontos,
@@ -8766,7 +8798,7 @@ function toggleFonte() {
 function _fonteBtnRefresh() {
   const el = document.getElementById('fonteToggleLabel'); if (!el) return;
   const n = _fonteNivel();
-  el.textContent = n === 'gggg' ? '🔤 Tamanho da letra: máxima (tocar pra voltar ao normal)' : (n === 'ggg' ? '🔤 Tamanho da letra: muito grande (tocar pra aumentar mais)' : (n === 'gg' ? '🔤 Tamanho da letra: maior (tocar pra aumentar mais)' : (n === 'g' ? '🔤 Tamanho da letra: grande (tocar pra aumentar mais)' : '🔤 Tamanho da letra: normal (tocar pra aumentar)')));   // v569
+  el.textContent = n === 'gggg' ? 'Tamanho da letra: máxima (tocar pra voltar ao normal)' : (n === 'ggg' ? 'Tamanho da letra: muito grande (tocar pra aumentar mais)' : (n === 'gg' ? 'Tamanho da letra: maior (tocar pra aumentar mais)' : (n === 'g' ? 'Tamanho da letra: grande (tocar pra aumentar mais)' : 'Tamanho da letra: normal (tocar pra aumentar)')));   // v569
 }
 function toggleCeleb() {
   try { localStorage.setItem('gh_celeb_off', _celebOff() ? '0' : '1'); } catch (_) {}
@@ -8777,8 +8809,8 @@ function _celebBtnRefresh() {
   if (!el) return;
   const en = _lang() === 'en';
   el.textContent = _celebOff()
-    ? (en ? '🎉 Celebrations: off (turn on)' : '🎉 Comemorações: desligadas (religar)')
-    : (en ? '🎉 Celebrations: on (turn off)' : '🎉 Comemorações: ligadas (desligar)');
+    ? (en ? 'Celebrations: off (turn on)' : 'Comemorações: desligadas (religar)')
+    : (en ? 'Celebrations: on (turn off)' : 'Comemorações: ligadas (desligar)');
 }
 // Chave própria do banco (não usa o _normEx global: se alguém redeclarar aquela função
 // noutro ponto do arquivo, o banco continua funcionando). Índice montado em runtime, com a
@@ -25388,7 +25420,13 @@ function renderDiet() {
   if (d.info.kcal && _tkc !== 'oculta') html += `<div class="diet-info-row"><span class="diet-info-label">${kcalEhNumero ? 'Calorias:' : 'Objetivo:'}</span><span class="diet-info-value">${_dx(d.info.kcal)}</span></div>`;
   if (d.info.objetivo && (kcalEhNumero || String(d.info.objetivo).trim().toLowerCase() !== String(d.info.kcal || '').trim().toLowerCase())) html += `<div class="diet-info-row"><span class="diet-info-label">Objetivo:</span><span class="diet-info-value">${_dx(d.info.objetivo)}</span></div>`;
   d.metas.forEach(m => {
-    html += `<div class="diet-info-row"><span class="diet-info-label">${_dx(m.campo)}:</span><span class="diet-info-value">${_dx(m.valor)}${m.detalhe ? ' · ' + _dx(m.detalhe) : ''}</span></div>`;
+    // v611: explicação longa (valor vazio ou texto comprido) vira parágrafo embaixo do rótulo, como o "Por que esses macros"
+    const _mv = String(m.valor == null ? '' : m.valor).trim(), _md = String(m.detalhe == null ? '' : m.detalhe).trim();
+    if ((_mv + ' ' + _md).trim().length > 64) {
+      html += `<div class="diet-info-row longa"><span class="diet-info-label">${_dx(m.campo)}:</span><span class="diet-info-value">${_mv ? '<b>' + _dx(_mv) + '</b>' + (_md ? ' · ' : '') : ''}${_dx(_md)}</span></div>`;
+    } else {
+      html += `<div class="diet-info-row"><span class="diet-info-label">${_dx(m.campo)}:</span><span class="diet-info-value">${_dx(m.valor)}${m.detalhe ? ' · ' + _dx(m.detalhe) : ''}</span></div>`;
+    }
   });
   html += `</div>`;
 
