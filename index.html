@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0D0D0D">
+<meta name="theme-color" content="#F1EFE9">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>Treino | Método GH</title>
 <!-- preconnect: corta DNS+TLS do primeiro fetch (fontes + protocolo no Google) -->
@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://script.googleusercontent.com">
 <link rel="preconnect" href="https://www.youtube-nocookie.com">
 <link rel="preconnect" href="https://i.ytimg.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cinzel:wght@600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Cinzel:wght@600;700&display=swap">
 <style>
   :root {
     --font-display: 'Cinzel', 'Times New Roman', serif;
@@ -3853,6 +3853,471 @@
     .set-row button.set-num.pop, #exerciseContainer.ex-enter .day-content.active, .mt-barra .mt-fill, .mt-anel .arc { animation: none; }
     #pgFill, #ddpFill, #focusBarFill, .proto-progress .pp-fill, .mt-barra .mt-fill, .mt-anel .arc { transition: none; }
   }
+
+  /* ══ v609 (GH 04 e 05/11/2026): CASCA NOVA. "Tá tudo muito saturado, paleta cansativa pro olho, informação muito junta."
+     Vidro do quiz (brilho, borda clara, blur só no que flutua), grafite azulado no fundo, dourado SÓ na ação (aba ativa,
+     série válida, progresso), verde pra feito, azul frio pra aquecimento e água, laranja pra dor. Fonte Manrope; Cinzel
+     fica só no MÉTODO GH. Um exercício aberto por vez (os outros viram uma linha com check, nome e última carga); refeição
+     feita recolhe; "como foi?" vira folha que sobe; barra de baixo flutua. Tema claro e escuro: o aluno escolhe no Mais
+     (html[data-theme="light"], guardado em gh-tema). Este bloco só SOBREPÕE o que vem acima: nada foi apagado, pra voltar
+     atrás basta tirar o bloco. */
+  :root {
+    --font-display: 'Manrope', 'Inter', system-ui, sans-serif;
+    --bg: #0C0D11;
+    --glass: rgba(255, 255, 255, 0.065);
+    --glass-2: rgba(255, 255, 255, 0.11);
+    --glass-3: rgba(255, 255, 255, 0.16);
+    --glass-line: rgba(255, 255, 255, 0.13);
+    --glass-brilho: inset 0 1px 0 rgba(255, 255, 255, 0.10);
+    --glass-sombra: 0 10px 30px rgba(0, 0, 0, 0.30);
+    --glass-fosco: blur(26px) saturate(180%);
+    --sheet-bg: rgba(24, 25, 32, 0.60);
+    --nav-bg: rgba(22, 23, 29, 0.80);
+    --fg: #F4F2EC;
+    --fg-2: #B8B4AA;
+    --fg-3: #7A766D;
+    --gold: #DDB65C;
+    --gold-fill: #DDB65C;
+    --gold-ink: #1A1304;
+    --gold-bright: #F1D69E;
+    --gold-dark: #B9913E;
+    --gold-dim: rgba(221, 182, 92, 0.38);
+    --gold-glow: rgba(221, 182, 92, 0.30);
+    --gold-soft: rgba(221, 182, 92, 0.10);
+    --ok: #3FD68E;
+    --ok-ink: #06241A;
+    --cool: #86BBFF;
+    --warn: #FF8A65;
+    --card: rgba(255, 255, 255, 0.065);
+    --bg-elevated: rgba(255, 255, 255, 0.10);
+    --header-bg: transparent;
+    --white: #F4F2EC;
+    --gray: #D8D4CA;
+    --muted: #8E8A80;
+    --green: #3FD68E;
+    --hairline: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    --c-aq: #86BBFF; --c-aq-rgb: 134,187,255;
+    --c-aj: #CDB582; --c-aj-rgb: 205,181,130;
+    --c-pap: #E09A62; --c-pap-rgb: 224,154,98;
+    --c-val: #DDB65C; --c-val-rgb: 221,182,92;
+    --c-ink: #1A1304;
+    color-scheme: dark;
+  }
+  :root[data-theme="light"] {
+    --bg: #F1EFE9;
+    --glass: rgba(255, 255, 255, 0.66);
+    --glass-2: rgba(255, 255, 255, 0.90);
+    --glass-3: rgba(20, 18, 12, 0.06);
+    --glass-line: rgba(20, 18, 12, 0.10);
+    --glass-brilho: inset 0 1px 0 rgba(255, 255, 255, 0.90);
+    --glass-sombra: 0 10px 30px rgba(40, 30, 10, 0.10);
+    --sheet-bg: rgba(250, 249, 245, 0.64);
+    --nav-bg: rgba(248, 247, 243, 0.82);
+    --fg: #1B1912;
+    --fg-2: #55524A;
+    --fg-3: #87837A;
+    --gold: #A77E2A;
+    --gold-fill: #D9B35A;
+    --gold-ink: #1A1304;
+    --gold-bright: #C9A14A;
+    --gold-dark: #8C6A22;
+    --gold-dim: rgba(167, 126, 42, 0.40);
+    --gold-glow: rgba(217, 179, 90, 0.35);
+    --gold-soft: rgba(167, 126, 42, 0.10);
+    --ok: #1E9E62;
+    --ok-ink: #FFFFFF;
+    --cool: #2F6FD6;
+    --warn: #D9552B;
+    --card: rgba(255, 255, 255, 0.66);
+    --bg-elevated: rgba(255, 255, 255, 0.90);
+    --header-bg: transparent;
+    --white: #1B1912;
+    --gray: #3A372F;
+    --muted: #6E6A61;
+    --green: #1E9E62;
+    --dark: #1B1912;
+    --bg-dark: #F1EFE9;
+    --hairline: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    --c-aq: #2F6FD6; --c-aq-rgb: 47,111,214;
+    --c-aj: #9B7A2E; --c-aj-rgb: 155,122,46;
+    --c-pap: #C2642C; --c-pap-rgb: 194,100,44;
+    --c-val: #D9B35A; --c-val-rgb: 217,179,90;
+    --c-ink: #1A1304;
+    color-scheme: light;
+  }
+  body { font-family: 'Manrope', 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif; background-color: var(--bg); color: var(--fg); }
+  body::before {
+    background:
+      radial-gradient(60% 38% at 12% 0%, rgba(221, 182, 92, 0.16) 0%, transparent 60%),
+      radial-gradient(45% 32% at 100% 18%, rgba(134, 187, 255, 0.07) 0%, transparent 60%),
+      radial-gradient(70% 45% at 50% 108%, rgba(221, 182, 92, 0.07) 0%, transparent 60%),
+      var(--bg);
+  }
+  :root[data-theme="light"] body::before {
+    background:
+      radial-gradient(60% 38% at 12% 0%, rgba(217, 179, 90, 0.22) 0%, transparent 60%),
+      radial-gradient(45% 32% at 100% 18%, rgba(47, 111, 214, 0.08) 0%, transparent 60%),
+      var(--bg);
+  }
+  /* cabeçalho mais leve: sem faixa dourada, sem degradê pesado, marca menor */
+  .app-header { background: transparent; border-image: none; border-bottom: none; padding: 18px 16px 10px; }
+  .app-header::after { display: none; }
+  .app-header .gh-hero-foto { opacity: .42; width: 30%; }
+  :root[data-theme="light"] .app-header .gh-hero-foto { opacity: .55; }
+  .app-header .brand-name { font-family: 'Cinzel', 'Times New Roman', serif; font-size: 22px; letter-spacing: 5px; filter: none; }
+  .app-header h1 { font-size: 10.5px; letter-spacing: .22em; color: var(--fg-3); margin-top: 4px; }
+  .app-header .last-mod { color: var(--fg-3) !important; }
+  /* abas do dia: pílulas de vidro, ativa dourada */
+  .day-tabs { padding: 10px 14px 8px; gap: 8px; }
+  .day-tab { background: var(--glass); border: 1px solid var(--glass-line); color: var(--fg-2); box-shadow: var(--glass-brilho); font-size: 12.5px; padding: 9px 16px; }
+  .day-tab.active { background: var(--gold-fill); color: var(--gold-ink); border-color: transparent; box-shadow: none; }
+  .day-tab.feito { border-color: rgba(63, 214, 142, .45); }
+  .day-tab.feito .wt-badge { color: var(--ok); }
+  .day-hero { background: var(--glass); border: 1px solid var(--glass-line); border-radius: 20px; box-shadow: var(--glass-brilho), var(--glass-sombra); }
+  .pg-bar { background: var(--glass-3); }
+  .pg-fill { background: var(--gold-fill); }
+  .const-dot.feito i { background: var(--ok); border-color: var(--ok); color: var(--ok-ink); }
+  .const-dot.hoje span { color: var(--gold); }
+  .const-dot i { border-color: var(--glass-line); }
+  /* ── cartão de exercício ── */
+  .exercise-card { background: var(--glass); border: 1px solid var(--glass-line); border-left: 1px solid var(--glass-line); border-radius: 18px; margin-bottom: 10px; box-shadow: var(--glass-brilho); transition: background .2s, border-color .2s; }
+  .exercise-card.warmup { border-left-color: var(--glass-line); }
+  .exercise-card.biset { border-left: 3px solid var(--warn); }
+  .exercise-card:not(.recolhido):not(.warmup):not(.done) { background: var(--glass-2); border-color: var(--glass-3); }
+  .exercise-main { padding: 13px 14px 10px; gap: 12px; align-items: flex-start; }
+  .exercise-main .ex-check { margin-top: 2px; }
+  .exercise-name { font-size: 15px; font-weight: 700; color: var(--fg); letter-spacing: -.01em; flex-wrap: wrap; }
+  .exercise-card.has-video .exercise-name { color: var(--fg); }
+  .video-icon { background: transparent; border: 1px solid var(--glass-line); color: var(--gold); border-radius: 999px; }
+  .musc-tag { color: var(--fg-3); }
+  .exercise-obs { color: var(--fg-2); }
+  .ex-presc { color: var(--fg-2); font-size: 12.5px; }
+  .ex-presc .cad { color: var(--fg-3); }
+  /* prescrição: as linhas por tipo saem (a grade ganhou a coluna META); fica a linha de descanso e cadência */
+  .ex-presc-tbl { margin-top: 4px; }
+  .ex-presc-tbl .ept-head, .ex-presc-tbl .ept-row { display: none; }
+  .ept-panel { background: transparent; border: none; padding: 0; }
+  .ept-foot { border-top: none; margin-top: 2px; padding-top: 0; color: var(--fg-3); font-size: 12px; }
+  .ex-check { border-color: var(--glass-line); border-radius: 8px; width: 24px; height: 24px; min-width: 24px; }
+  .ex-check.done { background: var(--ok); border-color: var(--ok); }
+  .ex-check.done::after { color: var(--ok-ink); }
+  .ex-check.skip { border-color: var(--fg-3); }
+  /* feito e pulado: o cartão inteiro não fica transparente (a folha do "como foi" nasce dentro dele); só o conteúdo apaga */
+  .exercise-card.done, .exercise-card.skipped { opacity: 1; }
+  .exercise-card.done .exercise-main, .exercise-card.done .carga-section, .exercise-card.skipped .exercise-main, .exercise-card.skipped .carga-section { opacity: .62; }
+  .exercise-card.done .exercise-name { text-decoration: none; color: var(--fg-2); }
+  .exercise-card.done .ex-resumo b { color: var(--ok); }
+  /* pills (trocar, vídeo, não consegui) em vidro, ícone dourado */
+  .ex-sub-pill, .ex-vid-pill, .ex-skip-btn { background: var(--glass); border: 1px solid var(--glass-line); color: var(--fg-2); min-height: 30px; }
+  .ex-sub-pill svg, .ex-vid-pill svg { color: var(--gold); }
+  .ex-sub-pill .n, .ex-vid-pill .n { color: var(--fg-3); }
+  .ex-sub-pill.on { background: var(--gold-fill); color: var(--gold-ink); border-color: transparent; }
+  .ex-sub-pill.on .n { color: var(--gold-ink); opacity: .7; }
+  .ex-skip-btn.on { border-color: var(--warn); color: var(--warn); }
+  /* ── registro ── */
+  .carga-section { background: transparent; border-top: 1px solid var(--glass-line); padding: 10px 14px 12px; }
+  .sg-head, .ept-head { color: var(--fg-3); font-size: 10px; letter-spacing: .12em; }
+  .sg-ant-nota, .sg-melhor { color: var(--fg-3); }
+  .set-head span { color: var(--fg-3); font-size: 9px; }
+  .set-head .sh-kg, .set-head .sh-pl { text-decoration-color: var(--fg-3); }
+  .set-head .set-num { width: 30px; min-width: 30px; }   /* mesma largura do botão da linha; 44 só na grade rotulada (aq/aj/val) */
+  .sets-grid.rotulada .set-head .set-num { width: 44px; min-width: 44px; }
+  .sets-grid.rotulada .set-row button.set-num { width: 44px; min-width: 44px; font-size: 9.5px; }
+  .sh-meta, .set-meta { width: 48px; min-width: 48px; text-align: center; }
+  .set-meta { font-size: 11px; font-weight: 600; color: var(--fg-3); line-height: 1.15; white-space: normal; overflow: hidden; }
+  .set-head .sh-kg, .set-in.set-kg { width: 54px; } .set-head .sh-pl, .set-in.set-pl { width: 44px; } .set-head .sh-reps, .set-in.set-reps { width: 48px; } .set-head .sh-rs, .set-in.set-rs, .set-head .sh-rpe, .set-in.set-rpe { width: 42px; }
+  .sets-grid.tempo .set-in.set-reps, .sets-grid.tempo .sh-reps { width: 64px; }
+  .set-head, .set-row { gap: 5px; }
+  .set-in { background: var(--glass-2); border: 1px solid var(--glass-line); border-radius: 10px; color: var(--fg); height: 36px; padding: 0 4px; font-size: 14px; font-weight: 600; font-family: inherit; }
+  .set-in:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(221, 182, 92, .18); background: var(--glass-3); }
+  .set-in::placeholder { color: var(--fg-3); font-weight: 500; }
+  .set-in.ph-ant::placeholder { color: var(--fg-3); }
+  .sets-grid.rotulada .set-in::placeholder { color: var(--fg-3); }
+  .set-in:not(:placeholder-shown) { border-color: rgba(221, 182, 92, .45); background: rgba(221, 182, 92, .10); }
+  :root[data-theme="light"] .set-in:not(:placeholder-shown) { background: rgba(217, 179, 90, .18); }
+  .set-row:has(.set-in:not(:placeholder-shown)) .set-num { color: var(--gold); }
+  button.set-num { border-radius: 9px; height: 30px; width: 30px; min-width: 30px; border-color: var(--glass-line); color: var(--fg-2); }
+  .set-row.feita button.set-num { background: var(--ok); border-color: var(--ok); color: var(--ok-ink); }
+  .set-row.t-aj, .set-row.t-pap, .set-row.t-val { background: none; }
+  .set-row.t-aq:not(.feita) button.set-num { color: var(--c-aq); border-color: rgba(var(--c-aq-rgb), .45); background: rgba(var(--c-aq-rgb), .08); }
+  .set-row.t-aj:not(.feita) button.set-num { color: var(--c-aj); border-color: rgba(var(--c-aj-rgb), .5); background: rgba(var(--c-aj-rgb), .10); }
+  .set-row.feita .set-in { opacity: .7; }
+  .set-prev { color: var(--fg-3); font-size: 11px; }
+  .set-prev .sp-lb { opacity: .8; }
+  .set-head .sh-prev { color: var(--fg-3); }
+  .set-del { color: var(--fg-3); }
+  .set-add { border: 1px dashed var(--glass-line); color: var(--fg-2); border-radius: 999px; padding: 5px 12px; background: var(--glass); }
+  .set-add:hover, .set-add:active { background: var(--glass-2); border-style: solid; color: var(--gold); }
+  .carga-saved { color: var(--ok); }
+  .carga-saved.cloud-ok { color: var(--ok); }
+  .carga-saved.cloud-fail { color: var(--warn); }
+  .ex-actions { gap: 6px; }
+  .ex-action-btn { background: var(--glass); border: 1px solid var(--glass-line); color: var(--gold); border-radius: 12px; min-width: 44px; padding: 7px 8px 6px; }
+  .ex-action-btn:hover { background: var(--glass-2); }
+  .ex-action-lbl { color: var(--fg-3); }
+  .set-sug { color: var(--fg-2); }
+  .forca-chip, .estag-chip, .prog-chip, .evo-chip, .mchip { color: var(--fg-2); }
+  /* ── sanfona: um exercício aberto por vez; o resto vira uma linha (check, nome, séries · reps · última carga) ── */
+  .ex-resumo { display: none; margin-top: 3px; font-size: 12px; color: var(--fg-3); font-weight: 500; line-height: 1.4; }
+  .ex-resumo i { font-style: normal; opacity: .6; }
+  .ex-resumo b { color: var(--fg-2); font-weight: 700; }
+  .ex-fold { flex: none; width: 30px; height: 30px; border-radius: 10px; border: 1px solid var(--glass-line); background: var(--glass); color: var(--fg-2); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; margin-left: 2px; font-family: inherit; }
+  .ex-fold svg { width: 14px; height: 14px; transition: transform .2s; }
+  .exercise-card.recolhido .ex-fold svg { transform: rotate(180deg); }
+  .exercise-card.recolhido { cursor: pointer; }
+  .exercise-card.recolhido .exercise-main { padding: 12px 14px; align-items: center; cursor: pointer; }
+  .exercise-card.recolhido .ex-resumo { display: block; }
+  .exercise-card.recolhido .exercise-name { font-size: 14px; }
+  .exercise-card.recolhido .exercise-name .video-icon { display: none; }
+  .exercise-card.recolhido .exercise-info > :not(.exercise-name):not(.ex-resumo) { display: none; }
+  .exercise-card.recolhido > :not(.exercise-main):not(.carga-section) { display: none; }
+  /* a grade fica no DOM (quem digita ou foca nela reabre o cartão), só sem altura */
+  .exercise-card.recolhido > .carga-section { display: block; height: 0; padding: 0; border: 0; margin: 0; overflow: hidden; opacity: 0; }   /* block: no flex da v608 a grade e o rodapé ficavam lado a lado e os botões caíam fora da tela (Z6 da 570) */
+  .exercise-card.ex-aberto-agora { scroll-margin-top: 10px; }
+  /* ── "como foi?" vira FOLHA que sobe (o bloco é movido pro body enquanto está aberto) ── */
+  .esf-compact .esf-summary { color: var(--fg-2); border-top: 1px solid var(--glass-line); padding: 11px 14px; font-size: 12px; }
+  .esf-compact.answered .esf-sum-tx { color: var(--fg-2); }
+  .esf-compact .esf-sum-tx b { color: var(--gold); }
+  .esf-chev { color: var(--fg-3); }
+  #esfOverlay { position: fixed; inset: 0; z-index: 9540; background: rgba(0, 0, 0, .32); animation: ghFade .2s; }
+  @keyframes ghFade { from { opacity: 0; } to { opacity: 1; } }
+  .esf-compact.open.esf-folha { position: fixed; left: 0; right: 0; bottom: 0; z-index: 9550; background: var(--sheet-bg); -webkit-backdrop-filter: var(--glass-fosco); backdrop-filter: var(--glass-fosco); border: 1px solid var(--glass-line); border-bottom: none; border-radius: 24px 24px 0 0; padding: 6px 0 max(20px, env(safe-area-inset-bottom, 0px)); box-shadow: 0 -12px 40px rgba(0, 0, 0, .45), var(--glass-brilho); max-height: 86vh; overflow: auto; animation: maisUp .22s ease; }
+  .esf-compact.open.esf-folha::before { content: ''; display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--glass-line); margin: 4px auto 4px; }
+  .esf-compact.open.esf-folha .esf-summary { border-top: none; font-size: 15px; color: var(--fg); font-weight: 700; padding: 8px 18px 6px; }
+  .esf-compact.open.esf-folha .esf-sum-tx b { color: var(--gold); }
+  .esf-compact.open.esf-folha .esf-body { padding: 0 18px 8px; }
+  .esf-compact.open.esf-folha .focus-carga-label { color: var(--fg-2); }
+  .esf-folha .esf-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .esf-folha .esf-chip { background: var(--glass); border: 1px solid var(--glass-line); color: var(--fg); border-radius: 999px; padding: 10px 14px; font-size: 13px; font-weight: 600; min-height: 40px; }
+  .esf-folha .esf-chip.sel { background: var(--gold-fill); color: var(--gold-ink); border-color: transparent; }
+  .esf-folha .esf-aptoggle, .esf-folha .esf-nototoggle { background: var(--glass); border: 1px solid var(--glass-line); color: var(--fg-2); border-radius: 12px; padding: 10px 14px; font-size: 13px; width: 100%; text-align: left; margin-top: 8px; }
+  .esf-folha .esf-aptoggle.dor-btn { color: var(--warn); }
+  .esf-folha .esf-apchip { background: var(--glass); border: 1px solid var(--glass-line); color: var(--fg); border-radius: 999px; }
+  .esf-folha .esf-apchip.sel { background: var(--warn); color: #fff; border-color: transparent; }
+  .esf-folha .esf-nota-in { background: var(--glass-2); border: 1px solid var(--glass-line); color: var(--fg); border-radius: 12px; }
+  .esf-folha .esf-nota-hint { color: var(--fg-3); }
+  /* ── dieta ── */
+  .diet-info-card, .diet-section-toggle, .diet-section-content, .diet-supl-group { background: var(--glass); border-color: var(--glass-line); box-shadow: var(--glass-brilho); color: var(--fg); }
+  .diet-section-toggle { border-radius: 16px; }
+  .diet-info-label, .diet-rule-name, .diet-supl-timing { color: var(--fg-3); }
+  .diet-info-value, .diet-rule-value, .diet-supl-name { color: var(--fg); }
+  .diet-supl-dose { color: var(--gold); }
+  .diet-action-btn { background: var(--glass); border: 1px solid var(--glass-line); color: var(--fg); border-radius: 14px; }
+  .diet-action-btn svg { color: var(--gold); }
+  .diet-cycle-tabs { background: var(--glass); border: 1px solid var(--glass-line); border-radius: 14px; padding: 3px; gap: 2px; }
+  .diet-cycle-tab { background: transparent; border: none; color: var(--fg-2); border-radius: 11px; }
+  .diet-cycle-tab.active { background: var(--gold-fill); color: var(--gold-ink); }
+  .diet-ciclo-desc, .diet-cycle-header { color: var(--fg-2); }
+  .diet-day-progress .ddp-label { color: var(--fg-3); }
+  .diet-day-progress .ddp-bar { background: var(--glass-3); }
+  .diet-day-progress .ddp-fill { background: var(--gold-fill); }
+  .diet-meal-card { background: var(--glass); border: 1px solid var(--glass-line); border-left: 1px solid var(--glass-line); border-radius: 18px; margin: 10px 14px; box-shadow: var(--glass-brilho); }
+  .diet-meal-header { background: transparent; color: var(--fg); font-size: 15px; letter-spacing: -.01em; padding: 13px 14px 8px; }
+  .dm-hora { border-color: var(--glass-line); color: var(--fg-3); background: var(--glass); }
+  .dm-hora.set { color: var(--gold); border-color: var(--gold-dim); }
+  .dm-nao { color: var(--fg-3); }
+  .dm-nota { color: var(--fg-2); padding: 0 14px; }
+  .diet-meal-check { border-color: var(--glass-line); color: var(--fg-2); background: var(--glass); min-height: 30px; }
+  .diet-meal-check.done { background: var(--ok); border-color: var(--ok); color: var(--ok-ink); }
+  .diet-meal-instruction { color: var(--fg-3); font-style: normal; padding: 0 14px 4px; }
+  .diet-food-item { padding: 8px 14px; border-bottom: 1px solid var(--glass-line); }
+  .diet-food-name { color: var(--fg); font-size: 13.5px; font-weight: 500; }
+  .diet-food-qty { color: var(--fg); font-weight: 700; font-size: 13px; }
+  .diet-food-obs { color: var(--fg-3); font-style: normal; }
+  .diet-food-alt { background: transparent; }
+  .diet-food-alt .diet-food-name { color: var(--fg-3); font-weight: 500; }
+  .diet-food-alt .diet-food-obs { color: var(--fg-3); }
+  .diet-option-tabs { display: flex; gap: 2px; margin: 8px 14px 4px; padding: 3px; background: var(--glass); border: 1px solid var(--glass-line); border-radius: 14px; overflow-x: auto; }
+  .diet-option-tab { flex: 1 0 auto; background: transparent; border: none; border-radius: 11px; color: var(--fg-2); font-size: 12px; font-weight: 700; padding: 8px 12px; text-align: center; }
+  .diet-option-tab.active { background: var(--gold-fill); color: var(--gold-ink); }
+  .diet-meal-note { color: var(--fg-3); padding: 4px 0; }
+  .dm-notas { margin: 2px 14px 10px; }
+  .dm-notas summary { list-style: none; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--fg-3); padding: 6px 0; display: flex; align-items: center; gap: 6px; }
+  .dm-notas summary::-webkit-details-marker { display: none; }
+  .dm-notas summary::before { content: ''; width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(-45deg); transition: transform .2s; margin-right: 2px; }
+  .dm-notas[open] summary::before { transform: rotate(45deg); }
+  /* refeição feita recolhe: fica só o cabeçalho (toque no nome mostra de novo) */
+  .diet-meal-card:has(.diet-meal-check.done):not(.ver) > :not(.diet-meal-header) { display: none; }
+  .diet-meal-card:has(.diet-meal-check.done) .diet-meal-header { padding-bottom: 13px; }
+  .diet-meal-card:has(.diet-meal-check.done) .dm-nome { color: var(--fg-3); }
+  .diet-meal-card.ver:has(.diet-meal-check.done) .diet-meal-header { padding-bottom: 8px; }
+  /* ── barra de baixo flutuando em vidro, e a folha do Mais ── */
+  #bottomNav { left: 12px; right: 12px; bottom: max(10px, env(safe-area-inset-bottom, 0px)); border-radius: 22px; background: var(--nav-bg); -webkit-backdrop-filter: var(--glass-fosco); backdrop-filter: var(--glass-fosco); border: 1px solid var(--glass-line); border-top: 1px solid var(--glass-line); box-shadow: var(--glass-brilho), var(--glass-sombra); padding: 6px 4px 6px; }
+  #bottomNav .bn-item { color: var(--fg-3); font-size: 9.5px; }
+  #bottomNav .bn-item.active { color: var(--gold); }
+  #bottomNav .bn-item.active svg { filter: drop-shadow(0 0 6px rgba(221, 182, 92, .35)); }
+  body.has-bnav { padding-bottom: max(calc(86px + env(safe-area-inset-bottom, 0px)), 100px); }
+  body.has-bnav #timerPill { bottom: max(calc(106px + env(safe-area-inset-bottom, 0px)), 122px); }
+  #maisSheetOverlay { background: rgba(0, 0, 0, .55); }
+  #maisSheet { background: var(--sheet-bg); -webkit-backdrop-filter: var(--glass-fosco); backdrop-filter: var(--glass-fosco); border: 1px solid var(--glass-line); border-bottom: none; border-radius: 24px 24px 0 0; box-shadow: 0 -12px 40px rgba(0, 0, 0, .45), var(--glass-brilho); }
+  #maisSheet .mais-grab { background: var(--glass-line); }
+  .mais-opt { background: var(--glass); border: 1px solid var(--glass-line); color: var(--fg); border-radius: 14px; }
+  .mais-opt .ic svg { color: var(--gold); }
+  .mais-opt.destaque { background: var(--gold-soft); border-color: var(--gold-dim); }
+  .mais-sep { color: var(--fg-3); }
+  .intro-splash.out { pointer-events: none; }   /* a abertura saindo (0,5 s) não engole mais o primeiro toque */
+  .tema-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 10px; padding: 10px 14px; background: var(--glass); border: 1px solid var(--glass-line); border-radius: 14px; }
+  .tema-row > span { font-size: 13.5px; font-weight: 600; color: var(--fg); }
+  .tema-seg { display: flex; gap: 2px; padding: 3px; max-width: 100%; box-sizing: border-box; background: var(--glass); border: 1px solid var(--glass-line); border-radius: 12px; }
+  .tema-seg button { min-width: 0; flex: 1 1 auto; background: transparent; border: none; color: var(--fg-2); font-family: inherit; font-size: 12px; font-weight: 700; padding: 7px 12px; border-radius: 9px; cursor: pointer; }
+  .tema-seg button.on { background: var(--gold-fill); color: var(--gold-ink); }
+  /* ── progresso e cartões gerais ── */
+  .pg-card, .fd-card, .sem-card, .week-selector, .student-info, .proto-progress { background: var(--glass); border: 1px solid var(--glass-line); border-radius: 18px; box-shadow: var(--glass-brilho); }
+  .pg-sec-t { font-family: inherit; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--fg-3); }
+  .sem-t { color: var(--fg-3); }
+  .sem-stat b { color: var(--fg); }
+  .fd-mut { color: var(--fg-2); }
+  .fd-btn { border-color: var(--glass-line); color: var(--fg); background: var(--glass); }
+  .fd-btn.ouro { background: var(--gold-fill); color: var(--gold-ink); border-color: transparent; }
+  .mt-barra { background: var(--glass-3); }
+  .mt-nome, .mt-val { color: var(--fg); }
+  .mt-hoje, .mt-sub, .mt-nota { color: var(--fg-3); }
+  .wt-fechar, #cadernoSalvarBtn, .dia-start { background: var(--gold-fill); color: var(--gold-ink); }
+  .gloss-it { color: var(--fg-2); border-color: var(--glass-line); }
+  /* tema claro: o que a casca antiga pintava à mão em escuro */
+  :root[data-theme="light"] .set-in, :root[data-theme="light"] .carga-input, :root[data-theme="light"] .rh-time, :root[data-theme="light"] .esf-nota-in { background: var(--glass-2); color: var(--fg); border-color: var(--glass-line); }
+  :root[data-theme="light"] .ex-check.done::after { color: var(--ok-ink); }
+  :root[data-theme="light"] .exercise-card, :root[data-theme="light"] .diet-meal-card, :root[data-theme="light"] .pg-card, :root[data-theme="light"] .day-hero { box-shadow: var(--glass-brilho), 0 4px 18px rgba(40, 30, 10, .06); }
+  @media (prefers-reduced-motion: reduce) { .esf-compact.open.esf-folha, #esfOverlay { animation: none; } }
+  /* v609b: o que ainda vinha pintado à mão em preto (ficava uma caixa chapada, pior no tema claro) */
+  .focus-esforco.esf-compact { background: transparent; border-radius: 0; padding: 0; margin: 0; }
+  .focus-esforco { background: var(--glass); }
+  .focus-carga-label { color: var(--fg-2); }
+  .esf-chip, .esf-apchip { background: var(--glass); border: 1px solid var(--glass-line); color: var(--fg); }
+  .esf-aptoggle, .esf-nototoggle { color: var(--fg-2); }
+  .forca-chip { background: var(--glass); border-left-color: var(--glass-line); }
+  .forca-lb, .forca-nota { color: var(--fg-3); } .forca-vl { color: var(--fg); }
+  .evo-chip { background: var(--glass); border-color: var(--glass-line); }
+  .evo-chip .evo-nums { color: var(--fg); } .evo-chip .evo-lbl { color: var(--fg-3); }
+  .prog-chip.up { color: var(--fg); } .prog-chip.down { color: var(--fg-2); border-left-color: var(--glass-line); }
+  .prog-now { color: var(--fg-2); }
+  .modo-seg { background: var(--glass-3); border-color: var(--glass-line); }
+  .modo-seg button { color: var(--fg-2); }
+  .modo-seg button.on { background: var(--gold-fill); color: var(--gold-ink); }
+  .mb-lbl { color: var(--fg-2); }
+  .proto-progress { background: var(--glass); border-color: var(--glass-line); }
+  .proto-progress .pp-track { background: var(--glass-3); }
+  .proto-progress .pp-dias { color: var(--fg-3); }
+  .proto-progress .pp-fill { background: var(--gold-fill); }
+  .student-info .label { color: var(--fg-3); } .student-info .value { color: var(--fg); }
+  .student-info .field { background: var(--glass); border-color: var(--glass-line); }
+  .week-btn { background: var(--glass); border-color: var(--glass-line); color: var(--fg); }
+  .week-label { color: var(--fg); }
+  .dh-title { font-size: 17px; letter-spacing: 0; }
+  .dh-kicker { color: var(--gold); }
+  .dh-sub { color: var(--fg-3); }
+  .dh-head .pg-week, .dh-head .pg-streak { background: var(--glass); border-color: var(--glass-line); color: var(--fg-2); }
+  .dh-head .pg-week.hit { background: rgba(63, 214, 142, .14); color: var(--ok); }
+  .pg-streak { color: var(--warn); }
+  /* uma opção só não precisa de aba */
+  .diet-option-tabs:has(> .diet-option-tab:only-child) { display: none; }
+  /* o título do dia (QUADRÍCEPS + POSTERIOR + PANTURRILHA) ganha a largura toda; os chips descem pra linha de baixo */
+  .dh-head { flex-wrap: wrap; row-gap: 8px; }
+  .dh-head-l { flex: 1 1 100%; }
+  /* ══ v609c (GH 05/11, prints do cartão, da constância e da folha): cartão aberto mais enxuto, um verde só, vidro de verdade, claro é o padrão ══ */
+  /* cartão aberto: só o músculo principal, sem a linha de cadência (mora no botão ritmo), sem "Teu registro", sem salvar (salva sozinho; "Salvar agora" fica no ···) */
+  .musc-tag .mt-s, .musc-tag .mt-dot { display: none; }
+  .musc-tag .mt-p { margin-right: 6px; }
+  .ex-presc .cad { display: none; }
+  .sg-head { display: none; }
+  .ex-actions .save-btn { display: none; }
+  .exercise-card .ex-sub-pill:not(.on) { display: none; }   /* a troca virou ícone na linha de ações; a pill só aparece quando já está trocado */
+  .exercise-card .ex-vid-pill { display: none; }            /* "Vídeo pro GH corrigir" mora no ··· */
+  body.modo-simples .exercise-card.recolhido .exercise-info > .ex-vid-pill { display: flex; margin-top: 8px; }   /* Intuitivo: a pill é a tarefa da semana, fica à vista até no cartão recolhido */
+  .ex-action-btn.ex-troca-btn.on { background: var(--gold-fill); color: var(--gold-ink); border-color: transparent; }
+  .sets-grid.sem-meta .set-meta, .sets-grid.sem-meta .sh-meta { display: none; }   /* meta igual em toda linha já está na frase de cima */
+  /* tela estreita ou letra grande: a coluna META não cabe (campo de carga ficava com 28 px); some e a tabela de prescrição da v608 volta */
+  @media (max-width: 379px) { .sets-grid .set-meta, .sets-grid .sh-meta { display: none; } .ex-presc-tbl .ept-head, .ex-presc-tbl .ept-row { display: flex; } }
+  body.fonte-gg .sets-grid .set-meta, body.fonte-gg .sets-grid .sh-meta, body.fonte-ggg .sets-grid .set-meta, body.fonte-ggg .sets-grid .sh-meta, body.fonte-gggg .sets-grid .set-meta, body.fonte-gggg .sets-grid .sh-meta { display: none; }
+  body.fonte-gg .ex-presc-tbl .ept-head, body.fonte-gg .ex-presc-tbl .ept-row, body.fonte-ggg .ex-presc-tbl .ept-head, body.fonte-ggg .ex-presc-tbl .ept-row, body.fonte-gggg .ex-presc-tbl .ept-head, body.fonte-gggg .ex-presc-tbl .ept-row { display: flex; }
+  /* um verde só: o da refeição feita, em tudo que é "deu certo" */
+  .ev-card svg .ev-bt { fill: var(--ok); }
+  .ev-card svg .ev-bd { fill: transparent; stroke: var(--ok); stroke-width: 1.5; }
+  .ev-card svg .ev-zero { fill: var(--glass-line); stroke: none; }
+  .ev-card svg .ev-meta { stroke: var(--fg-3); opacity: .5; }
+  .ev-card svg .ev-base { stroke: var(--glass-line); }
+  .ev-card svg .ev-selbg { fill: var(--gold-soft); }
+  .ev-card svg .ev-tx { fill: var(--fg-3); }
+  .ev-leg, .ev-leg-m { color: var(--fg-3); }
+  .ev-leg i.ev-bt { background: var(--ok); }
+  .ev-leg i.ev-bd { background: transparent; border: 1.5px solid var(--ok); box-sizing: border-box; }
+  .carga-saved.cloud-ok, .peso-saved, .timer-display.done, .pg-trendline.up, .proto-progress.done .pp-label, .ed-video-indicator.has-video { color: var(--ok); }
+  .dh-head .pg-week.hit { background: rgba(63, 214, 142, .16); background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
+  .proto-progress.done .pp-fill { background: var(--ok); }
+  #timerRingFill.done { stroke: var(--ok); }
+  .timer-pill.done, .focus-main-btn.rest.acabou { background: var(--ok); border-color: var(--ok); color: var(--ok-ink); }
+  .focus-main-btn.donebtn.isdone { background: var(--ok); color: var(--ok-ink); }
+  /* Tua jornada e Tua evolução: cores cravadas do CSS antigo viram token (no claro o branco sumia) */
+  .jr-h, .jr-lin b, .ev-resumo b, .ev-linha b, .ev-det b { color: var(--fg); }
+  .jr-lin { color: var(--fg-2); }
+  .ev-resumo { color: var(--fg-2); }
+  .jr-pontas, .jr-lin small, .jr-data span, .jr-pe, .ev-leg { color: var(--fg-3); }
+  .jr-barra { background: var(--glass-3); }
+  .jr-barra i { background: var(--gold-fill); }
+  .jr-sec, .ev-sub { border-top-color: var(--glass-line); }
+  .jr-ok { background: var(--gold-fill); color: var(--gold-ink); }
+  .jr-falta { border-color: var(--glass-line); }
+  .jr-data { border-color: var(--glass-line); }
+  /* ══ v609c: janelas no tema claro (o claro virou o padrão, GH 05/11). Folhas de baixo (menu ···, troca) viram vidro nos dois temas. ══ */
+  .rs-menu { background: rgba(10, 10, 12, .45); }
+  .rs-menu-sheet { background: var(--sheet-bg); -webkit-backdrop-filter: var(--glass-fosco); backdrop-filter: var(--glass-fosco); border: 1px solid var(--glass-line); border-bottom: none; border-radius: 24px 24px 0 0; box-shadow: 0 -12px 40px rgba(0, 0, 0, .35), var(--glass-brilho); }
+  .rs-menu-sheet button { background: var(--glass-2); color: var(--fg); border: 1px solid var(--glass-line); border-radius: 14px; }
+  .rs-menu-sheet .rs-menu-cancel { background: transparent; border-color: transparent; color: var(--fg-3); }
+  .rs-menu-sheet textarea.dm-nota-in { background: var(--glass-2); border-color: var(--glass-line); color: var(--fg); }
+  .sub-picker-overlay { background: rgba(10, 10, 12, .45); }
+  .sub-picker-card { background: var(--sheet-bg); -webkit-backdrop-filter: var(--glass-fosco); backdrop-filter: var(--glass-fosco); border: 1px solid var(--glass-line); border-bottom: none; border-radius: 24px 24px 0 0; box-shadow: 0 -12px 40px rgba(0, 0, 0, .35), var(--glass-brilho); }
+  .sub-picker-title { color: var(--fg); }
+  .sub-picker-orig, .sub-opt-tag { color: var(--fg-3); }
+  .sub-opt { background: var(--glass-2); border-color: var(--glass-line); color: var(--fg); border-radius: 14px; }
+  .sub-opt-on { border-color: var(--gold-fill); background: var(--gold-soft); }
+  .sub-opt-now { background: transparent; color: var(--fg-2); }
+  .sub-opt-volta, .sub-picker-close { border-color: var(--glass-line); color: var(--fg-2); }
+  .sub-aviso { color: var(--fg-2); }
+  :root[data-theme="light"] .focus-overlay { background: var(--bg); }
+  :root[data-theme="light"] .focus-close, :root[data-theme="light"] .focus-count { color: var(--fg-2); }
+  :root[data-theme="light"] .focus-bar { background: var(--glass-3); }
+  :root[data-theme="light"] .focus-bar-fill { background: var(--gold-fill); }
+  :root[data-theme="light"] .focus-badge { background: var(--gold-soft); }
+  :root[data-theme="light"] .focus-name { color: var(--fg); }
+  :root[data-theme="light"] .focus-tag, :root[data-theme="light"] .focus-video-btn, :root[data-theme="light"] .focus-nav, :root[data-theme="light"] .focus-main-btn.rest { background: var(--glass); border-color: var(--glass-line); color: var(--fg); }
+  :root[data-theme="light"] .focus-obs { color: var(--fg-2); background: var(--glass); border-left-color: var(--gold-fill); }
+  :root[data-theme="light"] .focus-carga { background: var(--glass); border: 1px solid var(--glass-line); }
+  :root[data-theme="light"] .focus-carga-label { color: var(--fg-3); }
+  :root[data-theme="light"] .focus-carga input { background: var(--glass-2); border-color: var(--glass-line); color: var(--fg); }
+  :root[data-theme="light"] .focus-main-btn.donebtn { background: var(--gold-fill); color: var(--gold-ink); }
+  :root[data-theme="light"] .history-modal-overlay, :root[data-theme="light"] .evo-overlay, :root[data-theme="light"] .te-modal-overlay { background: rgba(40, 36, 26, .40); }
+  :root[data-theme="light"] .history-modal-box, :root[data-theme="light"] .evo-box, :root[data-theme="light"] .te-modal-box { background: #FBFAF7; border-color: var(--glass-line); color: var(--fg); box-shadow: 0 24px 60px rgba(40, 30, 10, .18); }
+  :root[data-theme="light"] .evo-box.evo-rola > .evo-corpo { background: none; }
+  :root[data-theme="light"] .history-bar-label, :root[data-theme="light"] .evo-sub { color: var(--fg-3); }
+  :root[data-theme="light"] .history-bar-track { background: var(--glass-3); }
+  :root[data-theme="light"] .history-bar-fill { background: var(--gold-fill); }
+  :root[data-theme="light"] .history-bar-fill.empty { background: var(--glass-line); }
+  :root[data-theme="light"] .history-trend { background: var(--glass-3); color: var(--fg-2); }
+  :root[data-theme="light"] .history-trend.up { background: rgba(30, 158, 98, .12); color: var(--ok); }
+  :root[data-theme="light"] .history-trend.down { background: rgba(217, 85, 43, .12); color: var(--warn); }
+  :root[data-theme="light"] .evo-close { border-color: var(--glass-line); color: var(--fg-2); }
+  :root[data-theme="light"] .chat-msg.bot { background: var(--glass-3); color: var(--fg); border-color: var(--glass-line); }
+  :root[data-theme="light"] .chat-msg.user { background: var(--gold-fill); color: var(--gold-ink); }
+  :root[data-theme="light"] .chat-mode-tab { color: var(--fg-2); }
+  :root[data-theme="light"] .chat-mode-tab.active { background: var(--gold-fill); color: var(--gold-ink); }
+  :root[data-theme="light"] .gloss-it { color: var(--fg-2); border-bottom-color: var(--glass-line); }
+  :root[data-theme="light"] .te-modal-box input[type="text"], :root[data-theme="light"] .te-modal-box input[type="password"], :root[data-theme="light"] .te-modal-box textarea { background: #FFFFFF; border-color: var(--glass-line); color: var(--fg); }
+  :root[data-theme="light"] .te-btn { background: var(--gold-fill); color: var(--gold-ink); }
+  :root[data-theme="light"] .te-btn.ghost { color: var(--fg-2); border-color: var(--glass-line); }
+  :root[data-theme="light"] .timer-overlay { background: rgba(241, 239, 233, .96); }
+  :root[data-theme="light"] .timer-btn { background: var(--glass-2); color: var(--fg); border-color: var(--glass-line); }
+  :root[data-theme="light"] .timer-btn.primary { background: var(--gold-fill); color: var(--gold-ink); border-color: transparent; }
+  :root[data-theme="light"] .timer-pill { background: var(--glass-2); color: var(--fg); border-color: var(--glass-line); }
+  :root[data-theme="light"] .pacer-tag, :root[data-theme="light"] .pacer-cue, :root[data-theme="light"] .pacer-phase.neg { color: var(--fg-3); }
+  :root[data-theme="light"] .pacer-phase.iso { color: var(--gold-dark); }
+  :root[data-theme="light"] .te-btn.ghost { background: transparent; }
+  :root[data-theme="light"] .hist-chip { background: var(--glass-3); border-color: var(--glass-line); color: var(--fg-2); }
+  :root[data-theme="light"] .hist-chip b { color: var(--fg); }
+  :root[data-theme="light"] .hist-chip.pr { background: var(--gold-soft); border-color: var(--gold-dim); color: var(--gold); }
+  :root[data-theme="light"] .hist-antes { border-top-color: var(--glass-line); }
+  :root[data-theme="light"] .hist-antes-tit, :root[data-theme="light"] .hist-antes-row { color: var(--fg-3); border-bottom-color: var(--glass-line); }
+  :root[data-theme="light"] #chatInput { background: #FFFFFF !important; color: var(--fg) !important; border-color: var(--glass-line) !important; }
+  :root[data-theme="light"] #pacerOverlay circle:not(#pacerRingFill) { stroke: var(--glass-3); }
 </style>
 <script>
 // ══ v593 (auditoria 26/10): dois guardas que NÃO dependem do script principal (ES5 puro, primeiro script da página) ══
@@ -3925,6 +4390,7 @@
   } catch (_) {}
 })();
 </script>
+<script>try{if(localStorage.getItem('gh-tema')!=='escuro')document.documentElement.setAttribute('data-theme','light');}catch(e){}</script>
 </head>
 <body>
 <script>try{var _mq=new URLSearchParams(location.search).get('modo');if(_mq==='simples'||_mq==='intuitivo'){localStorage.setItem('gh_modo','intuitivo');localStorage.removeItem('gh_intu_aj_t');localStorage.removeItem('gh_intu_aj_d');}else if(_mq==='completo'||_mq==='completa')localStorage.removeItem('gh_modo');var _gm=localStorage.getItem('gh_modo');if(_gm==='simples'||_gm==='intuitivo')document.body.classList.add('modo-simples');if(localStorage.getItem('gh_intu_aj_t'))document.body.classList.add('aj-t-off');if(localStorage.getItem('gh_intu_aj_d'))document.body.classList.add('aj-d-off');}catch(e){}</script>
@@ -6068,6 +6534,7 @@
 <div id="maisSheetOverlay" onclick="if(event.target.id==='maisSheetOverlay')closeMaisSheet()">
   <div id="maisSheet">
     <div class="mais-grab"></div>
+    <div class="tema-row"><span>Aparência</span><div class="tema-seg" id="temaSeg"><button type="button" id="temaCla" onclick="ghTema('claro')">Claro</button><button type="button" id="temaEsc" onclick="ghTema('escuro')">Escuro</button></div></div>
     <button type="button" class="mais-opt" style="position:relative;" onclick="closeMaisSheet(); switchView('novidades')">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span><span>Novidades</span><span class="sup-dot" id="novDotMais" style="top:50%;transform:translateY(-50%);right:10px;"></span>
     </button>
@@ -8202,6 +8669,8 @@ function exMaisMenu(di, ei) {
       if (_nLin > _serieCountPresc(ex)) add('Remover a última série', () => removeSet(di, eiS, _setsBase(di, eiS).length - 1));   // só sai a série a mais; a prescrita fica
     }
     if (!ex.warmup && !ex.biset) add(isSkipped(di, ei) ? 'Desfazer "não consegui fazer"' : 'Não consegui fazer', () => onSkipExercise(di, ei));
+    if (!ex.warmup) add('Vídeo pro GH corrigir', () => { const a = document.querySelector('#exerciseContainer .ex-vid-pill[data-di="' + di + '"][data-ei="' + eiS + '"]'); if (a) a.click(); });   // v609c: a pill saiu da vista do cartão, a ação é a mesma
+    if (!ex.warmup) add('Salvar agora', () => saveSetsManual(di, eiS, null));   // v609c: o botão salvar saiu do cartão (salva sozinho)
     const c = document.createElement('button'); c.type = 'button'; c.className = 'rs-menu-cancel'; c.textContent = 'Fechar'; c.onclick = fecha;
     sheet.appendChild(c);
     m.appendChild(sheet);
@@ -8585,7 +9054,7 @@ function _dicaTrocaHtml(di) {
     if (typeof params !== 'undefined' && params.get('edit')) return '';
     const dia = WORKOUT[di];
     if (!dia || !(dia.exercises || []).some((e, ei) => !e.warmup && !e.biset && _alternativasNoDia(di, ei))) return '';
-    return '<div class="ex-dica-troca" id="dicaTroca"><span>Sem o aparelho, fila ou desconforto? Toca em <b>Trocar exercício</b> no card e escolhe outro do mesmo grupo, com vídeo. A carga do original fica guardada.</span><button type="button" class="x" onclick="dicaTrocaFecha()" aria-label="Fechar">&times;</button></div>';
+    return '<div class="ex-dica-troca" id="dicaTroca"><span>Sem o aparelho, fila ou desconforto? Toca em <b>trocar</b>, embaixo do teu registro, e escolhe outro do mesmo grupo, com vídeo. A carga do original fica guardada.</span><button type="button" class="x" onclick="dicaTrocaFecha()" aria-label="Fechar">&times;</button></div>';
   } catch (_) { return ''; }
 }
 function dicaTrocaFecha() { try { localStorage.setItem(_dicaTrocaKey(), '1'); } catch (_) {} try { document.querySelectorAll('.ex-dica-troca').forEach(d => d.remove()); } catch (_) {} }   // todos os dias (o render poe uma por dia)
@@ -9310,6 +9779,10 @@ function _slotsPorNome_(d, e) {
   return out.filter(foraDaqui);
 }
 function getPrevSets(d, e, w) {
+  try { if (_rdaMemo) { const _k = 'prev|' + d + '|' + e + '|' + w; if (Object.prototype.hasOwnProperty.call(_rdaMemo, _k)) return _rdaMemo[_k]; const _v = _getPrevSetsCru_(d, e, w); _rdaMemo[_k] = _v; return _v; } } catch (_) {}   // v609: uma leitura por cartão por pintura
+  return _getPrevSetsCru_(d, e, w);
+}
+function _getPrevSetsCru_(d, e, w) {
   const sf = _cargaSlotSuffix(d, e);
   const read = ww => {
     let raw = sf ? localStorage.getItem(setsKey(d, e, ww) + sf)
@@ -9419,8 +9892,10 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
     const _phKg = (_rotulada && _tipo !== 'val') ? (SERIE_TIPO_CARGA[_tipo] || getUnit()) : getUnit();
     const _phTempo = _porTempo ? (_tempoCurto((_rotulada && _segR != null) ? _repsSegmento(_exG, _segR) : _exG.reps) || _tUnid) : '';   // v504
     const _antKg = (p && p.kg) ? kgToDisplay(p.kg) : '', _antPl = (p && p.pl) ? String(p.pl) : '', _antReps = (p && p.reps) ? String(p.reps) : '';   // v531: última vez dentro do campo
+    const _metaTxt = _porTempo ? (_phTempo || '') : ((_rotulada && _tipo !== 'val') ? (_phKg + '<br>' + _phReps) : _phReps);   // v609: a prescrição desta linha, sempre à vista (a última carga vai no campo)
     return `<div class="set-row ${feita ? 'feita' : ''} ${_rotulada ? 't-' + _tipo : ''} ${_nv ? 'nv' : ''} ${si >= _nPresc ? 'extra' : ''}" data-si="${si}" data-tipo="${_tipo}">
         <button type="button" class="set-num ${_rotulada ? 't-' + _tipo : ''}" onclick="toggleSetFeita(${di},'${eiS}',${si})" title="${_rotulada ? 'Série de ' + SERIE_TIPO_NOME[_tipo] + '. ' : ''}Marcar série como feita" aria-label="Marcar série ${si + 1} como feita">${feita ? '✓' : (_rotulada ? (_nv ? 'não valeu' : _rot) : si + 1)}</button>
+        <span class="set-meta">${_metaTxt}</span>
         <input class="set-in set-kg${_antKg ? ' ph-ant' : ''}" type="number" aria-label="Peso, série ${si + 1}" inputmode="decimal" placeholder="${_antKg || _phKg}" value="${kgToDisplay(s.kg)}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-pl${_antPl ? ' ph-ant' : ''}" type="number" aria-label="Placas, série ${si + 1}" inputmode="numeric" placeholder="${_antPl || 'pl'}" value="${s.pl || ''}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-reps${_antReps ? ' ph-ant' : ''}" type="number" aria-label="Repetições, série ${si + 1}" inputmode="numeric" placeholder="${_antReps || (_porTempo ? _tUnid : _phReps)}" title="${_porTempo ? 'Quantos ' + (_tUnid === 'min' ? 'minutos' : 'segundos') + ' tu segurou' : ''}" value="${s.reps || ''}" oninput="onSetField(${di},'${eiS}')">
@@ -9430,12 +9905,12 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
         ${(si < _nPresc) ? '' : `<button type="button" class="set-del" onclick="removeSet(${di},'${eiS}',${si})" title="Tirar esta série extra" aria-label="Tirar a série extra ${si + 1}">&times;</button>`}
       </div>`;
   }).join('');
-  return `<div class="sets-grid${_rotulada ? ' rotulada' : ''}${_porTempo ? ' tempo' : ''}${_temPl ? ' tem-pl' : ''}" id="sets-${di}-${eiS}" data-di="${di}" data-ei="${eiS}" data-noadd="${noAdd ? '1' : ''}" data-semx="${semX ? '1' : ''}">
+  return `<div class="sets-grid${_rotulada ? ' rotulada' : ''}${_porTempo ? ' tempo' : ''}${(!_rotulada && !_porTempo) ? ' sem-meta' : ''}${_temPl ? ' tem-pl' : ''}" id="sets-${di}-${eiS}" data-di="${di}" data-ei="${eiS}" data-noadd="${noAdd ? '1' : ''}" data-semx="${semX ? '1' : ''}">
       <div class="sg-head">Teu registro</div>
       ${(prev && prev.length) ? '<div class="sg-ant-nota">' + ((prevCru && prevCru._origem) ? 'Em cinza, a última vez que tu fez este exercício' + (prevCru._origem.t > 0 ? ' (' + _arqDiaBR_(prevCru._origem.t) + ')' : '') : 'Em cinza, o que tu fez na última vez') + '</div>' : ''}
       ${label ? `<div class="carga-label" style="font-size:10px;margin-bottom:2px;">${label}</div>` : ''}
       ${evo}${melhor}
-      <div class="set-head"><span class="set-num"></span><span class="sh-kg" onclick="openGlossario('kg')" title="De cada lado ou o total?">${getUnit()}</span><span class="sh-pl" onclick="openPlacaInfo()" title="O que e placa?">placa</span><span class="sh-reps">${_porTempo ? _tUnid : 'reps'}</span><span class="sh-rs" title="Quantas repetições sobraram">sobrou</span><span class="sh-rpe" title="Esforço de 0 a 10">RPE</span><button type="button" class="rs-info-btn" onclick="openSobrouInfo()" aria-label="O que é o sobrou?">i</button><span class="sh-prev">${(prev && prev.length) ? 'última vez' : ''}</span></div>
+      <div class="set-head"><span class="set-num"></span><span class="sh-meta">meta</span><span class="sh-kg" onclick="openGlossario('kg')" title="De cada lado ou o total?">${getUnit()}</span><span class="sh-pl" onclick="openPlacaInfo()" title="O que e placa?">placa</span><span class="sh-reps">${_porTempo ? _tUnid : 'reps'}</span><span class="sh-rs" title="Quantas repetições sobraram">sobrou</span><span class="sh-rpe" title="Esforço de 0 a 10">RPE</span><button type="button" class="rs-info-btn" onclick="openSobrouInfo()" aria-label="O que é o sobrou?">i</button><span class="sh-prev">${(prev && prev.length) ? 'última vez' : ''}</span></div>
       ${rows}
       ${(noAdd || sets.length >= _nPresc + 3 || sets.length >= 12) ? '' : `<button type="button" class="set-add" onclick="addSet(${di},'${eiS}')" title="Abre uma série VÁLIDA a mais, além do que foi prescrito (por tua conta)">${_rotulada ? '+ válida extra' : '+ série extra'}</button>`}
     </div>`;
@@ -13032,7 +13507,7 @@ function _tourSteps() {
   return [
     { sel: '#dayTabs', t: 'Teu treino da semana', p: 'Cada botão é um dia de treino. O app já abre no treino certo de hoje, é só seguir.' },
     { sel: '.sets-grid', t: 'Anota tuas cargas aqui', p: 'Peso e repetições de cada série. É com isso que eu acompanho tua evolução e ajusto teu protocolo. Salva sozinho.' },
-    { sel: '.ex-sub-pill', t: 'Sem o aparelho? Troca.', p: 'Toca em "Trocar exercício" que eu te mostro as opções equivalentes pro mesmo músculo, com vídeo. A carga do original fica guardada.' },
+    { sel: '.ex-troca-btn', t: 'Sem o aparelho? Troca.', p: 'Toca em "trocar", embaixo do teu registro, que eu te mostro as opções equivalentes pro mesmo músculo, com vídeo. A carga do original fica guardada.' },
     { sel: '.dia-start', t: 'Começar treino', p: 'Liga o cronômetro e abre um exercício por vez, em tela cheia. Anotou a série, o descanso cronometra sozinho.' },
     { sel: '#bottomNav', t: 'Tua navegação', p: 'Dieta, teu progresso com gráficos e o resto do app moram aqui embaixo.' },
     { sel: '#bnMais', t: 'Fala comigo', p: 'Dúvida ou quer pedir um ajuste no protocolo? Toca no card do topo ou aqui em Mais.' }
@@ -13886,9 +14361,27 @@ function esfToggleWrap(di, key, force) {
   const w = document.getElementById('esfw-' + di + '-' + key);
   if (!w) return;
   const b = w.querySelector('.esf-body');
-  const show = force === true ? true : b.style.display === 'none';
+  const show = force === true ? true : (force === false ? false : b.style.display === 'none');
   b.style.display = show ? 'block' : 'none';
   w.classList.toggle('open', show);
+  // v609: aberto vira FOLHA que sobe. O bloco vai pro body enquanto está aberto (cartão apagado ou animado não prende a
+  // folha) e volta pro lugar ao fechar. Só uma folha por vez; o fundo escuro fecha no toque.
+  try {
+    if (show) {
+      document.querySelectorAll('.esf-compact.esf-folha.open').forEach(o => { if (o !== w) esfToggleWrap(o.getAttribute('data-di'), o.getAttribute('data-key'), false); });
+      if (!w._ghCasa) w._ghCasa = { pai: w.parentNode, prox: w.nextSibling };
+      let ov = document.getElementById('esfOverlay');
+      if (!ov) { ov = document.createElement('div'); ov.id = 'esfOverlay'; document.body.appendChild(ov); }
+      ov.onclick = () => esfToggleWrap(di, key, false);
+      w.classList.add('esf-folha');
+      document.body.appendChild(w);
+    } else {
+      const ov = document.getElementById('esfOverlay'); if (ov) ov.remove();
+      w.classList.remove('esf-folha');
+      const c = w._ghCasa; w._ghCasa = null;
+      if (c && c.pai) { if (c.prox && c.prox.parentNode === c.pai) c.pai.insertBefore(w, c.prox); else c.pai.appendChild(w); }
+    }
+  } catch (_) {}
 }
 // ── Anotação livre: abre/fecha, salva sozinha (debounce) e avisa quando salvou ──
 function notaToggle(btn) {
@@ -13977,7 +14470,7 @@ function onEsforco(di, key, btn, val) {
   _esfAplicaUi(di, key, val);
   // No card compacto: recolhe sozinho depois de responder
   const w = btn.closest('.esf-compact');
-  if (w) setTimeout(() => { const b = w.querySelector('.esf-body'); if (b) { b.style.display = 'none'; w.classList.remove('open'); } }, 450);
+  if (w) setTimeout(() => { try { esfToggleWrap(w.getAttribute('data-di'), w.getAttribute('data-key'), false); } catch (_) { const b = w.querySelector('.esf-body'); if (b) { b.style.display = 'none'; w.classList.remove('open'); } } }, 450);   // v609: fecha a folha
   try { _esfPreencheSobrou(di, key, val); } catch (_) {}
 }
 // resposta -> sobrou da última série FEITA (a última linha da grade com peso, placa ou reps; linha vazia não é série feita)
@@ -15321,7 +15814,120 @@ function _cardFalhaHtml_(ex, di, ei) {
   const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   return `<div class="exercise-card" data-ei="${ei}"><div class="exercise-header"><div class="exercise-name">${esc(nome)}</div></div><div class="exercise-obs" style="color:#d4a76a;">Não consegui montar a grade deste exercício neste aparelho. Toca em "Atualizar o app" na aba Mais; se seguir assim, fala no suporte.</div></div>`;
 }
+// ══ v609 (GH 04 e 05/11/2026): SANFONA dos exercícios, folha do "como foi?", dieta que recolhe o feito e tema claro/escuro.
+// Um exercício aberto por vez: o aberto é o que o aluno tocou por último (mapa por dia) ou, sem toque, o primeiro que ainda
+// não foi feito. Os outros viram uma linha: check, nome e "séries · reps · última carga" (GH 05/11: "a semana 2 mostra as
+// cargas da semana 1"). A grade recolhida continua no DOM (só sem altura): quem foca ou digita nela reabre o cartão, e o
+// caminho de carga não muda em nada. Toque em qualquer ponto da linha recolhida abre (o check continua marcando).
+window._exAbertoMapa = window._exAbertoMapa || {};
+function _exAbertoDoDia_(di) {
+  try {
+    const day = WORKOUT[di]; if (!day) return null;
+    const ok = i => { const ex = day.exercises[i]; return !!ex && !ex.warmup && !ex.biset && !isDone(di, i); };
+    const q = window._exAbertoMapa[di];
+    if (q != null && q !== '' && Number(q) >= 0 && ok(Number(q))) return String(q);
+    for (let i = 0; i < day.exercises.length; i++) if (ok(i)) return String(i);
+    return null;
+  } catch (_) { return null; }
+}
+function _exRecolhido_(di, ei, isWarmup) { try { if (isWarmup) return false; return _exAbertoDoDia_(di) !== String(ei); } catch (_) { return false; } }
+function _exCargaTxt_(s) {
+  if (!s) return '';
+  const kg = s.kg ? String(kgToDisplay(s.kg)).replace('.', ',') + ' ' + getUnit() : (s.pl ? s.pl + ' pl' : '');
+  if (!kg) return '';
+  return kg + (s.reps ? ' × ' + s.reps : '');
+}
+function _exResumoHtml_(di, ei, ex, exDone) {
+  try {
+    const p = [];
+    const rot = _serieTemRotulo(ex);
+    if (rot) p.push(_dx(_serieResumoCurto(ex)));
+    else if (ex.series) { const ns = String(ex.series).replace(/\s*[xX]\s*$/, ''); p.push(_dx(ns) + (/^\s*0?1\s*$/.test(ns) ? ' série' : ' séries')); }
+    if (ex.reps) {
+      const seg = rot ? ((_serieTipos(ex).find(x => x.tipo === 'val') || {}).seg) : null;
+      const rv = String((rot && seg != null) ? (_repsSegmento(ex, seg) || ex.reps) : ex.reps).trim();
+      p.push(_dx(rv) + ((/seg|min|\bs\b/i.test(rv) || !/\d\s*$/.test(rv)) ? '' : ' reps'));
+    }
+    const w = currentWeek;
+    const hoje = (loadSets(di, ei, w) || []).filter(s => s && (String(s.kg || '').trim() || String(s.pl || '').trim()));
+    let carga = '';
+    if (hoje.length) carga = '<b>' + _exCargaTxt_(hoje[hoje.length - 1]) + '</b>';
+    else { const prev = getPrevSets(di, ei, w) || []; const u = [...prev].reverse().find(x => x && (x.kg || x.pl)); if (u) carga = 'últ. ' + _exCargaTxt_(u); }
+    if (exDone) p.unshift('<b>feito</b>');
+    if (carga) p.push(carga);
+    return p.length ? '<div class="ex-resumo">' + p.join(' <i>·</i> ') + '</div>' : '';
+  } catch (_) { return ''; }
+}
+function _exFoldHtml_(di, ei) {
+  return '<button type="button" class="ex-fold" onclick="event.stopPropagation(); exFold(' + di + ',\'' + ei + '\')" aria-label="Abrir ou recolher este exercício" title="Abrir ou recolher"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg></button>';
+}
+// v609c (GH 05/11, "aqui ainda tem muita informação"): a troca de exercício vira ícone na linha de ações, no lugar do salvar
+// (o app salva sozinho; "Salvar agora" e "Vídeo pro GH corrigir" ficam no ···). Mesma ação da pill de sempre.
+function _trocaBtnHtml_(di, ei, act, subAlts) {
+  try {
+    const acao = subAlts ? ('openSubPicker(' + di + ', ' + ei + ')') : ('openSubFallback(' + di + ', ' + ei + ')');
+    return '<button type="button" class="ex-action-btn ex-troca-btn' + (act && act.sub ? ' on' : '') + '" onclick="event.stopPropagation(); ' + acao + '" title="Trocar exercício"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg><span class="ex-action-lbl">' + (act && act.sub ? 'trocado' : 'trocar') + '</span></button>';
+  } catch (_) { return ''; }
+}
+function _exCardEl_(di, ei) { return document.querySelector('#exerciseContainer .exercise-card[data-di="' + di + '"][data-ei="' + ei + '"]'); }
+function exFold(di, ei) { const c = _exCardEl_(di, ei); if (!c) return; if (c.classList.contains('recolhido')) exAbre(di, ei); else exRecolhe(di, ei); }
+function exAbre(di, ei) {
+  try {
+    window._exAbertoMapa[di] = String(ei);
+    const dia = document.querySelector('#exerciseContainer .day-content[data-di="' + di + '"]'); if (!dia) return;
+    dia.querySelectorAll('.exercise-card[data-ei]').forEach(c => {
+      if (c.getAttribute('data-ei') === String(ei)) { c.classList.remove('recolhido'); c.classList.add('ex-aberto-agora'); }
+      else if (!c.classList.contains('warmup')) { c.classList.add('recolhido'); c.classList.remove('ex-aberto-agora'); }
+    });
+    const card = _exCardEl_(di, ei);
+    if (card) setTimeout(() => { try { const r = card.getBoundingClientRect(); if (r.top < 0 || r.top > window.innerHeight * .55) card.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (_) {} }, 40);
+  } catch (_) {}
+}
+function exRecolhe(di, ei) { try { window._exAbertoMapa[di] = '-1'; const c = _exCardEl_(di, ei); if (c) { c.classList.add('recolhido'); c.classList.remove('ex-aberto-agora'); } } catch (_) {} }
+// toque na linha recolhida abre o cartão (na fase de captura, antes do onclick de vídeo do cartão); o check segue marcando
+document.addEventListener('click', function (e) {
+  try {
+    const t = e.target; if (!t || !t.closest) return;
+    const card = t.closest('#exerciseContainer .exercise-card.recolhido'); if (!card) return;
+    if (t.closest('.ex-check') || t.closest('.ex-vid-pill')) return;   // o check marca e a pill de vídeo abre o whats, sem o cartão engolir o toque
+    if (!t.closest('.exercise-main')) { exAbre(Number(card.getAttribute('data-di')), card.getAttribute('data-ei')); return; }   // toque em algo da parte recolhida (grade, botões): abre e deixa o toque seguir
+    e.preventDefault(); e.stopPropagation();
+    exAbre(Number(card.getAttribute('data-di')), card.getAttribute('data-ei'));
+  } catch (_) {}
+}, true);
+['focusin', 'input'].forEach(ev => document.addEventListener(ev, function (e) {
+  try { const t = e.target; if (!t || !t.closest) return; const card = t.closest('#exerciseContainer .exercise-card.recolhido'); if (card) exAbre(Number(card.getAttribute('data-di')), card.getAttribute('data-ei')); } catch (_) {}
+}, true));
+// refeição feita recolhe (CSS :has); toque no nome mostra de novo
+document.addEventListener('click', function (e) {
+  try {
+    const t = e.target; if (!t || !t.closest) return;
+    const nome = t.closest('#dietContent .diet-meal-card .dm-nome'); if (!nome) return;
+    const card = nome.closest('.diet-meal-card');
+    if (card && card.querySelector('.diet-meal-check.done')) card.classList.toggle('ver');
+  } catch (_) {}
+});
+// tema: CLARO é o padrão pra todo mundo (GH 05/11); escuro é opção no Mais, guardada em gh-tema (só neste aparelho).
+// O claro vive em html[data-theme="light"]; sem o atributo o CSS é o escuro.
+function ghTema(t) {
+  try {
+    if (t === 'escuro') { document.documentElement.removeAttribute('data-theme'); localStorage.setItem('gh-tema', 'escuro'); }
+    else { document.documentElement.setAttribute('data-theme', 'light'); localStorage.setItem('gh-tema', 'claro'); }
+  } catch (_) {}
+  ghTemaSync();
+}
+function ghTemaSync() {
+  try {
+    const claro = document.documentElement.getAttribute('data-theme') === 'light';
+    const a = document.getElementById('temaEsc'), b = document.getElementById('temaCla');
+    if (a) a.classList.toggle('on', !claro); if (b) b.classList.toggle('on', claro);
+    const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', claro ? '#F1EFE9' : '#0C0D11');
+  } catch (_) {}
+}
+try { ghTemaSync(); } catch (_) {}
+
 function _renderExercisesMiolo_() {
+  try { document.querySelectorAll('.esf-compact.esf-folha.open').forEach(o => esfToggleWrap(o.getAttribute('data-di'), o.getAttribute('data-key'), false)); } catch (_) {}   // v609
   try { _flushSetsPendentes_(false); } catch (_) {}   // v447: salva série digitada antes de trocar a grade
   const c = document.getElementById("exerciseContainer");
   c.innerHTML = "";
@@ -15414,12 +16020,13 @@ function _renderExercisesMiolo_() {
       // estava DENTRO do template e apareceu como texto no card do aluno (print do GH, Pedro Sousa).
 
       return `
-        <div class="exercise-card ${isWarmup ? 'warmup' : ''} ${hasVid ? 'has-video' : ''} ${exDone ? 'done' : ''} ${exSkip ? 'skipped' : ''} ${_shortSkip(di, ei) ? 'short-skip' : ''}">
+        <div class="exercise-card ${isWarmup ? 'warmup' : ''} ${hasVid ? 'has-video' : ''} ${exDone ? 'done' : ''} ${exSkip ? 'skipped' : ''} ${_shortSkip(di, ei) ? 'short-skip' : ''} ${_exRecolhido_(di, ei, isWarmup) ? 'recolhido' : ''}" data-di="${di}" data-ei="${ei}">
           <div class="exercise-main" ${hasVid ? `onclick="openVideo('${safeName}', '${safeVideo}')"` : ''}>
             <div class="ex-check ${exDone ? 'done' : ''} ${exSkip ? 'skip' : ''}" onclick="event.stopPropagation(); onCheckExercise(${di}, ${ei})" title="Marcar como feito"></div>
             <div class="exercise-info">
               ${_nomeBlocoHtml(di, ei, act, exDone, isWarmup, hasVid)}
               ${!isWarmup ? _muscTag(act.name) : ''}
+              ${!isWarmup ? _exResumoHtml_(di, ei, ex, exDone) : ''}
               <div class="ex-presc">${_prescLinha(ex, isWarmup)}</div>
               ${ex.obs ? `<div class="exercise-obs">${_glossWrap(_dx(ex.obs))}</div>` : ''}
               ${!isWarmup && !exDone ? _subPillHtml(di, ei, act, subAlts) : ''}
@@ -15427,6 +16034,7 @@ function _renderExercisesMiolo_() {
               ${_trocaMotivoHtml(di, ei)}
               ${!isWarmup && exSkip ? `<button type="button" class="ex-skip-btn on" onclick="event.stopPropagation(); onSkipExercise(${di}, ${ei})">⤼ Pulado hoje · desfazer</button>` : ''}
             </div>
+            ${!isWarmup ? _exFoldHtml_(di, ei) : ''}
           </div>
           ${!isWarmup ? `
           <div class="carga-section" style="flex-direction:column;align-items:stretch;gap:8px;">
@@ -15436,6 +16044,7 @@ function _renderExercisesMiolo_() {
             <span class="carga-saved" id="sv-${di}-${ei}">&#10003; salvo</span>
             <div class="ex-actions">
               <button class="ex-action-btn save-btn" onclick="event.stopPropagation(); saveSetsManual(${di}, '${ei}', this)" title="Salvar as séries agora (o app já salva sozinho enquanto tu digita; isto manda pro servidor na hora)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span class="ex-action-lbl">salvar</span></button>
+              ${!exDone ? _trocaBtnHtml_(di, ei, act, subAlts) : ''}
               <button class="ex-action-btn"${_exPorTempo(ex) ? ' style="display:none"' : ''} onclick="event.stopPropagation(); openPacer(${di}, ${ei})" title="Treinar no ritmo (coach de cadência)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="ex-action-lbl">ritmo</span></button>
               <button class="ex-action-btn" onclick="event.stopPropagation(); startTimer('${safeName}', parseIntervalSeconds('${safeRest}'))" title="Cronômetro de descanso (${_h(ex.rest || 'auto')})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="ex-action-lbl">descanso</span></button>
               <button class="ex-action-btn" onclick="event.stopPropagation(); showHistory(${di}, ${ei})" title="Histórico de cargas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg><span class="ex-action-lbl">histórico</span></button>
@@ -23903,9 +24512,9 @@ function renderDiet() {
         });
       }
 
-      ref.notas.forEach(n => {
-        if (n) html += `<div class="diet-meal-note">${_dx(n)}</div>`;
-      });
+      { const _nts = (ref.notas || []).filter(Boolean);   // v609: uma observação fica à vista; duas ou mais abrem no toque
+        if (_nts.length === 1) html += `<div class="diet-meal-note" style="padding:4px 14px 8px;">${_dx(_nts[0])}</div>`;
+        else if (_nts.length > 1) html += `<details class="dm-notas"><summary>${_nts.length} observações</summary>` + _nts.map(n => `<div class="diet-meal-note">${_dx(n)}</div>`).join('') + `</details>`; }
       html += `</div>`;
     });
 
@@ -26112,7 +26721,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v608';
+    var APP_SHELL_V = 'metodo-gh-v609';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
