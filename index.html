@@ -273,6 +273,12 @@
   .exercise-card.has-video .exercise-main { cursor: pointer; }
 
   .exercise-info { flex: 1; min-width: 0; }
+  /* v613: thumb de execução (quadro do vídeo do GH, inteiro); borda dourada e cantos aqui, o arquivo é só a foto */
+  .ex-thumb { width: 64px; height: 64px; border-radius: 12px; border: 2px solid var(--gold); object-fit: cover; flex: 0 0 auto; background: #111; display: block; }
+  .exercise-card.recolhido .ex-thumb { width: 44px; height: 44px; border-radius: 9px; }
+  .focus-thumb-row { display: flex; gap: 10px; align-items: stretch; margin-bottom: 14px; }
+  .focus-thumb-row .focus-video-btn { margin-bottom: 0; flex: 1; width: auto; }
+  .focus-thumb { width: 118px; height: 118px; border-radius: 16px; border: 2px solid var(--gold); object-fit: cover; flex: 0 0 auto; background: #111; display: block; }
   .exercise-name {
     font-size: 14px;
     font-weight: 600;
@@ -5166,9 +5172,10 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   .util-row #viagemBtn.viagem-on { background: var(--gold-fill) !important; color: var(--gold-ink) !important; border-color: transparent !important; }
   .util-row > button[style*="display: none"], .util-row > button[style*="display:none"] { display: none !important; }
   .fd-card { margin: 8px 0 4px; padding: 12px 14px; }
-  .fd-card .fd-linha { display: flex; align-items: center; gap: 12px; }
+  /* v613: a fila quebra linha quando os dois botões não cabem ao lado do rótulo (letra no máximo empurrava a tela 16 px pro lado) */
+  .fd-card .fd-linha { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; }
   .fd-card .fd-linha .sem-t { margin: 0; flex: 0 0 auto; }
-  .fd-card .fd-linha .fd-btns { flex: 1; min-width: 0; }
+  .fd-card .fd-linha .fd-btns { flex: 1 1 auto; min-width: 0; }
   .fd-card .fd-linha .fd-btn { padding: 9px 6px; font-size: 12.5px; }
   /* cardio da semana: "escrita quase apagada" no claro (GH 05/11): tudo em token, nos dois temas */
   .cardio-week { background: var(--glass); border: 1px solid var(--glass-line); box-shadow: var(--glass-brilho); }
@@ -15490,6 +15497,8 @@ function _focusRender() {
   };
   const vidBtn = (o) => (o.video && o.video.length)
     ? `<button class="focus-video-btn" onclick="openVideo('${_focusEsc(o.name)}', '${_focusEsc(o.video)}')">▶ Ver vídeo de execução</button>` : '';
+  // v613: thumb de execução ao lado do botão do vídeo; sem arquivo, fica só o botão como antes
+  const vidRow = (o) => { const b = vidBtn(o); if (!b) return ''; const t = _thumbHtml(o.video, 'focus-thumb'); return t ? `<div class="focus-thumb-row">${t}${b}</div>` : b; };
 
   let html = '';
   if (ex.biset) {
@@ -15508,7 +15517,7 @@ function _focusRender() {
     // respeita o substituto ativo (se o aluno trocou na lista, o player mostra o substituto) + botão próprio
     const _fact = (typeof _exAtivo === 'function') ? _exAtivo(_focusDi, _focusIdx) : { name: ex.name, video: ex.video, sub: false };
     const _falts = (typeof _alternativasNoDia === 'function') ? _alternativasNoDia(_focusDi, _focusIdx) : null;
-    html += `<div class="focus-name">${_dx(_fact.name)}${_fact.sub ? (_fact.viagem ? ' <span class="ex-sub-badge viagem">✈ LIVRE</span>' : ' <span class="ex-sub-badge">SUBST.</span>') : ''}</div>${vidBtn(_fact)}`;
+    html += `<div class="focus-name">${_dx(_fact.name)}${_fact.sub ? (_fact.viagem ? ' <span class="ex-sub-badge viagem">✈ LIVRE</span>' : ' <span class="ex-sub-badge">SUBST.</span>') : ''}</div>${vidRow(_fact)}`;
     if (_falts) html += `<button class="focus-sub-btn" onclick="openSubPicker(${_focusDi}, ${_focusIdx})">🔄 Trocar exercício</button>`;
     html += `<div class="focus-tags">${tags(ex)}</div>`;
     if (ex.obs) html += `<div class="focus-obs">${_glossWrap(_dx(ex.obs))}</div>`;
@@ -17061,6 +17070,7 @@ function _renderExercisesMiolo_() {
         <div class="exercise-card ${isWarmup ? 'warmup' : ''} ${hasVid ? 'has-video' : ''} ${exDone ? 'done' : ''} ${exSkip ? 'skipped' : ''} ${_shortSkip(di, ei) ? 'short-skip' : ''} ${_exRecolhido_(di, ei, isWarmup) ? 'recolhido' : ''}" data-di="${di}" data-ei="${ei}">
           <div class="exercise-main" ${hasVid ? `onclick="openVideo('${safeName}', '${safeVideo}')"` : ''}>
             <div class="ex-check ${exDone ? 'done' : ''} ${exSkip ? 'skip' : ''}" onclick="event.stopPropagation(); onCheckExercise(${di}, ${ei})" title="Marcar como feito"></div>
+            ${hasVid ? _thumbHtml(act.video, 'ex-thumb') : ''}
             <div class="exercise-info">
               ${_nomeBlocoHtml(di, ei, act, exDone, isWarmup, hasVid)}
               ${!isWarmup ? _muscTag(act.name) : ''}
@@ -18321,6 +18331,15 @@ const VID_OFF_BASE = 'https://chat.metodogh.com.br/videos/';
 const VID_CACHE = 'gh-videos-v1';
 let _vidObjUrl = null;
 // v556: link com outro parâmetro antes do v= (watch?feature=share&v=ID) não era reconhecido: o vídeo nem tentava abrir aqui dentro
+// v613: thumb de execução por id do vídeo (thumbs/<id>.jpg). Quando o arquivo não existe a imagem some e o id fica anotado,
+// senão cada repintura da lista pediria o 404 de novo.
+const _thumbsFaltam = new Set();
+function _thumbFalta(img) { try { const m = String(img.getAttribute('src') || '').match(/thumbs\/([\w-]+)\.jpg/); if (m) _thumbsFaltam.add(m[1]); img.remove(); } catch (_) {} }
+function _thumbHtml(url, cls) {
+  const id = _ytidDe(url);
+  if (!id || _thumbsFaltam.has(id)) return '';
+  return '<img class="' + cls + '" src="thumbs/' + id + '.jpg" alt="" loading="lazy" decoding="async" onerror="_thumbFalta(this)">';
+}
 function _ytidDe(url) { const u = String(url || ''); const m = u.match(/[?&]v=([\w-]{6,})/) || u.match(/(?:shorts\/|youtu\.be\/|embed\/)([\w-]{6,})/); return m ? m[1] : ''; }
 // ids dos vídeos que já estão baixados neste aparelho (conferidos a cada pintura do botão e a cada download)
 const _vidIdsLocais = new Set();
@@ -27808,7 +27827,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v610';
+    var APP_SHELL_V = 'metodo-gh-v613';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)

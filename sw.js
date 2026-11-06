@@ -1,4 +1,4 @@
-const CACHE_NAME = 'metodo-gh-v612';
+const CACHE_NAME = 'metodo-gh-v613';
 const ASSETS = [
   './',
   './index.html',
@@ -43,7 +43,7 @@ self.addEventListener('activate', e => {
     const preso517 = keys.indexOf('metodo-gh-v' + '517') >= 0;
     // v520: caches velhos saem ANTES de recarregar as janelas, senão a navegação acharia o shell velho neles
     // (caches.match procura em todos os caches). Sem cache, a navegação vai à rede e traz o shell novo.
-    await Promise.all(keys.filter(k => k !== CACHE_NAME && k !== 'gh-videos-v1').map(k => caches.delete(k)));
+    await Promise.all(keys.filter(k => k !== CACHE_NAME && k !== 'gh-videos-v1' && k !== 'gh-thumbs-v1').map(k => caches.delete(k)));
     await self.clients.claim();
     // v519/v520: shell e assets entram em segundo plano, sem segurar a ativação.
     caches.open(CACHE_NAME).then(c => Promise.all(ASSETS.map(u => c.add(new Request(u, { cache: 'reload' })).catch(() => {})))).catch(() => {});
@@ -101,6 +101,17 @@ async function _gasFetch(req) {
 self.addEventListener('fetch', e => {
   // v569: vídeos leves de execução (videos-lite/<id>.mp4, no Pages): só rede, nunca no cache do shell (faixas de bytes e 1 MB cada)
   if (e.request.url.includes('/videos-lite/')) return;
+  // v613: thumbs de execução (thumbs/<id>.jpg, no Pages): o arquivo de um id nunca muda, então cache-first num cache
+  // próprio (gh-thumbs-v1) que a troca de versão NÃO apaga. Só a pasta thumbs/ da raiz (as do GHFlix seguem a regra do GHFlix).
+  if (e.request.method === 'GET' && new URL(e.request.url).pathname.indexOf('/thumbs/') === 0) {
+    e.respondWith(_semNull_(
+      caches.open('gh-thumbs-v1').then(c => c.match(e.request).then(r => r || fetch(e.request).then(resp => {
+        if (resp && resp.ok) { try { c.put(e.request, resp.clone()).catch(() => {}); } catch (_) {} }
+        return resp;
+      }))), e.request
+    ));
+    return;
+  }
   // FONTES (Google Fonts): imutáveis — cache-first, senão caíam na regra 'Google = rede
   // sempre' abaixo e eram baixadas em TODA abertura, bloqueando a primeira pintura.
   if (e.request.url.includes('fonts.googleapis.com') || e.request.url.includes('fonts.gstatic.com')) {
