@@ -3602,6 +3602,40 @@
   .te-mode-tab:disabled { opacity: 0.3; cursor: not-allowed; }
   .te-tpl-btn { background: #2a2a2a; border: 1px solid var(--gold-dim); color: var(--gold); padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; }
   .te-tpl-btn:hover { background: var(--gold-dim); }
+  /* ══ v615 (GH 06/11/2026, print da tela de 1920: "Tá ruim de ver aqui em cima"): a barra de cima do editor do treinador tem cor
+     PRÓPRIA, igual nos dois temas. No tema claro (padrão desde a v610) ela seguia escura mas com as cores de TEXTO do tema claro:
+     o nome do aluno sumia (texto e fundo na mesma cor), abas e botões ficavam cinza sobre cinza, o link do protocolo em dourado
+     escuro sobre preto. #trainerEditor na frente de cada regra pra ganhar das regras do tema (html[data-theme="light"] ...).
+     A _teste615 (B1 escuro, B2 claro) mede letra e contraste de cada peça; B3 garante que a barra compacta do iPhone não mudou. ══ */
+  #trainerEditor .te-top-bar { background: #141414; border-bottom-color: rgba(221, 182, 92, 0.45); }
+  #trainerEditor .te-top-info, #trainerEditor .te-info-name { color: #F4F2ED; }
+  #trainerEditor .te-info-link a { color: #E3BE6B; }
+  #trainerEditor .te-link-copy, #trainerEditor .te-tpl-btn { background: #2a2a2a; border-color: rgba(221, 182, 92, 0.55); color: #E3BE6B; }
+  #trainerEditor .te-link-copy:active, #trainerEditor .te-tpl-btn:hover { background: #3a3122; }
+  #trainerEditor .te-mode-tab { background: #2a2a2a; border-color: #4a4a4a; color: #F4F2ED; }
+  #trainerEditor .te-mode-tab:hover:not(:disabled) { color: #fff; border-color: #E3BE6B; }
+  #trainerEditor .te-mode-tab.active { background: #DDB65C; color: #1A1304; border-color: #DDB65C; }
+  #trainerEditor .te-top-bar .te-btn.ghost { background: transparent; color: #F4F2ED; border-color: rgba(255, 255, 255, 0.32); }
+  #trainerEditor .te-top-bar .te-btn:not(.ghost) { background: #DDB65C; color: #1A1304; }
+  /* no computador a letra sobe: 11 a 13 px numa tela de 1920 não dá pra ler. Dois degraus pra barra seguir numa linha só
+     (abaixo de 1000 px vale o desenho de antes; o celular tem o bloco próprio da v600/v605, que não muda). */
+  @media (min-width: 1000px) {
+    #trainerEditor .te-top-info { font-size: 14px; }
+    #trainerEditor .te-info-link a { font-size: 14px; }
+    #trainerEditor .te-link-copy { font-size: 12px; padding: 5px 10px; }
+    #trainerEditor .te-mode-tab { font-size: 13px; padding: 7px 16px; }
+    #trainerEditor .te-tpl-btn { font-size: 13px; padding: 7px 12px; }
+  }
+  @media (min-width: 1500px) {
+    #trainerEditor .te-top-bar { padding: 12px 20px; gap: 12px; }
+    #trainerEditor .te-top-info { font-size: 16px; gap: 6px 14px; }
+    #trainerEditor .te-info-link a { font-size: 15px; }
+    #trainerEditor .te-link-copy { font-size: 13px; padding: 6px 12px; }
+    #trainerEditor .te-mode-tabs { gap: 6px; }
+    #trainerEditor .te-mode-tab { font-size: 15px; padding: 9px 20px; }
+    #trainerEditor .te-tpl-btn { font-size: 15px; padding: 9px 16px; }
+    #trainerEditor .te-top-bar > .te-btn { font-size: 15px; padding: 10px 20px; }
+  }
 
   /* ══ v600: editor no toque (iPhone e iPad). A alça de arrastar vira ▲▼; no mouse nada muda. ══ */
   .te-mv { display: none; flex-direction: column; gap: 3px; flex: none; letter-spacing: 0; }
@@ -27692,7 +27726,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v614';
+    var APP_SHELL_V = 'metodo-gh-v615';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
