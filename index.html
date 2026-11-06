@@ -7074,10 +7074,9 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
     </div>
     <h2>Tua etapa terminou</h2>
     <p>O acesso pausou, mas nada do que tu fez se perde: a próxima etapa começa de onde tu parou, com teu histórico, tuas cargas e teus selos. A decisão de seguir é tua.</p>
-    <a class="plan-block-cta" id="planBlockCta" href="javascript:void(0)" onclick="openRenovModal('bloqueio')">
+    <a class="plan-block-cta" id="planBlockCta" href="https://wa.me/555520131470?text=Oi!%20Minha%20etapa%20terminou%2C%20quero%20avan%C3%A7ar%20pra%20pr%C3%B3xima." target="_blank" rel="noopener" onclick="_renovLogOpen('bloqueio')">
       <span id="planBlockCtaLabel">Avançar pra próxima etapa</span>
     </a>
-    <a href="https://wa.me/555520131470?text=Oi!%20Minha%20etapa%20terminou%2C%20quero%20avan%C3%A7ar%20pra%20pr%C3%B3xima." target="_blank" rel="noopener" style="display:block;margin-top:12px;color:#25D366;font-size:12px;text-decoration:underline;">Prefere combinar pelo WhatsApp? Chama aqui</a>
     <div class="plan-block-hours">Atendimento de segunda a sexta, em horário comercial</div>
   </div>
 </div>
@@ -7401,35 +7400,8 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
      planBlockOverlay (99999) pra funcionar também na tela de plano vencido.
      v604 (GH 02/11/2026): tabela de call, anual R$ 2.997, semestral R$ 2.247 e trimestral R$ 1.197. A tabela do WhatsApp (2.247, 1.597 e 1.197) é do comercial e NÃO entra aqui.
      Os redirects antigos 309565 e 309566 seguem ligados na Greenn pra honrar quem já recebeu aquele preço. ══ -->
-<div class="te-modal-overlay" id="renovModal" style="z-index:100002;" onclick="if(event.target.id==='renovModal')teHide('renovModal')">
-  <div class="te-modal-box" style="max-width:440px;">
-    <h3 style="margin:0 0 4px;">Próxima etapa</h3>
-    <p style="color:#aaa;font-size:11.5px;margin:0 0 14px;line-height:1.5;">A próxima etapa começa de onde tu parou: teu histórico, tuas cargas e teus selos seguem contigo. Escolhe a duração e paga direto, em página segura. <b style="color:#ccc;">Protocolos adicionais</b> tu inclui dentro do próprio pagamento.</p>
-    <a class="renov-opt" href="https://payfast.greenn.com.br/124888/offer/p7qa5I?ch_id=21679&amp;b_id_1=168168&amp;b_offer_1=LNEse1&amp;b_id_2=120433&amp;b_offer_2=A4laNh" target="_blank" rel="noopener" onclick="_renovLogClick('anual')">
-      <div>
-        <div class="renov-opt-t">Etapa de 12 meses</div>
-        <div class="renov-opt-d">Um ano inteiro de acompanhamento, com todos os reajustes</div>
-      </div>
-      <span class="renov-opt-go">Avançar</span>
-    </a>
-    <a class="renov-opt" href="https://payfast.greenn.com.br/120446/offer/gg1BnH?ch_id=21679&amp;b_id_1=168168&amp;b_offer_1=LNEse1&amp;b_id_2=120433&amp;b_offer_2=A4laNh" target="_blank" rel="noopener" onclick="_renovLogClick('semestral')">
-      <div>
-        <div class="renov-opt-t">Etapa de 6 meses</div>
-        <div class="renov-opt-d">Seis meses de acompanhamento, com todos os reajustes</div>
-      </div>
-      <span class="renov-opt-go">Avançar</span>
-    </a>
-    <a class="renov-opt" href="https://payfast.greenn.com.br/120431/offer/fbXCo6?ch_id=21679&amp;b_id_1=120433&amp;b_offer_1=A4laNh&amp;b_id_2=168168&amp;b_offer_2=LNEse1" target="_blank" rel="noopener" onclick="_renovLogClick('trimestral')">
-      <div>
-        <div class="renov-opt-t">Etapa de 3 meses</div>
-        <div class="renov-opt-d">Três meses de acompanhamento, com todos os reajustes</div>
-      </div>
-      <span class="renov-opt-go">Avançar</span>
-    </a>
-    <a href="https://wa.me/555520131470?text=Oi!%20Quero%20avan%C3%A7ar%20pra%20pr%C3%B3xima%20etapa%2C%20mas%20tenho%20uma%20d%C3%BAvida." target="_blank" rel="noopener" style="display:block;text-align:center;color:#25D366;font-size:12px;margin:6px 0 2px;text-decoration:underline;">Prefere falar comigo antes? Chama no WhatsApp</a>
-    <button class="te-btn ghost" onclick="teHide('renovModal')" style="width:100%;margin-top:10px;font-size:12px;padding:7px;">Fechar</button>
-  </div>
-</div>
+<!-- v614 (GH 06/11/2026): a janela "Próxima etapa" com os checkouts da Greenn saiu; toda entrada vai direto pro
+     WhatsApp do suporte (openRenovModal). Pra voltar com ela: commit da v613, bloco renovModal. -->
 
 <!-- ══ BANNER DE RENOVAÇÃO (pré-vencimento / carência) — não bloqueia, só avisa ══ -->
 <div id="renovBanner" class="renov-banner">
@@ -12593,6 +12565,7 @@ function showAchievementCard(type, data) {
   document.getElementById('achOverlay').classList.add('show');
   document.body.style.overflow = 'hidden';
   drawAchievementCard(1, 1); // estático, sem animação que não vai pro Stories
+  try { document.fonts.ready.then(() => { if (_achData) drawAchievementCard(1, 1); }); } catch (_) {}   // v614: as fontes podem chegar depois do 1º desenho
 }
 // Desfaz o recorde recém-registrado: volta o PR pro valor anterior. O aluno corrige o
 // número na grade em seguida (e a reconciliação ajusta sozinha dali em diante).
@@ -12822,6 +12795,9 @@ function _roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 const ACH_FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+// v614: o card usa a Manrope do app e a Cinzel do cabeçalho (já carregadas pela página); o sistema entra só se faltarem
+const ACH_SANS = '"Manrope", ' + ACH_FONT;
+try { if (document.fonts && document.fonts.load) ['400 20px Manrope', '500 23px Manrope', '600 38px Cinzel'].forEach(f => document.fonts.load(f)); } catch (_) {}
 
 function drawAchievementCard(progress, rawP) {
   if (!_achData) return;
@@ -12831,67 +12807,97 @@ function drawAchievementCard(progress, rawP) {
   const ctx = c.getContext('2d');
   const W = c.width, H = c.height;
 
-  if (_achPhoto) {
-    // ── Background: foto do aluno (cover) + overlay escuro ──
-    const img = _achPhoto;
-    const scale = Math.max(W / img.width, H / img.height);
-    const w = img.width * scale, h = img.height * scale;
-    ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
-    // Overlay vertical pra leitura
-    const ov = ctx.createLinearGradient(0, 0, 0, H);
-    ov.addColorStop(0, 'rgba(0,0,0,0.78)');
-    ov.addColorStop(0.35, 'rgba(0,0,0,0.35)');
-    ov.addColorStop(0.65, 'rgba(0,0,0,0.45)');
-    ov.addColorStop(1, 'rgba(0,0,0,0.92)');
-    ctx.fillStyle = ov;
-    ctx.fillRect(0, 0, W, H);
-  } else if (_achBg && _achBg.complete && _achBg.naturalWidth > 0) {
-    // ── Background premium gerado (cover) + overlay pra contraste do conteúdo ──
-    const img = _achBg;
-    const scale = Math.max(W / img.naturalWidth, H / img.naturalHeight);
-    const w = img.naturalWidth * scale, h = img.naturalHeight * scale;
-    ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
-    // Escurece topo e metade de baixo (onde fica o conteúdo), preserva o miolo
-    const ov = ctx.createLinearGradient(0, 0, 0, H);
-    ov.addColorStop(0, 'rgba(0,0,0,0.55)');
-    ov.addColorStop(0.32, 'rgba(0,0,0,0.18)');
-    ov.addColorStop(0.5, 'rgba(0,0,0,0.42)');
-    ov.addColorStop(0.72, 'rgba(0,0,0,0.74)');
-    ov.addColorStop(1, 'rgba(0,0,0,0.92)');
-    ctx.fillStyle = ov;
-    ctx.fillRect(0, 0, W, H);
-  } else {
-    // ── Fallback (fundo ainda carregando ou falhou): gradient + spotlight ──
-    const grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, '#080808');
-    grad.addColorStop(0.5, '#161616');
-    grad.addColorStop(1, '#080808');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, H);
-    const rg = ctx.createRadialGradient(W/2, H*0.35, 100, W/2, H*0.35, W*0.85);
-    rg.addColorStop(0, 'rgba(212,167,106,0.22)');
-    rg.addColorStop(1, 'rgba(212,167,106,0)');
-    ctx.fillStyle = rg;
-    ctx.fillRect(0, 0, W, H);
-  }
+  // v614 (GH 06/11: "capricha nas fotos de compartilhamento"): a foto do aluno manda. O véu escuro só fica onde tem texto
+  // (topo leve, base forte); o miolo, onde está o corpo, fica limpo. Antes um gradiente de 35 a 45 % cobria o card inteiro
+  // e a logo e os músculos caíam em cima das pernas do aluno.
+  _achFundo(ctx, W, H);
+  // v614: sem os cantos dourados (GH 06/11: "tira esses quadrados ao redor")
 
-  // ── Cantos ornamentais ──
-  drawCornerOrnaments(ctx, W, H);
+  // Marca no topo, no estilo que o aluno escolheu (v493), menor que antes e com sombra pra ler sobre foto clara
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 2;
+  _logoBloco(ctx, W / 2, 190, _logoEstilo, 0.85);
+  ctx.restore();
 
-  // ── Header topo (só pra completion: discreto, dourado claro) ──
-  if (_achData.type === 'completion') {
-    ctx.textAlign = 'center';
-    ctx.font = `300 32px ${ACH_FONT}`;
-    ctx.fillStyle = 'rgba(212, 167, 106, 0.75)';
-    fillTextSpaced(ctx, 'TREINO  CONCLUÍDO', W/2, 200, 6);
-  }
-
-  // ── Conteúdo central (MÉTODO GH agora vai no meio, dentro de cada tipo) ──
   if (_achData.type === 'completion') drawCompletionContent(ctx, W, H, progress);
   else if (_achData.type === 'pr') drawPRContent(ctx, W, H, progress);
+}
 
-  // ── Footer signature: só pra PR (completion desenha o seu próprio dentro do bloco) ──
-  if (_achData.type !== 'completion') drawBottomSig(ctx, W, H);
+// Fundo do card: foto do aluno (cover) ou fundo gerado; senão, gradiente escuro com um brilho dourado
+function _achFundo(ctx, W, H) {
+  const img = _achPhoto || ((_achBg && _achBg.complete && _achBg.naturalWidth > 0) ? _achBg : null);
+  if (img) {
+    const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+    const scale = Math.max(W / iw, H / ih);
+    const w = iw * scale, h = ih * scale;
+    ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+  } else {
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, '#080808'); grad.addColorStop(0.5, '#161616'); grad.addColorStop(1, '#080808');
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+    const rg = ctx.createRadialGradient(W / 2, H * 0.35, 100, W / 2, H * 0.35, W * 0.85);
+    rg.addColorStop(0, 'rgba(212,167,106,0.22)'); rg.addColorStop(1, 'rgba(212,167,106,0)');
+    ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
+  }
+  // topo: véu leve, só atrás da marca
+  let g = ctx.createLinearGradient(0, 0, 0, H * 0.26);
+  g.addColorStop(0, 'rgba(6,5,4,0.62)'); g.addColorStop(0.55, 'rgba(6,5,4,0.17)'); g.addColorStop(1, 'rgba(6,5,4,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H * 0.26);
+  // base: véu forte, onde moram o olho, a manchete e o @
+  g = ctx.createLinearGradient(0, H * 0.5, 0, H);
+  g.addColorStop(0, 'rgba(6,5,4,0)'); g.addColorStop(0.42, 'rgba(6,5,4,0.30)'); g.addColorStop(0.75, 'rgba(6,5,4,0.62)'); g.addColorStop(1, 'rgba(6,5,4,0.92)');
+  ctx.fillStyle = g; ctx.fillRect(0, H * 0.5, W, H * 0.5);
+  // vinheta lateral discreta
+  g = ctx.createLinearGradient(0, 0, W, 0);
+  g.addColorStop(0, 'rgba(0,0,0,0.26)'); g.addColorStop(0.18, 'rgba(0,0,0,0)'); g.addColorStop(0.82, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.26)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+}
+
+// Texto com sombra (lê em qualquer foto). x é o centro; sp > 0 usa o espaçamento manual entre letras.
+function _achTxt(ctx, txt, x, y, font, cor, sp) {
+  ctx.save();
+  ctx.font = font; ctx.fillStyle = cor; ctx.textAlign = 'center';
+  ctx.shadowColor = 'rgba(0,0,0,0.62)'; ctx.shadowBlur = 16; ctx.shadowOffsetY = 2;
+  if (sp) fillTextSpaced(ctx, txt, x, y, sp); else ctx.fillText(txt, x, y);
+  ctx.restore();
+}
+
+// Fio dourado curto centrado (y = altura, meia = metade da largura)
+function _achFio(ctx, W, y, meia, alpha) {
+  ctx.save(); ctx.strokeStyle = 'rgba(212,175,106,' + (alpha || 0.6) + ')'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(W / 2 - meia, y); ctx.lineTo(W / 2 + meia, y); ctx.stroke(); ctx.restore();
+}
+// Largura de um texto com espaçamento manual entre letras
+function _achLarg(ctx, txt, sp) { return String(txt).split('').reduce((a, ch) => a + ctx.measureText(ch).width, 0) + sp * (Math.max(0, String(txt).length - 1)); }
+// Título em serifa fina (a do cabeçalho do app), branco, espaçado: "TREINO CONCLUÍDO", "NOVO RECORDE"
+function _achTitulo(ctx, W, txt, y) { _achFio(ctx, W, y, 34, 0.6); _achTxt(ctx, txt, W / 2, y + 30, `600 38px ${LOGO_SERIF}`, '#ffffff', 11); }
+// Assinatura: fio fino e @gh.scheuermann dourado, pequeno e espaçado (y = topo do texto)
+function _achAssina(ctx, W, y) { _achFio(ctx, W, y - 24, 22, 0.47); _achTxt(ctx, '@gh.scheuermann', W / 2, y, `500 26px ${ACH_SANS}`, '#D4AF6A', 2); }
+// Linha dourada espaçada em caixa alta, itens separados por "  ·  "; quebra em 2 linhas se não couber. Devolve as linhas.
+function _achLinhaOuro(ctx, itens, maxW) {
+  ctx.font = `500 23px ${ACH_SANS}`;
+  const ls = []; let cur = '';
+  for (const p of itens) {
+    const t = cur ? cur + '  ·  ' + p : p;
+    if (_achLarg(ctx, t, 6) <= maxW) cur = t; else { if (cur) ls.push(cur); cur = p; }
+  }
+  if (cur) ls.push(cur);
+  return ls;
+}
+
+// Linha de apoio: "QUINTA, 05/11 · 6 EXERCÍCIOS · 48 MIN" (o que existir)
+function _achMeta(d) {
+  const p = [];
+  try {
+    const m = String(d.dia || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m) { const dt = new Date(+m[1], +m[2] - 1, +m[3]); p.push(['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][dt.getDay()] + ' ' + m[3] + '/' + m[2]); }
+  } catch (_) {}
+  if (d.exercises > 0) p.push(d.exercises + (d.exercises === 1 ? ' exercício' : ' exercícios'));
+  try {
+    const r = (typeof _wtServer !== 'undefined' && typeof d.di === 'number' && typeof currentWeek !== 'undefined') ? _wtServer[d.di + '|' + currentWeek] : null;
+    if (r && r.duracao) p.push(String(r.duracao).replace(/min$/, ' min'));
+  } catch (_) {}
+  return p.join(' · ').toUpperCase();
 }
 
 // Desenha texto com letter-spacing manual (canvas não suporta nativo
@@ -12984,167 +12990,50 @@ function fillTextSpaced(ctx, text, x, y, spacing) {
 // Foto do pump
 let _achPhoto = null;
 
-function drawCornerOrnaments(ctx, W, H) {
-  ctx.strokeStyle = '#d4a76a';
-  ctx.lineWidth = 4;
-  const m = 60, len = 90;
-  ctx.beginPath();
-  ctx.moveTo(m, m + len); ctx.lineTo(m, m); ctx.lineTo(m + len, m);
-  ctx.moveTo(W - m - len, m); ctx.lineTo(W - m, m); ctx.lineTo(W - m, m + len);
-  ctx.moveTo(m, H - m - len); ctx.lineTo(m, H - m); ctx.lineTo(m + len, H - m);
-  ctx.moveTo(W - m - len, H - m); ctx.lineTo(W - m, H - m); ctx.lineTo(W - m, H - m - len);
-  ctx.stroke();
-}
+// v614: drawCornerOrnaments saiu (GH 06/11: "tira esses quadrados ao redor"); nada mais desenha moldura no card.
+// Assinatura do rodapé (v614: fio + @ pequeno). Mantida com este nome porque o card da refeição a cita.
+function drawBottomSig(ctx, W, H) { ctx.save(); ctx.textBaseline = 'top'; _achAssina(ctx, W, H - 178); ctx.restore(); }
 
-function drawBottomSig(ctx, W, H) {
-  ctx.textAlign = 'center';
-  // Decorative divider
-  ctx.strokeStyle = '#d4a76a';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(W/2 - 100, H - 290);
-  ctx.lineTo(W/2 + 100, H - 290);
-  ctx.stroke();
-
-  ctx.font = `300 30px ${ACH_FONT}`;
-  ctx.fillStyle = '#999';
-  ctx.fillText('Acompanhe', W/2, H - 240);
-
-  ctx.font = `bold 48px ${ACH_FONT}`;
-  ctx.fillStyle = '#d4a76a';
-  ctx.fillText('@gh.scheuermann', W/2, H - 175);
-}
-
+// v614 (GH 06/11, depois do 1º mock: "HORRÍVEL, mt grande isso aqui, nada elegante... Quero algo foda"): nada de manchete
+// gigante. Serifa fina do cabeçalho, letra pequena e espaçada, muito ar, fios finos, sem pílula. A foto manda.
 function drawCompletionContent(ctx, W, H, p) {
   const d = _achData;
-  ctx.textAlign = 'center';
-
-  // ══ TUDO NA METADE INFERIOR (Y > 960) ══
-  // Header "TREINO CONCLUÍDO" já foi desenhado no topo por drawAchievementCard.
-
-  // 1. Logo (v493) no estilo que o aluno escolheu. v494: os 3 quadros de numeros sairam (GH: "tirar isso e
-  // deixar mais clean"), entao o miolo desce pro centro da metade de baixo em vez de ficar colado no topo dela.
-  _logoBloco(ctx, W/2, 1230);
-
-  // 2. Musculos treinados, uma linha leve embaixo da logo
-  const name = d.dayName || ('DIA ' + d.day);
-  ctx.font = `500 30px ${ACH_FONT}`;
-  ctx.fillStyle = 'rgba(212, 167, 106, 0.85)';
-  if (ctx.measureText(name).width > W - 160) {
-    // v558: a linha 2 levava TODOS os grupos menos o primeiro (dia com muitos grupos cortava nas duas bordas). Agora as
-    // duas linhas saem equilibradas, e a letra diminui se ainda assim não couber.
-    const parts = name.split(' + ');
-    let corte = 1, melhor = Infinity;
-    for (let k = 1; k < parts.length; k++) {
-      const m = Math.max(ctx.measureText(parts.slice(0, k).join(' + ')).width, ctx.measureText('+ ' + parts.slice(k).join(' + ')).width);
-      if (m < melhor) { melhor = m; corte = k; }
-    }
-    const l1 = parts.slice(0, corte).join(' + '), l2 = parts.length > 1 ? '+ ' + parts.slice(corte).join(' + ') : '';
-    let fsM = 30;
-    while (fsM > 20 && Math.max(ctx.measureText(l1).width, ctx.measureText(l2).width) > W - 160) { fsM -= 2; ctx.font = `500 ${fsM}px ${ACH_FONT}`; }
-    ctx.fillText(l1, W/2, 1330);
-    if (l2) ctx.fillText(l2, W/2, 1368);
-  } else {
-    ctx.fillText(name, W/2, 1340);
-  }
-
-  // 5. Mini divider antes da assinatura
-  ctx.strokeStyle = 'rgba(212, 167, 106, 0.4)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(W/2 - 60, 1545); ctx.lineTo(W/2 + 60, 1545);
-  ctx.stroke();
-
-  // 6. Acompanhe (label discreto)
-  ctx.font = `300 28px ${ACH_FONT}`;
-  ctx.fillStyle = '#999';
-  ctx.fillText('Acompanhe', W/2, 1605);
-
-  // 7. @gh.scheuermann (assinatura final, dourado bold)
-  ctx.font = `bold 46px ${ACH_FONT}`;
-  ctx.fillStyle = '#d4a76a';
-  ctx.fillText('@gh.scheuermann', W/2, 1670);
+  const Y = 1486;
+  ctx.save(); ctx.textBaseline = 'top';
+  _achTitulo(ctx, W, 'TREINO CONCLUÍDO', Y);
+  const itens = String(d.dayName || ('DIA ' + d.day)).split(' + ').map(s => s.trim().toUpperCase()).filter(Boolean);
+  const ls = _achLinhaOuro(ctx, itens, W - 200);
+  ls.forEach((l, i) => _achTxt(ctx, l, W / 2, Y + 112 + i * 38, `500 23px ${ACH_SANS}`, '#D4AF6A', 6));
+  const yk = Y + 112 + ls.length * 38 + 20;
+  const meta = _achMeta(d);
+  if (meta) _achTxt(ctx, meta, W / 2, yk, `400 20px ${ACH_SANS}`, 'rgba(255,255,255,0.65)', 3);
+  _achAssina(ctx, W, yk + 98);
+  ctx.restore();
 }
 
 function drawPRContent(ctx, W, H, p) {
   const d = _achData;
-  ctx.textAlign = 'center';
-
-  // Trophy pequeno e baixo
-  ctx.font = '70px sans-serif';
-  ctx.fillText('🏆', W/2, 560);
-
-  // Logo (v493): mesmo bloco do card de treino concluido
-  _logoBloco(ctx, W/2, 700);
-
-  // NOVO RECORDE — subtítulo discreto
-  ctx.font = `300 44px ${ACH_FONT}`;
-  ctx.fillStyle = '#fff';
-  fillTextSpaced(ctx, 'NOVO  RECORDE', W/2, 830, 8);
-
-  // Exercise name
-  ctx.font = `bold 44px ${ACH_FONT}`;
-  ctx.fillStyle = '#fff';
-  const name = d.exerciseName || '';
-  const maxW = W - 160;
-  if (ctx.measureText(name).width > maxW) {
-    // v558: depois de mandar uma palavra pra linha 2, o laço continuava encaixando as seguintes na linha 1: nome comprido
-    // saía com as palavras fora de ordem. Agora a quebra é em sequência, e a letra diminui se a linha 2 passar da largura.
-    const words = name.split(' ');
-    let line1 = '', line2 = '', _passou = false;
-    for (const w of words) {
-      const test = line1 ? line1 + ' ' + w : w;
-      if (!_passou && ctx.measureText(test).width <= maxW) line1 = test;
-      else { _passou = true; line2 += (line2 ? ' ' : '') + w; }
-    }
-    let fsN = 44;
-    while (fsN > 28 && Math.max(ctx.measureText(line1).width, ctx.measureText(line2).width) > maxW) { fsN -= 2; ctx.font = `bold ${fsN}px ${ACH_FONT}`; }
-    ctx.fillText(line1, W/2, 900);
-    ctx.fillText(line2, W/2, 960);
-  } else {
-    ctx.fillText(name, W/2, 920);
-  }
-
-  // Old/New comparison — converte pra unidade selecionada do aluno
+  const Y = 1340;
+  ctx.save(); ctx.textBaseline = 'top';
+  _achTitulo(ctx, W, 'NOVO RECORDE', Y);
+  // nome do exercício em dourado espaçado, até 2 linhas (quebra por palavra)
+  const ls = _achLinhaOuro(ctx, String(d.exerciseName || '').toUpperCase().split(' '), W - 200).slice(0, 2).map(l => l.replace(/  ·  /g, ' '));
+  ls.forEach((l, i) => _achTxt(ctx, l, W / 2, Y + 112 + i * 38, `500 23px ${ACH_SANS}`, '#D4AF6A', 6));
+  const yk = Y + 112 + ls.length * 38 + 20;
   const unit = (typeof getUnit === 'function' ? getUnit() : 'kg');
   const factor = unit === 'lb' ? LB_PER_KG : 1;
+  const _vg = n => String(n).replace('.', ',');
   const oldDisp = Math.round(d.oldKg * factor * 10) / 10;
   const newDisp = Math.round(d.newKg * factor * 10) / 10;
   const animDisp = Math.round((d.oldKg + (d.newKg - d.oldKg) * p) * factor * 10) / 10;
-
-  // Old
-  ctx.font = `300 38px ${ACH_FONT}`;
-  ctx.fillStyle = '#666';
-  const _vg = n => String(n).replace('.', ',');   // v558: decimal com vírgula ("102,5kg")
-  ctx.fillText(_vg(oldDisp) + unit, W/2, 1130);
-
-  // Arrow down
-  ctx.font = `300 42px ${ACH_FONT}`;
-  ctx.fillStyle = '#d4a76a';
-  ctx.fillText('▼', W/2, 1190);
-
-  // Big new value with box
-  const boxW = 540, boxH = 200;
-  const boxX = (W - boxW) / 2;
-  const boxY = 1230;
-  ctx.fillStyle = 'rgba(212, 167, 106, 0.08)';
-  ctx.strokeStyle = '#d4a76a';
-  ctx.lineWidth = 3;
-  _roundRect(ctx, boxX, boxY, boxW, boxH, 20);
-  ctx.fill();
-  ctx.stroke();
-  ctx.font = `bold 150px ${ACH_FONT}`;
-  ctx.fillStyle = '#d4a76a';
-  // v558: número comprido ("1102,5lb") atravessava a caixa: a letra diminui até caber
-  let fsG = 150;
-  while (fsG > 80 && ctx.measureText(_vg(animDisp) + unit).width > boxW - 40) { fsG -= 6; ctx.font = `bold ${fsG}px ${ACH_FONT}`; }
-  ctx.fillText(_vg(animDisp) + unit, W/2, boxY + 145 - Math.round((150 - fsG) * 0.3));
-
-  // Diff
   const diffDisp = Math.round((newDisp - oldDisp) * 10) / 10;
-  ctx.font = `bold 58px ${ACH_FONT}`;
-  ctx.fillStyle = '#4caf50';
-  ctx.fillText('+' + _vg(diffDisp) + unit, W/2, 1530);
+  _achTxt(ctx, ('antes ' + _vg(oldDisp) + unit).toUpperCase(), W / 2, yk, `400 20px ${ACH_SANS}`, 'rgba(255,255,255,0.65)', 3);
+  let fsG = 96; ctx.font = `600 ${fsG}px ${LOGO_SERIF}`;
+  while (fsG > 60 && ctx.measureText(_vg(animDisp) + unit.toUpperCase()).width > W - 200) { fsG -= 6; ctx.font = `600 ${fsG}px ${LOGO_SERIF}`; }
+  _achTxt(ctx, _vg(animDisp) + unit.toUpperCase(), W / 2, yk + 40, `600 ${fsG}px ${LOGO_SERIF}`, '#D4AF6A', 2);
+  _achTxt(ctx, '+' + _vg(diffDisp) + unit.toUpperCase(), W / 2, yk + 160, `500 22px ${ACH_SANS}`, '#8fd47a', 3);
+  _achAssina(ctx, W, yk + 248);
+  ctx.restore();
 }
 
 // ══ v491 · @ DO ALUNO (prova do compartilhamento) ══ O dobro do ranking vinha de "a janela de
@@ -25401,36 +25290,24 @@ function _onMealPhotoFile(input) {
 
 // Card de compartilhamento da refeição — MESMO capricho do card de treino: foto de fundo (cover) +
 // gradiente vertical + cantos ornamentais + header dourado espaçado + assinatura @gh.scheuermann.
-// 1080×1920 (story). Reusa drawCornerOrnaments / fillTextSpaced / drawBottomSig / ACH_FONT do treino.
+// 1080×1920 (story). Reusa o acabamento do card de treino (_achTitulo, _achTxt, _achAssina); v614 sem moldura.
 function drawMealCard(photoImg) {
-  // Estilo minimal-elegante: a foto do prato manda; só um crédito discreto embaixo.
+  // v614: mesmo acabamento do card de treino: a foto manda, véu só no terço de baixo, sem cantos, título em serifa, assinatura
   const W = 1080, H = 1920;
   const c = document.createElement('canvas'); c.width = W; c.height = H;
   const ctx = c.getContext('2d');
-  // foto da refeição (cover) — ocupa o card inteiro
   const scale = Math.max(W / photoImg.width, H / photoImg.height);
   const w = photoImg.width * scale, h = photoImg.height * scale;
   ctx.drawImage(photoImg, (W - w) / 2, (H - h) / 2, w, h);
-  // scrim suave só no terço de baixo, pra legibilidade do crédito sobre qualquer foto
-  const ov = ctx.createLinearGradient(0, H * 0.55, 0, H);
-  ov.addColorStop(0, 'rgba(10,8,6,0)');
-  ov.addColorStop(0.6, 'rgba(10,8,6,0.45)');
-  ov.addColorStop(1, 'rgba(8,6,4,0.82)');
-  ctx.fillStyle = ov; ctx.fillRect(0, H * 0.55, W, H * 0.45);
-  ctx.textBaseline = 'alphabetic';
-  ctx.textAlign = 'center';
-  // fiozinho dourado
-  ctx.strokeStyle = 'rgba(212,167,106,0.55)';
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(W / 2 - 70, H - 260); ctx.lineTo(W / 2 + 70, H - 260); ctx.stroke();
-  // wordmark discreto (caps espaçado, não bold gritante)
-  ctx.font = `600 40px ${ACH_FONT}`;
-  ctx.fillStyle = 'rgba(255,255,255,0.95)';
-  fillTextSpaced(ctx, 'MÉTODO GH', W / 2, H - 200, 8);
-  // handle dourado
-  ctx.font = `500 34px ${ACH_FONT}`;
-  ctx.fillStyle = '#d4a76a';
-  ctx.fillText('@gh.scheuermann', W / 2, H - 145);
+  const ov = ctx.createLinearGradient(0, H * 0.58, 0, H);
+  ov.addColorStop(0, 'rgba(6,5,4,0)'); ov.addColorStop(0.5, 'rgba(6,5,4,0.40)'); ov.addColorStop(1, 'rgba(6,5,4,0.86)');
+  ctx.fillStyle = ov; ctx.fillRect(0, H * 0.58, W, H * 0.42);
+  ctx.save(); ctx.textBaseline = 'top';
+  const Y = 1600;
+  _achTitulo(ctx, W, _photoCardKind === 'cardio' ? 'CARDIO EM DIA' : 'REFEIÇÃO EM DIA', Y);
+  _achTxt(ctx, 'MÉTODO GH', W / 2, Y + 112, `500 23px ${ACH_SANS}`, '#D4AF6A', 6);
+  _achAssina(ctx, W, Y + 194);
+  ctx.restore();
   return c.toDataURL('image/jpeg', 0.9);
 }
 async function mealPhotoShare() {
@@ -25941,10 +25818,10 @@ const CORTESIA_SHEETS = [
 // duro continua sendo o planBlockOverlay (vencido + passou a carência de 3 dias).
 var RENOV_WA = 'https://wa.me/555520131470?text=';
 
-// ── Renovação self-service (GH 2026-08-04): modal com os checkouts da Greenn.
-// Hormonal e peptídeos são order bumps DENTRO do checkout (decisão do GH).
-// O clique é logado na CLICKS_AFILIADOS (type 'click' que já existe) com o sheetId,
-// pra CRM reconciliar caso o aluno pague com email/telefone diferente da mestre.
+// ── Próxima etapa (v614, GH 06/11/2026: "desativar os links de renovação automática por ora, tem que mandar direto pro whats").
+// A janela com os checkouts da Greenn (v338 a v613) saiu. Toda entrada (menu Mais, aviso de fim de etapa, tela de etapa
+// terminada, jornada, atalho das novidades) abre direto o WhatsApp do suporte com a mensagem pronta. O toque fica
+// registrado na CLICKS_AFILIADOS (Parceiro WHATSAPP, Produto "Renovacao whatsapp", Tag = origem) pra CRM seguir contando.
 var _renovOrigem = 'menu';
 function openGlossario(key) {
   teShow('glossModal');
@@ -25958,16 +25835,21 @@ function openGlossario(key) {
     it.classList.add('gloss-hl');
   }, 80);
 }
+function _renovWaMsg(origem) {
+  if (origem === 'bloqueio' || origem === 'banner_carencia') return 'Oi! Minha etapa terminou, quero avançar pra próxima.';
+  if (origem === 'banner_prevenc') return 'Oi! Minha etapa está acabando, quero avançar pra próxima.';
+  return 'Oi! Quero avançar pra próxima etapa da consultoria.';
+}
+function _renovWaHref(origem) { return RENOV_WA + encodeURIComponent(_renovWaMsg(origem)); }
 function openRenovModal(origem) {
   _renovOrigem = origem || 'menu';
   _renovLogOpen(_renovOrigem);
-  teShow('renovModal');
+  var h = _renovWaHref(_renovOrigem);
+  try { window.open(h, '_blank'); } catch (_) { location.href = h; }
 }
-// Abertura do modal. Ate 18/08 so o clique NO PLANO era registrado, entao o funil tinha um
-// degrau cego bem no meio: nao dava pra saber se o aluno nao renovava porque desistia no
-// checkout ou porque nem chegava a abrir o convite. Vai pela MESMA rota 'click' que ja
-// existe (CLICKS_AFILIADOS), com Produto 'Abriu modal' pra separar na hora de contar, e a
-// origem (menu / banner_prevenc / banner_carencia / bloqueio) na coluna Tag.
+// Registro do toque: mesma rota 'click' da CLICKS_AFILIADOS, com a origem (menu / jornada / banner_prevenc /
+// banner_carencia / bloqueio / mais_anamnese) na coluna Tag. Até a v613 saía como GREENN "Abriu modal" e o clique no
+// plano como "Renovacao anual/semestral/trimestral"; agora é um toque só.
 function _renovLogOpen(origem) {
   try {
     if (typeof LOG_ENDPOINT === 'undefined') return;
@@ -25977,28 +25859,10 @@ function _renovLogOpen(origem) {
         type: 'click',
         sheetId: (typeof SHEET_ID !== 'undefined' && SHEET_ID) ? SHEET_ID : '',
         studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
-        partner: 'GREENN',
-        productName: 'Abriu modal',
+        partner: 'WHATSAPP',
+        productName: 'Renovacao whatsapp',
         tag: origem || 'menu',
-        url: ''
-      }),
-      keepalive: true, redirect: 'follow'
-    }).catch(function () {});
-  } catch (_) {}
-}
-function _renovLogClick(plano) {
-  try {
-    if (typeof LOG_ENDPOINT === 'undefined') return;
-    fetch(LOG_ENDPOINT, {
-      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        type: 'click',
-        sheetId: (typeof SHEET_ID !== 'undefined' && SHEET_ID) ? SHEET_ID : '',
-        studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
-        partner: 'GREENN',
-        productName: 'Renovacao ' + plano,
-        tag: _renovOrigem,
-        url: (function () { try { var a = document.querySelector('#renovModal a.renov-opt[onclick*="\'' + plano + '\'"]'); return a ? String(a.getAttribute('href') || '').replace('https://payfast.greenn.com.br/', '') : ''; } catch (_) { return ''; } })()   // v562: o link do próprio botão tocado, pra nunca mais divergir
+        url: 'wa.me/555520131470'
       }),
       keepalive: true, redirect: 'follow'
     }).catch(function () {});
@@ -26021,9 +25885,10 @@ function renovBannerShow(tipo, dias) {
       b.classList.add('prevenc');
       txt.textContent = 'Tua etapa está acabando. Garante a próxima pra não pausar teu treino.';
     }
-    // CTA abre o modal de renovação self-service (antes ia pro WhatsApp fechar na mão)
-    cta.href = 'javascript:void(0)';
-    cta.onclick = function (e) { e.preventDefault(); openRenovModal(tipo === 'carencia' ? 'banner_carencia' : 'banner_prevenc'); };
+    // v614: o botão é o próprio link do WhatsApp (da v338 à v613 abria a janela da Greenn)
+    var _org = tipo === 'carencia' ? 'banner_carencia' : 'banner_prevenc';
+    cta.href = _renovWaHref(_org);
+    cta.onclick = function () { _renovLogOpen(_org); };
     var rb = document.getElementById('reajusteBanner'); if (rb) rb.classList.remove('show'); // renovação tem precedência
     var db = document.getElementById('dietDiaryBanner'); if (db) db.classList.remove('show'); // precedência sobre o aviso da dieta
     b.classList.add('show');
@@ -26365,9 +26230,9 @@ function protoProgressTap() {
 }
 
 // Ajusta o botão do WhatsApp do bloqueio (rótulo + mensagem pré-preenchida) conforme o motivo.
-function _planBlockCta(label, msg) {
+function _planBlockCta(label, msg, origem) {
   var lab = document.getElementById('planBlockCtaLabel'); if (lab) lab.textContent = label;
-  var a = document.getElementById('planBlockCta'); if (a) a.href = 'https://wa.me/555520131470?text=' + encodeURIComponent(msg);
+  var a = document.getElementById('planBlockCta'); if (a) { a.href = 'https://wa.me/555520131470?text=' + encodeURIComponent(msg); a.onclick = function () { _renovLogOpen(origem || 'bloqueio'); }; }
 }
 // Mostra o bloqueio de acesso. motivo='cancelado'/'pausado' trocam texto+botão; 'vencido' usa o HTML padrão.
 function mostrarPlanBlock(motivo) {
@@ -26376,11 +26241,11 @@ function mostrarPlanBlock(motivo) {
   if (motivo === 'cancelado') {
     if (h) h.textContent = 'Plano cancelado';
     if (p) p.textContent = 'Teu plano foi cancelado e o acesso ao protocolo está encerrado. Se quiser voltar a treinar comigo, fala no WhatsApp de suporte.';
-    _planBlockCta('Falar no WhatsApp', 'Oi! Meu plano foi cancelado, quero voltar a treinar.');
+    _planBlockCta('Falar no WhatsApp', 'Oi! Meu plano foi cancelado, quero voltar a treinar.', 'bloqueio_cancelado');
   } else if (motivo === 'pausado') {
     if (h) h.textContent = 'Plano pausado';
     if (p) p.textContent = 'Teu plano está pausado (congelamento temporário), o acesso fica bloqueado enquanto durar a pausa. Não perde nada: os dias parados são creditados no teu vencimento quando voltar. Pra retomar, fala comigo no WhatsApp de suporte.';
-    _planBlockCta('Retomar no WhatsApp', 'Oi! Meu plano está pausado, quero retomar.');
+    _planBlockCta('Retomar no WhatsApp', 'Oi! Meu plano está pausado, quero retomar.', 'bloqueio_pausado');
   }
   ov.classList.add('show'); document.body.style.overflow = 'hidden';
 }
@@ -27827,7 +27692,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v613';
+    var APP_SHELL_V = 'metodo-gh-v614';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
