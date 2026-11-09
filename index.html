@@ -1370,17 +1370,17 @@
   .sub-picker-close { width: 100%; margin-top: 6px; background: transparent; border: 1px solid #3a3a42; color: #b8b8c0; padding: 12px; border-radius: 11px; font-size: 14px; font-weight: 600; cursor: pointer; }
 
   /* ── Timer overlay ── */
-  .timer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 11000; overflow-y: auto; padding: 16px 0 calc(16px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; }
+  .timer-overlay { position: fixed; inset: 0; background: radial-gradient(ellipse at 50% 28%, #1b1812 0%, #050505 72%); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 11000; overflow-y: auto; padding: 16px 0 calc(16px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; }
   .timer-ring svg { width: min(230px, 58vw); height: auto; }   /* v591: com a letra grande o anel passava da tela e os botoes sumiam */
   .timer-overlay.show { display: flex; }
   .timer-name { color: var(--gold); font-size: 16px; font-weight: 700; margin-bottom: 20px; max-width: 320px; text-align: center; padding: 0 12px; }
-  .timer-display { color: var(--white); font-size: 110px; font-weight: 800; font-family: 'Courier New', monospace; line-height: 1; }
+  .timer-display { color: var(--white); font-size: 110px; font-weight: 800; font-family: 'Manrope', 'Inter', 'Segoe UI', system-ui, sans-serif; font-variant-numeric: tabular-nums; letter-spacing: -.02em; line-height: 1; }   /* v616: era Courier New */
   .timer-display.warn { color: #ff9800; }
   .timer-display.done { color: #4caf50; }
   .timer-ring { position: relative; display: flex; align-items: center; justify-content: center; }
   .timer-ring svg { display: block; }
   .timer-ring .timer-display { position: absolute; font-size: 60px; }
-  #timerRingFill { transition: stroke-dashoffset 0.95s linear; }
+  #timerRingFill { transition: stroke .25s; }   /* v616: o anel anda por quadro (_timerAnelQuadro); a transição de 0,95 s atrasava e tremia */
   #timerRingFill.warn { stroke: #ff9800; }
   #timerRingFill.done { stroke: #4caf50; }
   .timer-pill { position: fixed; bottom: 92px; left: 50%; transform: translateX(-50%); z-index: 9400; display: none; align-items: center; gap: 7px; background: #131316; color: var(--gold); border: 1.5px solid var(--gold); border-radius: 999px; padding: 11px 20px; font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; box-shadow: 0 4px 16px rgba(0,0,0,0.55); cursor: pointer; }
@@ -1661,6 +1661,57 @@
   .pacer-reps b { color: var(--gold); font-size: 19px; }
   #pacerRingFill.iso { stroke: #E6CF9C; }
   #pacerRingFill.neg { stroke: #8a744a; }
+  /* ══ v616 (GH 09/11/2026): animações do ritmo, do descanso e o guia do vácuo ══ */
+  #pacerRingFill.prep { stroke: #4a4a52; }
+  .pacer-phase.prep { color: #9a9389; letter-spacing: .12em; }
+  /* brilho na borda da tela com a cor da fase: o aluno deixa o celular no chão ou no banco e enxerga a fase de canto de olho */
+  .pacer-glow { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .28s ease, box-shadow .28s ease; }
+  .pacer-glow.forca { opacity: 1; box-shadow: inset 0 0 0 4px rgba(221, 182, 92, .85), inset 0 0 110px rgba(221, 182, 92, .28); }
+  .pacer-glow.iso { opacity: 1; box-shadow: inset 0 0 0 4px rgba(230, 207, 156, .9), inset 0 0 110px rgba(230, 207, 156, .22); }
+  .pacer-glow.neg { opacity: 1; box-shadow: inset 0 0 0 3px rgba(138, 116, 74, .55), inset 0 0 70px rgba(138, 116, 74, .14); }
+  .pacer-glow.prep { opacity: 1; box-shadow: inset 0 0 0 3px rgba(120, 120, 128, .45), inset 0 0 60px rgba(120, 120, 128, .12); }
+  .pacer-glow.insp { opacity: 1; box-shadow: inset 0 0 0 4px rgba(159, 203, 224, .85), inset 0 0 110px rgba(159, 203, 224, .22); }
+  .pacer-glow.sopra { opacity: 1; box-shadow: inset 0 0 0 4px rgba(221, 182, 92, .85), inset 0 0 110px rgba(221, 182, 92, .26); }
+  .pacer-glow.trava { opacity: 1; box-shadow: inset 0 0 0 4px rgba(230, 207, 156, .9), inset 0 0 90px rgba(230, 207, 156, .2); }
+  .pacer-glow.vac { opacity: 1; box-shadow: inset 0 0 0 5px rgba(221, 182, 92, 1), inset 0 0 130px rgba(221, 182, 92, .34); }
+  .pacer-glow.solta { opacity: 1; box-shadow: inset 0 0 0 3px rgba(138, 116, 74, .5), inset 0 0 70px rgba(138, 116, 74, .12); }
+  .pacer-glow.fim { opacity: 1; box-shadow: inset 0 0 0 5px rgba(76, 175, 80, .9), inset 0 0 120px rgba(76, 175, 80, .3); }
+  .pacer-glow.flash { animation: pgFlash .5s ease-out; }
+  @keyframes pgFlash { 0% { box-shadow: inset 0 0 0 10px rgba(240, 212, 138, 1), inset 0 0 160px rgba(240, 212, 138, .55); } 100% { box-shadow: inset 0 0 0 4px rgba(221, 182, 92, .85), inset 0 0 110px rgba(221, 182, 92, .28); } }
+  .pacer-reps .pacer-meta { color: #9a9389; font-size: 13px; margin-left: 4px; }
+  .pacer-reps b.ok { color: #4caf50; }
+  .pacer-reps.ok .pacer-meta { color: #4caf50; }
+  /* descanso: últimos 5 s pulsam */
+  .timer-display.warn { animation: tdPulse .9s ease-in-out infinite; }
+  #timerRingFill.warn { filter: drop-shadow(0 0 8px rgba(255, 152, 0, .55)); }
+  @keyframes tdPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.09); } }
+  /* guia do vácuo */
+  .vac-praticar { display: block; text-align: center; width: 100%; margin: 4px 0 14px; padding: 13px 14px; border-radius: 12px; border: 1px solid rgba(212, 175, 106, .5); background: rgba(212, 175, 106, .1); color: var(--gold); font-weight: 800; font-size: 14px; cursor: pointer; }
+  .vac-praticar:active { background: rgba(212, 175, 106, .2); }
+  .vac-praticar small { display: block; font-weight: 600; font-size: 11.5px; color: #9a9389; margin-top: 3px; }
+  .vac-svg { display: block; width: 100%; height: auto; }
+  .vac-svg text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  #vacuoOverlay .vac-boneco { width: min(150px, 36vw); margin: 10px auto 0; }
+  #vacuoOverlay .vac-boneco .vac-svg { max-height: 150px; }
+  .vac-niveis { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin: 6px 0 12px; padding: 0 12px; }
+  .vac-nivel { background: #2a2a2a; color: var(--white); border: 1px solid #444; border-radius: 999px; padding: 7px 13px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+  .vac-nivel.on { background: var(--gold); color: #1A1304; border-color: var(--gold); }
+  .vac-nivel:disabled { opacity: .45; cursor: default; }
+  .vac-serie { color: var(--white); font-size: 15px; margin-top: 10px; }
+  .vac-serie b { color: var(--gold); font-size: 19px; }
+  .vac-serie.fim b { color: #4caf50; }
+  @media (orientation: landscape) and (max-height: 540px) {
+    #vacuoOverlay .vac-boneco, #vacuoOverlay .pacer-tag { display: none; }
+    #vacuoOverlay .timer-ring svg { width: 140px; height: 140px; }
+    #vacuoOverlay .pacer-phase { font-size: 15px; }
+    #vacuoOverlay .pacer-secs { font-size: 22px; }
+    #vacuoOverlay .vac-niveis { margin: 4px 0 6px; }
+    #vacuoOverlay .timer-actions { margin-top: 8px; }
+  }
+  html[data-theme="light"] .vac-nivel { background: #fff; color: var(--fg); border-color: var(--glass-line); }
+  html[data-theme="light"] .vac-nivel.on { background: var(--gold); color: #fff; border-color: var(--gold); }
+  html[data-theme="light"] .vac-praticar small, html[data-theme="light"] .pacer-reps .pacer-meta { color: var(--fg-2); }
+  @media (prefers-reduced-motion: reduce) { .pacer-glow, .pacer-glow.flash, .timer-display.warn { animation: none; transition: none; } }
   .timer-btn:hover { background: #3a3a3a; }
   .timer-btn.primary:hover { background: var(--gold-dim); }
 
@@ -4085,7 +4136,7 @@ html[data-theme="light"] .sub-opt-now { color: var(--fg); }
 html[data-theme="light"] .sub-opt-volta { border-color: var(--glass-line); color: var(--fg-2); }
 html[data-theme="light"] .sub-aviso { color: var(--fg); }
 html[data-theme="light"] .sub-picker-close { border-color: var(--glass-line); color: var(--fg-2); }
-html[data-theme="light"] .timer-overlay { background: rgba(241, 239, 233, 0.96); }
+html[data-theme="light"] .timer-overlay { background: radial-gradient(ellipse at 50% 28%, #FBF9F4 0%, #ECE9E1 72%); }   /* v616: opaco */
 html[data-theme="light"] .timer-display.warn { color: hsl(36, 40%, 36%); }
 html[data-theme="light"] .timer-display.done { color: hsl(122, 40%, 36%); }
 html[data-theme="light"] .timer-pill { background: var(--glass); }
@@ -5166,7 +5217,7 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   :root[data-theme="light"] .te-modal-box input[type="text"], :root[data-theme="light"] .te-modal-box input[type="password"], :root[data-theme="light"] .te-modal-box textarea { background: #FFFFFF; border-color: var(--glass-line); color: var(--fg); }
   :root[data-theme="light"] .te-btn { background: var(--gold-fill); color: var(--gold-ink); }
   :root[data-theme="light"] .te-btn.ghost { color: var(--fg-2); border-color: var(--glass-line); }
-  :root[data-theme="light"] .timer-overlay { background: rgba(241, 239, 233, .96); }
+  :root[data-theme="light"] .timer-overlay { background: radial-gradient(ellipse at 50% 28%, #FBF9F4 0%, #ECE9E1 72%); }   /* v616: opaco (era 96%, o texto de trás vazava) */
   :root[data-theme="light"] .timer-btn { background: var(--glass-2); color: var(--fg); border-color: var(--glass-line); }
   :root[data-theme="light"] .timer-btn.primary { background: var(--gold-fill); color: var(--gold-ink); border-color: transparent; }
   :root[data-theme="light"] .timer-pill { background: var(--glass-2); color: var(--fg); border-color: var(--glass-line); }
@@ -5875,6 +5926,7 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
 
 <!-- ══ COACH DE CADÊNCIA (pacer) ══ -->
 <div class="timer-overlay" id="pacerOverlay">
+  <div class="pacer-glow" id="pacerGlow" aria-hidden="true"></div>
   <div class="timer-name" id="pacerName"></div>
   <div class="pacer-tag" id="pacerTag"></div>
   <div class="timer-ring" onclick="pacerPause()">
@@ -5914,12 +5966,53 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
       <circle id="pacerWaveBall" r="7.5" cx="-20" cy="-20"/>
     </svg>
   </div>
-  <div class="pacer-reps">Reps: <b id="pacerReps">0</b></div>
+  <div class="pacer-reps" id="pacerRepsBox">Reps: <b id="pacerReps">0</b><span class="pacer-meta" id="pacerMeta"></span></div>
   <div class="timer-actions">
     <button class="timer-btn" onclick="closePacer()">Fechar</button>
     <button class="timer-btn" id="pacerSomBtn" onclick="pacerMudoToggle()" title="Bip a cada troca de fase">🔊 Som ligado</button>
     <button class="timer-btn" id="pacerPauseBtn" onclick="pacerPause()">Pausar</button>
     <button class="timer-btn primary" onclick="pacerToRest()">Descansar</button>
+  </div>
+</div>
+
+<!-- ══ GUIA DO VÁCUO (v616, GH 09/11/2026) ══ Treino guiado do hipopressivo: Inspira, Sopra, Trava, Vácuo (conta os segundos
+     do nível), Solta, N séries. Mesmo desenho do coach de cadência (anel, fase, bip por fase, brilho na borda) e o boneco do manual
+     respirando no ritmo da fase. Nível e séries vêm da linha "hipo" da planilha do aluno quando existe. -->
+<div class="timer-overlay" id="vacuoOverlay">
+  <div class="pacer-glow" id="vacuoGlow" aria-hidden="true"></div>
+  <div class="timer-name">Vácuo abdominal</div>
+  <div class="pacer-tag" id="vacuoTag"></div>
+  <div class="vac-niveis" id="vacuoNiveis"></div>
+  <div class="timer-ring" onclick="vacuoComecar()">
+    <svg viewBox="0 0 160 160" width="230" height="230" aria-hidden="true">
+      <circle cx="80" cy="80" r="70" fill="none" stroke="#2a2a2a" stroke-width="7"/>
+      <circle id="vacuoRingFill" cx="80" cy="80" r="70" fill="none" stroke="#D4AF37" stroke-width="7" stroke-linecap="round" stroke-dasharray="439.8" stroke-dashoffset="439.8" transform="rotate(-90 80 80)"/>
+    </svg>
+    <div class="pacer-center">
+      <div class="pacer-phase prep" id="vacuoPhase">PRONTO</div>
+      <div class="pacer-secs" id="vacuoSecs">▶</div>
+      <div class="pacer-cue" id="vacuoCue">toca pra começar</div>
+    </div>
+  </div>
+  <div class="vac-boneco" id="vacuoBoneco" aria-hidden="true"><svg class="vac-svg" viewBox="0 0 300 272" width="100%" role="img" aria-label="Torso de perfil respirando: enche o peito pelo nariz, sopra pela boca, trava o ar e suga o umbigo nas costas">
+      <defs><linearGradient id="vacArG" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#9fcbe0"/><stop offset="1" stop-color="#e2f3fb"/></linearGradient></defs>
+      <path class="vac-tronco" d="" fill="#D4AF6A"/>
+      <rect class="vac-ar-fundo" x="141" y="98" width="30" height="52" rx="13" fill="#14110c" fill-opacity=".18"/>
+      <rect class="vac-ar" x="141" y="150" width="30" height="0" rx="13" fill="url(#vacArG)" fill-opacity=".92"/>
+      <circle class="vac-umbigo" r="3.2" cx="173" cy="186" fill="#14110c" fill-opacity=".4"/>
+      <path class="vac-cabelo" d="M146 48 C144 24 158 14 172 14 C190 14 200 28 198 44 C192 32 182 26 170 27 C158 28 150 36 146 48 Z" fill="#6E5526"/>
+      <circle class="vac-cabeca" cx="172" cy="50" r="26" fill="#D4AF6A"/>
+      <path class="vac-nariz" d="M196 46 L205 53 L196 58 Z" fill="#D4AF6A"/>
+      <circle class="vac-olho" cx="188" cy="44" r="2.6" fill="#3a2614"/>
+      <ellipse class="vac-boca" cx="192" cy="63" rx="3.5" ry="1" fill="#3a2614"/>
+      <g class="vac-dots" fill="#cfe3ee"><circle r="3" cx="-50" cy="-50" opacity="0"/><circle r="2.4" cx="-50" cy="-50" opacity="0"/><circle r="2.6" cx="-50" cy="-50" opacity="0"/></g>
+      <g class="vac-trava" opacity="0" transform="translate(214,58)"><rect x="-6" y="-1" width="12" height="10" rx="2" fill="#E6CF9C"/><path d="M-3.5 -1 v-3 a3.5 3.5 0 0 1 7 0 v3" fill="none" stroke="#E6CF9C" stroke-width="2"/></g>
+    </svg></div>
+  <div class="vac-serie" id="vacuoSerie">Série <b id="vacuoSerieN">0</b> de <span id="vacuoSerieT">3</span></div>
+  <div class="timer-actions">
+    <button class="timer-btn" onclick="closeVacuo()">Fechar</button>
+    <button class="timer-btn" id="vacuoSomBtn" onclick="pacerMudoToggle()" title="Bip a cada troca de fase">🔊 Som ligado</button>
+    <button class="timer-btn primary" id="vacuoBtn" onclick="vacuoComecar()">Começar</button>
   </div>
 </div>
 
@@ -6452,43 +6545,24 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   <p class="man-lead" style="color:var(--gold); font-style:italic;">Imagina colar o umbigo nas costas enquanto fecha o zíper de uma calça muito apertada.</p>
   <div class="gh-illus">
     <div class="gh-il-t">A respiração e o vácuo · 4 passos</div>
-    <svg viewBox="0 0 300 272" width="100%" role="img" aria-label="Torso de perfil respirando: enche o peito pelo nariz, sopra pela boca, trava o ar e suga o umbigo nas costas" style="display:block;max-width:300px;margin:0 auto">
-      <path fill="#D4AF6A">
-        <animate attributeName="d" dur="8s" repeatCount="indefinite" calcMode="spline"
-          keyTimes="0;0.18;0.4;0.48;0.62;0.88;1"
-          keySplines="0.4 0 0.3 1;0.4 0 0.3 1;0 0 1 1;0.4 0 0.2 1;0 0 1 1;0.4 0 0.3 1"
-          values="M128 92 C122 116 121 148 124 176 C126 200 132 216 142 222 C156 226 166 220 167 208 C168 194 165 184 164 176 C167 154 168 132 166 118 C169 106 174 98 174 90 C174 82 167 77 157 77 C146 77 134 83 128 92 Z;
-                  M128 92 C122 116 121 148 124 176 C126 200 132 216 142 222 C156 226 166 220 167 208 C168 194 165 184 164 176 C167 154 170 131 173 115 C177 105 182 99 180 89 C180 81 168 76 157 77 C146 77 134 83 128 92 Z;
-                  M128 92 C122 116 121 148 124 176 C126 200 132 216 142 222 C156 226 166 220 167 208 C168 194 165 184 164 176 C167 154 168 132 166 118 C169 106 174 98 174 90 C174 82 167 77 157 77 C146 77 134 83 128 92 Z;
-                  M128 92 C122 116 121 148 124 176 C126 200 132 216 142 222 C156 226 166 220 167 208 C168 194 165 184 164 176 C167 154 168 132 166 118 C169 106 174 98 174 90 C174 82 167 77 157 77 C146 77 134 83 128 92 Z;
-                  M128 92 C122 116 121 148 124 176 C126 200 132 216 142 222 C156 226 166 220 167 208 C168 194 151 186 146 176 C144 154 150 132 166 118 C169 106 174 98 174 90 C174 82 167 77 157 77 C146 77 134 83 128 92 Z;
-                  M128 92 C122 116 121 148 124 176 C126 200 132 216 142 222 C156 226 166 220 167 208 C168 194 151 186 146 176 C144 154 150 132 166 118 C169 106 174 98 174 90 C174 82 167 77 157 77 C146 77 134 83 128 92 Z;
-                  M128 92 C122 116 121 148 124 176 C126 200 132 216 142 222 C156 226 166 220 167 208 C168 194 165 184 164 176 C167 154 168 132 166 118 C169 106 174 98 174 90 C174 82 167 77 157 77 C146 77 134 83 128 92 Z"/>
-      </path>
-      <g fill="none" stroke="#14110c" stroke-opacity=".22" stroke-width="2" stroke-linecap="round">
-        <path d="M162 112 C168 116 173 117 176 115"/>
-        <path d="M160 126 C167 130 172 131 175 128"/>
-      </g>
-      <circle r="3.5" cy="182" fill="#14110c" fill-opacity=".38"><animate attributeName="cx" dur="8s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.18;0.4;0.48;0.62;0.88;1" keySplines="0.4 0 0.3 1;0.4 0 0.3 1;0 0 1 1;0.4 0 0.2 1;0 0 1 1;0.4 0 0.3 1" values="160;160;160;160;146;146;160"/></circle>
-      <path d="M138 62 L178 66 L176 96 L128 96 Z" fill="#D4AF6A"/>
-      <path d="M132 30 C130 12 145 6 157 6 C173 6 183 18 181 34 C177 22 167 16 157 16 C145 16 137 20 134 32 Z" fill="#6E5526"/>
-      <path d="M135 34 C133 22 143 14 157 14 C170 14 180 23 180 35 C181 41 187 43 189 49 C190 52 187 55 183 55 C181 62 179 68 171 72 C163 76 150 75 146 68 C141 60 138 48 137 38 C136 36 135 35 135 34 Z" fill="#D4AF6A"/>
-      <ellipse cx="180" cy="63" rx="4.5" fill="#3a2614"><animate attributeName="ry" dur="8s" repeatCount="indefinite" values="1;1;5;5;1;1;1" keyTimes="0;0.18;0.23;0.37;0.4;0.88;1"/></ellipse>
-      <g fill="#cfe3ee">
-        <circle r="3" cx="225" cy="44" opacity="0"><animate attributeName="cx" dur="8s" repeatCount="indefinite" values="225;193;193;193" keyTimes="0;0.15;0.18;1"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" values="0;0.7;0.7;0;0" keyTimes="0;0.04;0.13;0.17;1"/></circle>
-        <circle r="2.4" cx="232" cy="52" opacity="0"><animate attributeName="cx" dur="8s" repeatCount="indefinite" values="232;194;194;194" keyTimes="0;0.16;0.18;1"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" values="0;0.6;0.6;0;0" keyTimes="0;0.06;0.15;0.18;1"/></circle>
-        <circle r="2.6" cx="186" cy="63" opacity="0"><animate attributeName="cx" dur="8s" repeatCount="indefinite" values="186;186;220;224;224" keyTimes="0;0.18;0.33;0.4;1"/><animate attributeName="cy" dur="8s" repeatCount="indefinite" values="63;63;60;58;58" keyTimes="0;0.18;0.33;0.4;1"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" values="0;0;0.8;0;0" keyTimes="0;0.19;0.24;0.4;1"/></circle>
-        <circle r="2.2" cx="186" cy="63" opacity="0"><animate attributeName="cx" dur="8s" repeatCount="indefinite" values="186;186;218;226;226" keyTimes="0;0.24;0.37;0.4;1"/><animate attributeName="cy" dur="8s" repeatCount="indefinite" values="63;63;66;68;68" keyTimes="0;0.24;0.37;0.4;1"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" values="0;0;0.7;0;0" keyTimes="0;0.25;0.31;0.4;1"/></circle>
-      </g>
-      <g font-size="11" font-weight="600" text-anchor="middle">
-        <text x="34" y="262" fill="#D4AF6A" fill-opacity="0.35">1 Inspira<animate attributeName="fill-opacity" dur="8s" repeatCount="indefinite" values="0.35;1;1;0.35;0.35" keyTimes="0;0.02;0.16;0.2;1"/></text>
-        <text x="104" y="262" fill="#D4AF6A" fill-opacity="0.35">2 Sopra<animate attributeName="fill-opacity" dur="8s" repeatCount="indefinite" values="0.35;0.35;1;1;0.35;0.35" keyTimes="0;0.18;0.21;0.38;0.42;1"/></text>
-        <text x="166" y="262" fill="#D4AF6A" fill-opacity="0.35">3 Trava<animate attributeName="fill-opacity" dur="8s" repeatCount="indefinite" values="0.35;0.35;1;1;0.35;0.35" keyTimes="0;0.4;0.43;0.47;0.5;1"/></text>
-        <text x="240" y="262" fill="#D4AF6A" fill-opacity="0.35">4 Vácuo<animate attributeName="fill-opacity" dur="8s" repeatCount="indefinite" values="0.35;0.35;1;1;0.35" keyTimes="0;0.48;0.52;0.88;1"/></text>
-      </g>
+    <svg class="vac-svg" id="vacSvgManual" style="max-width:300px;margin:0 auto" viewBox="0 0 300 272" width="100%" role="img" aria-label="Torso de perfil respirando: enche o peito pelo nariz, sopra pela boca, trava o ar e suga o umbigo nas costas">
+      <defs><linearGradient id="vacArG" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#9fcbe0"/><stop offset="1" stop-color="#e2f3fb"/></linearGradient></defs>
+      <path class="vac-tronco" d="" fill="#D4AF6A"/>
+      <rect class="vac-ar-fundo" x="141" y="98" width="30" height="52" rx="13" fill="#14110c" fill-opacity=".18"/>
+      <rect class="vac-ar" x="141" y="150" width="30" height="0" rx="13" fill="url(#vacArG)" fill-opacity=".92"/>
+      <circle class="vac-umbigo" r="3.2" cx="173" cy="186" fill="#14110c" fill-opacity=".4"/>
+      <path class="vac-cabelo" d="M146 48 C144 24 158 14 172 14 C190 14 200 28 198 44 C192 32 182 26 170 27 C158 28 150 36 146 48 Z" fill="#6E5526"/>
+      <circle class="vac-cabeca" cx="172" cy="50" r="26" fill="#D4AF6A"/>
+      <path class="vac-nariz" d="M196 46 L205 53 L196 58 Z" fill="#D4AF6A"/>
+      <circle class="vac-olho" cx="188" cy="44" r="2.6" fill="#3a2614"/>
+      <ellipse class="vac-boca" cx="192" cy="63" rx="3.5" ry="1" fill="#3a2614"/>
+      <g class="vac-dots" fill="#cfe3ee"><circle r="3" cx="-50" cy="-50" opacity="0"/><circle r="2.4" cx="-50" cy="-50" opacity="0"/><circle r="2.6" cx="-50" cy="-50" opacity="0"/></g>
+      <g class="vac-trava" opacity="0" transform="translate(214,58)"><rect x="-6" y="-1" width="12" height="10" rx="2" fill="#E6CF9C"/><path d="M-3.5 -1 v-3 a3.5 3.5 0 0 1 7 0 v3" fill="none" stroke="#E6CF9C" stroke-width="2"/></g>
+      <g class="vac-passos" font-size="11" font-weight="600" text-anchor="middle" fill="#D4AF6A"><text x="34" y="262" fill-opacity=".35">1 Inspira</text><text x="104" y="262" fill-opacity=".35">2 Sopra</text><text x="166" y="262" fill-opacity=".35">3 Trava</text><text x="240" y="262" fill-opacity=".35">4 Vácuo</text></g>
     </svg>
     <div class="gh-il-c">Enche o peito pelo nariz, sopra tudo pela boca, trava o ar e suga o umbigo nas costas.</div>
   </div>
+  <button type="button" class="vac-praticar" onclick="openVacuo()">▶&nbsp; Praticar agora <small>guia com tempo, bip e o boneco respirando junto</small></button>
   <div class="man-sec"><span class="n">03</span> Níveis de progressão</div>
   <div class="level-card">
     <div class="level-head"><span class="level-name">Nível 1 · Iniciante</span><span class="level-meta">3x 5-8s</span></div>
@@ -14241,10 +14315,32 @@ const _TIMER_CIRC = 439.8; // 2πr do anel (r=70)
 // não muda nada, e ao voltar o número já está certo (ou o descanso já acabou).
 const _TIMER_ATRASO_MUDO = 120000;   // voltou mais de 2 min depois do fim: encerra sem beep/vibração
 function _timerRestante() { return Math.max(0, Math.ceil((_timerEndAt - Date.now()) / 1000)); }
+// v616: o anel do descanso anda a cada quadro (era 1 passo a cada 250 ms disfarçado por uma transição de 0,95 s)
+let _timerRaf = 0, _timerUltBip = 0;
+function _timerAnelVai() { _timerUltBip = 0; if (_timerRaf) cancelAnimationFrame(_timerRaf); _timerRaf = requestAnimationFrame(_timerAnelQuadro); }
+function _timerAnelQuadro() {
+  if (!_timerInt) { _timerRaf = 0; return; }
+  try {
+    const ring = document.getElementById('timerRingFill');
+    if (ring && _timerTotal > 0 && !document.hidden) { const frac = Math.max(0, Math.min(1, (_timerEndAt - Date.now()) / 1000 / _timerTotal)); ring.style.strokeDashoffset = (_TIMER_CIRC * (1 - frac)).toFixed(2); }
+  } catch (_) {}
+  _timerRaf = requestAnimationFrame(_timerAnelQuadro);
+}
+// bip curto (últimos 3 s do descanso e contagens): mesmo contexto de som do bip do fim
+function _bipCurto(freq, dur, vol) {
+  try {
+    _somDestrava(); const ctx = _somAC; if (!ctx) return;
+    const t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(freq || 620, t);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol || 0.18, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + (dur || 0.07));
+    o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + (dur || 0.07) + 0.02);
+  } catch (_) {}
+}
 function _timerSync() {
   if (!_timerInt) return;
   const faltaMs = _timerEndAt - Date.now();
   _timerLeft = Math.max(0, Math.ceil(faltaMs / 1000));
+  if (faltaMs > 0 && _timerLeft <= 3 && _timerLeft !== _timerUltBip) { _timerUltBip = _timerLeft; _bipCurto(620, 0.07, 0.16); }   // v616: 3, 2, 1 pra largar o celular e ir pra barra
   updateTimerDisplay();
   if (faltaMs <= 0) timerDone(-faltaMs);
 }
@@ -14316,7 +14412,7 @@ function startTimer(name, seconds) {
   document.body.style.overflow = 'hidden';
   updateTimerDisplay();
   if (_timerInt) clearInterval(_timerInt);
-  _timerInt = setInterval(_timerSync, 250);   // 250 ms: ao voltar pra tela o número corrige na hora
+  _timerInt = setInterval(_timerSync, 250); _timerAnelVai();   // 250 ms: ao voltar pra tela o número corrige na hora
   _timerLockOn();
 }
 // ── Descanso AUTOMÁTICO (GH 2026-08-13) ──
@@ -14336,7 +14432,7 @@ function startTimerAuto(name, seconds) {
   pill.classList.add('show');
   updateTimerDisplay();
   if (_timerInt) clearInterval(_timerInt);
-  _timerInt = setInterval(_timerSync, 250);
+  _timerInt = setInterval(_timerSync, 250); _timerAnelVai();
   _timerLockOn();
   if (navigator.vibrate) navigator.vibrate(20);
 }
@@ -14637,7 +14733,7 @@ function timerAdd(secs) {
     _timerFimLimpa();
     _timerEndAt = Date.now(); _timerTotal = 0;
     try { const d0 = document.getElementById('timerDisplay'); if (d0) d0.classList.remove('done'); const r0 = document.getElementById('timerRingFill'); if (r0) r0.classList.remove('done'); } catch (_) {}
-    _timerInt = setInterval(_timerSync, 250);
+    _timerInt = setInterval(_timerSync, 250); _timerAnelVai();
     _timerLockOn();
   }
   _timerEndAt += secs * 1000;                 // v446: o +30s empurra o FIM, não um contador solto
@@ -14739,6 +14835,7 @@ function beep() {
 // Anel + vibração no ritmo da repetição do exercício. parseCadencia lê a OBS:
 // padrão ouro 1/0,5/2 ou customizada do método (ex: excêntrica 5 seg).
 let _pacInt = null, _pacPh = 0, _pacT = 0, _pacReps = 0, _pacPhases = [], _pacPaused = false, _pacLast = 0, _pacBase = null;
+let _pacRaf = 0, _pacPrep = 0, _pacPrepUlt = -1, _pacMeta = null, _pacMetaOk = false;   // v616: quadro a quadro, prepara 3-2-1, meta de reps
 // ══ BIP DO COACH DE CADÊNCIA (pedido do GH 18/08, ideia pro aluno de fone) ══
 // O pacer já vibrava a cada troca de fase, MAS iPhone não suporta navigator.vibrate:
 // na prática o aluno de iOS não recebia sinal nenhum sem olhar a tela. Com fone, o som
@@ -14777,8 +14874,7 @@ function _pacBeepFase(lab) {
 function pacerMudoToggle() {
   _pacMudo = !_pacMudo;
   try { localStorage.setItem('gh_pacer_mudo', _pacMudo ? '1' : '0'); } catch (_) {}
-  const b = document.getElementById('pacerSomBtn');
-  if (b) { b.textContent = _pacMudo ? '🔇 Som desligado' : '🔊 Som ligado'; b.classList.toggle('off', _pacMudo); }
+  for (const id of ['pacerSomBtn', 'vacuoSomBtn']) { const b = document.getElementById(id); if (b) { b.textContent = _pacMudo ? '🔇 Som desligado' : '🔊 Som ligado'; b.classList.toggle('off', _pacMudo); } }   // v616: o guia do vácuo usa o mesmo som
   if (!_pacMudo) { _pacAudioInit(); _pacBeep(880, 0.09); }   // devolve um bip de confirmação
 }
 function openPacer(di, ei) {
@@ -14797,6 +14893,8 @@ function openPacer(di, ei) {
   ].filter(p => p.dur > 0.05);
   if (!_pacPhases.length) return;
   _pacPh = 0; _pacT = 0; _pacReps = 0; _pacPaused = false;
+  _pacPrep = 3; _pacPrepUlt = -1; _pacMetaOk = false;                                   // v616
+  _pacMeta = _pacMetaLe((act && act.reps) || _pacBase.reps); _pacMetaMostra();
   document.getElementById('pacerName').textContent = (act && act.name) || _pacBase.name || '';
   document.getElementById('pacerTag').textContent = 'Pos ' + fmtSec(cad.conc) + 's · Iso ' + fmtSec(cad.iso) + 's · Neg ' + fmtSec(cad.exc) + 's' + (cad.custom ? ' · cadência do método' : ' · padrão ouro');
   document.getElementById('pacerReps').textContent = '0';
@@ -14810,10 +14908,12 @@ function openPacer(di, ei) {
   if (_sb) { _sb.textContent = _pacMudo ? '🔇 Som desligado' : '🔊 Som ligado'; _sb.classList.toggle('off', _pacMudo); }
   _pacApplyPhase();
   _pacWaveBuild();                       // desenha a montanha desta cadência
-  _pacBeepFase(_pacPhases[0].lab);       // marca o início da 1ª fase
+  _pacPrepMostra();                      // v616: PREPARA 3, 2, 1 antes da 1ª fase (o bip da fase sai quando o prepara acaba)
   _pacLast = performance.now();
   if (_pacInt) clearInterval(_pacInt);
-  _pacInt = setInterval(_pacTick, 50);
+  _pacInt = setInterval(_pacTick, 250);                   // v616: relógio de apoio (som e fase seguem certos mesmo se o quadro travar)
+  if (_pacRaf) cancelAnimationFrame(_pacRaf);
+  _pacRaf = requestAnimationFrame(_pacQuadro);            // v616: anel, bolinha e contagem andam a cada quadro (era 20 por segundo)
 }
 // ── Trilha da cadência: montanha proporcional às fases + bolinha no mesmo relógio ──
 // v378 era polyline reta; v379 (GH: "deixa isso foda") virou caminho SUAVE com cantos
@@ -14913,6 +15013,7 @@ function _pacApplyPhase() {
   document.getElementById('pacerCue').textContent = p.cue;
   document.getElementById('pacerRingFill').setAttribute('class', p.cls);
   if (_pacSegs.length) _pacWaveFase();
+  _pacGlow('pacerGlow', p.cls || 'forca');   // v616
 }
 let _pacWakeLock = null;
 async function _pacLockOn() {
@@ -14921,7 +15022,7 @@ async function _pacLockOn() {
 }
 // v480: o ritmo tambem perde a trava quando o aluno sai e volta pro app; pede de novo se o ritmo estiver aberto
 document.addEventListener('visibilitychange', () => {
-  try { const po = document.getElementById('pacerOverlay'); if (document.visibilityState === 'visible' && po && po.classList.contains('show') && !_pacWakeLock) _pacLockOn(); } catch (_) {}
+  try { const po = document.getElementById('pacerOverlay'), vo = document.getElementById('vacuoOverlay'); if (document.visibilityState === 'visible' && ((po && po.classList.contains('show')) || (vo && vo.classList.contains('show'))) && !_pacWakeLock) _pacLockOn(); } catch (_) {}   // v616: o guia do vácuo também
 });
 function _pacLockOff() {
   try { _pacWakeLock && _pacWakeLock.release(); } catch (_) {}
@@ -14932,6 +15033,13 @@ function _pacTick() {
   const now = performance.now();
   const dt = (now - _pacLast) / 1000;
   _pacLast = now;
+  if (_pacPrep > 0) {                                      // v616: PREPARA 3, 2, 1 (bip grave a cada número; o da fase sai no zero)
+    if (dt < 2) _pacPrep -= dt;
+    if (_pacPrep <= 0) { _pacPrep = 0; _pacT = 0; _pacPh = 0; _pacApplyPhase(); _pacBeepFase(_pacPhases[0].lab); if (navigator.vibrate) navigator.vibrate(30); return; }
+    const sPrep = Math.ceil(_pacPrep);
+    if (sPrep !== _pacPrepUlt) { _pacPrepUlt = sPrep; _pacBeep(520, 0.07, 0.18); document.getElementById('pacerSecs').textContent = String(sPrep); }
+    return;
+  }
   // v447: o app fora da tela congela o tick; ao voltar, o delta acumulado executava TODAS as fases perdidas
   // de uma vez e o contador somava repetições que o aluno não fez (2 min fora = ~34 reps fantasma), com
   // vibração e bipe em rajada. Buraco maior que uma fase = o aluno não estava executando: retoma do zero.
@@ -14949,6 +15057,7 @@ function _pacTick() {
       if (navigator.vibrate) navigator.vibrate([60, 40, 60]);
       _pacBeep(990, 0.07); setTimeout(() => _pacBeep(990, 0.07), 110);   // rep fechada: 2 bips
       _pacBurst();                                                       // estouro dourado no fim da trilha
+      _pacMetaConfere(); _pacGlowFlash('pacerGlow');                     // v616: meta de reps e piscada na borda
     } else if (navigator.vibrate) navigator.vibrate(30);
     p = _pacPhases[_pacPh];
     if (_pacPh !== 0) _pacBeepFase(p.lab);   // fase 0 já bipou no fecha-rep acima
@@ -14965,8 +15074,56 @@ function pacerPause() {
   _pacPaused = !_pacPaused;
   document.getElementById('pacerPauseBtn').textContent = _pacPaused ? 'Retomar' : 'Pausar';
 }
+// ── v616: o ritmo quadro a quadro, PREPARA 3-2-1, meta de reps e brilho da fase ──
+function _pacQuadro() {
+  if (!_pacInt) { _pacRaf = 0; return; }
+  _pacTick();
+  _pacRaf = requestAnimationFrame(_pacQuadro);
+}
+function _pacPrepMostra() {
+  const ph = document.getElementById('pacerPhase');
+  ph.textContent = 'PREPARA'; ph.className = 'pacer-phase prep';
+  document.getElementById('pacerCue').textContent = 'pega a posição e respira';
+  document.getElementById('pacerSecs').textContent = '3';
+  const rf = document.getElementById('pacerRingFill'); rf.setAttribute('class', 'prep'); rf.style.strokeDashoffset = '439.8';
+  _pacGlow('pacerGlow', 'prep');
+}
+// meta de reps do exercício: "8 a 12" → de 8 a 12; "10 / 6 / 8 a 10" (série por série) → vale a última, a de trabalho;
+// tempo ("30 seg") não tem meta
+function _pacMetaLe(reps) {
+  const str = String(reps || '').trim();
+  if (!str || /seg|min|["'′″]/i.test(str)) return null;
+  const partes = str.split('/').map(x => x.trim()).filter(Boolean);
+  const seg = partes[partes.length - 1] || '';
+  const ns = (seg.match(/\d+/g) || []).map(Number).filter(n => n > 0 && n < 200);
+  if (!ns.length) return null;
+  return { min: Math.min(...ns), max: Math.max(...ns), txt: seg.replace(/\s+/g, ' ') };
+}
+function _pacMetaMostra() {
+  const m = document.getElementById('pacerMeta'), box = document.getElementById('pacerRepsBox'), b = document.getElementById('pacerReps');
+  if (!m) return;
+  if (box) box.classList.remove('ok'); if (b) b.classList.remove('ok');
+  m.textContent = _pacMeta ? ' de ' + _pacMeta.txt : '';
+}
+function _pacMetaConfere() {
+  if (!_pacMeta) return;
+  const m = document.getElementById('pacerMeta'), box = document.getElementById('pacerRepsBox'), b = document.getElementById('pacerReps');
+  if (_pacReps >= _pacMeta.min && !_pacMetaOk) {
+    _pacMetaOk = true;
+    if (box) box.classList.add('ok'); if (b) b.classList.add('ok');
+    if (m) m.textContent = ' · na meta';
+    // 3 bips subindo: bateu o mínimo (sai por cima dos 2 bips da rep)
+    setTimeout(() => { _pacBeep(660, 0.08); setTimeout(() => _pacBeep(880, 0.08), 120); setTimeout(() => _pacBeep(1100, 0.12), 240); }, 260);
+    if (navigator.vibrate) navigator.vibrate([40, 40, 40, 40, 120]);
+  }
+  if (_pacMetaOk && m && _pacMeta.max > _pacMeta.min && _pacReps >= _pacMeta.max) m.textContent = ' · teto, pode parar';
+}
+function _pacGlow(id, cls) { const g = document.getElementById(id); if (g) g.className = 'pacer-glow ' + (cls || ''); }
+function _pacGlowFlash(id) { const g = document.getElementById(id); if (!g) return; g.classList.remove('flash'); g.getBoundingClientRect(); g.classList.add('flash'); }
+
 function closePacer() {
   if (_pacInt) { clearInterval(_pacInt); _pacInt = null; }
+  if (_pacRaf) { cancelAnimationFrame(_pacRaf); _pacRaf = 0; }   // v616
   document.getElementById('pacerOverlay').classList.remove('show');
   document.body.style.overflow = '';
   _pacLockOff();
@@ -14976,6 +15133,210 @@ function pacerToRest() {
   closePacer();
   if (base) startTimer(base.name || 'Descanso', parseIntervalSeconds(base.rest));
 }
+
+
+// ══ GUIA DO VÁCUO (v616, GH 09/11/2026: "Pode fazer tudo") ══
+// Treino guiado do hipopressivo, no desenho do coach de cadência: anel que enche e esvazia, nome da fase, segundos, dica,
+// bip por fase (mesmo som e mesma chave de mudo do ritmo), brilho na borda e o boneco respirando junto. Nível, séries e
+// tempo vêm da linha "hipo" da planilha do aluno (window._hipoDados); sem ela, Nível 1 com 3 séries de 8 s.
+const _VAC_NIVEIS = [{ n: 1, nome: 'Nível 1', seg: 8 }, { n: 2, nome: 'Nível 2', seg: 15 }, { n: 3, nome: 'Nível 3', seg: 20 }];
+let _vacNivel = 1, _vacDur = 8, _vacN = 3, _vacSerie = 0, _vacFases = [], _vacPh = 0, _vacT = 0, _vacLast = 0, _vacInt = null, _vacRaf = 0;
+let _vacPaused = false, _vacPrep = 0, _vacPrepUlt = -1, _vacEstado = 'pronto', _vacBipUlt = -1;
+function _vacNivelDoAluno() { try { const h = window._hipoDados; const m = h && String(h.nivel || '').match(/[123]/); return m ? +m[0] : 1; } catch (_) { return 1; } }
+function _vacSegDoAluno(n) {
+  try { const h = window._hipoDados; if (h && h.tempo && n === _vacNivelDoAluno()) { const ns = (String(h.tempo).match(/\d+/g) || []).map(Number).filter(x => x >= 3 && x <= 60); if (ns.length) return Math.max(...ns); } } catch (_) {}
+  return _VAC_NIVEIS[n - 1].seg;
+}
+function _vacSeriesDoAluno() { try { const h = window._hipoDados; const m = h && String(h.series || '').match(/\d+/); if (m) return Math.max(1, Math.min(6, +m[0])); } catch (_) {} return 3; }
+function _vacFasesMonta(ultima) {
+  const f = [
+    { lab: 'INSPIRA', cue: 'enche o peito pelo nariz', dur: 3, cls: 'insp' },
+    { lab: 'SOPRA', cue: 'sopra tudo pela boca, até o fim', dur: 4, cls: 'sopra' },
+    { lab: 'TRAVA', cue: 'fecha a boca e o nariz', dur: 1.5, cls: 'trava' },
+    { lab: 'VÁCUO', cue: 'umbigo nas costas, pra dentro e pra cima', dur: _vacDur, cls: 'vac' }
+  ];
+  if (!ultima) f.push({ lab: 'SOLTA', cue: 'respira normal e relaxa', dur: 10, cls: 'solta' });
+  return f;
+}
+function openVacuo() {
+  _vacNivel = _vacNivelDoAluno(); _vacDur = _vacSegDoAluno(_vacNivel); _vacN = _vacSeriesDoAluno();
+  _vacEstado = 'pronto'; _vacSerie = 0; _vacPaused = false;
+  _vacNiveisMostra(); _vacTagMostra(); _vacProntoMostra();
+  document.getElementById('vacuoSerieT').textContent = String(_vacN);
+  document.getElementById('vacuoSerieN').textContent = '0';
+  document.getElementById('vacuoSerie').classList.remove('fim');
+  document.getElementById('vacuoOverlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  _pacAudioInit();
+  const sb = document.getElementById('vacuoSomBtn');
+  if (sb) { sb.textContent = _pacMudo ? '🔇 Som desligado' : '🔊 Som ligado'; sb.classList.toggle('off', _pacMudo); }
+  _vacDesenha(document.querySelector('#vacuoBoneco .vac-svg'), { ar: 0, vac: 0 });
+}
+function closeVacuo() {
+  _vacPara();
+  document.getElementById('vacuoOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+  _pacGlow('vacuoGlow', '');
+}
+function _vacPara() {
+  if (_vacInt) { clearInterval(_vacInt); _vacInt = null; }
+  if (_vacRaf) { cancelAnimationFrame(_vacRaf); _vacRaf = 0; }
+  _pacLockOff();
+}
+function _vacNiveisMostra() {
+  const box = document.getElementById('vacuoNiveis');
+  if (!box) return;
+  const rodando = _vacEstado === 'rodando';
+  box.innerHTML = _VAC_NIVEIS.map(l => '<button type="button" class="vac-nivel' + (l.n === _vacNivel ? ' on' : '') + '"' + (rodando ? ' disabled' : '') + ' onclick="vacuoNivel(' + l.n + ')">' + l.nome + ' · ' + _vacSegDoAluno(l.n) + ' s</button>').join('');
+}
+function vacuoNivel(n) {
+  if (_vacEstado === 'rodando') return;
+  _vacNivel = n; _vacDur = _vacSegDoAluno(n);
+  _vacNiveisMostra(); _vacTagMostra();
+}
+function _vacTagMostra() { const t = document.getElementById('vacuoTag'); if (t) t.textContent = _vacN + (_vacN === 1 ? ' série' : ' séries') + ' de ' + _vacDur + ' s de vácuo' + (window._hipoDados ? ' · teu nível no protocolo' : ''); }
+function _vacProntoMostra() {
+  const ph = document.getElementById('vacuoPhase'); ph.textContent = 'PRONTO'; ph.className = 'pacer-phase prep';
+  document.getElementById('vacuoSecs').textContent = '▶';
+  document.getElementById('vacuoCue').textContent = 'toca pra começar';
+  const rf = document.getElementById('vacuoRingFill'); rf.setAttribute('class', 'prep'); rf.style.strokeDashoffset = '439.8';
+  document.getElementById('vacuoBtn').textContent = 'Começar';
+  _pacGlow('vacuoGlow', '');
+}
+function vacuoComecar() {
+  if (_vacEstado === 'rodando') {   // toque no meio = pausa / retoma
+    _vacPaused = !_vacPaused;
+    document.getElementById('vacuoBtn').textContent = _vacPaused ? 'Retomar' : 'Pausar';
+    return;
+  }
+  _vacEstado = 'rodando'; _vacPaused = false; _vacSerie = 1; _vacPh = 0; _vacT = 0; _vacPrep = 3; _vacPrepUlt = -1; _vacBipUlt = -1;
+  _vacFases = _vacFasesMonta(_vacN === 1);
+  document.getElementById('vacuoSerieN').textContent = '1';
+  document.getElementById('vacuoSerie').classList.remove('fim');
+  document.getElementById('vacuoBtn').textContent = 'Pausar';
+  _vacNiveisMostra();
+  const ph = document.getElementById('vacuoPhase'); ph.textContent = 'PREPARA'; ph.className = 'pacer-phase prep';
+  document.getElementById('vacuoCue').textContent = 'deita ou apoia as mãos nas coxas';
+  document.getElementById('vacuoSecs').textContent = '3';
+  const rf = document.getElementById('vacuoRingFill'); rf.setAttribute('class', 'prep'); rf.style.strokeDashoffset = '439.8';
+  _pacGlow('vacuoGlow', 'prep');
+  _pacAudioInit(); _pacLockOn();
+  _vacLast = performance.now();
+  _vacPara(); _vacInt = setInterval(_vacTick, 250); _vacRaf = requestAnimationFrame(_vacQuadro);
+}
+function _vacQuadro() { if (!_vacInt) { _vacRaf = 0; return; } _vacTick(); _vacRaf = requestAnimationFrame(_vacQuadro); }
+function _vacBipFase(lab) {
+  if (lab === 'INSPIRA') _pacBeep(880, 0.09);
+  else if (lab === 'SOPRA') _pacBeep(440, 0.11);
+  else if (lab === 'TRAVA') _pacBeep(660, 0.07, 0.2);
+  else if (lab === 'VÁCUO') { _pacBeep(990, 0.07); setTimeout(() => _pacBeep(990, 0.07), 110); }
+  else _pacBeep(520, 0.09, 0.18);
+}
+function _vacAplica() {
+  const p = _vacFases[_vacPh];
+  const ph = document.getElementById('vacuoPhase'); ph.textContent = p.lab; ph.className = 'pacer-phase ' + (p.cls === 'vac' || p.cls === 'sopra' ? '' : (p.cls === 'solta' ? 'neg' : 'iso'));
+  document.getElementById('vacuoCue').textContent = p.cue;
+  document.getElementById('vacuoRingFill').setAttribute('class', p.cls === 'solta' ? 'neg' : (p.cls === 'trava' || p.cls === 'insp' ? 'iso' : ''));
+  _pacGlow('vacuoGlow', p.cls);
+  _vacBipUlt = -1;
+}
+function _vacTick() {
+  if (_vacPaused) { _vacLast = performance.now(); return; }
+  const now = performance.now(), dt = (now - _vacLast) / 1000; _vacLast = now;
+  if (_vacPrep > 0) {
+    if (dt < 2) _vacPrep -= dt;
+    if (_vacPrep <= 0) { _vacPrep = 0; _vacT = 0; _vacPh = 0; _vacAplica(); _vacBipFase(_vacFases[0].lab); return; }
+    const sp = Math.ceil(_vacPrep);
+    if (sp !== _vacPrepUlt) { _vacPrepUlt = sp; _pacBeep(520, 0.07, 0.18); document.getElementById('vacuoSecs').textContent = String(sp); }
+    return;
+  }
+  let p = _vacFases[_vacPh];
+  if (dt > p.dur + 1) { _vacT = 0; _vacAplica(); return; }   // ficou fora da tela: retoma a fase do zero, sem atropelar
+  _vacT += dt;
+  while (_vacT >= p.dur) {
+    _vacT -= p.dur; _vacPh++;
+    if (_vacPh >= _vacFases.length) {
+      if (_vacSerie >= _vacN) { _vacFim(); return; }
+      _vacSerie++; _vacPh = 0; _vacFases = _vacFasesMonta(_vacSerie === _vacN);
+      document.getElementById('vacuoSerieN').textContent = String(_vacSerie);
+    }
+    p = _vacFases[_vacPh];
+    _vacAplica(); _vacBipFase(p.lab);
+    if (navigator.vibrate) navigator.vibrate(p.lab === 'VÁCUO' ? [60, 40, 60] : 30);
+  }
+  const frac = Math.max(0, Math.min(1, _vacT / p.dur));
+  const resta = Math.max(0, p.dur - _vacT);
+  // vácuo: nos últimos 3 s um bip curto por segundo, pra ele saber que está acabando sem olhar
+  if (p.lab === 'VÁCUO') { const rs = Math.ceil(resta); if (rs <= 3 && rs > 0 && rs !== _vacBipUlt) { _vacBipUlt = rs; _pacBeep(740, 0.05, 0.14); } }
+  const fill = p.lab === 'INSPIRA' || p.lab === 'VÁCUO' ? frac : (p.lab === 'SOPRA' ? 1 - frac : (p.lab === 'TRAVA' ? 0 : 0));
+  document.getElementById('vacuoRingFill').style.strokeDashoffset = (439.8 * (1 - fill)).toFixed(2);
+  document.getElementById('vacuoSecs').textContent = p.lab === 'VÁCUO' ? String(Math.ceil(resta)) : resta.toFixed(1).replace('.', ',');
+  _vacDesenha(document.querySelector('#vacuoBoneco .vac-svg'), {
+    ar: p.lab === 'INSPIRA' ? frac : (p.lab === 'SOPRA' ? 1 - frac : 0),
+    vac: p.lab === 'VÁCUO' ? Math.min(1, _vacT / 0.6) : (p.lab === 'SOLTA' ? Math.max(0, 1 - _vacT / 1.2) : 0),
+    boca: p.lab === 'SOPRA' ? 1 : 0, trava: p.lab === 'TRAVA' ? 1 : 0,
+    entra: p.lab === 'INSPIRA' ? frac : -1, sai: p.lab === 'SOPRA' ? frac : -1
+  });
+}
+function _vacFim() {
+  _vacPara(); _vacEstado = 'fim';
+  const ph = document.getElementById('vacuoPhase'); ph.textContent = 'FEITO'; ph.className = 'pacer-phase';
+  document.getElementById('vacuoSecs').textContent = '✓';
+  document.getElementById('vacuoCue').textContent = _vacN + (_vacN === 1 ? ' série' : ' séries') + ' de ' + _vacDur + ' s. Respira e relaxa.';
+  const rf = document.getElementById('vacuoRingFill'); rf.setAttribute('class', 'done'); rf.style.strokeDashoffset = '0';
+  document.getElementById('vacuoSerie').classList.add('fim');
+  document.getElementById('vacuoBtn').textContent = 'De novo';
+  _pacGlow('vacuoGlow', 'fim');
+  _vacNiveisMostra();
+  _pacBeep(880, 0.09); setTimeout(() => _pacBeep(1100, 0.09), 130); setTimeout(() => _pacBeep(1320, 0.16), 260);
+  if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+  try { document.body.classList.add('descanso-fim'); setTimeout(() => { try { document.body.classList.remove('descanso-fim'); } catch (_) {} }, 1700); } catch (_) {}
+  _vacDesenha(document.querySelector('#vacuoBoneco .vac-svg'), { ar: 0, vac: 0 });
+}
+// ── O boneco (manual e guia): torso de perfil. ar = quanto ar no peito (0 a 1), vac = barriga sugada (0 a 1),
+//    boca = aberta soprando, trava = cadeado aceso, entra/sai = progresso das bolinhas de ar (-1 = sem), passo = rótulo aceso (manual)
+function _vacDesenha(root, e) {
+  if (!root) return;
+  const q = c => root.querySelector('.' + c);
+  const ar = Math.max(0, Math.min(1, e.ar || 0)), vac = Math.max(0, Math.min(1, e.vac || 0));
+  const cx = 180 + 9 * ar;          // frente do peito
+  const bx = 181 - 29 * vac;        // frente da barriga na altura do umbigo
+  const hx = 178 - 23 * vac;        // frente do quadril acompanha (senão sobra um "pé" pra frente)
+  const f = n => n.toFixed(1);
+  const tronco = q('vac-tronco');
+  if (tronco) tronco.setAttribute('d', 'M154 84 C138 112 124 160 128 212 Q129 228 144 228 L' + f(hx - 12) + ' 228 Q' + f(hx) + ' 228 ' + f(hx) + ' 216 C' + f(hx) + ' 208 ' + f(bx) + ' 200 ' + f(bx) + ' 184 C' + f(bx) + ' 166 ' + f(cx - 2) + ' 150 ' + f(cx) + ' 130 C' + f(cx + 1) + ' 112 ' + f(cx - 2) + ' 98 186 86 Q182 78 170 79 Q160 79 154 84 Z');
+  const arR = q('vac-ar'); if (arR) { const h = 52 * ar; arR.setAttribute('y', f(150 - h)); arR.setAttribute('height', f(h)); }
+  const um = q('vac-umbigo'); if (um) um.setAttribute('cx', f(bx - 7));
+  const boca = q('vac-boca'); if (boca) boca.setAttribute('ry', f(1 + 4 * (e.boca || 0)));
+  const tr = q('vac-trava'); if (tr) tr.setAttribute('opacity', String(e.trava || 0));
+  root.querySelectorAll('.vac-dots circle').forEach((d, i) => {
+    let x = -50, y = -50, o = 0;
+    if (e.entra != null && e.entra >= 0) { const p = Math.max(0, Math.min(1, e.entra * 1.3 - i * 0.14)); x = 242 - 36 * p; y = (38 + i * 9) + (53 - 38 - i * 9) * p; o = p > 0 && p < 0.9 ? 0.75 : 0; }
+    else if (e.sai != null && e.sai >= 0) { const p = Math.max(0, Math.min(1, e.sai * 1.3 - i * 0.14)); x = 198 + 42 * p; y = 63 + (i - 1) * 8 * p; o = p > 0 && p < 0.95 ? 0.8 * (1 - p * 0.6) : 0; }
+    d.setAttribute('cx', f(x)); d.setAttribute('cy', f(y)); d.setAttribute('opacity', o.toFixed(2));
+  });
+  if (e.passo != null) root.querySelectorAll('.vac-passos text').forEach((t, i) => t.setAttribute('fill-opacity', e.passo === i ? '1' : '0.35'));
+}
+// manual: laço de 8 s (Inspira 1,6 s, Sopra 1,8 s, Trava 0,8 s, Vácuo 3 s, solta 0,8 s), só enquanto o capítulo está aberto e a tela ligada
+let _vacManRaf = 0;
+function _vacManualVai() { if (_vacManRaf) return; _vacManRaf = requestAnimationFrame(_vacManualQuadro); }
+function _vacManualQuadro() {
+  const c = document.getElementById('hipoContent'), svg = document.getElementById('vacSvgManual');
+  if (!c || !svg || !c.classList.contains('show')) { _vacManRaf = 0; return; }
+  if (!document.hidden) {
+    const t = (performance.now() / 1000) % 8;
+    let e;
+    if (t < 1.6) e = { ar: t / 1.6, entra: t / 1.6, passo: 0 };
+    else if (t < 3.4) { const p = (t - 1.6) / 1.8; e = { ar: 1 - p, boca: 1, sai: p, passo: 1 }; }
+    else if (t < 4.2) e = { trava: 1, passo: 2 };
+    else if (t < 7.2) e = { vac: Math.min(1, (t - 4.2) / 0.7), passo: 3 };
+    else e = { vac: 1 - (t - 7.2) / 0.8, passo: -1 };
+    _vacDesenha(svg, e);
+  }
+  _vacManRaf = requestAnimationFrame(_vacManualQuadro);
+}
+try { document.addEventListener('visibilitychange', () => { try { if (!document.hidden) _vacManualVai(); } catch (_) {} }); } catch (_) {}
+try { _vacDesenha(document.getElementById('vacSvgManual'), { ar: 0, vac: 0, passo: 0 }); } catch (_) {}
 
 // ══ MODO TREINO FOCADO ══
 // Player de treino: um exercício por vez, tela cheia. Reusa o storage de carga
@@ -16320,6 +16681,7 @@ async function loadFromSheets(injectedText) {
       // Hipopressivo row: col A is "hipo"
       if (r[0].toLowerCase() === 'hipo') {
         hipoData = { nivel: r[1] || '', series: r[2] || '', tempo: r[3] || '', freq: r[4] || '', obs: r[5] || '' };
+        window._hipoDados = hipoData;   // v616: o guia do vácuo lê daqui
         continue;
       }
 
@@ -18688,6 +19050,7 @@ function toggleHipo() {
   const a = document.getElementById('hipoArrow');
   c.classList.toggle('show');
   a.classList.toggle('open', c.classList.contains('show'));
+  try { if (c.classList.contains('show')) _vacManualVai(); } catch (_) {}   // v616: o boneco respira enquanto o capítulo está aberto
 }
 
 // Navegação por capítulo dentro do Manual de Execução (chips no topo)
@@ -27726,7 +28089,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v615';
+    var APP_SHELL_V = 'metodo-gh-v616';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
