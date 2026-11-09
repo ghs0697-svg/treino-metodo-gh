@@ -1661,6 +1661,18 @@
   .pacer-reps b { color: var(--gold); font-size: 19px; }
   #pacerRingFill.iso { stroke: #E6CF9C; }
   #pacerRingFill.neg { stroke: #8a744a; }
+  /* ══ v617 (GH 09/11/2026): cronômetro automático ══ */
+  .da-row > span { flex: 1 1 170px; min-width: 0; }
+  .da-row > span small { display: block; margin-top: 2px; font-size: 11.5px; font-weight: 500; color: var(--fg-2); line-height: 1.35; }
+  .timer-auto-chip { margin-top: 22px; background: transparent; border: 1px solid rgba(255,255,255,.2); color: #b9b2a3; font-family: inherit; font-size: 13px; font-weight: 600; padding: 9px 16px; border-radius: 999px; cursor: pointer; }
+  .timer-auto-chip b { color: #ece6d8; font-weight: 800; }
+  .timer-auto-chip.on { border-color: rgba(212,175,55,.65); }
+  .timer-auto-chip.on b { color: var(--gold); }
+  html[data-theme="light"] .timer-auto-chip { border-color: rgba(40,34,20,.2); color: #5f5a4f; }
+  html[data-theme="light"] .timer-auto-chip b { color: #221f19; }
+  html[data-theme="light"] .timer-auto-chip.on { border-color: rgba(150,115,30,.55); }
+  html[data-theme="light"] .timer-auto-chip.on b { color: #8a6a12; }
+  @media (orientation: landscape) and (max-height: 540px) { #timerOverlay .timer-auto-chip { margin-top: 10px; padding: 6px 12px; } }
   /* ══ v616 (GH 09/11/2026): animações do ritmo, do descanso e o guia do vácuo ══ */
   #pacerRingFill.prep { stroke: #4a4a52; }
   .pacer-phase.prep { color: #9a9389; letter-spacing: .12em; }
@@ -5921,6 +5933,7 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
     <button class="timer-btn" onclick="timerMinimize()">Minimizar</button>
     <button class="timer-btn primary" onclick="timerAdd(15)">+15s</button>
   </div>
+  <button type="button" class="timer-auto-chip" id="timerAutoChip" aria-pressed="false" onclick="descAutoSet(!_descAutoOn())">Cronômetro automático <b>desligado</b></button>
 </div>
 <button class="timer-pill" id="timerPill" onclick="timerReopen()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> <span id="timerPillTime">60s</span></button>
 
@@ -7560,6 +7573,7 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   <div id="maisSheet">
     <div class="mais-grab"></div>
     <div class="tema-row"><span>Aparência</span><div class="tema-seg" id="temaSeg"><button type="button" id="temaCla" onclick="ghTema('claro')">Claro</button><button type="button" id="temaEsc" onclick="ghTema('escuro')">Escuro</button></div></div>
+    <div class="tema-row da-row"><span>Cronômetro automático<small>O descanso começa sozinho quando tu anota a série</small></span><div class="tema-seg" id="daSeg"><button type="button" id="daDes" class="on" aria-pressed="true" onclick="descAutoSet(false)">Desligado</button><button type="button" id="daLig" aria-pressed="false" onclick="descAutoSet(true)">Ligado</button></div></div>
     <button type="button" class="mais-opt" style="position:relative;" onclick="closeMaisSheet(); switchView('novidades')">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span><span>Novidades</span><span class="sup-dot" id="novDotMais" style="top:50%;transform:translateY(-50%);right:10px;"></span>
     </button>
@@ -8621,6 +8635,9 @@ const EX_EN_ALIAS = {
 function _lang() { try { return localStorage.getItem('gh_lang') === 'en' ? 'en' : 'pt'; } catch (_) { return 'pt'; } }
 const I18N_EN = {
   'Avisar das': 'Remind from', 'às': 'to',   // v612: janela da água
+  'Cronômetro automático': 'Automatic rest timer', 'Desligado': 'Off', 'Ligado': 'On', 'desligado': 'off', 'ligado': 'on',   // v617
+  'O descanso começa sozinho quando tu anota a série': 'Rest starts on its own when you log the set',
+  'Liga o cronômetro e abre um exercício por vez, em tela cheia. Quer que o descanso comece sozinho? Liga o Cronômetro automático no Mais.': 'Starts the timer and opens one exercise at a time, full screen. Want the rest to start on its own? Turn on the Automatic rest timer in More.',
   'Treino': 'Workout', 'Dieta': 'Diet', 'Progresso': 'Progress', 'Mais': 'More',
   'PROTOCOLO DE TREINO': 'TRAINING PROTOCOL', 'MÚSCULOS DE HOJE': "TODAY'S MUSCLES",
   'Músculos de hoje': "Today's muscles", 'TOCA PRA GIRAR': 'TAP TO ROTATE', 'Toca pra girar': 'Tap to rotate', 'toca pra girar': 'tap to rotate', 'frente': 'front', 'costas': 'back',
@@ -9691,7 +9708,7 @@ function exMaisMenu(di, ei) {
       // v544: conta pela grade salva completada até o prescrito (é o que está na tela). Antes o menu contava só o que estava
       // salvo e mandava remover por esse índice: em "4 séries com 3 feitas", o 2º toque apagava a 3ª série, COM dado.
       const _nLin = _setsBase(di, eiS).length;
-      if (_nLin < 12) add('Adicionar uma série', () => addSet(di, eiS));   // v523: o aluno abre série quando precisar (GH 25/09)
+      if (_nLin < 12 && _nLin < _serieCountPresc(ex) + 2) add('Adicionar uma série', () => addSet(di, eiS));   // v617: até 2 extras   // v523: o aluno abre série quando precisar (GH 25/09)
       if (_nLin > _serieCountPresc(ex)) add('Remover a última série', () => removeSet(di, eiS, _setsBase(di, eiS).length - 1));   // só sai a série a mais; a prescrita fica
     }
     if (!ex.warmup && !ex.biset) add(isSkipped(di, ei) ? 'Desfazer "não consegui fazer"' : 'Não consegui fazer', () => onSkipExercise(di, ei));
@@ -9954,7 +9971,7 @@ function _sobrouSugere(di, ei, arr) {
     // além do prescrito.
     const k = di + '|' + ei + '|' + currentWeek + '|' + li;
     const presc = _serieCountPresc(ex);
-    const cabeMais = arr.length < presc + 3;
+    const cabeMais = arr.length < presc + 2;   // v617: teto de 2 extras
     let ultimaVal = -1;
     for (let j = 0; j < arr.length; j++) if (ehVal(j)) ultimaVal = j;
     const explica = 'Sobrou ' + v + ', mais que ' + lim + ': essa não foi uma série válida.';
@@ -10885,7 +10902,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
   while (_nPresc && sets.length < _nPresc) sets.push({ kg: '', pl: '', reps: '', rs: '' });
   // v513/v514: acima de prescrito + 3 (o teto das extras automáticas, uma por série que não valeu) só sobra linha que TEM
   // dado; linha vazia além disso é resto de grade antiga e sai do render. Nunca tira linha com peso, reps ou sobrou.
-  if (_nPresc) { while (sets.length > _nPresc + 3) { const u = sets[sets.length - 1] || {}; if (String(u.kg || '').trim() || String(u.pl || '').trim() || String(u.reps || '').trim() || String(u.rs || '').trim()) break; sets.pop(); } }
+  if (_nPresc) { while (sets.length > _nPresc + 2) { const u = sets[sets.length - 1] || {}; if (String(u.kg || '').trim() || String(u.pl || '').trim() || String(u.reps || '').trim() || String(u.rs || '').trim()) break; sets.pop(); } }
   const prevCru = getPrevSets(di, ei, w);
   const prev = _porTempo ? prevCru : _prevSugComPeso(di, ei, w, prevCru, sets.length);   // v586: série sem peso na última vez sugere o peso de antes
   const eiS = String(ei);
@@ -10938,7 +10955,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
       ${evo}${melhor}
       <div class="set-head"><span class="set-num"></span><span class="sh-meta">meta</span><span class="sh-kg" onclick="openGlossario('kg')" title="De cada lado ou o total?">${getUnit()}</span><span class="sh-pl" onclick="openPlacaInfo()" title="O que e placa?">placa</span><span class="sh-reps">${_porTempo ? _tUnid : 'reps'}</span><span class="sh-rs" title="Quantas repetições sobraram">sobrou</span><span class="sh-rpe" title="Esforço de 0 a 10">RPE</span><button type="button" class="rs-info-btn" onclick="openSobrouInfo()" aria-label="O que é o sobrou?">i</button><span class="sh-prev">${(prev && prev.length) ? 'última vez' : ''}</span></div>
       ${rows}
-      ${(noAdd || sets.length >= _nPresc + 3 || sets.length >= 12) ? '' : `<button type="button" class="set-add" onclick="addSet(${di},'${eiS}')" title="Abre uma série VÁLIDA a mais, além do que foi prescrito (por tua conta)">${_rotulada ? '+ válida extra' : '+ série extra'}</button>`}
+      ${(noAdd || sets.length >= _nPresc + 2 || sets.length >= 12) ? '' : `<button type="button" class="set-add" onclick="addSet(${di},'${eiS}')" title="Abre uma série VÁLIDA a mais, além do que foi prescrito (por tua conta)">${_rotulada ? '+ válida extra' : '+ série extra'}</button>`}
     </div>`;
 }
 // Resolve a grade CERTA de (di,ei). O modo foco ("um exercício por vez") renderiza a MESMA grade
@@ -11051,7 +11068,7 @@ function toggleSetFeita(di, ei, si) {
   });
   if (!marcando) return;
   if (navigator.vibrate) navigator.vibrate(15);
-  _autoRestDoExercicio(di, ei);            // série feita com treino rolando = descanso sozinho
+  _daSerieFeita(di, ei, si);               // v617: série feita + cronômetro automático ligado = descanso na hora
   // todas as séries feitas → o exercício se marca sozinho (no foco, com avanço automático)
   const g = _gridEl(di, ei);
   if (g && /^\d+$/.test(String(ei))) {
@@ -11141,14 +11158,14 @@ function onSetField(di, ei) {
     if (!arr) return;
     // reps preenchidas ANTES deste save (fonte: storage) — é contra isso que o
     // descanso automático decide se uma série NOVA acabou de ser anotada
-    let _repsAntes = 0;
-    try { _repsAntes = (loadSets(di, ei, currentWeek) || []).filter(s => String(s.reps || '').trim()).length; } catch (_) {}
+    let _repsAntes = 0, _antesArr = [];
+    try { _antesArr = loadSets(di, ei, currentWeek) || []; _repsAntes = _antesArr.filter(s => String((s && s.reps) || '').trim()).length; } catch (_) {}
     saveSets(di, ei, currentWeek, arr);
     const el = document.getElementById(`sv-${di}-${_setSvKey(ei)}`);
     if (el) { el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 1500); }
     const kg = Math.max(0, ..._soVal(di, ei, arr).map(s => parseFloat(s.kg) || 0));   // PR pela maior carga entre as séries VALIDAS (v496); v480: arr ja vem em kg
     if (kg > 0 && typeof checkPR === 'function') checkPR(di, /^\d+$/.test(String(ei)) ? parseInt(ei) : ei, kg);
-    _autoRestMaybe(di, ei, arr, _repsAntes);   // reps nova + treino rolando = descanso dispara sozinho (pill)
+    _daAvalia(di, ei, _antesArr, arr);   // v617: cronômetro automático (só com a chave ligada)
     try { _sobrouSugere(di, ei, arr); } catch (_) {}   // v481: sobrou acima do alvo = serie a mais / sobe a carga
     try { _sobrouSincronizaEsf(di, ei, arr); } catch (_) {}   // v532: sobrou da última série responde "Última série: como foi?"
   }, 400);
@@ -11208,7 +11225,7 @@ function addSet(di, ei) {
   _flushSetLocal_(di, ei);
   const arr = _setsBase(di, ei);
   if (arr.length >= 12) return;                 // teto de sanidade
-  try { if (arr.length >= _serieCountPresc(_exObjAt(di, ei)) + 3) return; } catch (_) {}   // v601: até 3 extras (o render só mostra linha vazia até prescrito + 3; além disso ficava gravada e invisível)
+  try { if (arr.length >= _serieCountPresc(_exObjAt(di, ei)) + 2) return; } catch (_) {}   // v617 (GH 09/11): até 2 extras; v601: até 3 extras (o render só mostra linha vazia até prescrito + 3; além disso ficava gravada e invisível)
   // v601: já tem uma extra VAZIA esperando? Não abre outra (toque repetido no botão empilhava linhas vazias); só mostra a que está lá.
   try { const n = _serieCountPresc(_exObjAt(di, ei)), u = arr[arr.length - 1] || {}; if (arr.length > n && !String(u.kg || '').trim() && !String(u.pl || '').trim() && !String(u.reps || '').trim() && !String(u.rs || '').trim()) { const rs = _gridEl(di, ei).querySelectorAll('.set-row'); const l = rs[rs.length - 1]; if (l) { l.scrollIntoView({ block: 'nearest' }); l.classList.add('te-mv-pisca'); setTimeout(() => l.classList.remove('te-mv-pisca'), 500); } return; } } catch (_) {}
   arr.push({ kg: '', pl: '', reps: '', rs: '' });
@@ -14436,30 +14453,108 @@ function startTimerAuto(name, seconds) {
   _timerLockOn();
   if (navigator.vibrate) navigator.vibrate(20);
 }
-function _autoRestMaybe(di, ei, arr, repsAntes) {
+// ══ v617 (GH 09/11/2026): CRONÔMETRO AUTOMÁTICO, chave do aluno, DESLIGADA por padrão ══
+// "Colocar o cronômetro do descanso automaticamente sempre que o aluno terminar de preencher os pesos, séries e quanto sobrou,
+// ou uns 10 segundos depois dele preencher peso e séries… um toggle de cronômetro automático pra quem quer assim e deixar
+// desativado pra quem quer por conta". Até a v616 o descanso começava sozinho, minimizado, só com o treino rolando e já no
+// 1º número das reps (_autoRestMaybe). Agora só com a chave ligada, em qualquer tela, em tela cheia, e só com a série anotada:
+//   peso + reps + sobrou (ou série de aquecimento/ajuste com peso + reps; prancha só com o tempo) = 1,5 s depois do último toque;
+//   reps com peso, sem o sobrou (ou só reps, exercício sem carga) = 10 s depois do último toque (cada toque recomeça a conta);
+//   toque no número da série (série feita) = na hora.
+// O descanso conta desde que as reps foram anotadas (a série acabou ali): o anel já começa andado o que passou.
+// Uma vez por série (apagar as reps libera de novo); nunca atropela descanso rodando (a série anotada durante ele conta como
+// descansada, não fica na fila); a parte A do biset não descansa.
+const _DA_KEY = 'gh-descanso-auto';
+let _daRepsEm = {}, _daFeito = {}, _daTo = {};
+function _descAutoOn() { try { return localStorage.getItem(_DA_KEY) === '1'; } catch (_) { return false; } }
+function descAutoSet(on) {
+  try { localStorage.setItem(_DA_KEY, on ? '1' : '0'); } catch (_) {}
+  if (!on) { for (const k in _daTo) clearTimeout(_daTo[k]); _daTo = {}; }
+  descAutoSync();
+}
+function descAutoSync() {
   try {
-    const n = (arr || []).filter(s => String(s.reps || '').trim()).length;
-    if (n <= (repsAntes || 0)) return;              // só quando uma série NOVA ganhou reps (corrigir número não dispara)
-    _autoRestDoExercicio(di, ei);
+    const on = _descAutoOn();
+    const a = document.getElementById('daLig'), b = document.getElementById('daDes');
+    if (a) { a.classList.toggle('on', on); a.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+    if (b) { b.classList.toggle('on', !on); b.setAttribute('aria-pressed', on ? 'false' : 'true'); }
+    const c = document.getElementById('timerAutoChip');
+    if (c) { c.classList.toggle('on', on); c.setAttribute('aria-pressed', on ? 'true' : 'false'); const e = c.querySelector('b'); if (e) e.textContent = on ? 'ligado' : 'desligado'; }
   } catch (_) {}
 }
-// Miolo compartilhado: dispara o descanso prescrito do exercício, SE o treino está
-// ativo (cronômetro ligado ou modo foco aberto) e não há descanso já rodando.
-// Usado pelo registro de reps e pelo toque de "série feita".
-function _autoRestDoExercicio(di, ei) {
+const _daTem = v => String(v == null ? '' : v).trim() !== '';
+function _daChave(di, ei, si) { return currentWeek + '|' + di + '|' + ei + '|' + si; }
+function _daDescanso(di, ei) {
+  const exs = (WORKOUT[di] && WORKOUT[di].exercises) || [];
+  const base = exs[parseInt(ei, 10)];
+  if (!base || base.warmup) return null;
+  const suf = String(ei).match(/[ab]$/);
+  if (base.biset && suf && suf[0] === 'a') return null;          // biset: da A vai direto pra B, sem descanso
+  const obj = base.biset ? (((suf && suf[0] === 'b') ? base.b : base.a) || base) : base;
+  const secs = parseIntervalSeconds(obj.rest || base.rest);
+  return (secs && secs > 0) ? { nome: obj.name || base.name || 'Descanso', secs } : null;
+}
+// 2 = série anotada inteira, 1 = reps anotadas (falta o peso ou o sobrou), 0 = sem reps
+function _daEstado(di, ei, s, si) {
+  if (!s || !_daTem(s.reps)) return 0;
+  const ex = _exObjAt(di, ei);
+  try { if (_exPorTempo(ex)) return 2; } catch (_) {}            // prancha, isometria: só o tempo
+  let val = true;
+  try { if (_serieTemRotulo(ex)) { const t = _serieTipos(ex)[si]; val = !t || t.tipo === 'val'; } } catch (_) {}
+  const carga = _daTem(s.kg) || _daTem(s.pl);
+  if (val && _daTem(s.rs)) return 2;
+  if (!val && carga) return 2;                                   // aquecimento e ajuste não pedem o sobrou
+  return 1;
+}
+// depois de cada gravação da grade: marca quando cada série ganhou reps e agenda o descanso da última delas
+function _daAvalia(di, ei, antes, arr) {
   try {
-    const focoAberto = (() => { const f = document.getElementById('focusOverlay'); return f && f.classList.contains('show'); })();
-    const treinoRolando = (typeof _wtTick !== 'undefined' && _wtTick);
-    if (!focoAberto && !treinoRolando) return;      // fora de treino ativo: nada de timer sozinho
-    if (_timerInt) return;                          // já tem descanso rodando
-    const exs = (WORKOUT[di] && WORKOUT[di].exercises) || [];
-    const base = exs[parseInt(ei)];
-    if (!base) return;
-    const suf = String(ei).match(/[ab]$/);
-    const obj = base.biset ? ((suf && suf[0] === 'b') ? base.b : base.a) : base;
-    const secs = parseIntervalSeconds(obj.rest);
-    if (!secs || secs <= 0) return;
-    startTimerAuto(obj.name || 'Descanso', secs);
+    const eiS = String(ei);
+    (arr || []).forEach((x, si) => {
+      const k = _daChave(di, eiS, si);
+      const tinha = _daTem(((antes || [])[si] || {}).reps);
+      if (_daTem((x || {}).reps)) { if (!tinha && !_daRepsEm[k]) _daRepsEm[k] = Date.now(); }
+      else if (tinha) { delete _daRepsEm[k]; delete _daFeito[k]; }   // apagou as reps: libera de novo (série feita sem reps segue feita)
+    });
+    const kt = di + '|' + eiS;
+    clearTimeout(_daTo[kt]); delete _daTo[kt];
+    if (!_descAutoOn()) return;
+    let si = -1;
+    for (let i = (arr || []).length - 1; i >= 0; i--) { const k = _daChave(di, eiS, i); if (_daRepsEm[k] && !_daFeito[k]) { si = i; break; } }
+    if (si < 0) return;
+    const est = _daEstado(di, eiS, arr[si], si);
+    if (!est) return;
+    _daTo[kt] = setTimeout(() => { delete _daTo[kt]; _daDispara(di, eiS, si, 0); }, est === 2 ? 1100 : 9600);   // + 0,4 s do salvamento
+  } catch (_) {}
+}
+function _daDispara(di, ei, si, agora) {
+  try {
+    if (!_descAutoOn()) return;
+    const k = _daChave(di, ei, si);
+    if (_daFeito[k]) return;
+    if (_timerInt) { _daFeito[k] = 1; return; }                   // anotou com um descanso rodando: aquele vale por esta série
+    if (!agora) { if (!_daRepsEm[k]) return; const s = (loadSets(di, ei, currentWeek) || [])[si]; if (!s || !_daTem(s.reps)) return; }
+    const d = _daDescanso(di, ei);
+    if (!d) return;
+    _daFeito[k] = 1;
+    try { const a = document.activeElement; if (a && a.classList && a.classList.contains('set-in')) a.blur(); } catch (_) {}   // tira o teclado
+    startTimer(d.nome, d.secs);
+    const passou = (!agora && _daRepsEm[k]) ? Math.floor((Date.now() - _daRepsEm[k]) / 1000) : 0;
+    if (passou > 0 && passou < _timerTotal - 5) {                 // a série acabou quando as reps foram anotadas
+      _timerEndAt -= passou * 1000;
+      _timerLeft = Math.max(1, Math.ceil((_timerEndAt - Date.now()) / 1000));
+      _descansoGuarda(d.nome);
+      updateTimerDisplay();
+    }
+    if (navigator.vibrate) navigator.vibrate(20);
+  } catch (_) {}
+}
+function _daSerieFeita(di, ei, si) {
+  try {
+    if (!_descAutoOn()) return;
+    const kt = di + '|' + String(ei);
+    clearTimeout(_daTo[kt]); delete _daTo[kt];
+    _daDispara(di, String(ei), parseInt(si, 10), 1);
   } catch (_) {}
 }
 
@@ -14473,7 +14568,7 @@ function _tourSteps() {
     { sel: '#dayTabs', t: 'Teu treino da semana', p: 'Cada botão é um dia de treino. O app já abre no treino certo de hoje, é só seguir.' },
     { sel: '.sets-grid', t: 'Anota tuas cargas aqui', p: 'Peso e repetições de cada série. É com isso que eu acompanho tua evolução e ajusto teu protocolo. Salva sozinho.' },
     { sel: '.ex-troca-btn', t: 'Sem o aparelho? Troca.', p: 'Toca em "trocar", embaixo do teu registro, que eu te mostro as opções equivalentes pro mesmo músculo, com vídeo. A carga do original fica guardada.' },
-    { sel: '.dia-start', t: 'Começar treino', p: 'Liga o cronômetro e abre um exercício por vez, em tela cheia. Anotou a série, o descanso cronometra sozinho.' },
+    { sel: '.dia-start', t: 'Começar treino', p: 'Liga o cronômetro e abre um exercício por vez, em tela cheia. Quer que o descanso comece sozinho? Liga o Cronômetro automático no Mais.' },
     { sel: '#bottomNav', t: 'Tua navegação', p: 'Dieta, teu progresso com gráficos e o resto do app moram aqui embaixo.' },
     { sel: '#bnMais', t: 'Fala comigo', p: 'Dúvida ou quer pedir um ajuste no protocolo? Toca no card do topo ou aqui em Mais.' }
   ].filter(x => !(document.body.classList.contains('modo-simples') && (x.sel === '.ex-sub-pill' || x.sel === '.dia-start')));   // v584
@@ -17163,6 +17258,7 @@ function ghTemaSync() {
   } catch (_) {}
 }
 try { ghTemaSync(); } catch (_) {}
+try { descAutoSync(); } catch (_) {}   // v617
 // ══ v610 (GH 05/11/2026): repetir a última, progresso do dia, dieta pela hora, seta de evolução.
 // Repetir a última: copia pro campo o que está em cinza (a última vez) nas linhas ainda vazias e salva pelo caminho de
 // sempre (onSetField). Só preenche campo vazio: nunca sobrescreve o que o aluno digitou.
@@ -28089,7 +28185,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v616';
+    var APP_SHELL_V = 'metodo-gh-v617';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
