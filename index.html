@@ -5300,6 +5300,17 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   .hdr-chips > .last-mod::after { content: '›'; color: var(--fg-3); font-size: 14px; line-height: 1; margin-left: 1px; }
   #esforcoAlvoTexto, #metaNotasChev { display: none !important; }
   #metaNotasNovo { margin-left: 2px !important; }
+  /* ══ v619 (GH 10/11/2026): série de volta (rótulo 'bo') e média semanal do peso ══ */
+  /* volta = válida mais leve: mesmo dourado da válida, preenchido pela metade */
+  :root { --c-bo-txt: #EBD49A; }
+  :root[data-theme="light"] { --c-bo-txt: #5E4A12; }
+  .set-row.t-bo:not(.feita) button.set-num { color: var(--c-bo-txt); border-color: var(--c-val); background: rgba(var(--c-val-rgb), .30); }
+  .set-row.t-bo { background: linear-gradient(90deg, rgba(var(--c-val-rgb), .06), transparent 70%); border-radius: 6px; }
+  .ts-pill.t-bo, .gl-cor.t-bo, .ept-t.t-bo, .ex-presc .tp-chip.t-bo { color: var(--c-bo-txt); border-color: var(--c-val); background: rgba(var(--c-val-rgb), .30); }
+  .peso-media { margin-top: 10px; font-size: 13px; line-height: 1.45; color: var(--fg-2); }
+  .peso-media b { color: var(--fg); font-weight: 800; }
+  .peso-media .pm-dif { white-space: nowrap; }
+  .peso-media.vazia { font-size: 11px; color: var(--fg-3); }
   /* ══ v618 (GH 10/11/2026): revisão visual ══ */
   /* o selo do esforço quebra linha em tela estreita (nowrap alargava a página e tirava a barra de baixo do lugar) */
   .hdr-chips > #esforcoAlvoBadge[style*="display: block"] { display: inline-block !important; white-space: normal; text-align: center; border-radius: 16px; line-height: 1.4; padding: 6px 12px; text-wrap: balance; }
@@ -6271,6 +6282,7 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
     <div class="ts-row"><span class="ts-pill t-aj">ajuste</span><div class="tec-body"><b>Carga média, 6 repetições.</b> Serve pra avisar o teu sistema nervoso que vem esforço pesado, sem gastar energia. Também sobra muito, de propósito. Aparece quando o movimento muda de direção ou de ângulo, mesmo com a articulação já quente.</div></div>
     <div class="ts-row"><span class="ts-pill t-pap">PAP</span><div class="tec-body"><b>Uma repetição só, com carga acima do ajuste.</b> É um estímulo máximo pro sistema nervoso antes da série válida. Não é pra falhar. Só entra em quem já tem experiência, e só quando eu coloco.</div></div>
     <div class="ts-row"><span class="ts-pill t-val">válida</span><div class="tec-body"><b>É a série que constrói músculo.</b> Vai até a falha ou fica a uma repetição dela. É a única onde tu anota o "sobrou", e a única que conta como volume na semana. <span class="corte-on">Sobrou 3 ou mais? Então essa não valeu: o app abre outra série pra tu fazer.</span><span class="corte-off">No teu protocolo o esforço-alvo é maior de propósito: toda série tua conta, e o app não abre série a mais.</span> Por tua conta, tu também pode abrir uma válida a mais: é o botão "+ válida extra" embaixo do teu registro.</div></div>
+    <div class="ts-row"><span class="ts-pill t-bo">volta</span><div class="tec-body"><b>Série de volta.</b> Vem depois das válidas: tira uns 10% do peso e faz mais repetições, no mesmo esforço. Ela pega o músculo já cansado com um peso que ele ainda aguenta. Conta como válida: tu anota o "sobrou" nela também. Só aparece em alguns exercícios, quando eu coloco.</div></div>
     <div class="tec-body ts-why"><b>Por que alguns exercícios não têm aquecimento nem ajuste?</b> Porque a articulação e a direção do movimento já vieram prontas do exercício anterior. Barra fixa depois da puxada alta vai direto na válida: mesma direção, mesma articulação. Remada depois delas ajusta de novo, porque a direção mudou. Repetir aquecimento numa articulação que já está quente é série perdida.</div>
     <div class="tec-body ts-why"><b>Panturrilha, abdômen e lombar</b> levam só ajuste, porque os outros exercícios já usaram eles pra estabilizar. <b>Prancha e isometria</b> vão direto, porque não é carga a calibrar.</div>
   </div>
@@ -6656,10 +6668,11 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
       <button class="water-btn" onclick="registrarPeso()">Registrar hoje</button>
       <span class="peso-saved" id="pesoSaved">✓ salvo</span>
     </div>
+    <div class="peso-media" id="pesoMedia" style="display:none;"></div>
     <div id="pesoChart" style="margin-top:10px;"></div>
     <div id="pesoResumo" style="color:#888;font-size:11px;margin-top:6px;line-height:1.4;"></div>
     <p style="color:#888;font-size:11px;margin:8px 0 0;line-height:1.4;">Medidas de fita (cintura, braço, coxa) vão na anamnese de reajuste: Mais &gt; Anamnese de reajuste.</p>
-    <p style="color:#666;font-size:10px;margin:8px 0 0;line-height:1.4;font-style:italic;">Pesa sempre igual (de manhã, em jejum) que a linha mostra a tendência real entre os reajustes. O GH vê essa linha no teu acompanhamento.</p>
+    <p style="color:#888;font-size:11px;margin:8px 0 0;line-height:1.4;">Pesa todo dia de manhã, em jejum, depois do banheiro. O peso de um dia sobe e desce com sal, sono e estresse: quem mostra a direção é a média da semana. O GH vê essa linha no teu acompanhamento.</p>
   </div>
 
   <div class="accomp-card" id="registroSemanalCard">
@@ -7387,6 +7400,7 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
       <div class="gloss-it" data-g="aj"><b><span class="gl-cor t-aj">ajuste</span> Ajuste</b>Carga média, 6 repetições. Serve pra avisar o teu sistema nervoso que vem esforço pesado, sem gastar energia. Também sobra muito, de propósito. Aparece quando o movimento muda de direção ou de ângulo, mesmo com a articulação já quente.</div>
       <div class="gloss-it" data-g="pap"><b><span class="gl-cor t-pap">PAP</span> PAP</b>Uma repetição só, com carga acima do ajuste. É um estímulo máximo pro sistema nervoso antes da série válida. Não é pra falhar. Só entra em quem já tem experiência, e só quando eu coloco.</div>
       <div class="gloss-it" data-g="val"><b><span class="gl-cor t-val">válida</span> Válida</b>É a série que constrói músculo. Vai até a falha ou fica a uma repetição dela. É a única onde tu anota o "sobrou", e a única que conta como volume na semana. <span class="corte-on">Sobrou 3 ou mais? Então essa não valeu: o app abre outra série pra tu fazer.</span><span class="corte-off">No teu protocolo o esforço-alvo é maior de propósito: toda série tua conta, e o app não abre série a mais.</span> Por tua conta, tu também pode abrir uma válida a mais: é o botão "+ válida extra" embaixo do teu registro. Exercício sem cor na grade é só de válidas.</div>
+      <div class="gloss-it" data-g="bo"><b><span class="gl-cor t-bo">volta</span> Série de volta</b>Vem depois das válidas: tira uns 10% do peso e faz mais repetições, no mesmo esforço. Ela pega o músculo já cansado com um peso que ele ainda aguenta. Conta como válida: tu anota o "sobrou" nela também. Só aparece em alguns exercícios, quando eu coloco.</div>
       <div class="gloss-it" data-g="semaq"><b>Por que alguns exercícios não têm aquecimento nem ajuste?</b>Porque a articulação e a direção do movimento já vieram prontas do exercício anterior. Barra fixa depois da puxada alta vai direto na válida: mesma direção, mesma articulação. Remada depois delas ajusta de novo, porque a direção mudou. Repetir aquecimento numa articulação que já está quente é série perdida. Panturrilha, abdômen e lombar levam só ajuste, porque os outros exercícios já usaram eles pra estabilizar. Prancha e isometria vão direto, porque não é carga a calibrar.</div>
       <div class="gloss-it" data-g="cadencia"><b>Cadência (Pos · Iso · Neg)</b>A velocidade de cada fase do movimento. Pos = subir. Iso = segurar parado. Neg = descer controlando. "Neg 3s" = descer em 3 segundos. O botão "ritmo" marca isso pra ti com som e bolinha.</div>
       <div class="gloss-it" data-g="concentrica"><b>Concêntrica (positiva)</b>A fase de vencer o peso, subindo.</div>
@@ -9799,8 +9813,8 @@ function _sugMostra(di, ei, html) { const e = _sugEl(di, ei); if (!e) return; e.
 // todo protocolo antigo continua igual. Só a válida constrói: é a única que entra no alvo de esforço, na
 // série extra, na força estimada, na evolução, na progressão e no recorde. Aq, aj e PAP existem pra ela
 // render; "sobrou" alto nelas é o esperado.
-const SERIE_TIPO_ROTULO = { aq: 'aq', aj: 'aj', pap: 'PAP', val: 'val' };
-const SERIE_TIPO_NOME = { aq: 'aquecimento', aj: 'ajuste', pap: 'PAP', val: 'válida' };
+const SERIE_TIPO_ROTULO = { aq: 'aq', aj: 'aj', pap: 'PAP', val: 'val', bo: 'bo' };
+const SERIE_TIPO_NOME = { aq: 'aquecimento', aj: 'ajuste', pap: 'PAP', val: 'válida', bo: 'volta' };
 // '1X aq / 1X aj / 2X val' -> [{tipo:'aq',seg:0},{tipo:'aj',seg:1},{tipo:'val',seg:2},{tipo:'val',seg:2}]
 // Mesma contagem do _serieCountPresc (1 a 10 linhas); fora disso devolve [] e tudo vira val.
 function _serieTipos(ex) {
@@ -9813,7 +9827,7 @@ function _serieTipos(ex) {
       if (!m) return;
       const n = parseInt(m[1], 10) || 0;
       const t = String(m[2] || '').toLowerCase();
-      const tipo = (t === 'aq' || t === 'aj' || t === 'pap') ? t : 'val';
+      const tipo = (t === 'aq' || t === 'aj' || t === 'pap' || t === 'bo') ? t : 'val';   // v619: bo = série de volta
       for (let k = 0; k < n && out.length < 12; k++) out.push({ tipo, seg: i });
     });
     if (out.length < 1 || out.length > 10) return [];
@@ -9823,15 +9837,24 @@ function _serieTipos(ex) {
 // v498 (Entregas #2314): rotulado = tem rótulo explícito na col SÉRIES, inclusive '2X val' sem barra (o card diz
 // "2 válidas" igual aos outros). Sem rótulo nenhum = protocolo antigo, grade numerada como sempre.
 function _serieTemRotulo(ex) {
-  try { return _serieTipos(ex).length > 0 && /\d\s*[xX]\s*(aq|aj|pap|val)\b/i.test(String((ex && ex.series) || '')); } catch (_) { return false; }
+  try { return _serieTipos(ex).length > 0 && /\d\s*[xX]\s*(aq|aj|pap|val|bo)\b/i.test(String((ex && ex.series) || '')); } catch (_) { return false; }
 }
 // v498 (GH 22/09: "não dá pra entender o que são séries válidas, aquecimento, ajuste... destacar com cores"):
 // cada tipo tem cor própria (CSS --c-aq/--c-aj/--c-pap/--c-val), o botão da linha diz o tipo por extenso e o card
 // resume em chips na mesma cor: "aquecimento 1×10 · ajuste 1×6 · válidas 2×10 a 12". Placeholder do kg em
 // aquecimento/ajuste/PAP diz a carga esperada (leve / média / pesada), o das reps diz as reps daquele segmento.
-const SERIE_TIPO_CURTO = { aq: 'aquec.', aj: 'ajuste', pap: 'PAP', val: 'válida' };
-const SERIE_TIPO_CARGA = { aq: 'leve', aj: 'média', pap: 'pesada' };
-const SERIE_TIPO_ORDEM = ['aq', 'aj', 'pap', 'val'];
+const SERIE_TIPO_CURTO = { aq: 'aquec.', aj: 'ajuste', pap: 'PAP', val: 'válida', bo: 'volta' };
+const SERIE_TIPO_CARGA = { aq: 'leve', aj: 'média', pap: 'pesada', bo: '-10%' };
+const SERIE_TIPO_ORDEM = ['aq', 'aj', 'pap', 'val', 'bo'];
+// v619 (GH 10/11/2026, "adicionar uma série de Back Off depois das validas, com explicacao inclusa"): 'bo' = série de volta.
+// Depois das válidas, uns 10% menos peso e mais repetições, no mesmo esforço. CONTA como válida (sobrou, não valeu, série
+// extra, recorde, evolução). _tipoVale = "esta linha vale como válida".
+function _tipoVale(t) { return t === 'val' || t === 'bo'; }
+// índice da primeira série de volta na grade do exercício (-1 = não tem)
+function _boIdx(ex) { try { const tp = _serieTipos(ex); for (let i = 0; i < tp.length; i++) if (tp[i].tipo === 'bo') return i; } catch (_) {} return -1; }
+// As linhas ANTES da série de volta. A sugestão de carga e a pergunta de esforço do exercício olham a última VÁLIDA: a
+// volta é mais leve de propósito, e como base ela faria o app sugerir menos peso do que o aluno já usa na válida.
+function _antesDaVolta(di, ei, sets) { try { const b = _boIdx(_exObjAt(di, ei)); return (b > 0 && Array.isArray(sets)) ? sets.slice(0, b) : sets; } catch (_) { return sets; } }
 // "10 a 12" -> "10-12" (cabe no placeholder de 52 px); texto longo ("até a falha") volta pra "reps"
 function _repsCurto(s) {
   try {
@@ -9868,9 +9891,9 @@ function _serieFraseHtml(ex, tp) {
     tp.forEach(x => { if (!grupos[x.tipo]) grupos[x.tipo] = { n: 0, seg: x.seg }; grupos[x.tipo].n++; });
     return SERIE_TIPO_ORDEM.filter(t => grupos[t]).map(t => {
       const g = grupos[t];
-      const nome = t === 'val' ? (g.n === 1 ? 'válida' : 'válidas') : (t === 'pap' ? 'PAP' : SERIE_TIPO_NOME[t]);
+      const nome = t === 'val' ? (g.n === 1 ? 'válida' : 'válidas') : (t === 'bo' ? 'de volta' : (t === 'pap' ? 'PAP' : SERIE_TIPO_NOME[t]));
       let txt = g.n + ' <span class="gl" onclick="event.stopPropagation();openGlossario(\'' + t + '\')">' + nome + '</span>';
-      if (t === 'val') {
+      if (_tipoVale(t)) {
         const reps = String(_repsSegmento(ex, g.seg) || '').trim();
         if (reps) txt += (/\d/.test(reps) ? ' de ' : ' ') + _dx(reps) + ((/seg|min|\bs\b/i.test(reps) || !/\d\s*$/.test(reps)) ? '' : ' reps');   // v555: "2 válidas até a falha" (saía "de até a falha reps")
       }
@@ -9895,7 +9918,7 @@ function _prescTabelaHtml(ex, tp, isWarmup) {
       const g = grupos[t];
       let reps = String(_repsSegmento(ex, g.seg) || '').trim();
       if (reps && /\d\s*$/.test(reps) && !/seg|min|\bs\b/i.test(reps)) reps += (reps === '1' ? ' rep' : ' reps');   // PAP: "1 rep"; v555: só ganha "reps" o texto que termina em número ("até a falha" fica como está)
-      const extra = t === 'val' ? (_exPorTempo(ex) ? 'segurar firme' : esf) : (SERIE_TIPO_CARGA[t] || '');   // v531: prancha não tem "sobrar"
+      const extra = t === 'val' ? (_exPorTempo(ex) ? 'segurar firme' : esf) : (t === 'bo' ? '10% menos peso' : (SERIE_TIPO_CARGA[t] || ''));   // v619   // v531: prancha não tem "sobrar"
       return '<div class="ept-row"><span class="ept-t t-' + t + '" onclick="event.stopPropagation();openGlossario(\'' + t + '\')" title="' + SERIE_TIPO_NOME[t] + '">' + SERIE_TIPO_CURTO[t] + '</span>'
         + '<span class="ept-n">' + g.n + (g.n === 1 ? ' série' : ' séries') + '</span><span class="ept-r">' + _dx(reps) + '</span><span class="ept-c">' + extra + '</span></div>';
     }).join('');
@@ -9910,7 +9933,7 @@ function _prescTabelaHtml(ex, tp, isWarmup) {
 function _serieResumoCurto(ex) {
   try {
     const g = {}; _serieTipos(ex).forEach(x => { g[x.tipo] = (g[x.tipo] || 0) + 1; });
-    return SERIE_TIPO_ORDEM.filter(t => g[t]).map(t => g[t] + ' ' + (t === 'val' ? (g[t] === 1 ? 'válida' : 'válidas') : SERIE_TIPO_CURTO[t])).join(' + ') || String((ex && ex.series) || '');
+    return SERIE_TIPO_ORDEM.filter(t => g[t]).map(t => g[t] + ' ' + (t === 'val' ? (g[t] === 1 ? 'válida' : 'válidas') : (t === 'bo' ? 'de volta' : SERIE_TIPO_CURTO[t]))).join(' + ') || String((ex && ex.series) || '');
   } catch (_) { return String((ex && ex.series) || ''); }
 }
 function _serieChipsHtml(ex, tp) {
@@ -9935,8 +9958,8 @@ function _soVal(di, ei, sets) {
   try {
     if (!Array.isArray(sets)) return sets;
     const tp = _serieTipos(_exObjAt(di, ei));
-    if (!tp.length || !tp.some(x => x.tipo !== 'val')) return sets;
-    return sets.filter((s, i) => !tp[i] || tp[i].tipo === 'val');
+    if (!tp.length || !tp.some(x => !_tipoVale(x.tipo))) return sets;
+    return sets.filter((s, i) => !tp[i] || _tipoVale(tp[i].tipo));   // v619: a série de volta conta
   } catch (_) { return sets; }
 }
 // Reps prescritas de UM segmento ('10 / 6 / 8 a 10', seg 2 -> '8 a 10'); sem barra, é a string inteira
@@ -9985,7 +10008,7 @@ function _sobrouSugere(di, ei, arr) {
     const alvo = _alvoTopo();
     const ex = _exObjAt(di, ei);
     const tp = _serieTipos(ex);
-    const ehVal = i => !tp[i] || tp[i].tipo === 'val';
+    const ehVal = i => !tp[i] || _tipoVale(tp[i].tipo);   // v619: a série de volta conta
     // v496: só a série VÁLIDA entra aqui (aquecimento, ajuste e PAP sobrar é o esperado).
     let li = -1;
     for (let i = 0; i < arr.length; i++) if (ehVal(i) && String(arr[i].rs || '').trim()) li = i;
@@ -10004,7 +10027,10 @@ function _sobrouSugere(di, ei, arr) {
     let ultimaVal = -1;
     for (let j = 0; j < arr.length; j++) if (ehVal(j)) ultimaVal = j;
     const explica = 'Sobrou ' + v + ', mais que ' + lim + ': essa não foi uma série válida.';
-    if (li < ultimaVal) { _sugMostra(di, ei, explica + ' Faz a próxima com mais carga, pra sobrar no máximo ' + lim + '.'); return; }
+    // v619: se a próxima que vale é a série de volta, não manda "mais carga" (nela o peso desce de propósito)
+    let _proxVolta = false;
+    for (let j = li + 1; j < arr.length; j++) if (ehVal(j)) { _proxVolta = !!(tp[j] && tp[j].tipo === 'bo'); break; }
+    if (li < ultimaVal) { _sugMostra(di, ei, explica + (_proxVolta ? ' Na série de volta, acerta o peso pra sobrar no máximo ' + lim + '.' : ' Faz a próxima com mais carga, pra sobrar no máximo ' + lim + '.')); return; }
     if (_sugFeita[k] || !cabeMais) { _sugMostra(di, ei, explica + ' Faz outra série com mais carga.'); return; }
     _sugFeita[k] = 1;
     let _aberta = false;
@@ -10973,7 +10999,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
     const _tipo = _rotulada ? _rowTipo(di, eiS, si) : 'val';   // v496
     const _rot = _rotulada ? (SERIE_TIPO_CURTO[_tipo] || 'válida') : '';   // v498: por extenso, na cor do tipo
     const _rsV = parseInt(String(s.rs || '').replace(/[^0-9]/g, ''), 10);
-    const _nv = _corteOn && _rotulada && _tipo === 'val' && isFinite(_rsV) && _rsV > _alvoHi;   // v514: sobrou mais que o combinado = não valeu
+    const _nv = _corteOn && _rotulada && _tipoVale(_tipo) && isFinite(_rsV) && _rsV > _alvoHi;   // v514: sobrou mais que o combinado = não valeu
     const _segR = (_rotulada && _tpG[si]) ? _tpG[si].seg : null;
     const _phReps = _repsPh(_exG, si);   // v545: a faixa de reps DESTA linha (o v531 tinha deixado o campo só com "reps")
     const _phKg = (_rotulada && _tipo !== 'val') ? (SERIE_TIPO_CARGA[_tipo] || getUnit()) : getUnit();
@@ -10986,8 +11012,8 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
         <input class="set-in set-kg${_antKg ? ' ph-ant' : ''}" type="number" aria-label="Peso, série ${si + 1}" inputmode="decimal" placeholder="${_antKg || _phKg}" value="${kgToDisplay(s.kg)}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-pl${_antPl ? ' ph-ant' : ''}" type="number" aria-label="Placas, série ${si + 1}" inputmode="numeric" placeholder="${_antPl || 'pl'}" value="${s.pl || ''}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-reps${_antReps ? ' ph-ant' : ''}" type="number" aria-label="Repetições, série ${si + 1}" inputmode="numeric" placeholder="${_antReps || (_porTempo ? _tUnid : _phReps)}" title="${_porTempo ? 'Quantos ' + (_tUnid === 'min' ? 'minutos' : 'segundos') + ' tu segurou' : ''}" value="${s.reps || ''}" oninput="onSetField(${di},'${eiS}')">
-        <input class="set-in set-rs" type="number" aria-label="Sobrou, série ${si + 1}" inputmode="numeric" onfocus="sobrouDica(this)" onblur="sobrouDicaSome()" placeholder="${_tipo === 'val' ? rsPh : '·'}" title="${_tipo === 'val' ? 'Quantas repetições sobraram nessa série' : 'Série de ' + SERIE_TIPO_NOME[_tipo] + ': sobrar é o esperado, não entra no alvo'}" value="${s.rs || ''}" oninput="onSetField(${di},'${eiS}')">
-        <input class="set-in set-rpe" type="number" aria-label="RPE, série ${si + 1}" inputmode="numeric" min="0" max="10" placeholder="${_tipo === 'val' ? rpePh : '·'}" title="RPE: esforço de 0 a 10 (10 = não dava mais nenhuma). É o RIR visto do outro lado: RPE 9 = sobrou 1." value="${_rpeDe(s.rs)}" oninput="_rpeDigitado(this,${di},'${eiS}')" onblur="_rpeNormaliza(this)">
+        <input class="set-in set-rs" type="number" aria-label="Sobrou, série ${si + 1}" inputmode="numeric" onfocus="sobrouDica(this)" onblur="sobrouDicaSome()" placeholder="${_tipoVale(_tipo) ? rsPh : '·'}" title="${_tipoVale(_tipo) ? 'Quantas repetições sobraram nessa série' : 'Série de ' + SERIE_TIPO_NOME[_tipo] + ': sobrar é o esperado, não entra no alvo'}" value="${s.rs || ''}" oninput="onSetField(${di},'${eiS}')">
+        <input class="set-in set-rpe" type="number" aria-label="RPE, série ${si + 1}" inputmode="numeric" min="0" max="10" placeholder="${_tipoVale(_tipo) ? rpePh : '·'}" title="RPE: esforço de 0 a 10 (10 = não dava mais nenhuma). É o RIR visto do outro lado: RPE 9 = sobrou 1." value="${_rpeDe(s.rs)}" oninput="_rpeDigitado(this,${di},'${eiS}')" onblur="_rpeNormaliza(this)">
         ${prevTxt}
         ${(si < _nPresc) ? '' : `<button type="button" class="set-del" onclick="removeSet(${di},'${eiS}',${si})" title="Tirar esta série extra" aria-label="Tirar a série extra ${si + 1}">&times;</button>`}
       </div>`;
@@ -14544,7 +14570,7 @@ function _daEstado(di, ei, s, si) {
   const ex = _exObjAt(di, ei);
   try { if (_exPorTempo(ex)) return 2; } catch (_) {}            // prancha, isometria: só o tempo
   let val = true;
-  try { if (_serieTemRotulo(ex)) { const t = _serieTipos(ex)[si]; val = !t || t.tipo === 'val'; } } catch (_) {}
+  try { if (_serieTemRotulo(ex)) { const t = _serieTipos(ex)[si]; val = !t || _tipoVale(t.tipo); } } catch (_) {}
   const carga = _daTem(s.kg) || _daTem(s.pl);
   if (val && _daTem(s.rs)) return 2;
   if (!val && carga) return 2;                                   // aquecimento e ajuste não pedem o sobrou
@@ -15635,7 +15661,7 @@ function _progUltReg(di, ei) {
     for (let w = currentWeek - 1; w >= 1; w--) {
       const esf = loadEsf(di, String(ei), w);
       if (!esf) continue;
-      const base = _progBaseDoSets(_soVal(di, String(ei), loadSets(di, String(ei), w)));   // v496: so validas
+      const base = _progBaseDoSets(_soVal(di, String(ei), _antesDaVolta(di, String(ei), loadSets(di, String(ei), w))));   // v496: so validas; v619: sem a série de volta
       if (!base) continue;
       return { w, esf, base };
     }
@@ -15704,7 +15730,7 @@ function _focusEsforcoBlock(di, key, compact) {
   const apOpen = curA.length > 0;
   const curN = loadNota(di, key, currentWeek);
   const inner = `
-    <div class="focus-carga-label">Na última série, quantas reps sobraram? (quantas ainda dava pra fazer)</div>
+    <div class="focus-carga-label">${(() => { try { return _boIdx(_exObjAt(di, String(key))) > 0; } catch (_) { return false; } })() ? 'Na última série válida (antes da série de volta), quantas reps sobraram?' : 'Na última série, quantas reps sobraram? (quantas ainda dava pra fazer)'}</div>
     <div class="esf-chips">${chips}</div>
     <button class="esf-aptoggle${apOpen ? ' open' : ''}" onclick="esfToggleAp(this)">⚠️ Problema no aparelho?</button>
     <div class="esf-apchips" style="display:${apOpen ? 'flex' : 'none'};">${apChips}</div>
@@ -15806,7 +15832,7 @@ function _esfMsg(di, key, val) {
     return 'No alvo: carga certa, mantém.';
   }
   if (val === 'sobrou3') {
-    const base = _progBaseDoSets(loadSets(di, String(key), currentWeek));
+    const base = _progBaseDoSets(_antesDaVolta(di, String(key), loadSets(di, String(key), currentWeek)));   // v619
     const nomeEx = (WORKOUT[di] && WORKOUT[di].exercises[parseInt(key)] || {}).name || '';
     const sug = base ? _progSugestao(nomeEx, base, 'sobrou3') : null;
     return sug ? `💪 Sobrou 3+: na próxima <b>tenta ${sug.prox}</b>. Se travar, volta sem drama.` : '💪 Sobrou 3+: na próxima dá pra subir um degrau na carga.';
@@ -15852,7 +15878,8 @@ function _esfPreencheSobrou(di, key, val) {
   if (exG && _exPorTempo(exG)) return;   // prancha, isometria: não tem sobrou
   const g = _gridEl(di, ei); if (!g) return;
   let alvo = null;
-  g.querySelectorAll('.set-row').forEach(r => { const v = s => String((r.querySelector(s) || {}).value || '').trim(); if (v('.set-kg') || v('.set-pl') || v('.set-reps')) alvo = r; });
+  const _b619 = _boIdx(exG);   // v619: com série de volta, a resposta vai pra última válida
+  g.querySelectorAll('.set-row').forEach(r => { if (_b619 > 0 && parseInt(r.getAttribute('data-si'), 10) >= _b619) return; const v = s => String((r.querySelector(s) || {}).value || '').trim(); if (v('.set-kg') || v('.set-pl') || v('.set-reps')) alvo = r; });
   if (!alvo) return;
   const rs = alvo.querySelector('.set-rs');
   if (!rs || String(rs.value || '').trim() === n) return;
@@ -15867,7 +15894,9 @@ function _sobrouSincronizaEsf(di, ei, arr) {
   const ex = _exObjAt(di, ei);
   if (!ex || _exPorTempo(ex)) return;
   const key = String(ei).replace(/b$/, '');
-  const u = arr[arr.length - 1];
+  const _b619 = _boIdx(ex);
+  const _iu = (_b619 > 0 && _b619 <= arr.length) ? _b619 - 1 : arr.length - 1;   // v619: com série de volta, vale a última válida
+  const u = arr[_iu];
   const rs = String(u.rs || '').trim();
   if (!rs) return;
   const v = parseInt(rs.replace(/[^0-9]/g, ''), 10);
@@ -15878,7 +15907,7 @@ function _sobrouSincronizaEsf(di, ei, arr) {
     try {
       // v544: a faixa de reps é a DESTA linha. Antes vinha do primeiro segmento válido: em "20 / 15 / 12 / 12", fazer as 12
       // da última série com sobrou 0 virava "Travei antes de terminar" (12 < 20) e a progressão mandava descer a carga.
-      const repsP = String(_repsDaLinha(ex, arr.length - 1) || '');
+      const repsP = String(_repsDaLinha(ex, _iu) || '');
       const min = parseInt((repsP.match(/\d+/) || [])[0], 10);
       const feitas = parseInt(String(u.reps || '').replace(/[^0-9]/g, ''), 10);
       if (isFinite(min) && isFinite(feitas)) { if (feitas < min) val = 'falha_antes'; else _completou = true; }
@@ -16288,6 +16317,33 @@ function _lineChartSvg(pts, opts) {
 // GET action=medidas (linha do tempo: anamnese inicial + reajustes + o que o aluno salvar aqui)
 // e POST type 'medidas' só com o peso. Dado novo ENTRE os reajustes; não mexe em prescrição.
 let _pesoPts = null;   // cache da sessão
+// v619 (GH 10/11/2026, decisão 5a): a pesagem de um dia oscila; decide-se pela média. Semana = hoje e os 6 dias antes;
+// semana passada = os 7 dias antes disso. Uma pesagem por dia (a última do dia). Média só com 2 pesagens ou mais.
+function _pesoMedias(pts, agora) {
+  const hoje = new Date(agora || Date.now()); hoje.setHours(0, 0, 0, 0);
+  const diasAtras = p => {
+    let d = null;
+    const m = String((p && p.data) || '').match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    if (m) d = new Date(+m[3], +m[2] - 1, +m[1]);
+    else if (p && p.ts) { d = new Date(p.ts); d.setHours(0, 0, 0, 0); }
+    return (d && !isNaN(d.getTime())) ? Math.round((hoje - d) / 86400000) : null;
+  };
+  const a = [], b = [];
+  (pts || []).forEach(p => { const n = diasAtras(p); if (n == null || n < 0) return; if (n <= 6) a.push(p.peso); else if (n <= 13) b.push(p.peso); });
+  const med = x => x.length ? x.reduce((t, v) => t + v, 0) / x.length : null;
+  return { n: a.length, m: med(a), nAnt: b.length, mAnt: med(b) };
+}
+function _pesoMediaHtml(pts, agora) {
+  const r = _pesoMedias(pts, agora);
+  const f = v => v.toFixed(1).replace('.', ',');
+  if (r.n < 2) return { vazia: true, html: 'A média da semana aparece com 2 pesagens nos últimos 7 dias. Tu tem ' + r.n + '.' };
+  let h = 'Média da semana: <b>' + f(r.m) + 'kg</b> (' + r.n + ' pesagens)';
+  if (r.nAnt >= 2) {
+    const dif = Math.round((r.m - r.mAnt) * 10) / 10;
+    h += dif === 0 ? ' · <span class="pm-dif">igual à semana passada</span>' : ' · <span class="pm-dif"><b>' + (dif > 0 ? '+' : '-') + f(Math.abs(dif)) + 'kg</b> da semana passada</span>';
+  }
+  return { vazia: false, html: h };
+}
 async function renderPeso(force) {
   const chart = document.getElementById('pesoChart'), resumo = document.getElementById('pesoResumo');
   if (!chart || typeof SHEET_ID === 'undefined' || !SHEET_ID) return;
@@ -16301,11 +16357,14 @@ async function renderPeso(force) {
   const porDia = {};
   _pesoPts.forEach(p => { porDia[p.data] = p; });   // 1 ponto por dia (o último do dia)
   const pts = Object.values(porDia).sort((a, b) => (a.ts || 0) - (b.ts || 0));
+  const _pm = document.getElementById('pesoMedia');
   if (!pts.length) {
     chart.innerHTML = '';
+    if (_pm) _pm.style.display = 'none';
     resumo.textContent = 'Registra teu primeiro peso que a linha de tendência começa aqui.';
     return;
   }
+  try { if (_pm) { const m = _pesoMediaHtml(pts); _pm.innerHTML = m.html; _pm.classList.toggle('vazia', m.vazia); _pm.style.display = ''; } } catch (_) {}   // v619
   const fmtP = v => v.toFixed(1).replace('.', ',') + 'kg';
   chart.innerHTML = _lineChartSvg(pts.map(p => ({ x: String(p.data || '').slice(0, 5), y: p.peso })), { fmt: fmtP });
   const first = pts[0], last = pts[pts.length - 1];
@@ -16352,7 +16411,7 @@ function sobrouDica(inp) {
       alvo = (v && _esforcoEhFalha(v)) ? 'Teu alvo: até a falha, sobrar 0.' : ('Teu alvo: sobrar ' + (a.hi > a.lo ? a.lo + ' a ' + a.hi : a.lo) + '.');
     } catch (_) {}
     const d = document.createElement('div'); d.className = 'rs-dica';
-    d.innerHTML = tipo === 'val'
+    d.innerHTML = _tipoVale(tipo)
       ? '<b>Sobrou</b> = quantas reps tu ainda conseguia fazer quando parou. Parou no limite, nenhuma a mais: <b>0</b>. ' + alvo
       : 'Série de ' + ((typeof SERIE_TIPO_NOME !== 'undefined' && SERIE_TIPO_NOME[tipo]) || tipo) + ': sobrar é o esperado, não precisa anotar.';
     row.insertAdjacentElement('afterend', d);
@@ -28234,7 +28293,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v618';
+    var APP_SHELL_V = 'metodo-gh-v619';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
