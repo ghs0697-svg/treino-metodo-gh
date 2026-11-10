@@ -5300,6 +5300,27 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   .hdr-chips > .last-mod::after { content: '›'; color: var(--fg-3); font-size: 14px; line-height: 1; margin-left: 1px; }
   #esforcoAlvoTexto, #metaNotasChev { display: none !important; }
   #metaNotasNovo { margin-left: 2px !important; }
+  /* ══ v618 (GH 10/11/2026): revisão visual ══ */
+  /* o selo do esforço quebra linha em tela estreita (nowrap alargava a página e tirava a barra de baixo do lugar) */
+  .hdr-chips > #esforcoAlvoBadge[style*="display: block"] { display: inline-block !important; white-space: normal; text-align: center; border-radius: 16px; line-height: 1.4; padding: 6px 12px; text-wrap: balance; }
+  /* rede: conteúdo que passar da largura da tela é cortado, a página não alarga */
+  html, body { overflow-x: clip; }
+  html[data-theme="light"] .mt-anel .tr { stroke: rgba(20, 18, 12, .10); }
+  html[data-theme="light"] .mt-anel .num { fill: var(--fg); }
+  html[data-theme="light"] .mt-anel .arc { stroke: #C79A2E; }
+  html[data-theme="light"] .mt-anel.ok .arc { stroke: #B8891F; filter: none; }
+  html[data-theme="light"] .mt-anel.ok .num { fill: #8a6a12; }
+  html[data-theme="light"] .sl-selo .fundo { fill: rgba(255, 255, 255, .75); stroke: rgba(167, 126, 42, .30); }
+  html[data-theme="light"] .sl-selo .seg { stroke: rgba(20, 18, 12, .12); }
+  html[data-theme="light"] .sl-selo .seg.on { stroke: #C79A2E; }
+  html[data-theme="light"] .sl-selo .ico { stroke: #9a958a; }
+  html[data-theme="light"] .sl-selo.n1 .ico, html[data-theme="light"] .sl-selo.n2 .ico, html[data-theme="light"] .sl-selo.n3 .ico, html[data-theme="light"] .sl-selo.n4 .ico { stroke: var(--gold); }
+  html[data-theme="light"] .sl-selo.n5 .fundo { fill: rgba(212, 175, 106, .20); stroke: rgba(167, 126, 42, .55); }
+  html[data-theme="light"] .sl-selo.n5 .seg.on, html[data-theme="light"] .sl-selo.n5 .ico { stroke: #A77E2A; }
+  @media (max-width: 440px) {
+    #pacerOverlay .timer-actions, #vacuoOverlay .timer-actions { gap: 8px; padding: 0 12px; box-sizing: border-box; width: 100%; }
+    #pacerOverlay .timer-btn, #vacuoOverlay .timer-btn { padding: 12px 14px; }
+  }
   .hdr-esf p { margin: 0; }
   html[data-theme="light"] button.set-num { color: var(--fg-2); }   /* v610c: a regra gerada pra .set-num ganhava da v609 (button.set-num) por especificidade */
 </style>
@@ -9665,6 +9686,14 @@ function _trocaEnvia(p, motivo) {
       di: p.di, ei: p.ei, w: p.w, de: p.de, para: p.para, motivo: motivo || 'nao_informado' });
   } catch (_) {}
 }
+// v618: séries escritas uma a uma ("1X / 1X / 1X / 1X", reps diferentes por série) contam como "4 séries" no texto.
+function _seriesTxtSoma(ex) {
+  try {
+    const sg = _serieSegs(String((ex && ex.series) || ''));
+    if (sg.length > 1 && sg.every(x => /^\s*\d+\s*[xX]?\s*$/.test(x))) { const n = _serieCountPresc(ex); return n + (n === 1 ? ' série' : ' séries'); }
+  } catch (_) {}
+  return '';
+}
 // Prescrição em UMA linha (eram 4 caixinhas): séries, reps, intervalo, e embaixo a cadência.
 function _prescLinha(ex, isWarmup) {
   try {
@@ -9673,7 +9702,7 @@ function _prescLinha(ex, isWarmup) {
     const _rotP = _serieTemRotulo(ex);
     if (_rotP) return _prescTabelaHtml(ex, _tp, isWarmup);   // v506: bloco "Prescrição" espelhando a grade
     {
-      if (ex.series) { const _ns = String(ex.series).replace(/\s*[xX]\s*$/, ''); p.push(_ns + (/^\s*0?1\s*$/.test(_ns) ? ' série' : ' séries')); }   // v553: "1 série"
+      if (ex.series) { const _ns = String(ex.series).replace(/\s*[xX]\s*$/, ''); p.push(_seriesTxtSoma(ex) || (_ns + (/^\s*0?1\s*$/.test(_ns) ? ' série' : ' séries'))); }   // v553: "1 série"
       if (ex.reps) p.push((/seg|min|\bs\b/i.test(String(ex.reps)) || !/\d\s*$/.test(String(ex.reps))) ? _dx(ex.reps) : (_dx(ex.reps) + ' reps'));   // "20 seg" nao vira "20 seg reps"; v555: só ganha "reps" o texto que TERMINA em número ("até a falha" e "10 / até a falha" ficam como estão)
     }
     // v499: com chips, o intervalo vai sem o "·" (a borda do chip já separa) e não quebra no meio da frase
@@ -10321,6 +10350,21 @@ function _esforcoEhFalha(valor) {
 }
 // Esforço-alvo (RIR) vira frase clara e que PUXA esforço (sem "no tanque", que lia como "segura").
 // 'badge' = resumo curto pro topo; 'focado' = instrução da última série no Modo Focado.
+// v618: a montagem escreveu que a série NÃO vai até a falha ("sem ir até a falha", "nunca vai até a falha", "longe da falha"),
+// no alvo ou na explicação dele: o selo não manda "puxar até quase travar".
+function _esforcoContido(ea) {
+  try {
+    if (!ea || !ea.valor || _esforcoEhFalha(ea.valor)) return false;
+    const v = (String(ea.valor) + ' . ' + String(ea.texto || '')).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    let i = v.indexOf('falha');
+    while (i >= 0) {
+      const antes = v.slice(0, i).split(/[^a-z]+/).filter(Boolean).slice(-4);
+      if (antes.some(p => /^(sem|nao|nunca|jamais|zero|nada|evita|evitar|evite|longe)$/.test(p))) return true;
+      i = v.indexOf('falha', i + 5);
+    }
+  } catch (_) {}
+  return false;
+}
 function _esforcoFrase(valor, modo) {
   const r = _parseAlvoRange(valor);
   const falha = _esforcoEhFalha(valor);   // v475
@@ -16935,8 +16979,9 @@ async function loadFromSheets(injectedText) {
         // precisa ver o dele; achado da Entregas, Sala #806: alvos diferentes = badge igual).
         const rA = _parseAlvoRange(STUDENT_ESFORCO_ALVO.valor);
         const falhaA = _esforcoEhFalha(STUDENT_ESFORCO_ALVO.valor);   // v475: "sem falha" nao e falha
-        let tA = _esforcoFrase(STUDENT_ESFORCO_ALVO.valor, 'badge');
-        if (!falhaA && rA) tA += ' · sobrar no máx ' + (rA[0] === rA[1] ? rA[0] : rA[0] + '-' + rA[1]);
+        const contA = _esforcoContido(STUDENT_ESFORCO_ALVO);   // v618
+        let tA = contA ? 'última série firme, sem ir até a falha' : _esforcoFrase(STUDENT_ESFORCO_ALVO.valor, 'badge');
+        if (!falhaA && rA) tA += (contA ? ' · sobrar ' : ' · sobrar no máx ') + (rA[0] === rA[1] ? rA[0] : rA[0] + '-' + rA[1]);
         eaV.textContent = tA;
       }
       // Coluna D (o texto da montagem que ensina a AGIR sobre o número, ex: "sobrou 4 ou
@@ -17170,7 +17215,7 @@ function _exResumoHtml_(di, ei, ex, exDone) {
     const p = [];
     const rot = _serieTemRotulo(ex);
     if (rot) p.push(_dx(_serieResumoCurto(ex)));
-    else if (ex.series) { const ns = String(ex.series).replace(/\s*[xX]\s*$/, ''); p.push(_dx(ns) + (/^\s*0?1\s*$/.test(ns) ? ' série' : ' séries')); }
+    else if (ex.series) { const ns = String(ex.series).replace(/\s*[xX]\s*$/, ''); p.push(_seriesTxtSoma(ex) || (_dx(ns) + (/^\s*0?1\s*$/.test(ns) ? ' série' : ' séries'))); }
     if (ex.reps) {
       const seg = rot ? ((_serieTipos(ex).find(x => x.tipo === 'val') || {}).seg) : null;
       const rv = String((rot && seg != null) ? (_repsSegmento(ex, seg) || ex.reps) : ex.reps).trim();
@@ -26125,7 +26170,11 @@ function _infoKcalTipo(k) {
 }
 function _renderMacroDia(d) {
   let h = `<div class="diet-macro-card"><div class="diet-macro-title">Meta de macros do dia</div>`;
-  (d.macroDia || []).forEach(m => {
+  (d.macroDia || []).forEach(m0 => {
+    // v618: "G ~100g no dia BAIXO" = o dia do ciclo veio colado no número: sai do número e vira o rótulo da fileira
+    let _lab618 = m0.label || '';
+    const _pcg618 = String(m0.pcg || '').split(/\s*·\s*/).map(t => t.replace(/\s+(?:n[oa]s?\s+)?dias?\s+(?:de\s+)?(?:carbo(?:idrato)?s?\s+)?(alto|baixo|moderado)s?\s*$/i, (x, g) => { if (!_lab618) _lab618 = g.toUpperCase(); return ''; })).join(' · ');
+    const m = { label: _lab618, pcg: _pcg618, kcal: m0.kcal, extra: m0.extra };
     if (m.label) h += `<div class="diet-macro-cyclabel">${_dx(m.label)}</div>`;
     // v549: linha de macros sem as calorias (31 dietas) deixava a casa "kcal" vazia: com uma linha só, vale a caloria do cabeçalho
     h += _macroStatsGrid(m.pcg, m.kcal || (((d.macroDia || []).length === 1 && d.info && /\d[\d.]*\s*kcal/i.test(String(d.info.kcal || ''))) ? String(d.info.kcal) : ''));
@@ -28185,7 +28234,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v617';
+    var APP_SHELL_V = 'metodo-gh-v618';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
