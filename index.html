@@ -5332,6 +5332,75 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
     #pacerOverlay .timer-actions, #vacuoOverlay .timer-actions { gap: 8px; padding: 0 12px; box-sizing: border-box; width: 100%; }
     #pacerOverlay .timer-btn, #vacuoOverlay .timer-btn { padding: 12px 14px; }
   }
+  /* ══ v620 (GH 10/11/2026): melhorias de desenho + etapa 2 da revisão visual ══ */
+  /* 1) conserto da v618: o selo do esforço não aparece na Dieta, nas Novidades nem no GHFlix */
+  body.view-dieta .hdr-chips > #esforcoAlvoBadge[style], body.view-ghflix .hdr-chips > #esforcoAlvoBadge[style], body.view-novidades .hdr-chips > #esforcoAlvoBadge[style] { display: none !important; }
+  /* 2) Novidades: título em cima da foto sempre claro */
+  html[data-theme="light"] .nov-hero-t { color: #fff; }
+  html[data-theme="light"] .nov-hero-t b { color: #DDB65C; }
+  html[data-theme="light"] .nov-hero-sub { color: #e8d9ac; }
+  /* 3) cartão de conquista: fundo fechado; no tema claro a tela é clara (o cartão continua escuro) */
+  .ach-overlay { background: #060607; }
+  html[data-theme="light"] .ach-overlay { background: var(--bg); }
+  html[data-theme="light"] #achCanvas { box-shadow: 0 12px 34px rgba(40, 30, 10, .30); }
+  html[data-theme="light"] .ach-logo-lbl { color: var(--fg-3); }
+  html[data-theme="light"] .ach-btn.secondary { background: var(--glass-2); }
+  #achIg .ach-btn { border: 1px solid #444; border-radius: 9px; font-weight: 700; font-size: 13px; cursor: pointer; }
+  html[data-theme="light"] #achIg .ach-btn { border-color: var(--glass-line); }
+  html[data-theme="light"] .ach-btn.primary { background: var(--gold-fill); border-color: var(--gold-fill); color: var(--gold-ink); }
+  html[data-theme="light"] #achIgInput { background: var(--glass-2) !important; border-color: var(--glass-line) !important; color: var(--fg) !important; }
+  /* 4) topo do treino mais curto */
+  #chatBanner[style*="display: block"] { display: grid !important; grid-template-columns: 30px minmax(0, 1fr); column-gap: 11px; align-items: center; padding: 10px 40px 10px 12px !important; }
+  #chatBanner > div:nth-of-type(1) { grid-row: 1 / span 2; margin-bottom: 0 !important; }
+  #chatBanner > div:nth-of-type(2) { align-self: end; }
+  #chatBanner > div:nth-of-type(3) { align-self: start; margin-top: 1px !important; }
+  .student-info { padding: 9px 14px 10px; gap: 3px 0; align-items: baseline; }
+  .student-info .field { background: none; border: 0; box-shadow: none; border-radius: 0; padding: 0; font-size: 12.5px; min-width: 0; }
+  .student-info .field:nth-child(-n+3) .label { display: none; }
+  .student-info .field:nth-child(1) { flex: 0 1 auto; }
+  .student-info .field:nth-child(2), .student-info .field:nth-child(3) { flex: 0 0 auto; }
+  .student-info .field:nth-child(-n+3) { gap: 0; }
+  .student-info .field:nth-child(2)::before, .student-info .field:nth-child(3)::before { content: '·'; color: var(--fg-3); margin: 0 8px; font-weight: 700; }
+  .student-info .field:nth-child(4) { flex: 0 0 100%; font-size: 12px; }
+  .student-info .field:nth-child(4) .value { white-space: normal; font-weight: 500; color: var(--fg-2); }
+  /* 5) grade de séries sem carga anterior em nenhuma linha: os campos dividem a largura do cartão (84 px = número da série, 4 vãos e o "i") */
+  @supports selector(:has(*)) {
+    body:not(.modo-simples):not(.fonte-gggg) .sets-grid.sem-meta:not(:has(.set-prev:not(:empty))) .set-in.set-kg,
+    body:not(.modo-simples):not(.fonte-gggg) .sets-grid.sem-meta:not(:has(.set-prev:not(:empty))) .set-head .sh-kg { width: calc((100% - 84px) * .28); flex: none; }
+    body:not(.modo-simples):not(.fonte-gggg) .sets-grid.sem-meta:not(:has(.set-prev:not(:empty))) .set-in.set-pl,
+    body:not(.modo-simples):not(.fonte-gggg) .sets-grid.sem-meta:not(:has(.set-prev:not(:empty))) .set-head .sh-pl { width: calc((100% - 84px) * .21); flex: none; }
+    body:not(.modo-simples):not(.fonte-gggg) .sets-grid.sem-meta:not(:has(.set-prev:not(:empty))) .set-in.set-reps,
+    body:not(.modo-simples):not(.fonte-gggg) .sets-grid.sem-meta:not(:has(.set-prev:not(:empty))) .set-head .sh-reps { width: calc((100% - 84px) * .28); flex: none; }
+    body:not(.modo-simples):not(.fonte-gggg) .sets-grid.sem-meta:not(:has(.set-prev:not(:empty))) .set-in.set-rs,
+    body:not(.modo-simples):not(.fonte-gggg) .sets-grid.sem-meta:not(:has(.set-prev:not(:empty))) .set-head .sh-rs { width: calc((100% - 84px) * .23); flex: none; }
+    body:not(.modo-simples):not(.fonte-gggg) .sets-grid.sem-meta:not(:has(.set-prev:not(:empty))) .set-row .set-in { padding-left: 4px; padding-right: 4px; }
+    body:not(.modo-simples):not(.fonte-gggg) .sets-grid.sem-meta:not(:has(.set-prev:not(:empty))) .set-prev,
+    body:not(.modo-simples):not(.fonte-gggg) .sets-grid.sem-meta:not(:has(.set-prev:not(:empty))) .set-head .sh-prev { display: none; }
+  }
+  /* 5b) letra grande (2 primeiros níveis) em celular estreito: a mesma grade passava do cartão e o título desalinhava; agora cabe. Campo mais justo e a faixa em letra menor. */
+  @supports selector(:has(*)) {
+    body.fonte-gg:not(.modo-simples) .sets-grid.sem-meta:not(:has(.set-prev:not(:empty))) .set-row .set-in,
+    body.fonte-ggg:not(.modo-simples) .sets-grid.sem-meta:not(:has(.set-prev:not(:empty))) .set-row .set-in { padding-left: 2px; padding-right: 2px; }
+    body.fonte-gg:not(.modo-simples) .sets-grid.sem-meta:not(:has(.set-prev:not(:empty))) .set-row .set-in.set-reps::placeholder,
+    body.fonte-ggg:not(.modo-simples) .sets-grid.sem-meta:not(:has(.set-prev:not(:empty))) .set-row .set-in.set-reps::placeholder,
+    body.fonte-gg:not(.modo-simples) .sets-grid.sem-meta:not(:has(.set-prev:not(:empty))) .set-row .set-in.set-rs::placeholder,
+    body.fonte-ggg:not(.modo-simples) .sets-grid.sem-meta:not(:has(.set-prev:not(:empty))) .set-row .set-in.set-rs::placeholder { font-size: 11px; letter-spacing: -.2px; }
+    body.fonte-gg:not(.modo-simples) .sets-grid.sem-meta:not(:has(.set-prev:not(:empty))) .set-head > span.sh-rs { font-size: 8px; }
+    body.fonte-gg:not(.modo-simples) .sets-grid.sem-meta:not(:has(.set-prev:not(:empty))) .set-head > span,
+    body.fonte-ggg:not(.modo-simples) .sets-grid.sem-meta:not(:has(.set-prev:not(:empty))) .set-head > span { letter-spacing: 0; }
+    /* no segundo nível o campo das repetições ganha um pouco da largura dos outros, pra faixa caber */
+    body.fonte-ggg:not(.modo-simples) .sets-grid.sem-meta:not(:has(.set-prev:not(:empty))) .set-in.set-kg,
+    body.fonte-ggg:not(.modo-simples) .sets-grid.sem-meta:not(:has(.set-prev:not(:empty))) .set-head .sh-kg { width: calc((100% - 84px) * .26); }
+    body.fonte-ggg:not(.modo-simples) .sets-grid.sem-meta:not(:has(.set-prev:not(:empty))) .set-in.set-pl,
+    body.fonte-ggg:not(.modo-simples) .sets-grid.sem-meta:not(:has(.set-prev:not(:empty))) .set-head .sh-pl { width: calc((100% - 84px) * .18); }
+    body.fonte-ggg:not(.modo-simples) .sets-grid.sem-meta:not(:has(.set-prev:not(:empty))) .set-in.set-reps,
+    body.fonte-ggg:not(.modo-simples) .sets-grid.sem-meta:not(:has(.set-prev:not(:empty))) .set-head .sh-reps { width: calc((100% - 84px) * .33); }
+  }
+  /* 6) dieta: nome da refeição na linha inteira, botões na linha de baixo */
+  .diet-meal-header { flex-wrap: wrap; justify-content: flex-end; row-gap: 8px; }
+  .diet-meal-header .dm-nome { flex: 1 1 100%; }
+  /* 7) figurinha dos 4 botões do cartão do treino em tom único */
+  .util-row > button:not(.viagem-on) { filter: grayscale(1); }
   .hdr-esf p { margin: 0; }
   html[data-theme="light"] button.set-num { color: var(--fg-2); }   /* v610c: a regra gerada pra .set-num ganhava da v609 (button.set-num) por especificidade */
 </style>
@@ -25984,7 +26053,7 @@ function renderDiet() {
     // v611: explicação longa (valor vazio ou texto comprido) vira parágrafo embaixo do rótulo, como o "Por que esses macros"
     const _mv = String(m.valor == null ? '' : m.valor).trim(), _md = String(m.detalhe == null ? '' : m.detalhe).trim();
     if ((_mv + ' ' + _md).trim().length > 64) {
-      html += `<div class="diet-info-row longa"><span class="diet-info-label">${_dx(m.campo)}:</span><span class="diet-info-value">${_mv ? '<b>' + _dx(_mv) + '</b>' + (_md ? ' · ' : '') : ''}${_dx(_md)}</span></div>`;
+      html += `<div class="diet-info-row longa"><span class="diet-info-label">${_dx(m.campo)}:</span><span class="diet-info-value">${_mv ? (_mv.length <= 60 ? '<b>' + _dx(_mv) + '</b>' : _dx(_mv)) + (_md ? ' · ' : '') : ''}${_dx(_md)}</span></div>`;   // v620: texto comprido no valor não sai todo em negrito
     } else {
       html += `<div class="diet-info-row"><span class="diet-info-label">${_dx(m.campo)}:</span><span class="diet-info-value">${_dx(m.valor)}${m.detalhe ? ' · ' + _dx(m.detalhe) : ''}</span></div>`;
     }
@@ -28293,7 +28362,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v619';
+    var APP_SHELL_V = 'metodo-gh-v620';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
