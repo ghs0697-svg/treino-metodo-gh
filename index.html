@@ -5672,6 +5672,11 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   html[data-theme="light"] .water-toggle { background: var(--glass-line); }
   html[data-theme="light"] .water-toggle.on { background: var(--gold); }
   html[data-theme="light"] .water-toggle::after { box-shadow: 0 1px 2px rgba(0, 0, 0, .25); }
+  /* v622: peso sugerido depois de uma série que não valeu (dourado, dentro do campo vazio) e o chip "mantém" */
+  .sets-grid .set-row .set-in.ph-sug::placeholder { color: var(--gold); font-weight: 700; opacity: 1; }
+  .sets-grid .set-row .set-in.ph-sug { border-color: rgba(221, 182, 92, .55); }
+  .prog-chip.keep { background: rgba(255, 255, 255, .04); border-left: 3px solid rgba(221, 182, 92, .45); color: var(--fg-2); }
+  html[data-theme="light"] .prog-chip.keep { background: rgba(0, 0, 0, .035); color: var(--fg-2); }
 
 </style>
 <div id="painelGate" style="display:none;position:fixed;inset:0;z-index:99999;background:#0D0D0D;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:14px;text-align:center;">
@@ -10070,7 +10075,44 @@ function _repsAlvoDaSerie(ex, si) {
     return Math.max.apply(null, ns.map(Number));
   } catch (_) { return null; }
 }
+// v622 (GH 10/11/2026): a linha válida logo depois de uma que não valeu (sobrou mais que o combinado) mostra no campo vazio
+// o peso sugerido, em dourado: o da série que não valeu + 5% (10% nos grandes de perna). É só o texto de dentro do campo:
+// nada é escrito no registro do aluno, e o "repetir" não copia esse número.
+function _sugCargaLinhas(di, ei, sets) {
+  const out = [];
+  try {
+    if (!Array.isArray(sets) || !_corteAtivo()) return out;
+    const ex = _exObjAt(di, ei);
+    if (!ex || _exPorTempo(ex)) return out;
+    const tp = _serieTipos(ex), lim = _limiteValida();
+    let ult = -1;
+    for (let i = 0; i < sets.length; i++) {
+      if (tp[i] && !_tipoVale(tp[i].tipo)) continue;
+      if (ult >= 0 && !(tp[i] && tp[i].tipo === 'bo')) {
+        const a = sets[ult] || {}, v = parseInt(String(a.rs || '').replace(/[^0-9]/g, ''), 10);
+        if (isFinite(v) && v > lim) { const c = _progProxCarga(ex.name || '', _progBaseDoSets([a])); if (c) out[i] = c; }
+      }
+      ult = i;
+    }
+  } catch (_) {}
+  return out;
+}
+function _sugPintaPh(di, ei, sets) {
+  const g = _gridEl(di, ei);
+  if (!g) return;
+  const sug = _sugCargaLinhas(di, ei, sets);
+  g.querySelectorAll('.set-row').forEach((r, i) => {
+    [['.set-kg', 'ph'], ['.set-pl', 'phPl']].forEach(([sel, k]) => {
+      const inp = r.querySelector(sel);
+      if (!inp || inp.getAttribute('data-ph0') == null) return;
+      const v = sug[i] && sug[i][k];
+      if (v) { inp.placeholder = v; inp.classList.add('ph-sug'); inp.classList.remove('ph-ant'); }
+      else { inp.placeholder = inp.getAttribute('data-ph0'); inp.classList.remove('ph-sug'); inp.classList.toggle('ph-ant', inp.getAttribute('data-ant') === '1'); }
+    });
+  });
+}
 function _sobrouSugere(di, ei, arr) {
+  try { _sugPintaPh(di, ei, arr); } catch (_) {}   // v622
   try {
     if (!_sugEl(di, ei)) return;
     if (!_corteAtivo()) { _sugLimpa(di, ei); return; }   // v517: Esforço-alvo limitado = sem corte, toda série conta
@@ -10096,11 +10138,14 @@ function _sobrouSugere(di, ei, arr) {
     let ultimaVal = -1;
     for (let j = 0; j < arr.length; j++) if (ehVal(j)) ultimaVal = j;
     const explica = 'Sobrou ' + v + ', mais que ' + lim + ': essa não foi uma série válida.';
+    // v622: quanto subir, a partir da carga desta série (5% em cima, 10% nos grandes de perna)
+    let _cs = '';
+    try { const _c = _progProxCarga((ex && ex.name) || '', _progBaseDoSets([arr[li]])); if (_c) _cs = ', uns ' + _c.prox + ' (' + _c.pctTxt + ' a mais)'; } catch (_) {}
     // v619: se a próxima que vale é a série de volta, não manda "mais carga" (nela o peso desce de propósito)
     let _proxVolta = false;
     for (let j = li + 1; j < arr.length; j++) if (ehVal(j)) { _proxVolta = !!(tp[j] && tp[j].tipo === 'bo'); break; }
-    if (li < ultimaVal) { _sugMostra(di, ei, explica + (_proxVolta ? ' Na série de volta, acerta o peso pra sobrar no máximo ' + lim + '.' : ' Faz a próxima com mais carga, pra sobrar no máximo ' + lim + '.')); return; }
-    if (_sugFeita[k] || !cabeMais) { _sugMostra(di, ei, explica + ' Faz outra série com mais carga.'); return; }
+    if (li < ultimaVal) { _sugMostra(di, ei, explica + (_proxVolta ? ' Na série de volta, acerta o peso pra sobrar no máximo ' + lim + '.' : ' Faz a próxima com mais carga' + _cs + ', pra sobrar no máximo ' + lim + '.')); return; }
+    if (_sugFeita[k] || !cabeMais) { _sugMostra(di, ei, explica + ' Faz outra série com mais carga' + _cs + '.'); return; }
     _sugFeita[k] = 1;
     let _aberta = false;
     const abre = () => {
@@ -10111,7 +10156,7 @@ function _sobrouSugere(di, ei, arr) {
         const _fo = document.getElementById('focusOverlay');
         if (_fo && _fo.classList.contains('show') && !_fo.querySelector('[id="sets-' + di + '-' + ei + '"]')) { delete _sugFeita[k]; return; }
         addSet(di, ei);
-        _sugMostra(di, ei, explica + ' Abri outra série: faz de novo com mais carga, pra sobrar no máximo ' + lim + '.'
+        _sugMostra(di, ei, explica + ' Abri outra série: faz de novo com mais carga' + _cs + ', pra sobrar no máximo ' + lim + '.'
           + '<br><button type="button" class="und" onclick="_sugDesfaz(' + di + ', \'' + ei + '\')">desfazer</button>');
       } catch (_) {}
     };
@@ -11057,6 +11102,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
   const _temPl = sets.some(x => x && String(x.pl || '').trim()) || (Array.isArray(prev) && prev.some(x => x && String(x.pl || '').trim()));
   const rpePh = alvoR ? (alvoR[0] === alvoR[1] ? String(Math.max(0, 10 - alvoR[0])) : Math.max(0, 10 - alvoR[1]) + '-' + Math.max(0, 10 - alvoR[0])) : '?';
   const melhor = _melhorChipHtml_(di, ei, prevCru);   // v580: só quando a última vez ficou abaixo do melhor
+  const _sugL = _porTempo ? [] : _sugCargaLinhas(di, eiS, sets);   // v622: peso sugerido depois de uma série que não valeu
   const rows = sets.map((s, si) => {
     const p = prev && prev[si];
     const prevTxt = _porTempo
@@ -11078,8 +11124,8 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
     return `<div class="set-row ${feita ? 'feita' : ''} ${_rotulada ? 't-' + _tipo : ''} ${_nv ? 'nv' : ''} ${si >= _nPresc ? 'extra' : ''}" data-si="${si}" data-tipo="${_tipo}">
         <button type="button" class="set-num ${_rotulada ? 't-' + _tipo : ''}" onclick="toggleSetFeita(${di},'${eiS}',${si})" title="${_rotulada ? 'Série de ' + SERIE_TIPO_NOME[_tipo] + '. ' : ''}Marcar série como feita" aria-label="Marcar série ${si + 1} como feita">${feita ? '✓' : (_rotulada ? (_nv ? 'não valeu' : _rot) : si + 1)}</button>
         <span class="set-meta">${_metaTxt}</span>
-        <input class="set-in set-kg${_antKg ? ' ph-ant' : ''}" type="number" aria-label="Peso, série ${si + 1}" inputmode="decimal" placeholder="${_antKg || _phKg}" value="${kgToDisplay(s.kg)}" oninput="onSetField(${di},'${eiS}')">
-        <input class="set-in set-pl${_antPl ? ' ph-ant' : ''}" type="number" aria-label="Placas, série ${si + 1}" inputmode="numeric" placeholder="${_antPl || 'pl'}" value="${s.pl || ''}" oninput="onSetField(${di},'${eiS}')">
+        <input class="set-in set-kg${(_sugL[si] && _sugL[si].ph) ? ' ph-sug' : (_antKg ? ' ph-ant' : '')}" type="number" aria-label="Peso, série ${si + 1}" inputmode="decimal" placeholder="${(_sugL[si] && _sugL[si].ph) || _antKg || _phKg}" data-ph0="${_antKg || _phKg}" data-ant="${_antKg ? '1' : ''}" value="${kgToDisplay(s.kg)}" oninput="onSetField(${di},'${eiS}')">
+        <input class="set-in set-pl${(_sugL[si] && _sugL[si].phPl) ? ' ph-sug' : (_antPl ? ' ph-ant' : '')}" type="number" aria-label="Placas, série ${si + 1}" inputmode="numeric" placeholder="${(_sugL[si] && _sugL[si].phPl) || _antPl || 'pl'}" data-ph0="${_antPl || 'pl'}" data-ant="${_antPl ? '1' : ''}" value="${s.pl || ''}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-reps${_antReps ? ' ph-ant' : ''}" type="number" aria-label="Repetições, série ${si + 1}" inputmode="numeric" placeholder="${_antReps || (_porTempo ? _tUnid : _phReps)}" title="${_porTempo ? 'Quantos ' + (_tUnid === 'min' ? 'minutos' : 'segundos') + ' tu segurou' : ''}" value="${s.reps || ''}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-rs" type="number" aria-label="Sobrou, série ${si + 1}" inputmode="numeric" onfocus="sobrouDica(this)" onblur="sobrouDicaSome()" placeholder="${_tipoVale(_tipo) ? rsPh : '·'}" title="${_tipoVale(_tipo) ? 'Quantas repetições sobraram nessa série' : 'Série de ' + SERIE_TIPO_NOME[_tipo] + ': sobrar é o esperado, não entra no alvo'}" value="${s.rs || ''}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-rpe" type="number" aria-label="RPE, série ${si + 1}" inputmode="numeric" min="0" max="10" placeholder="${_tipoVale(_tipo) ? rpePh : '·'}" title="RPE: esforço de 0 a 10 (10 = não dava mais nenhuma). É o RIR visto do outro lado: RPE 9 = sobrou 1." value="${_rpeDe(s.rs)}" oninput="_rpeDigitado(this,${di},'${eiS}')" onblur="_rpeNormaliza(this)">
@@ -15714,6 +15760,30 @@ function _progStepKg(nome, baseKg) {
   if (baseKg > 0) st = Math.max(1, Math.min(st, Math.round(baseKg * 0.1)));
   return st;
 }
+// v622 (GH 10/11/2026): a subida é por PORCENTAGEM da carga, como no método do Jordan Peters. 10% nos grandes de perna
+// ("músculos grandes e fortes": leg press, agachamento e afins), 5% em todo o resto. Arredonda pro número inteiro mais perto
+// e sobe pelo menos 1. Placas: +5% ou +10%, pelo menos 1 placa. _progStepKg (degrau fixo) ficou só pra consulta.
+const _PROG_10 = /leg ?press|leg horizontal|agach|hack|p[eê]ndulo|stiff|terra|b[uú]lgaro|afundo|passada|avan[cç]o|p[eé]lvica|hip thrust|sum[oô]/i;
+function _progPct(nome) {
+  const n = String(nome || '');
+  return (_PROG_10.test(n) && !_PROG_SUP.test(n) && !/panturr|g[eê]meos|s[oó]leo/i.test(n)) ? 0.10 : 0.05;
+}
+function _progProxCarga(nome, base) {
+  if (!base) return null;
+  const pct = _progPct(nome), pctTxt = Math.round(pct * 100) + '%';
+  if (base.pl != null && isFinite(base.pl)) {
+    const p = base.pl + Math.max(1, Math.round(base.pl * pct));
+    return { prox: p + (p === 1 ? ' placa' : ' placas'), ph: '', phPl: String(p), passo: '+' + pctTxt, pctTxt };
+  }
+  if (base.kg != null && isFinite(base.kg) && base.kg > 0) {
+    const d = parseFloat(String(kgToDisplay(String(base.kg))).replace(',', '.'));
+    if (!isFinite(d) || d <= 0) return null;
+    let p = Math.round(d * (1 + pct));
+    if (p <= d) p = Math.floor(d) + 1;
+    return { prox: String(p) + getUnit(), ph: String(p), passo: '+' + pctTxt, pctTxt };
+  }
+  return null;
+}
 function _progBaseDoSets(sets) {
   // última série preenchida (kg ou placas) — é a carga de trabalho real
   if (!Array.isArray(sets)) return null;
@@ -15726,23 +15796,25 @@ function _progBaseDoSets(sets) {
 }
 // Último registro (carga + esforço juntos) do MESMO exercício em semanas anteriores do bloco.
 function _progUltReg(di, ei) {
+  // v622: a última semana em que o exercício tem carga numa série válida (antes da série de volta). Antes exigia a
+  // resposta "Última série: como foi?"; agora a sugestão sai sempre que há carga registrada.
   try {
+    const _e = String(ei), ex = _exObjAt(di, _e), tp = _serieTipos(ex);
     for (let w = currentWeek - 1; w >= 1; w--) {
-      const esf = loadEsf(di, String(ei), w);
-      if (!esf) continue;
-      const base = _progBaseDoSets(_soVal(di, String(ei), _antesDaVolta(di, String(ei), loadSets(di, String(ei), w))));   // v496: so validas; v619: sem a série de volta
+      const todas = _antesDaVolta(di, _e, loadSets(di, _e, w));
+      if (!Array.isArray(todas) || !todas.length) continue;
+      const linhas = [];
+      todas.forEach((x, i) => { if (x && (!tp[i] || _tipoVale(tp[i].tipo)) && (String(x.kg || '').trim() || String(x.pl || '').trim())) linhas.push({ s: x, i }); });
+      if (!linhas.length) continue;
+      const base = _progBaseDoSets(linhas.map(x => x.s));
       if (!base) continue;
-      return { w, esf, base };
+      return { w, esf: loadEsf(di, _e, w), base, linhas, ex };
     }
   } catch (_) {}
   return null;
 }
 function _progSugestao(nomeEx, base, esf) {
-  if (esf === 'sobrou3') {
-    if (base.pl != null && !isNaN(base.pl)) return { tipo: 'sobe', prox: (base.pl + 1) + ((base.pl + 1) === 1 ? ' placa' : ' placas') };
-    if (base.kg != null && !isNaN(base.kg)) { const st = _progStepKg(nomeEx, base.kg); const _u = getUnit(); return { tipo: 'sobe', prox: String(kgToDisplay(String(Math.round((base.kg + st) * 10) / 10))).replace('.', ',') + _u, passo: _u === 'kg' ? '+' + st : '' }; }
-    return null;
-  }
+  if (esf === 'sobrou3') { const c = _progProxCarga(nomeEx, base); return c ? { tipo: 'sobe', prox: c.prox, passo: c.passo } : null; }   // v622: 5% ou 10%
   if (esf === 'falha_antes') return { tipo: 'segura' };
   return null;   // sobrou1/2 e falha_ult: carga certa, sem chip (falha_ult É o alvo do método)
 }
@@ -15777,17 +15849,39 @@ function _forcaChipHtml(di, ei) {
        + `<span class="forca-lb">Força estimada</span><span class="forca-vl">${v} ${u}</span>`
        + `<span class="forca-nota">referência, não é pra testar</span></div>`;
 }
-// Chip no card do exercício: só aparece quando há algo ÚTIL a dizer (sobe ou segura).
+// v622 (GH 10/11/2026, "seria muito bom se fosse sugestionado sempre, dentro da metodologia do jordan peters"): o chip
+// aparece sempre que a última vez tem carga. SOBE (5% ou 10%) quando a última válida sobrou mais que o combinado, quando
+// fechou o topo da faixa em todas as válidas com aquela carga, ou com a resposta "sobrou 3 ou mais". Senão MANTÉM a carga e
+// busca 1 repetição a mais. Esforço-alvo limitado (2 a 3) só vê a subida pelo topo da faixa (o "sobrou 3" está dentro do
+// combinado dele, v544) e não vê o "mantém".
+function _progNum(v) { const n = parseInt(String(v == null ? '' : v).replace(/[^0-9]/g, ''), 10); return isFinite(n) ? n : null; }
 function _progChipHtml(di, ei, nomeEx) {
   if (document.body.classList.contains('modo-simples')) return '';   // v594: o Intuitivo esconde o chip pelo CSS; não vale ler até 24 semanas de carga por exercício à toa
   const reg = _progUltReg(di, ei);
-  if (!reg) return '';
-  const sug = _progSugestao(nomeEx, reg.base, reg.esf);
-  if (!sug) return '';
-  if (sug.tipo === 'sobe' && !_corteAtivo() && _alvoTopo().hi >= 3) return '';   // v544: "sobrou 3" está DENTRO do alvo de quem tem esforço limitado: não manda subir
+  if (!reg || !reg.base || !reg.linhas) return '';
+  const ex = reg.ex || _exObjAt(di, String(ei));
+  if (!ex || _exPorTempo(ex)) return '';
+  const corte = _corteAtivo(), lim = _limiteValida();
   const _quando = (reg.w === currentWeek - 1) ? 'Semana passada' : ('Na Semana ' + reg.w);   // v548: nem sempre o último registro é da semana passada
-  if (sug.tipo === 'sobe') return `<div class="prog-chip up">💡 ${_quando}: ${reg.base.txt}, sobrou 3+. Hoje <b>tenta ${sug.prox}</b>${sug.passo ? ' (' + sug.passo + ')' : ''}. Se travar, volta sem drama.</div>`;
-  return `<div class="prog-chip down">${_quando} travou antes de terminar: hoje vale <b>manter ou descer um degrau</b>.</div>`;
+  const c = _progProxCarga(nomeEx, reg.base);
+  const ult = reg.linhas[reg.linhas.length - 1];
+  const mesma = x => reg.base.pl != null ? parseFloat(String(x.s.pl || '').replace(',', '.')) === reg.base.pl
+    : (!String(x.s.pl || '').trim() && parseFloat(String(x.s.kg || '').replace(',', '.')) === reg.base.kg);
+  const naCarga = reg.linhas.filter(mesma);
+  const topo = _repsAlvoDaSerie(ex, ult.i);
+  const _fx = String(_repsDaLinha(ex, ult.i) || '').match(/\d+/g);
+  const minimo = _fx ? Math.min.apply(null, _fx.map(Number)) : null;
+  const rsUlt = _progNum(ult.s.rs);
+  const topoOk = topo != null && naCarga.length > 0 && naCarga.every(x => { const r = _progNum(x.s.reps), t = _repsAlvoDaSerie(ex, x.i); return r != null && t != null && r >= t; });
+  let motivo = '';
+  if (corte && rsUlt != null && rsUlt > lim) motivo = 'sobrou ' + rsUlt + ' na última válida';
+  else if (topoOk) motivo = naCarga.length > 1 ? 'fechou o topo da faixa em todas as válidas' : 'fechou o topo da faixa';
+  else if (reg.esf === 'sobrou3' && (corte || _alvoTopo().hi < 3)) motivo = 'sobrou 3 ou mais';
+  if (motivo && c) return `<div class="prog-chip up">💡 ${_quando}: ${reg.base.txt}, ${motivo}. Hoje <b>tenta ${c.prox}</b> (${c.pctTxt} a mais).${minimo ? ' Se não fechar ' + minimo + ' repetições, volta pra ' + reg.base.txt + '.' : ''}</div>`;
+  if (reg.esf === 'falha_antes') return `<div class="prog-chip down">${_quando} travou antes de terminar: hoje vale <b>manter ou descer um degrau</b>.</div>`;
+  if (!corte || !c || topo == null) return '';
+  const reps = naCarga.map(x => _progNum(x.s.reps)).filter(r => r != null);
+  return `<div class="prog-chip keep">${_quando}: ${reg.base.txt}${reps.length ? ' x ' + reps.join(', ') : ''}. Hoje <b>mantém ${reg.base.txt}</b> e busca 1 repetição a mais. Fechou ${topo} em todas as válidas? Aí sobe pra ${c.prox}.</div>`;
 }
 const _ESF_OPTS = [['sobrou3', 'Sobrou 3 ou mais: fácil'], ['sobrou2', 'Sobrou 2'], ['sobrou1', 'Sobrou 1'], ['falha_ult', 'Sobrou 0: no limite'], ['falha_antes', 'Travei antes de terminar']];   // v532: mesma palavra da coluna
 const _ESF_AP = [['maquina_ruim', 'Máquina ruim'], ['nao_sinto', 'Não sinto o músculo'], ['carga_estranha', 'Carga estranha']];
@@ -28362,7 +28456,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v621';
+    var APP_SHELL_V = 'metodo-gh-v622';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
