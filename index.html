@@ -459,7 +459,7 @@
   body.modo-simples .instructions-toggle, body.modo-simples .instructions-content,
   body.modo-simples .ex-dica-troca, body.modo-simples .musc-tag, body.modo-simples .ex-sub-pill, body.modo-simples .ex-motivo,
   body.modo-simples .evo-chip, body.modo-simples .sg-melhor, body.modo-simples .forca-chip, body.modo-simples .estag-chip,
-  body.modo-simples .prog-chip, body.modo-simples .focus-esforco,
+  body.modo-simples .focus-esforco,   /* v623: o chip de carga (.prog-chip) aparece no Intuitivo */
   body.modo-simples .ex-actions .ex-action-btn:not(.save-btn) { display: none !important; }
   /* placa: some só de quem não usa placa NESTE exercício (nem agora, nem na última vez). :has acompanha o que o aluno digita;
      navegador sem :has descarta a regra inteira e a coluna fica (lado seguro: carga nunca some da vista) */
@@ -5677,6 +5677,8 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   .sets-grid .set-row .set-in.ph-sug { border-color: rgba(221, 182, 92, .55); }
   .prog-chip.keep { background: rgba(255, 255, 255, .04); border-left: 3px solid rgba(221, 182, 92, .45); color: var(--fg-2); }
   html[data-theme="light"] .prog-chip.keep { background: rgba(0, 0, 0, .035); color: var(--fg-2); }
+  /* v623: chip de carga no Intuitivo, na letra de leitura do modo (15 px) */
+  body.modo-simples .prog-chip { font-size: 15px; line-height: 1.45; padding: 10px 12px; }
 
 </style>
 <div id="painelGate" style="display:none;position:fixed;inset:0;z-index:99999;background:#0D0D0D;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:14px;text-align:center;">
@@ -15856,7 +15858,7 @@ function _forcaChipHtml(di, ei) {
 // combinado dele, v544) e não vê o "mantém".
 function _progNum(v) { const n = parseInt(String(v == null ? '' : v).replace(/[^0-9]/g, ''), 10); return isFinite(n) ? n : null; }
 function _progChipHtml(di, ei, nomeEx) {
-  if (document.body.classList.contains('modo-simples')) return '';   // v594: o Intuitivo esconde o chip pelo CSS; não vale ler até 24 semanas de carga por exercício à toa
+  // v623 (GH 10/11/2026): o Intuitivo também mostra o chip (antes, v594, ele saía aqui)
   const reg = _progUltReg(di, ei);
   if (!reg || !reg.base || !reg.linhas) return '';
   const ex = reg.ex || _exObjAt(di, String(ei));
@@ -28456,7 +28458,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v622';
+    var APP_SHELL_V = 'metodo-gh-v623';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
