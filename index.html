@@ -5074,6 +5074,24 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   #bottomNav .bn-item.active svg { filter: drop-shadow(0 0 6px rgba(221, 182, 92, .35)); }
   body.has-bnav { padding-bottom: max(calc(86px + env(safe-area-inset-bottom, 0px)), 100px); }
   body.has-bnav #timerPill { bottom: max(calc(106px + env(safe-area-inset-bottom, 0px)), 122px); }
+  /* v626 (GH 11/11): nada aparece embaixo nem do lado da barra de baixo; faixa da cor do fundo atrás dela */
+  body.has-bnav::after { content: ''; position: fixed; left: 0; right: 0; bottom: 0; height: calc(max(10px, env(safe-area-inset-bottom, 0px)) + 62px); background: linear-gradient(to bottom, rgba(0,0,0,0) 0, var(--bg) 12px); z-index: 8899; pointer-events: none; }
+  /* v626: aviso legível nos dois temas (no claro o fundo era 66% transparente e o texto de trás aparecia) */
+  .gh-toast { background: #1B1B1F; color: #F1EDE4; border-color: rgba(255,255,255,.14); box-shadow: 0 10px 30px rgba(0,0,0,.55); font-weight: 600; }
+  :root[data-theme="light"] .gh-toast { background: #1B1912; color: #FBFAF7; border-color: #1B1912; box-shadow: 0 10px 30px rgba(40,30,10,.30); }
+  /* v626: opção escolhida aparece marcada (no claro uma regra apagava o dourado do .on) */
+  :root[data-theme="light"] .ft-b.on { background: var(--gold); border-color: var(--gold); color: #15100a; }
+  /* v626: janela da foto com fundo sólido (era transparente e ficava apagada) */
+  .meal-photo-box { background: #141416; }
+  :root[data-theme="light"] .meal-photo-box { background: #FBFAF7; color: var(--fg); box-shadow: 0 24px 60px rgba(40, 30, 10, .18); }
+  /* v626: foto e números não abrem sozinhos; botões aparecem do lado de "feita/feito" */
+  .dm-foto { display: none; align-items: center; gap: 4px; background: none; border: 1px solid var(--glass-line); color: var(--gold); font: inherit; font-size: 11px; font-weight: 700; border-radius: 99px; padding: 5px 9px; cursor: pointer; white-space: nowrap; }
+  .dm-foto svg { width: 13px; height: 13px; }
+  .diet-meal-header:has(.diet-meal-check.done) .dm-foto { display: inline-flex; }
+  .cw-acoes { display: none; gap: 8px; margin-top: 8px; }
+  .cw-acoes.on { display: flex; }
+  .cw-acoes button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 6px; border-radius: 9px; border: 1px solid var(--gold); background: transparent; color: var(--gold); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+  .cw-acoes button svg { width: 15px; height: 15px; }
   #maisSheetOverlay { background: rgba(0, 0, 0, .55); }
   #maisSheet { background: var(--sheet-bg); -webkit-backdrop-filter: var(--glass-fosco); backdrop-filter: var(--glass-fosco); border: 1px solid var(--glass-line); border-bottom: none; border-radius: 24px 24px 0 0; box-shadow: 0 -12px 40px rgba(0, 0, 0, .45), var(--glass-brilho); }
   #maisSheet .mais-grab { background: var(--glass-line); }
@@ -25148,7 +25166,7 @@ function _cardioTreinoMount(d, cardioFromOrient, temCardio) {
   const box = document.getElementById('cardioTreino');
   if (!box) return;
   if (!temCardio) { box.innerHTML = ''; return; }
-  let html = `<div class="cardio-week" id="cardioWeekCard"><div class="cw-row"><span class="cw-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="5" r="1.6"/><path d="M5 21l3-5 3 1 2-3"/><path d="M13 14l4 1 2 4"/><path d="M9 9l3-2 3 2 2-1"/></svg> <span id="cwTit">Cardio da semana</span></span><span class="cw-count" id="cwCount">0/${cardioTarget()}</span></div><div class="cw-bar"><div class="cw-fill" id="cwFill"></div></div><button type="button" class="cw-btn" id="cwBtn" onclick="cardioBotao()">Fiz o cardio hoje</button><div class="cw-ult" id="cwUlt" style="display:none;"></div></div>`;
+  let html = `<div class="cardio-week" id="cardioWeekCard"><div class="cw-row"><span class="cw-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="5" r="1.6"/><path d="M5 21l3-5 3 1 2-3"/><path d="M13 14l4 1 2 4"/><path d="M9 9l3-2 3 2 2-1"/></svg> <span id="cwTit">Cardio da semana</span></span><span class="cw-count" id="cwCount">0/${cardioTarget()}</span></div><div class="cw-bar"><div class="cw-fill" id="cwFill"></div></div><button type="button" class="cw-btn" id="cwBtn" onclick="cardioBotao()">Fiz o cardio hoje</button><div class="cw-acoes" id="cwAcoes"><button type="button" onclick="openCardioSess(_csDeHoje() ? 'editar' : 'depois')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span id="cwNumTxt">Registrar números</span></button><button type="button" onclick="showCardioPhotoCard()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Foto</button></div><div class="cw-ult" id="cwUlt" style="display:none;"></div></div>`;
   html += `<div class="diet-section-toggle" onclick="toggleDietSection('cardio')"><span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span><span class="tog-label">Cardio</span><span class="tog-chev" id="cardioArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></div>`;
   html += `<div class="diet-section-content" id="cardioContent">`;
   if (d.aerobicos && d.aerobicos.length > 0) {
@@ -25232,6 +25250,7 @@ function updateCardioProgress() {
   const cnt = document.getElementById('cwCount'), fill = document.getElementById('cwFill'), btn = document.getElementById('cwBtn');
   if (cnt) cnt.textContent = semData ? 'sem data' : `${Math.min(done, target)}/${target}`; // capa display (fazer +q o mínimo não vira "4/3")
   if (fill) fill.style.width = semData ? '0%' : ((target ? Math.min(100, done / target * 100) : 0) + '%');
+  try { const ac = document.getElementById('cwAcoes'), t2 = isCardioDoneToday(); if (ac) ac.classList.toggle('on', t2); const nt = document.getElementById('cwNumTxt'); if (nt) nt.textContent = _csDeHoje() ? 'Editar números' : 'Registrar números'; } catch (_) {}   // v626
   if (btn) { const t = isCardioDoneToday(); btn.classList.toggle('done', t); btn.textContent = t ? '✓ Cardio feito hoje' : 'Fiz o cardio hoje'; btn.style.display = ''; }   // v599: o botão fica SEMPRE (a marca é pela data de hoje, vale em qualquer semana aberta); v579 escondia e 6 alunos ficaram sem marcar
   try { _csUltRender(jan, semData); } catch (_) {}   // v577
 }
@@ -25242,7 +25261,7 @@ function onCardioDone() {
   updateCardioProgress();
   logCardioRegistro();                             // backup granular (aba CARDIO)
   notifyCardioCompletion();                        // pontua no ranking (LOGS plano='cardio')
-  setTimeout(() => showCardioPhotoCard(), 120);    // card de foto pra compartilhar (opcional)
+  // v626 (GH 11/11): a foto não abre sozinha; os botões Números e Foto aparecem embaixo do feito
   setTimeout(function () { try { _fmTentaHoje('cardio'); } catch (_) {} }, 900);   // v595: faltou marcar exercício com carga no treino de hoje
 }
 // Backup granular de cada dia de cardio (aba CARDIO), igual logMealRegistro é da dieta. Dedup 1/dia.
@@ -25380,7 +25399,7 @@ function _csUltRender(jan, semData) {
   const hoje = _csDeHoje(), ult = _csUltimo(), feito = isCardioDoneToday(), sem = _csSemanaMin();
   let h = '';
   if (hoje) h = 'Hoje: <b>' + _csTipo(hoje.tipo).nome + ', ' + _csNums(hoje) + '</b> · <button type="button" class="cw-link" onclick="openCardioSess(\'editar\')">editar</button>';
-  else if (feito) h = '<button type="button" class="cw-link" onclick="openCardioSess(\'depois\')">Registrar os números de hoje</button>';
+  // v626: o convite pra registrar virou o botão Registrar números do lado do feito
   else if (ult) h = 'Último: <b>' + _csTipo(ult.tipo).nome + ', ' + _csNums(ult) + '</b> (' + _csQuando(ult.d) + ')';
   const pe = [];
   if (sem > 0) {   // v579 (Frederico Schuller: "cardio esta 70 min e fiz 4 cardios essa semana"): os minutos sao so dos registrados com os numeros
@@ -25391,7 +25410,7 @@ function _csUltRender(jan, semData) {
   if (pe.length) h += (h ? '<br>' : '') + pe.join(' · ');
   el.innerHTML = h; el.style.display = h ? '' : 'none';
 }
-function cardioBotao() { openCardioSess(isCardioDoneToday() ? 'editar' : 'cartao'); }
+function cardioBotao() { if (isCardioDoneToday()) return; if (!SHEET_ID) return; onCardioDone(); }   // v626 (GH 11/11): marcar só marca; números e foto ficam nos botões do lado
 function openCardioSess(origem) {
   if (!SHEET_ID) return;
   const hoje = _csDeHoje(), base = hoje || _csUltimo();
@@ -26153,7 +26172,7 @@ function onCheckMeal(ri) {
   if (nv) {
     if (_mealNaoMotivo(ri)) _mealNaoLimpa(ri, true);   // v549: feita = o "não rolou" dela sai
     logMealRegistro(ri);                               // registra a refeição na planilha (backup granular)
-    setTimeout(() => showMealPhotoCard(ri), 120);      // tirar foto + postar
+    // v626 (GH 11/11): a janela da foto não abre mais sozinha; aparece o botão Foto do lado do Feita
     _dietDiaFechou();                                  // dia de dieta cumprido (pontua no ranking)
   }
 }
@@ -26450,7 +26469,7 @@ function renderDiet() {
       html += `<div class="diet-meal-card${(_riAgora != null && ri !== _riAgora && !isMealDone(ri)) ? ' dm-fora' : ''}">`;
       // v549: o botão "não rolou?" e a anotação existem uma vez POR CICLO (aba Alto / Baixo): saíram os ids repetidos, que
       // faziam o toque na 2ª aba atualizar só a 1ª. O nome da refeição não vai mais dentro do onclick (aspas quebravam o botão).
-      html += `<div class="diet-meal-header"><span class="dm-nome">${_dx(ref.nome)}${_refOpcional(ref) ? ' <span class="dm-opc">opcional, não conta pro dia</span>' : ''}</span>${_refHoraChipHtml(ri)}<button type="button" class="dm-nao${_mealNaoMotivo(ri) ? ' marcado' : ''}" data-nao-ri="${ri}" onclick="openMealNao(${ri})">${_mealNaoMotivo(ri) ? 'anotado 🤝' : 'não rolou?'}</button><button type="button" class="diet-meal-check${isMealDone(ri) ? ' done' : ''}" data-meal-ri="${ri}" onclick="onCheckMeal(${ri})" aria-label="Marcar refeição feita"><svg class="dm-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><svg class="dm-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span class="dm-txt">Feita</span></button></div>`;
+      html += `<div class="diet-meal-header"><span class="dm-nome">${_dx(ref.nome)}${_refOpcional(ref) ? ' <span class="dm-opc">opcional, não conta pro dia</span>' : ''}</span>${_refHoraChipHtml(ri)}<button type="button" class="dm-nao${_mealNaoMotivo(ri) ? ' marcado' : ''}" data-nao-ri="${ri}" onclick="openMealNao(${ri})">${_mealNaoMotivo(ri) ? 'anotado 🤝' : 'não rolou?'}</button><button type="button" class="dm-foto" onclick="showMealPhotoCard(${ri})" aria-label="Foto da refeição"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Foto</button><button type="button" class="diet-meal-check${isMealDone(ri) ? ' done' : ''}" data-meal-ri="${ri}" onclick="onCheckMeal(${ri})" aria-label="Marcar refeição feita"><svg class="dm-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><svg class="dm-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span class="dm-txt">Feita</span></button></div>`;
       if (_mealNota(ri)) html += `<div class="dm-nota" data-nota-ri="${ri}">📝 ${String(_mealNota(ri)).replace(/&/g, '&amp;').replace(/</g, '&lt;')}</div>`;   // v537
       if (ref.instrucao) html += `<div class="diet-meal-instruction">${_dx(ref.instrucao)}</div>`;
 
@@ -28671,7 +28690,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v625';
+    var APP_SHELL_V = 'metodo-gh-v626';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
