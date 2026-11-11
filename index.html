@@ -14,6 +14,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://docs.google.com">
 <link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://metodogh-api.vercel.app">
 <!-- v511: toda resposta do Apps Script vem por 302 de script.googleusercontent.com, e o vídeo de execução é iframe do YouTube; pré-conectar poupa o aperto de mão TLS na 1ª chamada (medição de 23/09: vídeo abria em 1,0 s a 4x CPU) -->
 <link rel="preconnect" href="https://script.googleusercontent.com">
 <link rel="preconnect" href="https://www.youtube-nocookie.com">
@@ -5431,7 +5432,7 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
         _enviados++;
         var sp = new URLSearchParams(location.search);
         var corpo = JSON.stringify({ type: 'erro_app', sheetId: sp.get('sheet') || '', v: String(window.GH_APP_V || ''), msg: String(reg.msg || '').slice(0, 300), onde: String(reg.onde || '').slice(0, 200), stack: String(reg.stack || '').slice(0, 600), ua: String(navigator.userAgent || '').slice(0, 140), vivo: !!window.__ghVivo, ts: new Date().toISOString() });
-        var url = 'https://script.google.com/macros/s/AKfycby0Kej7V7Gi2gIDKorBookSLofBMHOF50UFWq4Q1fTmstCD8ed8O9XLyCaZo8QIeUPfeQ/exec';
+        var url = 'https://metodogh-api.vercel.app/exec';   // v625
         fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: corpo, keepalive: true, redirect: 'follow' })['catch'](function () {});
       } catch (_) {}
     }
@@ -8408,8 +8409,34 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   try {
     if (!window.fetch || !window.AbortController) return;
     var _fetchNativo = window.fetch;
+    // v625 (migração pro Vercel, GH 11/11): o app fala com o servidor novo (API), que atende o que já migrou e repassa o resto
+    // ao Apps Script com a mesma resposta. Três casos vão DIRETO ao Apps Script: imagem (?action=..._img) e envio grande
+    // (fotos), porque o Vercel recusa mais de 4,5 MB; e o aparelho com localStorage mgh_api = 'gs' (chave de emergência).
+    // Se o servidor novo cair (rede ou erro 5xx), a MESMA chamada é refeita direto no Apps Script: o aluno não percebe.
+    var GS_DIRETO = 'https://script.google.com/macros/s/AKfycby0Kej7V7Gi2gIDKorBookSLofBMHOF50UFWq4Q1fTmstCD8ed8O9XLyCaZo8QIeUPfeQ/exec';
+    var API_NOVA = 'https://metodogh-api.vercel.app/exec';
+    var _soGs = false; try { _soGs = localStorage.getItem('mgh_api') === 'gs'; } catch (_) {}
+    function _comTeto(u, o) {
+      if (o && o.signal) return _fetchNativo.call(window, u, o);
+      var ac = new AbortController();
+      var tm = setTimeout(function () { try { ac.abort(); } catch (_) {} }, 60000);
+      var o2 = Object.assign({}, o || {}, { signal: ac.signal });
+      return _fetchNativo.call(window, u, o2).then(function (r) { clearTimeout(tm); return r; }, function (e) { clearTimeout(tm); throw e; });
+    }
     window.fetch = function (u, o) {
       try {
+        if (typeof u === 'string' && u.indexOf(API_NOVA) === 0) {
+          var direto = GS_DIRETO + u.slice(API_NOVA.length);
+          var corpo = (o && typeof o.body === 'string') ? o.body : '';
+          if (_soGs || /[?&]action=[a-z_]*_img(&|$)/.test(u) || corpo.length > 3000000) return _comTeto(direto, o);
+          return _comTeto(u, o).then(function (r) {
+            if (r && r.status >= 500) return _comTeto(direto, o);
+            return r;
+          }, function (e) {
+            if (e && e.name === 'AbortError') throw e;   // passou do teto ou o próprio app cancelou: não repete
+            return _comTeto(direto, o);
+          });
+        }
         if (typeof u === 'string' && u.indexOf('script.google.com/macros/') >= 0 && !(o && o.signal)) {
           var ac = new AbortController();
           var tm = setTimeout(function () { try { ac.abort(); } catch (_) {} }, 60000);
@@ -13719,7 +13746,7 @@ function showCompletionCard(di) {
 }
 
 // ══ Logging central (premiação + tracking de afiliados) ══
-const LOG_ENDPOINT = 'https://script.google.com/macros/s/AKfycby0Kej7V7Gi2gIDKorBookSLofBMHOF50UFWq4Q1fTmstCD8ed8O9XLyCaZo8QIeUPfeQ/exec';
+const LOG_ENDPOINT = 'https://metodogh-api.vercel.app/exec';   // v625: servidor novo (repassa ao Apps Script o que não migrou)
 
 // ══ "Atualizado em" ── pega lastUpdated do Drive via Apps Script ══
 async function loadAndShowLastModified() {
@@ -27278,7 +27305,7 @@ function planBlockGate(pre) {   // v512: pre = pedaço do boot; sem ele busca so
 function ghflixTabState(pre) {   // v512: pre = pedaço do boot
   try {
     if (typeof SHEET_ID === 'undefined' || !SHEET_ID) return;
-    var ep = 'https://script.google.com/macros/s/AKfycby0Kej7V7Gi2gIDKorBookSLofBMHOF50UFWq4Q1fTmstCD8ed8O9XLyCaZo8QIeUPfeQ/exec';
+    var ep = 'https://metodogh-api.vercel.app/exec';   // v625
     (pre ? Promise.resolve(pre) : fetch(ep + '?action=ghflixAccess&id=' + encodeURIComponent(SHEET_ID))
       .then(function (r) { return r.json(); }))
       .then(function (j) {
@@ -28644,7 +28671,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v624';
+    var APP_SHELL_V = 'metodo-gh-v625';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'metodo-gh-v624';
+const CACHE_NAME = 'metodo-gh-v625';
 const ASSETS = [
   './',
   './index.html',
@@ -88,7 +88,7 @@ async function _gasFetch(req) {
   if (req.method !== 'GET') return r;
   // v555: a frase "sem action" só vem do Apps Script. Planilha (CSV do treino e da dieta) e outras respostas do Google passam
   // direto, sem serem lidas duas vezes.
-  if (String(req.url || '').indexOf('script.google') === -1) return r;
+  if (String(req.url || '').indexOf('script.google') === -1 && String(req.url || '').indexOf('metodogh-api.vercel.app') === -1) return r;   // v625: servidor novo repassa o Apps Script
   try {
     const txt = await r.clone().text();
     if (txt && txt.indexOf('sem action') !== -1) {
@@ -126,7 +126,7 @@ self.addEventListener('fetch', e => {
   // URLs do Google Sheets / docs / Apps Script: SEMPRE network direto (sem cache)
   // Se falhar, propaga erro pro app — melhor que servir resposta cacheada/parcial
   // que estava bugando o reload do PWA standalone no iOS (DIETA sumindo).
-  if (e.request.url.includes('docs.google.com') || e.request.url.includes('script.google.com') || e.request.url.includes('googleapis.com')) {
+  if (e.request.url.includes('docs.google.com') || e.request.url.includes('script.google.com') || e.request.url.includes('googleapis.com') || e.request.url.includes('metodogh-api.vercel.app')) {   // v625: servidor novo também é rede sempre
     e.respondWith(_gasFetch(e.request));
     return;
   }
