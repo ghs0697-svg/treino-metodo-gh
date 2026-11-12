@@ -3729,6 +3729,24 @@
     #teRecadoBtn .te-lbl, #teFantasmaBtn .te-lbl { display: none; }   /* v605: no celular Recado e Antes ficam só no ícone, senão a fila de botões abre uma 3ª linha */
     #teRecadoBtn, #teFantasmaBtn { flex: 0 0 auto; padding: 7px 10px; }
   }
+  /* ══ v629 (GH 12/11, print do iPhone: "lá em cima tá horrível as funções, não dá pra entender nada"): no celular as abas
+     perdem o ícone e mostram o nome inteiro (ESFORÇO saía "ESFO..."), o Recado e o Antes voltam a ter nome escrito, o link do
+     protocolo vira dois botões pequenos ao lado do nome, e o Desfazer apagado fica claro que está apagado. ══ */
+  @media (max-width: 480px) {
+    #trainerEditor .te-ico { display: none; }
+    #trainerEditor .te-top-bar { gap: 7px; padding: 8px 10px 10px; }
+    #trainerEditor .te-top-info { flex-wrap: nowrap; gap: 6px; align-items: center; }
+    #trainerEditor .te-info-name { flex: 1 1 auto; min-width: 0; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #trainerEditor .te-info-link { gap: 6px; }
+    #trainerEditor .te-info-link a, #trainerEditor .te-link-copy { font-size: 12px; padding: 6px 9px; border-radius: 8px; border: 1px solid rgba(221,182,92,.55); background: #2a2a2a; color: #E3BE6B; text-decoration: none; font-weight: 700; line-height: 1.2; }
+    #trainerEditor .te-mode-tabs { gap: 4px; }
+    #trainerEditor .te-mode-tab { font-size: 11.5px; padding: 9px 0; letter-spacing: .01em; border-radius: 8px; text-overflow: clip; }
+    #trainerEditor .te-top-bar > .te-btn, #trainerEditor .te-top-bar > .te-tpl-btn { font-size: 12.5px; padding: 8px 4px; border-radius: 8px; min-height: 38px; }
+    #trainerEditor .te-top-bar > .te-btn:last-child { min-height: 0; padding: 6px 11px; font-size: 14px; }
+    #teRecadoBtn .te-lbl, #teFantasmaBtn .te-lbl { display: inline; }
+    #teRecadoBtn, #teFantasmaBtn { flex: 1 1 auto; padding: 8px 4px; }
+    #trainerEditor #teUndoBtn:disabled { opacity: .4; }
+  }
   .tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 6px; margin: 8px 0; }
   .tpl-pill { background: #222; border: 1px solid #333; color: #ccc; padding: 7px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; text-align: center; }
   .tpl-pill:hover { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
@@ -5630,18 +5648,25 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
 <div id="contaLoja" style="display:none;position:fixed;inset:0;z-index:99999;background:#0D0D0D;overflow:auto;">
   <div style="min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;box-sizing:border-box;">
     <div style="font-family:'Cinzel',serif;font-size:32px;letter-spacing:6px;color:var(--gold);font-weight:700;">MÉTODO GH</div>
-    <div id="clSub" style="color:#888;font-size:13px;letter-spacing:1px;margin:6px 0 18px;text-align:center;"></div>
+    <div id="clSub" style="color:#A8A8A8;font-size:13px;letter-spacing:1px;margin:6px 0 18px;text-align:center;"></div>
     <div id="clCorpo" style="width:100%;max-width:340px;display:flex;flex-direction:column;gap:10px;"></div>
-    <div id="clErr" style="color:#e74c3c;font-size:13px;min-height:18px;margin-top:10px;text-align:center;max-width:340px;"></div>
+    <div id="clErr" role="alert"></div>
     <button type="button" onclick="contaEquipe()" style="margin-top:28px;background:none;border:none;color:#555;font-size:11px;cursor:pointer;">Sou da equipe</button>
   </div>
 </div>
 <style>
-  #contaLoja input{width:100%;box-sizing:border-box;padding:14px;border-radius:8px;border:1px solid var(--gold-dim);background:#1a1a1a;color:#fff;font-size:16px;}
-  #contaLoja label{color:#bbb;font-size:12px;margin-bottom:-6px;}
-  #contaLoja .cl-btn{width:100%;padding:14px;border-radius:8px;border:none;background:var(--gold);color:var(--dark);font-size:15px;font-weight:700;cursor:pointer;}
+  /* v629 (GH 12/11, print do primeiro acesso): cores com mais contraste, erro numa caixa logo abaixo do botão, e o "ainda não
+     respondi a anamnese" vira um botão de verdade (antes era um link solto, longe do erro e quase sumido). */
+  #contaLoja input{width:100%;box-sizing:border-box;padding:14px;border-radius:10px;border:1px solid rgba(212,175,106,.38);background:#181818;color:#fff;font-size:16px;}
+  #contaLoja input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(212,175,106,.18);}
+  #contaLoja label{color:#C8C8C8;font-size:12.5px;margin-bottom:-6px;}
+  #contaLoja .cl-btn{width:100%;padding:15px;border-radius:10px;border:none;background:linear-gradient(135deg,#E6C76A,#B8913F);color:#1A1405;font-size:15.5px;font-weight:800;cursor:pointer;box-shadow:0 8px 22px rgba(212,175,106,.22);}
   #contaLoja .cl-btn[disabled]{opacity:.6;}
-  #contaLoja .cl-link{background:none;border:none;color:var(--gold);font-size:14px;cursor:pointer;padding:8px;}
+  #contaLoja .cl-btn2{width:100%;padding:13px;border-radius:10px;border:1px solid var(--gold);background:rgba(212,175,106,.10);color:#E6C76A;font-size:15px;font-weight:700;cursor:pointer;}
+  #contaLoja .cl-link{background:none;border:none;color:#E6C76A;font-size:14.5px;cursor:pointer;padding:8px;}
+  #contaLoja .cl-link.cl-fraco{color:#B4B4B4;font-size:13.5px;}
+  #clErr{width:100%;max-width:340px;box-sizing:border-box;border-radius:10px;padding:12px 14px;background:rgba(231,76,60,.12);border:1px solid rgba(240,110,95,.55);color:#FFC2B8;font-size:14px;line-height:1.45;text-align:left;}
+  #clErr:empty{display:none;}
   #contaLoja .cl-txt{color:#ccc;font-size:14px;line-height:1.55;text-align:center;}
 
   /* ══ v611 (revisão do protocolo da Barbara, GH 05/11) ══ */
@@ -8252,8 +8277,8 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   <div class="te-top-bar">
     <div class="te-top-info" id="trainerStudentInfo"></div>
     <div class="te-mode-tabs" id="teModeTabs"></div>
-    <button class="te-btn ghost" id="teUndoBtn" onclick="undoTrainerAction()" disabled title="Desfazer última ação (Ctrl+Z)">↶ Desfazer</button>
-    <button class="te-tpl-btn" id="trainerTplBtn" onclick="openTrainerTemplateModal()" style="display:none;" title="Carregar template oficial (substitui exercícios mantendo info do aluno)">📋 Template</button>
+    <button class="te-btn ghost" id="teUndoBtn" onclick="undoTrainerAction()" disabled title="Desfazer última ação (Ctrl+Z)"><span class="te-ico">↶ </span>Desfazer</button>
+    <button class="te-tpl-btn" id="trainerTplBtn" onclick="openTrainerTemplateModal()" style="display:none;" title="Carregar template oficial (substitui exercícios mantendo info do aluno)"><span class="te-ico">📋 </span>Template</button>
     <button class="te-btn ghost" id="teRecadoBtn" onclick="openRecadoModal()" title="Gravar recado em áudio pro aluno (entrega inicial). Some em 2 dias.">🎙<span class="te-lbl"> Recado</span></button>
     <button class="te-btn ghost" id="teFantasmaBtn" onclick="teFantasmaAbrir()" title="Ver por cima como este protocolo estava antes (versão anterior). Só a equipe vê.">👻<span class="te-lbl"> Antes</span></button>
     <button class="te-btn" id="trainerSaveBtn" onclick="trainerSave()">💾 Salvar</button>
@@ -28419,7 +28444,7 @@ function _clErro(cod) {
     login: 'E-mail ou senha não conferem.', muitas_tentativas: 'Muitas tentativas. Espera 15 minutos e tenta de novo.',
     sessao: 'Entra de novo com teu e-mail e senha.', cota: 'Não consegui mandar o e-mail agora. Tenta de novo amanhã ou fala com o suporte.',
     rede: 'Sem conexão com o servidor. Confere a internet e tenta de novo.',
-    sem_forms: 'Não achei esse e-mail nas respostas da anamnese. Confere se é o mesmo e-mail que tu colocou no formulário.',
+    sem_forms: 'Não achei esse e-mail nas respostas da anamnese. Confere se é o mesmo e-mail que tu colocou nela.',
     nao_confere: 'O CPF não bate com o desse e-mail. Confere os números.'
   };
   return m[cod] || 'Não deu certo agora. Tenta de novo em instantes.';
@@ -28446,7 +28471,7 @@ function contaTela(tela) {
         _clCampo('clSenha', 'Senha', 'password', 'autocomplete="current-password"') +
         '<button class="cl-btn" id="clBtn" onclick="contaEntrar()">Entrar</button>' +
         '<button class="cl-link" onclick="contaTela(\'primeiro\')">Primeiro acesso? Cria tua senha</button>' +
-        '<button class="cl-link" style="color:#888;font-size:13px" onclick="contaTela(\'senha\')">Esqueci a senha</button>';
+        '<button class="cl-link cl-fraco" onclick="contaTela(\'senha\')">Esqueci a senha</button>';
   } else if (tela === 'primeiro') {
     // v628: primeiro acesso com e-mail + CPF conferidos na anamnese, sem código (rota conta_primeiro). O código por e-mail
     // (tela 'criar') fica de plano B pra quem não consegue por aqui.
@@ -28456,9 +28481,9 @@ function contaTela(tela) {
         _clCampo('clCpf', 'CPF', 'text', 'inputmode="numeric" autocomplete="off" maxlength="14" oninput="contaMascaraCpf(this)"') +
         _clCampo('clSenha', 'Crie uma senha (6 ou mais caracteres)', 'password', 'autocomplete="new-password"') +
         '<button class="cl-btn" id="clBtn" onclick="contaPrimeiro()">Criar minha senha</button>' +
-        '<div id="clSemForms" style="display:none"><button class="cl-link" onclick="contaAnamnese()">Ainda não respondi a anamnese</button></div>' +
+        '<div id="clSemForms" style="display:none"><button class="cl-btn2" onclick="contaAnamnese()">Ainda não respondi: abrir a anamnese</button></div>' +
         '<button class="cl-link" onclick="contaTela(\'entrar\')">Já tenho conta</button>' +
-        '<button class="cl-link" style="color:#888;font-size:13px" onclick="contaTela(\'criar\')">Não consegui? Confirmar pelo e-mail</button>';
+        '<button class="cl-link cl-fraco" onclick="contaTela(\'criar\')">Não consegui? Confirmar pelo e-mail</button>';
   } else if (tela === 'criar') {
     sub.textContent = 'Confirmar pelo e-mail';
     h = '<div class="cl-txt" style="margin-bottom:4px">Usa o mesmo e-mail, CPF e WhatsApp que tu passou na compra. É por eles que a gente acha o teu protocolo.</div>' +
@@ -28476,7 +28501,7 @@ function contaTela(tela) {
         (tela === 'senha_codigo' ? _clCampo('clSenha', 'Senha nova (6 ou mais caracteres)', 'password', 'autocomplete="new-password"') : '') +
         '<button class="cl-btn" id="clBtn" onclick="' + (tela === 'criar_codigo' ? 'contaCriar()' : 'contaNovaSenha()') + '">Confirmar</button>' +
         '<button class="cl-link" onclick="contaPedeCodigo(\'' + (tela === 'criar_codigo' ? 'criar' : 'senha') + '\', true)">Mandar outro código</button>' +
-        '<button class="cl-link" style="color:#888;font-size:13px" onclick="contaTela(\'' + (tela === 'criar_codigo' ? 'criar' : 'entrar') + '\')">Voltar</button>';
+        '<button class="cl-link cl-fraco" onclick="contaTela(\'' + (tela === 'criar_codigo' ? 'criar' : 'entrar') + '\')">Voltar</button>';
   } else if (tela === 'senha') {
     sub.textContent = 'Trocar a senha';
     h = _clCampo('clEmail', 'E-mail da conta', 'email', 'autocomplete="email" inputmode="email" autocapitalize="off"') +
@@ -28499,10 +28524,12 @@ function contaTela(tela) {
           '<button class="cl-btn" onclick="contaSuporte()">Falar com o suporte</button>';
     }
     h += '<button class="cl-link" onclick="contaAtualiza()">Já está pronto? Atualizar</button>' +
-         '<button class="cl-link" style="color:#888;font-size:13px" onclick="contaSair()">Sair</button>' +
+         '<button class="cl-link cl-fraco" onclick="contaSair()">Sair</button>' +
          '<button class="cl-link" style="color:#666;font-size:12px" onclick="contaExcluirPede()">Excluir minha conta</button>';
   }
+  var _e = document.getElementById('clErr'); if (_e && c.contains(_e)) c.parentNode.insertBefore(_e, c.nextSibling);   // v629: o erro mora embaixo do botão
   c.innerHTML = h;
+  try { var _b = document.getElementById('clBtn'); if (_e && _b) _b.insertAdjacentElement('afterend', _e); } catch (_) {}
   var prim = c.querySelector('input'); if (prim && !prim.value) setTimeout(function () { try { prim.focus(); } catch (_) {} }, 120);
   c.querySelectorAll('input').forEach(function (inp) { inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { var b = document.getElementById('clBtn'); if (b) b.click(); } }); });
 }
@@ -28725,7 +28752,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v628';
+    var APP_SHELL_V = 'metodo-gh-v629';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
@@ -30089,16 +30116,16 @@ function renderEditorTopBar() {
   document.getElementById('trainerStudentInfo').innerHTML =
     `<span class="te-info-name"><strong>${escTrainer(studentName)}</strong>${meta ? ' · ' + escTrainer(meta) : ''}</span>` +
     `<span class="te-info-link">` +
-      `<a href="${protoUrl}" target="_blank" rel="noopener" title="Abrir o protocolo do aluno numa nova aba">🔗 abrir protocolo</a>` +
-      `<button type="button" class="te-link-copy" onclick="teCopyProtoLink(this)" title="Copiar o link do protocolo pra mandar pro aluno">📋 copiar link</button>` +
+      `<a href="${protoUrl}" target="_blank" rel="noopener" title="Abrir o protocolo do aluno numa nova aba"><span class="te-ico">🔗 </span>abrir protocolo</a>` +
+      `<button type="button" class="te-link-copy" onclick="teCopyProtoLink(this)" title="Copiar o link do protocolo pra mandar pro aluno">copiar link</button>` +
     `</span>`;
 
   const tabs = `
-    <button class="te-mode-tab${currentEditMode === 'treino' ? ' active' : ''}" ${trainerData ? `onclick="switchEditMode('treino')"` : 'disabled'}>📋 TREINO</button>
-    <button class="te-mode-tab${currentEditMode === 'dieta' ? ' active' : ''}" ${dietaData ? `onclick="switchEditMode('dieta')"` : 'disabled'}>🍽 DIETA</button>
-    <button class="te-mode-tab${currentEditMode === 'planta' ? ' active' : ''}" ${dietaData ? `onclick="switchEditMode('planta')"` : 'disabled'}>🕒 PLANTA</button>
-    <button class="te-mode-tab${currentEditMode === 'esforco' ? ' active' : ''}" ${trainerData ? `onclick="switchEditMode('esforco')"` : 'disabled'}>📊 ESFORÇO</button>
-    <button class="te-mode-tab${currentEditMode === 'raiox' ? ' active' : ''}" ${trainerData ? `onclick="switchEditMode('raiox')"` : 'disabled'}>🩻 RAIO-X</button>
+    <button class="te-mode-tab${currentEditMode === 'treino' ? ' active' : ''}" ${trainerData ? `onclick="switchEditMode('treino')"` : 'disabled'}><span class="te-ico">📋 </span>TREINO</button>
+    <button class="te-mode-tab${currentEditMode === 'dieta' ? ' active' : ''}" ${dietaData ? `onclick="switchEditMode('dieta')"` : 'disabled'}><span class="te-ico">🍽 </span>DIETA</button>
+    <button class="te-mode-tab${currentEditMode === 'planta' ? ' active' : ''}" ${dietaData ? `onclick="switchEditMode('planta')"` : 'disabled'}><span class="te-ico">🕒 </span>PLANTA</button>
+    <button class="te-mode-tab${currentEditMode === 'esforco' ? ' active' : ''}" ${trainerData ? `onclick="switchEditMode('esforco')"` : 'disabled'}><span class="te-ico">📊 </span>ESFORÇO</button>
+    <button class="te-mode-tab${currentEditMode === 'raiox' ? ' active' : ''}" ${trainerData ? `onclick="switchEditMode('raiox')"` : 'disabled'}><span class="te-ico">🩻 </span>RAIO-X</button>
   `;
   document.getElementById('teModeTabs').innerHTML = tabs;
 }
