@@ -8481,7 +8481,7 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
   <div class="te-modal-box" style="max-width:460px;">
     <h3>🎙 Recado em áudio</h3>
     <p style="color:#888;font-size:11px;margin:0 0 6px;">Grava um recado de voz pro aluno (entrega inicial). Aparece no topo do protocolo dele. Lê o card "O que observei no teu caso" enquanto grava.</p>
-    <p style="color:var(--gold);font-size:11px;margin:0 0 4px;">Pode gravar em qualquer navegador (Chrome, Safari) ou anexar um áudio pronto. O áudio toca em qualquer celular do aluno.</p>
+    <p style="color:var(--gold);font-size:11px;margin:0 0 4px;">Pode gravar em qualquer navegador (Chrome, Safari) ou anexar um áudio pronto. O áudio toca em qualquer celular do aluno. Gravando aqui vai até 5 minutos.</p>
     <div class="recado-existing" id="recadoExisting" style="display:none;">
       <span id="recadoExistingTxt"></span>
       <button type="button" class="recado-prazo-btn" id="recadoDelBtn" onclick="recadoDelete()" style="border-color:#e25555;color:#e25555;">🗑 Excluir</button>
@@ -28986,7 +28986,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v635';
+    var APP_SHELL_V = 'metodo-gh-v636';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
@@ -29750,11 +29750,11 @@ function teHide(id) { document.getElementById(id).classList.remove('show'); try 
 // ── Recado em áudio (só treinador, no editor) ──
 // Grava voz no navegador → base64 → POST type:'recado' pro Apps Script, que
 // salva no Drive do aluno (trainerSheetId). Player aparece no protocolo do
-// aluno e some em 2 dias (RECADO_TTL_DAYS no .gs). Captura PCM, comprime em MP3 (v510; WAV se o encoder falhar). Máx 3 min.
+// aluno e some em 2 dias (RECADO_TTL_DAYS no .gs). Captura PCM, comprime em MP3 (v510; WAV se o encoder falhar). Máx 5 min (v636, GH 12/11: 3 min cortava o recado no meio).
 let _recadoBlob = null, _recadoMime = 'audio/wav', _recadoRecording = false;
 let _recadoStream = null, _recadoTimerInt = null, _recadoT0 = 0, _recadoPerm = false;
 let _recadoCtx = null, _recadoProc = null, _recadoSrc = null, _recadoPCM = [], _recadoSampleRate = 44100;
-const _RECADO_MAX_S = 180;
+const _RECADO_MAX_S = 300;   // v636: 5 min (uns 1,2 MB em MP3; o anexo já aceitava 6 min pelo mesmo caminho)
 const _RECADO_OUT_HZ = 16000;
 
 function openRecadoModal() {
