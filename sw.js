@@ -1,4 +1,4 @@
-const CACHE_NAME = 'metodo-gh-v629';
+const CACHE_NAME = 'metodo-gh-v630';
 const ASSETS = [
   './',
   './index.html',
@@ -14,7 +14,8 @@ const ASSETS = [
   './assets/bg-gym.jpg',
   './assets/bg-particles.jpg',
   './assets/bg-texture.jpg',
-  './assets/gh-hero.jpg'
+  './assets/gh-hero.jpg',
+  './assets/gh-login.jpg'
 ];
 
 self.addEventListener('install', e => {

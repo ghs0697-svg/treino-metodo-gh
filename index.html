@@ -1909,6 +1909,12 @@
     padding: 20px 16px;
   }
   .admin-panel h2 { color: var(--gold); font-size: 16px; margin-bottom: 14px; text-align: center; }
+  /* v630 (GH 12/11): no app da loja o painel tem saída e abre o protocolo do aluno dentro do app */
+  .so-loja-app { display: none !important; }
+  html.app-loja .so-loja-app { display: inline-flex !important; }
+  .pn-voltar { align-items: center; gap: 6px; background: transparent; border: 1px solid rgba(221,182,92,.45); color: var(--gold); font-family: inherit; font-weight: 700; font-size: 13px; line-height: 1; padding: 9px 14px; border-radius: 999px; cursor: pointer; margin: 0 0 12px; }
+  .pn-voltar-gate { position: absolute; top: calc(14px + env(safe-area-inset-top, 0px)); left: 14px; margin: 0; }
+  #pnVoltaEditor { position: fixed; z-index: 99990; left: calc(12px + env(safe-area-inset-left, 0px)); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(135deg,#E6C76A,#B8913F); color: #1A1405; border: none; border-radius: 999px; padding: 11px 16px; font-family: inherit; font-weight: 800; font-size: 13.5px; line-height: 1; box-shadow: 0 6px 20px rgba(0,0,0,.45); cursor: pointer; }
   .admin-field { margin-bottom: 12px; }
   .admin-field label { display: block; color: var(--gold); font-size: 12px; font-weight: 600; margin-bottom: 4px; }
   .admin-field input, .admin-field select {
@@ -3746,6 +3752,18 @@
     #teRecadoBtn .te-lbl, #teFantasmaBtn .te-lbl { display: inline; }
     #teRecadoBtn, #teFantasmaBtn { flex: 1 1 auto; padding: 8px 4px; }
     #trainerEditor #teUndoBtn:disabled { opacity: .4; }
+  }
+  .te-dias-nav { display: none; }
+  /* v629: em uma coluna (celular, iPad em pé) cada DIA cresce inteiro, sem caixa da altura da tela com rolagem por dentro: no
+     iPhone o DIA 1 enchia a tela e o dedo rolava só dentro dele, os outros dias nunca apareciam. */
+  @media (max-width: 799px) {
+    #trainerEditor .te-day { max-height: none; overflow: visible; }
+    #trainerEditor .te-day-header { border-radius: 4px 4px 0 0; }
+    #trainerEditor .te-day-body { overflow: visible; }
+    .te-dias-nav { display: flex; gap: 6px; position: sticky; top: -10px; z-index: 6; margin: -10px -10px 10px; padding: 8px 10px; background: #141414; border-bottom: 1px solid rgba(221,182,92,.35); overflow-x: auto; scrollbar-width: none; }
+    .te-dias-nav::-webkit-scrollbar { display: none; }
+    .te-dias-nav button { flex: 0 0 auto; background: #2a2a2a; border: 1px solid #4a4a4a; color: #F4F2ED; font-weight: 800; font-size: 13px; padding: 8px 14px; border-radius: 999px; cursor: pointer; font-family: inherit; }
+    .te-dias-nav button.on { background: #DDB65C; border-color: #DDB65C; color: #1A1304; }
   }
   .tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 6px; margin: 8px 0; }
   .tpl-pill { background: #222; border: 1px solid #333; color: #ccc; padding: 7px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; text-align: center; }
@@ -5646,8 +5664,9 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
 <!-- ══ PORTÃO DE LOGIN DO PAINEL (raiz sem ?sheet) ══ -->
 <!-- ══ v598: CONTA DO APP DA LOJA (só com a chave _LOJA) ══ -->
 <div id="contaLoja" style="display:none;position:fixed;inset:0;z-index:99999;background:#0D0D0D;overflow:auto;">
-  <div style="min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;box-sizing:border-box;">
-    <div style="font-family:'Cinzel',serif;font-size:32px;letter-spacing:6px;color:var(--gold);font-weight:700;">MÉTODO GH</div>
+  <div id="clCaixa" style="min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:0 20px 28px;box-sizing:border-box;">
+    <div class="cl-foto" aria-hidden="true"></div>
+    <div class="cl-marca" style="font-family:'Cinzel',serif;font-size:32px;letter-spacing:6px;font-weight:700;">MÉTODO GH</div>
     <div id="clSub" style="color:#A8A8A8;font-size:13px;letter-spacing:1px;margin:6px 0 18px;text-align:center;"></div>
     <div id="clCorpo" style="width:100%;max-width:340px;display:flex;flex-direction:column;gap:10px;"></div>
     <div id="clErr" role="alert"></div>
@@ -5667,6 +5686,11 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   #contaLoja .cl-link.cl-fraco{color:#B4B4B4;font-size:13.5px;}
   #clErr{width:100%;max-width:340px;box-sizing:border-box;border-radius:10px;padding:12px 14px;background:rgba(231,76,60,.12);border:1px solid rgba(240,110,95,.55);color:#FFC2B8;font-size:14px;line-height:1.45;text-align:left;}
   #clErr:empty{display:none;}
+  /* v629 (GH 12/11): foto do GH no topo do login (assets/gh-login.jpg, recorte da gh-autoridade original), se apagando no preto,
+     e a marca no dourado com brilho do botão. */
+  #contaLoja .cl-foto{width:calc(100% + 40px);max-width:560px;height:clamp(210px,40vh,380px);margin:0 -20px;flex:none;background:linear-gradient(180deg,rgba(13,13,13,0) 0%,rgba(13,13,13,0) 48%,rgba(13,13,13,.78) 76%,#0D0D0D 96%,#0D0D0D 100%),url(assets/gh-login.jpg) center 18%/cover no-repeat;box-shadow:0 2px 0 #0D0D0D;}
+  #contaLoja .cl-marca{margin-top:-34px;position:relative;background:linear-gradient(135deg,#F1D88A,#C9A24B 55%,#E6C76A);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 2px 18px rgba(0,0,0,.35);}
+  @media (max-height:700px){ #contaLoja .cl-foto{height:clamp(160px,30vh,260px);} }
   #contaLoja .cl-txt{color:#ccc;font-size:14px;line-height:1.55;text-align:center;}
 
   /* ══ v611 (revisão do protocolo da Barbara, GH 05/11) ══ */
@@ -5738,13 +5762,15 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   <input type="password" id="painelGatePwd" placeholder="Senha" autocomplete="current-password"
          style="width:100%;max-width:320px;padding:14px;border-radius:8px;border:1px solid var(--gold-dim);background:#1a1a1a;color:#fff;font-size:15px;text-align:center;" />
   <button id="painelGateBtn" onclick="painelGateSubmit()"
-          style="width:100%;max-width:320px;padding:14px;border-radius:8px;border:none;background:var(--gold);color:var(--dark);font-size:15px;font-weight:700;cursor:pointer;">Entrar</button>
+          style="width:100%;max-width:320px;padding:15px;border-radius:10px;border:none;background:linear-gradient(135deg,#E6C76A,#B8913F);color:#1A1405;font-size:15.5px;font-weight:800;cursor:pointer;box-shadow:0 8px 22px rgba(212,175,106,.22);">Entrar</button>
   <div id="painelGateErr" style="color:#e74c3c;font-size:12px;min-height:16px;"></div>
   <div style="color:#555;font-size:11px;margin-top:8px;">Acesso restrito a funcionários autorizados.</div>
+  <button type="button" class="pn-voltar pn-voltar-gate so-loja-app" onclick="painelVoltar()">← Voltar</button>
 </div>
 
 <!-- ══ ADMIN PANEL (shown when no sheet params) ══ -->
 <div id="adminPanel" class="admin-panel" style="display:none;">
+  <button type="button" class="pn-voltar so-loja-app" onclick="painelVoltar()">← Voltar</button>
   <h2>PAINEL DO TREINADOR</h2>
 
   <button class="admin-btn" onclick="openTrainerLogin()" style="margin-bottom:16px;">🔍 BUSCAR ALUNO PELO NOME</button>
@@ -8527,6 +8553,7 @@ const params = new URLSearchParams(window.location.search);
 // v598: APP DA LOJA (App Store e Play Store). Só com ?loja=1 (a casca nativa abre assim) ou dentro do Capacitor: quem abre
 // sem link pessoal e sem aluno guardado vê o login da conta em vez do portão do treinador. Sem a chave, nada muda.
 var _LOJA = false; try { _LOJA = params.get('loja') === '1' || !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()); } catch (_) {}
+try { if (_LOJA) document.documentElement.classList.add('app-loja'); } catch (_) {}
 var _cl = { tela: 'entrar', dados: {} };   // estado da tela de conta (aqui em cima: initContaLoja roda antes do bloco da conta)
 let SHEET_ID = params.get('sheet');
 let TAB_NAME = params.get('tab');
@@ -8562,7 +8589,7 @@ if (!SHEET_ID && !TAB_NAME) {
 // v547: link pessoal sem o "&tab=" (cortado ao copiar) abre o treino do aluno. Antes caía no portão do Painel do Treinador.
 if (SHEET_ID && !TAB_NAME && !(params.has('editor') || params.has('admin') || params.get('edit') === '1')) TAB_NAME = 'TREINO';
 // Salva o aluno pra recuperar nas próximas aberturas sem link (tab opcional → default TREINO)
-if (params.get('sheet')) {
+if (params.get('sheet') && params.get('painel') !== '1') {   // v630: protocolo aberto pelo painel (GH) não vira o aluno do aparelho
   localStorage.setItem('gh_pwa_params', JSON.stringify({ sheet: params.get('sheet'), tab: params.get('tab') || 'TREINO' }));
 }
 
@@ -28253,6 +28280,30 @@ function generateLink() {
   document.getElementById('adminResult').style.display = 'block';
 }
 
+// v630 (GH 12/11, app da loja): o painel abre QUALQUER protocolo dentro do próprio app, com botão de volta pro editor.
+function _pnLoja_() { return params.get('loja') === '1' ? '&loja=1' : ''; }
+function teAbrirProtoAqui() {
+  if (!trainerSheetId) return;
+  const aba = (currentEditMode === 'dieta' || currentEditMode === 'planta') ? 'DIETA' : 'TREINO';
+  location.href = location.pathname + '?sheet=' + encodeURIComponent(trainerSheetId) + '&tab=' + aba + '&painel=1' + _pnLoja_();
+}
+function painelVoltar() {
+  // sai do painel/portão pra tela de entrada do app (a senha da equipe fica guardada: na próxima abertura volta pro painel)
+  var g = document.getElementById('painelGate'); if (g) g.style.display = 'none';
+  var p = document.getElementById('adminPanel'); if (p) p.style.display = 'none';
+  if (typeof initContaLoja === 'function') initContaLoja();
+}
+function _pnBotaoVolta_() {
+  try {
+    if (params.get('painel') !== '1' || !SHEET_ID || !localStorage.getItem('gh_trainer_token')) return;
+    if (document.getElementById('pnVoltaEditor')) return;
+    var b = document.createElement('button'); b.id = 'pnVoltaEditor'; b.type = 'button'; b.textContent = '← Voltar ao editor';
+    b.onclick = function () { location.href = location.pathname + '?edit=1&sheet=' + encodeURIComponent(SHEET_ID) + _pnLoja_(); };
+    document.body.appendChild(b);
+  } catch (_) {}
+}
+try { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _pnBotaoVolta_); else setTimeout(_pnBotaoVolta_, 0); } catch (_) {}
+
 // Copia o link do protocolo do aluno a partir do editor (nome do sheet + aba atual).
 function teCopyProtoLink(btn) {
   const url = `https://app.metodogh.com.br/?sheet=${encodeURIComponent(trainerSheetId)}&tab=${(currentEditMode === 'dieta' || currentEditMode === 'planta') ? 'DIETA' : 'TREINO'}`;
@@ -28752,7 +28803,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v629';
+    var APP_SHELL_V = 'metodo-gh-v630';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
@@ -30116,7 +30167,7 @@ function renderEditorTopBar() {
   document.getElementById('trainerStudentInfo').innerHTML =
     `<span class="te-info-name"><strong>${escTrainer(studentName)}</strong>${meta ? ' · ' + escTrainer(meta) : ''}</span>` +
     `<span class="te-info-link">` +
-      `<a href="${protoUrl}" target="_blank" rel="noopener" title="Abrir o protocolo do aluno numa nova aba"><span class="te-ico">🔗 </span>abrir protocolo</a>` +
+      (_LOJA ? `<a href="#" onclick="teAbrirProtoAqui();return false;" title="Abrir o protocolo do aluno aqui no app"><span class="te-ico">🔗 </span>abrir protocolo</a>` : `<a href="${protoUrl}" target="_blank" rel="noopener" title="Abrir o protocolo do aluno numa nova aba"><span class="te-ico">🔗 </span>abrir protocolo</a>`) +
       `<button type="button" class="te-link-copy" onclick="teCopyProtoLink(this)" title="Copiar o link do protocolo pra mandar pro aluno">copiar link</button>` +
     `</span>`;
 
@@ -30779,8 +30830,12 @@ function renderTrainerEditor() {
     days[day].push({ idx, name: r[1] || '', series: r[2] || '', reps: r[3] || '', rest: r[4] || '', obs: r[5] || '', video: r[6] || '', warmup: (r[7] || '').toLowerCase().trim() === 'sim' });
   });
 
-  let html = '<div class="te-days-grid">';
-  Object.keys(days).sort((a, b) => +a - +b).forEach(d => {
+  // v629 (GH 12/11, "no celular nem mostra os dias além do dia 1"): barra com os dias, presa no topo da lista. Só aparece em tela
+  // de uma coluna (abaixo de 800 px); um toque leva pro dia e ela marca em qual dia a pessoa está.
+  const _teDk = Object.keys(days).sort((a, b) => +a - +b);
+  let html = (_teDk.length > 1 ? '<div class="te-dias-nav" id="teDiasNav">' + _teDk.map(d => `<button type="button" data-d="${d}" onclick="teIrDia(${d})">Dia ${d}</button>`).join('') + '</div>' : '') +
+    '<div class="te-days-grid">';
+  _teDk.forEach(d => {
     const exs = days[d];
 
     html += `<div class="te-day" data-day="${d}"
@@ -30821,11 +30876,33 @@ function renderTrainerEditor() {
     html += `<button class="te-new-day-btn" onclick="addNewDay()">+ Adicionar novo DIA de treino</button>`;
   }
 
+  const _teC = document.getElementById('trainerDaysContainer');
+  if (_teC && !_teC._teNav) { _teC._teNav = 1; _teC.addEventListener('scroll', teDiasNavSync, { passive: true }); }
+  setTimeout(teDiasNavSync, 0);
   document.getElementById('trainerDaysContainer').innerHTML = hasDays ? html : `
     <p style="color:#888;text-align:center;padding:30px;">Sem exercícios na aba TREINO.</p>
     <button class="te-new-day-btn" onclick="addNewDay()" style="margin: 0 auto; max-width:340px;">+ Criar primeiro DIA de treino</button>`;
 }
 
+function teIrDia(d) {
+  const c = document.getElementById('trainerDaysContainer'), el = c && c.querySelector('.te-day[data-day="' + d + '"]'), nav = document.getElementById('teDiasNav');
+  if (!el) return;
+  const top = c.scrollTop + el.getBoundingClientRect().top - c.getBoundingClientRect().top - ((nav && nav.offsetHeight) || 0) - 6;
+  try { c.scrollTo({ top: Math.max(0, top), behavior: 'smooth' }); } catch (_) { c.scrollTop = Math.max(0, top); }
+}
+function teDiasNavSync() {
+  const c = document.getElementById('trainerDaysContainer'), nav = document.getElementById('teDiasNav');
+  if (!c || !nav || !nav.offsetParent) return;
+  const lim = c.getBoundingClientRect().top + nav.offsetHeight + 14;
+  let at = null;
+  c.querySelectorAll('.te-day').forEach(el => { if (el.getBoundingClientRect().top <= lim) at = el.dataset.day; });
+  if (at === null) { const f = c.querySelector('.te-day'); at = f ? f.dataset.day : null; }
+  nav.querySelectorAll('button').forEach(b => {
+    const on = b.dataset.d === at;
+    if (on && !b.classList.contains('on')) { try { nav.scrollTo({ left: b.offsetLeft - 10, behavior: 'smooth' }); } catch (_) {} }
+    b.classList.toggle('on', on);
+  });
+}
 const ALL_MUSCLES_ORDER = ['peito', 'costas', 'ombro', 'biceps', 'triceps', 'quadriceps', 'posterior', 'gluteo', 'panturrilha', 'abdomen', 'aquecimento'];
 let swapMuscleFilter = 'todos';
 
@@ -31448,6 +31525,7 @@ function trainerExit() {
   trainerSheetId = null;
   try { teFantasmaFechar(); } catch (_) {}   // v605
   _teFant = null;
+  if (_LOJA && SHEET_ID) location.replace(location.pathname + (params.get('loja') === '1' ? '?loja=1' : ''));   // v630: no app da loja o ✕ volta pro painel
 }
 
 // ══════════════════════════════════════════════════════════════
