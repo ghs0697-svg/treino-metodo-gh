@@ -8428,8 +8428,10 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
     if (!window.fetch || !window.AbortController) return;
     var _fetchNativo = window.fetch;
     // v625 (migração pro Vercel, GH 11/11): o app fala com o servidor novo (API), que atende o que já migrou e repassa o resto
-    // ao Apps Script com a mesma resposta. Três casos vão DIRETO ao Apps Script: imagem (?action=..._img) e envio grande
-    // (fotos), porque o Vercel recusa mais de 4,5 MB; e o aparelho com localStorage mgh_api = 'gs' (chave de emergência).
+    // ao Apps Script com a mesma resposta. Dois casos vão DIRETO ao Apps Script: envio grande (fotos), porque o Vercel recusa
+    // mais de 4,5 MB; e o aparelho com localStorage mgh_api = 'gs' (chave de emergência).
+    // v627: a imagem (?action=..._img) também passa pelo servidor novo (ele lê a miniatura do Drive, bem menor); imagem grande
+    // demais pra ele volta com erro e cai na regra de baixo.
     // Se o servidor novo cair (rede ou erro 5xx), a MESMA chamada é refeita direto no Apps Script: o aluno não percebe.
     var GS_DIRETO = 'https://script.google.com/macros/s/AKfycby0Kej7V7Gi2gIDKorBookSLofBMHOF50UFWq4Q1fTmstCD8ed8O9XLyCaZo8QIeUPfeQ/exec';
     var API_NOVA = 'https://metodogh-api.vercel.app/exec';
@@ -8446,7 +8448,7 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
         if (typeof u === 'string' && u.indexOf(API_NOVA) === 0) {
           var direto = GS_DIRETO + u.slice(API_NOVA.length);
           var corpo = (o && typeof o.body === 'string') ? o.body : '';
-          if (_soGs || /[?&]action=[a-z_]*_img(&|$)/.test(u) || corpo.length > 3000000) return _comTeto(direto, o);
+          if (_soGs || corpo.length > 3000000) return _comTeto(direto, o);
           return _comTeto(u, o).then(function (r) {
             if (r && r.status >= 500) return _comTeto(direto, o);
             return r;
@@ -28690,7 +28692,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v626';
+    var APP_SHELL_V = 'metodo-gh-v627';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
