@@ -1915,6 +1915,8 @@
   /* v630 (GH 12/11): no app da loja o painel tem saída e abre o protocolo do aluno dentro do app */
   .so-loja-app { display: none !important; }
   html.app-loja .so-loja-app { display: inline-flex !important; }
+  /* v633 (GH 12/11, decisão 1a): no app da loja não aparece botão de renovar/comprar (regra 3.1 da Apple). No site nada muda. */
+  html.app-loja .mais-opt[onclick*="openRenovModal"], html.app-loja #renovBanner, html.app-loja #planBlockCta, html.app-loja .plan-block-hours { display: none !important; }
   .pn-voltar { align-items: center; gap: 6px; background: transparent; border: 1px solid rgba(221,182,92,.45); color: var(--gold); font-family: inherit; font-weight: 700; font-size: 13px; line-height: 1; padding: 9px 14px; border-radius: 999px; cursor: pointer; margin: 0 0 12px; }
   .pn-voltar-gate { position: absolute; top: calc(14px + env(safe-area-inset-top, 0px)); left: 14px; margin: 0; }
   #pnVoltaEditor { position: fixed; z-index: 99990; left: calc(12px + env(safe-area-inset-left, 0px)); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(135deg,#E6C76A,#B8913F); color: #1A1405; border: none; border-radius: 999px; padding: 11px 16px; font-family: inherit; font-weight: 800; font-size: 13.5px; line-height: 1; box-shadow: 0 6px 20px rgba(0,0,0,.45); cursor: pointer; }
@@ -23875,7 +23877,7 @@ function _jornadaCardHtml() {
     if (venc && diasVenc != null && diasVenc >= 0) {
       const quando = diasVenc <= 60 ? pl(diasVenc, 'dia', 'dias') : pl(Math.round(diasVenc / 30), 'mês', 'meses');
       const rotulo = br(venc) + (venc.getFullYear() !== hoje.getFullYear() ? '/' + String(venc.getFullYear()).slice(-2) : '');
-      vem += diasVenc <= 45 ? lin(data(rotulo, quando), 'Fim da tua etapa', 'toca aqui pra ver a próxima etapa', "openRenovModal('jornada')")
+      vem += (diasVenc <= 45 && !_LOJA) ? lin(data(rotulo, quando), 'Fim da tua etapa', 'toca aqui pra ver a próxima etapa', "openRenovModal('jornada')")
         : lin(data(rotulo, quando), 'Fim da tua etapa', 'até lá teu protocolo é reajustado a cada ciclo');
     }
     return '<div class="pg-card jr-card" id="jornadaCard"><div class="pg-sec-t">TUA JORNADA</div>'
@@ -26966,6 +26968,7 @@ function _renovWaMsg(origem) {
 }
 function _renovWaHref(origem) { return RENOV_WA + encodeURIComponent(_renovWaMsg(origem)); }
 function openRenovModal(origem) {
+  if (_LOJA) { _ghToast('A tua etapa é combinada com a equipe da consultoria.', 4200); return; }   // v633: sem link de renovação no app da loja
   _renovOrigem = origem || 'menu';
   _renovLogOpen(_renovOrigem);
   var h = _renovWaHref(_renovOrigem);
@@ -26994,6 +26997,7 @@ function _renovLogOpen(origem) {
 }
 
 function renovBannerShow(tipo, dias) {
+  if (_LOJA) return;   // v633: aviso com botão de renovação não aparece no app da loja
   try {
     if (sessionStorage.getItem('renovBannerOff') === '1') return; // fechou nesta sessão
     try { var _rOff = Number(localStorage.getItem('gh_renov_off_' + SHEET_ID)) || 0; if (_rOff && Date.now() - _rOff < 86400000) return; } catch (_) {}   // v591: fechou ha menos de 24 h
@@ -27094,6 +27098,7 @@ function maisAnamnese() {
     // descartada e ele preencheria tudo de novo na renovação. O aviso da tela já respeitava; esta entrada não.
     if (_reajSuprimidoPorVenc()) {
       if (_renovPendenteServidor) { _ghToast('Tua renovação já está registrada: o teu protocolo novo vem por ela, então a anamnese de reajuste não precisa ser respondida agora.', 7000); return; }
+      if (_LOJA) { _ghToast('Tua etapa está no fim: o teu próximo protocolo vem com a próxima etapa, não pelo reajuste.', 5200); return; }
       _ghToast('Tua etapa está no fim: agora o que vale é garantir a próxima etapa, não o reajuste.', 5200);
       try { openRenovModal('mais_anamnese'); } catch (_) {}
       return;
@@ -28882,7 +28887,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v632';
+    var APP_SHELL_V = 'metodo-gh-v633';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
