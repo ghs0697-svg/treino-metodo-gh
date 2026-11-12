@@ -5670,7 +5670,7 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
     <div id="clSub" style="color:#A8A8A8;font-size:13px;letter-spacing:1px;margin:6px 0 18px;text-align:center;"></div>
     <div id="clCorpo" style="width:100%;max-width:340px;display:flex;flex-direction:column;gap:10px;"></div>
     <div id="clErr" role="alert"></div>
-    <button type="button" onclick="contaEquipe()" style="margin-top:28px;background:none;border:none;color:#555;font-size:11px;cursor:pointer;">Sou da equipe</button>
+    <button type="button" id="clEquipeBtn" onclick="contaEquipe()">Sou da equipe</button>
   </div>
 </div>
 <style>
@@ -5686,6 +5686,9 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   #contaLoja .cl-link.cl-fraco{color:#B4B4B4;font-size:13.5px;}
   #clErr{width:100%;max-width:340px;box-sizing:border-box;border-radius:10px;padding:12px 14px;background:rgba(231,76,60,.12);border:1px solid rgba(240,110,95,.55);color:#FFC2B8;font-size:14px;line-height:1.45;text-align:left;}
   #clErr:empty{display:none;}
+  /* v631: entrada da equipe. Sem senha guardada fica discreta (mas legível); com a senha do GH no aparelho vira botão. */
+  #clEquipeBtn{margin-top:26px;background:none;border:none;color:#8A8A8A;font-size:12.5px;letter-spacing:.3px;cursor:pointer;padding:10px;font-family:inherit;}
+  #clEquipeBtn.cl-equipe-on{width:100%;max-width:340px;margin-top:22px;padding:12px;border-radius:10px;border:1px solid rgba(212,175,106,.45);background:rgba(212,175,106,.06);color:#E6C76A;font-size:14px;font-weight:700;}
   /* v629 (GH 12/11): foto do GH no topo do login (assets/gh-login.jpg, recorte da gh-autoridade original), se apagando no preto,
      e a marca no dourado com brilho do botão. */
   #contaLoja .cl-foto{width:calc(100% + 40px);max-width:560px;height:clamp(210px,40vh,380px);margin:0 -20px;flex:none;background:linear-gradient(180deg,rgba(13,13,13,0) 0%,rgba(13,13,13,0) 48%,rgba(13,13,13,.78) 76%,#0D0D0D 96%,#0D0D0D 100%),url(assets/gh-login.jpg) center 18%/cover no-repeat;box-shadow:0 2px 0 #0D0D0D;}
@@ -28288,7 +28291,8 @@ function teAbrirProtoAqui() {
   location.href = location.pathname + '?sheet=' + encodeURIComponent(trainerSheetId) + '&tab=' + aba + '&painel=1' + _pnLoja_();
 }
 function painelVoltar() {
-  // sai do painel/portão pra tela de entrada do app (a senha da equipe fica guardada: na próxima abertura volta pro painel)
+  // sai do painel/portão pra tela de entrada do app (v631: a senha da equipe fica guardada; o app sempre abre no login e o
+  // botão "Painel do treinador" entra direto)
   var g = document.getElementById('painelGate'); if (g) g.style.display = 'none';
   var p = document.getElementById('adminPanel'); if (p) p.style.display = 'none';
   if (typeof initContaLoja === 'function') initContaLoja();
@@ -28474,8 +28478,10 @@ if (SHEET_ID && TAB_NAME) {
   const _edU = document.getElementById('edScriptUrl'); if (savedUrl && _edU) _edU.value = savedUrl;   // v459: o campo pode nao existir
   // Mostra o portão (e tenta revalidar token salvo em silêncio)
   // v598: no app da loja, quem não é da equipe vê o login da conta (Primeiro acesso / Entrar)
+  // v631 (GH 12/11, "abro o app e vai direto pro painel do editor, tem que ficar na tela de login"): no app da loja a senha
+  // da equipe guardada NÃO pula mais o login. Abre sempre na tela de entrada; o botão "Painel do treinador" leva ao painel
+  // (com a senha guardada entra direto, sem digitar). Fora da loja (navegador/Mac) segue como era.
   var _lojaEquipe = params.has('editor') || params.has('admin') || params.get('edit') === '1';
-  try { if (localStorage.getItem('gh_trainer_token')) _lojaEquipe = true; } catch (_) {}
   if (_LOJA && !_lojaEquipe) initContaLoja();
   else initPainelGate();
 }
@@ -28702,6 +28708,10 @@ function initContaLoja() {
   var gate = document.getElementById('painelGate'); if (gate) gate.style.display = 'none';
   var panel = document.getElementById('adminPanel'); if (panel) panel.style.display = 'none';
   var tela = document.getElementById('contaLoja'); if (tela) tela.style.display = 'block';
+  try {   // v631: aparelho com a senha da equipe guardada vê o botão "Painel do treinador" bem à vista
+    var eb = document.getElementById('clEquipeBtn'), eq = !!localStorage.getItem('gh_trainer_token');
+    if (eb) { eb.textContent = eq ? 'Painel do treinador →' : 'Sou da equipe'; eb.classList.toggle('cl-equipe-on', eq); }
+  } catch (_) {}
   if (_clConta()) contaAtualiza(); else contaTela('entrar');
 }
 // "Sair" e "Excluir minha conta" no Mais só pra quem entrou por conta
@@ -28719,7 +28729,7 @@ function initPainelGate() {
   if (panel) panel.style.display = 'none';
   if (gate) gate.style.display = 'flex';
   var inp = document.getElementById('painelGatePwd');
-  if (inp) inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') painelGateSubmit(); });
+  if (inp && !inp._ghEnter) { inp._ghEnter = 1; inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') painelGateSubmit(); }); }   // v631: Voltar/entrar várias vezes não empilha o listener
   var tok = localStorage.getItem('gh_trainer_token') || '';
   if (tok) painelGateValidate_(tok, true); // revalida em silêncio (Mac do GH entra direto)
   else if (inp) setTimeout(function () { inp.focus(); }, 150);
@@ -28803,7 +28813,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v630';
+    var APP_SHELL_V = 'metodo-gh-v631';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
