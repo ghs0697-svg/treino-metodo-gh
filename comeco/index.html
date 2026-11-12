@@ -7,6 +7,12 @@
 <meta name="robots" content="noindex">
 <title>Comece por aqui · Método GH</title>
 <meta name="description" content="Comece por aqui: o caminho dos teus primeiros dias na consultoria Método GH, passo a passo. Anamnese, protocolo, app, reajuste e os combinados.">
+<script>
+  // App da loja (12/11/2026): o passo "Baixa o app e cria a tua senha" troca o "instala na tela inicial" no dia que o app estiver
+  // aprovado na App Store e na Play Store. Até lá fica desligado (APP_NA_LOJA = false); ?loja=1 mostra a prévia (e não conta clique).
+  var APP_NA_LOJA = false;
+  try { if (APP_NA_LOJA || /[?&]loja=1/.test(location.search)) document.documentElement.className += ' loja'; } catch (e) {}
+</script>
 <link rel="icon" href="../icon-192.png">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -57,6 +63,14 @@
   .step h3 { font-size: 16.5px; font-weight: 800; line-height: 1.3; margin-bottom: 4px; }
   .step h3 span { color: var(--text-muted); font-weight: 500; font-size: 13px; }
   .step p { font-size: 14.5px; color: var(--text-muted); }
+  html:not(.loja) .so-loja, html.loja .so-pwa { display: none !important; }
+  .acesso { list-style: none; display: grid; gap: 6px; margin: 10px 0 6px; }
+  .acesso li { position: relative; padding-left: 26px; font-size: 14.5px; color: var(--text-muted); }
+  .acesso li b { position: absolute; left: 0; top: 1px; width: 19px; height: 19px; border-radius: 6px; display: grid; place-items: center; font-size: 11.5px; font-weight: 900; color: #1A1405; background: var(--gh-bright); }
+  .lojas { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .lojas .btn { font-size: 14.5px; min-height: 48px; margin-top: 10px; padding: 10px 8px; white-space: nowrap; }
+  .seaparecer { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); display: grid; gap: 7px; }
+  .seaparecer p { font-size: 13.5px; }
   .step strong, .card strong { color: var(--text-white); font-weight: 700; }
   .btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 54px; padding: 13px 18px; border-radius: 14px; font-size: 16px; font-weight: 800; letter-spacing: .01em; margin-top: 12px; transition: transform 160ms var(--ease-out), background 160ms; }
   .btn:active { transform: scale(.98); }
@@ -191,13 +205,34 @@
     </div></li>
     <li class="step"><div class="num" aria-hidden="true"></div><div>
       <h3>Teu protocolo chega <span>· em até 4 dias úteis</span></h3>
-      <p>Treino, dieta e o que mais o teu plano incluir, montados em cima do que tu respondeu. Chega no whats de suporte, com o <strong>link do teu app</strong>. O link é teu e é pessoal.</p>
+      <p>Treino, dieta e o que mais o teu plano incluir, montados em cima do que tu respondeu. Chega no whats de suporte, <span class="so-pwa">com o <strong>link do teu app</strong>. O link é teu e é pessoal.</span><span class="so-loja">com o <strong>link pra baixar o app</strong>.</span></p>
     </div></li>
     <li class="step"><div class="num" aria-hidden="true"></div><div>
       <h3>Ouve o recado do GH</h3>
       <p>Junto com o protocolo vai um áudio meu: o que eu vi no teu caso e por que o protocolo é esse. <strong>Ouve antes do primeiro treino.</strong></p>
     </div></li>
-    <li class="step"><div class="num" aria-hidden="true"></div><div>
+    <li class="step so-loja"><div class="num" aria-hidden="true"></div><div>
+      <h3>Baixa o app e cria a tua senha</h3>
+      <p>Baixa o <strong>Método GH</strong> na App Store (iPhone) ou no Google Play (Android). Na primeira vez, toca em <strong>Primeiro acesso? Cria tua senha</strong> e coloca:</p>
+      <ol class="acesso">
+        <li><b>1</b>O <strong>mesmo e-mail</strong> que tu colocou na anamnese</li>
+        <li><b>2</b>O teu <strong>CPF</strong></li>
+        <li><b>3</b>Uma senha tua, com 6 ou mais letras ou números</li>
+      </ol>
+      <p>Pronto: o teu protocolo abre na hora. Das próximas vezes é só e-mail e senha.</p>
+      <div class="lojas">
+        <a class="btn ghost" href="https://apps.apple.com/br/app/id6833762884" target="_blank" rel="noopener" data-etapa="link-loja-iphone">App Store</a>
+        <a class="btn ghost" href="https://play.google.com/store/apps/details?id=br.com.metodogh.app" target="_blank" rel="noopener" data-etapa="link-loja-android">Google Play</a>
+      </div>
+      <div class="seaparecer">
+        <p><strong>"O teu protocolo está sendo montado":</strong> a anamnese chegou. Ele fica pronto em até 4 dias úteis e aparece sozinho no app.</p>
+        <p><strong>"Não achei esse e-mail":</strong> confere se é o mesmo e-mail da anamnese. Ainda não respondeu? O próprio app mostra o botão que abre a anamnese.</p>
+        <p><strong>"O CPF não bate":</strong> confere os números do CPF.</p>
+        <p><strong>Não deu de jeito nenhum?</strong> Toca em <strong>Não consegui? Confirmar pelo e-mail</strong> e usa o código que chega no teu e-mail. Ou chama o suporte aqui embaixo.</p>
+        <p><strong>Esqueceu a senha?</strong> Na tela de entrar, toca em <strong>Esqueci a senha</strong>.</p>
+      </div>
+    </div></li>
+    <li class="step so-pwa"><div class="num" aria-hidden="true"></div><div>
       <h3>Abre o app e instala na tela inicial</h3>
       <p>No celular, abre o link e vai em <strong>Mais, Instalar app na tela inicial</strong>. Ali está o treino com o vídeo de cada exercício, a dieta, o progresso, as aulas e o suporte.</p>
     </div></li>
@@ -246,7 +281,8 @@
     <li>Marca no app, não na memória. O que não está marcado eu não enxergo.</li>
     <li>Ajuste é pelo app, em Dúvida ou ajuste. Não fica pra depois nem vai em comentário de story.</li>
     <li>Tem exame? Manda na anamnese. Não tem? Não espera por ele pra começar.</li>
-    <li>O link do app é pessoal. Treino em dupla? Cada um com o seu.</li>
+    <li class="so-pwa">O link do app é pessoal. Treino em dupla? Cada um com o seu.</li>
+    <li class="so-loja">O teu login é pessoal. Treino em dupla? Cada um com a sua conta.</li>
   </ul>
 
   <section class="suporte" aria-label="Suporte">
@@ -290,7 +326,7 @@
     return 'outro';
   })();
   var APARELHO = (function () { try { var k = 'gh_comeco_d', v = localStorage.getItem(k); if (!v) { v = Math.random().toString(36).slice(2, 10); localStorage.setItem(k, v); } return v; } catch (e) { return 'x'; } })();
-  var ROBO = (function () { try { return !!navigator.webdriver && !Q.has('ensaio'); } catch (e) { return false; } })();
+  var ROBO = (function () { try { return (!!navigator.webdriver && !Q.has('ensaio')) || (!APP_NA_LOJA && Q.get('loja') === '1'); } catch (e) { return false; } })();   // ?loja=1 antes do app estar na loja = prévia, não conta
   function conta(etapa) {
     if (ROBO) return;
     try {
