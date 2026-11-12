@@ -548,7 +548,8 @@
   body.fonte-ggg .set-row .set-in, body.fonte-gggg .set-row .set-in, body.fonte-ggg .set-head > span:not(.set-num), body.fonte-gggg .set-head > span:not(.set-num) { flex: 1 1 0; width: auto; min-width: 0; padding-left: 2px; padding-right: 2px; }
   body.fonte-ggg .set-row, body.fonte-gggg .set-row, body.fonte-ggg .set-head, body.fonte-gggg .set-head { gap: 4px; }
   body.fonte-ggg .is-inner, body.fonte-gggg .is-inner { padding: 0 6px; }
-  body.fonte-gggg .is-logo { font-size: 23px; }
+  body.fonte-gggg .is-logo { font-size: 26px; }
+  body.fonte-gggg .is-gh { font-size: 78px; }
   /* v569: no nível máximo o cabeçalho da grade de séries fica abreviado (KG · PL · REPS · SOB), senão as palavras se atropelam.
      v570: o "font-size: 0" da abreviação PERDIA pro seletor geral de cima (span:not(.set-num) pesa mais que .sh-pl), então PLACA e
      SOBROU continuavam na tela por cima do PL e do SOB (foto da v569 a 360 px). Agora o seletor da abreviação pesa igual e vem depois.
@@ -1183,15 +1184,17 @@
   body.view-dieta #dayHero, body.view-ghflix #dayHero { display: none !important; }
 
   /* ── Abertura cinematográfica ── */
-  .intro-splash { position: fixed; inset: 0; z-index: 12000; background: radial-gradient(120% 90% at 50% 12%, #181410, #0D0D0D 72%); display: none; align-items: center; justify-content: center; }
+  .intro-splash { position: fixed; inset: 0; z-index: 12000; background: #0D0D0D; display: none; align-items: center; justify-content: center; }
   .intro-splash.show { display: flex; }
   .intro-splash.out { animation: isOut .5s cubic-bezier(.4, 0, .2, 1) forwards; }
   @keyframes isOut { to { opacity: 0; transform: scale(1.045); } }
   .is-inner { text-align: center; padding: 0 20px; }
-  .is-logo { color: var(--white); font-family: var(--font-display); font-size: 27px; font-weight: 700; letter-spacing: .16em; padding-left: .16em; opacity: 0; animation: isIn .8s cubic-bezier(.2, 0, .2, 1) .12s forwards; }
-  .is-logo span { color: var(--gold); }
-  .is-line { width: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(212,175,106,.85), transparent); margin: 15px auto 13px; animation: isLine .7s cubic-bezier(.3, 0, .2, 1) .55s forwards; }
-  @keyframes isLine { to { width: 190px; } }
+  /* v632 (GH 12/11): abertura igual à da loja, MÉTODO / linha / GH em dourado, cores fixas (antes o MÉTODO usava --white, que no tema claro é quase preto e sumia no fundo escuro) */
+  .is-logo, .is-gh { font-family: 'Cinzel', 'Times New Roman', serif; font-weight: 700; background: linear-gradient(135deg, #F1D88A, #C9A24B 55%, #E6C76A); -webkit-background-clip: text; background-clip: text; color: transparent; opacity: 0; animation: isIn .8s cubic-bezier(.2, 0, .2, 1) .12s forwards; }
+  .is-logo { font-size: 31px; letter-spacing: .14em; padding-left: .14em; }
+  .is-gh { font-size: 92px; line-height: .95; letter-spacing: .02em; animation-delay: .3s; }
+  .is-line { width: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(230,199,106,.9), transparent); margin: 14px auto 12px; animation: isLine .7s cubic-bezier(.3, 0, .2, 1) .45s forwards; }
+  @keyframes isLine { to { width: 170px; } }
   .is-day { color: var(--gold); font-size: 13px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; min-height: 18px; opacity: 0; }
   .is-day.on { animation: isIn .6s cubic-bezier(.2, 0, .2, 1) forwards; }
   @keyframes isIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
@@ -5758,6 +5761,71 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   .compra-q { color: var(--gold); font-weight: 700; white-space: normal; }
   html[data-theme="light"] .compra-q { color: hsl(40, 60%, 32%); }
 
+  /* v632 (GH 12/11, decisão 1a): o dourado brilhante do botão Entrar vai pro app inteiro: botões cheios, abas e chips ligados, marcas de feito e barras de progresso.
+     Só a imagem de fundo muda (a cor de base continua o --gold de cada tema), e o texto em cima do dourado fica escuro nos dois temas. */
+  html .day-hero .focus-entry:not(#shortModeBtn):not(.util-mini),
+  html .dia-start:not(.fechado),
+  html .fd-btn.ouro,
+  html #cadernoSalvarBtn,
+  html .esf-folha .esf-chip.sel,
+  html .tema-seg button.on,
+  html .ex-action-btn.ex-troca-btn.on,
+  html .util-row #viagemBtn.viagem-on,
+  html .ach-btn.primary,
+  html .set-repete:active,
+  html .sem-aviso-btn,
+  html .water-btn,
+  html .nov-btn,
+  html #ftBtn,
+  html #csBtn,
+  html #fmBtn,
+  html .sem-share,
+  html .tour-next,
+  html .renov-opt-go,
+  html .renov-banner.diary .renov-banner-cta,
+  html .focus-main-btn.donebtn,
+  html .timer-btn.primary,
+  html .mp-share,
+  html .wt-fechar,
+  html .inst-aviso-bt .ia-ok,
+  html .admin-btn:not(.secondary),
+  html .install-btn,
+  html .day-tab.active,
+  html .modo-seg button.on,
+  html .ex-sub-pill.on,
+  html .dc-seg button.on,
+  html .tlem-day.on,
+  html .tlem-h.on,
+  html .ft-b.on,
+  html .chat-mode-tab.active,
+  html .admin-tab.active,
+  html .vac-nivel.on,
+  html .diet-option-tab.active,
+  html .diet-cycle-tab.active,
+  html .treino-bloco-tab.active,
+  html .ex-action-btn.sub-btn.sub-on,
+  html .week-btn:active,
+  html .cardio-week .cw-btn.done,
+  html .sem-dots span.on,
+  html .compra-dias button.on { background-image: linear-gradient(135deg, #E6C76A, #B8913F) !important; color: #1A1405 !important; border-color: #C9A24B !important; }
+  html .set-row.feita button.set-num,
+  html .ex-check.done,
+  html .diet-meal-check.done,
+  html .const-dot.feito i,
+  html .jr-ok,
+  html .reg-card .tec-ic,
+  html .water-toggle.on,
+  html .rh-switch.on { background-image: linear-gradient(135deg, #E6C76A, #B8913F) !important; border-color: #C9A24B !important; }
+  html .pg-fill,
+  html .dia-prog i b,
+  html .proto-progress .pp-fill,
+  html .focus-bar-fill,
+  html .jr-barra i,
+  html .history-bar-fill,
+  html .sl-barra i,
+  html .diet-day-progress .ddp-fill,
+  html .cardio-week .cw-fill { background-image: linear-gradient(90deg, #B8913F, #E6C76A) !important; }
+
 </style>
 <div id="painelGate" style="display:none;position:fixed;inset:0;z-index:99999;background:#0D0D0D;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:14px;text-align:center;">
   <div style="font-family:'Cinzel',serif;font-size:34px;letter-spacing:6px;color:var(--gold);font-weight:700;">MÉTODO GH</div>
@@ -6087,8 +6155,9 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
 <!-- ══ ABERTURA CINEMATOGRÁFICA ══ -->
 <div class="intro-splash" id="introSplash" aria-hidden="true">
   <div class="is-inner">
-    <div class="is-logo">MÉTODO <span>GH</span></div>
+    <div class="is-logo">MÉTODO</div>
     <div class="is-line"></div>
+    <div class="is-gh">GH</div>
   </div>
 </div>
 
@@ -28813,7 +28882,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v631';
+    var APP_SHELL_V = 'metodo-gh-v632';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
