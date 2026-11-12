@@ -5917,6 +5917,9 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
 .esf-compact .esf-chev { font-size: 12px; }
   /* 16 (v635) */ html[data-theme="light"] .dia-start { background: var(--gold-bg); }
   /* 17 (v635) borda no tom do degradê, como os outros botões dourados */ html[data-theme="light"] :is(.timer-btn.primary, .fotos-tab.active, .laudo-chip.on, .ach-btn.primary, .tpl-pill.active, .laudo-mk-tools button.gold, .esf-chip.sel) { border-color: #C9A24B; }
+  /* 18 (v637, GH 12/11) marca do topo e números grandes um passo mais claros, na paleta do botão Entrar. Texto pequeno segue no --gold escuro, que é o que dá leitura em fundo claro */
+  html[data-theme="light"] .app-header .brand-name { background-image: linear-gradient(135deg, #E6C76A 0%, #C9A24B 55%, #B8913F 100%); }
+  html[data-theme="light"] :is(.diet-macro-stat, .pg-stat) .v:not(.kcal) { color: #B8913F; }
 </style>
 <div id="painelGate" style="display:none;position:fixed;inset:0;z-index:99999;background:#0D0D0D;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:14px;text-align:center;">
   <div style="font-family:'Cinzel',serif;font-size:34px;letter-spacing:6px;color:var(--gold);font-weight:700;">MÉTODO GH</div>
@@ -28986,7 +28989,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v636';
+    var APP_SHELL_V = 'metodo-gh-v637';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
