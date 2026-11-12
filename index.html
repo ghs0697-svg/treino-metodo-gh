@@ -5546,13 +5546,28 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   <div class="brand-name">MÉTODO GH</div>
   <h1 id="headerTitle">PROTOCOLO DE TREINO</h1>
   <button type="button" class="hdr-bell" id="hdrBell" onclick="switchView('novidades')" aria-label="Novidades" title="Novidades"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="sup-dot" id="novDotHdr"></span></button>
-  <div class="last-mod" id="lastModBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:0.3px;"><span id="versionBadge" style="display:none;color:var(--gold);font-weight:600;">Protocolo v<span id="versionValue"></span></span><span id="lastModSep" style="display:none;"> · </span>Atualizado em <span id="lastModValue"></span></div>
+  <div class="last-mod" id="lastModBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:0.3px;"><span id="versionBadge" style="display:none;color:var(--gold);font-weight:600;">Protocolo v<span id="versionValue"></span></span><span id="lastModSep" style="display:none;"> · </span><span class="lm-rot">Atualizado em </span><span id="lastModValue"></span></div>
   <div class="last-mod" id="proxReajusteBadge" style="display:none;font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:0.3px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-1px;margin-right:3px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span id="proxReajusteLabel">Próxima anamnese de reajuste: </span><span id="proxReajusteValue" style="color:var(--gold);font-weight:600;"></span></div>
   <div class="hdr-chips">
   <div class="last-mod" id="esforcoAlvoBadge" role="button" tabindex="0" onclick="openEsforcoAlvo()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openEsforcoAlvo();}" style="display:none;cursor:pointer;font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:0.3px;">💪 Esforço: <span id="esforcoAlvoValue" style="color:var(--gold);font-weight:600;"></span><div id="esforcoAlvoTexto" style="display:none;font-size:10.5px;color:#8d8579;font-weight:400;margin-top:2px;line-height:1.4;"></div></div>
   <div class="last-mod" id="metaNotasBadge" role="button" tabindex="0" onclick="openMetaNotas()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openMetaNotas();}" style="display:none;font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:0.3px;cursor:pointer;">📖 <span id="metaNotasTitulo"></span><span id="metaNotasResumo" style="color:var(--gold);font-weight:600;"></span> <span id="metaNotasChev" style="color:#8d8579;font-size:10px;white-space:nowrap;text-decoration:underline dotted;">ler</span><span id="metaNotasNovo" style="display:none;margin-left:5px;width:6px;height:6px;border-radius:50%;background:var(--gold);vertical-align:middle;"></span></div>
   </div>
 </div>
+<script>
+/* v634: a foto do topo termina onde começa a fileira de botões (Esforço, Como ler), em qualquer tela, letra ou aba.
+   Antes os botões e a hora ficavam por cima do GH. Mede sozinho quando o cabeçalho muda de tamanho. */
+(function () { try {
+  var h = document.querySelector('.app-header'); if (!h) return;
+  var f = function () { try {
+    var c = h.querySelector('.hdr-chips');
+    var v = (c && c.offsetHeight > 4) ? (c.offsetTop - 2) : h.offsetHeight;
+    if (v > 20) h.style.setProperty('--hero-h', v + 'px');
+  } catch (_) {} };
+  f();
+  if (window.ResizeObserver) new ResizeObserver(f).observe(h);
+  window.addEventListener('load', f);
+} catch (_) {} })();
+</script>
 
 <!-- ══ AVISO GLOBAL (célula AVISOS!A2 da mestre; controlado sem deploy) ══ -->
 <div id="avisoGlobalBanner" style="display:none;background:linear-gradient(180deg,#2a1f10,#1d1710);border-bottom:1px solid #6b5324;padding:12px 40px 12px 14px;position:relative;">
@@ -5828,6 +5843,75 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   html .diet-day-progress .ddp-fill,
   html .cardio-week .cw-fill { background-image: linear-gradient(90deg, #B8913F, #E6C76A) !important; }
 
+  /* ══ v634 (GH 12/11: revisão visual antes das lojas) ══ */
+  /* 1) Campo numérico no computador: o Chrome guarda uns 15 px à direita pras setinhas de subir/descer e cortava o texto do campo
+     ("15-2(" no lugar de "15-20" nas REPS da grade de séries). Sem setinha em campo nenhum: no celular nunca existiu. */
+  input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; appearance: none; margin: 0; display: none; }
+  input[type=number] { -moz-appearance: textfield; }   /* só Firefox; no iPhone e no Android o campo fica como já era */
+  /* 2) O sino das novidades ficava em cima da cabeça do GH na foto do topo: vai pro canto esquerdo, que é vazio. */
+  .app-header .hdr-bell { right: auto; left: 12px; }
+  :root[data-theme="light"] .app-header .hdr-bell { background: rgba(255, 255, 255, .72); border-color: rgba(176, 136, 48, .45); }
+  /* 3) Bolinha de aviso no tema claro: era rosa quase branco com aro cinza, parecia um anel vazio do lado do "Mais". */
+  html[data-theme="light"] .sup-dot { background: #d9432f; box-shadow: 0 0 0 2px #fff; }
+  /* 4) A bolinha vermelha do "Mais" na barra de baixo cobria dois dos três pontinhos do ícone: sobe e vai pro lado de fora dele. */
+  #novDotBn, #supDotBn { top: 2px; right: calc(50% - 19px); }
+  /* 5) Foto do GH no topo: os botões "Esforço" e "Como ler" e a hora do "Atualizado em" ficavam por cima dela. Agora ela termina
+     acima da fileira de botões (some suave embaixo) e a linha do "Atualizado em" mostra só a data. */
+  .app-header .gh-hero-foto { bottom: auto; height: var(--hero-h, 86px);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.9) 45%, #000 100%), linear-gradient(180deg, #000 0%, #000 68%, transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.9) 45%, #000 100%), linear-gradient(180deg, #000 0%, #000 68%, transparent 100%);
+    -webkit-mask-composite: source-in; mask-composite: intersect; }
+/* 6) celular estreito (até 379px): a coluna "como" da prescrição caía pra linha de baixo */
+@media (max-width: 379px) {
+  .ept-row { gap: 5px; }
+  .ept-t { width: 44px; min-width: 44px; }
+  .ept-n { min-width: 43px; }
+  .ept-r { min-width: 66px; }
+  .ept-c { flex: 1 1 40px; }
+}
+/* 6b) tela de 320 a 345px: não cabe numa linha; o "como" desce alinhado embaixo de "séries", sem título solto */
+@media (max-width: 345px) {
+  .ept-row.ept-hdr .ept-c { display: none; }
+  .ept-row:not(.ept-hdr) .ept-c { flex: 1 1 100%; padding-left: 49px; font-size: 11px; margin-top: -3px; }
+}
+/* 7) força estimada e chip de progresso encostavam na borda do card */
+.exercise-card > .forca-chip, .exercise-card > .prog-chip { margin: 8px 14px 10px; }
+/* 8) "6 kg" do resumo do card recolhido não quebra entre o número e a unidade */
+.ex-resumo b { white-space: nowrap; }
+/* 5b) tela de 320 a 345px: a data encostava na foto, fica só "Protocolo v1.0 · 24/09/2026" */
+@media (max-width: 345px) { .app-header .lm-rot { display: none; } }
+/* 9) títulos KG / PLACA / REPS / SOBROU saíam do lugar das colunas (iPhone de 390 px e tela de 320 px): o "i" empurrava a fila.
+      Com a coluna "última vez" à direita, o "i" some e o próprio SOBROU abre a explicação (igual KG e PLACA). */
+body:not(.modo-simples) .set-head { padding-left: 0; padding-right: 0; }
+body:not(.modo-simples) .set-head > span:not(.sh-prev):not(.set-num) { min-width: 0; white-space: nowrap; }
+body:not(.modo-simples) .set-head .rs-info-btn { margin-left: 0; margin-right: -25px; }   /* o "i" não ocupa lugar na fila: título e campo encolhem igual */
+/* 9b) letra grande ou tela estreita: os campos não encolhiam e a placa sem uso virava um risco de 7 px (e a linha passava do card).
+       Agora campo e título encolhem juntos, com piso de leitura. Letra muito grande (ggg, gggg) segue nas regras próprias da v569. */
+body:not(.modo-simples):not(.fonte-gg):not(.fonte-ggg):not(.fonte-gggg) .sets-grid .set-in.set-kg, body:not(.modo-simples):not(.fonte-gg):not(.fonte-ggg):not(.fonte-gggg) .sets-grid .set-head .sh-kg { min-width: 44px; }
+body:not(.modo-simples):not(.fonte-gg):not(.fonte-ggg):not(.fonte-gggg) .sets-grid .set-in.set-pl, body:not(.modo-simples):not(.fonte-gg):not(.fonte-ggg):not(.fonte-gggg) .sets-grid .set-head .sh-pl { min-width: 24px; }
+body:not(.modo-simples):not(.fonte-gg):not(.fonte-ggg):not(.fonte-gggg) .sets-grid .set-in.set-reps, body:not(.modo-simples):not(.fonte-gg):not(.fonte-ggg):not(.fonte-gggg) .sets-grid .set-head .sh-reps { min-width: 40px; }
+body:not(.modo-simples):not(.fonte-gg):not(.fonte-ggg):not(.fonte-gggg) .sets-grid .set-in.set-rs, body:not(.modo-simples):not(.fonte-gg):not(.fonte-ggg):not(.fonte-gggg) .sets-grid .set-head .sh-rs { min-width: 34px; }
+body:not(.modo-simples).fonte-gg .sets-grid .set-in.set-kg, body:not(.modo-simples).fonte-gg .sets-grid .set-head .sh-kg { min-width: 40px; }
+body:not(.modo-simples).fonte-gg .sets-grid .set-in.set-pl, body:not(.modo-simples).fonte-gg .sets-grid .set-head .sh-pl { min-width: 18px; }
+body:not(.modo-simples).fonte-gg .sets-grid .set-in.set-reps, body:not(.modo-simples).fonte-gg .sets-grid .set-head .sh-reps { min-width: 36px; }
+body:not(.modo-simples).fonte-gg .sets-grid .set-in.set-rs, body:not(.modo-simples).fonte-gg .sets-grid .set-head .sh-rs { min-width: 30px; }
+.set-head .sh-rs { cursor: pointer; }
+body:not(.modo-simples) .set-head:has(.sh-prev:not(:empty)) .rs-info-btn { display: none; }
+body:not(.modo-simples) .set-head:has(.sh-prev:not(:empty)) .sh-rs { text-decoration: underline dotted; text-underline-offset: 2px; text-decoration-color: var(--fg-3); }
+/* 11) app da loja (App Store / Play): some o "Instalar app na tela inicial" (já está instalado) */
+html.app-loja .mais-opt[onclick*="showInstallInstructions"], html.app-loja #installBtn { display: none !important; }
+/* 12) modo Intuitivo: o "i" empurrava os títulos pra fora das colunas. Some o "i" e o título "Sobrou (RIR)" abre a explicação
+       (sublinhado pontilhado, igual "Peso kg" e "Placas"). */
+body.modo-simples .set-head .rs-info-btn { display: none; }
+body.modo-simples .set-head > span.sh-rs::after { text-decoration: underline dotted; text-underline-offset: 2px; }
+/* 13) modo Intuitivo: "pesada", "média" e "leve" no campo de carga apareciam cortadas ("pesac") */
+body.modo-simples .set-row .set-in.set-kg:is([placeholder="pesada"], [placeholder="média"], [placeholder="leve"])::placeholder { font-size: 12px; letter-spacing: -.2px; }
+/* 14) modo Intuitivo: "Vídeo pro GH corrigir · treino da semana" passava da borda do card; agora quebra em duas linhas quando não cabe */
+body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 16px; }
+/* 15) janelas com rolagem (Como ler, glossário): a barra de rolagem passava por cima do fim das linhas */
+.evo-box.evo-rola > .evo-corpo { padding-right: 10px; margin-right: -6px; }
+/* 10) setinha do "Última série: como foi?" era um pontinho */
+.esf-compact .esf-chev { font-size: 12px; }
 </style>
 <div id="painelGate" style="display:none;position:fixed;inset:0;z-index:99999;background:#0D0D0D;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:14px;text-align:center;">
   <div style="font-family:'Cinzel',serif;font-size:34px;letter-spacing:6px;color:var(--gold);font-weight:700;">MÉTODO GH</div>
@@ -11320,7 +11404,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
       ${(prev && prev.length) ? '<div class="sg-ant-nota">' + ((prevCru && prevCru._origem) ? 'Em cinza, a última vez que tu fez este exercício' + (prevCru._origem.t > 0 ? ' (' + _arqDiaBR_(prevCru._origem.t) + ')' : '') : 'Em cinza, o que tu fez na última vez') + _repeteBtnHtml_(di, eiS, sets) + '</div>' : ''}
       ${label ? `<div class="carga-label" style="font-size:10px;margin-bottom:2px;">${label}</div>` : ''}
       ${evo}${melhor}
-      <div class="set-head"><span class="set-num"></span><span class="sh-meta">meta</span><span class="sh-kg" onclick="openGlossario('kg')" title="De cada lado ou o total?">${getUnit()}</span><span class="sh-pl" onclick="openPlacaInfo()" title="O que e placa?">placa</span><span class="sh-reps">${_porTempo ? _tUnid : 'reps'}</span><span class="sh-rs" title="Quantas repetições sobraram">sobrou</span><span class="sh-rpe" title="Esforço de 0 a 10">RPE</span><button type="button" class="rs-info-btn" onclick="openSobrouInfo()" aria-label="O que é o sobrou?">i</button><span class="sh-prev">${(prev && prev.length) ? 'última vez' : ''}</span></div>
+      <div class="set-head"><span class="set-num"></span><span class="sh-meta">meta</span><span class="sh-kg" onclick="openGlossario('kg')" title="De cada lado ou o total?">${getUnit()}</span><span class="sh-pl" onclick="openPlacaInfo()" title="O que e placa?">placa</span><span class="sh-reps">${_porTempo ? _tUnid : 'reps'}</span><span class="sh-rs" onclick="openSobrouInfo()" title="Quantas repetições sobraram">sobrou</span><span class="sh-rpe" title="Esforço de 0 a 10">RPE</span><button type="button" class="rs-info-btn" onclick="openSobrouInfo()" aria-label="O que é o sobrou?">i</button><span class="sh-prev">${(prev && prev.length) ? 'última vez' : ''}</span></div>
       ${rows}
       ${(noAdd || sets.length >= _nPresc + 2 || sets.length >= 12) ? '' : `<button type="button" class="set-add" onclick="addSet(${di},'${eiS}')" title="Abre uma série VÁLIDA a mais, além do que foi prescrito (por tua conta)">${_rotulada ? '+ válida extra' : '+ série extra'}</button>`}
     </div>`;
@@ -13903,7 +13987,7 @@ async function loadAndShowLastModified() {
     if (cached) {
       const el = document.getElementById('lastModValue');
       const badge = document.getElementById('lastModBadge');
-      if (el && badge) { el.textContent = cached; badge.style.display = 'block'; }
+      if (el && badge) { el.textContent = String(cached).split(' ')[0]; el.title = cached; badge.style.display = 'block'; }
     }
     let data = await _bootPeca_('lastmod');   // v512
     if (!data) {
@@ -13917,7 +14001,7 @@ async function loadAndShowLastModified() {
     const el = document.getElementById('lastModValue');
     const badge = document.getElementById('lastModBadge');
     if (el && badge) {
-      el.textContent = data.lastModifiedBR;
+      el.textContent = String(data.lastModifiedBR).split(' ')[0]; el.title = data.lastModifiedBR;   // v634: só a data (a hora ficava por cima da foto)
       badge.style.display = 'block';
       sessionStorage.setItem(cacheKey, data.lastModifiedBR);
     }
@@ -26796,6 +26880,7 @@ const _INST_KEY = 'gh_inst_aviso';
 function _instAvisoMaybe() {
   try {
     if (typeof SHEET_ID === 'undefined' || !SHEET_ID || SHEET_ID === 'demo') return;
+    if (typeof _LOJA !== 'undefined' && _LOJA) return;   // v634: app da loja já está instalado, não convida a "instalar na tela inicial"
     if (new URLSearchParams(location.search).get('edit') === '1') return;
     if (!/iPad|iPhone|iPod|Android/i.test(navigator.userAgent || '')) return;
     if ((window.matchMedia && matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone) return;
@@ -28887,7 +28972,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v633';
+    var APP_SHELL_V = 'metodo-gh-v634';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
