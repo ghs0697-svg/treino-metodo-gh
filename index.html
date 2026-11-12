@@ -28418,7 +28418,9 @@ function _clErro(cod) {
     codigo_expirado: 'O código venceu. Pede um novo.', muitos_codigos: 'Muitos códigos pedidos. Tenta de novo daqui a uma hora.',
     login: 'E-mail ou senha não conferem.', muitas_tentativas: 'Muitas tentativas. Espera 15 minutos e tenta de novo.',
     sessao: 'Entra de novo com teu e-mail e senha.', cota: 'Não consegui mandar o e-mail agora. Tenta de novo amanhã ou fala com o suporte.',
-    rede: 'Sem conexão com o servidor. Confere a internet e tenta de novo.'
+    rede: 'Sem conexão com o servidor. Confere a internet e tenta de novo.',
+    sem_forms: 'Não achei esse e-mail nas respostas da anamnese. Confere se é o mesmo e-mail que tu colocou no formulário.',
+    nao_confere: 'O CPF não bate com o desse e-mail. Confere os números.'
   };
   return m[cod] || 'Não deu certo agora. Tenta de novo em instantes.';
 }
@@ -28443,10 +28445,22 @@ function contaTela(tela) {
     h = _clCampo('clEmail', 'E-mail', 'email', 'autocomplete="email" inputmode="email" autocapitalize="off"') +
         _clCampo('clSenha', 'Senha', 'password', 'autocomplete="current-password"') +
         '<button class="cl-btn" id="clBtn" onclick="contaEntrar()">Entrar</button>' +
-        '<button class="cl-link" onclick="contaTela(\'criar\')">Primeiro acesso? Cria tua conta</button>' +
+        '<button class="cl-link" onclick="contaTela(\'primeiro\')">Primeiro acesso? Cria tua senha</button>' +
         '<button class="cl-link" style="color:#888;font-size:13px" onclick="contaTela(\'senha\')">Esqueci a senha</button>';
-  } else if (tela === 'criar') {
+  } else if (tela === 'primeiro') {
+    // v628: primeiro acesso com e-mail + CPF conferidos na anamnese, sem código (rota conta_primeiro). O código por e-mail
+    // (tela 'criar') fica de plano B pra quem não consegue por aqui.
     sub.textContent = 'Primeiro acesso';
+    h = '<div class="cl-txt" style="margin-bottom:4px">Usa o mesmo e-mail que tu colocou na anamnese e o teu CPF. É por eles que a gente acha o teu protocolo.</div>' +
+        _clCampo('clEmail', 'E-mail', 'email', 'autocomplete="email" inputmode="email" autocapitalize="off"') +
+        _clCampo('clCpf', 'CPF', 'text', 'inputmode="numeric" autocomplete="off" maxlength="14" oninput="contaMascaraCpf(this)"') +
+        _clCampo('clSenha', 'Crie uma senha (6 ou mais caracteres)', 'password', 'autocomplete="new-password"') +
+        '<button class="cl-btn" id="clBtn" onclick="contaPrimeiro()">Criar minha senha</button>' +
+        '<div id="clSemForms" style="display:none"><button class="cl-link" onclick="contaAnamnese()">Ainda não respondi a anamnese</button></div>' +
+        '<button class="cl-link" onclick="contaTela(\'entrar\')">Já tenho conta</button>' +
+        '<button class="cl-link" style="color:#888;font-size:13px" onclick="contaTela(\'criar\')">Não consegui? Confirmar pelo e-mail</button>';
+  } else if (tela === 'criar') {
+    sub.textContent = 'Confirmar pelo e-mail';
     h = '<div class="cl-txt" style="margin-bottom:4px">Usa o mesmo e-mail, CPF e WhatsApp que tu passou na compra. É por eles que a gente acha o teu protocolo.</div>' +
         _clCampo('clNome', 'Nome completo', 'text', 'autocomplete="name"') +
         _clCampo('clEmail', 'E-mail', 'email', 'autocomplete="email" inputmode="email" autocapitalize="off"') +
@@ -28454,7 +28468,7 @@ function contaTela(tela) {
         _clCampo('clTel', 'WhatsApp com DDD', 'tel', 'autocomplete="tel" inputmode="tel"') +
         _clCampo('clSenha', 'Crie uma senha (6 ou mais caracteres)', 'password', 'autocomplete="new-password"') +
         '<button class="cl-btn" id="clBtn" onclick="contaPedeCodigo(\'criar\')">Continuar</button>' +
-        '<button class="cl-link" onclick="contaTela(\'entrar\')">Já tenho conta</button>';
+        '<button class="cl-link" onclick="contaTela(\'primeiro\')">Voltar</button>';
   } else if (tela === 'criar_codigo' || tela === 'senha_codigo') {
     sub.textContent = 'Confirma teu e-mail';
     h = '<div class="cl-txt">Mandei um código de 6 números pro <b>' + _clEsc(_cl.dados.clEmail) + '</b>. Se não chegar em 2 minutos, olha no spam.</div>' +
@@ -28474,7 +28488,9 @@ function contaTela(tela) {
   } else if (tela === 'espera') {
     var r = _cl.resp || {}, nome = String(r.nome || '').split(' ')[0];
     sub.textContent = nome ? 'Oi, ' + nome + '!' : 'Tua conta está pronta';
-    if (r.situacao === 'sem protocolo') {
+    if (r.situacao === 'sem protocolo' && r.formRespondido) {
+      h = '<div class="cl-txt">Recebi a tua anamnese. O teu protocolo está sendo montado e fica pronto em até 4 dias úteis. Tu recebe um aviso no WhatsApp, e ele aparece aqui quando tu abrir o app.</div>';
+    } else if (r.situacao === 'sem protocolo') {
       h = '<div class="cl-txt">O próximo passo é a anamnese. É com ela que eu monto o teu protocolo. Já deixei teus dados preenchidos.</div>' +
           '<button class="cl-btn" onclick="contaAnamnese()">Responder a anamnese</button>' +
           '<div class="cl-txt" style="font-size:13px;color:#999">Depois de responder, o teu protocolo fica pronto em até 4 dias úteis e aparece aqui quando tu abrir o app.</div>';
@@ -28542,6 +28558,23 @@ async function contaCriar() {
   if (!r || !r.ok) { document.getElementById('clErr').textContent = _clErro(r && r.erro); return; }
   _cl.senha = '';
   _clEntrou(r, String(d.clEmail).toLowerCase());
+}
+async function contaPrimeiro() {
+  _clGuarda();
+  var err = document.getElementById('clErr'), email = String(_cl.dados.clEmail || '').toLowerCase(), cpf = _cl.dados.clCpf || '', senha = _clVal('clSenha');
+  var sf = document.getElementById('clSemForms'); if (sf) sf.style.display = 'none';
+  if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(email)) { err.textContent = _clErro('email'); return; }
+  if (!_clCpfOk(cpf)) { err.textContent = _clErro('cpf'); return; }
+  if (senha.length < 6) { err.textContent = _clErro('senha'); return; }
+  _clOcupado(true);
+  var r = await _clPost({ type: 'conta_primeiro', email: email, cpf: cpf, senha: senha });
+  _clOcupado(false);
+  if (!r || !r.ok) {
+    err.textContent = _clErro(r && r.erro);
+    if (r && r.erro === 'sem_forms' && sf) sf.style.display = '';
+    return;
+  }
+  _clEntrou(r, email);
 }
 async function contaEntrar() {
   var email = _clVal('clEmail').toLowerCase(), senha = _clVal('clSenha');
@@ -28692,7 +28725,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v627';
+    var APP_SHELL_V = 'metodo-gh-v628';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
