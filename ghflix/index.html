@@ -101,10 +101,10 @@
   @media(hover:none){.arr{display:none}}
 
   /* ---------- cards ---------- */
-  .card{flex:0 0 188px;scroll-snap-align:start;cursor:pointer;transition:transform .22s}
-  .card:hover{transform:translateY(-5px)}
+  .card{flex:0 0 188px;scroll-snap-align:start;cursor:pointer;transition:transform .22s;contain:layout style}
+  @media(hover:hover){ .card:hover{transform:translateY(-5px)} }
   .thumb{position:relative;width:100%;aspect-ratio:2/3;border-radius:var(--r);overflow:hidden;background:#1a1a1a;border:1px solid rgba(255,255,255,.07);transition:.22s}
-  .card:hover .thumb{border-color:rgba(212,167,106,.6);box-shadow:var(--shadow)}
+  @media(hover:hover){ .card:hover .thumb{border-color:rgba(212,167,106,.6);box-shadow:var(--shadow)} }
   .pimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#1a1a1a}
   .pimg.sheet{width:200%;height:200%;max-width:none;object-fit:cover;object-position:0 0}
   .thumb .grad{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.18) 0%,transparent 30%,transparent 62%,rgba(0,0,0,.72) 100%)}
@@ -113,9 +113,9 @@
   .views{position:absolute;bottom:9px;right:9px;font-size:10.5px;font-weight:600;background:rgba(10,10,10,.88);padding:3px 8px;border-radius:7px;color:#eee}
   .dur{position:absolute;bottom:9px;left:9px;font-size:10.5px;font-weight:600;background:rgba(10,10,10,.88);padding:3px 8px;border-radius:7px;color:var(--muted)}
   .playov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:.2s;background:rgba(0,0,0,.18)}
-  .card:hover .playov{opacity:1}
+  @media(hover:hover){ .card:hover .playov{opacity:1} }
   .playov span{width:50px;height:50px;border-radius:50%;background:rgba(255,167,38,.95);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 22px rgba(0,0,0,.5);transform:scale(.92);transition:.2s}
-  .card:hover .playov span{transform:scale(1)}
+  @media(hover:hover){ .card:hover .playov span{transform:scale(1)} }
   .playov span::after{content:'';border-left:15px solid #161616;border-top:9px solid transparent;border-bottom:9px solid transparent;margin-left:4px}
   .card.more .thumb{display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1d1d1d,#242424);border:1px dashed rgba(212,167,106,.4)}
   .card.more .thumb span{color:var(--gold);font-weight:800;font-size:13.5px;text-align:center;padding:12px;line-height:1.4}
@@ -355,15 +355,17 @@ function syncAuthUI(){
 
 const fmtViews=v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1000?(v/1000).toFixed(v>=10000?0:1)+'k':String(v||0);
 const fmtDur=s=>s?Math.round(s)+'s':'';
+const TELA_PEQ=matchMedia('(max-width:700px)').matches;
 const poster=(ref,big)=>{
   const v=(typeof IDX!=='undefined'&&IDX&&IDX.videos&&IDX.videos[ref.id])||ref;
   // local SEMPRE primeiro (mesmo dominio, sem o estrangulamento do Drive que
   // deixava card preto no celular); onerror do <img> cai pro thumbnail do Drive
-  if(v.drive_id) return `thumbs/${v.drive_id}.jpg`;
+  if(v.drive_id) return `${(!big&&TELA_PEQ)?'thumbs-p':'thumbs'}/${v.drive_id}.jpg`;
   return `_sheets/${v.id}.jpg`;
 };
-/* fallback em cadeia: thumbs/ local -> thumbnail do Drive -> contact-sheet */
+/* fallback em cadeia: thumbs-p/ (celular) -> thumbs/ local -> thumbnail do Drive -> contact-sheet */
 function trocaPoster(img,did,cid){
+  if(did&&!img.dataset.fp&&img.getAttribute('src').startsWith('thumbs-p/')){ img.dataset.fp='1'; img.src=`thumbs/${did}.jpg`; return; }
   if(did&&!img.dataset.fb){ img.dataset.fb='1'; img.src=`https://drive.google.com/thumbnail?id=${did}&sz=w420`; return; }
   img.onerror=null; img.classList.add('sheet'); img.src=`_sheets/${cid}.jpg`;
 }
@@ -439,10 +441,24 @@ function mountRow(id){
   const el=document.getElementById('row-'+id);
   if(!el||!el.classList.contains('lazy'))return;
   const s=SHELF_REFS[id]; if(!s)return;
-  let html=s.refs.slice(0,CAP).map(cardHTML).join('');
-  if(s.refs.length>CAP)html+=`<div class="card more" onclick="verTodos('${id}')" role="button" tabindex="0"><div class="thumb"><span>Ver todos<br>+${s.refs.length-CAP}</span></div></div>`;
-  el.innerHTML=html;
+  const prim=Math.min(CAP,Math.ceil(innerWidth/(TELA_PEQ?155:201))+2);
+  el.innerHTML=s.refs.slice(0,prim).map(cardHTML).join('');
   el.classList.remove('lazy');
+  if(Math.min(s.refs.length,CAP)>prim||s.refs.length>CAP){
+    el.dataset.resto=prim;
+    const comp=()=>completaRow(id);
+    el.addEventListener('scroll',comp,{passive:true,once:true});
+    el.addEventListener('touchstart',comp,{passive:true,once:true});
+    el.addEventListener('pointerenter',comp,{passive:true,once:true});
+  }
+}
+function completaRow(id){
+  const el=document.getElementById('row-'+id); if(!el||!el.dataset.resto)return;
+  const s=SHELF_REFS[id]; if(!s)return;
+  const de=+el.dataset.resto; delete el.dataset.resto;
+  let html=s.refs.slice(de,CAP).map(cardHTML).join('');
+  if(s.refs.length>CAP)html+=`<div class="card more" onclick="verTodos('${id}')" role="button" tabindex="0"><div class="thumb"><span>Ver todos<br>+${s.refs.length-CAP}</span></div></div>`;
+  el.insertAdjacentHTML('beforeend',html);
 }
 function montaPerto(){
   /* monta toda prateleira a ate 900px do viewport (fallback universal: nao
@@ -483,6 +499,7 @@ function renderGrid(){
 }
 function fecharGrid(){ gridState=null; render(); window.scrollTo({top:0}); }
 function slide(id,dir){
+  completaRow(id);
   const r=document.getElementById('row-'+id);
   r.scrollBy({left:dir*(r.clientWidth*.82),behavior:'smooth'});
 }
