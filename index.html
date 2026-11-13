@@ -6284,7 +6284,7 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
     <button class="timer-btn" onclick="timerMinimize()">Minimizar</button>
     <button class="timer-btn primary" onclick="timerAdd(15)">+15s</button>
   </div>
-  <button type="button" class="timer-auto-chip" id="timerAutoChip" aria-pressed="false" onclick="descAutoSet(!_descAutoOn())">Cronômetro automático <b>desligado</b></button>
+  <button type="button" class="timer-auto-chip" id="timerAutoChip" aria-pressed="true" onclick="descAutoSet(!_descAutoOn())">Cronômetro automático <b>ligado</b></button>
 </div>
 <button class="timer-pill" id="timerPill" onclick="timerReopen()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> <span id="timerPillTime">60s</span></button>
 
@@ -7927,7 +7927,7 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
   <div id="maisSheet">
     <div class="mais-grab"></div>
     <div class="tema-row"><span>Aparência</span><div class="tema-seg" id="temaSeg"><button type="button" id="temaCla" onclick="ghTema('claro')">Claro</button><button type="button" id="temaEsc" onclick="ghTema('escuro')">Escuro</button></div></div>
-    <div class="tema-row da-row"><span>Cronômetro automático<small>O descanso começa sozinho quando tu anota a série</small></span><div class="tema-seg" id="daSeg"><button type="button" id="daDes" class="on" aria-pressed="true" onclick="descAutoSet(false)">Desligado</button><button type="button" id="daLig" aria-pressed="false" onclick="descAutoSet(true)">Ligado</button></div></div>
+    <div class="tema-row da-row"><span>Cronômetro automático<small>O descanso começa sozinho quando tu anota a série</small></span><div class="tema-seg" id="daSeg"><button type="button" id="daDes" aria-pressed="false" onclick="descAutoSet(false)">Desligado</button><button type="button" id="daLig" class="on" aria-pressed="true" onclick="descAutoSet(true)">Ligado</button></div></div>
     <button type="button" class="mais-opt" style="position:relative;" onclick="closeMaisSheet(); switchView('novidades')">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span><span>Novidades</span><span class="sup-dot" id="novDotMais" style="top:50%;transform:translateY(-50%);right:10px;"></span>
     </button>
@@ -9020,7 +9020,7 @@ const I18N_EN = {
   'Avisar das': 'Remind from', 'às': 'to',   // v612: janela da água
   'Cronômetro automático': 'Automatic rest timer', 'Desligado': 'Off', 'Ligado': 'On', 'desligado': 'off', 'ligado': 'on',   // v617
   'O descanso começa sozinho quando tu anota a série': 'Rest starts on its own when you log the set',
-  'Liga o cronômetro e abre um exercício por vez, em tela cheia. Quer que o descanso comece sozinho? Liga o Cronômetro automático no Mais.': 'Starts the timer and opens one exercise at a time, full screen. Want the rest to start on its own? Turn on the Automatic rest timer in More.',
+  'Liga o cronômetro e abre um exercício por vez, em tela cheia. O descanso começa sozinho quando tu anota a série; se preferir controlar, desliga o Cronômetro automático no Mais.': 'Starts the timer and opens one exercise at a time, full screen. Rest starts on its own when you log the set; to control it yourself, turn off the Automatic rest timer in More.',
   'Treino': 'Workout', 'Dieta': 'Diet', 'Progresso': 'Progress', 'Mais': 'More',
   'PROTOCOLO DE TREINO': 'TRAINING PROTOCOL', 'MÚSCULOS DE HOJE': "TODAY'S MUSCLES",
   'Músculos de hoje': "Today's muscles", 'TOCA PRA GIRAR': 'TAP TO ROTATE', 'Toca pra girar': 'Tap to rotate', 'toca pra girar': 'tap to rotate', 'frente': 'front', 'costas': 'back',
@@ -14914,7 +14914,7 @@ function startTimerAuto(name, seconds) {
   _timerLockOn();
   if (navigator.vibrate) navigator.vibrate(20);
 }
-// ══ v617 (GH 09/11/2026): CRONÔMETRO AUTOMÁTICO, chave do aluno, DESLIGADA por padrão ══
+// ══ v617 (GH 09/11/2026): CRONÔMETRO AUTOMÁTICO, chave do aluno (LIGADA por padrão desde a v638) ══
 // "Colocar o cronômetro do descanso automaticamente sempre que o aluno terminar de preencher os pesos, séries e quanto sobrou,
 // ou uns 10 segundos depois dele preencher peso e séries… um toggle de cronômetro automático pra quem quer assim e deixar
 // desativado pra quem quer por conta". Até a v616 o descanso começava sozinho, minimizado, só com o treino rolando e já no
@@ -14927,7 +14927,8 @@ function startTimerAuto(name, seconds) {
 // descansada, não fica na fila); a parte A do biset não descansa.
 const _DA_KEY = 'gh-descanso-auto';
 let _daRepsEm = {}, _daFeito = {}, _daTo = {};
-function _descAutoOn() { try { return localStorage.getItem(_DA_KEY) === '1'; } catch (_) { return false; } }
+// v638 (GH 13/11): LIGADO por padrão. Só fica desligado pra quem desligou na mão (chave '0').
+function _descAutoOn() { try { return localStorage.getItem(_DA_KEY) !== '0'; } catch (_) { return true; } }
 function descAutoSet(on) {
   try { localStorage.setItem(_DA_KEY, on ? '1' : '0'); } catch (_) {}
   if (!on) { for (const k in _daTo) clearTimeout(_daTo[k]); _daTo = {}; }
@@ -15029,7 +15030,7 @@ function _tourSteps() {
     { sel: '#dayTabs', t: 'Teu treino da semana', p: 'Cada botão é um dia de treino. O app já abre no treino certo de hoje, é só seguir.' },
     { sel: '.sets-grid', t: 'Anota tuas cargas aqui', p: 'Peso e repetições de cada série. É com isso que eu acompanho tua evolução e ajusto teu protocolo. Salva sozinho.' },
     { sel: '.ex-troca-btn', t: 'Sem o aparelho? Troca.', p: 'Toca em "trocar", embaixo do teu registro, que eu te mostro as opções equivalentes pro mesmo músculo, com vídeo. A carga do original fica guardada.' },
-    { sel: '.dia-start', t: 'Começar treino', p: 'Liga o cronômetro e abre um exercício por vez, em tela cheia. Quer que o descanso comece sozinho? Liga o Cronômetro automático no Mais.' },
+    { sel: '.dia-start', t: 'Começar treino', p: 'Liga o cronômetro e abre um exercício por vez, em tela cheia. O descanso começa sozinho quando tu anota a série; se preferir controlar, desliga o Cronômetro automático no Mais.' },
     { sel: '#bottomNav', t: 'Tua navegação', p: 'Dieta, teu progresso com gráficos e o resto do app moram aqui embaixo.' },
     { sel: '#bnMais', t: 'Fala comigo', p: 'Dúvida ou quer pedir um ajuste no protocolo? Toca no card do topo ou aqui em Mais.' }
   ].filter(x => !(document.body.classList.contains('modo-simples') && (x.sel === '.ex-sub-pill' || x.sel === '.dia-start')));   // v584
@@ -28989,7 +28990,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v637';
+    var APP_SHELL_V = 'metodo-gh-v638';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
