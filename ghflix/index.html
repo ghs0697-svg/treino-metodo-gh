@@ -290,7 +290,13 @@
 
 <script>
 /* ================= CONFIG ================= */
-const ACCESS_ENDPOINT='https://script.google.com/macros/s/AKfycby0Kej7V7Gi2gIDKorBookSLofBMHOF50UFWq4Q1fTmstCD8ed8O9XLyCaZo8QIeUPfeQ/exec'; // Apps Script: ?action=ghflixAccess&id=<sheetID> -> {liberado:bool}
+const ACCESS_ENDPOINT='https://metodogh-api.vercel.app/exec';
+/* reserva: o Apps Script antigo segue valendo; se a Vercel nao responder, o login cai nele */
+const ACCESS_RESERVA='https://script.google.com/macros/s/AKfycby0Kej7V7Gi2gIDKorBookSLofBMHOF50UFWq4Q1fTmstCD8ed8O9XLyCaZo8QIeUPfeQ/exec';
+async function accFetch(q){
+  try{ const r=await fetch(ACCESS_ENDPOINT+q); if(!r.ok)throw new Error('http '+r.status); const j=await r.clone().json(); if(j&&typeof j==='object')return r; throw new Error('resposta'); }
+  catch(e){ return fetch(ACCESS_RESERVA+q); }
+} // Apps Script: ?action=ghflixAccess&id=<sheetID> -> {liberado:bool}
 const CHECKOUT_URL='https://payfast.greenn.com.br/redirect/293094';
 const PARAMS=new URLSearchParams(location.search);
 const ALUNO_ID=PARAMS.get('id')||PARAMS.get('sheet')||'';
@@ -692,18 +698,18 @@ async function checkAccess(){
   if(!ACCESS_ENDPOINT)return{liberado:false};
   // Aluno (dentro do app): libera pelo ?id da planilha
   if(ALUNO_ID){
-    try{ const r=await fetch(`${ACCESS_ENDPOINT}?action=ghflixAccess&id=${encodeURIComponent(ALUNO_ID)}`); return await r.json(); }
+    try{ const r=await accFetch(`?action=ghflixAccess&id=${encodeURIComponent(ALUNO_ID)}`); return await r.json(); }
     catch(e){ return{liberado:false}; }
   }
   // Público (subdomínio, sem id): tenta pelo email já salvo no aparelho
   const em=emailSalvo();
   if(em){
-    try{ const r=await fetch(`${ACCESS_ENDPOINT}?action=ghflixAccess&email=${encodeURIComponent(em)}`); return await r.json(); }
+    try{ const r=await accFetch(`?action=ghflixAccess&email=${encodeURIComponent(em)}`); return await r.json(); }
     catch(e){ return{liberado:false,precisaLogin:true}; }
   }
   const dc=docSalvo();
   if(dc){
-    try{ const r=await fetch(`${ACCESS_ENDPOINT}?action=ghflixAccess&cpf=${encodeURIComponent(dc)}&phone=${encodeURIComponent(dc)}`); return await r.json(); }
+    try{ const r=await accFetch(`?action=ghflixAccess&cpf=${encodeURIComponent(dc)}&phone=${encodeURIComponent(dc)}`); return await r.json(); }
     catch(e){ return{liberado:false,precisaLogin:true}; }
   }
   return{liberado:false,precisaLogin:true};
@@ -728,7 +734,7 @@ async function loginEmail(){
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ msg.style.color='#e0a';msg.textContent='Digite um email válido.';return; }
   msg.style.color='var(--dim)';msg.textContent='Verificando…'; btn.disabled=true; const t=btn.textContent; btn.textContent='…';
   try{
-    const r=await fetch(`${ACCESS_ENDPOINT}?action=ghflixAccess&email=${encodeURIComponent(em)}`);
+    const r=await accFetch(`?action=ghflixAccess&email=${encodeURIComponent(em)}`);
     const j=await r.json();
     if(j&&j.liberado){ localStorage.setItem(EMAIL_KEY,em); ACESSO.liberado=true; mintToken(); hideLogin(); syncAuthUI(); if(IDX)render(); else loadCatalog(); }
     else { msg.style.color='#e0a'; msg.textContent='Não achamos uma assinatura ativa com esse email. Confere o email da compra ou assina abaixo.'; }
@@ -750,7 +756,7 @@ async function recuperarAcesso(){
   msg.style.color='var(--dim)'; msg.textContent='Procurando…'; btn.disabled=true; const t=btn.textContent; btn.textContent='…';
   try{
     // manda o mesmo número como cpf E phone; o servidor casa na coluna certa
-    const r=await fetch(`${ACCESS_ENDPOINT}?action=ghflixAccess&cpf=${encodeURIComponent(dig)}&phone=${encodeURIComponent(dig)}`);
+    const r=await accFetch(`?action=ghflixAccess&cpf=${encodeURIComponent(dig)}&phone=${encodeURIComponent(dig)}`);
     const j=await r.json();
     if(j&&j.liberado){
       try{ localStorage.setItem(DOC_KEY,dig); }catch(_){}
