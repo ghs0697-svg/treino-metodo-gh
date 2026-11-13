@@ -5464,6 +5464,22 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   .util-row > button:not(.viagem-on) { filter: grayscale(1); }
   .hdr-esf p { margin: 0; }
   html[data-theme="light"] button.set-num { color: var(--fg-2); }   /* v610c: a regra gerada pra .set-num ganhava da v609 (button.set-num) por especificidade */
+/* v639: foto da refeição = mesma medida e moldura da miniatura do exercício (.ex-thumb: 64 px, canto 12, borda dourada;
+     feita encolhe pra 44 px, igual ao exercício recolhido). GH 13/11: "pelo menos tamanho parecido". */
+  .diet-meal-header.tem-thumb { position: relative; padding-left: 92px !important; min-height: 92px; }
+  .diet-meal-header .dm-thumb { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 64px; height: 64px; border-radius: 12px; border: 2px solid var(--gold); object-fit: cover; background: #111; display: block; }
+  .diet-meal-card:has(.diet-meal-check.done) .dm-thumb { width: 44px; height: 44px; border-radius: 9px; }
+  .diet-meal-card:has(.diet-meal-check.done) .diet-meal-header.tem-thumb { min-height: 72px; padding-left: 72px !important; }
+
+  /* v639 (GHFlix pediu, Sala #4647, rolagem travando no iPhone): com a aba GHFlix aberta a barra de baixo e o topo ficam com
+     fundo SÓLIDO, sem desfoque (o iPhone refazia o desfoque a cada quadro da rolagem do player por baixo), e a página de fora
+     não rola nem 1 px (o gesto alternava entre a página e o player). */
+  body.view-ghflix #bottomNav, body.view-ghflix .main-nav, body.view-ghflix .header { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+  body.view-ghflix #bottomNav { background: #16171d !important; }
+  html[data-theme="light"] body.view-ghflix #bottomNav { background: #f8f7f3 !important; }
+  body.view-ghflix .main-nav { background: #100d0a !important; }
+  html[data-theme="light"] body.view-ghflix .main-nav { background: #f1efe9 !important; }
+  html:has(body.view-ghflix), body.view-ghflix { overflow: hidden !important; overscroll-behavior: none; }
 </style>
 <script>
 // ══ v593 (auditoria 26/10): dois guardas que NÃO dependem do script principal (ES5 puro, primeiro script da página) ══
@@ -26699,7 +26715,8 @@ function renderDiet() {
       html += `<div class="diet-meal-card${(_riAgora != null && ri !== _riAgora && !isMealDone(ri)) ? ' dm-fora' : ''}">`;
       // v549: o botão "não rolou?" e a anotação existem uma vez POR CICLO (aba Alto / Baixo): saíram os ids repetidos, que
       // faziam o toque na 2ª aba atualizar só a 1ª. O nome da refeição não vai mais dentro do onclick (aspas quebravam o botão).
-      html += `<div class="diet-meal-header"><span class="dm-nome">${_dx(ref.nome)}${_refOpcional(ref) ? ' <span class="dm-opc">opcional, não conta pro dia</span>' : ''}</span>${_refHoraChipHtml(ri)}<button type="button" class="dm-nao${_mealNaoMotivo(ri) ? ' marcado' : ''}" data-nao-ri="${ri}" onclick="openMealNao(${ri})">${_mealNaoMotivo(ri) ? 'anotado 🤝' : 'não rolou?'}</button><button type="button" class="dm-foto" onclick="showMealPhotoCard(${ri})" aria-label="Foto da refeição"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Foto</button><button type="button" class="diet-meal-check${isMealDone(ri) ? ' done' : ''}" data-meal-ri="${ri}" onclick="onCheckMeal(${ri})" aria-label="Marcar refeição feita"><svg class="dm-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><svg class="dm-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span class="dm-txt">Feita</span></button></div>`;
+      const _fotos = _refFotos_(ref);   // v639: foto da refeição pelos alimentos (uma por opção)
+      html += `<div class="diet-meal-header${_fotos ? ' tem-thumb' : ''}">${_fotos ? `<img class="dm-thumb" id="dmThumb${uid}" data-fotos="${_fotos.join(',')}" src="thumbs/refeicoes/${_fotos[0]}.jpg" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}<span class="dm-nome">${_dx(ref.nome)}${_refOpcional(ref) ? ' <span class="dm-opc">opcional, não conta pro dia</span>' : ''}</span>${_refHoraChipHtml(ri)}<button type="button" class="dm-nao${_mealNaoMotivo(ri) ? ' marcado' : ''}" data-nao-ri="${ri}" onclick="openMealNao(${ri})">${_mealNaoMotivo(ri) ? 'anotado 🤝' : 'não rolou?'}</button><button type="button" class="dm-foto" onclick="showMealPhotoCard(${ri})" aria-label="Foto da refeição"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Foto</button><button type="button" class="diet-meal-check${isMealDone(ri) ? ' done' : ''}" data-meal-ri="${ri}" onclick="onCheckMeal(${ri})" aria-label="Marcar refeição feita"><svg class="dm-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><svg class="dm-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span class="dm-txt">Feita</span></button></div>`;
       if (_mealNota(ri)) html += `<div class="dm-nota" data-nota-ri="${ri}">📝 ${String(_mealNota(ri)).replace(/&/g, '&amp;').replace(/</g, '&lt;')}</div>`;   // v537
       if (ref.instrucao) html += `<div class="diet-meal-instruction">${_dx(ref.instrucao)}</div>`;
 
@@ -26941,7 +26958,7 @@ function switchView(view) {
   // A15: se já falhou de verdade, NÃO re-tenta sozinho a cada toque (o aviso na aba tem botão "Tentar de novo");
   // se ainda não carregou e não falhou, carrega.
   if (view === 'dieta' && !dietLoaded) { if (dietFetchFailed) _showDietFetchError(); else loadDietFromSheets(); }
-  if (view === 'ghflix') ensureGhflixFrame();
+  if (view === 'ghflix') { ensureGhflixFrame(); try { window.scrollTo(0, 0); } catch (_) {} }   // v639: página de fora parada
   if (view === 'progresso' && typeof renderProgressoScreen === 'function') renderProgressoScreen();
   document.getElementById('navTreino').classList.toggle('active', view === 'treino');
   document.getElementById('navDieta').classList.toggle('active', view === 'dieta');
@@ -27682,11 +27699,78 @@ function _restoreFetch_() {
   return _restoreProm;
 }
 
+// v639 (GH 13/11, "tá faltando algo que deixe o visual mais agradável na aba da Dieta"): foto da refeição no card, igual à
+// miniatura do exercício. A foto sai dos ALIMENTOS escritos na dieta (o primeiro de cada linha "A | B | C"), não do nome
+// da refeição: almoço de shake mostra shake. Banco em thumbs/refeicoes/<chave>.jpg (27 pratos gerados por IA, 192 px).
+// Nada muda na planilha nem na montagem. Refeição sem alimento nenhum fica sem foto.
+function _refFotoKey_(refNome, opNome, alims) {
+  const n = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const nome = n(refNome);
+  const t = n(opNome) + ' ; ' + (alims || []).map(a => n(String((a && a.nome) || '').split('|')[0].split('(')[0])).join(' ; ');
+  const tem = re => re.test(t);
+  if (/\bdoces?\b|sobremesa/.test(nome)) return 'doce';   // "DOCE DA SEMANA": chocolate 70%, mel
+  // o nome da opção manda primeiro ("Shake com pão" é shake, "Iogurte com fruta" é iogurte)
+  const opn = n(opNome).replace(/^op[cç][aã]o\s*\d+[.:)\s-]*/, '');
+  if (/shake|batido|vitamina/.test(opn)) return 'shake';
+  if (/mingau/.test(opn)) return 'mingau';
+  if (/^iogurte/.test(opn)) return 'iogurte';
+  if (/crepioca|tapioca/.test(opn)) return 'tapioca';
+  if (/panqueca|bolinho/.test(opn)) return 'panqueca';
+  if (/sanduiche/.test(opn)) return 'sanduiche';
+  if (tem(/mingau|porridge/)) return 'mingau';
+  if (tem(/crepioca/)) return 'tapioca';
+  if (tem(/panqueca|bolinho|waffle/)) return 'panqueca';
+  if (tem(/cuscuz/)) return 'cuscuz';
+  if (tem(/macarr|massa|espaguete|talharim|penne|lasanha|nhoque|yakisoba/)) return 'massa';
+  const carbo = tem(/arroz|feij|quinoa|lentilha|grao de bico/) ? 'arroz' : tem(/mandioca|aipim|macaxeira/) ? 'mandioca' : tem(/batata|inhame|abobora|\bcara\b/) ? 'batata' : '';
+  const prot = tem(/salm/) ? 'salmao' : tem(/peixe|tilapia|merluza|atum|pescada|sardinha|camar|bacalhau/) ? 'peixe' : tem(/suin|lombo|pernil|porco/) ? 'suino'
+    : tem(/carne|patinho|bovin|alcatra|mignon|picanha|musculo|acem|coxao|maminha|contra.?file|hamburg|almondega|figado/) ? 'carne' : tem(/frango|\bperu\b|sobrecoxa|chester/) ? 'frango' : '';
+  const pao = tem(/\bpao\b|paes|torrada|bisnaguinha|sanduiche|\bpaozinho/);
+  const prato = (p, c) => p === 'salmao' ? 'salmao' : p === 'peixe' ? 'peixe_arroz' : p === 'suino' ? 'suino'
+    : c === 'mandioca' ? 'mandioca' : p === 'carne' ? (c === 'arroz' ? 'carne_arroz' : c === 'batata' ? 'carne_batata' : 'carne_legumes')
+    : (c === 'arroz' ? 'frango_arroz' : c === 'batata' ? 'frango_batata' : 'frango_legumes');
+  if (prot && !pao && !tem(/tapioca|rap ?10|wrap|tortilha/) && (carbo || tem(/salada|legume|verdura|brocolis|vegeta/))) return prato(prot, carbo);
+  if (tem(/\bovos?\b|omelete|claras?\b|gema/)) {
+    if (carbo === 'arroz' && !pao && tem(/salada|legume|verdura|feij/)) return 'ovo_arroz';   // prato feito com ovo
+    if (tem(/tapioca/)) return 'tapioca';
+    if (tem(/rap ?10|wrap|tortilha/)) return 'wrap';
+    if (pao) return 'ovos_pao';
+    if (/lanche|ceia/.test(nome) || tem(/cozid/)) return 'ovos_cozidos';
+    return 'omelete';
+  }
+  if (tem(/tapioca/)) return 'tapioca';
+  if (tem(/rap ?10|wrap|tortilha/)) return 'wrap';
+  if (tem(/amendoim/) && (pao || tem(/banana/))) return 'pao_amendoim';
+  if (pao) return (prot || tem(/queijo|requeij|ricota|cottage|presunto/)) ? 'sanduiche' : 'pretreino';
+  if (tem(/iogurte|skyr|kefir|coalhada|danone|yopro/)) return 'iogurte';
+  if (tem(/whey|shake|proteina|caseina|albumina|vitamina|\bleite\b|hipercalorico/)) return 'shake';
+  if (prot) return prato(prot, carbo);
+  if (tem(/banana|maca\b|mamao|abacaxi|morango|laranja|tangerina|mexerica|melancia|melao|\buva|kiwi|\bpera\b|manga|fruta|ameixa|abacate/)) return (/pre.?treino/.test(nome) || tem(/cafe/)) ? 'pretreino' : 'frutas';
+  if (tem(/cafe/)) return 'pretreino';
+  if (/desjejum|cafe da manha|manha/.test(nome)) return 'ovos_pao';
+  if (/pos.?treino/.test(nome)) return 'shake';
+  if (/pre.?treino/.test(nome)) return 'pretreino';
+  if (/ceia/.test(nome)) return 'iogurte';
+  if (/lanche/.test(nome)) return 'frutas';
+  if (/jant/.test(nome)) return 'carne_legumes';
+  return 'frango_arroz';
+}
+function _refFotos_(ref) {
+  try {
+    const base = ref.alimentos || [], ops = ref.opcoes || [];
+    if (ops.length) return ops.map(op => _refFotoKey_(ref.nome, op.nome, base.concat(op.alimentos || [])));
+    if (!base.length) return null;
+    return [_refFotoKey_(ref.nome, '', base)];
+  } catch (_) { return null; }
+}
+
 function selectDietOption(uid, opIdx) {
   const tabs = document.querySelectorAll(`#optTabs${uid} .diet-option-tab`);
   tabs.forEach((t, i) => t.classList.toggle('active', i === opIdx));
   const allOpts = document.querySelectorAll(`[id^="opt${uid}_"]`);
   allOpts.forEach((c, i) => c.classList.toggle('active', i === opIdx));
+  const th = document.getElementById('dmThumb' + uid);   // v639: a foto acompanha a opção escolhida
+  if (th && th.dataset.fotos) { const k = th.dataset.fotos.split(',')[opIdx]; if (k && th.src.indexOf('/' + k + '.jpg') < 0) th.src = 'thumbs/refeicoes/' + k + '.jpg'; }
 }
 
 function selectDietCycle(idx) {
@@ -28990,7 +29074,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v638';
+    var APP_SHELL_V = 'metodo-gh-v639';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
