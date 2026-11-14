@@ -5483,6 +5483,71 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   body.view-ghflix .main-nav { background: #100d0a !important; }
   html[data-theme="light"] body.view-ghflix .main-nav { background: #f1efe9 !important; }
   html:has(body.view-ghflix), body.view-ghflix { overflow: hidden !important; overscroll-behavior: none; }
+
+  /* ══ v643: VIDRO LÍQUIDO nos cartões (GH 14/11) ══
+     O cartão deixa de ser uma chapa lisa: a superfície ganha um reflexo em diagonal (mais claro no canto de cima, quase
+     transparente no meio), a borda vira um fio de luz (forte em cima, fraco embaixo) e a luz do fundo fica mais viva, pra
+     ela atravessar o vidro e mudar conforme a tela rola. Sem backdrop-filter no cartão (ele prende as folhas fixas que
+     nascem dentro do cartão); o desfoque de verdade continua só no que flutua (barra de baixo e folhas). */
+  :root {
+    --liq-fill: linear-gradient(140deg, rgba(255,255,255,.13) 0%, rgba(255,255,255,.06) 30%, rgba(255,255,255,.035) 60%, rgba(255,255,255,.08) 100%);
+    --liq-line: rgba(255,255,255,.16);
+    --liq-rim: inset 0 1px 0 rgba(255,255,255,.28), inset 1px 0 0 rgba(255,255,255,.08), inset -1px 0 0 rgba(255,255,255,.04), inset 0 -1px 0 rgba(255,255,255,.09), inset 0 22px 30px -22px rgba(255,255,255,.10);
+    --liq-sombra: 0 16px 36px rgba(0,0,0,.38), 0 2px 6px rgba(0,0,0,.24);
+  }
+  :root[data-theme="light"] {
+    --liq-fill: linear-gradient(140deg, rgba(255,255,255,.96) 0%, rgba(255,255,255,.66) 32%, rgba(255,255,255,.52) 62%, rgba(255,255,255,.82) 100%);
+    --liq-line: rgba(255,255,255,.85);
+    --liq-rim: inset 0 1px 0 #fff, inset 1px 0 0 rgba(255,255,255,.7), inset -1px 0 0 rgba(255,255,255,.45), inset 0 -1px 0 rgba(20,18,12,.05), inset 0 22px 30px -22px rgba(255,255,255,.9);
+    --liq-sombra: 0 14px 32px rgba(40,30,10,.10), 0 1px 3px rgba(40,30,10,.06);
+  }
+  .day-hero, .exercise-card, .diet-meal-card, .diet-info-card, .diet-section-toggle, .diet-supl-group, .pg-card, .fd-card, .sem-card, .week-selector, .student-info, .proto-progress, .cardio-week,
+  :root[data-theme="light"] .exercise-card, :root[data-theme="light"] .diet-meal-card, :root[data-theme="light"] .pg-card, :root[data-theme="light"] .day-hero {
+    background: var(--liq-fill); border-color: var(--liq-line); box-shadow: var(--liq-rim), var(--liq-sombra);
+  }
+  /* cartões com borda própria (faixa dourada do macro, contorno do modo): só a superfície e a luz, a borda fica */
+  .diet-macro-card, .modo-bar, .diet-action-btn { background: var(--liq-fill); box-shadow: var(--liq-rim), var(--liq-sombra); }
+  .exercise-card, .diet-meal-card, .pg-card, .fd-card, .sem-card { border-radius: 22px; }
+  .day-hero { border-radius: 24px; }
+  body::before { background:
+      radial-gradient(62% 40% at 10% 0%, rgba(221, 182, 92, .24) 0%, transparent 62%),
+      radial-gradient(50% 36% at 104% 22%, rgba(134, 187, 255, .14) 0%, transparent 62%),
+      radial-gradient(46% 30% at -6% 62%, rgba(134, 187, 255, .07) 0%, transparent 62%),
+      radial-gradient(72% 46% at 55% 108%, rgba(221, 182, 92, .13) 0%, transparent 62%),
+      var(--bg); }
+  :root[data-theme="light"] body::before { background:
+      radial-gradient(62% 40% at 10% 0%, rgba(217, 179, 90, .28) 0%, transparent 62%),
+      radial-gradient(50% 36% at 104% 22%, rgba(47, 111, 214, .12) 0%, transparent 62%),
+      radial-gradient(46% 30% at -6% 62%, rgba(47, 111, 214, .07) 0%, transparent 62%),
+      radial-gradient(72% 46% at 55% 108%, rgba(217, 179, 90, .15) 0%, transparent 62%),
+      var(--bg); }
+
+  :root {
+    --liq-fill: radial-gradient(130% 95% at 0% 0%, rgba(255,255,255,.16) 0%, rgba(255,255,255,0) 54%), radial-gradient(115% 85% at 100% 100%, rgba(221,182,92,.13) 0%, rgba(221,182,92,0) 56%), linear-gradient(rgba(255,255,255,.035), rgba(255,255,255,.035));
+    --liq-line: rgba(255,255,255,.22);
+    --liq-rim: inset 0 1.5px 0 rgba(255,255,255,.42), inset 1px 0 0 rgba(255,255,255,.10), inset -1px 0 0 rgba(255,255,255,.06), inset 0 -1px 0 rgba(255,255,255,.14), inset 0 0 26px rgba(255,255,255,.05), inset 0 26px 34px -26px rgba(255,255,255,.16);
+    --liq-sombra: 0 18px 40px rgba(0,0,0,.42), 0 2px 6px rgba(0,0,0,.26);
+  }
+  :root[data-theme="light"] {
+    --liq-fill: radial-gradient(130% 95% at 0% 0%, rgba(255,255,255,.98) 0%, rgba(255,255,255,0) 56%), radial-gradient(115% 85% at 100% 100%, rgba(255,255,255,.80) 0%, rgba(255,255,255,0) 58%), linear-gradient(rgba(255,255,255,.40), rgba(255,255,255,.40));
+    --liq-line: rgba(255,255,255,.90);
+    --liq-rim: inset 0 1.5px 0 #fff, inset 1px 0 0 rgba(255,255,255,.8), inset -1px 0 0 rgba(255,255,255,.5), inset 0 -1px 0 rgba(20,18,12,.06), inset 0 0 26px rgba(255,255,255,.5);
+    --liq-sombra: 0 16px 36px rgba(40,30,10,.14), 0 1px 3px rgba(40,30,10,.07);
+  }
+  body::before { background:
+      radial-gradient(64% 42% at 8% 2%, rgba(221, 182, 92, .34) 0%, transparent 64%),
+      radial-gradient(56% 40% at 106% 26%, rgba(110, 170, 255, .26) 0%, transparent 64%),
+      radial-gradient(54% 36% at -8% 60%, rgba(221, 182, 92, .16) 0%, transparent 64%),
+      radial-gradient(60% 40% at 108% 78%, rgba(110, 170, 255, .15) 0%, transparent 64%),
+      radial-gradient(76% 46% at 50% 110%, rgba(221, 182, 92, .22) 0%, transparent 64%),
+      var(--bg); }
+  :root[data-theme="light"] body::before { background:
+      radial-gradient(64% 42% at 8% 2%, rgba(217, 179, 90, .42) 0%, transparent 64%),
+      radial-gradient(56% 40% at 106% 26%, rgba(47, 111, 214, .20) 0%, transparent 64%),
+      radial-gradient(54% 36% at -8% 60%, rgba(217, 179, 90, .22) 0%, transparent 64%),
+      radial-gradient(60% 40% at 108% 78%, rgba(47, 111, 214, .13) 0%, transparent 64%),
+      radial-gradient(76% 46% at 50% 110%, rgba(217, 179, 90, .26) 0%, transparent 64%),
+      var(--bg); }
 </style>
 <script>
 // ══ v593 (auditoria 26/10): dois guardas que NÃO dependem do script principal (ES5 puro, primeiro script da página) ══
@@ -29104,7 +29169,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v642';
+    var APP_SHELL_V = 'metodo-gh-v643';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
