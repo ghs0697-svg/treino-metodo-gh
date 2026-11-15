@@ -76,6 +76,22 @@ Extensão de Punho com Barra / Extensão de Punho no Cross
 `;
 
 // ════════════════════════════════════════════════════════════════════════
+//  TROCAS SÓ DE IDA (GH 15/11/2026)
+//  Linha no formato:  Exercício A / Exercício B > Exercício C / Exercício D
+//  Quem está ANTES do ">" pode trocar pelos que estão DEPOIS. O contrário
+//  não vale: C e D não ganham A nem B como opção.
+//  Serve pra exercício prescrito por lesão: ele só pode virar o que é seguro.
+//  Soma com o grupo de mão dupla de cima (não precisa repetir lá).
+//
+//  Elevação Frontal Supinada (bursite, epicondilite, lesão no supraespinhal):
+//  só vira Anilha ou Cross, nunca halter. As outras frontais podem virar supinada.
+// ════════════════════════════════════════════════════════════════════════
+const TROCAS_SO_DE_IDA = `
+Elevação Frontal Supinada > Elevação Frontal com Anilha / Elevação Frontal no Cross
+Elevação Frontal com Anilha / Elevação Frontal com Halteres em Isometria / Elevação Frontal Neutra com Halteres / Elevação Frontal no Cross / Elevação Frontal Corda no Cross > Elevação Frontal Supinada
+`;
+
+// ════════════════════════════════════════════════════════════════════════
 //  LISTA DE REFERÊNCIA — os 153 exercícios do banco oficial (com vídeo).
 //  Copie os nomes DAQUI pra não errar. (Só pra consulta; não mexe em nada.)
 // ════════════════════════════════════════════════════════════════════════

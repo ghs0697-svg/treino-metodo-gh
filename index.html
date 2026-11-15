@@ -8714,7 +8714,7 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
 </div>
 
 <script src="editor-data.js?v=139"></script>
-<script src="substitutos.js?v=6"></script>
+<script src="substitutos.js?v=7"></script>
 <script>
 // ══ v592 (auditoria 26/10): rede com teto de tempo ══
 // Toda chamada ao Apps Script que não traz o próprio sinal ganha 60 s de limite. Antes uma rede que caía no meio deixava o
@@ -9630,6 +9630,23 @@ const _SUB_GRUPOS = (function () {
 const _SUB_GRUPO_BY_NORM = (function () {
   const m = {};
   _SUB_GRUPOS.forEach(g => g.forEach(x => { if (!m[x.norm]) m[x.norm] = g; }));
+  // v648 (GH 15/11/2026): troca SÓ DE IDA, bloco TROCAS_SO_DE_IDA do substitutos.js. Linha "A / B > C / D": quem está à esquerda
+  // ganha os da direita como opção; os da direita NÃO ganham os da esquerda. Caso que criou: a Elevação Frontal Supinada é o
+  // exercício de quem tem bursite, epicondilite ou lesão no supraespinhal e só pode virar Anilha ou Cross (nunca halter); as
+  // outras frontais podem virar supinada. A lista passa a ser POR EXERCÍCIO (cópia), então o grupo de mão dupla não muda.
+  try {
+    const raw = (typeof TROCAS_SO_DE_IDA === 'string') ? TROCAS_SO_DE_IDA : '';
+    const nomes = t => String(t).split('/').map(x => x.trim()).filter(Boolean).map(n => ({ name: n, norm: _normEx(n) }));
+    String(raw).split('\n').forEach(line => {
+      const lados = line.split('>'); if (lados.length !== 2) return;
+      const de = nomes(lados[0]), para = nomes(lados[1]); if (!de.length || !para.length) return;
+      de.forEach(d => {
+        const lista = (m[d.norm] || [d]).slice();
+        para.forEach(p => { if (!lista.some(x => x.norm === p.norm)) lista.push(p); });
+        m[d.norm] = lista;
+      });
+    });
+  } catch (_) {}
   return m;
 })();
 function _grupoDe(name) { return _SUB_GRUPO_BY_NORM[_normEx(name)] || null; }
@@ -29171,7 +29188,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v647';
+    var APP_SHELL_V = 'metodo-gh-v648';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
