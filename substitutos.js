@@ -188,6 +188,7 @@ OMBRO
   Elevação Frontal com Halteres em Isometria
   Elevação Frontal Neutra com Halteres
   Elevação Frontal no Cross
+  Elevação Frontal Supinada
   Elevação Lateral
   Elevação Lateral na Máquina
   Elevação Lateral na Máquina Sentado
