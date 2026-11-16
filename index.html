@@ -3842,6 +3842,8 @@
   .di-sv-txt small { display: block; color: #999; font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .di-sv-x { background: none; border: 0; color: #777; font-size: 12px; cursor: pointer; padding: 2px 4px; }
   .di-sv-x:hover { color: #e57373; }
+  .di-sv-todas { padding: 10px; font-size: 12px; color: var(--gold); text-align: center; cursor: pointer; border-top: 1px solid #2c2c2c; }
+  .di-sv-todas:hover { text-decoration: underline; }
   .di-sv-vazio { padding: 12px 10px; font-size: 12px; color: #aaa; line-height: 1.5; }
   .di-section-divider { color: #888; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin: 6px 0 4px; padding-left: 4px; }
   .di-op-block { background: #1a1a1a; border: 1px dashed #3a3a3a; border-radius: 6px; padding: 6px 8px; margin: 6px 0; }
@@ -4715,6 +4717,7 @@ html[data-theme="light"] .di-block-body { border-top-color: var(--glass-line); }
 html[data-theme="light"] .di-row input { background: var(--glass-2); color: var(--fg); border-color: var(--glass-line); }
 html[data-theme="light"] .di-sv-drop { background: #fffdf8; border-color: var(--glass-line); box-shadow: 0 10px 30px rgba(60,45,10,.18); }
 html[data-theme="light"] .di-sv-head { background: #f6f1e4; border-bottom-color: var(--glass-line); }
+html[data-theme="light"] .di-sv-todas { border-top-color: var(--glass-line); }
 html[data-theme="light"] .di-sv-item { border-bottom-color: var(--glass-line); }
 html[data-theme="light"] .di-sv-txt { color: var(--fg); }
 html[data-theme="light"] .di-sv-txt small, html[data-theme="light"] .di-sv-vazio { color: var(--fg-2); }
@@ -29209,7 +29212,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v649';
+    var APP_SHELL_V = 'metodo-gh-v650';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
@@ -32315,17 +32318,23 @@ function _svDesenha_() {
   const d = _svDrop_(), idx = _svAlvo.idx, g = _svGrupoDe_(idx), o = _svLe_();
   const q = _svAlvo.filtrou ? _svNorm_(_svAlvo.input.value).trim() : '';
   const casa = x => !q || _svNorm_(x.n + ' ' + x.d + ' ' + x.o).includes(q);
-  const daqui = (o[g] || []).map((x, i) => ({ x, g, i })).filter(e => casa(e.x));
+  let daqui = (o[g] || []).map((x, i) => ({ x, g, i })).filter(e => casa(e.x));
+  // v650: campo já com nome e sem digitar = só as do mesmo nome (sem o parêntese); se não tem nenhuma, mostra todas
+  const vNome = _svAlvo.input.value.trim(); let soNome = '';
+  if (!_svAlvo.filtrou && !_svAlvo.todas && vNome) { const b = _svBase_(vNome); const m = daqui.filter(e => _svBase_(e.x.n) === b); if (m.length) { daqui = m; soNome = vNome.replace(/\s*\(.*$/, '').trim(); } }
   const outros = q ? Object.keys(o).filter(k => k !== g).flatMap(k => (o[k] || []).map((x, i) => ({ x, g: k, i }))).filter(e => casa(e.x)) : [];
   const item = e => '<div class="di-sv-item" role="option" onmousedown="event.preventDefault();diSvEscolhe(\'' + e.g + '\',' + e.i + ')">'
     + '<div class="di-sv-txt"><b>' + escTrainer(e.x.n) + '</b>' + (e.x.d ? '<span class="di-sv-d">' + escTrainer(e.x.d) + '</span>' : '') + (e.x.o ? '<small>' + escTrainer(e.x.o) + '</small>' : '') + '</div>'
     + '<button type="button" class="di-sv-x" onmousedown="event.preventDefault();event.stopPropagation();diSvApaga(\'' + e.g + '\',' + e.i + ')" title="Apagar das linhas salvas" aria-label="Apagar das linhas salvas">✕</button></div>';
-  let h = '<div class="di-sv-head">Minhas linhas salvas · ' + _SV_NOME[g] + '</div>';
+  let h = '<div class="di-sv-head">Minhas linhas salvas · ' + (soNome ? escTrainer(soNome) : _SV_NOME[g]) + '</div>';
   if (daqui.length) h += daqui.map(item).join('');
   else if (!outros.length) h += '<div class="di-sv-vazio">' + (q ? 'Nenhuma linha salva com “' + escTrainer(_svAlvo.input.value.trim()) + '”.' : 'Nenhuma linha salva neste bloco ainda.') + '<br>Escreve a linha e toca na ☆ do lado do nome pra guardar.</div>';
   if (outros.length) h += '<div class="di-sv-head">De outros blocos</div>' + outros.map(item).join('');
+  if (soNome) h += '<div class="di-sv-todas" role="option" onmousedown="event.preventDefault();diSvTodas()">Ver todas as linhas salvas de ' + _SV_NOME[g] + '</div>';
   d.innerHTML = h; d.hidden = false; _svPosiciona_();
 }
+function _svBase_(s) { return _svNorm_(s).replace(/\s*\(.*$/, '').replace(/\s+/g, ' ').trim(); }
+function diSvTodas() { if (!_svAlvo) return; _svAlvo.todas = true; _svDesenha_(); }
 function diSvAbre(input, idx) { _svAlvo = { input, idx, filtrou: false }; _svDesenha_(); _svSincroniza_(); }
 function diSvFiltra(input, idx) { if (!_svAlvo || _svAlvo.input !== input) _svAlvo = { input, idx, filtrou: true }; _svAlvo.filtrou = true; _svDesenha_(); diSvStar(idx); }
 function diSvFecha(ja) { const f = () => { const d = document.getElementById('diSvDrop'); if (d) d.hidden = true; _svAlvo = null; }; if (ja) f(); else setTimeout(() => { if (_svAlvo && document.activeElement === _svAlvo.input) return; f(); }, 120); }
