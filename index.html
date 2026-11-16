@@ -3827,6 +3827,22 @@
   .di-row .te-drag-handle { font-size: 14px; }
   .di-row input { background: #222; color: #fff; border: 1px solid #333; padding: 6px; border-radius: 4px; font-size: 11px; width: 100%; box-sizing: border-box; }
   .di-row input:focus { border-color: var(--gold); outline: none; }
+  /* v649: linhas salvas do editor da dieta */
+  .di-sv-wrap { position: relative; min-width: 0; display: block; }
+  .di-row .di-sv-wrap .di-sv-in { padding-right: 26px; }
+  .di-sv-star { position: absolute; right: 3px; top: 50%; transform: translateY(-50%); background: none; border: 0; color: #777; font-size: 14px; line-height: 1; padding: 3px; cursor: pointer; }
+  .di-sv-star:hover, .di-sv-star.on { color: var(--gold); }
+  .di-sv-drop { position: fixed; z-index: 9700; background: #1c1c1c; border: 1px solid var(--gold-dim); border-radius: 8px; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,.45); }
+  .di-sv-head { position: sticky; top: 0; background: #161616; color: var(--gold); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; padding: 7px 10px; border-bottom: 1px solid #2c2c2c; }
+  .di-sv-item { display: flex; align-items: flex-start; gap: 8px; padding: 7px 10px; border-bottom: 1px solid #2a2a2a; cursor: pointer; }
+  .di-sv-item:hover { background: rgba(212,175,55,.12); }
+  .di-sv-txt { flex: 1; min-width: 0; font-size: 12px; color: #eee; }
+  .di-sv-txt b { font-weight: 600; }
+  .di-sv-d { color: var(--gold); margin-left: 6px; }
+  .di-sv-txt small { display: block; color: #999; font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .di-sv-x { background: none; border: 0; color: #777; font-size: 12px; cursor: pointer; padding: 2px 4px; }
+  .di-sv-x:hover { color: #e57373; }
+  .di-sv-vazio { padding: 12px 10px; font-size: 12px; color: #aaa; line-height: 1.5; }
   .di-section-divider { color: #888; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin: 6px 0 4px; padding-left: 4px; }
   .di-op-block { background: #1a1a1a; border: 1px dashed #3a3a3a; border-radius: 6px; padding: 6px 8px; margin: 6px 0; }
   .di-op-head { color: #f1c40f; font-size: 12px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
@@ -4697,6 +4713,11 @@ html[data-theme="light"] .di-block-arrow { color: var(--fg-3); }
 html[data-theme="light"] .di-head-trash { background: hsl(6, 45%, 92%); border-color: hsl(6, 35%, 72%); color: var(--fg); }
 html[data-theme="light"] .di-block-body { border-top-color: var(--glass-line); }
 html[data-theme="light"] .di-row input { background: var(--glass-2); color: var(--fg); border-color: var(--glass-line); }
+html[data-theme="light"] .di-sv-drop { background: #fffdf8; border-color: var(--glass-line); box-shadow: 0 10px 30px rgba(60,45,10,.18); }
+html[data-theme="light"] .di-sv-head { background: #f6f1e4; border-bottom-color: var(--glass-line); }
+html[data-theme="light"] .di-sv-item { border-bottom-color: var(--glass-line); }
+html[data-theme="light"] .di-sv-txt { color: var(--fg); }
+html[data-theme="light"] .di-sv-txt small, html[data-theme="light"] .di-sv-vazio { color: var(--fg-2); }
 html[data-theme="light"] .di-section-divider { color: var(--fg-2); }
 html[data-theme="light"] .di-op-block { background: var(--glass); border-color: var(--glass-line); }
 html[data-theme="light"] .di-op-head { color: hsl(48, 45%, 30%); }
@@ -29188,7 +29209,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v648';
+    var APP_SHELL_V = 'metodo-gh-v649';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
@@ -32186,12 +32207,150 @@ function renderDietaSimpleRow(it, placeholders) {
           ondragend="diDragEnd()"
           ondragover="diDragOver(event)"
           ondrop="diDrop(${it.idx}, event)"><i class="te-dots">⋮⋮</i><span class="te-mv"><button type="button" class="te-mv-b" onclick="event.stopPropagation();diMove(${it.idx},-1)" aria-label="Subir" title="Subir">▲</button><button type="button" class="te-mv-b" onclick="event.stopPropagation();diMove(${it.idx},1)" aria-label="Descer" title="Descer">▼</button></span></span>
-    <input type="text" value="${escTrainer(r[1])}" oninput="dietaData[${it.idx}][1]=this.value" placeholder="${placeholders[0]}">
-    <input type="text" value="${escTrainer(r[2])}" oninput="dietaData[${it.idx}][2]=this.value" placeholder="${placeholders[1]}">
-    <input type="text" value="${escTrainer(r[3])}" oninput="dietaData[${it.idx}][3]=this.value" placeholder="${placeholders[2]}">
+    <span class="di-sv-wrap"><input type="text" class="di-sv-in" value="${escTrainer(r[1])}" oninput="dietaData[${it.idx}][1]=this.value;diSvFiltra(this,${it.idx})" onfocus="diSvAbre(this,${it.idx})" onblur="diSvFecha()" onkeydown="diSvTecla(event,this,${it.idx})" autocomplete="off" placeholder="${placeholders[0]}"><button type="button" class="di-sv-star${_svTem_(it.idx) ? ' on' : ''}" onmousedown="event.preventDefault()" onclick="diSvSalva(${it.idx})" title="${_svTem_(it.idx) ? 'Linha salva. Toca pra tirar das tuas linhas salvas' : 'Salvar esta linha pra usar em outros alunos'}" aria-label="Salvar linha">${_svTem_(it.idx) ? '★' : '☆'}</button></span>
+    <input type="text" value="${escTrainer(r[2])}" oninput="dietaData[${it.idx}][2]=this.value;diSvStar(${it.idx})" placeholder="${placeholders[1]}">
+    <input type="text" value="${escTrainer(r[3])}" oninput="dietaData[${it.idx}][3]=this.value;diSvStar(${it.idx})" placeholder="${placeholders[2]}">
     <button class="te-trash" onclick="dietaRemove(${it.idx})" title="Remover">🗑</button>
   </div>`;
 }
+
+// ── v649 (GH 16/11/2026): LINHAS SALVAS do editor da dieta ──
+// GH textual: "tu clicaria na linha e ja abriria minhas linhas salvas ... tipo acontece com a edicao de exercicios".
+// Guardadas NESTE aparelho (localStorage gh_linhas_salvas_v1), por bloco: regras, supl, orient (cardio/dica), proto.
+// Começa vazio: só entra o que o GH salvar na estrela. Escolher uma linha preenche nome, dose e observação da linha
+// tocada (o tipo da linha não muda); o 💾 Salvar lá em cima continua sendo o que grava na planilha do aluno.
+const _SV_KEY = 'gh_linhas_salvas_v1';
+const _SV_GRUPO = { regra: 'regras', supl: 'supl', cardio: 'orient', aerob: 'orient', dica: 'orient', orient: 'orient', proto: 'proto', ciclo: 'proto' };
+const _SV_NOME = { regras: 'Regras', supl: 'Suplementação', orient: 'Cardio, dicas e orientações', proto: 'Protocolos', outros: 'Outras' };
+let _svAlvo = null; // { input, idx, filtrou }
+function _svLe_() { try { const o = JSON.parse(localStorage.getItem(_SV_KEY) || '{}'); return (o && typeof o === 'object' && !Array.isArray(o)) ? o : {}; } catch (_) { return {}; } }
+function _svGrava_(o) { try { localStorage.setItem(_SV_KEY, JSON.stringify(o)); return true; } catch (_) { return false; } }
+// Servidor (GH 16/11): a lista mora na aba LINHAS_SALVAS da mestre. Aqui fica só a cópia pra abrir na hora e a fila do que
+// ainda não chegou lá (sem internet, senha não digitada). Cada ☆ ou ✕ vira UMA operação; a resposta traz a lista inteira.
+const _SV_PEND = 'gh_linhas_salvas_pend_v1';
+let _svUltima = 0, _svEnviando = false;   // última leitura do servidor (relê se passou 1 minuto)
+function _svPendLe_() { try { const a = JSON.parse(localStorage.getItem(_SV_PEND) || '[]'); return Array.isArray(a) ? a : []; } catch (_) { return []; } }
+function _svPendGrava_(a) { try { localStorage.setItem(_SV_PEND, JSON.stringify(a)); } catch (_) {} }
+function _svDoServidor_(linhas) {
+  if (!linhas || typeof linhas !== 'object') return;
+  const o = {}; Object.keys(linhas).forEach(g => { const l = Array.isArray(linhas[g]) ? linhas[g] : []; if (l.length) o[g] = l.map(x => ({ n: String(x.n || ''), d: String(x.d || ''), o: String(x.o || '') })); });
+  // o que ainda está na fila continua valendo por cima do que o servidor mandou
+  _svPendLe_().forEach(p => { const l = o[p.bloco] = (o[p.bloco] || []); const i = l.findIndex(x => _svIgual_(x, p.item)); if (p.op === 'salva' && i < 0) l.push(p.item); if (p.op === 'apaga' && i >= 0) l.splice(i, 1); });
+  Object.keys(o).forEach(g => o[g].sort((a, b) => a.n.localeCompare(b.n, 'pt') || a.d.localeCompare(b.d, 'pt')));
+  _svGrava_(o);
+  if (_svAlvo) { diSvStar(_svAlvo.idx); _svDesenha_(); }
+  document.querySelectorAll('.di-row[data-idx] .di-sv-star').forEach(b => { const r = b.closest('.di-row'); if (r) diSvStar(+r.dataset.idx); });
+}
+async function _svSincroniza_() {
+  if (Date.now() - _svUltima < 60000) return; _svUltima = Date.now();
+  const tok = localStorage.getItem('gh_trainer_token') || ''; if (!tok) { _svUltima = 0; return; }
+  try {
+    const r = await fetch(TRAINER_APPS_SCRIPT + '?action=linhas_salvas&token=' + encodeURIComponent(tok) + '&_=' + Date.now(), { cache: 'no-store' });
+    const j = await r.json();
+    if (j && j.ok && j.linhas) { _svDoServidor_(j.linhas); _svEnvia_(); }
+    else _svUltima = 0;   // rota ainda não publicada ou senha errada: fica com a cópia e tenta na próxima abertura
+  } catch (_) { _svUltima = 0; }
+}
+async function _svEnvia_(perguntaSenha) {
+  if (_svEnviando) return; _svEnviando = true;
+  try {
+    while (true) {
+      const fila = _svPendLe_(); if (!fila.length) break;
+      const p = fila[0];
+      if (!localStorage.getItem('gh_trainer_token') && !(perguntaSenha && _trainerToken_(true))) break;
+      let r; try { r = await _publicaAba_(TRAINER_APPS_SCRIPT, { type: 'linhas_salvas', op: p.op, bloco: p.bloco, item: p.item }); } catch (_) { break; }
+      if (!r || !r.j || !r.j.ok || !r.j.linhas) break;   // .gs antigo (sem a rota) responde sem a lista: fica na fila
+      const resto = _svPendLe_(); if (resto.length && resto[0].op === p.op && resto[0].bloco === p.bloco && _svIgual_(resto[0].item, p.item)) resto.shift();
+      _svPendGrava_(resto);
+      _svDoServidor_(r.j.linhas);
+    }
+  } finally { _svEnviando = false; }
+  const sobrou = _svPendLe_().length;
+  if (sobrou && perguntaSenha && typeof _ghToast === 'function') _ghToast('Guardei neste aparelho. Mando pro servidor assim que a internet voltar', 2600);
+}
+function _svFila_(op, bloco, item) {
+  const a = _svPendLe_().filter(p => !(p.bloco === bloco && _svIgual_(p.item, item)));   // ☆ e ✕ na mesma linha: vale o último
+  a.push({ op, bloco, item: { n: item.n, d: item.d, o: item.o } });
+  _svPendGrava_(a);
+  _svEnvia_(true);
+}
+function _svGrupoDe_(idx) { const t = String(((dietaData || [])[idx] || [])[0] || '').toLowerCase().trim(); return _SV_GRUPO[t] || 'outros'; }
+function _svLinhaDe_(idx) { const r = (dietaData || [])[idx] || []; return { n: String(r[1] || '').trim(), d: String(r[2] || '').trim(), o: String(r[3] || '').trim() }; }
+function _svIgual_(a, b) { return a.n === b.n && a.d === b.d && a.o === b.o; }
+function _svTem_(idx) { const l = _svLinhaDe_(idx); if (!l.n) return false; return (_svLe_()[_svGrupoDe_(idx)] || []).some(x => _svIgual_(x, l)); }
+function _svNorm_(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+function diSvStar(idx) {
+  const b = document.querySelector('.di-row[data-idx="' + idx + '"] .di-sv-star'); if (!b) return;
+  const on = _svTem_(idx); b.classList.toggle('on', on); b.textContent = on ? '★' : '☆';
+  b.title = on ? 'Linha salva. Toca pra tirar das tuas linhas salvas' : 'Salvar esta linha pra usar em outros alunos';
+}
+function diSvSalva(idx) {
+  const l = _svLinhaDe_(idx);
+  const avisa = m => { if (typeof _ghToast === 'function') _ghToast(m, 2200); };
+  if (!l.n) { avisa('Escreve a linha antes de salvar'); return; }
+  const o = _svLe_(), g = _svGrupoDe_(idx); const lista = o[g] = (o[g] || []);
+  const i = lista.findIndex(x => _svIgual_(x, l));
+  if (i >= 0) { lista.splice(i, 1); avisa('Tirei das tuas linhas salvas'); }
+  else { lista.push(l); lista.sort((a, b) => a.n.localeCompare(b.n, 'pt') || a.d.localeCompare(b.d, 'pt')); avisa('Linha salva em ' + _SV_NOME[g]); }
+  _svGrava_(o);
+  _svFila_(i >= 0 ? 'apaga' : 'salva', g, l);
+  diSvStar(idx);
+  if (_svAlvo) _svDesenha_();   // lista aberta em outra linha do bloco já mostra a que acabou de entrar
+}
+function _svDrop_() {
+  let d = document.getElementById('diSvDrop');
+  if (!d) { d = document.createElement('div'); d.id = 'diSvDrop'; d.className = 'di-sv-drop'; d.setAttribute('role', 'listbox'); d.hidden = true; document.body.appendChild(d); }
+  return d;
+}
+function _svPosiciona_() {
+  const d = document.getElementById('diSvDrop'); if (!d || d.hidden || !_svAlvo || !_svAlvo.input.isConnected) return;
+  const r = _svAlvo.input.getBoundingClientRect(); const w = Math.max(r.width, Math.min(420, window.innerWidth - 16));
+  d.style.width = w + 'px'; d.style.left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8)) + 'px';
+  const embaixo = window.innerHeight - r.bottom, emCima = r.top;
+  if (embaixo < 220 && emCima > embaixo) { d.style.top = ''; d.style.bottom = (window.innerHeight - r.top + 4) + 'px'; d.style.maxHeight = Math.min(320, emCima - 12) + 'px'; }
+  else { d.style.bottom = ''; d.style.top = (r.bottom + 4) + 'px'; d.style.maxHeight = Math.min(320, embaixo - 12) + 'px'; }
+}
+function _svDesenha_() {
+  if (!_svAlvo) return;
+  const d = _svDrop_(), idx = _svAlvo.idx, g = _svGrupoDe_(idx), o = _svLe_();
+  const q = _svAlvo.filtrou ? _svNorm_(_svAlvo.input.value).trim() : '';
+  const casa = x => !q || _svNorm_(x.n + ' ' + x.d + ' ' + x.o).includes(q);
+  const daqui = (o[g] || []).map((x, i) => ({ x, g, i })).filter(e => casa(e.x));
+  const outros = q ? Object.keys(o).filter(k => k !== g).flatMap(k => (o[k] || []).map((x, i) => ({ x, g: k, i }))).filter(e => casa(e.x)) : [];
+  const item = e => '<div class="di-sv-item" role="option" onmousedown="event.preventDefault();diSvEscolhe(\'' + e.g + '\',' + e.i + ')">'
+    + '<div class="di-sv-txt"><b>' + escTrainer(e.x.n) + '</b>' + (e.x.d ? '<span class="di-sv-d">' + escTrainer(e.x.d) + '</span>' : '') + (e.x.o ? '<small>' + escTrainer(e.x.o) + '</small>' : '') + '</div>'
+    + '<button type="button" class="di-sv-x" onmousedown="event.preventDefault();event.stopPropagation();diSvApaga(\'' + e.g + '\',' + e.i + ')" title="Apagar das linhas salvas" aria-label="Apagar das linhas salvas">✕</button></div>';
+  let h = '<div class="di-sv-head">Minhas linhas salvas · ' + _SV_NOME[g] + '</div>';
+  if (daqui.length) h += daqui.map(item).join('');
+  else if (!outros.length) h += '<div class="di-sv-vazio">' + (q ? 'Nenhuma linha salva com “' + escTrainer(_svAlvo.input.value.trim()) + '”.' : 'Nenhuma linha salva neste bloco ainda.') + '<br>Escreve a linha e toca na ☆ do lado do nome pra guardar.</div>';
+  if (outros.length) h += '<div class="di-sv-head">De outros blocos</div>' + outros.map(item).join('');
+  d.innerHTML = h; d.hidden = false; _svPosiciona_();
+}
+function diSvAbre(input, idx) { _svAlvo = { input, idx, filtrou: false }; _svDesenha_(); _svSincroniza_(); }
+function diSvFiltra(input, idx) { if (!_svAlvo || _svAlvo.input !== input) _svAlvo = { input, idx, filtrou: true }; _svAlvo.filtrou = true; _svDesenha_(); diSvStar(idx); }
+function diSvFecha(ja) { const f = () => { const d = document.getElementById('diSvDrop'); if (d) d.hidden = true; _svAlvo = null; }; if (ja) f(); else setTimeout(() => { if (_svAlvo && document.activeElement === _svAlvo.input) return; f(); }, 120); }
+function diSvTecla(ev, input, idx) {
+  if (ev.key === 'Escape') { diSvFecha(true); return; }
+  if (ev.key === 'Enter') { const d = document.getElementById('diSvDrop'); const pri = d && !d.hidden && d.querySelector('.di-sv-item'); if (pri && _svAlvo && _svAlvo.filtrou) { ev.preventDefault(); pri.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true })); } }
+}
+function diSvEscolhe(g, i) {
+  if (!_svAlvo) return; const l = (_svLe_()[g] || [])[i]; if (!l) return;
+  const idx = _svAlvo.idx; const r = dietaData[idx]; if (!r) return;
+  r[1] = l.n; r[2] = l.d; r[3] = l.o;
+  diSvFecha(true);
+  renderDietaEditor();
+  const novo = document.querySelector('.di-row[data-idx="' + idx + '"] input:not(.di-sv-in)');
+  if (novo) { try { novo.focus({ preventScroll: true }); } catch (_) {} }
+}
+function diSvApaga(g, i) {
+  const o = _svLe_(); if (!o[g] || !o[g][i]) return;
+  const item = o[g][i];
+  o[g].splice(i, 1); _svGrava_(o);
+  _svFila_('apaga', g, item);
+  if (_svAlvo) { diSvStar(_svAlvo.idx); _svDesenha_(); }
+}
+window.addEventListener('resize', () => _svPosiciona_());
+document.addEventListener('scroll', () => _svPosiciona_(), true);
 
 function renderDietaRefeicao(ref, ri) {
   const key = `ref-${ref.idx}`;
@@ -32465,8 +32624,9 @@ function dietaAddSimple(type) {
   for (let i = dietaData.length - 1; i >= 0; i--) {
     if (String(dietaData[i][0] || '').toLowerCase().trim() === type) { lastOfType = i; break; }
   }
+  let _svNovo = -1;   // v649: índice da linha nova, pra abrir as linhas salvas nela
   if (lastOfType >= 0) {
-    dietaInsertAfter(lastOfType, [type, '', '', '']);
+    _svNovo = dietaInsertAfter(lastOfType, [type, '', '', '']);
   } else {
     // Insere depois do último info/meta
     let lastInfo = 0;
@@ -32475,12 +32635,14 @@ function dietaAddSimple(type) {
       if (s === 'info' || s === 'meta') lastInfo = i;
       else if (s) break;
     }
-    dietaInsertAfter(lastInfo, [type, '', '', '']);
+    _svNovo = dietaInsertAfter(lastInfo, [type, '', '', '']);
   }
   // Mantém o bloco aberto
   const blockMap = { regra: 'regras', supl: 'supl', cardio: 'orient', aerob: 'orient', dica: 'orient', orient: 'orient', proto: 'proto', ciclo: 'proto' };
   if (blockMap[type]) DIETA_OPEN_BLOCKS.add(blockMap[type]);
   renderDietaEditor();
+  const _svIn = _svNovo >= 0 && document.querySelector('.di-row[data-idx="' + _svNovo + '"] .di-sv-in');
+  if (_svIn) { try { _svIn.focus(); } catch (_) {} }
 }
 
 // ── Drag & drop dieta ──
