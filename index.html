@@ -3847,6 +3847,15 @@
   .di-head-sv.on { color: #E3BE6B; border-color: #E3BE6B; }
   .di-ref-novas, .di-su-novas { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
   .di-ref-novas .di-add-btn, .di-su-novas .di-add-btn { margin: 0; }
+  /* v665: trilha do médico */
+  .me-mo .me-mo-txt { display: block; width: 100%; box-sizing: border-box; min-height: 230px; max-height: 46vh; background: #161616; color: #eee; border: 1px solid #3a3a3a; border-radius: 9px; padding: 10px; margin: 0 0 10px; font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; resize: vertical; -webkit-text-size-adjust: 100%; }
+  .me-mo .me-mo-txt:focus { outline: none; border-color: var(--gold); }
+  .me-mo .me-mo-erro { border-color: #8a3b3b; }
+  .me-mo .te-conf-pe { flex-wrap: wrap; }
+  .me-mo .te-conf-pe button { flex: 1 1 30%; }
+  html[data-theme="light"] .me-mo .me-mo-txt { background: #fff; color: #141414; border-color: rgba(0, 0, 0, 0.22); }
+  html[data-theme="light"] .me-mo .me-mo-erro { border-color: #b3261e; }
+  @media (pointer: coarse) { .me-mo .me-mo-txt { font-size: 16px; } }
   .rs-painel .te-conf-cx { max-width: 560px; }
   .rs-painel .te-fi-busca { margin: 2px 0 8px; }
   .rs-it { display: flex; align-items: stretch; gap: 6px; margin: 0 0 6px; }
@@ -18741,6 +18750,13 @@ function _buildDietaPrintHTML() {
     if (rows) html += `<div class="pa-day"><h2 class="pa-day-title">Suplementação</h2><table>${rows}</table></div>`;
   }
 
+  // v665: prescrição médica (seção med), tabela própria no PDF
+  if (d.med && d.med.length) {
+    let rows = '';
+    d.med.forEach(s => { rows += `<tr><td class="pa-ex">${esc(s.nome)}</td><td>${esc(s.dose)}${s.obs ? ' · ' + esc(s.obs) : ''}</td></tr>`; });
+    html += `<div class="pa-day"><h2 class="pa-day-title">Prescrição médica</h2><table>${rows}</table></div>`;
+  }
+
   // Cardio saiu do PDF da DIETA (GH 26/08: cardio é treino) — agora vai no PDF do treino.
   const isCardioCat = c => /a[eé]r[oó]bic|cardio/i.test(String(c || ''));
 
@@ -25539,6 +25555,7 @@ function parseDietData(rows) {
     macroPorque: '',     // texto do "Por que esses macros"
     regras: [],
     supls: {},
+    med: [],             // v665: prescrição médica (seção med), separada da suplementação
     ciclos: [],
     orientacoes: [],
     receitas: [],        // linhas `dica` "Receita N · nome" (§8.B.6) — seção própria (GH 2026-07-05)
@@ -25610,6 +25627,11 @@ function parseDietData(rows) {
       case 'regra':
         data.regras.push({ nome: r[1] || '', valor: r[2] || '', detalhe: r[3] || '' });
         break;
+      case 'med': {   // v665: prescrição médica
+        const _mn = (r[1] || '').trim();
+        if (_mn) data.med.push({ nome: _mn, dose: (r[2] || '').trim(), obs: (r[3] || '').trim() });
+        break;
+      }
       case 'supl': {
         const nome = (r[1] || '').trim();
         const dose = (r[2] || '').trim();
@@ -27182,6 +27204,19 @@ function renderDiet() {
   }
 
   // Ciclos — com 2+ ciclos, vira TOGGLE no topo (Alto / Baixo carbo)
+  // v665: prescrição médica (seção med da dieta), card próprio logo depois da suplementação
+  if (d.med && d.med.length > 0) {
+    html += `<div class="diet-section-toggle" onclick="toggleDietSection('med')"><span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/></svg></span><span class="tog-label">Prescrição médica</span><span class="tog-chev" id="medArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></div>`;
+    html += `<div class="diet-section-content" id="medContent">`;
+    html += `<div style="color:#8d8579;font-size:11.5px;line-height:1.5;margin:0 0 10px;">O que o médico prescreveu pra ti: o que tomar, dose e horário. Fica separado da tua suplementação.</div>`;
+    html += `<div class="diet-supl-group">`;
+    d.med.forEach(s => {
+      const obs = s.obs ? `<span class="diet-supl-obs" style="display:block;font-size:11px;opacity:0.7;margin-top:2px;">${_dx(s.obs)}</span>` : '';
+      html += `<div class="diet-supl-item"><span class="diet-supl-name">${_dx(s.nome)}${obs}</span><span class="diet-supl-dose">${_dx(s.dose)}</span></div>`;
+    });
+    html += `</div></div>`;
+  }
+
   const multiCiclo = d.ciclos.length > 1;
   if (multiCiclo) {
     html += `<div class="diet-cycle-tabs" id="cycleTabs">`;
@@ -29581,7 +29616,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v664';
+    var APP_SHELL_V = 'metodo-gh-v665';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
@@ -31378,7 +31413,7 @@ function _diMoTroca(rows, novas) {
     if (s === 'ref') { dentro = true; if (pos < 0) pos = fica.length; return; }
     if (dentro && (s === '' || s === 'alimento' || s === 'food' || s === 'op' || s === 'obs' || s === 'nota')) return;
     dentro = false; fica.push(r); });
-  if (pos < 0) { pos = Math.min(1, fica.length); fica.forEach((r, i) => { if (['info', 'meta', 'aluno', 'regra', 'supl'].indexOf(sec(r)) >= 0) pos = i + 1; }); }
+  if (pos < 0) { pos = Math.min(1, fica.length); fica.forEach((r, i) => { if (['info', 'meta', 'aluno', 'regra', 'supl', 'med'].indexOf(sec(r)) >= 0) pos = i + 1; }); }
   fica.splice.apply(fica, [pos, 0].concat(novas)); return fica;
 }
 function _diMoMeta(rows) {   // linha "Macros do dia" com o total que ficou
@@ -33208,6 +33243,368 @@ function suMoMonta() {
   _suMoDesenha();
 }
 
+// v665: regras do médico (leitura, conferência com a anamnese e escrita do bloco med)
+// Trilha do médico (plano B, sem IA): lê as regras escritas no formato "Se / E / Então / Menos se", confere com a anamnese do
+// aluno e escreve o bloco "Prescrição médica" da dieta (seção med), separado da suplementação. Hormônio e peptídeo não entram
+// por regra: a linha é recusada na leitura e fica pra ser escrita à mão no editor.
+const GHME = (() => {
+  const nrm = s => String(s == null ? '' : s).replace(/<[^>]*>/g, ' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').replace(/ ([,.;:!?])/g, '$1').trim();
+  const limpa = s => String(s == null ? '' : s).replace(/<[^>]*>/g, ' ').replace(/\s*[\u2014\u2013]\s*/g, ', ').replace(/\s+/g, ' ').replace(/ ([,.;:!?])/g, '$1').trim();
+  const semPonto = s => nrm(s).replace(/[.!?;:,]+$/, '').trim();
+  const esc = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // nomes que a regra não pode prescrever (só o nome, pra recusar)
+  const FORA = new RegExp('(^|[^a-z0-9])(' + ['testosterona', 'enantato', 'cipionato', 'propionato', 'undecilato', 'undecanoato', 'durateston', 'deposteron', 'nebido', 'androgel', 'oxandrolona', 'anavar', 'stanozolol', 'estanozolol', 'winstrol', 'trembolona', 'nandrolona', 'deca', 'npp', 'boldenona', 'masteron', 'drostanolona', 'primobolan', 'metenolona', 'dianabol', 'metandrostenolona', 'hemogenin', 'oximetolona', 'turinabol', 'halotestin', 'proviron', 'mesterolona', 'gh', 'hgh', 'somatropina', 'hcg', 'gonadotrofina', 'clomifeno', 'clomid', 'tamoxifeno', 'anastrozol', 'letrozol', 'exemestano', 'cabergolina', 'estradiol', 'estrogenio', 'progesterona', 'gestrinona', 'dhea', 'pregnenolona', 'levotiroxina', 'liotironina', 't3', 't4', 'insulina', 'clembuterol', 'anabolizante', 'esteroide', 'sarm', 'sarms', 'ostarine', 'ligandrol', 'cardarine', 'implante hormonal', 'chip hormonal', 'hormonio', 'peptideo', 'peptideos', 'semaglutida', 'ozempic', 'wegovy', 'rybelsus', 'tirzepatida', 'mounjaro', 'retatrutida', 'liraglutida', 'saxenda', 'victoza', 'dulaglutida', 'bpc', 'bpc-157', 'tb-500', 'tb500', 'ipamorelin', 'ipamorelina', 'cjc', 'cjc-1295', 'tesamorelina', 'tesamorelin', 'sermorelina', 'sermorelin', 'mots-c', 'motsc', 'aod', 'aod-9604', 'melanotan', 'pt-141', 'ghk', 'ghk-cu', 'epitalon', 'selank', 'semax', 'kisspeptina', 'hexarelin', 'ghrp', 'mk-677', 'mk677', 'igf', 'igf-1'].map(esc).join('|') + ')([^a-z0-9]|$)');
+  const ehFora = nome => FORA.test(nrm(nome));
+  const num = t => { const m = /-?\d+(?:[.,]\d+)?/.exec(String(t == null ? '' : t)); return m ? parseFloat(m[0].replace(',', '.')) : null; };
+  const aspas = t => String(t).replace(/[\u201c\u201d\u201e\u00ab\u00bb]/g, '"').replace(/[\u2018\u2019]/g, "'");
+
+  // ── leitura do arquivo de regras ──
+  function valores(txt) {
+    const t = String(txt).trim();
+    if (/"/.test(t)) {
+      const vs = [], re = /"([^"]*)"/g; let m, resto = t;
+      while ((m = re.exec(t))) vs.push(m[1].trim());
+      resto = t.replace(/"[^"]*"/g, ' ').replace(/\s+/g, ' ').trim();
+      if (/(^|\s)e(\s|$)/i.test(resto)) return { erro: 'pra exigir dois valores ao mesmo tempo, usa uma linha "E:" pra cada um (aqui só vale "ou")' };
+      if (resto.replace(/\b(ou)\b|,/gi, '').trim()) return { erro: 'texto fora das aspas: ' + resto };
+      if (!vs.length || vs.some(v => !v)) return { erro: 'valor vazio' };
+      return { vs };
+    }
+    const v = t.replace(/[.;]+$/, '').trim();
+    return v ? { vs: [v] } : { erro: 'falta o valor' };
+  }
+  function condicao(txtBruto) {
+    const txt = aspas(txtBruto).replace(/\s{2,}\([^()]*\)\s*$/, '').trim();
+    const m = /^(pergunta|reajuste)\s+(?:"([^"]+)"|(\d+(?:\.\d+)*))\s*[.:]?\s+(.+)$/i.exec(txt);
+    if (!m) return { erro: 'começa com "pergunta 58.1 ..." ou "reajuste 12 ...", ou com o trecho do enunciado entre aspas' };
+    const c = { fonte: m[1].toLowerCase() === 'reajuste' ? 'rea' : 'ini', num: m[3] || '', trecho: (m[2] || '').trim(), txt };
+    const r = m[4].trim();
+    let x;
+    if (/^n[aã]o\s+respondeu\b/i.test(r)) c.op = 'vazio';
+    else if (/^respondeu\b/i.test(r)) c.op = 'tem';
+    else if ((x = /^(?:[eé]\s+)?entre\s+(-?\d+(?:[.,]\d+)?)\s+e\s+(-?\d+(?:[.,]\d+)?)\b/i.exec(r))) { c.op = 'entre'; c.a = num(x[1]); c.b = num(x[2]); if (c.a > c.b) { const t = c.a; c.a = c.b; c.b = t; } }
+    else if ((x = /^(?:[eé]\s+)?(maior|menor)(\s+ou\s+igual)?\s+(?:do\s+que|que|a)\s+(-?\d+(?:[.,]\d+)?)\b/i.exec(r))) { c.op = x[1].toLowerCase() + (x[2] ? 'ig' : ''); c.a = num(x[3]); }
+    else if ((x = /^n[aã]o\s+cont[eé]m\s+(.+)$/i.exec(r))) { c.op = 'ncontem'; c.v = x[1]; }
+    else if ((x = /^cont[eé]m\s+(.+)$/i.exec(r))) { c.op = 'contem'; c.v = x[1]; }
+    else if ((x = /^n[aã]o\s+[eé]\s+(.+)$/i.exec(r))) { c.op = 'nao_e'; c.v = x[1]; }
+    else if ((x = /^[eé]\s+(.+)$/i.exec(r))) { c.op = 'e'; c.v = x[1]; }
+    else return { erro: 'condição que o montador não entende: "' + r + '". Vale: é, não é, contém, não contém, maior que, menor que, entre X e Y, respondeu, não respondeu' };
+    if ('v' in c) { const v = valores(c.v); if (v.erro) return { erro: v.erro }; c.vs = v.vs; delete c.v; }
+    return { c };
+  }
+  function le(texto) {
+    const regras = [], erros = [], avisos = [];
+    const linhas = String(texto == null ? '' : texto).replace(/\r/g, '').split('\n');
+    let cur = null, cerca = false, naCerca = 0;
+    const fecha = () => {
+      if (!cur) return;
+      if (!cur.se.length && !cur.entao.length && !cur.menos.length && !cur.ruim) { cur = null; return; }   // título sem regra embaixo: é só texto
+      if (!cur.ruim) {   // regra que já tem linha errada não ganha um segundo aviso por causa dela
+        if (!cur.se.length) { erros.push({ linha: cur.linha, regra: cur.nome, txt: 'falta a linha "Se:"' }); cur.ruim = true; }
+        if (!cur.entao.length) { erros.push({ linha: cur.linha, regra: cur.nome, txt: 'falta a linha "Então:"' }); cur.ruim = true; }
+      }
+      if (!cur.ruim) { if (regras.some(r => nrm(r.nome) === nrm(cur.nome))) avisos.push('Duas regras com o mesmo nome: ' + cur.nome + '. As duas valem, mas fica difícil saber qual entrou.'); regras.push({ nome: cur.nome, linha: cur.linha, se: cur.se, menos: cur.menos, entao: cur.entao }); }
+      cur = null;
+    };
+    linhas.forEach((bruta, i) => {
+      const n = i + 1, l = bruta.trim();
+      if (/^(```|~~~)/.test(l)) { cerca = !cerca; return; }
+      if (cerca) { if (l) naCerca++; return; }
+      let m;
+      if ((m = /^#{3,6}\s+(.+?)\s*#*$/.exec(l))) { fecha(); cur = { nome: limpa(m[1]).slice(0, 80), linha: n, se: [], menos: [], entao: [], ruim: false }; return; }
+      if (/^#{1,2}\s/.test(l)) { fecha(); return; }
+      m = /^(?:[-*\u2022]\s*)?(se|e|ent[aã]o|menos\s+se|exceto\s+se)\s*:\s*(.*)$/i.exec(l);
+      if (!m) { if (cur && /^[-*\u2022]\s+\S/.test(l)) { erros.push({ linha: n, regra: cur.nome, txt: 'linha que o montador não entende. Vale "Se:", "E:", "Então:" e "Menos se:"' }); cur.ruim = true; } return; }
+      if (!cur) { erros.push({ linha: n, regra: '', txt: 'linha de regra sem o título antes (### Nome da regra)' }); return; }
+      const tipo = nrm(m[1]).replace(/\s+/g, ' '), resto = m[2].trim();
+      if (tipo === 'entao') {
+        const ps = resto.replace(/\s{2,}\([^()]*\)\s*$/, '').split('|').map(limpa);
+        if (ps.length !== 3 || !ps[0] || !ps[1] || !ps[2]) { erros.push({ linha: n, regra: cur.nome, txt: 'o "Então:" pede três partes separadas por barra: nome | dose | horário e observação' }); cur.ruim = true; return; }
+        if (ehFora(ps[0])) { erros.push({ linha: n, regra: cur.nome, txt: 'hormônio e peptídeo não entram por regra: essa linha é escrita à mão no editor. Tira ela daqui', fora: true }); cur.ruim = true; return; }
+        if (ps[0].length > 120 || ps[1].length > 60 || ps[2].length > 300) { erros.push({ linha: n, regra: cur.nome, txt: 'linha comprida demais (nome até 120, dose até 60, horário e observação até 300 letras)' }); cur.ruim = true; return; }
+        if (cur.entao.some(x => nrm(x[0]) === nrm(ps[0]))) { erros.push({ linha: n, regra: cur.nome, txt: 'a mesma regra manda "' + ps[0] + '" duas vezes' }); cur.ruim = true; return; }
+        cur.entao.push(ps);
+      } else {
+        const r = condicao(resto);
+        if (r.erro) { erros.push({ linha: n, regra: cur.nome, txt: r.erro }); cur.ruim = true; return; }
+        r.c.linha = n;
+        (tipo === 'se' || tipo === 'e' ? cur.se : cur.menos).push(r.c);
+      }
+    });
+    fecha();
+    if (naCerca) avisos.push('Tem ' + naCerca + (naCerca === 1 ? ' linha' : ' linhas') + ' dentro de cerca de código (```): o montador trata como exemplo e não lê.');
+    return { regras, erros, avisos };
+  }
+
+  // ── conferência com a anamnese ──
+  const rotulo = c => (c.fonte === 'rea' ? 'a pergunta do reajuste ' : 'a pergunta ') + (c.num || '"' + c.trecho + '"');
+  function acha(c, fichas) {
+    const lista = fichas && fichas[c.fonte];
+    if (!Array.isArray(lista)) return { falta: c.fonte === 'rea' ? 'ele não tem anamnese de reajuste' : 'ele não tem anamnese inicial' };
+    let ach;
+    if (c.num) { const re = new RegExp('^\\s*' + esc(c.num) + '(?!\\d)(?!\\.\\d)'); ach = lista.filter(y => re.test(String((y && y.p) || '').replace(/<[^>]*>/g, ''))); }
+    else { const t = nrm(c.trecho); ach = lista.filter(y => nrm(y && y.p).indexOf(t) >= 0); }
+    if (!ach.length) return { falta: rotulo(c) + ' não está na anamnese dele' };
+    const rs = ach.map(y => limpa(y.r));
+    if (ach.length > 1 && rs.some(r => nrm(r) !== nrm(rs[0]))) return { falta: rotulo(c) + ' aparece ' + ach.length + ' vezes na anamnese: troca na regra pelo trecho do enunciado entre aspas' };
+    return { r: rs[0] };
+  }
+  const contem = (resp, v) => new RegExp('(^|[^a-z0-9])' + esc(nrm(v))).test(nrm(resp));
+  // devolve true, false ou null (não deu pra conferir); em "menos se" a pergunta em branco barra na negação
+  function avalia(c, fichas, excecao) {
+    const a = acha(c, fichas);
+    if (a.falta) return { v: null, por: a.falta };
+    const r = a.r, vazia = !nrm(r);
+    if (c.op === 'tem') return { v: !vazia, r };
+    if (c.op === 'vazio') return { v: vazia, r };
+    if (vazia) return { v: !!excecao && (c.op === 'nao_e' || c.op === 'ncontem'), r, vazia: true };
+    if (c.op === 'e') return { v: c.vs.some(v => semPonto(r) === semPonto(v)), r };
+    if (c.op === 'nao_e') return { v: !c.vs.some(v => semPonto(r) === semPonto(v)), r };
+    if (c.op === 'contem') return { v: c.vs.some(v => contem(r, v)), r };
+    if (c.op === 'ncontem') return { v: !c.vs.some(v => contem(r, v)), r };
+    const x = num(r);
+    if (x == null) return { v: null, por: rotulo(c) + ' veio sem número ("' + r.slice(0, 60) + '")', r };
+    if (c.op === 'maior') return { v: x > c.a, r };
+    if (c.op === 'maiorig') return { v: x >= c.a, r };
+    if (c.op === 'menor') return { v: x < c.a, r };
+    if (c.op === 'menorig') return { v: x <= c.a, r };
+    if (c.op === 'entre') return { v: x >= c.a && x <= c.b, r };
+    return { v: null, por: 'condição desconhecida' };
+  }
+  function aplica(regras, fichas) {
+    const porRegra = [], cand = [];
+    (regras || []).forEach(rg => {
+      const se = rg.se.map(c => avalia(c, fichas, false));
+      if (se.some(x => x.v === false)) { porRegra.push({ nome: rg.nome, estado: 'nao' }); return; }
+      const inc = se.find(x => x.v === null);
+      if (inc) { porRegra.push({ nome: rg.nome, estado: 'incerta', por: inc.por }); return; }
+      const me = rg.menos.map(c => ({ c, x: avalia(c, fichas, true) }));
+      const barra = me.find(y => y.x.v === true);
+      if (barra) { porRegra.push({ nome: rg.nome, estado: 'barrada', por: 'Menos se: ' + barra.c.txt + (barra.x.vazia ? ' (ele deixou em branco)' : ' (ele respondeu "' + String(barra.x.r).slice(0, 80) + '")') }); return; }
+      const mi = me.find(y => y.x.v === null);
+      if (mi) { porRegra.push({ nome: rg.nome, estado: 'excecao', por: mi.x.por }); return; }
+      porRegra.push({ nome: rg.nome, estado: 'entrou', linhas: rg.entao.map(x => x.slice()) });
+      rg.entao.forEach(x => cand.push({ regra: rg.nome, l: x.slice() }));
+    });
+    // a mesma linha pedida por duas regras entra uma vez; o mesmo nome com dose ou horário diferente não entra
+    const grupos = new Map(); cand.forEach(x => { const k = nrm(x.l[0]); if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(x); });
+    const linhas = [], conflitos = [];
+    grupos.forEach((g, k) => {
+      const dif = g.filter((x, i) => g.findIndex(y => nrm(y.l[1]) === nrm(x.l[1]) && nrm(y.l[2]) === nrm(x.l[2])) === i);
+      if (dif.length > 1) conflitos.push({ chave: k, nome: g[0].l[0], txt: 'Duas regras pedem ' + g[0].l[0] + ' de jeitos diferentes (' + dif.map(x => x.regra + ': ' + x.l[1] + ', ' + x.l[2]).join('; ') + '). Nenhuma entrou: escreve a certa na mão.' });
+      else linhas.push(g[0].l);
+    });
+    return { linhas, porRegra, conflitos };
+  }
+
+  // ── escrita do bloco na dieta ──
+  const sec = r => String((r || [])[0] == null ? '' : (r || [])[0]).toLowerCase().trim();
+  function poe(atual, regras, res) {
+    const rows = (atual || []).map(r => { const x = (r || []).slice(0, 4).map(v => (v == null ? '' : String(v))); while (x.length < 4) x.push(''); return x; });
+    const entrou = [], saiu = [], mudou = [], ficou = [], notas = [];
+    const novas = new Map(); res.linhas.forEach(l => novas.set(nrm(l[0]), l));
+    const estadoDe = new Map();   // nome da linha -> estados das regras que mandam ela
+    (regras || []).forEach(rg => { const e = (res.porRegra.find(p => p.nome === rg.nome) || {}).estado || 'nao'; rg.entao.forEach(x => { const k = nrm(x[0]); if (!estadoDe.has(k)) estadoDe.set(k, []); estadoDe.get(k).push(e); }); });
+    const conf = new Set(res.conflitos.map(c => c.chave));
+    const usadas = new Set(), saida = [];
+    rows.forEach(r => {
+      if (sec(r) !== 'med') { saida.push(r); return; }
+      const k = nrm(r[1]);
+      if (!k) return;   // linha vazia do bloco sai
+      if (usadas.has(k)) { saiu.push(r[1] + ' (estava repetida)'); return; }
+      if (novas.has(k)) {
+        const l = novas.get(k); usadas.add(k);
+        if (r[1] === l[0] && r[2] === l[1] && r[3] === l[2]) { ficou.push(r[1]); saida.push(r); }
+        else { mudou.push(l[0] + ': ' + l[1] + ', ' + l[2].charAt(0).toLowerCase() + l[2].slice(1)); saida.push(['med', l[0], l[1], l[2]]); }
+        return;
+      }
+      const es = estadoDe.get(k);
+      if (!es || conf.has(k)) { saida.push(r); return; }   // escrita à mão, ou em conflito: fica como está
+      if (es.some(e => e === 'incerta' || e === 'excecao')) { notas.push(r[1] + ' já estava no bloco e ficou como estava: não deu pra conferir a regra dela.'); saida.push(r); return; }
+      saiu.push(r[1] + (es.indexOf('barrada') >= 0 ? ' (a exceção da regra vale pra ele)' : ' (a regra não vale mais pra ele)'));
+    });
+    const faltam = res.linhas.filter(l => !usadas.has(nrm(l[0])));
+    if (faltam.length) {
+      let pos = -1;
+      saida.forEach((x, i) => { if (sec(x) === 'med') pos = i + 1; });
+      if (pos < 0) saida.forEach((x, i) => { if (sec(x) === 'supl') pos = i + 1; });
+      if (pos < 0) { pos = Math.min(1, saida.length); saida.forEach((x, i) => { if (['info', 'meta', 'aluno', 'regra'].indexOf(sec(x)) >= 0) pos = i + 1; }); }
+      faltam.forEach((l, n) => { saida.splice(pos + n, 0, ['med', l[0], l[1], l[2]]); entrou.push(l[0] + ' ' + l[1]); });
+    }
+    return { rows: saida, entrou, saiu, mudou, ficou, notas, total: saida.filter(r => sec(r) === 'med').length };
+  }
+  return { le, aplica, poe, ehFora, nrm, limpa };
+})();
+
+// ── v665 (GH 17/11, plano B): TRILHA DO MÉDICO, dentro do editor da dieta ──
+// As regras do médico ficam no depósito do editor (chave regras_medico, valor { txt, em }): o texto é o regras-medico.md no
+// formato "Se / E / Então / Menos se". O botão confere as respostas da anamnese do aluno com cada regra e escreve o bloco
+// "Prescrição médica" (seção med), separado da suplementação. Sem IA. Hormônio e peptídeo não entram por regra.
+// As respostas ficam só na memória da página; nada delas vai pro aparelho.
+const _ME_CHAVE = 'regras_medico';
+let _meMo = { car: false, erro: '', senha: false, j: null, txt: '', em: '', lido: false, lidoEm: 0, edita: false, rasc: null, conf: null, salvando: false, apaga: false, msg: '', pronto: null };
+function _meMoFichas(j) {
+  const fs = (j && j.fichas) || [], ini = fs.find(x => x && x.fonte === 'inicial'), rea = fs.find(x => x && x.fonte === 'reajuste');
+  const le = f => f ? (f.respostas || []).map(y => ({ p: String((y && y.p) || ''), r: _trMoLimpa(y && y.r) })) : null;
+  return { ini: le(ini), rea: le(rea) };
+}
+async function _meMoLeRegras(fresh) {
+  if (!fresh && _meMo.lido && Date.now() - _meMo.lidoEm < 60000) return true;
+  const tok = localStorage.getItem('gh_trainer_token') || ''; if (!tok) { _meMo.senha = true; return false; }
+  try {
+    const r = await fetch(TRAINER_APPS_SCRIPT + '?action=editor_dados&chave=' + _ME_CHAVE + '&token=' + encodeURIComponent(tok) + '&_=' + Date.now(), { cache: 'no-store' });
+    const j = await r.json();
+    if (j && j.ok && j.dados && _ME_CHAVE in j.dados) { const v = j.dados[_ME_CHAVE]; _meMo.txt = v && typeof v.txt === 'string' ? v.txt : ''; _meMo.em = v && v.em ? String(v.em) : ''; _meMo.lido = true; _meMo.lidoEm = Date.now(); return true; }
+    if (j && /unauthorized/i.test(String(j.error || ''))) _meMo.senha = true;
+  } catch (_) {}
+  return false;
+}
+async function _meMoCarrega(fresh) {
+  const sid = String(trainerSheetId || ''); if (!sid) return;
+  _meMo.car = true; _meMo.erro = ''; _meMo.senha = false; _meMoDesenha();
+  let okR = false;
+  try { const rs = await Promise.all([_meMoLeRegras(!!fresh), (_teFi.cache.get(sid) && !fresh) ? null : _teFichaCarrega(!!fresh).catch(() => null)]); okR = !!rs[0]; } catch (_) {}
+  if (String(trainerSheetId || '') !== sid) return;
+  _meMo.car = false;
+  const j = _teFi.cache.get(sid) || null; _meMo.j = j;
+  if (!okR) _meMo.erro = _meMo.senha ? 'Precisa da senha do treinador pra ler as regras do médico.' : 'As regras do médico não vieram agora. Tenta de novo.';
+  else if (!j) { _meMo.erro = (_teFi.st && _teFi.st.erro) || 'A ficha não veio agora. Tenta de novo.'; _meMo.senha = !!(_teFi.st && _teFi.st.senha); }
+  if (okR && j && !String(_meMo.txt || '').trim()) { _meMo.edita = true; _meMo.rasc = ''; }
+  _meMoDesenha();
+}
+function meMoSenha() { if (_trainerToken_(true)) _meMoCarrega(true); }
+function meMoAbre() {
+  if (!trainerSheetId || !Array.isArray(dietaData)) return;
+  _meMo.pronto = null; _meMo.edita = false; _meMo.rasc = null; _meMo.conf = null; _meMo.msg = ''; _meMo.apaga = false; _meMo.erro = '';
+  _meMo.j = _teFi.cache.get(String(trainerSheetId)) || null;
+  _meMoDesenha(); _meMoCarrega(false);
+}
+function meMoFecha(tudo) { const o = document.getElementById('meMo'); if (o) o.hidden = true; _meMo.pronto = null; if (tudo) { _meMo.j = null; _meMo.edita = false; _meMo.rasc = null; _meMo.conf = null; _meMo.erro = ''; _meMo.car = false; _meMo.msg = ''; _meMo.apaga = false; } }
+function _meMoQuatro() { return dietaData.map(x => { const y = (x || []).slice(0, 4).map(z => (z == null ? '' : String(z))); while (y.length < 4) y.push(''); return y; }); }
+function _meMoConta() {
+  const l = GHME.le(_meMo.txt || ''), res = GHME.aplica(l.regras, _meMoFichas(_meMo.j)), p = GHME.poe(_meMoQuatro(), l.regras, res);
+  return { l, res, p };
+}
+function _meMoData(iso) { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; }
+function meMoEdita(sim) { _meMo.edita = !!sim; _meMo.rasc = sim ? String(_meMo.txt || '') : null; _meMo.conf = null; _meMo.msg = ''; _meMo.apaga = false; _meMoDesenha(); }
+function meMoConfere() { _meMo.conf = GHME.le(_meMo.rasc || ''); _meMo.msg = ''; _meMo.apaga = false; _meMoDesenha(); }
+async function meMoGuarda() {
+  if (_meMo.salvando) return;
+  const txt = String(_meMo.rasc == null ? '' : _meMo.rasc).replace(/\r/g, '');
+  if (txt.length > 200000) { _meMo.msg = 'O texto passou de 200 mil letras. Divide ou enxuga antes de guardar.'; _meMoDesenha(); return; }
+  const l = GHME.le(txt); _meMo.conf = l;
+  if (l.erros.length) { _meMo.msg = 'Tem linha com erro: arruma antes de guardar.'; _meMoDesenha(); return; }
+  const vazio = !txt.trim();
+  if (vazio && String(_meMo.txt || '').trim() && !_meMo.apaga) { _meMo.apaga = true; _meMo.msg = 'O texto está vazio: guardar assim apaga as regras do médico. Toca de novo pra confirmar.'; _meMoDesenha(); return; }
+  if (!vazio && !l.regras.length) { _meMo.msg = 'Não achei nenhuma regra no texto. Cada regra começa com "### Nome" e tem as linhas "Se:" e "Então:".'; _meMoDesenha(); return; }
+  _meMo.salvando = true; _meMo.msg = ''; _meMoDesenha();
+  const em = new Date().toISOString();
+  let r = null; try { r = await _publicaAba_(TRAINER_APPS_SCRIPT, vazio ? { type: 'editor_dados', chave: _ME_CHAVE, op: 'apaga' } : { type: 'editor_dados', chave: _ME_CHAVE, op: 'grava', valor: { txt, em } }); } catch (_) { r = null; }
+  _meMo.salvando = false; _meMo.apaga = false;
+  if (!r || !r.j || !r.j.ok) { _meMo.msg = 'Não guardou agora (sem internet, ou a senha não bateu). O texto continua aqui: tenta de novo.'; _meMoDesenha(); return; }
+  _meMo.txt = vazio ? '' : txt; _meMo.em = vazio ? '' : em; _meMo.lido = true; _meMo.lidoEm = Date.now();
+  if (vazio) { _meMo.rasc = ''; _meMo.conf = null; _meMo.msg = 'Regras apagadas.'; _meMoDesenha(); return; }
+  _meMo.edita = false; _meMo.rasc = null; _meMo.conf = null; _meMo.msg = l.regras.length + (l.regras.length === 1 ? ' regra guardada.' : ' regras guardadas.');
+  _meMoDesenha();
+}
+function meMoMonta() {
+  if (!Array.isArray(dietaData) || !_meMo.j) return;
+  let c; try { c = _meMoConta(); } catch (_) { c = null; }
+  if (!c) { _meMo.pronto = { ok: false, tit: 'Não escreveu', res: 'Não consegui conferir as regras. Escreve a prescrição na mão pelo editor.', dias: [], notas: [] }; _meMoDesenha(); _meMo.pronto = null; return; }
+  const antes = dietaData.map(x => (x || []).slice()), p = c.p;
+  // linha que não mudou volta inteira, com as colunas que já tinha
+  const orig = new Map(); antes.forEach(x => { if (String((x || [])[0] || '').toLowerCase().trim() === 'med') { const y = x.slice(0, 4).map(z => (z == null ? '' : String(z))); while (y.length < 4) y.push(''); orig.set(y.join('\u0001'), x); } });
+  let k = 0; const novas = p.rows.map(x => { if (String(x[0] || '').toLowerCase().trim() !== 'med') { while (k < antes.length && String((antes[k] || [])[0] || '').toLowerCase().trim() === 'med') k++; const y = antes[k++]; return y ? y.slice() : x; } const o = orig.get(x.slice(0, 4).join('\u0001')); return o ? o.slice() : x.slice(0, 4); });
+  _diMoPoe(novas);
+  DIETA_OPEN_BLOCKS.add('med');
+  if (typeof currentEditMode !== 'undefined' && currentEditMode !== 'dieta') switchEditMode('dieta'); else renderCurrentEditor();
+  const lista = ns => ns.length > 1 ? ns.slice(0, -1).join(', ') + ' e ' + ns[ns.length - 1] : (ns[0] || '');
+  const dias = [];
+  if (p.entrou.length) dias.push('Entrou: ' + lista(p.entrou));
+  if (p.saiu.length) dias.push('Saiu: ' + lista(p.saiu));
+  p.mudou.forEach(t => dias.push('Mudou: ' + t));
+  if (!p.entrou.length && !p.saiu.length && !p.mudou.length) dias.push('O bloco já estava como as regras pedem: nada mudou.');
+  _meMo.pronto = { ok: true, tit: 'Prescrição médica escrita', res: p.total + (p.total === 1 ? ' linha' : ' linhas') + ' no bloco da prescrição médica. Lê cada uma, confere com o médico se for o caso e salva a aba.', dias, notas: p.notas.concat(c.res.conflitos.map(x => x.txt)) };
+  _meMoDesenha();
+}
+function meMoLinha() {
+  if (!Array.isArray(dietaData)) return;
+  teSnapshot();
+  const sec = i => String((dietaData[i] || [])[0] || '').toLowerCase().trim();
+  let pos = -1;
+  for (let i = 0; i < dietaData.length; i++) if (sec(i) === 'med') pos = i;
+  if (pos < 0) for (let i = 0; i < dietaData.length; i++) if (sec(i) === 'supl') pos = i;
+  if (pos < 0) { pos = 0; for (let i = 0; i < dietaData.length; i++) if (['info', 'meta', 'aluno', 'regra'].indexOf(sec(i)) >= 0) pos = i; }
+  const novo = dietaData.length ? dietaInsertAfter(pos, ['med', '', '', '']) : (dietaData.push(['med', '', '', '']), 0);
+  DIETA_OPEN_BLOCKS.add('med'); meMoFecha();
+  renderDietaEditor();
+  const inp = document.querySelector('.di-row[data-idx="' + novo + '"] input'); if (inp) { try { inp.scrollIntoView({ block: 'center' }); inp.focus({ preventScroll: true }); } catch (_) {} }
+}
+function renderDietaMedRow(it) {
+  const r = dietaData[it.idx], i = it.idx;
+  return '<div class="di-row me-row" data-idx="' + i + '">' +
+    '<span class="te-drag-handle" draggable="true" ondragstart="diDragStart(' + i + ', event)" ondragend="diDragEnd()" ondragover="diDragOver(event)" ondrop="diDrop(' + i + ', event)"><i class="te-dots">⋮⋮</i><span class="te-mv"><button type="button" class="te-mv-b" onclick="event.stopPropagation();diMove(' + i + ',-1)" aria-label="Subir" title="Subir">▲</button><button type="button" class="te-mv-b" onclick="event.stopPropagation();diMove(' + i + ',1)" aria-label="Descer" title="Descer">▼</button></span></span>' +
+    '<input type="text" class="me-in" value="' + escTrainer(r[1]) + '" oninput="dietaData[' + i + '][1]=this.value" autocomplete="off" placeholder="O que o médico prescreveu">' +
+    '<input type="text" value="' + escTrainer(r[2]) + '" oninput="dietaData[' + i + '][2]=this.value" autocomplete="off" placeholder="Dose">' +
+    '<input type="text" value="' + escTrainer(r[3]) + '" oninput="dietaData[' + i + '][3]=this.value" autocomplete="off" placeholder="Horário e observação">' +
+    '<button class="te-trash" onclick="dietaRemove(' + i + ')" title="Remover">🗑</button></div>';
+}
+function _meMoDesenha() {
+  let o = document.getElementById('meMo');
+  if (!o) { o = document.createElement('div'); o.id = 'meMo'; o.className = 'te-conf di-mo tr-mo me-mo'; o.hidden = true; o.addEventListener('click', ev => { if (ev.target === o) meMoFecha(); }); (document.getElementById('trainerEditor') || document.body).appendChild(o); }
+  const e = escTrainer, nome = String(typeof trainerStudentNameHint === 'string' && trainerStudentNameHint ? trainerStudentNameHint : ((_meMo.j && _meMo.j.nome) || ''));
+  const pe = bts => '<div class="te-conf-pe">' + bts + '</div>';
+  let h = '<div class="te-conf-cx" role="dialog" aria-label="Prescrição médica">';
+  if (_meMo.pronto) {
+    const r = _meMo.pronto;
+    h += '<div class="te-conf-tit">' + e(r.tit) + '</div><div class="te-conf-sub">' + e(nome) + '</div><div class="te-conf-lista"><div class="te-ent-res">' + e(r.res) + '</div>' + (r.dias || []).map(t => '<div class="tr-mo-dia">' + e(t) + '</div>').join('') + (r.notas || []).map(t => '<div class="te-ent-linha">' + e(t) + '</div>').join('') +
+      (r.ok ? '<div class="di-mo-dica">Não gostou? O botão de desfazer do editor volta a dieta como estava.</div>' : '') + '</div>' + pe('<button type="button" class="te-conf-salva ok me-mo-ver" onclick="meMoFecha()">' + (r.ok ? 'Ver a prescrição' : 'Fechar') + '</button>');
+    o.innerHTML = h + '</div>'; o.hidden = false; return;
+  }
+  if (_meMo.edita) {
+    const c = _meMo.conf, tinha = !!String(_meMo.txt || '').trim();
+    h += '<div class="te-conf-tit">Regras do médico</div><div class="te-conf-sub">Valem pra todos os alunos</div><div class="te-conf-lista di-mo-corpo">';
+    if (!tinha) h += '<div class="te-ent-aviso">Ainda não tem regra do médico guardada. Cola aqui o texto do regras-medico.md, confere e guarda.</div>';
+    h += '<textarea class="me-mo-txt" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="### Nome da regra&#10;- Se: pergunta 58.1 é &quot;Sim&quot;&#10;- E: pergunta 59 contém &quot;raramente&quot;&#10;- Então: Nome | dose | horário e observação&#10;- Menos se: pergunta 47 contém &quot;anticoagulante&quot;" oninput="_meMo.rasc=this.value;_meMo.apaga=false">' + e(_meMo.rasc == null ? '' : _meMo.rasc) + '</textarea>';
+    if (_meMo.msg) h += '<div class="te-ent-aviso me-mo-msg">' + e(_meMo.msg) + '</div>';
+    if (c) {
+      h += '<div class="di-mo-dados me-mo-lidas"><b>' + (c.regras.length === 1 ? '1 regra lida' : c.regras.length + ' regras lidas') + '</b>' + (c.erros.length ? ', ' + (c.erros.length === 1 ? '1 linha com erro' : c.erros.length + ' linhas com erro') : (c.regras.length ? ', sem erro' : '')) + '</div>';
+      h += c.erros.map(x => '<div class="te-ent-linha me-mo-erro">Linha ' + x.linha + (x.regra ? ' (' + e(x.regra) + ')' : '') + ': ' + e(x.txt) + '</div>').join('');
+      h += c.avisos.map(t => '<div class="te-ent-aviso">' + e(t) + '</div>').join('');
+      if (!c.erros.length && c.regras.length) h += c.regras.map(rg => '<div class="tr-mo-dia"><b>' + e(rg.nome) + '</b>: ' + e(rg.entao.map(x => x[0] + ' ' + x[1]).join(', ')) + '</div>').join('');
+    }
+    h += '<div class="di-mo-dica">Cada regra: "### Nome", depois "Se:", "E:" (quantas quiser), "Então: nome | dose | horário e observação" e "Menos se:". Condições: é, não é, contém, não contém, maior que, menor que, entre X e Y, respondeu, não respondeu. Hormônio e peptídeo não entram por regra: essa linha é escrita à mão no bloco.</div></div>';
+    h += pe((tinha ? '<button type="button" class="te-conf-salva" onclick="meMoEdita(false)">Voltar</button>' : '<button type="button" class="te-conf-salva" onclick="meMoFecha()">Fechar</button>') + '<button type="button" class="te-conf-salva me-mo-conf" onclick="meMoConfere()">Conferir</button><button type="button" class="te-conf-salva ok me-mo-guarda" onclick="meMoGuarda()">' + (_meMo.salvando ? 'Guardando\u2026' : (_meMo.apaga ? 'Apagar as regras' : 'Guardar as regras')) + '</button>');
+    o.innerHTML = h + '</div>'; o.hidden = false; return;
+  }
+  h += '<div class="te-conf-tit">Prescrição médica</div><div class="te-conf-sub">' + e(nome) + '</div>';
+  if (_meMo.car) { o.innerHTML = h + '<div class="te-ent-res">Buscando as regras do médico e a anamnese\u2026</div>' + pe('<button type="button" class="te-conf-salva" onclick="meMoFecha()">Fechar</button>') + '</div>'; o.hidden = false; return; }
+  if (_meMo.erro || !_meMo.j || !_meMo.lido) { o.innerHTML = h + '<div class="te-ent-linha">' + e(_meMo.erro || 'A ficha não veio agora.') + '</div>' + pe('<button type="button" class="te-conf-salva" onclick="meMoFecha()">Fechar</button><button type="button" class="te-conf-salva ok" onclick="' + (_meMo.senha ? 'meMoSenha()' : '_meMoCarrega(true)') + '">' + (_meMo.senha ? 'Digitar a senha' : 'Tentar de novo') + '</button>') + '</div>'; o.hidden = false; return; }
+  let c; try { c = _meMoConta(); } catch (_) { c = null; }
+  h += '<div class="te-conf-lista di-mo-corpo">';
+  if (!c) h += '<div class="te-ent-linha">Não consegui ler as regras guardadas. Abre "Ver as regras" e confere o texto.</div>';
+  else {
+    const pr = c.res.porRegra, de = est => pr.filter(x => x.estado === est), fichas = _meMoFichas(_meMo.j), d = _meMoData(_meMo.em);
+    h += '<div class="di-mo-dados"><b>' + (c.l.regras.length === 1 ? '1 regra do médico' : c.l.regras.length + ' regras do médico') + '</b>' + (d ? ', guardadas em ' + e(d) : '') + '<br>' + (fichas.ini ? 'Conferidas com a anamnese inicial' + (fichas.rea ? ' e com o último reajuste' : '') + ' dele.' : 'Ele não tem anamnese inicial: nenhuma regra dá pra conferir.') + '</div>';
+    if (_meMo.msg) h += '<div class="te-ent-aviso me-mo-msg">' + e(_meMo.msg) + '</div>';
+    if (c.l.erros.length) h += '<div class="te-ent-aviso">As regras guardadas têm ' + (c.l.erros.length === 1 ? '1 linha com erro' : c.l.erros.length + ' linhas com erro') + ': a regra dela não vale até arrumar. Abre "Ver as regras".</div>';
+    const ent = de('entrou');
+    h += '<div class="tr-mo-g"><span class="tr-mo-rot">Vale pra ele</span>' + (ent.length ? ent.map(x => '<div class="te-ent-linha me-mo-entra"><b>' + e(x.nome) + '</b><br>' + x.linhas.map(l => e(l[0] + ', ' + l[1] + ', ' + l[2].charAt(0).toLowerCase() + l[2].slice(1))).join('<br>') + '</div>').join('') : '<div class="tr-mo-dia">Nenhuma regra vale pra ele pelas respostas.</div>') + '</div>';
+    const bar = de('barrada'); if (bar.length) h += '<div class="tr-mo-g"><span class="tr-mo-rot">Ficou de fora pela exceção</span>' + bar.map(x => '<div class="te-ent-linha me-mo-barra"><b>' + e(x.nome) + '</b><br>' + e(x.por) + '</div>').join('') + '</div>';
+    const inc = pr.filter(x => x.estado === 'incerta' || x.estado === 'excecao'); if (inc.length) h += '<div class="tr-mo-g"><span class="tr-mo-rot">Não deu pra conferir</span>' + inc.map(x => '<div class="te-ent-linha me-mo-incerta"><b>' + e(x.nome) + '</b><br>' + e(x.por.charAt(0).toUpperCase() + x.por.slice(1)) + (x.estado === 'excecao' ? '. Sem conferir a exceção, a regra não entra: escreve na mão se couber.' : '.') + '</div>').join('') + '</div>';
+    h += c.res.conflitos.map(x => '<div class="te-ent-aviso">' + e(x.txt) + '</div>').join('');
+    const nao = de('nao'); if (nao.length) h += '<div class="di-mo-dados me-mo-nao"><b>Não ' + (nao.length === 1 ? 'vale' : 'valem') + ' pra ele:</b> ' + e(nao.map(x => x.nome).join(', ')) + '</div>';
+    const muda = c.p.entrou.length || c.p.saiu.length || c.p.mudou.length;
+    if (muda) { const t = []; if (c.p.entrou.length) t.push('entra ' + c.p.entrou.join(', ')); if (c.p.saiu.length) t.push('sai ' + c.p.saiu.join(', ')); if (c.p.mudou.length) t.push('muda ' + c.p.mudou.join('; ')); h += '<div class="te-ent-aviso me-mo-vai">Ao escrever: ' + e(t.join('. ') + '.') + '</div>'; }
+    else h += '<div class="di-mo-dica me-mo-nada">' + (c.p.total ? 'O bloco da prescrição já está como as regras pedem.' : 'Nada pra escrever pelas regras.') + '</div>';
+    h += '<div class="di-mo-dica">Linha escrita à mão no bloco não é tocada. Hormônio e peptídeo não entram por regra.</div>';
+    h += '</div>' + pe('<button type="button" class="te-conf-salva" onclick="meMoFecha()">Fechar</button><button type="button" class="te-conf-salva me-mo-regras" onclick="meMoEdita(true)">Ver as regras</button>' + (muda ? '<button type="button" class="te-conf-salva ok me-mo-vai-bt" onclick="meMoMonta()">Escrever a prescrição</button>' : '<button type="button" class="te-conf-salva me-mo-mao" onclick="meMoLinha()">Escrever uma linha à mão</button>'));
+    o.innerHTML = h + '</div>'; o.hidden = false; return;
+  }
+  h += '</div>' + pe('<button type="button" class="te-conf-salva" onclick="meMoFecha()">Fechar</button><button type="button" class="te-conf-salva me-mo-regras" onclick="meMoEdita(true)">Ver as regras</button>');
+  o.innerHTML = h + '</div>'; o.hidden = false;
+}
+
 function openTrainerSheetModal() {
   document.getElementById('trainerSheetIdInput').value = '';
   teShow('trainerSheetModal');
@@ -34860,6 +35257,7 @@ function trainerExit() {
   try { diMoFecha(true); } catch (_) {}   // v661
   try { trMoFecha(true); } catch (_) {}   // v662
   try { suMoFecha(true); } catch (_) {}   // v664
+  try { meMoFecha(true); } catch (_) {}   // v665
   try { teFantasmaFechar(); } catch (_) {}   // v605
   try { teFichaSai(); } catch (_) {}   // v656
   _teFant = null;
@@ -34991,7 +35389,7 @@ function renderDietaEditor() {
     sections.refs.forEach(r => DIETA_OPEN_BLOCKS.add('ref-' + r.idx));
   }
 
-  const _algumAberto = ['regras', 'supl', 'orient', 'proto', 'info'].some(k => DIETA_OPEN_BLOCKS.has(k)) || sections.refs.some(r => !_dietaRefFechadas.has(dietaData[r.idx]));
+  const _algumAberto = ['regras', 'supl', 'med', 'orient', 'proto', 'info'].some(k => DIETA_OPEN_BLOCKS.has(k)) || sections.refs.some(r => !_dietaRefFechadas.has(dietaData[r.idx]));
   let html = _diMacBarra(_algumAberto);   // v654: total do dia + Recolher tudo
 
   // INFO + METAS
@@ -35007,7 +35405,13 @@ function renderDietaEditor() {
   // SUPLEMENTAÇÃO
   html += renderDietaBlock('supl', '💊 SUPLEMENTAÇÃO', sections.supl.length + ' itens',
     sections.supl.map(r => renderDietaSimpleRow(r, ['Suplemento', 'Dose', 'Horário/Obs'])).join('') +
-    `<div class="di-su-novas"><button class="di-add-btn" onclick="dietaAddSimple('supl')">+ Suplemento</button><button type="button" class="di-add-btn su-mo-abre" onclick="suMoAbre()" title="Montar a suplementação pela anamnese inicial ou de reajuste, sem IA">Montar pela anamnese</button></div>`);
+    `<div class="di-su-novas"><button class="di-add-btn" onclick="dietaAddSimple('supl')">+ Suplemento</button><button type="button" class="di-add-btn su-mo-abre" onclick="suMoAbre()" title="Montar a suplementação pela anamnese inicial ou de reajuste, sem IA">Montar pela anamnese</button><button type="button" class="di-add-btn me-mo-abre" onclick="meMoAbre()" title="Conferir as regras do médico com a anamnese deste aluno e escrever a prescrição médica, sem IA">Prescrição médica</button></div>`);
+
+  // PRESCRIÇÃO MÉDICA (v665): bloco separado da suplementação, aparece quando tem linha
+  if (sections.med.length) html += renderDietaBlock('med', '🩺 PRESCRIÇÃO MÉDICA', sections.med.length + ' itens',
+    sections.med.map(r => renderDietaMedRow(r)).join('') +
+    `<div class="di-su-novas"><button class="di-add-btn me-mo-mais" onclick="meMoLinha()">+ Linha</button><button type="button" class="di-add-btn me-mo-abre2" onclick="meMoAbre()" title="Conferir as regras do médico com a anamnese deste aluno, sem IA">Conferir pelas regras</button></div>`);
+
 
   // REFEIÇÕES (cada uma é um bloco colapsável próprio)
   const _dia = _diDiaCab_(dietaData);   // v659: o rótulo do dia do ciclo aparece antes da primeira refeição dele
@@ -35044,7 +35448,7 @@ function renderDietaEditor() {
 }
 
 function parseDietaSections(rows) {
-  const sections = { info: [], regras: [], supl: [], refs: [], orient: [], proto: [] };
+  const sections = { info: [], regras: [], supl: [], med: [], refs: [], orient: [], proto: [] };
   let currentRef = null;
   let currentOp = null;
 
@@ -35064,6 +35468,9 @@ function parseDietaSections(rows) {
         break;
       case 'supl':
         sections.supl.push({ idx, type: 'supl' });
+        break;
+      case 'med':   // v665: prescrição médica
+        sections.med.push({ idx, type: 'med' });
         break;
       case 'ref':
         currentRef = { idx, type: 'ref', items: [], opcoes: [] };
@@ -35300,7 +35707,7 @@ function _teCopMarca_(rows) {
   return rows.map((r, i) => {
     if (_teCopVazia_(r)) return ult;
     const s = _teCopSec_(r); let p;
-    if (i === 0 || s === 'info' || s === 'proto' || s === 'ciclo') p = null;
+    if (i === 0 || s === 'info' || s === 'proto' || s === 'ciclo' || s === 'med') p = null;   // v665: a prescrição médica é do aluno, não se copia
     else if (s === 'regra') p = 'regras';
     else if (s === 'supl') p = 'supl';
     else if (s === 'dica' || s === 'cardio' || s === 'aerob' || s === 'orient') p = 'orient';
@@ -36220,13 +36627,14 @@ function _teColaComida(linha) {
 function _teColaSimples(linha, sec) {
   const cel = _teColaCels(linha); if (cel) return cel;
   const t = _teColaIni(linha); if (!t) return null;
-  if (sec === 'supl') { const m = _TE_RE_MEIO.exec(t); if (m) return [m[1].trim(), m[2].trim(), _teColaResto(m[3])]; }
+  if (sec === 'med' && t.indexOf('|') > 0) { const c = t.split('|').map(x => x.trim()); if (c[0]) return [c[0], c[1] || '', c.slice(2).filter(Boolean).join(', ')]; }   // v665: linha no formato nome | dose | horário
+  if (sec === 'supl' || sec === 'med') { const m = _TE_RE_MEIO.exec(t); if (m) return [m[1].trim(), m[2].trim(), _teColaResto(m[3])]; }
   const k = t.indexOf(': ');
   if (k > 0 && k < 40) return [t.slice(0, k).trim(), t.slice(k + 2).trim(), ''];
   return [t, '', ''];
 }
 function _teCola(ev) {
-  const t = ev.target; if (!t || t.tagName !== 'INPUT' || !t.classList.contains('di-sv-in')) return;
+  const t = ev.target; if (!t || t.tagName !== 'INPUT' || !(t.classList.contains('di-sv-in') || t.classList.contains('me-in'))) return;
   const row = t.closest('.di-row[data-idx]'); if (!row) return;
   let txt = ''; try { txt = (ev.clipboardData || window.clipboardData).getData('text'); } catch (_) {}
   const linhas = String(txt || '').replace(/\r/g, '').split('\n').filter(l => l.trim());
@@ -36244,7 +36652,7 @@ function _teCola(ev) {
   try { diSvFecha(true); } catch (_) {}
   renderDietaEditor();
   if (typeof _ghToast === 'function') _ghToast(total + ' linhas coladas' + (linhas.length > 40 ? ' (o resto passou de 40)' : ''), 2600);
-  const alvo = document.querySelector('#trainerDaysContainer .di-row[data-idx="' + pos + '"] input:not(.di-sv-in)');
+  const alvo = document.querySelector('#trainerDaysContainer .di-row[data-idx="' + pos + '"] input:not(.di-sv-in):not(.me-in)');
   if (alvo) { try { alvo.focus({ preventScroll: true }); alvo.scrollIntoView({ block: 'nearest' }); } catch (_) {} }
 }
 
@@ -36291,7 +36699,7 @@ function _teConfTrecho(v, cod) {
 function _teConfTexto(rows, cols, out) {
   rows.forEach((r, idx) => { if (!r) return; cols.forEach(c => GHT.acha(r[c]).forEach(a => out.push({ g: a.g, c: a.c, idx, m: a.m + ': "' + _teConfTrecho(r[c], a.c) + '"' }))); });
 }
-const _TE_CONF_SIMPLES = { regra: 'Regras', supl: 'Suplementação', cardio: 'Cardio e dicas', aerob: 'Cardio e dicas', dica: 'Cardio e dicas', orient: 'Cardio e dicas', proto: 'Protocolos', obs: 'observação', nota: 'observação' };
+const _TE_CONF_SIMPLES = { regra: 'Regras', supl: 'Suplementação', med: 'Prescrição médica', cardio: 'Cardio e dicas', aerob: 'Cardio e dicas', dica: 'Cardio e dicas', orient: 'Cardio e dicas', proto: 'Protocolos', obs: 'observação', nota: 'observação' };
 function teConfDieta(rows) {
   const out = [], sec = r => String((r && r[0]) || '').toLowerCase().trim(), tx = v => String(v == null ? '' : v).trim();
   _teConfTexto(rows, [1, 2, 3], out);
@@ -36308,6 +36716,8 @@ function teConfDieta(rows) {
     if ((s === '' || s === 'alimento') && !a && (b || c)) out.push({ g: 'erro', c: 'semnome', idx, m: 'Alimento sem nome (' + _teConfTrecho(b || c) + ')' });
     if (_TE_CONF_SIMPLES[s] && !a && !b && !c) out.push({ g: 'aviso', c: 'vazia', idx, m: 'Linha vazia em ' + _TE_CONF_SIMPLES[s] });
     if (s === 'supl' && a && !b && !c && !/^[\u2014\u2013\-=]/.test(a) && a !== a.toUpperCase()) out.push({ g: 'aviso', c: 'supldose', idx, m: 'Suplemento sem dose nem horário: ' + _teConfTrecho(a) });
+    if (s === 'med' && a && !b && !c) out.push({ g: 'aviso', c: 'meddose', idx, m: 'Prescrição médica sem dose nem horário: ' + _teConfTrecho(a) });   // v665
+    if (s === 'med' && !a && (b || c)) out.push({ g: 'erro', c: 'medsemnome', idx, m: 'Linha da prescrição médica sem nome, o aluno não vê (' + _teConfTrecho(b || c) + ')' });
   });
   const calc = _diMacCalc(rows), alvos = _diMacAlvos(rows), dias = calc.blocos.filter(b => b.t.n);
   calc.blocos.forEach((b, bi) => {
@@ -36408,7 +36818,7 @@ function dietaRemoveRef(idx) {
   if (!confirm(`Remover "${refName}" inteira (alimentos e opções)?`)) return;
   teSnapshot();
   // remove a linha ref + tudo até a próxima ref ou seção raiz (regra/supl/proto/cardio/dica/etc)
-  const stopSections = new Set(['ref', 'regra', 'supl', 'proto', 'ciclo', 'cardio', 'aerob', 'dica', 'orient', 'info', 'meta']);
+  const stopSections = new Set(['ref', 'regra', 'supl', 'med', 'proto', 'ciclo', 'cardio', 'aerob', 'dica', 'orient', 'info', 'meta']);
   let endIdx = dietaData.length;
   for (let j = idx + 1; j < dietaData.length; j++) {
     const s = String(dietaData[j][0] || '').toLowerCase().trim();
@@ -36428,7 +36838,7 @@ let _rsUltima = 0, _rsEnviando = false, _rsBusca = '', _rsApagar = '';
 const _rsNorm = s => String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
 function _rsItem_(v) {   // só entra o que tem a forma certa (o que vem do servidor também passa por aqui)
   if (!v || typeof v !== 'object' || !Array.isArray(v.rows)) return null;
-  const fora = new Set(['proto', 'ciclo', 'info', 'meta', 'regra', 'supl', 'cardio', 'aerob', 'dica', 'orient']);
+  const fora = new Set(['proto', 'ciclo', 'info', 'meta', 'regra', 'supl', 'med', 'cardio', 'aerob', 'dica', 'orient']);
   const rows = v.rows.slice(0, 60).filter(r => Array.isArray(r) && !fora.has(String(r[0] || '').toLowerCase().trim()))
     .map(r => [0, 1, 2, 3].map(i => String(r[i] == null ? '' : r[i]).slice(0, 400)));
   if (!rows.length || String(rows[0][0]).toLowerCase().trim() !== 'ref') return null;
@@ -36447,7 +36857,7 @@ function _rsVista_() {   // cópia do servidor + o que ainda está na fila
 }
 function _rsAssin_(rows) { return JSON.stringify(rows.map(r => [0, 1, 2, 3].map(i => _rsNorm(r[i]))).filter(r => r.some(Boolean))); }
 function _rsFaixa_(idx) {   // linhas da refeição que começa em idx (mesma faixa do Duplicar)
-  const stop = new Set(['ref', 'regra', 'supl', 'proto', 'ciclo', 'cardio', 'aerob', 'dica', 'orient', 'info', 'meta']);
+  const stop = new Set(['ref', 'regra', 'supl', 'med', 'proto', 'ciclo', 'cardio', 'aerob', 'dica', 'orient', 'info', 'meta']);
   let fim = dietaData.length;
   for (let j = idx + 1; j < dietaData.length; j++) { if (stop.has(String(dietaData[j][0] || '').toLowerCase().trim())) { fim = j; break; } }
   return dietaData.slice(idx, fim).filter(r => r.some(c => String(c || '').trim())).map(r => [0, 1, 2, 3].map(i => String(r[i] == null ? '' : r[i])));
@@ -36543,7 +36953,7 @@ function rsEscolhe(id) {
   teSnapshot();
   // entra depois da última refeição; dieta sem refeição: antes de cardio, dicas e protocolo (igual ao "+ Refeição")
   const sec = j => String(dietaData[j][0] || '').toLowerCase().trim();
-  const stop = new Set(['ref', 'regra', 'supl', 'proto', 'ciclo', 'cardio', 'aerob', 'dica', 'orient', 'info', 'meta']);
+  const stop = new Set(['ref', 'regra', 'supl', 'med', 'proto', 'ciclo', 'cardio', 'aerob', 'dica', 'orient', 'info', 'meta']);
   let ult = -1; for (let j = dietaData.length - 1; j >= 0; j--) { if (sec(j) === 'ref') { ult = j; break; } }
   let em = dietaData.length;
   if (ult >= 0) { for (let j = ult + 1; j < dietaData.length; j++) { if (stop.has(sec(j))) { em = j; break; } } }
@@ -36556,7 +36966,7 @@ function rsEscolhe(id) {
 }
 
 function dietaDuplicaRef(idx) {
-  const stop = new Set(['ref', 'regra', 'supl', 'proto', 'ciclo', 'cardio', 'aerob', 'dica', 'orient', 'info', 'meta']);
+  const stop = new Set(['ref', 'regra', 'supl', 'med', 'proto', 'ciclo', 'cardio', 'aerob', 'dica', 'orient', 'info', 'meta']);
   let fim = dietaData.length;
   for (let j = idx + 1; j < dietaData.length; j++) { if (stop.has(String(dietaData[j][0] || '').toLowerCase().trim())) { fim = j; break; } }
   const copia = dietaData.slice(idx, fim).filter(r => r.some(c => String(c || '').trim())).map(r => r.slice());
@@ -36575,7 +36985,7 @@ function dietaUpdateBlockMeta(key, val) {
 // v653: recolhe ou abre todos os blocos da dieta de uma vez. O '_' segura o conjunto fora do zero, senão a próxima
 // pintura entende que é a primeira e abre tudo de novo.
 function dietaTudo() {
-  const sec = parseDietaSections(dietaData), fixos = ['info', 'regras', 'supl', 'orient', 'proto'];
+  const sec = parseDietaSections(dietaData), fixos = ['info', 'regras', 'supl', 'med', 'orient', 'proto'];
   const algum = fixos.some(k => DIETA_OPEN_BLOCKS.has(k)) || sec.refs.some(r => !_dietaRefFechadas.has(dietaData[r.idx]));
   DIETA_OPEN_BLOCKS.clear(); DIETA_OPEN_BLOCKS.add('_');
   if (algum) sec.refs.forEach(r => _dietaRefFechadas.add(dietaData[r.idx]));
@@ -36592,7 +37002,7 @@ function dietaFindLastItemOfRef(refIdx) {
   // varre linhas após refIdx até achar próxima 'ref' / 'op' / seção raiz.
   // 'op' incluído pra que "+ Alimento" da refeição insira ANTES da primeira
   // opção (e não dentro da última opção, que ficava confuso visualmente).
-  const stopSections = new Set(['ref', 'op', 'regra', 'supl', 'proto', 'ciclo', 'cardio', 'aerob', 'dica', 'orient', 'info', 'meta']);
+  const stopSections = new Set(['ref', 'op', 'regra', 'supl', 'med', 'proto', 'ciclo', 'cardio', 'aerob', 'dica', 'orient', 'info', 'meta']);
   let last = refIdx;
   for (let j = refIdx + 1; j < dietaData.length; j++) {
     const s = String(dietaData[j][0] || '').toLowerCase().trim();
@@ -36603,7 +37013,7 @@ function dietaFindLastItemOfRef(refIdx) {
 }
 
 function dietaFindLastItemOfOp(opIdx) {
-  const stopSections = new Set(['op', 'ref', 'regra', 'supl', 'proto', 'ciclo', 'cardio', 'aerob', 'dica', 'orient', 'info', 'meta']);
+  const stopSections = new Set(['op', 'ref', 'regra', 'supl', 'med', 'proto', 'ciclo', 'cardio', 'aerob', 'dica', 'orient', 'info', 'meta']);
   let last = opIdx;
   for (let j = opIdx + 1; j < dietaData.length; j++) {
     const s = String(dietaData[j][0] || '').toLowerCase().trim();
@@ -36644,7 +37054,7 @@ function dietaAddOpcao(refIdx) {
 function dietaAddRefeicao() {
   teSnapshot();
   // Adiciona refeição no final (antes de orient/proto se existirem, senão no fim)
-  const stopSections = new Set(['cardio', 'aerob', 'dica', 'orient', 'proto', 'ciclo', 'regra', 'supl', 'info', 'meta']);
+  const stopSections = new Set(['cardio', 'aerob', 'dica', 'orient', 'proto', 'ciclo', 'regra', 'supl', 'med', 'info', 'meta']);
   let insertAt = dietaData.length, _ultRef = -1;
   dietaData.forEach((r, j) => { if (String((r && r[0]) || '').toLowerCase().trim() === 'ref') _ultRef = j; });   // v659: com ciclo de carbo entrava antes do primeiro dia
   for (let j = _ultRef + 1; j < dietaData.length; j++) {
