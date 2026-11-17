@@ -3845,8 +3845,8 @@
   .di-head-sv { background: transparent; border: 1.5px solid #555; color: #ddd; border-radius: 4px; cursor: pointer; padding: 2px 8px; font-size: 15px; flex-shrink: 0; font-weight: 700; line-height: 1.2; font-family: inherit; }
   .di-head-sv:hover { border-color: var(--gold); color: var(--gold); }
   .di-head-sv.on { color: #E3BE6B; border-color: #E3BE6B; }
-  .di-ref-novas { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
-  .di-ref-novas .di-add-btn { margin: 0; }
+  .di-ref-novas, .di-su-novas { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
+  .di-ref-novas .di-add-btn, .di-su-novas .di-add-btn { margin: 0; }
   .rs-painel .te-conf-cx { max-width: 560px; }
   .rs-painel .te-fi-busca { margin: 2px 0 8px; }
   .rs-it { display: flex; align-items: stretch; gap: 6px; margin: 0 0 6px; }
@@ -29581,7 +29581,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v663';
+    var APP_SHELL_V = 'metodo-gh-v664';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
@@ -32891,6 +32891,323 @@ function trMoMonta() {
   _trMoDesenha();
 }
 
+// v664: gerador da suplementação do Montar
+// ── GHSU: suplementação do Montar (plano B, sem IA). Base do método + corretiva pela anamnese + o que o exame mostrou (marcado pelo treinador).
+// Só linhas `supl`. Hormônio, peptídeo e remédio não entram aqui: o que já estiver escrito fica como está.
+const GHSU = (() => {
+  const nrm = s => String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+  const ENZ = 'Enzimas digestivas (Amilase 50mg + Protease 25mg + Bromelina 25mg + Papaína 50mg + Pepsina 100mg + Lipase 25mg)';
+  const SONO = 'Fórmula do Sono (Magnésio Treonato 300mg + Apigenina 50mg + Teanina 200mg + Melatonina 10mg)';
+  const MULTI = 'Multivitamínico (B12 4mg + C 500mg + D3 4000UI + MK7 50mcg)';
+  const MULTI_MOTIVO = { exame: 'Hipovitaminose no exame', escritorio: 'Muitas horas de escritório sem sol', desregrada: 'Alimentação desregrada antes do protocolo' };
+  // momento do dia, na ordem em que o aluno toma
+  const MOMENTO = [[/ao acordar|em jejum/, 0], [/desjejum|cafe da manha/, 1], [/antes do almoco/, 2], [/almoco/, 3], [/pre-? ?treino|antes do treino/, 4], [/intra|durante o treino/, 5], [/pos-? ?treino|refeicoes/, 6], [/janta/, 7], [/dormir|deitar|noite/, 8], [/qualquer horario|todo dia/, 9]];
+  const momentoDe = o => { const t = nrm(o); for (const [re, k] of MOMENTO) if (re.test(t)) return k; return 10; };
+  // itens: [nome, dose, horário, como reconhecer numa linha que já existe]
+  const ITEM = {
+    omega: ['Ômega 3 (EPA e DHA)', '1000mg', 'Pós-desjejum', /omega ?-?3|\bepa\b|\bdha\b|oleo de peixe/],
+    creatina: ['Creatina monohidratada', '5g', 'Todo dia, qualquer horário', /creatina/],
+    whey: ['Whey protein', '30g', 'Pós-treino', /whey|proteina (vegetal|de ervilha|de arroz|isolada)/],
+    magnesio: ['Magnésio Dimalato', '600mg', 'Antes de dormir', /^magnesio (?!treonato)|^magnesio$/],
+    morosil: ['Morosil', '500mg', 'Pós-desjejum', /morosil/],
+    enzimas: [ENZ, '01 dose', 'Pós-almoço', /enzima/],
+    ashwa: ['Ashwagandha KSM-66', '600mg', 'Ao acordar', /ashwagandha/],
+    rhodiola: ['Rhodiola Rosea', '400mg', 'Pós-desjejum', /rhodiola/],
+    htp: ['5-HTP', '100mg', 'Antes de dormir, por 60 dias', /5-? ?htp/],
+    bacopa: ['Bacopa Monnieri', '300mg', 'Pós-desjejum', /bacopa/],
+    tirosina: ['L-Tirosina', '500mg', 'Pré-treino', /tirosina/],
+    vitc: ['Vitamina C', '500mg', 'Pós-desjejum', /^vitamina c\b|^vit\.? c\b|acido ascorbico/],
+    zinco: ['Zinco Quelato', '30mg', 'Antes de dormir', /^zinco/],
+    biotina: ['Biotina', '5mg', 'Pós-desjejum', /biotina/],
+    sono: [SONO, '01 dose', 'Pós-janta', /formula (do )?sono|melatonina|treonato/],
+    passiflora: ['Passiflora', '500mg', 'Antes de dormir', /passiflora|valeriana|mulungu|mungulu/],
+    boswellia: ['Boswellia serrata', '500mg', 'Ao acordar', /boswellia/],
+    arnica: ['Arnica Montana', '01 dose', 'Ao acordar', /arnica/],
+    d3: ['Vitamina D3', '7000UI', 'Pós-desjejum, por 60 dias', /^vitamina d\b|^vitamina d3|^vit\.? d|^d3\b/],
+    b12: ['Metilcobalamina (B12)', '1000mcg', 'Pós-desjejum, por 60 dias', /metilcobalamina|^vitamina b12|^b12\b/],
+    ferro: ['Sulfato ferroso 40mg + Vitamina C 500mg', '01 dose', 'Pós-almoço, longe de café e de laticínio, por 60 dias', /sulfato ferroso|^ferro\b|ferro quelato/],
+    policosanol: ['Policosanol', '40mg', 'Pós-desjejum, por 30 dias', /policosanol/],
+    berberina: ['Berberina', '500mg', 'Uma cápsula antes do almoço e uma antes da janta', /berberina/],
+    folico: ['Metilfolato', '800mcg', 'Pós-desjejum, por 30 dias', /metilfolato|acido folico/],
+    multi: [MULTI, '01 cápsula', 'Pós-desjejum', /multivitamin|multi ?vit|polivitamin/],
+  };
+  const ORDEM = ['boswellia', 'arnica', 'ashwa', 'omega', 'morosil', 'multi', 'd3', 'b12', 'folico', 'policosanol', 'vitc', 'biotina', 'bacopa', 'rhodiola', 'berberina', 'enzimas', 'ferro', 'tirosina', 'whey', 'sono', 'magnesio', 'zinco', 'passiflora', 'htp', 'creatina'];
+  const NOME = { omega: 'Ômega 3', creatina: 'Creatina', whey: 'Whey', magnesio: 'Magnésio', morosil: 'Morosil', enzimas: 'Enzimas digestivas', ashwa: 'Ashwagandha', rhodiola: 'Rhodiola', htp: '5-HTP', bacopa: 'Bacopa', tirosina: 'L-Tirosina', vitc: 'Vitamina C', zinco: 'Zinco', biotina: 'Biotina',
+    sono: 'Fórmula do Sono', passiflora: 'Passiflora', boswellia: 'Boswellia', arnica: 'Arnica', d3: 'Vitamina D3', b12: 'B12', ferro: 'Ferro', policosanol: 'Policosanol', berberina: 'Berberina', folico: 'Metilfolato', multi: 'Multivitamínico' };
+  // o que não é do Montar: fica como está, nunca entra, nunca sai, nunca muda
+  const FORA = /testo|enantato|cipionato|propionato|durateston|deca\b|nandrol|\bnpp\b|trembol|oxandrol|primobol|bolden|masteron|drostanol|stanoz|dianabol|hemogenin|oximetol|turinabol|\bdhb\b|anastrozol|tamoxif|clomif|\bhcg\b|gonadotrof|cabergol|tirzep|retatrut|semaglut|ozempic|mounjaro|\bcjc\b|ipamorel|\bbpc\b|tb-? ?500|mots-? ?c|ghk|tesamorel|somatrop|clembut|clenbut|ioimbina|yohimb|sibutram|levotirox|\bt3\b|\bt4\b|glifage|metformina|finaster|minoxidil|sildenafil|tadalafil/;
+  const PSIQ = /sertralina|fluoxetina|escitalopram|paroxetina|venlafaxina|desvenlafaxina|duloxetina|bupropiona|citalopram|amitriptilina|nortriptilina|trazodona|mirtazapina|antidepress|venvanse|ritalina|concerta|lisdexanfetamina|metilfenidato|litio|quetiapina|risperidona|olanzapina|aripiprazol|clonazepam|rivotril|alprazolam|zolpidem|lamotrigina|topiramato|pregabalina/;
+  const canon = s => nrm(s).replace(/[^a-z0-9 ]/g, ' ').replace(/\b(e|de|do|da)\b/g, ' ').replace(/\s+/g, ' ').trim();
+  const dose = t => { const m = String(t || '').replace(',', '.').match(/(\d+(?:\.\d+)?)\s*(mg|g\b|mcg|ui)/i); if (!m) return null; const v = parseFloat(m[1]), u = m[2].toLowerCase(); return u === 'g' ? v * 1000 : v; };
+  const FATOR = [[/digest|intestin/, 'digestao'], [/humor|bem-estar|emocional/, 'humor'], [/concentr|foco/, 'foco'], [/imunidade/, 'imunidade'], [/pele|cabelo|unhas/, 'pele']];
+  function fatoresDe(txt) { const t = nrm(txt), out = []; FATOR.forEach(([re, k]) => { if (re.test(t)) out.push(k); }); return out; }
+
+  // o que este aluno leva: { chave: [nome, dose, horário] }
+  function pede(P, notas) {
+    const q = {}, poe = (k, o) => { const era = q[k] && dose(q[k].d); q[k] = Object.assign({ n: ITEM[k][0], d: ITEM[k][1], o: ITEM[k][2] }, q[k] || {}, o || {}); if (era && dose(q[k].d) < era) q[k].d = era >= 1000 && k === 'omega' ? era + 'mg' : q[k].d; };
+    const f = new Set(P.fatores || []), psiq = PSIQ.test(nrm(P.remedios));
+    poe('omega'); poe('creatina'); poe('magnesio');
+    // whey: isolado na intolerância à lactose, vegetal na alergia a leite, e sem linha de pós-treino quando ele já está nas refeições
+    if (P.semWhey) notas.push('Marcou que não consegue comprar whey: ficou fora. Confere se a dieta fecha a proteína sem ele.');
+    else poe('whey', { n: P.alergiaLeite ? 'Proteína vegetal (ervilha e arroz)' : (P.lactose ? 'Whey protein isolado' : 'Whey protein'), d: P.wheyNaDieta ? '30g por dose' : '30g', o: P.wheyNaDieta ? 'Nas refeições da dieta em que ele aparece' : 'Pós-treino' });
+    if (P.deficit) poe('morosil');
+    if (f.has('digestao')) poe('enzimas');
+    if (f.has('humor')) { poe('ashwa'); if (psiq) notas.push('Humor marcado, mas usa remédio que pede cuidado: o 5-HTP ficou fora. Confere a ashwagandha com o GH.'); else poe('htp'); poe('omega', { d: '2000mg' }); }
+    if (f.has('foco')) { poe('bacopa'); if (psiq) notas.push('Foco marcado, mas usa remédio que pede cuidado: a L-Tirosina ficou fora.'); else poe('tirosina'); }
+    if (f.has('imunidade')) { poe('vitc', { d: '1g' }); poe('zinco'); }
+    if (f.has('pele')) { poe('biotina'); poe('vitc'); poe('zinco'); }
+    if (P.sonoRuim) poe('sono');
+    if (P.ansiedadeAlta) poe('passiflora');
+    if (P.estresseAlto && !q.ashwa) poe('ashwa');
+    if (P.libido) { poe('rhodiola'); poe('ashwa', { o: 'Antes de dormir' }); notas.push('Queda de libido marcada, sem acompanhamento hormonal: entraram Rhodiola e Ashwagandha. O resto dessa conduta é com o GH.'); }
+    if (P.dorArticular || P.artrose) { poe('omega', { d: '3000mg' }); poe('magnesio', { n: 'Magnésio Glicinato' }); }
+    if (P.artrose) { poe('boswellia'); poe('arnica'); }
+    const ex = P.exame || {};
+    if (ex.d3) poe('d3'); if (ex.b12) poe('b12'); if (ex.ferritina) poe('ferro'); if (ex.ldl) poe('policosanol'); if (ex.trig) poe('omega', { d: '3000mg' }); if (ex.glicose) poe('berberina'); if (ex.zinco) poe('zinco'); if (ex.folico) poe('folico');
+    if (P.multi && MULTI_MOTIVO[P.multi]) poe('multi', { o: 'Pós-desjejum. ' + MULTI_MOTIVO[P.multi] });
+    return q;
+  }
+
+  // atual: linhas da DIETA (qualquer seção). Devolve a DIETA inteira com o bloco supl novo, e o que mudou.
+  function monta(atual, perfil) {
+    const P = Object.assign({ tipo: 'inicial', fatores: [], exame: {} }, perfil || {}), rea = P.tipo === 'reajuste';
+    const rows = (atual || []).filter(r => Array.isArray(r)).map(r => { const x = r.slice(0, 4).map(c => (c == null ? '' : String(c))); while (x.length < 4) x.push(''); return x; });
+    const sec = r => nrm(r[0]), ehSupl = r => sec(r) === 'supl';
+    const sep = r => ehSupl(r) && !String(r[2]).trim() && !String(r[3]).trim() && (/^[\u2014\u2013\-]+\s*.+\s*[\u2014\u2013\-]+$/.test(String(r[1]).trim()) || (String(r[1]).trim() && String(r[1]).trim() === String(r[1]).trim().toUpperCase() && !/\d/.test(r[1])));
+    const notas = [], entrou = [], saiu = [], mudou = [], ficou = [];
+    const q = pede(P, notas);
+    const chaveDe = r => { const n = nrm(r[1]); if (FORA.test(n)) return null; for (const k of ORDEM) if (ITEM[k][3].test(n)) return k; return null; };
+    const usado = new Set(); let fora = 0;
+    const saida = [];
+    for (const r of rows) {
+      if (!ehSupl(r)) { saida.push(r); continue; }
+      if (sep(r)) { saida.push(r); continue; }
+      const n = nrm(r[1] + ' ' + r[2] + ' ' + r[3]);
+      if (FORA.test(n)) {
+        if (!rea && /glifage|metformina/.test(n)) { saiu.push(r[1]); notas.push('Glifage não entra mais no protocolo inicial: a linha saiu. Se a glicose pede controle, marca "glicose alterada" que entra a Berberina.'); continue; }
+        fora++; saida.push(r); continue;
+      }
+      if (/colageno/.test(n)) { saiu.push(r[1]); notas.push('Colágeno não entra no método: a linha saiu. Pra pele, cabelo e unha é Biotina, Vitamina C e Zinco.'); continue; }
+      const k = chaveDe(r);
+      if (k === 'multi' && !q.multi) { saiu.push(r[1]); notas.push('Multivitamínico só fica com motivo (hipovitaminose no exame, escritório sem sol ou alimentação desregrada): a linha saiu. Se for o caso, marca o motivo e monta de novo.'); continue; }
+      if (k === 'morosil' && !q.morosil) { saiu.push(r[1]); notas.push('Morosil só vai em quem está em déficit pra emagrecer: a linha saiu.'); continue; }
+      if (!k || !q[k]) { ficou.push(r[1]); saida.push(r); continue; }
+      if (usado.has(k)) { ficou.push(r[1]); saida.push(r); continue; }
+      usado.add(k);
+      const novo = ['supl', q[k].n, q[k].d, q[k].o];
+      if (rea && k !== 'multi') {
+        // reajuste: o que ele já usa fica como está. Só a dose sobe quando a regra pede mais do que tem.
+        const tem = dose(r[1] + ' ' + r[2]), quer = dose(q[k].d);
+        if (k === 'omega' && tem && quer && quer > tem) { const x = r.slice(); x[2] = q[k].d; mudou.push(NOME[k] + ': de ' + String(r[2]).trim() + ' pra ' + q[k].d); saida.push(x); }
+        else { if (k === 'omega' && !tem && quer > 1000) notas.push('A regra pede ' + q[k].d + ' de ômega 3 e a linha atual está em "' + String(r[2]).trim() + '": confere se chega lá.'); ficou.push(r[1]); saida.push(r); }
+        continue;
+      }
+      if (canon(r[1]) === canon(novo[1]) && nrm(r[2]) === nrm(novo[2]) && nrm(r[3]) === nrm(novo[3])) { ficou.push(r[1]); saida.push(r); }
+      else { mudou.push(NOME[k] + ': ' + novo[1] + ', ' + novo[2] + ', ' + novo[3].charAt(0).toLowerCase() + novo[3].slice(1)); saida.push(novo); }
+    }
+    // o que falta entra no lugar certo
+    const faltam = ORDEM.filter(k => q[k] && !usado.has(k)).map(k => ({ k, r: ['supl', q[k].n, q[k].d, q[k].o] }));
+    faltam.sort((a, b) => momentoDe(a.r[3]) - momentoDe(b.r[3]) || ORDEM.indexOf(a.k) - ORDEM.indexOf(b.k));
+    const temSep = saida.some(sep);
+    for (const { k, r } of faltam) {
+      entrou.push(NOME[k] + ' ' + r[2]);
+      const m = momentoDe(r[3]); let pos = -1;
+      if (temSep) {
+        // com separador de horário, a linha entra debaixo do separador do mesmo momento; sem ele, abre um
+        let dentro = false, ult = -1;
+        saida.forEach((x, i) => { if (!ehSupl(x)) { dentro = false; return; } if (sep(x)) { dentro = momentoDe(String(x[1]).replace(/[\u2014\u2013\-]/g, ' ')) === m; if (dentro) ult = i; return; } if (dentro) ult = i; });
+        if (ult >= 0) pos = ult + 1;
+        else { let fim = -1, achou = false; saida.forEach((x, i) => { if (achou) return; if (ehSupl(x) && sep(x) && momentoDe(String(x[1]).replace(/[\u2014\u2013\-]/g, ' ')) > m) { achou = true; return; } if (ehSupl(x)) fim = i; }); const mod = String((saida.find(sep) || [])[1] || '').trim().match(/^([\u2014\u2013\-]+\s*).+?(\s*[\u2014\u2013\-]+)$/), tit = r[3].split(/[,.]/)[0].toUpperCase(); saida.splice(fim + 1, 0, ['supl', mod ? mod[1] + tit + mod[2] : '- ' + tit + ' -', '', '']); pos = fim + 2; }
+      } else {
+        // sem separador: depois da última linha do mesmo momento, ou antes da primeira de um momento mais tarde
+        let ult = -1, antes = -1, fim = -1;
+        saida.forEach((x, i) => { if (!ehSupl(x)) return; fim = i; const mx = momentoDe(x[3]); if (mx === m) ult = i; if (antes < 0 && mx > m) antes = i; });
+        pos = ult >= 0 ? ult + 1 : (antes >= 0 ? antes : fim + 1);
+        if (fim < 0) { pos = Math.min(1, saida.length); saida.forEach((x, i) => { if (['info', 'meta', 'aluno', 'regra'].indexOf(sec(x)) >= 0) pos = i + 1; }); }
+      }
+      saida.splice(pos, 0, r);
+    }
+    // sem separador, o bloco sai na ordem do dia, no inicial e no reajuste (linha sem horário reconhecido fica no fim, na ordem em que estava)
+    if (!temSep) {
+      const idx = []; saida.forEach((x, i) => { if (ehSupl(x)) idx.push(i); });
+      const ord = idx.map((i, n) => { const k = chaveDe(saida[i]); return { r: saida[i], n, m: momentoDe(saida[i][3]), k: k ? ORDEM.indexOf(k) : 99 }; });
+      if (ord.some((o, n) => n > 0 && ord[n - 1].m > o.m)) mudou.push('a ordem das linhas, que ficou a do dia');
+      ord.sort((a, b) => a.m - b.m || a.k - b.k || a.n - b.n);
+      idx.forEach((i, n) => { saida[i] = ord[n].r; });
+    }
+    // linha que ficou sem dose ou sem horário: o treinador completa
+    saida.forEach(x => { if (!ehSupl(x) || sep(x)) return; if (!/\d+\s*(mg|g\b|mcg|ui|ml|c[áa]ps|caps|dose|colher|gota|comprimid|sache|scoop)/i.test(x.slice(1).join(' '))) notas.push('Linha sem dose: ' + x[1] + '. Completa antes de entregar.'); else if (!String(x[3]).trim() && !temSep) notas.push('Linha sem horário: ' + x[1] + '. Completa antes de entregar.'); });
+    if (fora) notas.push('Tem ' + fora + (fora === 1 ? ' linha' : ' linhas') + ' de remédio, hormônio ou queima na suplementação: o Montar não mexe ' + (fora === 1 ? 'nela' : 'nelas') + '. Confere com o GH.');
+    if (P.temExame && !Object.keys(P.exame || {}).some(k => P.exame[k])) notas.push('Tem exame anexado: lê e marca em "O exame mostrou" o que veio alterado. O Montar não lê o arquivo.');
+    else if (!rea) notas.push('Sem exame anexado: a corretiva saiu só pela anamnese. Vale pedir os exames.');
+    if (P.jaUsa) notas.push('Na anamnese, o que já usa: ' + String(P.jaUsa).slice(0, 160) + '. Confere se algo repete ou precisa sair.');
+    if (P.remedios) notas.push('Usa remédio: ' + String(P.remedios).slice(0, 160) + '. Confere interação antes de entregar.');
+    if (P.alergiaLeite) notas.push('Alergia a leite: o whey virou proteína vegetal.');
+    else if (P.lactose && q.whey) notas.push('Intolerância à lactose: o whey é o isolado.');
+    return { rows: saida, entrou, saiu, mudou, ficou, notas, total: saida.filter(r => ehSupl(r) && !sep(r)).length };
+  }
+  return { monta, fatoresDe, ITEM, NOME, MULTI_MOTIVO, nrm };
+})();
+
+// ── v664 (GH 17/11, plano B): MONTAR A SUPLEMENTAÇÃO dentro do editor da dieta, sem IA. Lê da anamnese inicial o que ele
+// marcou pra melhorar (digestão, humor, foco, imunidade, pele), o sono, a ansiedade, o estresse, a lactose e a alergia;
+// na aba de reajuste lê as notas do formulário de reajuste e mantém o que o aluno já usa. O treinador confere cada marca,
+// diz o que o exame mostrou (o Montar não lê arquivo) e o botão escreve o bloco de suplementação com dose e horário.
+// Hormônio, peptídeo e remédio não entram e o que já estiver escrito disso não é tocado. As respostas ficam só na
+// memória da página.
+const _suMo = { car: false, erro: '', senha: false, j: null, v: null, rv: null, pronto: null, aba: '' };
+const _SUMO_FAT = [['digestao', 'Digestão'], ['humor', 'Humor'], ['foco', 'Foco'], ['imunidade', 'Imunidade'], ['pele', 'Pele, cabelo e unha']];
+const _SUMO_TEM = [['sonoRuim', 'Sono ruim'], ['ansiedadeAlta', 'Ansiedade alta'], ['estresseAlto', 'Estresse alto'], ['dorArticular', 'Dor articular'], ['artrose', 'Artrose ou tendinite em laudo'], ['libido', 'Queda de libido']];
+const _SUMO_EX = [['d3', 'Vitamina D baixa'], ['b12', 'B12 baixa'], ['ferritina', 'Ferritina baixa'], ['ldl', 'Colesterol alto'], ['trig', 'Triglicérides alto'], ['glicose', 'Glicose alterada'], ['zinco', 'Zinco baixo'], ['folico', 'Ácido fólico baixo']];
+const _SUMO_WHEY = [['', 'Comum'], ['iso', 'Isolado (lactose)'], ['veg', 'Vegetal (alergia a leite)'], ['sem', 'Não compra']];
+const _SUMO_MULTI = [['', 'Não'], ['exame', 'Hipovitaminose no exame'], ['escritorio', 'Escritório sem sol'], ['desregrada', 'Alimentação desregrada']];
+function _suMoNao(t) { const n = _teFiNorm(t).trim(); return !n || /^(nao|n|nenhum|nenhuma|nada|nao uso|nao utilizo|nao tomo|-)\b/.test(n); }
+function _suMoIni(j) {
+  const f = ((j && j.fichas) || []).find(x => x && x.fonte === 'inicial'); if (!f) return null;
+  const N = _teFiNorm, resp = f.respostas || [], L = _trMoLimpa, R = re => L(_diMoR(f, re));
+  const d = _diMoIni(j) || {}, t = _trMoIni(j) || {};
+  const nota = re => { const y = resp.find(z => re.test(N(_teFiTxt(z.p))) && /^[1-5]\b/.test(String(z.r == null ? '' : z.r).trim())); return y ? +String(y.r).trim().charAt(0) : null; };
+  const comResto = re => { const k = resp.findIndex(y => re.test(N(_teFiTxt(y.p)))); if (k < 0) return ''; const a = L(resp[k].r); if (_suMoNao(a)) return ''; if (!/^sim\b/.test(N(a).trim())) return a; const prox = resp[k + 1]; const b = prox && /resposta anterior|se sim|qual|quais|onde|explique/.test(N(_teFiTxt(prox.p))) ? L(prox.r) : ''; return b || 'sim (não disse qual)'; };
+  const fatTxt = R(/fatores.*precisa melhorar/), usa = resp.filter(y => /quais suplementos e (vitaminas|manipulados)/.test(N(_teFiTxt(y.p))) && !_suMoNao(y.r)).map(y => L(y.r)).join(' / ');
+  const artic = [comResto(/problema osseo ou articular/), comResto(/limitacao articular/)].filter(Boolean).join(' / ');
+  const exa = resp.find(y => /exames de sangue/.test(N(_teFiTxt(y.p)))), wheyTxt = R(/pacote de whey/), alergia = String(d.alergia || '');
+  const sint = R(/atualmente algum desses sintomas/), horm = /^sim\b/.test(N(R(/contratou o acompanhamento hormonal/)).trim());
+  return { f, sexo: d.sexo || t.sexo || '', objTxt: L(d.objTxt || ''), secar: d.obj === 'secar', fatTxt, fat: GHSU.fatoresDe(fatTxt), sono: t.sono == null ? null : t.sono, sonoTxt: R(/como e o seu sono/),
+    ansioso: /^sim\b/.test(N(R(/muito ansioso/)).trim()), ansNota: nota(/nivel de ansiedade/), estressado: /^sim\b/.test(N(R(/muito estressado/)).trim()), estNota: nota(/nivel de estresse/),
+    lac: !!d.lac, alergia, alergiaLeite: /leite|lact|caseina|whey/.test(N(alergia)), semWhey: !!wheyTxt && /^nao\b/.test(N(wheyTxt).trim()), wheyTxt, investe: R(/investir em sua suplementacao/), usa,
+    remedios: comResto(/utiliza medicamentos/), temExame: !!(exa && String(exa.r == null ? '' : exa.r).trim() && !_suMoNao(exa.r)), artic, artrose: /artrose|condropatia|condromalac|tendin|bursite|hernia/.test(N(artic)), libido: /libido/.test(N(sint)), horm, sint };
+}
+// formulário de reajuste: as notas de agora, comparadas com a rodada anterior
+function _suMoRea(j) {
+  const fs = ((j && j.fichas) || []).filter(x => x && x.fonte === 'reajuste'); if (!fs.length) return null;
+  const N = _teFiNorm, le = f => { const resp = (f && f.respostas) || []; const nota = re => { const y = resp.find(z => re.test(N(_teFiTxt(z.p))) && /^[1-5]\b/.test(String(z.r == null ? '' : z.r).trim())); return y ? +String(y.r).trim().charAt(0) : null; };
+    return { ans: nota(/ansiedade/), est: nota(/nivel de estresse|estresse/), sonoCmp: nota(/sono atualmente/) }; };
+  const a = le(fs[0]), b = fs[1] ? le(fs[1]) : null, f = fs[0];
+  const acha = re => _trMoLimpa(_diMoR(f, re));
+  return { f, data: String(f.data || '').slice(0, 10), ans: a.ans, est: a.est, sonoCmp: a.sonoCmp, ansAntes: b ? b.ans : null, melhorou: acha(/fatores.*melhor|o que melhorou/), livre: acha(/tuas palavras|suas palavras/) };
+}
+function _suMoWheyNaDieta() { let dentro = false; return (dietaData || []).some(r => { const s = String((r && r[0]) || '').toLowerCase().trim(); if (s === 'ref') { dentro = true; return false; } if (dentro && (s === '' || s === 'alimento' || s === 'food' || s === 'op')) return /whey/i.test(String(r[1] || '')); if (s !== 'obs' && s !== 'nota') dentro = false; return false; }); }
+function _suMoTemSupl() { return Array.isArray(dietaData) && dietaData.some(r => String((r && r[0]) || '').toLowerCase().trim() === 'supl' && String(r[1] || '').trim()); }
+function _suMoBase(ini) {
+  const fat = {}; _SUMO_FAT.forEach(p => { fat[p[0]] = !!(ini && ini.fat.indexOf(p[0]) >= 0); });
+  return { fat, sonoRuim: !!(ini && ini.sono != null && ini.sono <= 2), ansiedadeAlta: !!(ini && ini.ansioso && ini.ansNota >= 4), estresseAlto: !!(ini && ini.estressado && ini.estNota >= 4), dorArticular: !!(ini && ini.artic), artrose: !!(ini && ini.artrose),
+    libido: !!(ini && ini.libido && !ini.horm), whey: ini ? (ini.semWhey ? 'sem' : (ini.alergiaLeite ? 'veg' : (ini.lac ? 'iso' : ''))) : '', deficit: false, multi: '', exame: {} };
+}
+function _suMoValores(ini) { if (!_suMo.v) _suMo.v = _suMoBase(ini); return _suMo.v; }
+function _suMoReaValores(ini, rea) {
+  if (_suMo.rv) return _suMo.rv;
+  const v = _suMoBase(ini);
+  // o reajuste só acrescenta marca: o que a anamnese inicial pediu continua valendo (o fiscal cobra) e o formulário novo liga
+  // sono pior que no início (1 ou 2), ansiedade 4 ou 5 ou pior que na rodada anterior, estresse 4 ou 5
+  if (rea) {
+    const antes = rea.ansAntes != null ? rea.ansAntes : (ini ? ini.ansNota : null);
+    if (rea.sonoCmp != null && rea.sonoCmp <= 2) v.sonoRuim = true;
+    if (rea.ans != null && (rea.ans >= 4 || (antes != null && rea.ans > antes))) v.ansiedadeAlta = true;
+    if (rea.est != null && rea.est >= 4) v.estresseAlto = true;
+  }
+  _suMo.rv = v; return v;
+}
+function suMoAba(a) { _suMo.aba = a; _suMo.pronto = null; _suMoDesenha(); }
+function suMoSet(k, val) {
+  const v = _suMo.aba === 'rea' ? _suMo.rv : _suMo.v; if (!v) return;
+  if (k === 'fat') v.fat[val] = !v.fat[val]; else if (k === 'exame') v.exame[val] = !v.exame[val]; else if (k === 'tem') { v[val] = !v[val]; if (val === 'artrose' && v.artrose) v.dorArticular = true; } else v[k] = val;
+  _suMoDesenha();
+}
+async function _suMoCarrega(fresh) {
+  const sid = String(trainerSheetId || ''); if (!sid) return;
+  _suMo.car = true; _suMo.erro = ''; _suMo.senha = false; _suMoDesenha();
+  try { await _teFichaCarrega(!!fresh); } catch (_) {}
+  if (String(trainerSheetId || '') !== sid) return;
+  _suMo.car = false;
+  const j = _teFi.cache.get(sid);
+  if (j) { _suMo.j = j; _suMo.v = null; _suMo.rv = null; }
+  else { _suMo.j = null; _suMo.erro = (_teFi.st && _teFi.st.erro) || 'A ficha não veio agora. Tenta de novo.'; _suMo.senha = !!(_teFi.st && _teFi.st.senha); }
+  _suMoDesenha();
+}
+function suMoSenha() { if (_trainerToken_(true)) _suMoCarrega(true); }
+function suMoAbre() {
+  if (!trainerSheetId || !Array.isArray(dietaData)) return;
+  _suMo.pronto = null; _suMo.aba = '';
+  if (!_suMo.j || _teFi.cache.get(String(trainerSheetId)) !== _suMo.j) { _suMo.j = _teFi.cache.get(String(trainerSheetId)) || null; _suMo.v = null; _suMo.rv = null; }
+  _suMoDesenha(); if (!_suMo.j) _suMoCarrega(false);
+}
+function suMoFecha(tudo) { const o = document.getElementById('suMo'); if (o) o.hidden = true; _suMo.pronto = null; if (tudo) { _suMo.j = null; _suMo.v = null; _suMo.rv = null; _suMo.aba = ''; _suMo.erro = ''; _suMo.car = false; } }
+function _suMoDesenha() {
+  let o = document.getElementById('suMo');
+  if (!o) { o = document.createElement('div'); o.id = 'suMo'; o.className = 'te-conf di-mo tr-mo su-mo'; o.hidden = true; o.addEventListener('click', ev => { if (ev.target === o) suMoFecha(); }); (document.getElementById('trainerEditor') || document.body).appendChild(o); }
+  const e = escTrainer, nome = String(typeof trainerStudentNameHint === 'string' && trainerStudentNameHint ? trainerStudentNameHint : ((_suMo.j && _suMo.j.nome) || ''));
+  let h = '<div class="te-conf-cx" role="dialog" aria-label="Montar a suplementação">';
+  if (_suMo.pronto) {
+    const r = _suMo.pronto;
+    h += '<div class="te-conf-tit">' + e(r.tit) + '</div><div class="te-conf-sub">' + e(nome) + '</div><div class="te-conf-lista"><div class="te-ent-res">' + e(r.res) + '</div>' + (r.dias || []).map(t => '<div class="tr-mo-dia">' + e(t) + '</div>').join('') + (r.notas || []).map(t => '<div class="te-ent-linha">' + e(t) + '</div>').join('') +
+      (r.ok ? '<div class="di-mo-dica">Não gostou? O botão de desfazer do editor volta a suplementação como estava.</div>' : '') + '</div><div class="te-conf-pe"><button type="button" class="te-conf-salva ok su-mo-ver" onclick="suMoFecha()">' + (r.ok ? 'Ver a suplementação' : 'Fechar') + '</button></div>';
+    o.innerHTML = h + '</div>'; o.hidden = false; return;
+  }
+  h += '<div class="te-conf-tit">Montar a suplementação</div><div class="te-conf-sub">' + e(nome) + '</div>';
+  if (_suMo.car) { o.innerHTML = h + '<div class="te-ent-res">Buscando a anamnese…</div><div class="te-conf-pe"><button type="button" class="te-conf-salva" onclick="suMoFecha()">Fechar</button></div></div>'; o.hidden = false; return; }
+  if (_suMo.erro || !_suMo.j) { o.innerHTML = h + '<div class="te-ent-linha">' + e(_suMo.erro || 'A ficha não veio agora.') + '</div><div class="te-conf-pe"><button type="button" class="te-conf-salva" onclick="suMoFecha()">Fechar</button><button type="button" class="te-conf-salva ok" onclick="' + (_suMo.senha ? 'suMoSenha()' : '_suMoCarrega(true)') + '">' + (_suMo.senha ? 'Digitar a senha' : 'Tentar de novo') + '</button></div></div>'; o.hidden = false; return; }
+  const ini = _suMoIni(_suMo.j), rea = _suMoRea(_suMo.j);
+  if (!_suMo.aba) _suMo.aba = _suMoTemSupl() && rea ? 'rea' : 'ini';
+  const ehRea = _suMo.aba === 'rea', v = ehRea ? _suMoReaValores(ini, rea) : _suMoValores(ini), grupo = _trMoGrupo, tem = _suMoTemSupl();
+  h += '<div class="di-mo-abas"><button type="button" class="' + (!ehRea ? 'on' : '') + '" onclick="suMoAba(\'ini\')">Anamnese inicial</button><button type="button" class="' + (ehRea ? 'on' : '') + '" onclick="suMoAba(\'rea\')">Anamnese de reajuste</button></div>';
+  h += '<div class="te-conf-lista di-mo-corpo">';
+  if (ehRea) {
+    if (!rea) h += '<div class="te-ent-aviso">Não achei a anamnese de reajuste deste aluno. Dá pra montar marcando tudo aqui embaixo.</div>';
+    else {
+      const d = [rea.sonoCmp ? 'Sono comparado ao início: ' + rea.sonoCmp + ' de 5' : '', rea.ans ? 'Ansiedade: ' + rea.ans + ' de 5' + (rea.ansAntes ? ' (na rodada anterior, ' + rea.ansAntes + ')' : (ini && ini.ansNota ? ' (na anamnese inicial, ' + ini.ansNota + ')' : '')) : '', rea.est ? 'Estresse: ' + rea.est + ' de 5' : '', rea.melhorou ? 'O que melhorou: ' + rea.melhorou : '', rea.livre ? 'Com as palavras dele: ' + rea.livre : ''].filter(Boolean);
+      h += '<div class="di-mo-dados"><b>No reajuste' + (rea.data ? ' de ' + e(rea.data) : '') + '</b><br>' + (d.length ? d.map(e).join('<br>') : 'Veio sem as notas de sono, ansiedade e estresse. Marca aqui embaixo.') + '</div>';
+    }
+  }
+  if (!ini) h += '<div class="te-ent-aviso">Não achei a anamnese inicial deste aluno. Dá pra montar marcando tudo aqui embaixo.</div>';
+  else {
+    const d = [ini.fatTxt ? 'Quer melhorar: ' + ini.fatTxt : '', ini.sono ? 'Sono: ' + ini.sono + ' de 5' + (ini.sonoTxt ? ' (' + ini.sonoTxt + ')' : '') : (ini.sonoTxt ? 'Sono: ' + ini.sonoTxt : ''), (ini.ansNota || ini.ansioso) ? 'Ansiedade: ' + (ini.ansioso ? 'se acha ansioso' : 'não se acha ansioso') + (ini.ansNota ? ', ' + ini.ansNota + ' de 5 nos últimos 30 dias' : '') : '',
+      (ini.estNota || ini.estressado) ? 'Estresse: ' + (ini.estressado ? 'se acha estressado' : 'não se acha estressado') + (ini.estNota ? ', ' + ini.estNota + ' de 5 nos últimos 30 dias' : '') : '', ini.objTxt ? 'Objetivo: ' + ini.objTxt : '', ini.lac ? 'Intolerância à lactose: sim' : '', ini.alergia ? 'Alergia: ' + ini.alergia : '',
+      ini.wheyTxt ? 'Consegue comprar whey: ' + ini.wheyTxt : '', ini.investe ? 'Quanto investe por mês: ' + ini.investe : '', ini.usa ? 'Já usa: ' + ini.usa : '', ini.remedios ? 'Remédios: ' + ini.remedios : '', ini.artic ? 'Articulação: ' + ini.artic : '', ini.temExame ? 'Exame de sangue: anexou' : 'Exame de sangue: não anexou'].filter(Boolean);
+    h += '<div class="di-mo-dados"><b>Na anamnese' + (ehRea ? ' inicial' : '') + '</b><br>' + d.map(e).join('<br>') + '</div>';
+  }
+  h += grupo('Precisa melhorar', _SUMO_FAT.map(p => [p[1], "suMoSet('fat','" + p[0] + "')", !!v.fat[p[0]]]));
+  h += grupo('Também tem', _SUMO_TEM.map(p => [p[1], "suMoSet('tem','" + p[0] + "')", !!v[p[0]]]));
+  h += grupo('Whey', _SUMO_WHEY.map(p => [p[1], "suMoSet('whey','" + p[0] + "')", v.whey === p[0]]));
+  h += grupo('Em déficit e com gordura acima de 20%', [['Não', "suMoSet('deficit',false)", !v.deficit], ['Sim', "suMoSet('deficit',true)", !!v.deficit]]);
+  h += grupo('O exame mostrou', _SUMO_EX.map(p => [p[1], "suMoSet('exame','" + p[0] + "')", !!v.exame[p[0]]]));
+  h += grupo('Multivitamínico', _SUMO_MULTI.map(p => [p[1], "suMoSet('multi','" + p[0] + "')", v.multi === p[0]]));
+  const av = [];
+  if (ini && ini.secar && !v.deficit) av.push('O objetivo dele é emagrecer. Se a gordura passa de 20%, marca o déficit aqui em cima que entra o Morosil.');
+  if (ini && ini.temExame && !_SUMO_EX.some(p => v.exame[p[0]])) av.push('Ele anexou exame de sangue. O Montar não lê o arquivo: abre o exame e marca em "O exame mostrou" o que veio alterado.');
+  if (ini && ini.libido && ini.horm) av.push('Marcou queda de libido e contratou o acompanhamento hormonal: essa conduta é com o GH.');
+  if (ini && ini.remedios) av.push('Usa remédio (' + ini.remedios + '). Confere interação antes de entregar.');
+  if (_suMoWheyNaDieta() && v.whey !== 'sem') av.push('A dieta já tem whey nas refeições: a linha do whey sai apontando pra elas, sem dose extra de pós-treino.');
+  if (ehRea && tem) av.push('No reajuste o que ele já usa fica como está. O Montar só acrescenta o que falta e tira o que o método não usa.');
+  if (!ehRea && tem) av.push('A suplementação já tem linhas. Montar reescreve as que são do método com a dose e o horário padrão e mantém as outras.');
+  h += av.map(t => '<div class="te-ent-aviso">' + e(t) + '</div>').join('');
+  h += '<div class="di-mo-dica">Hormônio, peptídeo e remédio não entram aqui: isso é contigo. Linha disso que já estiver escrita não é tocada.</div></div>';
+  h += '<div class="te-conf-pe"><button type="button" class="te-conf-salva" onclick="suMoFecha()">Fechar</button><button type="button" class="te-conf-salva ok su-mo-vai" onclick="suMoMonta()">Montar a suplementação</button></div>';
+  o.innerHTML = h + '</div>'; o.hidden = false;
+}
+function suMoMonta() {
+  const ehRea = _suMo.aba === 'rea', v = ehRea ? _suMo.rv : _suMo.v; if (!v || !Array.isArray(dietaData)) return;
+  const ini = _suMoIni(_suMo.j);
+  const perfil = { tipo: ehRea ? 'reajuste' : 'inicial', fatores: _SUMO_FAT.map(p => p[0]).filter(k => v.fat[k]), sonoRuim: !!v.sonoRuim, ansiedadeAlta: !!v.ansiedadeAlta, estresseAlto: !!v.estresseAlto, dorArticular: !!v.dorArticular, artrose: !!v.artrose, libido: !!v.libido,
+    lactose: v.whey === 'iso', alergiaLeite: v.whey === 'veg', semWhey: v.whey === 'sem', wheyNaDieta: _suMoWheyNaDieta(), deficit: !!v.deficit, multi: v.multi || '', exame: Object.assign({}, v.exame), temExame: !!(ini && ini.temExame), jaUsa: ini ? ini.usa : '', remedios: ini ? ini.remedios : '' };
+  let r; try { r = GHSU.monta(dietaData.map(x => (x || []).slice()), perfil); } catch (_) { r = null; }
+  if (!r) { _suMo.pronto = { tit: 'Não montou', res: 'Não consegui montar a suplementação. Ajusta na mão pelo editor.', notas: [], ok: false }; _suMoDesenha(); _suMo.pronto = null; return; }
+  const antes = dietaData.map(x => (x || []).slice());
+  // as linhas que não são de suplemento voltam inteiras, com todas as colunas que já tinham
+  const orig = new Map(); antes.forEach(x => { if (String((x || [])[0] || '').toLowerCase().trim() === 'supl') { const y = x.slice(0, 4).map(z => (z == null ? '' : String(z))); while (y.length < 4) y.push(''); orig.set(y.join('\u0001'), x); } });
+  let k = 0; const novas = r.rows.map(x => { if (String(x[0] || '').toLowerCase().trim() !== 'supl') { while (k < antes.length && String((antes[k] || [])[0] || '').toLowerCase().trim() === 'supl') k++; const y = antes[k++]; return y ? y.slice() : x; } const o = orig.get(x.slice(0, 4).join('\u0001')); return o ? o.slice() : x.slice(0, 4); });
+  _diMoPoe(novas);
+  DIETA_OPEN_BLOCKS.add('supl');
+  if (typeof currentEditMode !== 'undefined' && currentEditMode !== 'dieta') switchEditMode('dieta'); else renderCurrentEditor();
+  const lista = ns => ns.length > 1 ? ns.slice(0, -1).join(', ') + ' e ' + ns[ns.length - 1] : (ns[0] || '');
+  const dias = [];
+  if (r.entrou.length) dias.push('Entrou: ' + lista(r.entrou));
+  if (r.saiu.length) dias.push('Saiu: ' + lista(r.saiu));
+  r.mudou.forEach(t => dias.push('Mudou: ' + t));
+  if (!r.entrou.length && !r.saiu.length && !r.mudou.length) dias.push('A suplementação já estava como o método pede: nada mudou.');
+  _suMo.pronto = { ok: true, tit: ehRea ? 'Suplementação reajustada' : 'Suplementação montada', res: r.total + (r.total === 1 ? ' linha' : ' linhas') + ' na suplementação. Lê cada uma, ajusta o que quiser e salva a aba.', dias, notas: r.notas };
+  _suMoDesenha();
+}
+
 function openTrainerSheetModal() {
   document.getElementById('trainerSheetIdInput').value = '';
   teShow('trainerSheetModal');
@@ -34542,6 +34859,7 @@ function trainerExit() {
   try { _teEnt.mandando = false; teEntFecha(); _teEntGuarda_('', null, null); } catch (_) {}   // v660
   try { diMoFecha(true); } catch (_) {}   // v661
   try { trMoFecha(true); } catch (_) {}   // v662
+  try { suMoFecha(true); } catch (_) {}   // v664
   try { teFantasmaFechar(); } catch (_) {}   // v605
   try { teFichaSai(); } catch (_) {}   // v656
   _teFant = null;
@@ -34689,7 +35007,7 @@ function renderDietaEditor() {
   // SUPLEMENTAÇÃO
   html += renderDietaBlock('supl', '💊 SUPLEMENTAÇÃO', sections.supl.length + ' itens',
     sections.supl.map(r => renderDietaSimpleRow(r, ['Suplemento', 'Dose', 'Horário/Obs'])).join('') +
-    `<button class="di-add-btn" onclick="dietaAddSimple('supl')">+ Suplemento</button>`);
+    `<div class="di-su-novas"><button class="di-add-btn" onclick="dietaAddSimple('supl')">+ Suplemento</button><button type="button" class="di-add-btn su-mo-abre" onclick="suMoAbre()" title="Montar a suplementação pela anamnese inicial ou de reajuste, sem IA">Montar pela anamnese</button></div>`);
 
   // REFEIÇÕES (cada uma é um bloco colapsável próprio)
   const _dia = _diDiaCab_(dietaData);   // v659: o rótulo do dia do ciclo aparece antes da primeira refeição dele
