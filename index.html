@@ -3765,6 +3765,24 @@
   /* ══ v653 (GH 17/11, plano C): editor mais rápido no celular ══ */
   #teMaisBtn, .te-mais-links, .te-undo-cel, .te-ex-resumo { display: none; }
   .di-tudo-bar { display: flex; justify-content: flex-end; margin: 0 0 8px; }
+  /* ══ v658 (GH 17/11, plano C): fila de quem está sem protocolo ══ */
+  .tf-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 4px 2px 2px; }
+  .tf-cab b { font-size: 12px; color: var(--gold); letter-spacing: 0.3px; text-transform: uppercase; white-space: nowrap; }
+  .tf-cab span { font-size: 10.5px; color: #888; text-align: right; }
+  .tf-it { display: flex; flex-direction: column; gap: 3px; }
+  .tf-it .tf-b { width: 100%; font-family: inherit; }
+  .tf-it .tf-b.on { border-color: var(--gold); }
+  .tf-it .tf-b[disabled] { opacity: 0.55; cursor: default; }
+  .tf-conf { background: #1b1b1b; border: 1px solid var(--gold-dim, #7a6520); border-radius: 6px; padding: 9px 10px; font-size: 12px; line-height: 1.45; color: #ddd; }
+  .tf-conf > div { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .tf-conf button { font-family: inherit; font-size: 12.5px; font-weight: 800; border-radius: 6px; padding: 8px 12px; cursor: pointer; min-height: 36px; }
+  .tf-sim { flex: 1 1 auto; background: var(--gold); color: #141414; border: 1px solid var(--gold); }
+  .tf-nao { background: transparent; color: #bbb; border: 1px solid #444; }
+  .tf-erro { font-size: 12px; line-height: 1.4; color: #ff9a8f; padding: 2px 4px 4px; }
+  .tf-nota { color: #888; font-size: 11.5px; padding: 6px 4px; margin: 0; }
+  .tf-zero { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 12px auto 0; max-width: 340px; }
+  .tf-zero button { flex: 1 1 150px; background: #1c1c1c; border: 1px solid #6b5a22; color: #E3BE6B; opacity: 1; border-radius: 7px; padding: 9px 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .tf-zero button:hover { border-color: var(--gold); color: #fff; }
   /* ══ v657 (GH 17/11, plano C): refeições salvas ══ */
   .di-head-sv { background: transparent; border: 1.5px solid #555; color: #ddd; border-radius: 4px; cursor: pointer; padding: 2px 8px; font-size: 15px; flex-shrink: 0; font-weight: 700; line-height: 1.2; font-family: inherit; }
   .di-head-sv:hover { border-color: var(--gold); color: var(--gold); }
@@ -4921,6 +4939,11 @@ html[data-theme="light"] .te-conf-it.erro i { background: #c0392b; }
 html[data-theme="light"] .te-conf-it b { color: #999; }
 html[data-theme="light"] .te-conf-salva { color: #3a3a3a; border-color: rgba(0, 0, 0, 0.3); }
 html[data-theme="light"] .te-conf-alvo { outline-color: #c27a00 !important; }
+html[data-theme="light"] .tf-cab b { color: #8a6410; }
+html[data-theme="light"] .tf-cab span, html[data-theme="light"] .tf-nota { color: #6b6b6b; }
+html[data-theme="light"] .tf-conf { background: #fff; border-color: #B8913F; color: #141414; }
+html[data-theme="light"] .tf-nao { color: #555; border-color: rgba(0, 0, 0, 0.25); }
+html[data-theme="light"] .tf-erro { color: #b0392e; }
 html[data-theme="light"] .di-head-sv { background: var(--glass-2); border-color: var(--glass-line); color: var(--fg); }
 html[data-theme="light"] .di-head-sv.on { color: #8a6410; border-color: #B8913F; }
 html[data-theme="light"] .rs-usa { background: #fff; border-color: rgba(0, 0, 0, 0.12); color: #141414; }
@@ -8795,7 +8818,7 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
     <p style="color:#888;font-size:12px;margin:0 0 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
       <span>Pesquisa pelo nome (digita 2+ letras)</span>
       <span id="trainerStudentCount" style="color:#666;font-size:10px;flex:1;"></span>
-      <button type="button" id="trainerRefreshBtn" onclick="loadTrainerStudents(true)"
+      <button type="button" id="trainerRefreshBtn" onclick="loadTrainerStudents(true); try { tfBusca(true); } catch (_) {}"
               style="background:transparent;border:1px solid var(--gold-dim);color:var(--gold);font-size:11px;padding:3px 9px;border-radius:4px;cursor:pointer;font-weight:700;"
               title="Forçar atualização: usa quando criou aluno novo">🔄 Atualizar</button>
     </p>
@@ -29474,7 +29497,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v657';
+    var APP_SHELL_V = 'metodo-gh-v658';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
@@ -30719,6 +30742,7 @@ function trainerSearchStudents(query) {
   const q = norm(query).trim();
   if (!q || q.length < 2) {
     list.innerHTML = '';
+    try { tfDesenha(); } catch (_) {}   // v658
     return;
   }
   if (!trainerStudentsLoaded) {
@@ -30759,9 +30783,102 @@ function pickTrainerStudent(sheetId, name) {
   trainerLoadSheet();
 }
 
+// ── v658 (GH 17/11, plano C): FILA de quem está sem protocolo, no topo da lista de alunos do editor. Lê a rota editor_fila do
+// .gs 2026-11-17b (ativos da mestre sem link do protocolo, na ordem da mestre: quem espera há mais tempo em cima). Tocar num
+// aluno pede a planilha pela rota editor_cria_planilha (cria a pasta e a planilha se não existirem; se já existem, só devolve) e
+// abre o editor. A planilha nova nasce vazia: o editor abre EM BRANCO (cabeçalho e nome), pronto pra treino pronto, copiar de
+// outro aluno ou montar na mão. A fila fica só na memória da página. Entrega (link na mestre, aviso ao aluno) não é aqui.
+const _tf = { fila: null, ts: 0, car: false, erro: '', conf: 0, criando: 0, msg: {} };
+const _tfSids = new Map();   // planilha aberta pela fila: { linha, n, novo }
+function _tfNorm(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+function _tfBuscaCurta() { const i = document.getElementById('trainerStudentSearch'); return _tfNorm(i ? i.value : '').length < 2; }
+function _tfEspera(compra) {   // "12/11/2026" vira "há 5 dias"
+  const m = String(compra || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); if (!m) return '';
+  const d = new Date(+m[3], +m[2] - 1, +m[1]), h = new Date(); h.setHours(0, 0, 0, 0);
+  const n = Math.round((h - d) / 86400000);
+  if (isNaN(n) || n < 0 || n > 400) return '';
+  return n === 0 ? 'comprou hoje' : (n === 1 ? 'comprou ontem' : 'comprou há ' + n + ' dias');
+}
+async function tfBusca(forca) {
+  if (_tf.car) return;
+  if (!forca && _tf.fila && Date.now() - _tf.ts < 60000) return;
+  const tok = localStorage.getItem('gh_trainer_token') || '';
+  if (!tok) { _tf.erro = 'senha'; tfDesenha(); return; }
+  _tf.car = true; tfDesenha();
+  try {
+    const r = await fetch(TRAINER_APPS_SCRIPT + '?action=editor_fila&token=' + encodeURIComponent(tok) + '&_=' + Date.now(), { cache: 'no-store' });
+    const j = await r.json();
+    if (j && j.ok && Array.isArray(j.fila)) {
+      _tf.fila = j.fila.filter(x => x && x.n && +x.linha >= 2).map(x => ({ linha: +x.linha, n: String(x.n), plano: String(x.plano || ''), compra: String(x.compra || ''), versao: String(x.versao || '') }));
+      _tf.ts = Date.now(); _tf.erro = '';
+    } else if (j && j.error === 'unauthorized') _tf.erro = 'senha';
+    else _tf.erro = _tf.fila ? '' : 'semrota';   // servidor sem a rota: a lista de alunos segue como sempre foi
+  } catch (_) { _tf.erro = _tf.fila ? 'velha' : 'rede'; }
+  _tf.car = false; tfDesenha();
+}
+function tfAbre() { _tf.conf = 0; _tf.msg = {}; tfDesenha(); tfBusca(false); }
+function tfDesenha() {
+  const list = document.getElementById('trainerStudentList'); if (!list) return;
+  if (!_tfBuscaCurta()) return;   // com 2 letras ou mais a lista é da busca
+  const aviso = t => '<p class="tf-nota">' + t + '</p>';
+  if (!_tf.fila) {
+    list.innerHTML = _tf.car ? aviso('Vendo quem está sem protocolo…') : (_tf.erro === 'rede' ? aviso('Não consegui ver a fila de quem está sem protocolo. Confere a internet e toca em Atualizar.') : '');
+    return;
+  }
+  if (!_tf.fila.length) { list.innerHTML = aviso('Ninguém esperando protocolo agora.'); return; }
+  let h = '<div class="tf-cab"><b>Sem protocolo (' + _tf.fila.length + ')</b><span>' + (_tf.car ? 'atualizando…' : (_tf.erro === 'velha' ? 'não atualizou' : 'mais antigo em cima')) + '</span></div>';
+  _tf.fila.forEach(x => {
+    const meta = [x.plano, _tfEspera(x.compra)].filter(Boolean).join(' · ');
+    h += '<div class="tf-it" data-linha="' + x.linha + '"><button class="trainer-student-item tf-b' + (_tf.conf === x.linha ? ' on' : '') + '" onclick="tfToca(' + x.linha + ')"' + (_tf.criando ? ' disabled' : '') + '><span>' + escTrainer(x.n) + '</span>' + (meta ? '<span class="trainer-student-meta">' + escTrainer(meta) + '</span>' : '') + '</button>';
+    if (_tf.criando === x.linha) h += '<div class="tf-conf"><span>Preparando a planilha deste aluno. Leva alguns segundos…</span></div>';
+    else if (_tf.conf === x.linha) h += '<div class="tf-conf"><span>Abrir pra montar o protocolo? Se ele ainda não tem planilha, a pasta e a planilha dele são criadas agora.</span><div><button type="button" class="tf-sim" onclick="tfCria(' + x.linha + ')">Abrir pra montar</button><button type="button" class="tf-nao" onclick="tfToca(0)">Agora não</button></div></div>';
+    if (_tf.msg[x.linha]) h += '<div class="tf-erro">' + escTrainer(_tf.msg[x.linha]) + '</div>';
+    h += '</div>';
+  });
+  list.innerHTML = h;
+}
+function tfToca(linha) { if (_tf.criando) return; _tf.conf = (_tf.conf === linha ? 0 : linha); tfDesenha(); }
+async function tfCria(linha) {
+  if (_tf.criando) return;
+  const x = (_tf.fila || []).find(y => y.linha === linha); if (!x) return;
+  _tf.criando = linha; delete _tf.msg[linha]; tfDesenha();
+  let erro = '', j = null;
+  try {
+    const r = await _publicaAba_(TRAINER_APPS_SCRIPT, { type: 'editor_cria_planilha', linha: linha, nome: x.n });
+    j = r && r.j;
+    if (!j) erro = 'O servidor não respondeu direito. Tenta de novo.';
+    else if (j.ok === true && /^[\w-]{20,}$/.test(String(j.sheetId || ''))) erro = '';
+    else if (/unauthorized/i.test(String(j.error || ''))) erro = 'A senha do treinador deste aparelho não confere.';
+    else if (/mudou de aluno/i.test(String(j.error || ''))) { erro = 'A mestre mudou de lugar. Atualizei a fila: procura o aluno de novo.'; setTimeout(() => tfBusca(true), 50); }
+    else if (/sinal_aguardando/i.test(String(j.error || ''))) erro = 'Este aluno pagou só o sinal e ainda não fechou o plano. A planilha só nasce depois.';
+    else if (j.ok === false) erro = 'Não deu pra preparar a planilha agora (' + String(j.error || 'sem motivo').slice(0, 120) + ').';
+    else erro = 'O servidor ainda não tem essa função. A planilha deste aluno precisa ser criada pela entrega.';
+  } catch (_) { erro = 'Sem resposta do servidor. Confere a internet e tenta de novo.'; }
+  _tf.criando = 0;
+  if (erro) { _tf.msg[linha] = erro; _tf.conf = 0; tfDesenha(); return; }
+  _tf.conf = 0;
+  _tfSids.set(String(j.sheetId), { linha: linha, n: x.n, novo: j.jaExistia === false });
+  tfDesenha();
+  pickTrainerStudent(String(j.sheetId), x.n);
+}
+// planilha da fila que veio vazia: abre em branco. "novo" = o servidor acabou de criar (vale uma vez só); fora disso só quando as
+// DUAS abas responderam e vieram vazias. Planilha de qualquer outro caminho nunca abre em branco (não dá pra salvar um protocolo
+// vazio por cima de um de verdade por causa de uma leitura que falhou).
+function _tfBranco_(sid, vazias) {
+  const e = _tfSids.get(String(sid)); if (!e) return null;
+  if (!e.novo && !vazias) return null;
+  e.novo = false;
+  const nome = String(e.n || '').trim();
+  return {
+    t: [['TREINO', 'EXERCÍCIO', 'SÉRIES', 'REPETIÇÕES', 'INTERVALO', 'OBS', 'VÍDEO', 'AQUECIMENTO'], ['info', nome, '', '', '', '', '', '']],
+    d: [['DIETA', 'ALIMENTO', 'QUANTIDADE', 'OBSERVAÇÃO'], ['info', nome, '', '']]
+  };
+}
+
 function openTrainerSheetModal() {
   document.getElementById('trainerSheetIdInput').value = '';
   teShow('trainerSheetModal');
+  try { tfAbre(); } catch (_) {}   // v658: fila de quem está sem protocolo
   // foco abre na BUSCA POR NOME (o caminho de sempre do GH); o campo de ID é o manual raro
   setTimeout(() => document.getElementById('trainerStudentSearch').focus(), 100);
 }
@@ -30784,13 +30901,15 @@ async function trainerLoadSheet(presetSid) {
   if (!sid) { alert('Cola o ID, a URL do Drive OU a URL do site (?sheet=...)'); return; }
   trainerSheetId = sid;
   try { teFantasmaFechar(); } catch (_) {}   // v605
+  // v658: planilha que o servidor ACABOU de criar pela fila pode ainda não estar legível; como ela é vazia, a falha de leitura não trava
+  const _tfSemLeitura = e => { const x = _tfSids.get(String(sid)); if (x && x.novo) return { ok: false, text: async () => '' }; throw e; };
   try {
     const stamp = Date.now();
     // headers=0 evita o gviz mesclar linhas similares (info/meta/regra/supl) numa única —
     // bug que sumia 1ª refeição (DESJEJUM) e suplementos do trainer mode
     const [tResp, dResp] = await Promise.all([
-      fetch(`https://docs.google.com/spreadsheets/d/${sid}/gviz/tq?tqx=out:csv&sheet=TREINO&headers=0&_=${stamp}`),
-      fetch(`https://docs.google.com/spreadsheets/d/${sid}/gviz/tq?tqx=out:csv&sheet=DIETA&headers=0&_=${stamp}`)
+      fetch(`https://docs.google.com/spreadsheets/d/${sid}/gviz/tq?tqx=out:csv&sheet=TREINO&headers=0&_=${stamp}`).catch(_tfSemLeitura),
+      fetch(`https://docs.google.com/spreadsheets/d/${sid}/gviz/tq?tqx=out:csv&sheet=DIETA&headers=0&_=${stamp}`).catch(_tfSemLeitura)
     ]);
     const tText = tResp.ok ? await tResp.text() : '';
     const dText = dResp.ok ? await dResp.text() : '';
@@ -30801,6 +30920,8 @@ async function trainerLoadSheet(presetSid) {
     // Reseta undo stack ao carregar treino novo (evita misturar histórico de sheets)
     teUndoStack = [];
     teUpdateUndoBtn();
+    let _tfB = null;   // v658: aluno da fila com a planilha vazia abre em branco
+    if (!trainerData && !dietaData) { _tfB = _tfBranco_(sid, !!(tResp.ok && dResp.ok && !tText.trim() && !dText.trim())); if (_tfB) { trainerData = _tfB.t; dietaData = _tfB.d; } }
     if (!trainerData && !dietaData) throw new Error('aba TREINO ou DIETA não encontrada (verifique compartilhamento)');
     DIETA_OPEN_BLOCKS.clear(); // reset de blocos abertos pra novo aluno
     _dietaNewFoodRows.clear(); // descarta referências de linhas do aluno anterior
@@ -30812,6 +30933,7 @@ async function trainerLoadSheet(presetSid) {
     renderCurrentEditor();
     const tb = document.getElementById('trainerTplBtn');
     if (tb) tb.style.display = currentEditMode === 'treino' ? 'inline-block' : 'none';
+    if (_tfB && typeof _ghToast === 'function') _ghToast('Planilha nova, em branco. Monta o treino e a dieta e salva cada aba', 5200);
   } catch (e) {
     alert('Erro: ' + e.message);
   }
@@ -30937,12 +31059,14 @@ async function _teFichaCarrega(fresh) {
   const tok = localStorage.getItem('gh_trainer_token') || '';
   if (!tok) { _teFi.st = { erro: 'Falta a senha do treinador neste aparelho.', senha: true }; _teFichaDesenha(); return; }
   const ped = ++_teFi.ped;
+  const _fl = _tfSids.get(String(sid)) || null;   // v658: aluno da fila ainda não tem link na mestre, a ficha vem pela linha
   _teFi.st = { car: true }; _teFichaDesenha();
   let st;
   try {
-    const r = await fetch(TRAINER_APPS_SCRIPT + '?action=ficha_aluno&id=' + encodeURIComponent(sid) + '&token=' + encodeURIComponent(tok) + (fresh ? '&fresh=1' : '') + '&_=' + Date.now(), { cache: 'no-store' });
+    const r = await fetch(TRAINER_APPS_SCRIPT + '?action=ficha_aluno' + (_fl ? '&linha=' + _fl.linha : '&id=' + encodeURIComponent(sid)) + '&token=' + encodeURIComponent(tok) + (fresh ? '&fresh=1' : '') + '&_=' + Date.now(), { cache: 'no-store' });
     const j = await r.json();
-    if (j && j.ok && Array.isArray(j.fichas)) { _teFi.cache.set(sid, j); st = { j }; }
+    if (j && j.ok && _fl && _tfNorm(j.nome) !== _tfNorm(_fl.n)) st = { erro: 'A mestre mudou de lugar e a ficha que veio é de outro aluno. Fecha o editor e abre este aluno pela fila de novo.' };
+    else if (j && j.ok && Array.isArray(j.fichas)) { _teFi.cache.set(sid, j); st = { j }; }
     else if (j && j.error === 'unauthorized') st = { erro: 'A senha do treinador deste aparelho não confere.', senha: true };
     else if (j && j.error === 'aluno nao encontrado') st = { erro: 'Não achei este aluno na planilha mestre. O link do protocolo dele ainda não está lá.' };
     else st = { erro: 'A ficha não veio agora.' };
@@ -31720,7 +31844,8 @@ function renderTrainerEditor() {
   try { teTecladoLiga(); } catch (_) {}   // v655
   document.getElementById('trainerDaysContainer').innerHTML = hasDays ? html : `
     <p style="color:#888;text-align:center;padding:30px;">Sem exercícios na aba TREINO.</p>
-    <button class="te-new-day-btn" onclick="addNewDay()" style="margin: 0 auto; max-width:340px;">+ Criar primeiro DIA de treino</button>`;
+    <button class="te-new-day-btn" onclick="addNewDay()" style="margin: 0 auto; max-width:340px;">+ Criar primeiro DIA de treino</button>
+    <div class="tf-zero"><button type="button" onclick="openTrainerTemplateModal()">Carregar treino pronto</button><button type="button" onclick="teCopiaAbrir()">Copiar de outro aluno</button></div>`;
 }
 
 // v653: no celular o exercício ocupa uma linha; a observação fica resumida embaixo e o exercício abre (observação inteira
