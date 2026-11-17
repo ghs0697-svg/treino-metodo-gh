@@ -3762,6 +3762,60 @@
     #trainerEditor #teUndoBtn:disabled { opacity: .4; }
   }
   .te-dias-nav { display: none; }
+  /* ══ v653 (GH 17/11, plano C): editor mais rápido no celular ══ */
+  #teMaisBtn, .te-mais-links, .te-undo-cel, .te-ex-resumo { display: none; }
+  .di-tudo-bar { display: flex; justify-content: flex-end; margin: 0 0 8px; }
+  .di-tudo-btn { background: transparent; border: 1px solid #444; color: #aaa; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .di-tudo-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .di-ref-cab { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 6px; margin: 0 0 8px; }
+  .di-ref-cab input { background: #222; color: #fff; border: 1px solid #333; padding: 7px 8px; border-radius: 4px; font-size: 12px; width: 100%; box-sizing: border-box; font-family: inherit; }
+  .di-ref-cab input:focus { border-color: var(--gold); outline: none; }
+  .di-ref-cab .di-ref-nome { font-weight: 700; }
+  .di-head-dup { background: transparent; border: 1.5px solid #555; color: #ddd; border-radius: 4px; cursor: pointer; padding: 3px 8px; font-size: 13px; flex-shrink: 0; font-weight: 700; line-height: 1.2; }
+  .di-head-dup:hover { border-color: var(--gold); color: var(--gold); }
+  @media (max-width: 480px) {
+    /* topo: nome, Desfazer, ⋯, Salvar e ✕ numa linha; abas na segunda; o resto só com o ⋯ aberto */
+    #trainerEditor .te-top-bar { align-items: center; }
+    #trainerEditor .te-top-info { order: -5; flex: 1 1 0; min-width: 0; }
+    #trainerEditor .te-top-info .te-info-link { display: none; }
+    #trainerEditor .te-top-bar > #teUndoBtn { order: -4; flex: 0 0 auto; padding: 8px 12px; font-size: 16px; line-height: 1; }
+    #trainerEditor #teUndoBtn .te-lbl { display: none; }
+    #trainerEditor #teUndoBtn .te-undo-cel { display: inline; }
+    #trainerEditor .te-top-bar > #teMaisBtn { display: inline-flex; align-items: center; justify-content: center; order: -3; flex: 0 0 auto; padding: 8px 12px; font-size: 18px; line-height: 1; font-weight: 800; }
+    #trainerEditor .te-top-bar.mais > #teMaisBtn { background: #DDB65C; color: #1A1304; border-color: #DDB65C; }
+    #trainerEditor .te-top-bar > #trainerSaveBtn { order: -2; flex: 0 0 auto; padding: 8px 14px; font-size: 13.5px; }
+    #trainerEditor .te-top-bar > .te-btn:last-child { order: -1; }
+    #trainerEditor .te-top-bar > #trainerTplBtn, #trainerEditor .te-top-bar > #teCopiaBtn, #trainerEditor .te-top-bar > #teRecadoBtn, #trainerEditor .te-top-bar > #teFantasmaBtn { order: 2; }
+    #trainerEditor .te-top-bar:not(.mais) > #trainerTplBtn, #trainerEditor .te-top-bar:not(.mais) > #teCopiaBtn, #trainerEditor .te-top-bar:not(.mais) > #teRecadoBtn, #trainerEditor .te-top-bar:not(.mais) > #teFantasmaBtn { display: none !important; }
+    #trainerEditor .te-top-bar.mais > .te-mais-links { display: flex; order: 1; flex-basis: 100%; gap: 7px; }
+    #trainerEditor .te-mais-links a, #trainerEditor .te-mais-links .te-link-copy { flex: 1 1 0; text-align: center; font-size: 12.5px; padding: 9px 6px; border-radius: 8px; border: 1px solid rgba(221,182,92,.55); background: #2a2a2a; color: #E3BE6B; text-decoration: none; font-weight: 700; line-height: 1.2; font-family: inherit; }
+    /* linha da dieta em dois andares: nome inteiro em cima, quantidade e observação embaixo */
+    #trainerEditor .di-row { grid-template-columns: 34px 84px minmax(0, 1fr) 30px; row-gap: 5px; padding: 6px 0; }
+    #trainerEditor .di-row > :nth-child(1) { grid-column: 1; grid-row: 1 / span 2; }
+    #trainerEditor .di-row > :nth-child(2) { grid-column: 2 / span 2; grid-row: 1; }
+    #trainerEditor .di-row > :nth-child(3) { grid-column: 2; grid-row: 2; }
+    #trainerEditor .di-row > :nth-child(4) { grid-column: 3; grid-row: 2; }
+    #trainerEditor .di-row > :nth-child(5) { grid-column: 4; grid-row: 1 / span 2; }
+    #trainerEditor .di-row + .di-row { border-top: 1px solid rgba(128,128,128,.18); }
+    #trainerEditor .di-row input { font-size: 13px; padding: 8px; }
+    #trainerEditor .di-ref-cab input { font-size: 13px; padding: 8px; }
+    #trainerEditor .di-add-btn { padding: 8px 12px; font-size: 12.5px; }
+    #trainerEditor .di-action-bar { gap: 6px; }
+    #trainerEditor .di-action-bar .di-add-btn { flex: 1 1 auto; }
+    #trainerEditor .di-block[data-key^="ref-"] .di-block-meta { display: none; }   /* o horário já está no campo logo abaixo */
+  }
+  /* notebook (901 a 1500 px): os botões espremiam o nome do aluno e o link do protocolo até sumirem; o nome ganha a linha dele */
+  @media (min-width: 901px) and (max-width: 1500px) {
+    #trainerEditor .te-top-bar { flex-wrap: wrap; }
+    #trainerEditor .te-top-info { flex-basis: 100%; order: -1; }
+  }
+  @media (max-width: 600px) {
+    /* treino: uma linha por exercício; abre ao tocar */
+    #trainerEditor .te-ex:not(.aberto) > .te-obs, #trainerEditor .te-ex:not(.aberto) > .te-detail-btn { display: none; }
+    #trainerEditor .te-ex:not(.aberto) > .te-ex-resumo { display: block; font-size: 11.5px; line-height: 1.3; opacity: .72; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 5px 2px 1px 2px; cursor: pointer; }
+    #trainerEditor .te-ex.aberto { box-shadow: 0 0 0 1.5px rgba(221,182,92,.55); }
+    #trainerEditor .te-ex-name { white-space: normal; line-height: 1.2; max-height: 2.9em; text-overflow: clip; }   /* nome do exercício em até duas linhas, sem cortar */
+  }
   /* v629: em uma coluna (celular, iPad em pé) cada DIA cresce inteiro, sem caixa da altura da tela com rolagem por dentro: no
      iPhone o DIA 1 enchia a tela e o dedo rolava só dentro dele, os outros dias nunca apareciam. */
   @media (max-width: 799px) {
@@ -4721,6 +4775,8 @@ html[data-theme="light"] .di-block-arrow { color: var(--fg-3); }
 html[data-theme="light"] .di-head-trash { background: hsl(6, 45%, 92%); border-color: hsl(6, 35%, 72%); color: var(--fg); }
 html[data-theme="light"] .di-block-body { border-top-color: var(--glass-line); }
 html[data-theme="light"] .di-row input { background: var(--glass-2); color: var(--fg); border-color: var(--glass-line); }
+html[data-theme="light"] .di-ref-cab input { background: var(--glass-2); color: var(--fg); border-color: var(--glass-line); }
+html[data-theme="light"] .di-head-dup { background: var(--glass-2); border-color: var(--glass-line); color: var(--fg); }
 html[data-theme="light"] .di-sv-drop { background: #fffdf8; border-color: var(--glass-line); box-shadow: 0 10px 30px rgba(60,45,10,.18); }
 html[data-theme="light"] .di-sv-head { background: #f6f1e4; border-bottom-color: var(--glass-line); }
 html[data-theme="light"] .di-sv-todas { border-top-color: var(--glass-line); }
@@ -8578,11 +8634,13 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
   <div class="te-top-bar">
     <div class="te-top-info" id="trainerStudentInfo"></div>
     <div class="te-mode-tabs" id="teModeTabs"></div>
-    <button class="te-btn ghost" id="teUndoBtn" onclick="undoTrainerAction()" disabled title="Desfazer última ação (Ctrl+Z)"><span class="te-ico">↶ </span>Desfazer</button>
+    <button class="te-btn ghost" id="teUndoBtn" onclick="undoTrainerAction()" disabled title="Desfazer última ação (Ctrl+Z)" aria-label="Desfazer"><span class="te-ico">↶ </span><span class="te-undo-cel">↶</span><span class="te-lbl">Desfazer</span></button>
     <button class="te-tpl-btn" id="trainerTplBtn" onclick="openTrainerTemplateModal()" style="display:none;" title="Carregar template oficial (substitui exercícios mantendo info do aluno)"><span class="te-ico">📋 </span>Template</button>
     <button class="te-btn ghost" id="teCopiaBtn" onclick="teCopiaAbrir()" title="Copiar treino, dieta ou parte da dieta de outro aluno">⧉<span class="te-lbl"> Copiar de</span></button>
     <button class="te-btn ghost" id="teRecadoBtn" onclick="openRecadoModal()" title="Gravar recado em áudio pro aluno (entrega inicial). Some em 2 dias.">🎙<span class="te-lbl"> Recado</span></button>
     <button class="te-btn ghost" id="teFantasmaBtn" onclick="teFantasmaAbrir()" title="Ver por cima como este protocolo estava antes (versão anterior). Só a equipe vê.">👻<span class="te-lbl"> Antes</span></button>
+    <div class="te-mais-links" id="teMaisLinks"></div>
+    <button class="te-btn ghost" id="teMaisBtn" onclick="teMaisAlterna()" title="Mais opções" aria-label="Mais opções">⋯</button>
     <button class="te-btn" id="trainerSaveBtn" onclick="trainerSave()">💾 Salvar</button>
     <button class="te-btn ghost" onclick="trainerExit()">✕</button>
   </div>
@@ -29234,7 +29292,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v652';
+    var APP_SHELL_V = 'metodo-gh-v653';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
@@ -30601,6 +30659,9 @@ function renderEditorTopBar() {
       (_LOJA ? `<a href="#" onclick="teAbrirProtoAqui();return false;" title="Abrir o protocolo do aluno aqui no app"><span class="te-ico">🔗 </span>abrir protocolo</a>` : `<a href="${protoUrl}" target="_blank" rel="noopener" title="Abrir o protocolo do aluno numa nova aba"><span class="te-ico">🔗 </span>abrir protocolo</a>`) +
       `<button type="button" class="te-link-copy" onclick="teCopyProtoLink(this)" title="Copiar o link do protocolo pra mandar pro aluno">copiar link</button>` +
     `</span>`;
+  // v653: no celular os dois botões do link moram no "⋯"
+  const _ml = document.getElementById('teMaisLinks');
+  if (_ml) _ml.innerHTML = (_LOJA ? `<a href="#" onclick="teAbrirProtoAqui();return false;">abrir protocolo</a>` : `<a href="${protoUrl}" target="_blank" rel="noopener">abrir protocolo</a>`) + `<button type="button" class="te-link-copy" onclick="teCopyProtoLink(this)">copiar link</button>`;
 
   const tabs = `
     <button class="te-mode-tab${currentEditMode === 'treino' ? ' active' : ''}" ${trainerData ? `onclick="switchEditMode('treino')"` : 'disabled'}><span class="te-ico">📋 </span>TREINO</button>
@@ -30611,6 +30672,16 @@ function renderEditorTopBar() {
   `;
   document.getElementById('teModeTabs').innerHTML = tabs;
 }
+
+// v653: "⋯" do topo do editor no celular
+function teMaisAlterna(abre) {
+  const b = document.querySelector('#trainerEditor .te-top-bar'); if (!b) return;
+  b.classList.toggle('mais', typeof abre === 'boolean' ? abre : !b.classList.contains('mais'));
+}
+document.addEventListener('click', e => {
+  const t = e.target && e.target.closest && e.target.closest('#teCopiaBtn, #teRecadoBtn, #teFantasmaBtn, #trainerTplBtn, #teMaisLinks a, #teMaisLinks button');
+  if (t) setTimeout(() => teMaisAlterna(false), 0);
+});
 
 function switchEditMode(mode) {
   try { teFantasmaFechar(); } catch (_) {}   // v605: o fantasma é de uma aba só
@@ -31282,7 +31353,7 @@ function renderTrainerEditor() {
       const color = MUSCLE_COLORS[g];
       const tc = teTextColor_(color);
       const icon = e.warmup ? '🔵' : '🔄';
-      html += `<div class="te-ex" data-idx="${e.idx}" style="border-left-color:${color}"
+      html += `<div class="te-ex${_teExAberto === e.idx ? ' aberto' : ''}" data-idx="${e.idx}" style="border-left-color:${color}"
           ondragover="teDragOver(event)" ondragleave="teDragLeave(event)" ondrop="teDrop(${e.idx}, event)">
         <div class="te-ex-row">
           <span class="te-drag-handle" draggable="true" ondragstart="teDragStart(${e.idx}, event)" ondragend="teDragEnd()" title="Arraste pra reordenar"><i class="te-dots">⋮⋮</i><span class="te-mv"><button type="button" class="te-mv-b" onclick="event.stopPropagation();teMoveEx(${e.idx},-1)" aria-label="Subir" title="Subir">▲</button><button type="button" class="te-mv-b" onclick="event.stopPropagation();teMoveEx(${e.idx},1)" aria-label="Descer" title="Descer">▼</button></span></span>
@@ -31291,7 +31362,7 @@ function renderTrainerEditor() {
           <input class="te-input" value="${escTrainer(e.reps)}" oninput="_teUpdate(this,3)" placeholder="Reps">
           <input class="te-input" value="${escTrainer(e.rest)}" oninput="_teUpdate(this,4)" placeholder="Int.">
           <button class="te-trash" onclick="removeExercise(${e.idx})" title="Remover exercício">🗑</button>
-        </div>
+        </div>${e.obs ? `<div class="te-ex-resumo" onclick="teExAbre(${e.idx}, true)">${escTrainer(e.obs)}</div>` : ''}
         <input class="te-input te-obs" value="${escTrainer(e.obs)}" oninput="_teUpdate(this,5)" placeholder="OBS / cadência (use o botão de detalhes pra montagem rápida)">
         <button class="te-detail-btn" onclick="openDetailModal(${e.idx})">✏️ Cadência · Técnica · Detalhes →</button>
       </div>`;
@@ -31309,10 +31380,32 @@ function renderTrainerEditor() {
 
   const _teC = document.getElementById('trainerDaysContainer');
   if (_teC && !_teC._teNav) { _teC._teNav = 1; _teC.addEventListener('scroll', teDiasNavSync, { passive: true }); }
+  if (_teC && !_teC._teAbre) { _teC._teAbre = 1; _teC.addEventListener('focusin', ev => { const x = ev.target && ev.target.closest && ev.target.closest('.te-ex'); if (x && ev.target.tagName === 'INPUT') teExAbre(+x.dataset.idx); }); }
   setTimeout(teDiasNavSync, 0);
   document.getElementById('trainerDaysContainer').innerHTML = hasDays ? html : `
     <p style="color:#888;text-align:center;padding:30px;">Sem exercícios na aba TREINO.</p>
     <button class="te-new-day-btn" onclick="addNewDay()" style="margin: 0 auto; max-width:340px;">+ Criar primeiro DIA de treino</button>`;
+}
+
+// v653: no celular o exercício ocupa uma linha; a observação fica resumida embaixo e o exercício abre (observação inteira
+// e botão de técnica) quando a pessoa toca num campo dele ou no resumo. Um aberto por vez.
+let _teExAberto = -1;
+function _teExResumo(el) {
+  const idx = +el.dataset.idx, obs = String((trainerData[idx] && trainerData[idx][5]) || '').trim();
+  let r = el.querySelector('.te-ex-resumo');
+  if (!obs) { if (r) r.remove(); return; }
+  if (!r) { r = document.createElement('div'); r.className = 'te-ex-resumo'; r.onclick = () => teExAbre(idx, true); const row = el.querySelector('.te-ex-row'); if (row) row.insertAdjacentElement('afterend', r); }
+  r.textContent = obs;
+}
+function teExAbre(idx, foca) {
+  const c = document.getElementById('trainerDaysContainer'); if (!c) return;
+  if (_teExAberto !== idx) {
+    c.querySelectorAll('.te-ex.aberto').forEach(x => { x.classList.remove('aberto'); try { _teExResumo(x); } catch (_) {} });
+    _teExAberto = idx;
+  }
+  const el = c.querySelector('.te-ex[data-idx="' + idx + '"]'); if (!el) return;
+  el.classList.add('aberto');
+  if (foca) { const o = el.querySelector('.te-obs'); if (o && getComputedStyle(o).display !== 'none') { try { o.focus(); } catch (_) {} } }
 }
 
 function teIrDia(d) {
@@ -32084,7 +32177,8 @@ function renderDietaEditor() {
     sections.refs.forEach(r => DIETA_OPEN_BLOCKS.add('ref-' + r.idx));
   }
 
-  let html = '';
+  const _algumAberto = ['regras', 'supl', 'orient', 'proto', 'info'].some(k => DIETA_OPEN_BLOCKS.has(k)) || sections.refs.some(r => !_dietaRefFechadas.has(dietaData[r.idx]));
+  let html = `<div class="di-tudo-bar"><button type="button" class="di-tudo-btn" onclick="dietaTudo()">${_algumAberto ? 'Recolher tudo' : 'Abrir tudo'}</button></div>`;
 
   // INFO + METAS
   if (sections.info.length) {
@@ -32204,7 +32298,16 @@ function renderDietaBlock(key, title, meta, body) {
   </div>`;
 }
 
+const _dietaRefFechadas = new WeakSet();   // v653: refeições recolhidas, pela linha
 function dietaToggleBlock(key) {
+  const _m = /^ref-(\d+)$/.exec(key), _row = _m && dietaData[+_m[1]];
+  if (_row) {
+    if (_dietaRefFechadas.has(_row)) _dietaRefFechadas.delete(_row); else _dietaRefFechadas.add(_row);
+    const _el = document.querySelector(`.di-block[data-key="${key}"]`);
+    if (_el) _el.classList.toggle('open', !_dietaRefFechadas.has(_row));
+    const _b = document.querySelector('.di-tudo-btn'); if (_b) _b.textContent = (document.querySelector('#trainerDaysContainer .di-block.open') ? 'Recolher tudo' : 'Abrir tudo');
+    return;
+  }
   if (DIETA_OPEN_BLOCKS.has(key)) DIETA_OPEN_BLOCKS.delete(key);
   else DIETA_OPEN_BLOCKS.add(key);
   const el = document.querySelector(`.di-block[data-key="${key}"]`);
@@ -32521,21 +32624,15 @@ document.addEventListener('scroll', () => _svPosiciona_(), true);
 
 function renderDietaRefeicao(ref, ri) {
   const key = `ref-${ref.idx}`;
-  const isOpen = DIETA_OPEN_BLOCKS.has(key);
   const r = dietaData[ref.idx];
+  const isOpen = !_dietaRefFechadas.has(r);   // v653
   const refName = r[1] || 'Refeição';
   const refKcal = r[3] || '';
   const totalItems = ref.items.length + ref.opcoes.reduce((a, o) => a + o.items.length, 0);
 
-  let body = `<div class="di-row" style="margin-bottom:6px;">
-    <span class="te-drag-handle" title="refeição">≡</span>
-    <input type="text" value="${escTrainer(r[1])}" oninput="dietaData[${ref.idx}][1]=this.value;dietaUpdateBlockTitle('${key}',this.value)" placeholder="Nome (DESJEJUM, ALMOÇO…)" style="grid-column: span 3;">
-    <button class="te-trash" onclick="dietaRemoveRef(${ref.idx})" title="Remover refeição">🗑</button>
-  </div>
-  <div class="di-row" style="margin-bottom:8px;">
-    <span></span>
-    <input type="text" value="${escTrainer(r[3])}" oninput="dietaData[${ref.idx}][3]=this.value" placeholder="Aprox kcal / prot (ex: 500 kcal | 40g prot)" style="grid-column: span 3;">
-    <span></span>
+  let body = `<div class="di-ref-cab">
+    <input type="text" class="di-ref-nome" value="${escTrainer(r[1])}" oninput="dietaData[${ref.idx}][1]=this.value;dietaUpdateBlockTitle('${key}',this.value)" placeholder="Nome (DESJEJUM, ALMOÇO…)">
+    <input type="text" class="di-ref-hora" value="${escTrainer(r[3])}" oninput="dietaData[${ref.idx}][3]=this.value;dietaUpdateBlockMeta('${key}',this.value)" placeholder="Horário ou kcal">
   </div>`;
 
   // Itens diretos da refeição (alimentos / obs)
@@ -32559,6 +32656,7 @@ function renderDietaRefeicao(ref, ri) {
     <div class="di-block-head" onclick="dietaToggleBlock('${key}')">
       <span class="di-block-title">🍽 ${escTrainer(refName)}</span>
       <span class="di-block-meta">${escTrainer(refKcal) || totalItems + ' itens'}</span>
+      <button class="di-head-dup" onclick="event.stopPropagation(); dietaDuplicaRef(${ref.idx})" title="Duplicar esta refeição (cria outra igual logo abaixo)" aria-label="Duplicar refeição">⧉</button>
       <button class="di-head-trash" onclick="event.stopPropagation(); dietaRemoveRef(${ref.idx})" title="Excluir esta refeição inteira (alimentos e opções)">🗑</button>
       <span class="di-block-arrow">▶</span>
     </div>
@@ -32708,6 +32806,35 @@ function dietaRemoveRef(idx) {
     if (stopSections.has(s)) { endIdx = j; break; }
   }
   dietaData.splice(idx, endIdx - idx);
+  renderDietaEditor();
+}
+
+// v653: duplica a refeição inteira (alimentos, opções e observações) logo abaixo dela
+function dietaDuplicaRef(idx) {
+  const stop = new Set(['ref', 'regra', 'supl', 'proto', 'ciclo', 'cardio', 'aerob', 'dica', 'orient', 'info', 'meta']);
+  let fim = dietaData.length;
+  for (let j = idx + 1; j < dietaData.length; j++) { if (stop.has(String(dietaData[j][0] || '').toLowerCase().trim())) { fim = j; break; } }
+  const copia = dietaData.slice(idx, fim).filter(r => r.some(c => String(c || '').trim())).map(r => r.slice());
+  if (!copia.length) return;
+  teSnapshot();
+  dietaData.splice(fim, 0, ...copia);
+  renderDietaEditor();
+  const el = document.querySelector('.di-block[data-key="ref-' + fim + '"]');
+  if (el) { try { el.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (_) {} const n = el.querySelector('.di-ref-nome'); if (n) setTimeout(() => { try { n.focus(); n.select(); } catch (_) {} }, 250); }
+  if (typeof _ghToast === 'function') _ghToast('Refeição duplicada. Ajusta o nome e o horário', 2600);
+}
+function dietaUpdateBlockMeta(key, val) {
+  const el = document.querySelector('.di-block[data-key="' + key + '"] .di-block-meta');
+  if (el && String(val || '').trim()) el.textContent = val;
+}
+// v653: recolhe ou abre todos os blocos da dieta de uma vez. O '_' segura o conjunto fora do zero, senão a próxima
+// pintura entende que é a primeira e abre tudo de novo.
+function dietaTudo() {
+  const sec = parseDietaSections(dietaData), fixos = ['info', 'regras', 'supl', 'orient', 'proto'];
+  const algum = fixos.some(k => DIETA_OPEN_BLOCKS.has(k)) || sec.refs.some(r => !_dietaRefFechadas.has(dietaData[r.idx]));
+  DIETA_OPEN_BLOCKS.clear(); DIETA_OPEN_BLOCKS.add('_');
+  if (algum) sec.refs.forEach(r => _dietaRefFechadas.add(dietaData[r.idx]));
+  else { fixos.forEach(k => DIETA_OPEN_BLOCKS.add(k)); sec.refs.forEach(r => _dietaRefFechadas.delete(dietaData[r.idx])); }
   renderDietaEditor();
 }
 
