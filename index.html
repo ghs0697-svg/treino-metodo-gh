@@ -3765,6 +3765,46 @@
   /* ══ v653 (GH 17/11, plano C): editor mais rápido no celular ══ */
   #teMaisBtn, .te-mais-links, .te-undo-cel, .te-ex-resumo { display: none; }
   .di-tudo-bar { display: flex; justify-content: flex-end; margin: 0 0 8px; }
+  /* ══ v654 (GH 17/11, plano C): total da dieta ao vivo ══ */
+  .di-mac { position: sticky; top: -10px; z-index: 6; background: #101010; border: 1px solid rgba(221, 182, 92, 0.45); border-radius: 10px; padding: 8px 10px; margin: 0 0 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35); }
+  .di-mac-nums { flex: 1 1 300px; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; cursor: pointer; color: #ddd; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  .di-mac-dia { display: inline-flex; align-items: baseline; gap: 4px 9px; flex-wrap: wrap; }
+  .di-mac-dia i { font-style: normal; font-size: 10px; font-weight: 800; letter-spacing: .06em; color: #1A1304; background: #DDB65C; border-radius: 4px; padding: 1px 6px; align-self: center; }
+  .di-mac-dia b { font-size: 17px; color: #fff; font-weight: 800; }
+  .di-mac-dia small { font-size: 11px; color: #999; margin-left: -5px; }
+  .di-mac-dia span { font-weight: 700; }
+  .di-mac-dia .fib { font-weight: 500; color: #999; }
+  .di-mac-alvo { font-style: normal; font-size: 11px; font-weight: 600; color: #8fbf8f; }
+  .di-mac-alvo.fora { color: #f0b34a; }
+  .di-mac-vazio { color: #888; font-size: 12px; }
+  .di-mac-sem { background: transparent; border: 1px dashed #f0b34a; color: #f0b34a; border-radius: 999px; padding: 2px 9px; font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .di-mac-bts { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .di-mac-b { background: #DDB65C; color: #1A1304; border: 1px solid #DDB65C; border-radius: 6px; padding: 6px 11px; font-size: 12px; font-weight: 800; cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .di-mac-b.fino { background: transparent; color: #E3BE6B; border-color: rgba(221, 182, 92, 0.55); }
+  .di-mac-painel { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; border-top: 1px solid #2a2a2a; padding-top: 8px; }
+  .di-mac-painel[hidden] { display: none; }
+  .di-mac-painel label { display: flex; flex-direction: column; gap: 3px; font-size: 10.5px; color: #999; font-weight: 700; }
+  .di-mac-painel input { width: 112px; background: #222; color: #fff; border: 1px solid #333; border-radius: 4px; padding: 7px 8px; font-size: 14px; font-family: inherit; box-sizing: border-box; }
+  .di-mac-painel input:focus { border-color: var(--gold); outline: none; }
+  .di-mac-painel p { flex: 1 1 100%; margin: 0; font-size: 11px; color: #888; line-height: 1.4; }
+  .di-ref-kc { color: #bbb; font-size: 11px; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .di-op-kc { color: #999; font-size: 11px; font-weight: 600; white-space: nowrap; margin: 0 8px; font-variant-numeric: tabular-nums; }
+  .di-ref-kc:empty, .di-op-kc:empty { display: none; }
+  .di-op-kc.dif { color: #f0b34a; }
+  .di-row[data-mac="sem"] > input:first-of-type { border-style: dashed; border-color: #f0b34a; }
+  @media (max-width: 480px) {
+    .di-mac { padding: 7px 8px; gap: 6px; }
+    .di-mac-nums { flex-basis: 100%; font-size: 12px; gap: 2px 12px; }
+    .di-mac-dia b { font-size: 16px; }
+    .di-mac-bts { flex: 1 1 100%; gap: 5px; flex-wrap: nowrap; }
+    .di-mac-bts .di-mac-b, .di-mac-bts .di-tudo-btn { flex: 1 1 auto; padding: 8px 4px; font-size: 11.5px; min-width: 0; white-space: nowrap; }
+    .di-mac-painel label { flex: 1 1 40%; } .di-mac-painel input { width: 100%; font-size: 16px; }
+    .di-mac-painel .di-mac-b { flex: 1 1 40%; padding: 9px 6px; }
+    /* o total da refeição desce pra linha de baixo do nome, senão o nome quebra em duas */
+    .di-block[data-key^="ref-"] .di-block-head { flex-wrap: wrap; row-gap: 2px; }
+    .di-block[data-key^="ref-"] .di-block-head .di-block-title { flex: 1 1 0; min-width: 0; }
+    .di-block[data-key^="ref-"] .di-ref-kc { order: 9; flex: 1 1 100%; font-weight: 600; }
+  }
   .di-tudo-btn { background: transparent; border: 1px solid #444; color: #aaa; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; }
   .di-tudo-btn:hover { border-color: var(--gold); color: var(--gold); }
   .di-ref-cab { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 6px; margin: 0 0 8px; }
@@ -4777,6 +4817,20 @@ html[data-theme="light"] .di-block-body { border-top-color: var(--glass-line); }
 html[data-theme="light"] .di-row input { background: var(--glass-2); color: var(--fg); border-color: var(--glass-line); }
 html[data-theme="light"] .di-ref-cab input { background: var(--glass-2); color: var(--fg); border-color: var(--glass-line); }
 html[data-theme="light"] .di-head-dup { background: var(--glass-2); border-color: var(--glass-line); color: var(--fg); }
+html[data-theme="light"] .di-mac { background: #FBFAF7; border-color: rgba(184, 145, 63, 0.55); box-shadow: 0 6px 14px rgba(0, 0, 0, 0.10); }
+html[data-theme="light"] .di-mac-nums { color: #3a3a3a; }
+html[data-theme="light"] .di-mac-dia b { color: #141414; }
+html[data-theme="light"] .di-mac-dia small, html[data-theme="light"] .di-mac-dia .fib, html[data-theme="light"] .di-mac-vazio, html[data-theme="light"] .di-mac-painel label, html[data-theme="light"] .di-mac-painel p { color: #6b6b6b; }
+html[data-theme="light"] .di-mac-alvo { color: #2e7d32; }
+html[data-theme="light"] .di-mac-alvo.fora, html[data-theme="light"] .di-op-kc.dif { color: #a05a00; }
+html[data-theme="light"] .di-mac-sem { border-color: #a05a00; color: #a05a00; }
+html[data-theme="light"] .di-mac-b.fino { color: #7a5c14; border-color: rgba(184, 145, 63, 0.7); }
+html[data-theme="light"] .di-mac-painel { border-top-color: rgba(0, 0, 0, 0.12); }
+html[data-theme="light"] .di-mac-painel input { background: #fff; color: #141414; border-color: rgba(0, 0, 0, 0.22); }
+html[data-theme="light"] .di-ref-kc { color: #4a4a4a; }
+html[data-theme="light"] .di-op-kc { color: #6b6b6b; }
+html[data-theme="light"] .di-row[data-mac="sem"] > input:first-of-type { border-color: #a05a00; }
+html[data-theme="light"] .di-tudo-btn { border-color: rgba(0, 0, 0, 0.25); color: #4a4a4a; }
 html[data-theme="light"] .di-sv-drop { background: #fffdf8; border-color: var(--glass-line); box-shadow: 0 10px 30px rgba(60,45,10,.18); }
 html[data-theme="light"] .di-sv-head { background: #f6f1e4; border-bottom-color: var(--glass-line); }
 html[data-theme="light"] .di-sv-todas { border-top-color: var(--glass-line); }
@@ -29292,7 +29346,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v653';
+    var APP_SHELL_V = 'metodo-gh-v654';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
@@ -32178,7 +32232,7 @@ function renderDietaEditor() {
   }
 
   const _algumAberto = ['regras', 'supl', 'orient', 'proto', 'info'].some(k => DIETA_OPEN_BLOCKS.has(k)) || sections.refs.some(r => !_dietaRefFechadas.has(dietaData[r.idx]));
-  let html = `<div class="di-tudo-bar"><button type="button" class="di-tudo-btn" onclick="dietaTudo()">${_algumAberto ? 'Recolher tudo' : 'Abrir tudo'}</button></div>`;
+  let html = _diMacBarra(_algumAberto);   // v654: total do dia + Recolher tudo
 
   // INFO + METAS
   if (sections.info.length) {
@@ -32219,6 +32273,9 @@ function renderDietaEditor() {
   }
 
   c.innerHTML = html;
+  // v654: total ao vivo (digitar nome ou quantidade recalcula sem redesenhar os campos)
+  if (!c._diMac) { c._diMac = 1; c.addEventListener('input', ev => { const t = ev.target; if (t && t.closest && t.closest('.di-row') && !t.closest('#diMac')) diMacAgenda(); }); }
+  diMacPinta();
 }
 
 function parseDietaSections(rows) {
@@ -32270,6 +32327,7 @@ function parseDietaSections(rows) {
       case 'ciclo':
         sections.proto.push({ idx, type: sec });
         break;
+      case 'alimento':   // v654: dieta antiga marca o alimento na coluna A; o editor não mostrava essas linhas
       case '':
         // alimento (col A vazio): renderiza se tem nome OU se foi recém-adicionado (input vazio pra digitar)
         if (item || isNewFood) {
@@ -32656,6 +32714,7 @@ function renderDietaRefeicao(ref, ri) {
     <div class="di-block-head" onclick="dietaToggleBlock('${key}')">
       <span class="di-block-title">🍽 ${escTrainer(refName)}</span>
       <span class="di-block-meta">${escTrainer(refKcal) || totalItems + ' itens'}</span>
+      <span class="di-ref-kc" data-refkc="${ref.idx}"></span>
       <button class="di-head-dup" onclick="event.stopPropagation(); dietaDuplicaRef(${ref.idx})" title="Duplicar esta refeição (cria outra igual logo abaixo)" aria-label="Duplicar refeição">⧉</button>
       <button class="di-head-trash" onclick="event.stopPropagation(); dietaRemoveRef(${ref.idx})" title="Excluir esta refeição inteira (alimentos e opções)">🗑</button>
       <span class="di-block-arrow">▶</span>
@@ -32669,6 +32728,7 @@ function renderDietaOpcao(op, oi) {
   let html = `<div class="di-op-block">
     <div class="di-op-head">
       <input class="di-op-name" type="text" value="${escTrainer(r[1])}" oninput="dietaData[${op.idx}][1]=this.value" placeholder="Opção 1: nome">
+      <span class="di-op-kc" data-opkc="${op.idx}"></span>
       <button class="te-trash" onclick="dietaRemove(${op.idx})" title="Remover opção">🗑</button>
     </div>`;
   op.items.forEach(it => { html += renderDietaItem(it); });
@@ -32777,6 +32837,547 @@ document.addEventListener('focusout', function (e) { if (e.target && e.target.ma
 function dietaSetObs(idx, val) {
   // OBS na sheet de dieta vai no col[3] (obs/detalhe)
   dietaData[idx][3] = val;
+}
+
+// ── v654: núcleo de macros (CÓPIA GERADA de webfit-mcp/macros.mjs por _gera_macros_app.mjs; não editar aqui) ──
+const GHM = (function () {
+const norm = s => String(s == null ? '' : s)
+  .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .replace(/\([^)]*\)/g, ' ')          // tira "(160g)", "(cozido)"
+  .replace(/\d+\s*(g|kg|ml|un|unidade|fatia|dose|col|colher)s?\b/gi, ' ') // tira qtd embutida
+  .replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ').trim();
+
+const F = (kc, p, c, g, gun = null) => ({ kc, p, c, g, gun });
+const TAB = [
+  [['carne bovina magra', 'bovina', 'gado', 'carne vermelha', 'patinho', 'coxao', 'alcatra', 'file mignon', 'figado bovino'], F(149, 26, 0, 5)],
+  [['frango sem pele', 'frango', 'file de frango', 'peito de frango', 'sobrecoxa', 'moela'], F(119, 23, 0, 3)],
+  [['carne suina magra', 'suina', 'porco', 'lombo suino', 'lombo'], F(124, 22, 0, 4)],
+  [['tilapia', 'file de peixe', 'peixe', 'pescada', 'merluza'], F(98, 20, 0, 2)],
+  [['atum'], F(113, 26, 0, 1)],
+  [['sardinha'], F(145, 25, 0, 5)],
+  [['salmao'], F(170, 20, 0, 10)],
+  [['camarao'], F(89, 20, 0, 1)],
+  [['tofu'], F(76, 8, 2, 4.8)],
+  [['carne de soja', 'proteina de soja', 'pts', 'soja texturizada'], F(110, 13, 9, 1)], // hidratada
+  [['ovos', 'ovo', 'ovo inteiro'], F(143, 13, 1, 9.5, 50)],
+  [['claras', 'clara de ovo', 'clara'], F(52, 11, 0.7, 0.2, 33)],
+  [['whey isolado', 'whey', 'whey protein', 'proteina de ervilha', 'whey vegano'], F(377, 80, 7, 3.3, 30)],
+  [['albumina'], F(370, 80, 6, 1, 30)],
+  [['marmita pronta', 'marmita congelada', 'marmita fit'], F(150, 13, 17, 3.3, 350)],
+  [['arroz integral'], F(124, 2.6, 26, 1)],
+  [['arroz'], F(128, 2.5, 28, 0.2)],
+  [['batata inglesa', 'batata'], F(64, 1.8, 15, 0)],
+  [['batata doce'], F(77, 1.3, 18, 0)],
+  [['mandioca', 'aipim', 'macaxeira'], F(125, 0.6, 30, 0.3)],
+  [['inhame'], F(116, 2.1, 27.6, 0.2)],
+  [['batata salsa'], F(88, 1.4, 20, 0.2)],
+  [['abobora'], F(25, 1, 5, 0.1)],
+  [['beterraba'], F(32, 1.3, 7.2, 0.1)],
+  [['massa integral'], F(120, 5, 24, 0.8)],
+  [['massa', 'macarrao'], F(118, 3, 25, 0.5)],
+  [['cuscuz'], F(112, 2, 25, 0.3)],
+  [['polenta'], F(85, 2, 18, 0.3)],
+  [['feijao'], F(77, 5, 14, 0.5)],
+  [['lentilha'], F(115, 9, 20, 0.4)],
+  [['grao de bico'], F(160, 9, 27, 2.6)],
+  [['aveia', 'farelo de aveia', 'farinha de aveia'], F(352, 14, 56, 8)],
+  [['farinha de arroz', 'creme de arroz'], F(366, 6, 80, 1.5)],
+  [['biscoito de polvilho', 'polvilho'], F(438, 1.3, 80.5, 12.2)],
+  [['geleia'], F(252, 0.4, 62, 0.1)],
+  [['tapioca', 'goma de tapioca'], F(343, 0, 85, 0, 35)],
+  [['pao integral', 'pao de forma', 'pao sem gluten'], F(250, 9, 46, 3, 25)],
+  [['pao frances', 'cacetinho', 'pao'], F(270, 8, 56, 3, 50)],
+  [['rap10', 'wrap', 'tortilha'], F(297, 8, 50, 7, 38)],
+  [['iogurte natural', 'iogurte', 'iogurte zero', 'iogurte desnatado'], F(33, 4, 4, 0, 100)],
+  [['leite desnatado', 'leite'], F(35, 3.4, 5, 0.1, 100)],
+  [['yakult sem acucar', 'yakult light'], F(37.5, 2.1, 4.4, 0, 80)],
+  [['yakult'], F(63.8, 2.1, 13.8, 0, 80)],
+  [['requeijao'], F(113, 10, 3, 7, 30)],
+  [['queijo mussarela', 'mussarela', 'muçarela', 'queijo'], F(280, 23, 2, 21, 30)],
+  [['ricota', 'creme de ricota'], F(140, 11, 3, 8, 35)],
+  [['cottage'], F(98, 11, 3, 4, 30)],
+  [['banana'], F(89, 1.1, 23, 0.3, 100)],
+  [['maca'], F(52, 0.3, 14, 0.2, 150)],
+  [['mamao'], F(40, 0.5, 10, 0.1, 100)],
+  [['abacaxi'], F(48, 0.5, 12, 0.1, 100)],
+  [['manga'], F(60, 0.8, 15, 0.4, 100)],
+  [['morango'], F(34, 0.7, 8, 0.3, 100)],
+  [['framboesa'], F(52, 1.2, 11.9, 0.65)],
+  [['uva'], F(69, 0.6, 17, 0.2, 100)],
+  [['melancia'], F(30, 0.6, 8, 0.2, 100)],
+  [['melao'], F(34, 0.8, 8, 0.1, 100)],
+  [['laranja'], F(47, 0.9, 12, 0.1, 150)],
+  [['tangerina', 'bergamota', 'mexerica'], F(53, 0.8, 13, 0.3, 100)],
+  [['kiwi'], F(56, 1.1, 14, 0.4, 75)],
+  [['pessego'], F(40, 0.9, 10, 0.1, 100)],
+  [['pera'], F(57, 0.4, 15, 0.1, 150)],
+  [['caqui'], F(71, 0.4, 19, 0.1, 100)],
+  [['goiaba'], F(54, 1.4, 13, 0.6, 100)],
+  [['abacate'], F(160, 2, 9, 15, 40)],
+  [['coco'], F(354, 3, 15, 33, 30)],
+  [['azeite', 'azeite de oliva', 'azeite de abacate', 'oleo de abacate', 'oleo'], F(884, 0, 0, 100, 9)], // 1 col sopa ~9g
+  [['manteiga'], F(760, 0.4, 0.1, 84, 10)],   // 1 col sopa ~10g
+  [['margarina'], F(596, 0, 0, 66, 10)],
+  [['pasta de amendoim', 'amendoim'], F(588, 25, 20, 50, 15)],
+  [['chia', 'linhaca'], F(490, 17, 42, 30, 10)],
+  [['pipoca', 'milho de pipoca', 'pipoca estourada'], F(387, 12.9, 77.8, 4.5)],
+  [['mix de sementes', 'semente de abobora', 'sementes de abobora', 'semente de girassol', 'sementes de girassol', 'gergelim'], F(570, 21, 17, 47, 10)],
+  [['castanha', 'noz', 'amendoa'], F(620, 15, 12, 58, 15)],
+  [['chocolate ao leite'], F(540, 7.2, 59.6, 30.3)],
+  [['chocolate meio amargo', 'chocolate amargo', 'chocolate'], F(598, 7.8, 45.9, 42.6)],
+];
+
+const FRUTA_GENERICA = F(52, 0.8, 13, 0.3, 100);
+
+const MEL = F(304, 0.3, 82.4, 0, 20);
+
+const TAB_N = TAB.map(([als, mac]) => [als.map(norm), mac]);
+
+const _ENTRADA = alias => { const n = norm(alias); const e = TAB.find(([als]) => als.map(norm).includes(n)); return e ? e[1] : null; };
+
+const _padrao = opts => (false ? { generico: false, fatia25: false, ...opts } : { generico: true, fatia25: true, ...opts });
+
+function lookup(nome, opts = {}) {
+  opts = _padrao(opts);
+  const n = norm(nome);
+  if (!n) return null;
+  for (const [als, mac] of TAB_N) if (als.includes(n)) return mac;
+  if (/^mel( |$)/.test(n)) return MEL;
+  let best = null, bestLen = 0;
+  for (const [als, mac] of TAB_N) for (const a of als) {
+    if ((n === a || n.includes(a) || a.includes(n)) && a.length > bestLen) { best = mac; bestLen = a.length; }
+  }
+  if (!best && opts.generico && /^(salada de )?frutas?( |$)/.test(n)) return FRUTA_GENERICA;
+  return best;
+}
+
+const _FRACAO_UNICODE = { '½': '0.5', '¼': '0.25', '¾': '0.75', '⅓': '0.3333', '⅔': '0.6667' };
+function normalizaFracao(txt) {
+  let t = String(txt || '').replace(/[½¼¾⅓⅔]/g, m => _FRACAO_UNICODE[m]);
+  return t.replace(/(?:(\d+)\s+)?\b([1-3])\s*\/\s*([2-4])\b/g, (m, inteiro, num, den) => {
+    if (Number(num) >= Number(den)) return m;              // 4/2 não é fração de cozinha
+    const v = Number(inteiro || 0) + Number(num) / Number(den);
+    return String(Number(v.toFixed(4)));
+  });
+}
+
+function parseGramas(item, qtd, gun) {
+  const blob = normalizaFracao(`${item || ''} ${qtd || ''}`.toLowerCase());
+  if (/(a vontade|à vontade|a gosto|livre)/.test(blob)) return null; // salada/legumes: macro ~0
+  const mg = blob.match(/(\d+(?:[.,]\d+)?)\s*g\b/);
+  if (mg) return { g: parseFloat(mg[1].replace(',', '.')) };
+  const ml = blob.match(/(\d+(?:[.,]\d+)?)\s*ml\b/);
+  if (ml) return { g: parseFloat(ml[1].replace(',', '.')) };
+  const mu = blob.match(/(\d+(?:[.,]\d+)?)\s*(inteiro|unidade|un|fatia|dose|col|colher|porcao|porção)/);
+  if (mu && gun) return { g: parseFloat(mu[1].replace(',', '.')) * gun };
+  const mn = blob.match(/\b(\d+(?:[.,]\d+)?)\b/);
+  if (mn && gun) return { g: parseFloat(mn[1].replace(',', '.')) * gun };
+  return null;
+}
+
+function macroDe(item, qtd, opts = {}) {
+  opts = _padrao(opts);
+  const primeiro = String(item || '').split('|')[0].trim();
+  let mac = lookup(primeiro, opts);
+  if (!mac) return null;
+  if (opts.fatia25 && mac === _ENTRADA('pao frances') && !/franc|cacetinho/.test(norm(primeiro))
+      && /fatia/i.test(`${primeiro} ${qtd || ''}`) && !/\d\s*g\b/i.test(`${primeiro} ${qtd || ''}`)) mac = _ENTRADA('pao de forma');
+  let gr = parseGramas(primeiro, qtd, mac.gun);
+  if (!gr) return null;
+  if (mac === MEL) { const t = `${primeiro} ${qtd || ''}`.toLowerCase(); if (!/\d\s*(g|ml)\b/.test(t)) { if (/colher(es)? de ch[aá]/.test(t)) gr = { g: gr.g * 7 / 20 }; else if (/colher(es)? de sobremesa/.test(t)) gr = { g: gr.g * 14 / 20 }; } }
+  const f = gr.g / 100;
+  return { kc: mac.kc * f, p: mac.p * f, c: mac.c * f, g: mac.g * f };
+}
+
+const TETO = {
+  bovina: 250, gado: 250, frango: 300, suina: 300, porco: 300, tilapia: 350, peixe: 350, atum: 250, sardinha: 200, salmao: 300, camarao: 350,
+  arroz: 300, mandioca: 300, massa: 300, cuscuz: 300, polenta: 400, 'batata inglesa': 600, 'batata doce': 600, batata: 600, abobora: 700, inhame: 350, 'batata salsa': 350,
+  aveia: 100, 'farinha de arroz': 100, tapioca: 70,
+};
+
+function gramaParaMacro(item, alvoMacro, qual = 'p', piso = 10) {
+  const mac = lookup(String(item || '').split('|')[0]);
+  if (!mac) return null;
+  const per = qual === 'p' ? mac.p : qual === 'c' ? mac.c : mac.g; // por 100g
+  if (!per || per <= 0) return null;
+  let g = Math.round((alvoMacro / per) * 100 / 10) * 10; // dezenas fechadas
+  const n = norm(item);
+  for (const k in TETO) if (n.includes(k)) { g = Math.min(g, TETO[k]); break; }
+  return g < piso ? (piso === 0 ? 0 : piso) : g;
+}
+
+function somaMacro(linhas) {
+  const tot = { kc: 0, p: 0, c: 0, g: 0 }; let lidos = 0, ignorados = 0;
+  for (const l of linhas) {
+    const m = macroDe(l.item, l.qtd);
+    if (!m) { ignorados++; continue; }
+    tot.kc += m.kc; tot.p += m.p; tot.c += m.c; tot.g += m.g; lidos++;
+  }
+  for (const k of ['kc', 'p', 'c', 'g']) tot[k] = Math.round(tot[k]);
+  return { ...tot, lidos, ignorados };
+}
+
+const FIB_100 = {
+  'carne de soja': 4, 'arroz integral': 2.7, 'arroz': 1.6, 'batata inglesa': 1.3, 'batata doce': 2.2, 'mandioca': 1.6,
+  'inhame': 1.7, 'batata salsa': 1.8, 'abobora': 2.0, 'beterraba': 1.9, 'massa integral': 3.9, 'massa': 1.5,
+  'cuscuz': 2.1, 'polenta': 1.0, 'feijao': 8.5, 'lentilha': 7.9, 'grao de bico': 7.6, 'aveia': 9.1,
+  'farinha de arroz': 0.6, 'pao integral': 2.5, 'pao frances': 2.3, 'rap10': 3,
+  'banana': 2.0, 'maca': 1.3, 'mamao': 1.4, 'abacaxi': 1.0, 'manga': 1.6, 'morango': 1.7, 'framboesa': 6.5,
+  'uva': 0.9, 'melancia': 0.1, 'melao': 0.3, 'laranja': 1.0, 'tangerina': 0.9, 'kiwi': 2.7, 'pessego': 1.4,
+  'pera': 3.0, 'caqui': 6.5, 'goiaba': 6.2, 'abacate': 6.3, 'coco': 5.4,
+  'pasta de amendoim': 8, 'chia': 34, 'pipoca': 14.5, 'mix de sementes': 9, 'castanha': 8,
+  'chocolate ao leite': 2.2, 'chocolate meio amargo': 11,
+};
+const FIBMAP = new Map(TAB.map(([als, mac]) => [mac, FIB_100[als[0]] ?? 0]));
+FIBMAP.set(FRUTA_GENERICA, 1.8); FIBMAP.set(MEL, 0);
+const FIB_VEG = [
+  [['brocolis'], 3.4], [['cenoura'], 2.6], [['vagem'], 2.4], [['couve flor'], 2.1], [['couve'], 3.1],
+  [['espinafre'], 2.5], [['berinjela'], 2.5], [['quiabo'], 2.6], [['abobrinha'], 1.6], [['chuchu'], 1.0],
+  [['repolho'], 1.9], [['pimentao'], 2.6], [['rucula'], 1.7], [['tomate'], 1.2], [['pepino'], 0.5],
+  [['legume', 'legumes', 'vegetais', 'verduras cozidas'], 2.5],
+  [['salada', 'folhas', 'alface', 'verduras'], 1.5],
+].map(([als, f]) => [als.map(norm), f]);
+
+function fibraDe(item, qtd) {
+  const primeiro = String(item || '').split('|')[0].trim();
+  const n = norm(primeiro);
+  if (!n) return null;
+  const mac = lookup(primeiro);
+  if (mac) {
+    let per = FIBMAP.get(mac) ?? 0;
+    if (mac === _ENTRADA('pao integral') && /integral/.test(n)) per = 6.9;
+    let gun = mac.gun;
+    if (mac === _ENTRADA('pao frances') && !/franc|cacetinho/.test(n) && /fatia/i.test(`${primeiro} ${qtd || ''}`)) { per = FIB_100['pao integral']; gun = 25; }
+    let gr = parseGramas(primeiro, qtd, gun);
+    if (!gr && per > 0 && gun) gr = { g: gun };
+    return gr ? per * gr.g / 100 : 0;
+  }
+  let best = null, bestLen = 0;
+  for (const [als, f] of FIB_VEG) for (const a of als) if ((n === a || n.includes(a)) && a.length > bestLen) { best = f; bestLen = a.length; }
+  if (best == null) return null;
+  const gr = parseGramas(primeiro, qtd, null) || { g: 100 };
+  return best * gr.g / 100;
+}
+
+const _ALIAS1 = new Map(TAB.map(([als, mac]) => [mac, als[0]]));
+const _CL = { p: ['carne bovina magra', 'frango sem pele', 'carne suina magra', 'tilapia', 'atum', 'sardinha', 'salmao', 'camarao', 'tofu', 'carne de soja', 'ovos', 'claras', 'whey isolado', 'albumina'],
+  c: ['arroz integral', 'arroz', 'batata inglesa', 'batata doce', 'mandioca', 'inhame', 'batata salsa', 'massa integral', 'massa', 'cuscuz', 'polenta', 'aveia', 'farinha de arroz', 'tapioca', 'pao integral', 'pao frances', 'rap10'],
+  g: ['azeite', 'manteiga', 'margarina', 'pasta de amendoim', 'castanha'] };
+function info(nome) {
+  const primeiro = String(nome || '').split('|')[0].trim();
+  const mac = lookup(primeiro); if (!mac) return null;
+  const alias = _ALIAS1.get(mac) || (mac === MEL ? 'mel' : 'fruta');
+  const cl = _CL.p.includes(alias) ? 'p' : _CL.c.includes(alias) ? 'c' : _CL.g.includes(alias) ? 'g' : '';
+  const n = norm(primeiro); let teto = null; for (const k in TETO) if (n.includes(k)) { teto = TETO[k]; break; }
+  return { alias, cl, teto, gun: mac.gun || null };
+}
+return { norm, lookup, parseGramas, macroDe, fibraDe, gramaParaMacro, info };
+})();
+
+// ── v654 (GH 17/11/2026, plano C): total da dieta ao vivo no editor ──
+// Soma igual ao auditor (regra D10): por dia, cada refeição conta os alimentos soltos mais a 1ª opção. Dieta com ciclo de
+// carbo tem um total por dia do ciclo. "Secar mais" e "Crescer mais" mexem em carbo e, se faltar, em gordura; a proteína só
+// muda quando o treinador digita a proteína no painel (GH: a proteína fica sempre alta).
+function _diMacRot(t) {
+  t = String(t || '');
+  if (/alto/i.test(t)) return 'ALTO'; if (/baixo/i.test(t)) return 'BAIXO'; if (/moder|m[eé]dio/i.test(t)) return 'MÉDIO';
+  return t.replace(/^[^A-Za-zÀ-ú0-9]+|[^A-Za-zÀ-ú0-9]+$/g, '').slice(0, 16);
+}
+function _diMacEstrutura(rows) {
+  rows = rows || [];
+  const sec = r => String((r && r[0]) || '').toLowerCase().trim();
+  // só é cabeçalho de dia a linha de ciclo que tem refeição depois dela (linha de ciclo solta no fim é só explicação)
+  const cab = new Set(); let pend = -1;
+  rows.forEach((r, i) => { const s2 = sec(r); if (s2 === 'ciclo') pend = i; else if (s2 === 'ref' && pend >= 0) { cab.add(pend); pend = -1; } });
+  const blocos = []; let b = null, ref = null, op = null;
+  rows.forEach((r, idx) => {
+    const s2 = sec(r), item = String((r && r[1]) || '').trim();
+    if (s2 === 'ciclo') {
+      if (!cab.has(idx)) return;
+      if (b && !b.ciclo) { b.rot = _diMacRot(item); b.ciclo = true; }      // refeições antes do 1º cabeçalho entram no 1º dia
+      else { b = { rot: _diMacRot(item), ciclo: true, refs: [] }; blocos.push(b); }
+      ref = null; op = null; return;
+    }
+    if (s2 === 'ref') { if (!b) { b = { rot: '', ciclo: false, refs: [] }; blocos.push(b); } ref = { idx, dir: [], ops: [] }; b.refs.push(ref); op = null; return; }
+    if (s2 === 'op') { if (ref) { op = { idx, it: [] }; ref.ops.push(op); } return; }
+    if ((s2 === '' || s2 === 'alimento') && item && ref) (op ? op.it : ref.dir).push(idx);
+  });
+  return blocos.filter(x => x.refs.length);
+}
+function _diMacLivre(r, fb) {
+  const t = (String(r[1] || '') + ' ' + String(r[2] || '')).toLowerCase();
+  if (/(a vontade|à vontade|a gosto|livre)/.test(t)) return true;
+  if (fb != null && !GHM.lookup(String(r[1] || '').split('|')[0])) return true;      // salada e legume: livres no método
+  return /caf[eé]|ch[aá]\b|[aá]gua|lim[aã]o|tempero|ado[cç]ante|creatina|vinagre|canela|mostarda|gelatina (zero|diet)|refrigerante zero|suco zero/.test(t);
+}
+function _diMacZero() { return { kc: 0, p: 0, c: 0, g: 0, f: 0, n: 0 }; }
+function _diMacMais(a, b) { ['kc', 'p', 'c', 'g', 'f', 'n'].forEach(k => { a[k] += b[k]; }); return a; }
+function _diMacCalc(rows) {
+  const st = new Map();
+  const soma = ids => { const t = _diMacZero(); ids.forEach(i => { const r = rows[i]; const m = GHM.macroDe(r[1], r[2]), fb = GHM.fibraDe(r[1], r[2]); if (fb) t.f += fb;
+    if (m) { t.kc += m.kc; t.p += m.p; t.c += m.c; t.g += m.g; t.n++; st.set(i, 'ok'); } else st.set(i, _diMacLivre(r, fb) ? 'livre' : 'sem'); }); return t; };
+  const blocos = _diMacEstrutura(rows);
+  blocos.forEach(b => { b.t = _diMacZero(); b.refs.forEach(ref => {
+    ref.td = soma(ref.dir); ref.ops.forEach(o => { o.t = _diMacMais(soma(o.it), ref.td); });
+    ref.t = ref.ops.length ? ref.ops[0].t : ref.td; _diMacMais(b.t, ref.t);
+  }); });
+  let sem = 0; st.forEach(v => { if (v === 'sem') sem++; });
+  return { blocos, st, sem };
+}
+function _diMacAlvos(rows) {
+  const out = [];
+  (rows || []).forEach((r, idx) => {
+    if (String((r && r[0]) || '').toLowerCase().trim() !== 'meta' || !/^macros?\b/i.test(String(r[1] || '').trim())) return;
+    const C = String(r[2] || '') + ' ' + String(r[3] || '');
+    const kcM = C.match(/(\d[\d.,]*)\s*kcal/i), num = re => { const m = C.match(re); return m ? parseFloat(m[1].replace(',', '.')) : null; };
+    out.push({ idx, rot: _diMacRot(String(r[1]).replace(/^macros?( do dia)?/i, '')).replace(/APROXIMAD[OA]S?/i, '').trim(),
+      kc: kcM ? parseInt(kcM[1].replace(/[.,]/g, ''), 10) : null, p: num(/\bP\s*~?\s*(\d+(?:[.,]\d+)?)/i), c: num(/\bC\s*~?\s*(\d+(?:[.,]\d+)?)/i), g: num(/\bG\s*~?\s*(\d+(?:[.,]\d+)?)/i) });
+  });
+  return out;
+}
+function _diMacAlvoDo(alvos, blocos, bi) {
+  const b = blocos[bi]; if (!alvos.length) return null;
+  if (b.rot) { const a = alvos.find(x => x.rot === b.rot); if (a) return a; }
+  if (blocos.length === 1) return alvos[0];
+  return alvos[bi] && !alvos[bi].rot ? alvos[bi] : null;
+}
+function _diMacN(n) { return Math.round(n).toLocaleString('pt-BR'); }
+
+// Quantidade que dá pra mexer sozinha. Dois jeitos de escrever, os dois das dietas reais:
+//  a) na coluna da quantidade, com um número só: "150g", "200g cozido", "2 unidades", "03 fatias", "200g cru (150g pronto)";
+//  b) dentro do nome, uma por alternativa: "Arroz (120g) | Massa (120g) | Batata inglesa (250g)", "Ovo (04)".
+function _diMacTx(x, virg) { return Number.isInteger(x) ? String(x) : String(Math.round(x * 10) / 10).replace('.', virg ? ',' : '.'); }
+function _diMacPlural(pal, n) { const base = /^un$/i.test(pal) ? pal : pal.replace(/s$/i, ''); return /^un$/i.test(base) || n === 1 ? base : base + 's'; }
+function _diMacQtd(nome, q) {
+  q = String(q == null ? '' : q); if (/\([^)]*\d/.test(String(nome || ''))) return null;
+  let m = /^(\s*)(\d+(?:[.,]\d+)?)(\s*)(g|ml)\b(.*)$/i.exec(q);
+  if (m) {
+    const v = parseFloat(m[2].replace(',', '.')), resto = m[5], virg = m[2].indexOf(',') >= 0;
+    const pr = /^(\s*cru[a]?s?\s*\()(\d+)(\s*g\b)([^)\d]*\)[^\d]*)$/i.exec(resto);
+    if (pr) { const raz = (+pr[2]) / v; return { tipo: 'g', v, fmt: n => m[1] + _diMacTx(n, virg) + m[3] + m[4] + pr[1] + (Math.round(n * raz / 10) * 10) + pr[3] + pr[4] }; }
+    if (/\d/.test(resto)) return null;
+    return { tipo: 'g', v, fmt: n => m[1] + _diMacTx(n, virg) + m[3] + m[4] + resto };
+  }
+  m = /^(\s*)(\d+)(\s*)(unidades?|un|inteiros?|fatias?|doses?)\b(.*)$/i.exec(q);
+  if (m && !/\d/.test(m[5])) {
+    const zero = m[2].length > 1 && m[2][0] === '0';
+    return { tipo: 'u', v: +m[2], fmt: n => m[1] + (zero && n < 10 ? '0' + n : n) + m[3] + _diMacPlural(m[4], n) + m[5] };
+  }
+  return null;
+}
+// uma alternativa escrita no nome: "Arroz (130g cozido)", "Banana (01)", "Pão integral (03 fatias)"
+function _diMacAlt(txt) {
+  const m = /^([^()\d]*\()(\s*)(\d+(?:[.,]\d+)?)(\s*)((?:g|ml)\b)?([^)\d]*\)[^\d]*)$/i.exec(String(txt || ''));
+  if (!m) return null;
+  const v = parseFloat(m[3].replace(',', '.')), virg = m[3].indexOf(',') >= 0;
+  if (m[5]) return { tipo: 'g', v, fmt: n => m[1] + m[2] + _diMacTx(n, virg) + m[4] + m[5] + m[6] };
+  const u = /^(\s*)(unidades?|un|inteiros?|fatias?|doses?)?(\s*\).*)$/i.exec(m[6]); if (!u) return null;
+  const zero = m[3].length > 1 && m[3][0] === '0';
+  return { tipo: 'u', v, fmt: n => m[1] + m[2] + (zero && n < 10 ? '0' + n : n) + m[4] + u[1] + (u[2] ? _diMacPlural(u[2], n) : '') + u[3] };
+}
+function _diMacFaixa(cl, inf, q) {
+  const po = /whey|albumina/.test(inf.alias), seco = /aveia|farinha|tapioca/.test(inf.alias);
+  let passo, min, max;
+  if (q.tipo === 'g') {
+    passo = (cl === 'g' || (cl === 'c' && seco)) ? 5 : 10;   // carbo seco anda de 5 em 5 g (10 g de aveia já são 35 kcal)
+    if (cl === 'c') { min = seco ? 20 : 30; max = inf.teto || Math.max(q.v * 2, q.v + 100); }
+    else if (cl === 'g') { min = 5; max = /amendoim|castanha/.test(inf.alias) ? 40 : 30; }
+    else { min = po ? 20 : 80; max = po ? 60 : (inf.teto || 300); }
+  } else { passo = 1; min = 1; max = cl === 'p' ? (inf.alias === 'claras' ? 8 : po ? 2 : 6) : q.v + 3; }
+  if (q.v < min) min = q.v; if (q.v > max) max = q.v;
+  return { passo, min, max };
+}
+function _diMacLinhaAj(rows, idx, cl) {
+  const r = rows[idx], nome = String(r[1] || ''), qtd = String(r[2] == null ? '' : r[2]);
+  const inf = GHM.info(nome); if (!inf || inf.cl !== cl) return null;
+  if (/\d/.test(qtd)) {                                    // jeito (a)
+    const q = _diMacQtd(nome, qtd); if (!q) return null;
+    const m0 = GHM.macroDe(nome, qtd); if (!m0) return null;
+    const fx = _diMacFaixa(cl, inf, q), memo = {};
+    return { idx, passo: fx.passo, min: fx.min, max: fx.max, v: q.v, v0: q.v, med: n => memo[n] || (memo[n] = GHM.macroDe(nome, q.fmt(n)) || m0), escreve(k) { rows[idx][2] = q.fmt(this.v); } };
+  }
+  if (!/\([^)]*\d/.test(nome)) return null;                // jeito (b)
+  const pecas = nome.split(/(\s*\|\s*)/), q = _diMacAlt(pecas[0]); if (!q || (cl === 'g' && q.tipo !== 'g')) return null;
+  const m0 = GHM.macroDe(pecas[0], ''); if (!m0) return null;
+  const fx = _diMacFaixa(cl, inf, q), memo = {};
+  const med = n => memo[n] || (memo[n] = GHM.macroDe(q.fmt(n), '') || m0);
+  return { idx, passo: fx.passo, min: fx.min, max: fx.max, v: q.v, v0: q.v, med, escreve(k) {
+    const d = med(this.v)[k] - med(q.v)[k];
+    rows[idx][1] = pecas.map((p, j) => {
+      if (j === 0) return q.fmt(this.v); if (j % 2) return p;                       // ímpar = o separador " | "
+      // as outras alternativas da linha levam a MESMA diferença (de kcal ou de proteína), pra continuarem equivalentes
+      const qa = _diMacAlt(p), ia = qa && GHM.info(p), a0 = qa && GHM.macroDe(p, ''); if (!qa || !ia || !a0) return p;
+      const ps = _diMacFaixa(ia.cl || cl, ia, qa).passo, a1 = GHM.macroDe(qa.fmt(qa.v + ps), ''); const pp = a1 ? a1[k] - a0[k] : 0; if (pp < 0.01) return p;
+      return qa.fmt(Math.max(ps, qa.v + Math.round(d / pp) * ps));
+    }).join('');
+  } };
+}
+// reparte um delta (kcal ou g de proteína) entre as linhas, na proporção do que cada uma já pesa, em passos redondos
+function _diMacAloca(ls, delta, k) {
+  if (!ls.length || !delta) return 0;
+  const tot0 = ls.reduce((a, l) => a + l.med(l.v0)[k], 0); if (tot0 <= 0) return 0;
+  ls.forEach(l => {
+    const pp = (l.med(l.v0 + l.passo)[k] - l.med(l.v0)[k]) || 0.0001;
+    const n = Math.round(delta * (l.med(l.v0)[k] / tot0) / pp);
+    l.v = Math.max(l.min, Math.min(l.max, l.v0 + n * l.passo));
+  });
+  const feito = () => ls.reduce((a, l) => a + l.med(l.v)[k] - l.med(l.v0)[k], 0);
+  for (let i = 0; i < 80; i++) {
+    const res = delta - feito(); let best = null, bestAbs = Math.abs(res);
+    ls.forEach(l => [1, -1].forEach(s => { const nv = l.v + s * l.passo; if (nv < l.min || nv > l.max) return;
+      const a = Math.abs(res - (l.med(nv)[k] - l.med(l.v)[k])); if (a < bestAbs - 0.01) { bestAbs = a; best = [l, nv]; } }));
+    if (!best) break; best[0].v = best[1];
+  }
+  return feito();
+}
+function _diMacPasso(rows, b, cl, k, delta) {
+  if (!delta) return 0;
+  const prim = ref => ref.dir.concat(ref.ops.length ? ref.ops[0].it : []);
+  const aplica = l => { if (l.v !== l.v0) l.escreve(k); };
+  const porRef = b.refs.map(ref => prim(ref).map(i => _diMacLinhaAj(rows, i, cl)).filter(Boolean));
+  const feito = _diMacAloca([].concat.apply([], porRef), delta, k);
+  b.refs.forEach((ref, ri) => {
+    const dRef = porRef[ri].reduce((a, l) => a + l.med(l.v)[k] - l.med(l.v0)[k], 0);
+    // as outras opções da refeição andam junto, pra continuarem valendo o mesmo que a 1ª
+    if (Math.abs(dRef) > 0.5) ref.ops.slice(1).forEach(o => { const ls = o.it.map(i => _diMacLinhaAj(rows, i, cl)).filter(Boolean); _diMacAloca(ls, dRef, k); ls.forEach(aplica); });
+    porRef[ri].forEach(aplica);
+  });
+  return feito;
+}
+// op: { dKcal } (botões) ou { alvoKcal, alvoP } (painel). Mexe em `rows` e devolve o que aconteceu em cada dia.
+function _diMacAjusta(rows, op) {
+  const c0 = _diMacCalc(rows); if (!c0.blocos.length) return { dias: [] };
+  const t0 = c0.blocos[0].t;
+  const dP = op.alvoP != null ? op.alvoP - t0.p : 0;
+  const dKc = op.alvoKcal != null ? op.alvoKcal - t0.kc : (op.dKcal || 0);
+  const dias = [];
+  c0.blocos.forEach((_, bi) => {
+    const tot = () => _diMacCalc(rows).blocos[bi].t, bl = () => _diMacEstrutura(rows)[bi];
+    const a = tot(), alvoKc = a.kc + dKc;
+    // proteína: com alvo digitado vai pro alvo; sem alvo, ao SECAR ela não pode cair (o carbo cortado leva uns gramas de
+    // proteína junto, e isso volta na carne ou no ovo). Ao crescer ela sobe um pouco sozinha e fica assim.
+    const digitou = op.alvoP != null, alvoP = digitou ? a.p + dP : (dKc < 0 ? a.p : null);
+    let falta = 0;
+    for (let volta = 0; volta < 3; volta++) {
+      if (alvoP != null) { const dp = alvoP - tot().p; if (digitou ? Math.abs(dp) >= 2 : dp >= 3) _diMacPasso(rows, bl(), 'p', 'p', dp); }
+      falta = alvoKc - tot().kc;
+      if (Math.abs(falta) >= 5) falta -= _diMacPasso(rows, bl(), 'c', 'kc', falta);
+      if (volta === 0 && Math.abs(falta) > 25) {
+        let lim = falta;
+        if (falta < 0) { const t = tot(); const sobra = t.g * 9 - 0.20 * (t.kc + falta); lim = sobra > 0 ? Math.max(falta, -sobra) : 0; }   // piso de gordura: 20% das kcal
+        if (lim) falta -= _diMacPasso(rows, bl(), 'g', 'kc', lim);
+      }
+      if (alvoP == null) break;
+      const dp2 = alvoP - tot().p; if (digitou ? Math.abs(dp2) < 3 : dp2 < 3) break;
+    }
+    const z = tot();
+    dias.push({ rot: c0.blocos[bi].rot, kc0: a.kc, kc1: z.kc, p0: a.p, p1: z.p, falta: alvoKc - z.kc });
+  });
+  return { dias };
+}
+
+// ── tela ──
+let _diMacT = null;
+function diMacAgenda() { clearTimeout(_diMacT); _diMacT = setTimeout(diMacPinta, 160); }
+function _diMacBarra(algumAberto) {
+  return `<div class="di-mac" id="diMac">
+    <div class="di-mac-nums" onclick="diMacPainel()" title="Total do dia pelos alimentos. Toca pra digitar as calorias e a proteína"></div>
+    <div class="di-mac-bts">
+      <button type="button" class="di-mac-b" onclick="diMacMexe(-100)" title="Tira 100 kcal do dia no carbo. A proteína fica">Secar mais</button>
+      <button type="button" class="di-mac-b" onclick="diMacMexe(100)" title="Põe 100 kcal no dia no carbo. A proteína fica">Crescer mais</button>
+      <button type="button" class="di-mac-b fino" onclick="diMacPainel()" title="Digitar as calorias e a proteína do dia">Digitar</button>
+      <button type="button" class="di-tudo-btn" onclick="dietaTudo()">${algumAberto ? 'Recolher tudo' : 'Abrir tudo'}</button>
+    </div>
+    <div class="di-mac-painel" id="diMacPainel" hidden>
+      <label>Calorias do dia<input type="text" inputmode="numeric" id="diMacKc" autocomplete="off"></label>
+      <label>Proteína (g)<input type="text" inputmode="numeric" id="diMacP" autocomplete="off"></label>
+      <button type="button" class="di-mac-b" onclick="diMacAplica()">Aplicar</button>
+      <button type="button" class="di-mac-b fino" onclick="diMacGrava()" title="Escreve o total na linha Macros do dia do protocolo">Gravar total no protocolo</button>
+      <p id="diMacNota"></p>
+    </div>
+  </div>`;
+}
+function _diMacChip(t) { return t.n ? `≈ ${_diMacN(t.kc)} kcal · P ${Math.round(t.p)}` : ''; }
+function diMacPinta() {
+  const el = document.getElementById('diMac'); if (!el || !dietaData || typeof GHM === 'undefined') return;
+  let c; try { c = _diMacCalc(dietaData); } catch (_) { return; }
+  const alvos = _diMacAlvos(dietaData);
+  let h = '';
+  if (!c.blocos.some(b => b.t.n)) h = '<span class="di-mac-vazio">Total do dia aparece aqui quando tiver alimento com quantidade</span>';
+  else c.blocos.forEach((b, bi) => {
+    const t = b.t, a = _diMacAlvoDo(alvos, c.blocos, bi);
+    let alvo = '';
+    if (a && a.kc) { const d = Math.round(t.kc - a.kc), fora = Math.abs(d) > a.kc * 0.08; alvo = `<em class="di-mac-alvo${fora ? ' fora' : ''}">alvo ${_diMacN(a.kc)}${Math.abs(d) >= 10 ? ' (' + (d > 0 ? '+' : '') + _diMacN(d) + ')' : ''}</em>`; }
+    h += `<span class="di-mac-dia">${b.rot ? '<i>' + escTrainer(b.rot) + '</i>' : ''}<b>≈ ${_diMacN(t.kc)}</b><small>kcal</small><span>P ${Math.round(t.p)}</span><span>C ${Math.round(t.c)}</span><span>G ${Math.round(t.g)}</span><span class="fib">fibra ${Math.round(t.f)}</span>${alvo}</span>`;
+  });
+  if (c.sem) h += `<button type="button" class="di-mac-sem" onclick="event.stopPropagation();diMacVaiSem()" title="Alimento que eu não conheço ou quantidade que eu não sei ler. Não entra no total">${c.sem} fora da conta</button>`;
+  el.querySelector('.di-mac-nums').innerHTML = h;
+  const refT = {}, opT = {};
+  c.blocos.forEach(b => b.refs.forEach(ref => { refT[ref.idx] = _diMacChip(ref.t); const base = ref.ops.length ? ref.ops[0].t.kc : 0;
+    ref.ops.forEach((o, oi) => { opT[o.idx] = { txt: _diMacChip(o.t), dif: oi > 0 && o.t.n > 0 && base > 0 && Math.abs(o.t.kc - base) > Math.max(60, base * 0.12) }; }); }));
+  document.querySelectorAll('#trainerDaysContainer [data-refkc]').forEach(x => { x.textContent = refT[x.dataset.refkc] || ''; });
+  document.querySelectorAll('#trainerDaysContainer [data-opkc]').forEach(x => { const o = opT[x.dataset.opkc]; x.textContent = o ? o.txt : ''; x.classList.toggle('dif', !!(o && o.dif)); x.title = o && o.dif ? 'Esta opção vale bem diferente da 1ª' : ''; });
+  document.querySelectorAll('#trainerDaysContainer .di-row[data-idx]').forEach(x => { if (c.st.get(+x.dataset.idx) === 'sem') x.dataset.mac = 'sem'; else delete x.dataset.mac; });
+}
+function diMacPainel(abre) {
+  const p = document.getElementById('diMacPainel'); if (!p) return;
+  const vai = abre == null ? p.hidden : !!abre; p.hidden = !vai; if (!vai) return;
+  const c = _diMacCalc(dietaData), b = c.blocos[0];
+  document.getElementById('diMacKc').value = b ? Math.round(b.t.kc / 10) * 10 : '';
+  document.getElementById('diMacP').value = b ? Math.round(b.t.p) : '';
+  document.getElementById('diMacNota').textContent = (c.blocos.length > 1 ? 'Os números são do dia ' + (b.rot || '1') + '. Os outros dias do ciclo andam junto, na mesma diferença. ' : '') + 'Secar e crescer mexem no carbo e, se faltar, na gordura. A proteína só muda se tu digitar ela aqui.';
+}
+function _diMacRoda(op) {
+  if (!dietaData || typeof GHM === 'undefined') return null;
+  const copia = dietaData.map(r => r.slice()); let res; try { res = _diMacAjusta(copia, op); } catch (_) { return null; }
+  const mud = []; copia.forEach((r, i) => { if (r[2] !== dietaData[i][2] || r[1] !== dietaData[i][1]) mud.push(i); });
+  if (mud.length) { teSnapshot(); mud.forEach(i => { dietaData[i][1] = copia[i][1]; dietaData[i][2] = copia[i][2]; }); }
+  res.mudou = mud.length; return res;
+}
+function _diMacFala(res, comProt) {
+  if (typeof _ghToast !== 'function') return;
+  if (!res || !res.dias.length) { _ghToast('Ainda não tem alimento com quantidade pra somar', 3200); return; }
+  if (!res.mudou) { _ghToast('Não achei linha com a quantidade em grama ou unidade pra mexer. Ajusta na mão', 4200); return; }
+  const d = res.dias[0], dia = res.dias.length > 1 ? 'Dia ' + (d.rot || '1') : 'O dia';
+  let t = dia + ' foi de ' + _diMacN(d.kc0) + ' pra ' + _diMacN(d.kc1) + ' kcal. ';
+  t += Math.abs(d.p1 - d.p0) >= 1 ? 'Proteína de ' + Math.round(d.p0) + ' pra ' + Math.round(d.p1) + ' g.' : 'Proteína segue em ' + Math.round(d.p1) + ' g.';
+  if (Math.abs(d.falta) > 40) t += ' Faltaram uns ' + _diMacN(Math.abs(d.falta)) + ' kcal: o carbo e a gordura já estão no limite.';
+  _ghToast(t, 4600);
+}
+function diMacMexe(d) { const _p = document.getElementById('diMacPainel'), aberto = !!_p && !_p.hidden; const res = _diMacRoda({ dKcal: d }); if (res && res.mudou) renderDietaEditor(); if (aberto) diMacPainel(true); _diMacFala(res); }
+function diMacAplica() {
+  const num = id => { const v = String(document.getElementById(id).value || '').replace(/\./g, '').replace(',', '.').replace(/[^\d.]/g, ''); return v ? parseFloat(v) : null; };
+  const kc = num('diMacKc'), p = num('diMacP'); if (kc == null && p == null) return;
+  const c = _diMacCalc(dietaData), b = c.blocos[0]; if (!b) { _diMacFala(null); return; }
+  if (kc != null && (kc < 800 || kc > 7000)) { if (typeof _ghToast === 'function') _ghToast('Calorias fora do que faz sentido (800 a 7.000)', 3200); return; }
+  if (p != null && (p < 40 || p > 450)) { if (typeof _ghToast === 'function') _ghToast('Proteína fora do que faz sentido (40 a 450 g)', 3200); return; }
+  if (p != null && p < Math.round(b.t.p) - 5 && !confirm('Isso BAIXA a proteína de ' + Math.round(b.t.p) + ' g pra ' + Math.round(p) + ' g. Confirma?')) return;
+  const op = {}; if (p != null && Math.abs(p - Math.round(b.t.p)) >= 1) op.alvoP = p; op.alvoKcal = kc != null ? kc : b.t.kc;
+  const res = _diMacRoda(op); if (res && res.mudou) renderDietaEditor(); diMacPainel(true); _diMacFala(res);
+}
+// escreve o total na linha "Macros do dia" (cria se não tiver) e acerta as calorias da linha do aluno
+function diMacGrava() {
+  const c = _diMacCalc(dietaData); if (!c.blocos.some(b => b.t.n)) { _diMacFala(null); return; }
+  const alvos = _diMacAlvos(dietaData), txt = t => 'P ~' + Math.round(t.p) + 'g · C ~' + Math.round(t.c) + 'g · G ~' + Math.round(t.g) + 'g · ~' + _diMacN(Math.round(t.kc / 10) * 10) + ' kcal';
+  teSnapshot();
+  let fim = 0; dietaData.forEach((r, i) => { const s = String((r && r[0]) || '').toLowerCase().trim(); if (s === 'info' || s === 'meta' || s === 'aluno') fim = i; });
+  const novas = [];
+  c.blocos.forEach((b, bi) => {
+    if (!b.t.n) return; const a = _diMacAlvoDo(alvos, c.blocos, bi);
+    if (a) { const r = dietaData[a.idx]; r[2] = txt(b.t); if (/kcal/i.test(String(r[3] || '')) || /^[~≈]?\s*\d[\d.,]*$/.test(String(r[3] || '').trim())) r[3] = ''; }
+    else novas.push(['meta', 'Macros do dia (' + (c.blocos.length > 1 ? (b.rot || 'dia ' + (bi + 1)) : 'aproximado') + ')', txt(b.t), '']);
+  });
+  if (novas.length) dietaData.splice.apply(dietaData, [fim + 1, 0].concat(novas));
+  if (c.blocos.length === 1) { const inf = dietaData.find(r => String((r && r[0]) || '').toLowerCase().trim() === 'info'); if (inf && /\d[\d.]*\s*kcal/i.test(String(inf[2] || ''))) inf[2] = String(inf[2]).replace(/[~≈]?\s*\d[\d.]*\s*kcal/i, '~' + _diMacN(Math.round(c.blocos[0].t.kc / 10) * 10) + ' kcal'); }
+  DIETA_OPEN_BLOCKS.add('info');
+  renderDietaEditor(); diMacPainel(true);
+  if (typeof _ghToast === 'function') _ghToast('Total gravado na linha Macros do dia', 3200);
+}
+function diMacVaiSem() {
+  let x = document.querySelector('#trainerDaysContainer .di-row[data-mac="sem"]'); if (!x) return;
+  const bl = x.closest('.di-block'); if (bl && !bl.classList.contains('open')) dietaToggleBlock(bl.dataset.key);
+  try { x.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) {}
+  const q = x.querySelector(':scope > input'); if (q) setTimeout(() => { try { q.focus({ preventScroll: true }); } catch (_) {} }, 300);
 }
 
 function dietaUpdateBlockTitle(key, val) {
