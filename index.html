@@ -3765,6 +3765,31 @@
   /* ══ v653 (GH 17/11, plano C): editor mais rápido no celular ══ */
   #teMaisBtn, .te-mais-links, .te-undo-cel, .te-ex-resumo { display: none; }
   .di-tudo-bar { display: flex; justify-content: flex-end; margin: 0 0 8px; }
+  /* ══ v655 (GH 17/11, plano C): conferência antes de salvar ══ */
+  .te-conf { position: fixed; inset: 0; z-index: 9700; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .te-conf[hidden] { display: none; }
+  .te-conf-cx { width: 100%; max-width: 520px; max-height: min(86vh, 720px); display: flex; flex-direction: column; background: #151515; color: #eee; border: 1px solid rgba(221, 182, 92, 0.45); border-radius: 14px; padding: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55); font-family: inherit; }
+  .te-conf-tit { font-size: 18px; font-weight: 800; color: #fff; }
+  .te-conf-sub { font-size: 13px; color: #aaa; margin: 4px 0 10px; line-height: 1.35; }
+  .te-conf-fix { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
+  .te-conf-fix button { background: transparent; color: #E3BE6B; border: 1px solid rgba(221, 182, 92, 0.55); border-radius: 8px; padding: 8px 12px; font-size: 12.5px; font-weight: 800; cursor: pointer; font-family: inherit; }
+  .te-conf-lista { overflow-y: auto; flex: 1 1 auto; min-height: 0; -webkit-overflow-scrolling: touch; }
+  .te-conf-gr { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; font-weight: 800; color: #999; margin: 10px 0 5px; }
+  .te-conf-it { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: #1e1e1e; border: 1px solid #2c2c2c; color: #eee; border-radius: 9px; padding: 10px 12px; margin: 0 0 6px; font-size: 13.5px; line-height: 1.3; cursor: pointer; font-family: inherit; }
+  .te-conf-it i { flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: #f0b34a; }
+  .te-conf-it.erro i { background: #e2574c; }
+  .te-conf-it span { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+  .te-conf-it b { color: #777; font-weight: 400; font-size: 17px; }
+  .te-conf-pe { display: flex; gap: 8px; margin-top: 12px; }
+  .te-conf-pe button { flex: 1 1 0; min-width: 0; padding: 12px 8px; border-radius: 9px; font-weight: 800; font-size: 14px; cursor: pointer; font-family: inherit; }
+  .te-conf-volta, .te-conf-salva.ok { background: #DDB65C; color: #1A1304; border: 1px solid #DDB65C; }
+  .te-conf-salva { background: transparent; color: #ddd; border: 1px solid #555; }
+  .te-conf-alvo { outline: 2px solid #f0b34a !important; outline-offset: 2px; border-radius: 8px; animation: teConfPisca 1.3s ease 2; }
+  @keyframes teConfPisca { 50% { outline-color: transparent; } }
+  @media (max-width: 480px) {
+    .te-conf { align-items: flex-end; padding: 0; }
+    .te-conf-cx { max-width: none; border-radius: 16px 16px 0 0; max-height: 88vh; border-bottom: 0; padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+  }
   /* ══ v654 (GH 17/11, plano C): total da dieta ao vivo ══ */
   .di-mac { position: sticky; top: -10px; z-index: 6; background: #101010; border: 1px solid rgba(221, 182, 92, 0.45); border-radius: 10px; padding: 8px 10px; margin: 0 0 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35); }
   .di-mac-nums { flex: 1 1 300px; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; cursor: pointer; color: #ddd; font-size: 12.5px; font-variant-numeric: tabular-nums; }
@@ -4819,6 +4844,17 @@ html[data-theme="light"] .di-ref-cab input { background: var(--glass-2); color: 
 html[data-theme="light"] .di-head-dup { background: var(--glass-2); border-color: var(--glass-line); color: var(--fg); }
 html[data-theme="light"] .di-mac { background: #FBFAF7; border-color: rgba(184, 145, 63, 0.55); box-shadow: 0 6px 14px rgba(0, 0, 0, 0.10); }
 html[data-theme="light"] .di-mac-nums { color: #3a3a3a; }
+html[data-theme="light"] .te-conf { background: rgba(40, 30, 10, 0.45); }
+html[data-theme="light"] .te-conf-cx { background: #FBFAF7; color: #141414; border-color: rgba(184, 145, 63, 0.55); box-shadow: 0 20px 60px rgba(60, 45, 10, 0.28); }
+html[data-theme="light"] .te-conf-tit { color: #141414; }
+html[data-theme="light"] .te-conf-sub, html[data-theme="light"] .te-conf-gr { color: #6b6b6b; }
+html[data-theme="light"] .te-conf-fix button { color: #7a5c14; border-color: rgba(184, 145, 63, 0.7); }
+html[data-theme="light"] .te-conf-it { background: #fff; border-color: rgba(0, 0, 0, 0.12); color: #141414; }
+html[data-theme="light"] .te-conf-it i { background: #c27a00; }
+html[data-theme="light"] .te-conf-it.erro i { background: #c0392b; }
+html[data-theme="light"] .te-conf-it b { color: #999; }
+html[data-theme="light"] .te-conf-salva { color: #3a3a3a; border-color: rgba(0, 0, 0, 0.3); }
+html[data-theme="light"] .te-conf-alvo { outline-color: #c27a00 !important; }
 html[data-theme="light"] .di-mac-dia b { color: #141414; }
 html[data-theme="light"] .di-mac-dia small, html[data-theme="light"] .di-mac-dia .fib, html[data-theme="light"] .di-mac-vazio, html[data-theme="light"] .di-mac-painel label, html[data-theme="light"] .di-mac-painel p { color: #6b6b6b; }
 html[data-theme="light"] .di-mac-alvo { color: #2e7d32; }
@@ -29346,7 +29382,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v654';
+    var APP_SHELL_V = 'metodo-gh-v655';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
@@ -31436,6 +31472,7 @@ function renderTrainerEditor() {
   if (_teC && !_teC._teNav) { _teC._teNav = 1; _teC.addEventListener('scroll', teDiasNavSync, { passive: true }); }
   if (_teC && !_teC._teAbre) { _teC._teAbre = 1; _teC.addEventListener('focusin', ev => { const x = ev.target && ev.target.closest && ev.target.closest('.te-ex'); if (x && ev.target.tagName === 'INPUT') teExAbre(+x.dataset.idx); }); }
   setTimeout(teDiasNavSync, 0);
+  try { teTecladoLiga(); } catch (_) {}   // v655
   document.getElementById('trainerDaysContainer').innerHTML = hasDays ? html : `
     <p style="color:#888;text-align:center;padding:30px;">Sem exercícios na aba TREINO.</p>
     <button class="te-new-day-btn" onclick="addNewDay()" style="margin: 0 auto; max-width:340px;">+ Criar primeiro DIA de treino</button>`;
@@ -32045,7 +32082,14 @@ async function trainerSave() {
   let data = isTreino ? trainerData : dietaData;
   const tab = isTreino ? 'TREINO' : 'DIETA';
   if (!data || !data.length) return;
-  if (!confirm(`Salvar todas as mudanças em ${tab}? (a aba ${tab} vai ser sobrescrita)`)) return;
+  // v655: conferência antes de salvar (regras de texto do auditor + contas da barra). Achou algo: mostra a lista e para aqui;
+  // "Salvar assim mesmo" volta com _teConfPassa ligado. Não achou nada: segue o aviso de sempre.
+  if (_teConfPassa) _teConfPassa = false;
+  else {
+    let _ach = []; try { _ach = teConfRoda(); } catch (e) { console.warn('[conferencia]', e); }
+    if (_ach.length) { teConfAbre(_ach); return; }
+    if (!confirm(`Conferido, nada pra corrigir.\n\nSalvar todas as mudanças em ${tab}? (a aba ${tab} vai ser sobrescrita)`)) return;
+  }
   // v553: o editor lê a planilha pelo mesmo caminho do app, que às vezes devolve a coluna do DIA vazia numa linha de exercício.
   // Salvar regravava a aba inteira com essa coluna vazia DE VERDADE (o "edição manual apaga a col A"). Antes de salvar, linha
   // de exercício sem dia recebe o dia da linha de cima, com confirmação.
@@ -32276,6 +32320,7 @@ function renderDietaEditor() {
   // v654: total ao vivo (digitar nome ou quantidade recalcula sem redesenhar os campos)
   if (!c._diMac) { c._diMac = 1; c.addEventListener('input', ev => { const t = ev.target; if (t && t.closest && t.closest('.di-row') && !t.closest('#diMac')) diMacAgenda(); }); }
   diMacPinta();
+  teTecladoLiga();   // v655
 }
 
 function parseDietaSections(rows) {
@@ -32375,7 +32420,7 @@ function dietaToggleBlock(key) {
 function renderDietaInfoMeta(items) {
   return items.map(it => {
     const r = dietaData[it.idx];
-    return `<div class="di-row">
+    return `<div class="di-row" data-idx="${it.idx}">
       <span class="te-drag-handle" title="${it.type}">${it.type === 'info' ? 'i' : 'm'}</span>
       <input type="text" value="${escTrainer(r[1])}" oninput="dietaData[${it.idx}][1]=this.value" placeholder="Item">
       <input type="text" value="${escTrainer(r[2])}" oninput="dietaData[${it.idx}][2]=this.value" placeholder="Valor">
@@ -32652,6 +32697,8 @@ function diSvBanco(i) {
   const idx = _svAlvo.idx; const r = dietaData[idx]; if (!r) return;
   r[1] = f.n; if (f.q) r[2] = f.q; if (f.o) r[3] = f.o;
   diSvFecha(true); renderDietaEditor();
+  const novo = document.querySelector('.di-row[data-idx="' + idx + '"] input:not(.di-sv-in)');   // v655
+  if (novo) { try { novo.focus({ preventScroll: true }); } catch (_) {} }
 }
 function diSvTodas() { if (!_svAlvo) return; _svAlvo.todas = true; _svDesenha_(); }
 function diSvAbre(input, idx) { _svAlvo = { input, idx, filtrou: false }; _svDesenha_(); _svSincroniza_(); }
@@ -33378,6 +33425,242 @@ function diMacVaiSem() {
   const bl = x.closest('.di-block'); if (bl && !bl.classList.contains('open')) dietaToggleBlock(bl.dataset.key);
   try { x.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) {}
   const q = x.querySelector(':scope > input'); if (q) setTimeout(() => { try { q.focus({ preventScroll: true }); } catch (_) {} }, 300);
+}
+
+// ── v655: regras de texto (CÓPIA GERADA de webfit-mcp/linter/rules/transversal.mjs por _gera_regras_texto_app.mjs; não editar aqui) ──
+const GHT = (function () {
+const norm = s => String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const META = [/\bconsiderar\b/, /\bcogitar\b/, /\btalvez\b/, /avaliar se\b/, /pode ser interessante/, /se quiser (trocar|substituir|mudar|troca|tirar|outra opcao|outro exerc)/, /se sentir necessidade/, /substitui[u]?\b/, /\(nao marcou\)/, /nao marcou\)/, /reajuste v\d/, /\bvs versao\b/, /\bvs dia\b/, /\bvs anterior\b/, /^(?!.*(vers[aã]o (passada|anterior)|protocolo (passado|anterior)|antes (era|estava)|passad[ao] era|anterior era)).*\bera \d/s, /\bcorrigido\b/, /carbos marcados/, /frutas marcad/, /proteinas marcad/, /doces marcad/, /probiotico marcad/, /dose feminina/];
+const EN = [/\bpriority\b/, /\bpulse\b/, /\bworkout\b/, /\bpre-?workout\b/, /\bpost-?workout\b/, /\btrigger\b/, /\btiming\b/, /\brest day\b/, /\brecovery\b/, /\bburnout\b/, /\bsplit\b/, /\bsupplement\b/, /\bwarmup\b/, /\bwarm-?up\b/];
+const MONTAGEM = [/\bcontratad[oa]s?\b/, /\bcontratou\b/, /\bescalei\b/, /\bescalonei\b/, /mantive .{0,16}\blinha\b/, /mantive a linha/, /\blinha (dele|dela)\b/, /\bque eu \w+(ei|i)\b/, /\b(adicionei|eu inclui|troquei na montagem)\b/, /pra fechar (3|tr[êe]s) (injet|anabol)/, /\bna montagem\b/, /escalei do (custom|que ele)/, /\bvou (conferir|ajustar|ajeitar|verificar|analisar|checar|olhar|revisar|corrigir|acertar|montar|fazer|ver)\b/, /\bvamos (conferir|verificar|analisar|ajustar)\b/, /conferir os marcadores/, /(depois|mais tarde|na pr[óo]xima|mais pra frente) eu? ?(vejo|ajusto|confiro|olho|fa[çc]o|monto)/, /\bainda (vou|tenho que)\b/, /\bfica pendente\b/, /\bpendente de (an[áa]lise|confer)/];
+const DEFERENCIA = [/\b(do jeito|no formato|da forma|como)\s+que\s+tu\s+(pediu|preencheu|escolheu|quis|mandou|solicitou)\b/, /\bque\s+tu\s+(pediu|preencheu|solicitou)\b/, /\btu\s+(pediu|solicitou)\b/, /\beu\s+respeitei\b/, /\brespeitei\s+(isso|teu|tua|o que)\b/, /\bconforme\s+tu\s+\w+/, /\batendendo\s+(teu|tua|ao teu)\b/, /\btu\s+escolheu\b/, /\bcomo\s+tu\s+quis\b/];
+const TERCEIRA = [/\b(?:o|ao|do|pro|pra o|para o|com o|pelo|no)\s+GH\b/i, /\bGH\s+(?:vai|foi|disse|mandou|decidiu|falou|monta|montou|quer|acha|pediu|recomenda|orienta|avisa)\b/i, /\b(?:o|ao|do|com o|pro)\s+Gabriel\b/i, /\b(?:teu|seu|o)\s+(?:treinador|professor|nutricionista|preparador)\b/i, /\b(?:a|nossa|minha)\s+equipe\b/i, /\b(?:o|nosso)\s+time\b/i, /\bfala(?:r)?\s+com\s+(?:o\s+GH|o\s+Gabriel|ele)\b/i, /\bele\s+(?:vai|te)\s+(?:falar|montar|explicar|ligar|avisar|responder)\b/i];
+const LIGACAO = [/\b(?:te|vou te|eu te)\s+lig(?:o|ar|arei)\b/i, /\bligo\s+(?:pra|para)\s+(?:ti|voc[êe]|tu)\b/i, /\b(?:uma|por)\s+liga[çc][ãa]o\b/i, /\bmarco\s+(?:uma\s+)?(?:call|chamada|liga[çc][ãa]o)\b/i];
+// Devolve os achados de UMA célula: { g: 'erro' | 'aviso', c: código, m: frase curta }. Mesma lógica do X1 a X7.
+function acha(txt) {
+  const t = String(txt == null ? '' : txt), v = [];
+  if (!t.trim() || /^https?:\/\//i.test(t.trim())) return v;
+  const n = norm(t);
+  if (/[\u2014\u2013]/.test(t) && !/^[\u2014\u2013].*[\u2014\u2013]$/.test(t.trim())) v.push({ g: 'erro', c: 'trav', m: 'Travessão' });
+  if (/\bQ\d/.test(t) && !/coenzima\s*q10|\bcoq10\b/i.test(n)) v.push({ g: 'erro', c: 'q', m: 'Código interno (Q e número)' });
+  if (MONTAGEM.some(re => re.test(n))) v.push({ g: 'erro', c: 'mont', m: 'Anotação de montagem' });
+  if (DEFERENCIA.some(re => re.test(n))) v.push({ g: 'erro', c: 'defer', m: 'Decisão atribuída ao aluno' });
+  if (TERCEIRA.some(re => re.test(t))) v.push({ g: 'erro', c: '3p', m: 'Fala de ti em terceira pessoa' });
+  if (LIGACAO.some(re => re.test(t))) v.push({ g: 'erro', c: 'lig', m: 'Promessa de ligação' });
+  if (META.some(re => re.test(n))) v.push({ g: 'aviso', c: 'meta', m: 'Anotação interna ou sugestão' });
+  if (n !== 'split' && EN.some(re => re.test(n))) v.push({ g: 'aviso', c: 'en', m: 'Termo em inglês' });
+  return v;
+}
+return { norm, acha };
+})();
+
+// ══ v655 (GH 17/11, plano C do editor, 3ª parte do desenho): TECLADO e CONFERÊNCIA ANTES DE SALVAR ══
+// Teclado: Enter anda pro próximo campo e, no último, cria a linha de baixo já com o cursor nela; colar várias linhas
+// num campo de nome vira uma linha por linha colada. Conferência: antes de salvar, o editor passa as mesmas regras de
+// texto do auditor (X1 a X7, cópia gerada em GHT) e as contas da barra de total, e mostra o que achou numa lista que
+// leva até a linha. Nada é bloqueado: dá pra salvar assim mesmo.
+
+// ── colar ──
+const _TE_UN = '(?:kg|g|mg|mcg|ml|l|ui|unidades?|un|fatias?|colher(?:es)?(?:\\s+de\\s+(?:sopa|ch[áa]|sobremesa|caf[ée]))?|x[íi]caras?|copos?|scoops?|c[áa]psulas?|caps|comprimidos?|gotas?|sach[êe]s?|doses?|conchas?|pegador(?:es)?|potes?|latas?|fil[ée]s?|bifes?|peda[çc]os?|por[çc](?:[ãa]o|[õo]es))';
+const _TE_RE_MEIO = new RegExp('^(.+?)[\\s,:;\\-]+(\\d+(?:[.,]\\d+)?\\s*' + _TE_UN + ')(?![a-zà-ú])(.*)$', 'i');
+const _TE_RE_INI = new RegExp('^(\\d+(?:[.,]\\d+)?\\s*' + _TE_UN + ')(?![a-zà-ú])\\s+(?:de\\s+)?(.+)$', 'i');
+function _teColaTxt(s) {   // tira marcador de lista, numeração e travessão (travessão é proibido no protocolo)
+  return String(s == null ? '' : s).replace(/\u00a0/g, ' ').replace(/\s+[\u2014\u2013]\s+/g, ', ').replace(/[\u2014\u2013]/g, '-').replace(/\s+/g, ' ').trim();
+}
+function _teColaIni(s) { return _teColaTxt(s).replace(/^[•·▪●■□✔✅☑*\-]+\s*/, '').replace(/^\d{1,2}[.)]\s+/, '').trim(); }
+function _teColaMai(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+function _teColaResto(s) { return String(s || '').replace(/^[\s,;:\-]+/, '').trim(); }
+function _teColaCels(linha) {   // linha copiada de planilha: colunas separadas por tabulação
+  if (linha.indexOf('\t') < 0) return null;
+  let c = linha.split('\t').map(_teColaTxt);
+  if (c.length === 4) c = c.slice(1);   // linha inteira da aba (seção | item | quantidade | obs)
+  while (c.length > 1 && !c[0]) c.shift();
+  return [_teColaIni(c[0] || ''), c[1] || '', c.slice(2).filter(Boolean).join(' ')];
+}
+function _teColaComida(linha) {
+  const cel = _teColaCels(linha); if (cel) return cel;
+  const t = _teColaIni(linha); if (!t) return null;
+  let m = _TE_RE_INI.exec(t);
+  if (m) return [_teColaMai(m[2].trim()), m[1].trim(), ''];
+  m = _TE_RE_MEIO.exec(t);
+  if (m && m[1].indexOf('(') >= 0) m = null;   // "Arroz (120g) | Massa (120g)": a quantidade já mora no nome
+  if (!m && /\([^)]*\d/.test(t)) return [t, '', ''];
+  if (m) {
+    const resto = m[3].trim();
+    if (/^(?:\(|cru|crua|cozid|pront|grelhad|assad|sec[oa]\b|em p[óo])/i.test(resto)) return [m[1].trim(), (m[2] + ' ' + resto).trim(), ''];
+    return [m[1].trim(), m[2].trim(), _teColaResto(resto)];
+  }
+  m = /^(\d{1,2})\s+(?:de\s+)?([a-zà-ú].*)$/i.exec(t);   // "2 ovos", "1 banana"
+  if (m) return [_teColaMai(m[2].trim()), m[1] + (+m[1] === 1 ? ' unidade' : ' unidades'), ''];
+  return [t, '', ''];
+}
+function _teColaSimples(linha, sec) {
+  const cel = _teColaCels(linha); if (cel) return cel;
+  const t = _teColaIni(linha); if (!t) return null;
+  if (sec === 'supl') { const m = _TE_RE_MEIO.exec(t); if (m) return [m[1].trim(), m[2].trim(), _teColaResto(m[3])]; }
+  const k = t.indexOf(': ');
+  if (k > 0 && k < 40) return [t.slice(0, k).trim(), t.slice(k + 2).trim(), ''];
+  return [t, '', ''];
+}
+function _teCola(ev) {
+  const t = ev.target; if (!t || t.tagName !== 'INPUT' || !t.classList.contains('di-sv-in')) return;
+  const row = t.closest('.di-row[data-idx]'); if (!row) return;
+  let txt = ''; try { txt = (ev.clipboardData || window.clipboardData).getData('text'); } catch (_) {}
+  const linhas = String(txt || '').replace(/\r/g, '').split('\n').filter(l => l.trim());
+  if (linhas.length < 2) return;   // uma linha só: cola normal do navegador
+  const idx = +row.dataset.idx, r = dietaData[idx]; if (!r) return;
+  const sec = String(r[0] || '').toLowerCase().trim(), comida = sec === '' || sec === 'alimento';
+  const novas = linhas.slice(0, 40).map(l => comida ? _teColaComida(l) : _teColaSimples(l, sec)).filter(x => x && x[0]);
+  if (!novas.length) return;
+  ev.preventDefault();
+  teSnapshot();
+  const total = novas.length;
+  let pos = idx;
+  if (!String(r[1] || '').trim() && !String(r[2] || '').trim() && !String(r[3] || '').trim()) { const p = novas.shift(); r[1] = p[0]; r[2] = p[1]; r[3] = p[2]; }
+  novas.forEach(nv => { dietaData.splice(++pos, 0, [comida ? '' : r[0], nv[0], nv[1], nv[2]]); });
+  try { diSvFecha(true); } catch (_) {}
+  renderDietaEditor();
+  if (typeof _ghToast === 'function') _ghToast(total + ' linhas coladas' + (linhas.length > 40 ? ' (o resto passou de 40)' : ''), 2600);
+  const alvo = document.querySelector('#trainerDaysContainer .di-row[data-idx="' + pos + '"] input:not(.di-sv-in)');
+  if (alvo) { try { alvo.focus({ preventScroll: true }); alvo.scrollIntoView({ block: 'nearest' }); } catch (_) {} }
+}
+
+// ── Enter ──
+function _teEnter(ev) {
+  if (ev.key !== 'Enter' || ev.defaultPrevented || ev.isComposing || ev.shiftKey || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+  const t = ev.target; if (!t || t.tagName !== 'INPUT' || t.closest('#diMac')) return;
+  if (t.classList.contains('te-input') && t.closest('.te-ex-row')) {   // treino: séries, repetições, intervalo e desce pro exercício de baixo
+    const ins = Array.from(document.querySelectorAll('#trainerDaysContainer .te-ex-row > input.te-input')), k = ins.indexOf(t);
+    if (k >= 0 && ins[k + 1]) { ev.preventDefault(); ins[k + 1].focus(); try { ins[k + 1].select(); } catch (_) {} }
+    return;
+  }
+  const row = t.closest('.di-row[data-idx]'); if (!row) return;
+  const idx = +row.dataset.idx, r = dietaData && dietaData[idx]; if (!r) return;
+  const sec = String(r[0] || '').toLowerCase().trim(); if (sec === 'info' || sec === 'meta') return;
+  const ins = Array.from(row.querySelectorAll('input[type="text"]')), k = ins.indexOf(t); if (k < 0) return;
+  const comida = sec === '' || sec === 'alimento';
+  const nome = String(r[1] || '').trim();
+  ev.preventDefault();
+  if (!nome && !String(r[2] || '').trim() && !String(r[3] || '').trim()) return;   // linha vazia não empilha outra
+  const ultimo = comida ? (k >= 1 || /\([^)]*\d/.test(nome)) : k >= ins.length - 1;
+  if (!ultimo && ins[k + 1]) { ins[k + 1].focus(); return; }
+  teSnapshot();
+  const nova = comida ? ['', '', '', ''] : [r[0], '', '', ''];
+  if (comida) _dietaNewFoodRows.add(nova);
+  dietaData.splice(idx + 1, 0, nova);
+  try { diSvFecha(true); } catch (_) {}
+  renderDietaEditor();
+  const alvo = document.querySelector('#trainerDaysContainer .di-row[data-idx="' + (idx + 1) + '"] input');
+  if (alvo) { try { alvo.focus(); } catch (_) {} }
+}
+function teTecladoLiga() {
+  const c = document.getElementById('trainerDaysContainer'); if (!c || c._teTec) return; c._teTec = 1;
+  c.addEventListener('keydown', _teEnter);
+  c.addEventListener('paste', _teCola);
+}
+
+// ── conferência ──
+function _teConfTrecho(v, cod) {
+  const s = String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
+  if (cod === 'trav') { const k = s.search(/[\u2014\u2013]/); if (k > 28) return '…' + s.slice(k - 22, k + 22) + (s.length > k + 22 ? '…' : ''); }
+  return s.length > 46 ? s.slice(0, 46) + '…' : s;
+}
+function _teConfTexto(rows, cols, out) {
+  rows.forEach((r, idx) => { if (!r) return; cols.forEach(c => GHT.acha(r[c]).forEach(a => out.push({ g: a.g, c: a.c, idx, m: a.m + ': "' + _teConfTrecho(r[c], a.c) + '"' }))); });
+}
+const _TE_CONF_SIMPLES = { regra: 'Regras', supl: 'Suplementação', cardio: 'Cardio e dicas', aerob: 'Cardio e dicas', dica: 'Cardio e dicas', orient: 'Cardio e dicas', proto: 'Protocolos', obs: 'observação', nota: 'observação' };
+function teConfDieta(rows) {
+  const out = [], sec = r => String((r && r[0]) || '').toLowerCase().trim(), tx = v => String(v == null ? '' : v).trim();
+  _teConfTexto(rows, [1, 2, 3], out);
+  const S = parseDietaSections(rows);
+  S.refs.forEach(ref => {
+    const nome = tx(rows[ref.idx][1]);
+    if (!nome || /^nova refei[çc][ãa]o$/i.test(nome)) out.push({ g: 'erro', c: 'refnome', idx: ref.idx, m: 'Refeição sem nome' });
+    const com = its => its.filter(i => i.type === 'alimento' && tx(rows[i.idx][1])).length;
+    if (!com(ref.items) && !ref.opcoes.some(o => com(o.items))) out.push({ g: 'aviso', c: 'refvazia', idx: ref.idx, m: 'Refeição sem alimento: ' + (nome || 'sem nome') });
+    else ref.opcoes.forEach(o => { if (!com(o.items)) out.push({ g: 'aviso', c: 'opvazia', idx: o.idx, m: 'Opção sem alimento em ' + (nome || 'refeição sem nome') }); });
+  });
+  rows.forEach((r, idx) => {
+    if (!r) return; const s = sec(r), a = tx(r[1]), b = tx(r[2]), c = tx(r[3]);
+    if ((s === '' || s === 'alimento') && !a && (b || c)) out.push({ g: 'erro', c: 'semnome', idx, m: 'Alimento sem nome (' + _teConfTrecho(b || c) + ')' });
+    if (_TE_CONF_SIMPLES[s] && !a && !b && !c) out.push({ g: 'aviso', c: 'vazia', idx, m: 'Linha vazia em ' + _TE_CONF_SIMPLES[s] });
+    if (s === 'supl' && a && !b && !c && !/^[\u2014\u2013\-=]/.test(a) && a !== a.toUpperCase()) out.push({ g: 'aviso', c: 'supldose', idx, m: 'Suplemento sem dose nem horário: ' + _teConfTrecho(a) });
+  });
+  const calc = _diMacCalc(rows), alvos = _diMacAlvos(rows), dias = calc.blocos.filter(b => b.t.n);
+  calc.blocos.forEach((b, bi) => {
+    if (!b.t.n) return;
+    const rot = b.rot ? ' ' + b.rot : '', a = _diMacAlvoDo(alvos, calc.blocos, bi), kc = Math.round(b.t.kc);
+    if (a && a.kc && Math.abs(kc - a.kc) / a.kc > 0.08) out.push({ g: 'aviso', c: 'kcal', idx: a.idx, m: 'O dia' + rot + ' soma ' + _diMacN(kc) + ' kcal e a linha Macros do dia diz ' + _diMacN(a.kc) + ' (o botão Gravar total acerta)' });
+    if (b.t.n >= 5 && (kc < 800 || kc > 6000)) out.push({ g: 'aviso', c: 'faixa', idx: b.refs.length ? b.refs[0].idx : 0, m: 'O dia' + rot + ' soma ' + _diMacN(kc) + ' kcal, fora do comum' });
+  });
+  if (dias.length && !alvos.length) out.push({ g: 'aviso', c: 'semmacros', idx: -1, m: 'Falta a linha Macros do dia (o botão Gravar total cria)' });
+  if (dias.length && dias[0].t.n >= 3 && Math.round(dias[0].t.f) < 25) out.push({ g: 'aviso', c: 'fibra', idx: dias[0].refs.length ? dias[0].refs[0].idx : 0, m: 'Fibra do dia em ' + Math.round(dias[0].t.f) + ' g (mínimo 25 g pra mulher e 30 g pra homem)' });
+  if (calc.sem) { let pri = -1; calc.st.forEach((v, i) => { if (v === 'sem' && pri < 0) pri = i; }); out.push({ g: 'aviso', c: 'fora', idx: pri, m: calc.sem + (calc.sem === 1 ? ' alimento fora' : ' alimentos fora') + ' da conta do total (sem quantidade ou que a tabela não conhece)' }); }
+  return out;
+}
+function teConfTreino(rows) {
+  const out = [], tx = v => String(v == null ? '' : v).trim();
+  _teConfTexto(rows, [1, 2, 3, 4, 5], out);
+  rows.forEach((r, idx) => {
+    if (!r || isNaN(parseInt(r[0], 10))) return;
+    const nome = tx(r[1]);
+    if (!nome) { out.push({ g: 'erro', c: 'exnome', idx, m: 'Exercício sem nome no dia ' + parseInt(r[0], 10) }); return; }
+    if (/^https?:|^@treino/i.test(nome)) return;
+    if (!tx(r[2])) out.push({ g: 'aviso', c: 'exserie', idx, m: 'Sem séries: ' + _teConfTrecho(nome) });
+    else if (!tx(r[3])) out.push({ g: 'aviso', c: 'exreps', idx, m: 'Sem repetições: ' + _teConfTrecho(nome) });
+  });
+  return out;
+}
+
+let _teConfLista = [], _teConfPassa = false;
+function teConfRoda() { const t = currentEditMode === 'treino'; return t ? teConfTreino(trainerData || []) : teConfDieta(dietaData || []); }
+function teConfFecha() { const o = document.getElementById('teConf'); if (o) o.hidden = true; }
+function _teConfDesenha() {
+  let o = document.getElementById('teConf');
+  if (!o) { o = document.createElement('div'); o.id = 'teConf'; o.className = 'te-conf'; o.hidden = true; o.addEventListener('click', ev => { if (ev.target === o) teConfFecha(); }); (document.getElementById('trainerEditor') || document.body).appendChild(o); }
+  const L = _teConfLista, er = L.filter(x => x.g === 'erro'), av = L.filter(x => x.g === 'aviso');
+  const item = x => '<button type="button" class="te-conf-it ' + x.g + '" onclick="teConfVai(' + L.indexOf(x) + ')"><i></i><span>' + escTrainer(x.m) + '</span><b>›</b></button>';
+  const nTrav = L.filter(x => x.c === 'trav').length, nVaz = L.filter(x => x.c === 'vazia').length;
+  let h = '<div class="te-conf-cx" role="dialog" aria-label="Conferência antes de salvar">';
+  if (!L.length) h += '<div class="te-conf-tit">Tudo certo</div><div class="te-conf-sub">Nada pra corrigir. Pode salvar.</div>';
+  else {
+    h += '<div class="te-conf-tit">Antes de salvar</div><div class="te-conf-sub">' + (er.length ? er.length + (er.length === 1 ? ' ponto pra corrigir' : ' pontos pra corrigir') : '') + (er.length && av.length ? ' e ' : '') + (av.length ? av.length + (av.length === 1 ? ' pra dar uma olhada' : ' pra dar uma olhada') : '') + '. Toca na linha pra ir até ela.</div>';
+    if (nTrav || nVaz) h += '<div class="te-conf-fix">' + (nTrav ? '<button type="button" onclick="teConfConserta(\'trav\')">Trocar travessão por vírgula (' + nTrav + ')</button>' : '') + (nVaz ? '<button type="button" onclick="teConfConserta(\'vazia\')">Tirar ' + (nVaz === 1 ? 'a linha vazia' : 'as ' + nVaz + ' linhas vazias') + '</button>' : '') + '</div>';
+    h += '<div class="te-conf-lista">' + (er.length ? '<div class="te-conf-gr">Corrigir</div>' + er.map(item).join('') : '') + (av.length ? '<div class="te-conf-gr">Dar uma olhada</div>' + av.map(item).join('') : '') + '</div>';
+  }
+  h += '<div class="te-conf-pe"><button type="button" class="te-conf-volta" onclick="teConfFecha()">' + (L.length ? 'Voltar e corrigir' : 'Voltar') + '</button><button type="button" class="te-conf-salva' + (L.length ? '' : ' ok') + '" onclick="teConfSalva()">' + (L.length ? 'Salvar assim mesmo' : 'Salvar') + '</button></div></div>';
+  o.innerHTML = h; o.hidden = false;
+}
+function teConfAbre(lista) { _teConfLista = lista || []; _teConfDesenha(); }
+function teConfSalva() { teConfFecha(); _teConfPassa = true; trainerSave(); }
+function teConfConserta(qual) {
+  const t = currentEditMode === 'treino', rows = t ? trainerData : dietaData; if (!rows) return;
+  teSnapshot();
+  if (qual === 'trav') {
+    const cols = t ? [1, 2, 3, 4, 5] : [1, 2, 3];
+    rows.forEach(r => { if (!r) return; cols.forEach(c => { const v = String(r[c] == null ? '' : r[c]); if (!/[\u2014\u2013]/.test(v) || /^[\u2014\u2013].*[\u2014\u2013]$/.test(v.trim()) || /^https?:/i.test(v.trim())) return;
+      r[c] = v.replace(/\s*[\u2014\u2013]\s*/g, ', ').replace(/^, /, '').replace(/, $/, '').replace(/,\s*,/g, ','); }); });
+  } else if (qual === 'vazia' && !t) {
+    for (let i = rows.length - 1; i >= 0; i--) { const r = rows[i], s = String((r && r[0]) || '').toLowerCase().trim(); if (_TE_CONF_SIMPLES[s] && !String(r[1] || '').trim() && !String(r[2] || '').trim() && !String(r[3] || '').trim()) rows.splice(i, 1); }
+  }
+  if (t) renderTrainerEditor(); else renderDietaEditor();
+  _teConfLista = teConfRoda(); _teConfDesenha();
+}
+function teConfVai(i) {
+  const x = _teConfLista[i]; if (!x) return; teConfFecha();
+  const c = document.getElementById('trainerDaysContainer'); if (!c) return;
+  let el = null;
+  if (currentEditMode === 'treino') { el = c.querySelector('.te-ex[data-idx="' + x.idx + '"]'); if (el) { try { teExAbre(x.idx); } catch (_) {} } }
+  else if (x.idx >= 0) {
+    el = c.querySelector('.di-row[data-idx="' + x.idx + '"], .di-obs-row[data-idx="' + x.idx + '"]') || c.querySelector('.di-block[data-key="ref-' + x.idx + '"]');
+    if (!el) { const op = c.querySelector('[data-opkc="' + x.idx + '"]'); if (op) el = op.closest('.di-op-head'); }
+    const bl = el && el.closest('.di-block'); if (bl && !bl.classList.contains('open')) dietaToggleBlock(bl.dataset.key);
+  } else { const b = document.getElementById('diMac'); if (b) { try { diMacPainel(true); } catch (_) {} el = b; } }
+  if (!el) { if (typeof _ghToast === 'function') _ghToast(x.m, 4200); return; }
+  try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) {}
+  el.classList.add('te-conf-alvo'); setTimeout(() => { try { el.classList.remove('te-conf-alvo'); } catch (_) {} }, 2600);
+  const inp = el.matches('.di-block') ? el.querySelector('.di-ref-nome') : el.querySelector('input');
+  if (inp && x.g === 'erro') setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch (_) {} }, 350);
 }
 
 function dietaUpdateBlockTitle(key, val) {
