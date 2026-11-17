@@ -3765,6 +3765,22 @@
   /* ══ v653 (GH 17/11, plano C): editor mais rápido no celular ══ */
   #teMaisBtn, .te-mais-links, .te-undo-cel, .te-ex-resumo { display: none; }
   .di-tudo-bar { display: flex; justify-content: flex-end; margin: 0 0 8px; }
+  /* ══ v657 (GH 17/11, plano C): refeições salvas ══ */
+  .di-head-sv { background: transparent; border: 1.5px solid #555; color: #ddd; border-radius: 4px; cursor: pointer; padding: 2px 8px; font-size: 15px; flex-shrink: 0; font-weight: 700; line-height: 1.2; font-family: inherit; }
+  .di-head-sv:hover { border-color: var(--gold); color: var(--gold); }
+  .di-head-sv.on { color: #E3BE6B; border-color: #E3BE6B; }
+  .di-ref-novas { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
+  .di-ref-novas .di-add-btn { margin: 0; }
+  .rs-painel .te-conf-cx { max-width: 560px; }
+  .rs-painel .te-fi-busca { margin: 2px 0 8px; }
+  .rs-it { display: flex; align-items: stretch; gap: 6px; margin: 0 0 6px; }
+  .rs-usa { flex: 1 1 auto; min-width: 0; text-align: left; background: #1e1e1e; border: 1px solid #2c2c2c; color: #eee; border-radius: 9px; padding: 10px 12px; cursor: pointer; font-family: inherit; }
+  .rs-usa b { display: block; font-size: 14.5px; font-weight: 800; overflow-wrap: anywhere; }
+  .rs-usa span { display: block; font-size: 12px; color: #E3BE6B; margin-top: 2px; }
+  .rs-usa i { display: block; font-style: normal; font-size: 12px; color: #9a9a9a; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rs-x { flex: 0 0 auto; min-width: 42px; background: transparent; color: #999; border: 1px solid #3a3a3a; border-radius: 9px; font-size: 14px; cursor: pointer; font-family: inherit; padding: 0 10px; }
+  .rs-x.certeza { color: #fff; background: #b0392e; border-color: #b0392e; font-weight: 800; font-size: 12.5px; }
+  .rs-vazio { font-size: 13.5px; line-height: 1.5; color: #aaa; text-align: center; padding: 22px 8px; }
   /* ══ v656 (GH 17/11, plano C): ficha do aluno no editor ══ */
   #trainerEditor .te-info-name { cursor: pointer; }
   #trainerEditor .te-top-bar #teFichaBtn.on { background: #DDB65C; color: #1A1304; border-color: #DDB65C; }
@@ -4905,6 +4921,13 @@ html[data-theme="light"] .te-conf-it.erro i { background: #c0392b; }
 html[data-theme="light"] .te-conf-it b { color: #999; }
 html[data-theme="light"] .te-conf-salva { color: #3a3a3a; border-color: rgba(0, 0, 0, 0.3); }
 html[data-theme="light"] .te-conf-alvo { outline-color: #c27a00 !important; }
+html[data-theme="light"] .di-head-sv { background: var(--glass-2); border-color: var(--glass-line); color: var(--fg); }
+html[data-theme="light"] .di-head-sv.on { color: #8a6410; border-color: #B8913F; }
+html[data-theme="light"] .rs-usa { background: #fff; border-color: rgba(0, 0, 0, 0.12); color: #141414; }
+html[data-theme="light"] .rs-usa span { color: #7a5c14; }
+html[data-theme="light"] .rs-usa i, html[data-theme="light"] .rs-vazio { color: #6b6b6b; }
+html[data-theme="light"] .rs-x { color: #6b6b6b; border-color: rgba(0, 0, 0, 0.2); }
+html[data-theme="light"] .rs-x.certeza { color: #fff; background: #c0392b; border-color: #c0392b; }
 html[data-theme="light"] .te-fi { background: #FBFAF7; color: #141414; border-color: rgba(184, 145, 63, 0.55); }
 html[data-theme="light"] .te-fi-cab { border-bottom-color: rgba(0, 0, 0, 0.1); }
 html[data-theme="light"] .te-fi-cab b { color: #7a5c14; }
@@ -29451,7 +29474,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v656';
+    var APP_SHELL_V = 'metodo-gh-v657';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
@@ -32520,7 +32543,7 @@ function renderDietaEditor() {
   sections.refs.forEach((ref, ri) => {
     html += renderDietaRefeicao(ref, ri);
   });
-  html += `<button class="di-add-btn" style="margin: 6px 0;" onclick="dietaAddRefeicao()">+ Refeição</button>`;
+  html += `<div class="di-ref-novas"><button class="di-add-btn" onclick="dietaAddRefeicao()">+ Refeição</button><button class="di-add-btn di-add-salva" onclick="dietaRefSalvaAbre()" title="Colocar uma das tuas refeições salvas">★ Refeição salva</button></div>`;
 
   // CARDIO / DICAS
   html += renderDietaBlock('orient', 'CARDIO / DICAS / ORIENTAÇÕES', sections.orient.length + ' itens',
@@ -32544,6 +32567,7 @@ function renderDietaEditor() {
   if (!c._diMac) { c._diMac = 1; c.addEventListener('input', ev => { const t = ev.target; if (t && t.closest && t.closest('.di-row') && !t.closest('#diMac')) diMacAgenda(); }); }
   diMacPinta();
   teTecladoLiga();   // v655
+  try { _rsSincroniza_(); } catch (_) {}   // v657: no máximo uma leitura por minuto
 }
 
 function parseDietaSections(rows) {
@@ -32985,6 +33009,7 @@ function renderDietaRefeicao(ref, ri) {
       <span class="di-block-title">🍽 ${escTrainer(refName)}</span>
       <span class="di-block-meta">${escTrainer(refKcal) || totalItems + ' itens'}</span>
       <span class="di-ref-kc" data-refkc="${ref.idx}"></span>
+      <button class="di-head-sv${_rsAcha_(ref.idx) ? ' on' : ''}" data-refsv="${ref.idx}" onclick="event.stopPropagation(); dietaSalvaRef(${ref.idx})" title="Salvar esta refeição inteira pra usar em outros alunos" aria-label="Salvar refeição">${_rsAcha_(ref.idx) ? '★' : '☆'}</button>
       <button class="di-head-dup" onclick="event.stopPropagation(); dietaDuplicaRef(${ref.idx})" title="Duplicar esta refeição (cria outra igual logo abaixo)" aria-label="Duplicar refeição">⧉</button>
       <button class="di-head-trash" onclick="event.stopPropagation(); dietaRemoveRef(${ref.idx})" title="Excluir esta refeição inteira (alimentos e opções)">🗑</button>
       <span class="di-block-arrow">▶</span>
@@ -33917,6 +33942,142 @@ function dietaRemoveRef(idx) {
 }
 
 // v653: duplica a refeição inteira (alimentos, opções e observações) logo abaixo dela
+// ── v657 (GH 17/11, plano C): REFEIÇÕES SALVAS. A ☆ do cabeçalho da refeição guarda a refeição inteira (nome, horário,
+// alimentos, opções e observações) e "+ Refeição salva" coloca uma delas em qualquer aluno. Mora no SERVIDOR (depósito do
+// editor, chave "refeicoes" da rota editor_dados do .gs 2026-11-17b); o aparelho tem a cópia e a fila do que ainda não chegou.
+// Nunca leva linha de protocolo (proto, ciclo), de info ou de meta: a faixa da refeição para antes delas.
+const _RS_KEY = 'gh_ed_refeicoes_v1', _RS_PEND = 'gh_ed_refeicoes_pend_v1', _RS_CHAVE = 'refeicoes', _RS_TETO = 200;
+let _rsUltima = 0, _rsEnviando = false, _rsBusca = '', _rsApagar = '';
+const _rsNorm = s => String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+function _rsItem_(v) {   // só entra o que tem a forma certa (o que vem do servidor também passa por aqui)
+  if (!v || typeof v !== 'object' || !Array.isArray(v.rows)) return null;
+  const fora = new Set(['proto', 'ciclo', 'info', 'meta', 'regra', 'supl', 'cardio', 'aerob', 'dica', 'orient']);
+  const rows = v.rows.slice(0, 60).filter(r => Array.isArray(r) && !fora.has(String(r[0] || '').toLowerCase().trim()))
+    .map(r => [0, 1, 2, 3].map(i => String(r[i] == null ? '' : r[i]).slice(0, 400)));
+  if (!rows.length || String(rows[0][0]).toLowerCase().trim() !== 'ref') return null;
+  if (rows.slice(1).some(r => String(r[0]).toLowerCase().trim() === 'ref')) return null;   // uma refeição por item
+  return { n: String(v.n || rows[0][1] || '').slice(0, 80), rows, em: +v.em || 0 };
+}
+function _rsObj_(o) { const out = {}; if (o && typeof o === 'object' && !Array.isArray(o)) Object.keys(o).forEach(id => { const it = _rsItem_(o[id]); if (it && /^[\w-]{1,80}$/.test(id)) out[id] = it; }); return out; }
+function _rsLe_() { try { return _rsObj_(JSON.parse(localStorage.getItem(_RS_KEY) || '{}')); } catch (_) { return {}; } }
+function _rsGrava_(o) { try { localStorage.setItem(_RS_KEY, JSON.stringify(_rsObj_(o))); } catch (_) {} }
+function _rsPendLe_() { try { const a = JSON.parse(localStorage.getItem(_RS_PEND) || '[]'); return Array.isArray(a) ? a.filter(p => p && (p.op === 'poe' || p.op === 'tira') && p.id) : []; } catch (_) { return []; } }
+function _rsPendGrava_(a) { try { localStorage.setItem(_RS_PEND, JSON.stringify(a)); } catch (_) {} }
+function _rsVista_() {   // cópia do servidor + o que ainda está na fila
+  const o = _rsLe_();
+  _rsPendLe_().forEach(p => { if (p.op === 'poe') { const it = _rsItem_(p.valor); if (it) o[p.id] = it; } else delete o[p.id]; });
+  return o;
+}
+function _rsAssin_(rows) { return JSON.stringify(rows.map(r => [0, 1, 2, 3].map(i => _rsNorm(r[i]))).filter(r => r.some(Boolean))); }
+function _rsFaixa_(idx) {   // linhas da refeição que começa em idx (mesma faixa do Duplicar)
+  const stop = new Set(['ref', 'regra', 'supl', 'proto', 'ciclo', 'cardio', 'aerob', 'dica', 'orient', 'info', 'meta']);
+  let fim = dietaData.length;
+  for (let j = idx + 1; j < dietaData.length; j++) { if (stop.has(String(dietaData[j][0] || '').toLowerCase().trim())) { fim = j; break; } }
+  return dietaData.slice(idx, fim).filter(r => r.some(c => String(c || '').trim())).map(r => [0, 1, 2, 3].map(i => String(r[i] == null ? '' : r[i])));
+}
+function _rsAcha_(idx) { const a = _rsAssin_(_rsFaixa_(idx)), o = _rsVista_(); return Object.keys(o).find(id => _rsAssin_(o[id].rows) === a) || ''; }
+function _rsEstrela_(idx) { const b = document.querySelector('[data-refsv="' + idx + '"]'); if (!b) return; const tem = !!_rsAcha_(idx); b.textContent = tem ? '★' : '☆'; b.classList.toggle('on', tem); b.title = tem ? 'Refeição salva. Tocar tira das salvas' : 'Salvar esta refeição inteira pra usar em outros alunos'; }
+function _rsEstrelas_() { document.querySelectorAll('[data-refsv]').forEach(b => _rsEstrela_(+b.dataset.refsv)); }
+function dietaSalvaRef(idx) {
+  const r = dietaData[idx]; if (!r) return;
+  const ja = _rsAcha_(idx), fila = _rsPendLe_();
+  if (ja) { fila.push({ op: 'tira', id: ja }); _rsPendGrava_(fila); _rsEstrela_(idx); _ghToast('Refeição tirada das salvas', 2200); _rsEnvia_(true); return; }
+  const rows = _rsFaixa_(idx), nome = String(r[1] || '').trim();
+  if (!nome || /^nova refei[cç][aã]o$/i.test(nome)) { _ghToast('Dá um nome pra refeição antes de salvar', 2800); return; }
+  if (!rows.slice(1).some(x => { const s = String(x[0] || '').toLowerCase().trim(); return (s === '' || s === 'alimento' || s === 'food') && String(x[1] || '').trim(); })) { _ghToast('Refeição sem alimento não dá pra salvar', 2800); return; }
+  if (Object.keys(_rsVista_()).length >= _RS_TETO) { _ghToast('Já são ' + _RS_TETO + ' refeições salvas. Apaga alguma antes', 3200); return; }
+  const it = _rsItem_({ n: nome, rows, em: Date.now() });
+  if (!it) { _ghToast('Não deu pra salvar esta refeição', 2800); return; }
+  fila.push({ op: 'poe', id: 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), valor: it });
+  _rsPendGrava_(fila); _rsEstrela_(idx);
+  _ghToast('Refeição salva. Ela aparece em "+ Refeição salva"', 3000);
+  _rsEnvia_(true);
+}
+async function _rsEnvia_(perguntaSenha) {
+  if (_rsEnviando) return; _rsEnviando = true;
+  try {
+    while (true) {
+      const fila = _rsPendLe_(); if (!fila.length) break;
+      const p = fila[0];
+      if (!localStorage.getItem('gh_trainer_token') && !(perguntaSenha && _trainerToken_(true))) break;
+      let r; try { r = await _publicaAba_(TRAINER_APPS_SCRIPT, { type: 'editor_dados', chave: _RS_CHAVE, op: p.op, id: p.id, valor: p.valor }); } catch (_) { break; }
+      if (!r || !r.j || !r.j.ok || !r.j.dados || !(_RS_CHAVE in r.j.dados)) break;   // servidor sem a rota ou senha errada: fica na fila
+      const resto = _rsPendLe_(); if (resto.length && resto[0].op === p.op && resto[0].id === p.id) resto.shift();
+      _rsPendGrava_(resto);
+      _rsGrava_(r.j.dados[_RS_CHAVE]);
+    }
+  } finally { _rsEnviando = false; }
+  _rsEstrelas_(); if (_rsAberto_()) _rsDesenha_();
+}
+async function _rsSincroniza_() {
+  if (Date.now() - _rsUltima < 60000) return; _rsUltima = Date.now();
+  const tok = localStorage.getItem('gh_trainer_token') || ''; if (!tok) { _rsUltima = 0; return; }
+  try {
+    const r = await fetch(TRAINER_APPS_SCRIPT + '?action=editor_dados&chave=' + _RS_CHAVE + '&token=' + encodeURIComponent(tok) + '&_=' + Date.now(), { cache: 'no-store' });
+    const j = await r.json();
+    if (j && j.ok && j.dados && _RS_CHAVE in j.dados) { _rsGrava_(j.dados[_RS_CHAVE] || {}); _rsEstrelas_(); if (_rsAberto_()) _rsDesenha_(); _rsEnvia_(); }
+    else _rsUltima = 0;
+  } catch (_) { _rsUltima = 0; }
+}
+function _rsAberto_() { const e = document.getElementById('rsPainel'); return !!(e && !e.hidden); }
+function _rsResumo_(it) {   // "≈ 485 kcal · P 28" pela mesma conta da barra; sem conta, só a contagem de alimentos
+  const com = it.rows.slice(1).filter(r => { const s = String(r[0] || '').toLowerCase().trim(); return (s === '' || s === 'alimento' || s === 'food') && String(r[1] || '').trim(); });
+  const ops = it.rows.filter(r => String(r[0] || '').toLowerCase().trim() === 'op').length;
+  let kc = '';
+  try { const c = _diMacCalc(it.rows.map(r => r.slice())); const t = c && c.blocos && c.blocos[0] && c.blocos[0].t; if (t && t.kc > 0) kc = '≈ ' + Math.round(t.kc) + ' kcal · P ' + Math.round(t.p); } catch (_) {}
+  return { kc, cont: com.length + (com.length === 1 ? ' alimento' : ' alimentos') + (ops ? ' em ' + ops + (ops === 1 ? ' opção' : ' opções') : ''), nomes: com.slice(0, 4).map(r => String(r[1]).split('|')[0].replace(/\s*\(.*$/, '').trim()).filter(Boolean).join(', ') + (com.length > 4 ? '...' : '') };
+}
+function _rsDesenha_() {
+  const cx = document.getElementById('rsLista'); if (!cx) return;
+  const o = _rsVista_(), b = _rsNorm(_rsBusca);
+  let ids = Object.keys(o).sort((x, y) => o[x].n.localeCompare(o[y].n, 'pt', { numeric: true }) || (o[y].em - o[x].em));
+  const total = ids.length;
+  if (b) ids = ids.filter(id => _rsNorm(o[id].n).includes(b) || o[id].rows.some(r => _rsNorm(r[1]).includes(b)));
+  const sub = document.getElementById('rsSub');
+  if (sub) sub.textContent = total ? (total === 1 ? '1 refeição salva' : total + ' refeições salvas') + '. Tocar coloca no fim das refeições deste aluno.' : '';
+  if (!total) { cx.innerHTML = '<div class="rs-vazio">Nenhuma refeição salva ainda.<br>Abre uma refeição que tu gosta e toca na ☆ do cabeçalho dela.</div>'; return; }
+  if (!ids.length) { cx.innerHTML = '<div class="rs-vazio">Nenhuma refeição com esse nome ou alimento.</div>'; return; }
+  cx.innerHTML = ids.map(id => { const it = o[id], r = _rsResumo_(it), hora = String(it.rows[0][3] || '').trim();
+    return '<div class="rs-it"><button type="button" class="rs-usa" onclick="rsEscolhe(\'' + escTrainer(id) + '\')"><b>' + escTrainer(it.n) + '</b><span>' + escTrainer([hora, r.kc, r.cont].filter(Boolean).join(' · ')) + '</span><i>' + escTrainer(r.nomes) + '</i></button>' +
+      '<button type="button" class="rs-x' + (_rsApagar === id ? ' certeza' : '') + '" onclick="rsApaga(\'' + escTrainer(id) + '\')" aria-label="Apagar das salvas">' + (_rsApagar === id ? 'Apagar?' : '✕') + '</button></div>'; }).join('');
+}
+function dietaRefSalvaAbre() {
+  let e = document.getElementById('rsPainel');
+  if (!e) {
+    e = document.createElement('div'); e.id = 'rsPainel'; e.className = 'te-conf rs-painel'; e.hidden = true;
+    e.innerHTML = '<div class="te-conf-cx"><div class="te-conf-tit">Refeições salvas</div><div class="te-conf-sub" id="rsSub"></div>' +
+      '<input type="search" class="te-fi-busca" id="rsBusca" placeholder="Buscar pelo nome ou por um alimento" oninput="rsFiltra(this.value)" autocomplete="off" enterkeyhint="search">' +
+      '<div class="te-conf-lista" id="rsLista"></div><div class="te-conf-pe"><button type="button" class="te-conf-salva" onclick="rsFecha()">Fechar</button></div></div>';
+    e.addEventListener('click', ev => { if (ev.target === e) rsFecha(); });
+    (document.getElementById('trainerEditor') || document.body).appendChild(e);
+  }
+  _rsBusca = ''; _rsApagar = ''; const i = document.getElementById('rsBusca'); if (i) i.value = '';
+  e.hidden = false; _rsDesenha_(); _rsSincroniza_();
+}
+function rsFecha() { const e = document.getElementById('rsPainel'); if (e) e.hidden = true; }
+function rsFiltra(v) { _rsBusca = String(v || ''); _rsApagar = ''; _rsDesenha_(); }
+function rsApaga(id) {   // dois toques: o primeiro pergunta no próprio botão
+  if (_rsApagar !== id) { _rsApagar = id; _rsDesenha_(); setTimeout(() => { if (_rsApagar === id) { _rsApagar = ''; if (_rsAberto_()) _rsDesenha_(); } }, 3500); return; }
+  _rsApagar = ''; const fila = _rsPendLe_(); fila.push({ op: 'tira', id }); _rsPendGrava_(fila);
+  _rsDesenha_(); _rsEstrelas_(); _rsEnvia_(true);
+}
+function rsEscolhe(id) {
+  const it = _rsVista_()[id]; if (!it || !dietaData) return;
+  teSnapshot();
+  // entra depois da última refeição; dieta sem refeição: antes de cardio, dicas e protocolo (igual ao "+ Refeição")
+  const sec = j => String(dietaData[j][0] || '').toLowerCase().trim();
+  const stop = new Set(['ref', 'regra', 'supl', 'proto', 'ciclo', 'cardio', 'aerob', 'dica', 'orient', 'info', 'meta']);
+  let ult = -1; for (let j = dietaData.length - 1; j >= 0; j--) { if (sec(j) === 'ref') { ult = j; break; } }
+  let em = dietaData.length;
+  if (ult >= 0) { for (let j = ult + 1; j < dietaData.length; j++) { if (stop.has(sec(j))) { em = j; break; } } }
+  else { const para = new Set(['cardio', 'aerob', 'dica', 'orient', 'proto', 'ciclo']); for (let j = 0; j < dietaData.length; j++) { if (para.has(sec(j))) { em = j; break; } } }
+  dietaData.splice(em, 0, ...it.rows.map(r => r.slice()));
+  rsFecha(); renderDietaEditor();
+  const el = document.querySelector('.di-block[data-key="ref-' + em + '"]');
+  if (el) { try { el.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (_) {} }
+  _ghToast('Refeição colocada. Confere as gramas pra este aluno', 3000);
+}
+
 function dietaDuplicaRef(idx) {
   const stop = new Set(['ref', 'regra', 'supl', 'proto', 'ciclo', 'cardio', 'aerob', 'dica', 'orient', 'info', 'meta']);
   let fim = dietaData.length;
