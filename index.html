@@ -3765,6 +3765,15 @@
   /* ══ v653 (GH 17/11, plano C): editor mais rápido no celular ══ */
   #teMaisBtn, .te-mais-links, .te-undo-cel, .te-ex-resumo { display: none; }
   .di-tudo-bar { display: flex; justify-content: flex-end; margin: 0 0 8px; }
+  /* ══ v660: entregar pelo editor ══ */
+  #trainerEditor #teEntregaBtn { border-color: var(--gold); color: var(--gold); font-weight: 800; white-space: nowrap; }
+  .te-ent-res { font-size: 13.5px; line-height: 1.45; color: #ddd; margin: 0 0 10px; }
+  .te-ent-aviso { font-size: 13.5px; line-height: 1.45; color: #f3dca0; background: #231d0c; border: 1px solid #6b5a22; border-radius: 9px; padding: 10px 12px; margin: 0 0 10px; }
+  .te-ent-linha { font-size: 13.5px; line-height: 1.45; color: #eee; background: #1e1e1e; border: 1px solid #2c2c2c; border-radius: 9px; padding: 10px 12px; margin: 0 0 6px; overflow-wrap: anywhere; }
+  @media (max-width: 480px) {
+    #trainerEditor .te-top-bar > #teEntregaBtn { order: 2; flex: 1 1 100%; padding: 11px 8px; font-size: 14px; }
+    #trainerEditor .te-top-bar:not(.mais) > #teEntregaBtn { display: none !important; }
+  }
   /* ══ v659: rótulo do dia do ciclo de carbo, no lugar ══ */
   .di-dia { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 14px 0 6px; padding: 8px 10px; background: #1c1a12; border: 1px solid #6b5a22; border-left: 3px solid var(--gold); border-radius: 7px; }
   .di-dia-t { font-size: 10.5px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: var(--gold); white-space: nowrap; }
@@ -4945,6 +4954,10 @@ html[data-theme="light"] .te-conf-it.erro i { background: #c0392b; }
 html[data-theme="light"] .te-conf-it b { color: #999; }
 html[data-theme="light"] .te-conf-salva { color: #3a3a3a; border-color: rgba(0, 0, 0, 0.3); }
 html[data-theme="light"] .te-conf-alvo { outline-color: #c27a00 !important; }
+html[data-theme="light"] #trainerEditor #teEntregaBtn { border-color: #B8913F; color: #8a6410; }
+html[data-theme="light"] .te-ent-res { color: #333; }
+html[data-theme="light"] .te-ent-aviso { background: #fbf6e6; border-color: #B8913F; color: #5c4408; }
+html[data-theme="light"] .te-ent-linha { background: #fff; border-color: rgba(0, 0, 0, 0.12); color: #141414; }
 html[data-theme="light"] .di-dia { background: #fbf6e6; border-color: #B8913F; }
 html[data-theme="light"] .di-dia-t { color: #8a6410; }
 html[data-theme="light"] .di-dia input { background: #fff; border-color: rgba(0, 0, 0, 0.2); color: #141414; }
@@ -8855,6 +8868,7 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
     <button class="te-btn ghost" id="teFantasmaBtn" onclick="teFantasmaAbrir()" title="Ver por cima como este protocolo estava antes (versão anterior). Só a equipe vê.">👻<span class="te-lbl"> Antes</span></button>
     <div class="te-mais-links" id="teMaisLinks"></div>
     <button class="te-btn ghost" id="teMaisBtn" onclick="teMaisAlterna()" title="Mais opções" aria-label="Mais opções">⋯</button>
+    <button class="te-btn ghost" id="teEntregaBtn" onclick="teEntregaAbre()" style="display:none;" title="Entregar o protocolo: manda a mensagem pro aluno e escreve data, versão e link na mestre">📤 Entregar</button>
     <button class="te-btn" id="trainerSaveBtn" onclick="trainerSave()">💾 Salvar</button>
     <button class="te-btn ghost" onclick="trainerExit()">✕</button>
   </div>
@@ -29507,7 +29521,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v659';
+    var APP_SHELL_V = 'metodo-gh-v660';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
@@ -30867,7 +30881,7 @@ async function tfCria(linha) {
   _tf.criando = 0;
   if (erro) { _tf.msg[linha] = erro; _tf.conf = 0; tfDesenha(); return; }
   _tf.conf = 0;
-  _tfSids.set(String(j.sheetId), { linha: linha, n: x.n, novo: j.jaExistia === false });
+  _tfSids.set(String(j.sheetId), { linha: linha, n: x.n, novo: j.jaExistia === false, compra: x.compra });
   tfDesenha();
   pickTrainerStudent(String(j.sheetId), x.n);
 }
@@ -30963,6 +30977,123 @@ function dietaRemoveDia(idx) {
   renderDietaEditor();
 }
 
+// ── v660 (GH 17/11, decisão 1a): ENTREGAR pelo editor. Só pra aluno aberto pela fila de quem está sem protocolo (a linha dele
+// na mestre ainda não tem link). O botão confere que as duas abas têm conteúdo e estão salvas, roda a conferência de texto do
+// treino e da dieta, pede a confirmação na própria tela e chama a rota editor_entrega do .gs 2026-11-17c, que faz a mesma entrega
+// de sempre: mensagem ao aluno no WhatsApp e data, versão e link na mestre. O servidor recusa linha que já tem link, então dois
+// toques nunca viram duas mensagens.
+const _teEnt = { st: '', achT: [], achD: [], falta: [], msg: '', tit: '', res: null, mandando: false, salvo: { sid: '', TREINO: null, DIETA: null } };
+function _teEntNorm_(rows) {
+  const o = [];
+  (rows || []).forEach(r => { const c = (r || []).map(v => String(v == null ? '' : v).replace(/\s*\r?\n\s*/g, '\n').trim()); while (c.length && c[c.length - 1] === '') c.pop(); if (c.length) o.push(c); });
+  return JSON.stringify(o);
+}
+// retrato de cada aba como ela está NA PLANILHA: o que veio na abertura e, depois, o que cada Salvar gravou
+function _teEntGuarda_(sid, t, d) { _teEnt.salvo = { sid: String(sid || ''), TREINO: t ? _teEntNorm_(t) : null, DIETA: d ? _teEntNorm_(d) : null }; }
+function _teEntSalvou_(tab, gravado) { if (_teEnt.salvo.sid === String(trainerSheetId || '')) _teEnt.salvo[tab] = _teEntNorm_(gravado); }
+function _teEntAlvo_() { const sid = String(trainerSheetId || ''), x = sid ? _tfSids.get(sid) : null; return (x && !x.entregue) ? { sid: sid, linha: x.linha, n: x.n } : null; }
+function teEntregaSinc() { const b = document.getElementById('teEntregaBtn'); if (b) b.style.display = _teEntAlvo_() ? '' : 'none'; }
+function _teEntConta_() {
+  const tx = v => String(v == null ? '' : v).trim(), dias = new Set(); let ex = 0, ref = 0, alim = 0, dentro = false;
+  (trainerData || []).forEach(r => { if (!r) return; const a = tx(r[0]); if (/^\d+$/.test(a) && tx(r[1]) && !/^https?:/i.test(tx(r[1]))) { dias.add(a); ex++; } });
+  (dietaData || []).forEach((r, i) => { if (!r || !i) return; const a = tx(r[0]).toLowerCase(); if (a === 'ref') { ref++; dentro = true; } else if (a === '' || a === 'alimento') { if (dentro && tx(r[1])) alim++; } else if (a !== 'op' && a !== 'obs' && a !== 'nota') dentro = false; });
+  return { dias: dias.size, ex: ex, ref: ref, alim: alim };
+}
+// data de compra da mestre que ainda não chegou = protocolo agendado (regra da montagem): a entrega avisa antes
+function _teEntFutura_() {
+  const x = _tfSids.get(String(trainerSheetId || '')), m = String((x && x.compra) || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); if (!m) return '';
+  const d = new Date(+m[3], +m[2] - 1, +m[1]), h = new Date(); h.setHours(0, 0, 0, 0);
+  return d > h ? m[0] : '';
+}
+function _teEntFalta_(sid) {
+  const f = [], n = _teEntConta_(), s = _teEnt.salvo;
+  if (!n.ex) f.push('O treino está vazio. Monta pelo menos um dia com exercício.');
+  if (!n.ref || !n.alim) f.push('A dieta está sem refeição com alimento.');
+  [['TREINO', trainerData, n.ex], ['DIETA', dietaData, n.ref && n.alim]].forEach(x => {
+    if (!x[2]) return;
+    if (s.sid !== sid || s[x[0]] == null || s[x[0]] !== _teEntNorm_(x[1])) f.push('A aba ' + x[0] + ' tem mudança que ainda não foi salva. Abre a aba, toca em Salvar e volta aqui.');
+  });
+  return f;
+}
+function teEntFecha() { if (_teEnt.mandando) return; const o = document.getElementById('teEnt'); if (o) o.hidden = true; _teEnt.st = ''; }
+function teEntregaAbre() {
+  const a = _teEntAlvo_(); if (!a || _teEnt.mandando) return;
+  try { teMaisAlterna(false); } catch (_) {}
+  _teEnt.falta = _teEntFalta_(a.sid);
+  if (_teEnt.falta.length) { _teEnt.st = 'falta'; _teEntDesenha(); return; }
+  try { _teEnt.achT = teConfTreino(trainerData || []); } catch (_) { _teEnt.achT = []; }
+  try { _teEnt.achD = teConfDieta(dietaData || []); } catch (_) { _teEnt.achD = []; }
+  _teEnt.st = 'confirma'; _teEntDesenha();
+}
+function teEntVai(qual, i) {
+  const L = qual === 't' ? _teEnt.achT : _teEnt.achD; if (!L[i]) return;
+  teEntFecha();
+  const modo = qual === 't' ? 'treino' : 'dieta';
+  if (currentEditMode !== modo) switchEditMode(modo);
+  _teConfLista = L; setTimeout(() => { try { teConfVai(i); } catch (_) {} }, 60);
+}
+function _teEntDesenha() {
+  let o = document.getElementById('teEnt');
+  if (!o) { o = document.createElement('div'); o.id = 'teEnt'; o.className = 'te-conf te-ent'; o.hidden = true; o.addEventListener('click', ev => { if (ev.target === o) teEntFecha(); }); (document.getElementById('trainerEditor') || document.body).appendChild(o); }
+  const a = _teEntAlvo_(), nome = a ? a.n : ((_tfSids.get(String(trainerSheetId || '')) || {}).n || ''), e = escTrainer;
+  let h = '<div class="te-conf-cx" role="dialog" aria-label="Entregar o protocolo">';
+  const pe = (volta, vai, limpo) => '<div class="te-conf-pe"><button type="button" class="' + (vai && limpo ? 'te-conf-salva' : 'te-conf-volta') + '" onclick="teEntFecha()">' + volta + '</button>' + (vai ? '<button type="button" class="te-conf-salva te-ent-vai' + (limpo ? ' ok' : '') + '" onclick="teEntregaManda()">' + vai + '</button>' : '') + '</div>';
+  if (_teEnt.st === 'falta') {
+    h += '<div class="te-conf-tit">Ainda não dá pra entregar</div><div class="te-conf-sub">' + e(nome) + '</div><div class="te-conf-lista">' + _teEnt.falta.map(t => '<div class="te-ent-linha">' + e(t) + '</div>').join('') + '</div>' + pe('Voltar');
+  } else if (_teEnt.st === 'confirma') {
+    const n = _teEntConta_(), L = [['t', 'Treino', _teEnt.achT], ['d', 'Dieta', _teEnt.achD]], tot = _teEnt.achT.length + _teEnt.achD.length;
+    h += '<div class="te-conf-tit">Entregar o protocolo?</div><div class="te-conf-sub">' + e(nome) + '</div>';
+    h += '<div class="te-ent-res">Treino: ' + n.dias + (n.dias === 1 ? ' dia, ' : ' dias, ') + n.ex + (n.ex === 1 ? ' exercício' : ' exercícios') + '. Dieta: ' + n.ref + (n.ref === 1 ? ' refeição.' : ' refeições.') + '</div>';
+    h += '<div class="te-ent-aviso">O aluno recebe AGORA no WhatsApp a mensagem com o link do protocolo. A mestre recebe a data de hoje, a versão e o link. Não dá pra desfazer.</div>';
+    const fut = _teEntFutura_();
+    if (fut) h += '<div class="te-ent-aviso te-ent-fut">Atenção: a data de compra dele na mestre é ' + e(fut) + ', que ainda não chegou. Se o protocolo está agendado pra essa data, não entrega agora.</div>';
+    if (tot) {
+      h += '<div class="te-conf-lista">';
+      L.forEach(g => { if (!g[2].length) return; h += '<div class="te-conf-gr">' + g[1] + ': ' + g[2].length + (g[2].length === 1 ? ' ponto da conferência' : ' pontos da conferência') + '</div>' + g[2].map((x, i) => '<button type="button" class="te-conf-it ' + x.g + '" onclick="teEntVai(\'' + g[0] + '\',' + i + ')"><i></i><span>' + e(x.m) + '</span><b>›</b></button>').join(''); });
+      h += '</div>';
+    }
+    h += pe(tot ? 'Voltar e corrigir' : 'Voltar', tot ? 'Entregar assim mesmo' : 'Entregar agora', !tot);
+  } else if (_teEnt.st === 'mandando') {
+    h += '<div class="te-conf-tit">Entregando…</div><div class="te-conf-sub">' + e(nome) + '</div><div class="te-ent-aviso">Não fecha esta tela. Leva alguns segundos.</div>';
+  } else if (_teEnt.st === 'ok') {
+    const r = _teEnt.res || {};
+    h += '<div class="te-conf-tit">Entregue</div><div class="te-conf-sub">' + e(nome) + '</div><div class="te-ent-res">A mensagem com o link foi disparada pro WhatsApp do aluno. Na mestre entraram a data de hoje, ' + (r.versao ? 'a versão ' + e(r.versao) : 'a versão') + ' e o link' + (r.linha ? ' (linha ' + (+r.linha) + ')' : '') + '.</div>';
+    if (r.pastas && r.pastas !== 'ok') h += '<div class="te-ent-aviso">As pastas de fotos e exames dele não foram preparadas. Avisa a Entregas pra conferir a pasta.</div>';
+    h += pe('Fechar');
+  } else {
+    h += '<div class="te-conf-tit">' + e(_teEnt.tit || 'Não entregou') + '</div><div class="te-conf-sub">' + e(nome) + '</div><div class="te-ent-linha">' + e(_teEnt.msg) + '</div>' + pe('Fechar');
+  }
+  o.innerHTML = h + '</div>'; o.hidden = false;
+}
+async function teEntregaManda() {
+  const a = _teEntAlvo_(); if (!a || _teEnt.mandando || _teEnt.st !== 'confirma') return;
+  _teEnt.falta = _teEntFalta_(a.sid);
+  if (_teEnt.falta.length) { _teEnt.st = 'falta'; _teEntDesenha(); return; }
+  _teEnt.mandando = true; _teEnt.st = 'mandando'; _teEntDesenha();
+  let j = null, sem = false;
+  try { const r = await _publicaAba_(TRAINER_APPS_SCRIPT, { type: 'editor_entrega', linha: a.linha, nome: a.n, sheetId: a.sid }); j = r && r.j; if (!j || typeof j !== 'object') sem = true; } catch (_) { sem = true; }
+  _teEnt.mandando = false; _teEnt.tit = 'Não entregou'; _teEnt.res = null;
+  const feito = () => { const x = _tfSids.get(a.sid); if (x) x.entregue = true; teEntregaSinc(); try { tfBusca(true); } catch (_) {} };
+  const er = String((j && j.error) || '');
+  if (sem) { _teEnt.st = 'erro'; _teEnt.tit = 'Sem resposta do servidor'; _teEnt.msg = 'Não deu pra saber se a entrega foi feita. Antes de tocar em Entregar de novo, abre a lista de alunos e toca em Atualizar: se este aluno saiu da fila de quem está sem protocolo, a entrega foi feita.'; }
+  else if (j.ok === true) { _teEnt.st = 'ok'; _teEnt.res = { versao: String(j.versao || ''), linha: +j.linha || 0, pastas: String(j.pastas || '') }; feito(); }
+  else {
+    _teEnt.st = 'erro';
+    if (/unauthorized/i.test(er)) _teEnt.msg = 'A senha do treinador deste aparelho não confere. Nada foi enviado.';
+    else if (j.ok !== false) _teEnt.msg = 'O servidor ainda não tem a entrega pelo editor. Falta publicar o arquivo do servidor com a versão 2026-11-17c. Nada foi enviado.';
+    else if (er === 'ocupado') _teEnt.msg = 'O servidor está no meio de outra entrega. Espera uns segundos e toca em Entregar de novo.';
+    else if (/mudou de aluno/i.test(er)) _teEnt.msg = 'A mestre mudou de lugar desde que a fila foi lida. Nada foi enviado. Fecha o editor, toca em Atualizar na lista de alunos e abre este aluno pela fila de novo.';
+    else if (er === 'ja_tem_link') { _teEnt.tit = 'Já estava entregue'; _teEnt.msg = 'A linha deste aluno na mestre já tem o link: a entrega dele já foi feita. Nada foi enviado agora.'; feito(); }
+    else if (er === 'ja_entregue_hoje') { _teEnt.tit = 'Já estava entregue'; _teEnt.msg = 'A mestre já tem entrega deste aluno com a data de hoje. Nada foi enviado agora.'; }
+    else if (er === 'cancelado') _teEnt.msg = 'A linha deste aluno está marcada como cancelada na mestre. Nada foi enviado.';
+    else if (er === 'planilha_de_outro_aluno') _teEnt.msg = 'Esta planilha está no link de outro aluno na mestre. Nada foi enviado. Passa pra Entregas conferir.';
+    else if (er === 'falta_aba') { const fa = Array.isArray(j.falta) ? j.falta : []; _teEnt.msg = 'Na planilha salva ' + (fa.length === 2 ? 'faltam o treino e a dieta' : (fa[0] === 'TREINO' ? 'falta o treino' : 'falta a dieta')) + '. Nada foi enviado. Salva a aba e toca em Entregar de novo.'; }
+    else if (er === 'linha_diferente') _teEnt.msg = 'A mestre tem mais de uma linha que parece ser deste aluno e a entrega cairia na linha ' + (+j.linha || '?') + ', não na da fila. Nada foi enviado. Passa pra Entregas conferir.';
+    else _teEnt.msg = 'Não deu pra concluir (' + (er || 'sem motivo').slice(0, 120) + '). Antes de tentar de novo, confere na mestre se a entrega deste aluno entrou.';
+  }
+  _teEntDesenha();
+}
+
 function openTrainerSheetModal() {
   document.getElementById('trainerSheetIdInput').value = '';
   teShow('trainerSheetModal');
@@ -31004,6 +31135,7 @@ async function trainerLoadSheet(presetSid) {
     const tParsed = tText ? parseCSVCru(tText).map(r => { while (r.length < 8) r.push(''); return r.slice(0, 8); }) : [];
     const dParsed = dText ? parseCSVCru(dText).map(r => { while (r.length < 4) r.push(''); return r.slice(0, 4); }) : [];
     _teBaseGuarda_(sid, tResp.ok ? tText : null, dResp.ok ? dText : null);   // v659: referência pro aviso de "mudou depois que abriu"
+    _teEntGuarda_(sid, tParsed.length >= 2 ? tParsed : null, dParsed.length >= 2 ? dParsed : null);   // v660: o que já está salvo, pro Entregar
     trainerData = (tParsed.length >= 2) ? tParsed : null;
     dietaData   = (dParsed.length >= 2) ? dParsed : null;
     // Reseta undo stack ao carregar treino novo (evita misturar histórico de sheets)
@@ -31065,6 +31197,7 @@ function renderEditorTopBar() {
   `;
   document.getElementById('teModeTabs').innerHTML = tabs;
   try { teFichaSinc(); } catch (_) {}   // v656
+  try { teEntregaSinc(); } catch (_) {}   // v660
 }
 
 // ── v656 (GH 17/11, plano C): FICHA do aluno dentro do editor. Lê a rota ficha_aluno do .gs 2026-11-17b (plano da mestre e
@@ -32590,6 +32723,7 @@ async function trainerSave() {
     btn.textContent = ok ? '✅ Salvo' : '❌ Falhou';
     if (ok) _teFant = null;   // v605: a publicação guardou uma versão nova, o fantasma busca de novo
     if (ok) { try { _teBaseDepois_(tab, data); } catch (_) {} }   // v659
+    if (ok) { try { _teEntSalvou_(tab, data); } catch (_) {} }   // v660
     if (!ok) alert('Apps Script retornou erro:\n\n' + errMsg);
     setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2500);
   } catch (e) {
@@ -32607,6 +32741,7 @@ function trainerExit() {
   dietaData = null;
   trainerSheetId = null;
   try { _teBaseGuarda_('', null, null); } catch (_) {}   // v659
+  try { _teEnt.mandando = false; teEntFecha(); _teEntGuarda_('', null, null); } catch (_) {}   // v660
   try { teFantasmaFechar(); } catch (_) {}   // v605
   try { teFichaSai(); } catch (_) {}   // v656
   _teFant = null;
