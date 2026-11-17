@@ -3765,6 +3765,19 @@
   /* ══ v653 (GH 17/11, plano C): editor mais rápido no celular ══ */
   #teMaisBtn, .te-mais-links, .te-undo-cel, .te-ex-resumo { display: none; }
   .di-tudo-bar { display: flex; justify-content: flex-end; margin: 0 0 8px; }
+  /* ══ v662: montar o treino pela anamnese ══ */
+  .tr-mo-bar { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; }
+  .tr-mo-bar span { font-size: 12px; color: #999; }
+  .tf-zero button.tr-mo-zero { background: #DDB65C; color: #1A1304; border-color: #DDB65C; font-weight: 800; }
+  .tr-mo-g { margin: 0 0 10px; }
+  .tr-mo-rot { display: block; font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: #999; margin: 0 0 5px; }
+  .tr-mo-ops { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tr-mo-ops button { background: transparent; color: #ccc; border: 1px solid #3a3a3a; border-radius: 999px; padding: 7px 12px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .tr-mo-ops button.on { background: #DDB65C; color: #1A1304; border-color: #DDB65C; }
+  .tr-mo-dia { font-size: 13.5px; line-height: 1.45; color: #eee; padding: 2px 0; }
+  .tr-mo .te-ent-linha { margin-top: 6px; }
+  .tr-mo .te-conf-salva[disabled] { opacity: .45; cursor: default; }
+  @media (max-width: 480px) { .tr-mo-ops button { padding: 9px 12px; } }
   /* ══ v661: montar a dieta pela anamnese ══ */
   .di-mo-abre { background: #DDB65C; color: #1A1304; border: 1px solid #DDB65C; border-radius: 6px; padding: 6px 11px; font-size: 12px; font-weight: 800; cursor: pointer; font-family: inherit; white-space: nowrap; }
   .di-mo-abas { display: flex; gap: 6px; margin: 0 0 10px; }
@@ -4997,6 +5010,11 @@ html[data-theme="light"] .di-mo-chips button { color: #7a5c14; border-color: rgb
 html[data-theme="light"] .di-mo-calc { color: #555; } html[data-theme="light"] .di-mo-calc.erro { color: #c0392b; }
 html[data-theme="light"] .di-mo-com { color: #555; } html[data-theme="light"] .di-mo-com b { color: #222; }
 html[data-theme="light"] .di-mo-dica { color: #5f5f5f; }
+html[data-theme="light"] .tr-mo-bar span { color: #666; }
+html[data-theme="light"] .tr-mo-rot { color: #666; }
+html[data-theme="light"] .tr-mo-ops button { color: #444; border-color: rgba(0, 0, 0, 0.22); }
+html[data-theme="light"] .tr-mo-ops button.on { background: #DDB65C; color: #1A1304; border-color: #B8913F; }
+html[data-theme="light"] .tr-mo-dia { color: #141414; }
 html[data-theme="light"] .di-dia { background: #fbf6e6; border-color: #B8913F; }
 html[data-theme="light"] .di-dia-t { color: #8a6410; }
 html[data-theme="light"] .di-dia input { background: #fff; border-color: rgba(0, 0, 0, 0.2); color: #141414; }
@@ -29560,7 +29578,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v661';
+    var APP_SHELL_V = 'metodo-gh-v662';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
@@ -31567,6 +31585,736 @@ function diMoAplicaRea() {
   _diMoDesenha();
 }
 
+// v662: rotulador de séries (cópia do núcleo da lane Entregas, gerada por _gera_series_app.mjs) e gerador de treino do Montar
+const GHSR = (function () {
+const TAB = {"ABDOMINAL ARNOLD":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDOMINAL ELEVAÇÃO DE PERNAS COM HALTER OU CANELEIRA":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna","quadril"]},"ABDOMINAL ELEVAÇÃO DE PERNAS NA PARALELA":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna","quadril"]},"ABDOMINAL ELEVAÇÃO DE PERNAS NO BANCO DECLINADO":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna","quadril"]},"ABDOMINAL NA BARRA FIXA":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDOMINAL NA MÁQUINA":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDOMINAL NA REMADA BAIXA OU CROSS":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDOMINAL NO BANCO DECLINADO":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDOMINAL NO BANCO DECLINADO COM PESO":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDOMINAL NO CHÃO":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDUÇÃO DEITADA COM MINI BAND":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"ABDUÇÃO EM PÉ NA MÁQUINA":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"ABDUÇÃO EM QUATRO APOIOS COM MINI BAND":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"ABDUÇÃO LATERAL NA MÁQUINA":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"ABDUÇÃO NO CROSS":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"AFUNDO NO CHÃO":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"AFUNDO SMITH":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"AFUNDO SMITH COM STEP":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"AGACHAMENTO HACK":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["coluna","joelho","quadril","tornozelo"]},"AGACHAMENTO LIVRE":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"AGACHAMENTO SMITH":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"AGACHAMENTO SUMÔ SMITH":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"ALONGAMENTO ADUTORES":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"ALONGAMENTO ESCÁPULAS E OMBRO":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"ALONGAMENTO GLÚTEO":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"ALONGAMENTO PEITORAL MENOR":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"ALONGAMENTO POSTERIOR":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"ALONGAMENTO QUADRIL – RETROVERSÃO":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"ALONGAMENTO TORNOZELO E ILIOPSOAS":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"AQUECIMENTO MANGUITO":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"BARRA FIXA":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"BÚLGARO":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"BÚLGARO NA MÁQUINA":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo"]},"CADEIRA ABDUTORA":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"CADEIRA ABDUTORA 45° EM PÉ":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"CADEIRA ABDUTORA EM PÉ":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"CADEIRA ADUTORA":{"grupo":"adutor","tipo":"isolador","vetor":"aducao-quadril","artic":["quadril"]},"CADEIRA EXTENSORA":{"grupo":"quad","tipo":"isolador","vetor":"extensao-joelho","artic":["joelho"]},"CADEIRA FLEXORA":{"grupo":"posterior","tipo":"isolador","vetor":"flexao-joelho","artic":["joelho"]},"COICE COM CANELEIRA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"COICE NA MÁQUINA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"COICE NO CROSS COM POLIA ALTA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"CROSSOVER":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CROSSOVER POLIA MÉDIA":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO DECLINADO":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO DECLINADO COM HALTERES":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO INCLINADO":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO INCLINADO NO CROSS":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO INVERSO COM HALTERES":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO INVERSO NO CROSS":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO INVERSO NO VOADOR":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO RETO":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO RETO COM HALTERES":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"DESCOMPRESSÃO ESCÁPULAS":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"DESCOMPRESSÃO LOMBAR":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"DESENVOLVIMENTO COM HALTERES":{"grupo":"ombro","tipo":"composto","vetor":"empurrar-vertical","artic":["ombro","cotovelo","escapula"]},"DESENVOLVIMENTO NA MÁQUINA":{"grupo":"ombro","tipo":"composto","vetor":"empurrar-vertical","artic":["ombro","cotovelo","escapula"]},"DESENVOLVIMENTO NA MÁQUINA INCLINADO":{"grupo":"ombro","tipo":"composto","vetor":"empurrar-vertical","artic":["ombro","cotovelo","escapula"]},"ELEVAÇÃO FRONTAL COM ANILHA":{"grupo":"ombro","tipo":"isolador","vetor":"flexao-ombro","artic":["ombro"]},"ELEVAÇÃO FRONTAL COM HALTERES EM ISOMETRIA":{"grupo":"ombro","tipo":"isolador","vetor":"flexao-ombro","artic":["ombro"]},"ELEVAÇÃO FRONTAL NEUTRA COM HALTERES":{"grupo":"ombro","tipo":"isolador","vetor":"flexao-ombro","artic":["ombro"]},"ELEVAÇÃO FRONTAL NO CROSS":{"grupo":"ombro","tipo":"isolador","vetor":"flexao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL NA MÁQUINA":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL NA MÁQUINA SENTADO":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL NO BANCO INCLINADO":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL NO CROSS":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL PARCIAL NO CROSS":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL SENTADO":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO PÉLVICA 2D OU LIVRE":{"grupo":"gluteo","tipo":"composto","vetor":"extensao-quadril","artic":["quadril","joelho"]},"ELEVAÇÃO PÉLVICA NA MÁQUINA":{"grupo":"gluteo","tipo":"composto","vetor":"extensao-quadril","artic":["quadril","joelho"]},"EXTENSÃO DE GLÚTEO COM CANELEIRA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"EXTENSÃO DE GLÚTEO NA MÁQUINA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"EXTENSÃO DE GLÚTEO NA POLIA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"EXTENSÃO DE PUNHO COM BARRA":{"grupo":"antebraco","tipo":"isolador","vetor":"punho","artic":["punho"]},"EXTENSÃO DE PUNHO NO CROSS":{"grupo":"antebraco","tipo":"isolador","vetor":"punho","artic":["punho"]},"FACE PULL":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-horizontal","artic":["ombro","escapula"]},"FACEPULL COM CORDA NO CROSS":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-horizontal","artic":["ombro","escapula"]},"FLEXOR NÓRDICO NA MÁQUINA":{"grupo":"posterior","tipo":"isolador","vetor":"flexao-joelho","artic":["joelho"]},"FLEXORA UNILATERAL EM PÉ":{"grupo":"posterior","tipo":"isolador","vetor":"flexao-joelho","artic":["joelho"]},"FLEXÃO DE PUNHO COM BARRA":{"grupo":"antebraco","tipo":"isolador","vetor":"punho","artic":["punho"]},"GLÚTEO NO HIPEREXTENSOR DE LOMBAR":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"HIPEREXTENSOR DE LOMBAR NA MÁQUINA COM CARGA":{"grupo":"lombar","tipo":"isolador","vetor":"extensao-tronco","artic":["coluna","quadril"]},"HIPEREXTENSÃO DE LOMBAR":{"grupo":"lombar","tipo":"isolador","vetor":"extensao-tronco","artic":["coluna","quadril"]},"LEG HORIZONTAL":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["coluna","joelho","quadril","tornozelo"]},"LEG PRESS 45º":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["coluna","joelho","quadril","tornozelo"]},"LEG PRESS 45º UNILATERAL":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["coluna","joelho","quadril","tornozelo"]},"LEVANTAMENTO TERRA":{"grupo":"quad","tipo":"composto","vetor":"dobradica","artic":["coluna","joelho","quadril","tornozelo"]},"LEVANTAMENTO TERRA HEXAGONAL":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["coluna","joelho","quadril","tornozelo"]},"LEVANTAMENTO TERRA NA MÁQUINA":{"grupo":"quad","tipo":"composto","vetor":"dobradica","artic":["coluna","joelho","quadril","tornozelo"]},"MEIO TERRA":{"grupo":"lombar","tipo":"composto","vetor":"dobradica","artic":["quadril","coluna"]},"MESA FLEXORA":{"grupo":"posterior","tipo":"isolador","vetor":"flexao-joelho","artic":["joelho"]},"MESA FLEXORA LIVRE COM HALTER":{"grupo":"posterior","tipo":"isolador","vetor":"flexao-joelho","artic":["joelho"]},"MOBILIDADE DE TORNOZELO":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"OSTRA COM MINI BAND":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"PANTURRILHA EM PÉ":{"grupo":"panturrilha","tipo":"isolador","vetor":"flexao-plantar","artic":["tornozelo"]},"PANTURRILHA NO LEG 45º":{"grupo":"panturrilha","tipo":"isolador","vetor":"flexao-plantar","artic":["tornozelo"]},"PANTURRILHA SENTADO":{"grupo":"panturrilha","tipo":"isolador","vetor":"flexao-plantar","artic":["tornozelo"]},"PRANCHA COM RETROVERSÃO":{"grupo":"abdomen","tipo":"isolador","vetor":"anti-extensao","artic":["coluna"]},"PRANCHA PARAVERTEBRAIS":{"grupo":"abdomen","tipo":"isolador","vetor":"anti-extensao","artic":["coluna"]},"PULLDOWN":{"grupo":"costas","tipo":"isolador","vetor":"puxar-vertical","artic":["ombro","escapula"]},"PULLDOWN NA MÁQUINA":{"grupo":"costas","tipo":"isolador","vetor":"puxar-vertical","artic":["ombro","escapula"]},"PULLOVER COM HALTER":{"grupo":"costas","tipo":"isolador","vetor":"puxar-vertical","artic":["ombro","escapula"]},"PULLOVER NA MÁQUINA":{"grupo":"costas","tipo":"isolador","vetor":"puxar-vertical","artic":["ombro","escapula"]},"PUXADA ALTA COM TRIÂNGULO":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"PUXADA ALTA NA MÁQUINA ARTICULADA":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"PUXADA ALTA PRONADA":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"PUXADA ALTA SUPINADA":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"PUXADA ALTA SUPINADA NA MÁQUINA":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"PUXADA ALTA UNILATERAL SUPINADA":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"REMADA ALTA NA POLIA":{"grupo":"ombro","tipo":"composto","vetor":"puxar-vertical-alto","artic":["ombro","cotovelo","escapula"]},"REMADA BAIXA ABERTA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA BAIXA COM TRIÂNGULO":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA BAIXA DROP SET MECÂNICO COM TRIÂNGULO":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA BAIXA SUPINADA NA MÁQUINA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA CAVALINHO ABERTA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula","coluna","quadril"]},"REMADA CURVADA NA MÁQUINA GUIADA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA CURVADA PRONADA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula","coluna","quadril"]},"REMADA CURVADA SENTADO":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA NEUTRA NO CROSS":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA PRONADA NA MÁQUINA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA UNILATERAL NA MÁQUINA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"ROSCA BAYESIAN":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo","ombro"]},"ROSCA CONCENTRADA COM HALTER":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA DIRETA ALTERNADA":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA DIRETA COM BARRA W":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA DIRETA COM HALTER NO BANCO INCLINADO":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo","ombro"]},"ROSCA DIRETA COM HALTERES":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA DIRETA NA PUXADA ALTA":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA DIRETA NO CROSS":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA MARTELO COM HALTERES":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA MARTELO NO CROSS":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA SCOTT FECHADA":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA SCOTT UNILATERAL":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA SPIDER":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA UNILATERAL NO CROSS":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"SAPINHO NA MÁQUINA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"SERROTE COM HALTER":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula","coluna","quadril"]},"SERROTE PÊNDULO COM HALTER":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula","coluna","quadril"]},"STEP UP":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"STEP UP NO CROSS":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"STIFF":{"grupo":"posterior","tipo":"composto","vetor":"dobradica","artic":["quadril","coluna"]},"STIFF NA MÁQUINA":{"grupo":"posterior","tipo":"composto","vetor":"dobradica","artic":["quadril"]},"STIFF NO HIPEREXTENSOR":{"grupo":"posterior","tipo":"composto","vetor":"dobradica","artic":["quadril"]},"SUPERMAN – FORTALECIMENTO PARAVERTEBRAIS E GLÚTEO":{"grupo":"lombar","tipo":"isolador","vetor":"extensao-tronco","artic":["coluna","quadril"]},"SUPINO DECLINADO":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO DECLINADO COM BARRA":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO DECLINADO COM HALTERES":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO DECLINADO NA MÁQUINA":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO INCLINADO":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO INCLINADO COM HALTERES":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO INCLINADO NA MÁQUINA":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO RETO":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO RETO COM HALTERES":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO RETO NA MÁQUINA":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO RETO NA MÁQUINA SENTADO":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"TERRA SUMÔ":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["coluna","joelho","quadril","tornozelo"]},"TRÍCEPS FRANCÊS COM HALTER":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo","ombro"]},"TRÍCEPS FRANCÊS NO CROSS":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo","ombro"]},"TRÍCEPS NA PARALELA":{"grupo":"triceps","tipo":"composto","vetor":"extensao-cotovelo","artic":["cotovelo","ombro","escapula"]},"TRÍCEPS PULLEY COM BARRA":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo"]},"TRÍCEPS PULLEY COM CORDA":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo"]},"TRÍCEPS PULLEY NA MÁQUINA":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo"]},"TRÍCEPS PULLEY UNILATERAL":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo"]},"TRÍCEPS SUPINADO":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo"]},"TRÍCEPS TESTA EM PÉ":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo","ombro"]},"TRÍCEPS TESTA NO BANCO INCLINADO":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo","ombro"]},"VOADOR":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]}};
+const norm = s => String(s || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+const META = {}; for (const [k, v] of Object.entries(TAB)) if (k !== '_meta') META[norm(k)] = v;
+const meta = nome => META[norm(nome)] || null;
+
+const GRANDES = new Set(['peito', 'costas', 'quad', 'posterior', 'ombro']);
+const PEQUENOS = new Set(['biceps', 'triceps']);
+const ACESSORIO_SO_AJ = new Set(['panturrilha', 'abdomen', 'lombar', 'antebraco']);   // GH 22/09: só ajuste, nunca aquecimento
+const FAIXA = { grande_prioridade: [12, 14], grande: [10, 12], pequeno_prioridade: [12, 12], pequeno: [6, 8], acessorio: [2, 6] };
+const TETO_VAL_EXERCICIO = 4, TETO_VAL_GRUPO = 16;
+
+const ALIAS_GRUPO = {
+  braco: ['biceps', 'triceps'], bracos: ['biceps', 'triceps'], cotovelo: ['biceps', 'triceps', 'antebraco'],
+  perna: ['quad', 'posterior'], pernas: ['quad', 'posterior'], joelho: ['quad'], quadriceps: ['quad'],
+  gluteo: ['gluteo', 'gluteo_medio', 'gluteo_maximo'], gluteos: ['gluteo', 'gluteo_medio', 'gluteo_maximo'],
+  ombro: ['ombro'], ombros: ['ombro'], costas: ['costas'], peito: ['peito'], posterior: ['posterior'], biceps: ['biceps'], triceps: ['triceps'],
+  lombar: ['lombar'], panturrilha: ['panturrilha'], abdomen: ['abdomen'], antebraco: ['antebraco'],
+};
+const expandeGrupos = lista => { const out = new Set(); for (const x of (lista || [])) { const k = norm(x).toLowerCase().replace(/[^a-z_]/g, ''); (ALIAS_GRUPO[k] || [k]).forEach(g => out.add(g)); } return out; };
+function pisosDoPerfil(perfil = {}) {
+  const p = perfil || {}; const motivos = []; let ajuste = 0;
+  const niv = norm(p.nivel).toLowerCase();
+  const avancado = /avanc|atleta/.test(niv), iniciante = /inician/.test(niv);
+  const sono = p.sono == null ? null : Number(p.sono), estresse = p.estresse == null ? null : Number(p.estresse), idade = p.idade == null ? null : Number(p.idade);
+  const recuperaBem = sono != null && sono >= 4 && (estresse == null || estresse <= 2);
+  if (avancado && (recuperaBem || p.hormonal)) { ajuste += 2; motivos.push('avançado e recupera bem' + (p.hormonal ? ' (hormonal)' : ` (sono ${sono}, estresse ${estresse ?? '?'})`) + ': +2 em tudo'); }
+  if (iniciante || p.voltando) { ajuste -= 2; motivos.push((iniciante ? 'iniciante' : 'voltando de 6+ meses parado') + ': -2 em tudo nas primeiras 4 semanas'); }
+  const sinais = [];
+  if (sono != null && sono <= 2) sinais.push('sono ' + sono);
+  if (estresse != null && estresse >= 4) sinais.push('estresse ' + estresse);
+  if (idade != null && idade > 50) sinais.push(idade + ' anos');
+  if (p.deficitForte) sinais.push('déficit forte');
+  if (sinais.length) { ajuste -= 2; motivos.push('recuperação limitada (' + sinais.join(', ') + '): -2 em tudo'); }
+  const prioridade2 = expandeGrupos(p.prioridade2), lesao = expandeGrupos(p.lesao);
+  if (prioridade2.size) motivos.push('atrasado na foto, piso de prioridade: ' + [...prioridade2].join(', '));
+  if (lesao.size) motivos.push('dor ou lesão, fica no mínimo: ' + [...lesao].join(', '));
+  return { ajuste, motivos, prioridade2, lesao };
+}
+const GRANDES_FEM = new Set(['gluteo_medio', 'gluteo_maximo']);
+const grupoEfetivo = (m, sexo) => (String(sexo || '').toUpperCase().startsWith('F') && m.grupo === 'gluteo') ? (m.vetor === 'abducao-quadril' ? 'gluteo_medio' : 'gluteo_maximo') : m.grupo;
+const categoria = (grupo, prioridade) => {
+  const pri = String(prioridade || '').toLowerCase();
+  const ehPri = !!pri && (grupo === pri || (/gluteo/.test(pri) && /^gluteo/.test(grupo)) || (/braco/.test(pri) && /^(biceps|triceps)$/.test(grupo)));
+  if (GRANDES.has(grupo) || GRANDES_FEM.has(grupo)) return ehPri ? 'grande_prioridade' : 'grande';
+  if (PEQUENOS.has(grupo)) return ehPri ? 'pequeno_prioridade' : 'pequeno';
+  return 'acessorio';   // prioridade em acessório não existe: glúteo na mulher já é grande
+};
+const faixaDe = (grupo, prioridade) => FAIXA[categoria(grupo, prioridade)];
+
+const ehDia = r => /^\d+$/.test(String((r && r[0]) || '').trim());
+const ehAq = r => String((r && r[7]) || '').toLowerCase() === 'sim' || /alongament|mobilidad|manguito|descompress/i.test(String((r && r[1]) || ''));
+const REPS = { aq: '10', aj: '6', pap: '1' };
+
+const ESCALA = {
+  basico:   ['6 a 10', '8 a 12', '10 a 15', '15 a 20'],   // Iniciante e Intermediário
+  avancado: ['4 a 6',  '6 a 8',  '8 a 10',  '10 a 12'],   // Avançado e Atleta
+};
+const escalaDoNivel = nivel => /avanc|atleta/i.test(String(nivel || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')) ? 'avancado' : 'basico';
+const LEGADA = ['8 a 10', '10 a 12', '12 a 15', '15 a 20'];
+const normFaixa = f => String(f || '').trim().replace(/\s*a\s*/i, ' a ').replace(/^(\d+)\s*-\s*(\d+)$/, '$1 a $2');
+function faixaCanonica(faixa, nivel, migrando = false) {
+  const bruto = normFaixa(faixa);
+  if (/seg|min/i.test(bruto)) return faixa;           // série por tempo passa intacta
+  const m = bruto.match(/^(\d+\s*a\s*\d+)(\s+cada\s+.+)?$/i);
+  if (!m) return faixa;
+  const f = normFaixa(m[1]), sufixo = m[2] || '';
+  const chave = escalaDoNivel(nivel), esc = ESCALA[chave];
+  if (esc.includes(f)) return f + sufixo;             // já está na escala do nível: não mexe
+  const legadaAmbiguaNoBasico = chave === 'basico' && LEGADA.includes(f) && ESCALA.avancado.includes(f);
+  const canonicaEmAlguma = ESCALA.basico.includes(f) || ESCALA.avancado.includes(f);
+  if (canonicaEmAlguma && !migrando && !legadaAmbiguaNoBasico) return f + sufixo;
+  const iL = LEGADA.indexOf(f);
+  if (iL >= 0) return esc[iL] + sufixo;
+  return faixa;
+}
+function leRotulos(series) {
+  const s = String(series || ''); if (!/\b(aq|aj|pap|val)\b/i.test(s)) return null;
+  const r = { aq: 0, aj: 0, pap: 0, val: 0 };
+  for (const seg of s.split('/')) { const n = parseInt((seg.match(/\d+/) || [0])[0], 10) || 0; const k = (seg.match(/\b(aq|aj|pap|val)\b/i) || [, 'val'])[1].toLowerCase(); r[k] += n; }
+  return r;
+}
+
+function rotulaSemana(treino, opts = {}) {
+  const { nivel = '', prioridade = null, pap = new Set(), sexo = 'M', migrando = false, pisoPor = {}, perfil = null } = opts;
+  const perf = pisosDoPerfil({ nivel, ...(perfil || {}) });
+  const iniciante = /inician/i.test(String(nivel));   // GH 22/09: iniciante faz tudo; a flag só informa, não muda rótulo
+  const papSet = new Set([...pap].map(norm));
+  const alertas = [], plano = [], dias = {};
+  treino.forEach((r, idx) => { if (!ehDia(r) || ehAq(r)) return; (dias[String(r[0]).trim()] = dias[String(r[0]).trim()] || []).push({ idx, r }); });
+
+  for (const [d, lista] of Object.entries(dias)) {
+    const quentesV = new Set(), quentesA = new Set(), tipoAnteriorNoVetor = {}; let ultimoVetor = null;
+    const compostosNoGrupo = {};   // quantos COMPOSTOS do grupo já passaram no dia (regra do isolador, GH 24/09)
+    for (const { idx, r } of lista) {
+      const nome = String(r[1] || ''); const m = meta(nome);
+      if (!m) { alertas.push(`D${d}: "${nome}" não está na tabela de articulações; tratado como composto novo (aq + aj)`); plano.push({ idx, dia: d, nome, m: null, aq: 1, aj: iniciante ? 0 : 1, pap: 0, val: 2 }); continue; }
+      const novoV = !quentesV.has(m.vetor), novasA = m.artic.filter(a => !quentesA.has(a));
+      let aq = 0, aj = 0;
+      const porTempo = /seg/i.test(String(r[3] || ''));
+      const acessorio = ACESSORIO_SO_AJ.has(m.grupo);
+      const soCotovelo = novasA.length > 0 && novasA.every(a => /cotovelo/i.test(a)) && quentesA.size > 0;
+      const isoladorDepoisDeComposto = m.tipo === 'isolador' && (compostosNoGrupo[m.grupo] || 0) >= 2;
+      if (porTempo) { /* série por tempo: nem aq nem aj */ }
+      else if (isoladorDepoisDeComposto) { /* grupo aquecido e calibrado: direto na válida */ }
+      else if (acessorio) { if (novoV || novasA.length) aj = 1; }
+      else if (soCotovelo) { aj = 1; }
+      else if (novasA.length) { aq = 1; aj = 1; }                   // articulação nova: aquece E ajusta
+      else if (novoV) { aj = 1; }                                    // vetor novo, articulação quente: só ajusta
+      /* nada novo: direto na válida */
+      let p = 0;
+      if (papSet.has(norm(nome))) {
+        if (iniciante) alertas.push(`D${d}: PAP em iniciante ("${nome}"), removido`);
+        else if (m.tipo !== 'composto') alertas.push(`D${d}: PAP em isolador ("${nome}"), removido: PAP é do composto pesado do dia`);
+        else p = 1;
+      }
+      if (!novoV && m.vetor === ultimoVetor && novasA.length && m.tipo === 'composto' && tipoAnteriorNoVetor[m.vetor] === 'composto') alertas.push(`D${d}: "${nome}" entra no bloco ${m.vetor} trazendo articulação nova (${novasA.join(', ')}) e reaquece. No bloco, o exercício com mais articulações vai PRIMEIRO`);
+      if (m.tipo === 'composto') compostosNoGrupo[m.grupo] = (compostosNoGrupo[m.grupo] || 0) + 1;
+      m.artic.forEach(a => quentesA.add(a)); quentesV.add(m.vetor); ultimoVetor = m.vetor; tipoAnteriorNoVetor[m.vetor] = m.tipo;
+      plano.push({ idx, dia: d, nome, m, aq, aj, pap: p, val: 2 });
+    }
+  }
+  const porGrupo = {}; plano.forEach(p => { const g = p.m ? grupoEfetivo(p.m, sexo) : '?'; (porGrupo[g] = porGrupo[g] || []).push(p); });
+  const validas = {};
+  for (const [g, ps] of Object.entries(porGrupo)) {
+    if (g === '?' || g === 'aq') continue;
+    let cat = categoria(g, prioridade);
+    if (perf.prioridade2.has(g) && cat === 'grande') cat = 'grande_prioridade';
+    if (perf.prioridade2.has(g) && cat === 'pequeno') cat = 'pequeno_prioridade';
+    const [pisoFaixa, tetoRef] = FAIXA[cat];
+    const aj = cat === 'acessorio' ? 0 : (perf.lesao.has(g) ? Math.min(perf.ajuste, 0) : perf.ajuste);
+    let piso = Math.max(2, pisoFaixa + aj);
+    if (Number(pisoPor[g]) > piso) piso = Number(pisoPor[g]);   // override explícito do gerador, se maior
+    piso = Math.min(piso, TETO_VAL_GRUPO);
+    const teto = Math.max(tetoRef, piso);
+    const diasDoGrupo = new Set(ps.map(p => p.dia)).size;
+    const pisoEfetivo = diasDoGrupo === 1 ? Math.min(piso, ps.length * 3) : piso;
+    const soma = () => ps.reduce((s, p) => s + p.val, 0);
+    const ordem = [...ps.filter(p => p.m.tipo === 'isolador'), ...ps.filter(p => p.m.tipo === 'composto').reverse()];
+    for (const p of ordem) { if (soma() >= pisoEfetivo) break; p.val = 3; }
+    const ordem4 = [...ps.filter(p => p.m.tipo === 'composto'), ...ps.filter(p => p.m.tipo === 'isolador')];
+    for (const p of ordem4) { if (soma() >= pisoEfetivo || soma() >= TETO_VAL_GRUPO) break; p.val = Math.min(TETO_VAL_EXERCICIO, p.val + 1); }
+    const s = soma(); validas[g] = { validas: s, exercicios: ps.length, piso, pisoEfetivo, dias: diasDoGrupo, teto, cat, ajuste: aj, lesao: perf.lesao.has(g), prioridade2: perf.prioridade2.has(g) };
+    if (s < pisoEfetivo && cat !== 'acessorio')
+      alertas.push(`${g}: ${s} válida(s) na semana mesmo com todos em ${TETO_VAL_EXERCICIO}, piso é ${pisoEfetivo}: falta EXERCÍCIO, não série`);
+  }
+  const out = treino.map(r => [...r]);
+  for (const p of plano) {
+    const r = out[p.idx]; const repsAtual = String(r[3] || '');
+    const segs = repsAtual.split('/').map(x => x.trim()).filter(Boolean);
+    let valReps = segs.pop() || repsAtual;
+    if (/^\d+$/.test(valReps) && segs.length && /^\d+$/.test(segs[segs.length - 1])) {
+      const nums = [...segs.filter(x => /^\d+$/.test(x)).map(Number), +valReps];
+      const distintos = [...new Set(nums)];
+      const ult = distintos.slice(-2);
+      if (ult.length === 2) valReps = `${Math.min(...ult)} a ${Math.max(...ult)}`;
+      else if (ult.length === 1) valReps = String(ult[0]);   // pirâmide de valor único: repetição solta
+    }
+    const seg = [], reps = [];
+    if (p.aq) { seg.push('1X aq'); reps.push(REPS.aq); }
+    if (p.aj) { seg.push('1X aj'); reps.push(REPS.aj); }
+    if (p.pap) { seg.push('1X pap'); reps.push(REPS.pap); }
+    seg.push(`${p.val}X val`); reps.push(faixaCanonica(valReps, nivel, migrando));
+    r[2] = seg.join(' / '); r[3] = reps.join(' / ');
+  }
+  return { treino: out, plano, validas, alertas, iniciante, perfil: { ajuste: perf.ajuste, motivos: perf.motivos } };
+}
+
+function resumo(res) {
+  const L = [];
+  const dias = {}; res.plano.forEach(p => (dias[p.dia] = dias[p.dia] || []).push(p));
+  for (const [d, ps] of Object.entries(dias)) {
+    L.push(`  D${d}`);
+    for (const p of ps) L.push(`    ${p.nome.padEnd(38)} ${[p.aq && 'aq', p.aj && 'aj', p.pap && 'pap'].filter(Boolean).join('+').padEnd(7)} ${p.val} val   ${p.m ? p.m.grupo + ' · ' + p.m.vetor : '??'}`);
+  }
+  if (res.perfil && res.perfil.motivos && res.perfil.motivos.length) { L.push('  PERFIL DO ALUNO (ajuste ' + (res.perfil.ajuste > 0 ? '+' : '') + res.perfil.ajuste + '):'); res.perfil.motivos.forEach(m => L.push('    · ' + m)); }
+  L.push('  VÁLIDAS NA SEMANA POR GRUPO:');
+  for (const [g, v] of Object.entries(res.validas)) L.push(`    ${g.padEnd(12)} ${String(v.validas).padStart(2)} válidas em ${v.exercicios} exercício(s)   ${(v.cat || '').padEnd(11)} piso ${v.pisoEfetivo}${v.pisoEfetivo < v.piso ? ' (era ' + v.piso + ', grupo treina 1 dia)' : ''} (ref. ${v.piso} a ${v.teto}) ${v.cat === 'acessorio' ? '(branda)' : v.validas < v.pisoEfetivo ? '🔴 abaixo do piso' : '✓'}${v.lesao ? ' [lesão: não sobe]' : ''}${v.prioridade2 ? ' [atrasado na foto]' : ''}`);
+  if (res.alertas.length) { L.push('  ALERTAS:'); res.alertas.forEach(a => L.push('    ⚠ ' + a)); }
+  return L.join('\n');
+}
+return { rotulaSemana, meta, norm };
+})();
+
+// ══ MONTAR DO TREINO (plano B, sem IA): gera a semana pela anamnese, nas regras de montagem do GH ══
+// Puro: não toca em tela. Entra o perfil, sai { rows, notas, split } ou { erro }.
+// A rotulagem das séries (aq, aj, val) é do GHS.rotulaSemana, que entra por parâmetro.
+const GHTR = (() => {
+  const nrm = s => String(s == null ? '' : s).toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+
+  // nome: [peso da faixa (P pesado, M médio, L leve, T tempo, A alongamento), intervalo, lado ('' | 'lado' | 'perna'), progressão de carga, dica, respiração]
+  const EX = {
+    // peito
+    'Crucifixo Inclinado': ['M', '60 seg', '', 0, 'Abre o peito alongando. Cotovelo na linha do peito, desce pro lado e pra baixo até sentir esticar e para em cima sem fechar os halteres', 'Solta o ar fechando os braços'],
+    'Crucifixo Inclinado no Cross': ['M', '60 seg', '', 0, 'Abre o peito alongando, com a polia puxando do começo ao fim. Cotovelo na linha do peito, desce até sentir esticar', 'Solta o ar fechando os braços'],
+    'Supino Inclinado com Halteres': ['P', '2 min', '', 1, 'O pesado do teu peito. Escápula presa no banco, desce até a linha do peito, sem passar dela', 'Solta o ar na subida'],
+    'Supino Inclinado na Máquina': ['P', '90 seg', '', 1, 'Parte de cima do peito no caminho guiado. Costas coladas no encosto e escápula presa', 'Solta o ar empurrando'],
+    'Supino Reto': ['P', '90 seg', '', 1, 'Barra desce na linha do mamilo, pé firme no chão e escápula presa no banco', 'Solta o ar na subida'],
+    'Supino Reto com Halteres': ['P', '90 seg', '', 1, 'Meio do peito. Escápula presa no banco, desce até a linha do peito e sobe sem bater os halteres', 'Solta o ar na subida'],
+    'Supino Reto na Máquina': ['P', '90 seg', '', 1, 'Meio do peito no caminho guiado, que poupa o ombro. Costas coladas no encosto', 'Solta o ar empurrando'],
+    'Voador': ['M', '60 seg', '', 0, 'Fecha o peito. Regula o banco pro cotovelo ficar na linha do peito, a mão nunca acima dele. Esmaga o bíceps em cima do peito e volta devagar', 'Solta o ar fechando os braços'],
+    'Crossover': ['M', '60 seg', '', 0, 'Polia abaixo da altura da cabeça e um passo pequeno à frente. Leva o bíceps pra cima do peito, sem pensar em fechar as mãos', 'Solta o ar fechando os braços'],
+    // costas
+    'Remada Curvada Pronada': ['P', '2 min', '', 1, 'O pesado das tuas costas. Tronco inclinado e firme, puxa a barra até a barriga levando o cotovelo pra trás', 'Solta o ar puxando'],
+    'Remada Baixa com Triângulo': ['P', '90 seg', '', 1, 'Tronco parado, sem jogar o corpo pra trás. Aperta a escápula 1 segundo atrás', 'Solta o ar puxando'],
+    'Remada Pronada na Máquina': ['P', '90 seg', '', 1, 'Peito apoiado, puxa levando o cotovelo pra trás e aperta a escápula 1 segundo', 'Solta o ar puxando'],
+    'Remada Baixa Supinada na Máquina': ['P', '90 seg', '', 1, 'Palma pra cima, que poupa o cotovelo. Puxa levando o cotovelo pra trás do corpo e aperta 1 segundo', 'Solta o ar puxando'],
+    'Remada Unilateral na Máquina': ['M', '60 seg', 'lado', 0, 'Um lado de cada vez, puxando o cotovelo pra trás do corpo. Descanso só depois dos dois', 'Solta o ar puxando'],
+    'Serrote com Halter': ['M', '60 seg', 'lado', 1, 'Mão e joelho apoiados no banco, coluna reta. Puxa o halter até a cintura. Descanso só depois dos dois lados', 'Solta o ar puxando'],
+    'Puxada Alta Pronada': ['P', '90 seg', '', 1, 'A largura das tuas costas. Puxa com o cotovelo até a barra chegar no alto do peito e, na volta, para em cima com o braço ainda um pouco dobrado, sem se jogar pra trás', 'Solta o ar puxando'],
+    'Puxada Alta com Triângulo': ['P', '90 seg', '', 1, 'Puxa o triângulo até o alto do peito com o cotovelo descendo junto do corpo. Na volta, para em cima com o braço ainda um pouco dobrado', 'Solta o ar puxando'],
+    'Puxada Alta Supinada': ['P', '90 seg', '', 1, 'Palma virada pra ti, que poupa o cotovelo. Puxa até o alto do peito e, na volta, para em cima com o braço ainda um pouco dobrado', 'Solta o ar puxando'],
+    'Pulldown': ['M', '60 seg', '', 0, 'Braço quase esticado, as costas puxando a barra lá de cima até a coxa, sem o bíceps ajudar', 'Solta o ar puxando'],
+    'Pullover na Máquina': ['M', '60 seg', '', 0, 'Braço quase esticado, as costas puxando lá de cima até a linha do quadril, sem o bíceps ajudar', 'Solta o ar puxando'],
+    // ombro
+    'Desenvolvimento com Halteres': ['P', '90 seg', '', 1, 'O pesado do ombro. Costas no encosto, desce até a mão na altura da orelha e sobe sem bater os halteres', 'Solta o ar empurrando'],
+    'Desenvolvimento na Máquina': ['P', '90 seg', '', 1, 'O pesado do ombro, no caminho guiado, que poupa a articulação. Costas coladas no encosto, desce até a mão na altura da orelha', 'Solta o ar empurrando'],
+    'Elevação Lateral': ['L', '45 seg', '', 0, 'O que alarga o teu ombro. Sobe até a linha do ombro com o cotovelo um pouco dobrado, sem impulso do tronco, e desce devagar', 'Solta o ar subindo'],
+    'Elevação Lateral no Cross': ['L', '45 seg', 'lado', 0, 'Um braço por vez, com a polia puxando do começo ao fim. Descanso só depois dos dois', 'Solta o ar subindo'],
+    'Elevação Lateral na Máquina Sentado': ['L', '45 seg', '', 0, 'Sentado e firme no banco, sem impulso. Segura 1 segundo em cima e desce devagar', 'Solta o ar subindo'],
+    'Elevação Frontal no Cross': ['L', '45 seg', '', 0, 'Frente do ombro com a polia, que pesa menos na articulação. Sobe até a linha do ombro, sem passar dela', 'Solta o ar subindo'],
+    'Elevação Frontal com Anilha': ['L', '45 seg', '', 0, 'Frente do ombro segurando a anilha com as duas mãos, que pesa menos na articulação. Sobe até a linha do ombro', 'Solta o ar subindo'],
+    'Elevação Frontal Neutra com Halteres': ['L', '45 seg', '', 0, 'Frente do ombro com o polegar pra cima. Sobe até a linha do ombro, sem balançar o tronco', 'Solta o ar subindo'],
+    'Crucifixo Inverso no Voador': ['L', '45 seg', '', 0, 'Parte de trás do ombro, que segura ele no lugar e equilibra todo o empurrar da semana. Abre até a linha do ombro', 'Solta o ar abrindo os braços'],
+    'Crucifixo Inverso no Cross': ['L', '45 seg', '', 0, 'Parte de trás do ombro com a polia. Braço quase esticado, abre até a linha do ombro e volta devagar', 'Solta o ar abrindo os braços'],
+    // bíceps
+    'Rosca Direta com Barra W': ['M', '75 seg', '', 1, 'O pesado do bíceps. Cotovelo colado no corpo, sem balançar o tronco', 'Solta o ar subindo'],
+    'Rosca Direta com Halteres': ['M', '60 seg', '', 1, 'Palma pra cima do começo ao fim, cotovelo colado no corpo, sem balançar o tronco', 'Solta o ar subindo'],
+    'Rosca Direta com Halter no Banco Inclinado': ['M', '60 seg', '', 0, 'Deitado no banco inclinado, braço atrás do corpo: o bíceps trabalha alongado. Desce até esticar quase tudo', 'Solta o ar subindo'],
+    'Rosca Martelo com Halteres': ['M', '60 seg', '', 0, 'Pegada de martelo, que pega o bíceps e o antebraço juntos. Cotovelo parado ao lado do corpo', 'Solta o ar subindo'],
+    'Rosca Bayesian': ['M', '60 seg', 'lado', 0, 'Na polia, de costas pro aparelho, braço atrás do corpo: o bíceps trabalha alongado. Descanso só depois dos dois', 'Solta o ar subindo'],
+    'Rosca Scott Fechada': ['M', '60 seg', '', 0, 'Braço apoiado no banco, sem tirar o cotovelo do apoio. Desce até quase esticar e sobe sem impulso', 'Solta o ar subindo'],
+    // tríceps
+    'Tríceps Francês no Cross': ['M', '60 seg', '', 0, 'De costas pra polia, cotovelo por cima da cabeça: é onde a parte maior do tríceps alonga', 'Solta o ar esticando o braço'],
+    'Tríceps Testa no Banco Inclinado': ['M', '75 seg', '', 1, 'Barra W, cotovelo apontado pro teto e parado. Desce até perto da testa e estica', 'Solta o ar esticando o braço'],
+    'Tríceps Pulley com Corda': ['M', '60 seg', '', 0, 'Cotovelo colado no tronco, abre a corda embaixo e segura 1 segundo', 'Solta o ar empurrando pra baixo'],
+    'Tríceps Pulley com Barra': ['M', '60 seg', '', 1, 'Cotovelo colado no tronco e parado, estica até o fim e volta devagar', 'Solta o ar empurrando pra baixo'],
+    // quadríceps
+    'Agachamento Hack': ['P', '2 min', '', 1, 'O pesado da tua coxa, com as costas apoiadas. Pé na largura do ombro, desce até a coxa passar da linha do joelho e sobe empurrando a plataforma', 'Solta o ar subindo'],
+    'Agachamento Livre': ['P', '2 min', '', 1, 'O pesado da coxa. Barra nas costas, pé na largura do ombro, desce até a coxa passar da linha do joelho e sobe empurrando o chão', 'Solta o ar subindo'],
+    'Agachamento Smith': ['P', '2 min', '', 1, 'Barra guiada, pé um pouco à frente do corpo. Desce até a coxa passar da linha do joelho', 'Solta o ar subindo'],
+    'Leg Press 45º': ['P', '90 seg', '', 1, 'Pé no meio da plataforma e o joelho na linha do pé, sem fechar pra dentro. Em cima, para um pouco antes de esticar o joelho todo', 'Solta o ar empurrando'],
+    'Leg Horizontal': ['P', '90 seg', '', 1, 'Costas apoiadas, pé no meio da plataforma e o joelho na linha do pé. Em cima, para um pouco antes de esticar o joelho todo', 'Solta o ar empurrando'],
+    'Leg Press 45º Unilateral': ['M', '60 seg', 'perna', 0, 'Uma perna por vez, pra igualar os dois lados. Descanso só depois das duas', 'Solta o ar empurrando'],
+    'Cadeira Extensora': ['M', '60 seg', '', 0, 'Fecha a frente da coxa. Sobe até quase esticar, segura 1 segundo em cima e desce em 2', 'Solta o ar subindo'],
+    'Búlgaro': ['M', '90 seg', 'perna', 0, 'Uma perna de cada vez. Pé de trás no banco, tronco em pé, desce reto. Descanso só depois das duas', 'Solta o ar empurrando'],
+    'Afundo Smith': ['M', '90 seg', 'perna', 0, 'Uma perna de cada vez na barra guiada. Passo largo, tronco em pé, desce reto até o joelho de trás quase tocar o chão. Descanso só depois das duas', 'Solta o ar subindo'],
+    // posterior
+    'Mesa Flexora': ['P', '90 seg', '', 1, 'O pesado do teu posterior, deitado. Quadril colado no banco, sobe em 1 segundo e desce em 3', 'Solta o ar dobrando o joelho'],
+    'Cadeira Flexora': ['M', '60 seg', '', 0, 'Parte de trás da coxa, sentado. Costas no encosto, dobra até o fim e volta devagar', 'Solta o ar dobrando o joelho'],
+    'Flexora Unilateral em Pé': ['M', '60 seg', 'perna', 0, 'Uma perna de cada vez, corrigindo a diferença entre os lados. Descanso só depois das duas', 'Solta o ar dobrando o joelho'],
+    'Stiff': ['P', '90 seg', '', 1, 'Barra colada na perna, desce com a coluna reta até sentir puxar atrás da coxa e sobe empurrando o quadril pra frente', 'Puxa o ar descendo e solta subindo'],
+    'Stiff no Hiperextensor': ['M', '60 seg', '', 0, 'No banco de lombar, com a coluna reta do começo ao fim. Desce até sentir puxar atrás da coxa e sobe até alinhar o tronco com a perna', 'Solta o ar subindo'],
+    // glúteo e adutor
+    'Cadeira Abdutora': ['L', '45 seg', '', 0, 'Lado do glúteo, e já aquece o quadril. Abre até o fim, segura 1 segundo e volta devagar', 'Solta o ar abrindo as pernas'],
+    'Cadeira Adutora': ['L', '45 seg', '', 0, 'Liga a parte de dentro da coxa antes do peso. Volta devagar, sem deixar o peso bater', 'Solta o ar fechando as pernas'],
+    'Elevação Pélvica na Máquina': ['P', '90 seg', '', 1, 'O pesado do teu glúteo. Empurra com o calcanhar e aperta 1 segundo em cima', 'Solta o ar subindo o quadril'],
+    'Elevação Pélvica 2D ou Livre': ['P', '90 seg', '', 1, 'O pesado do glúteo. Costas no banco, empurra com o calcanhar e aperta 1 segundo em cima', 'Solta o ar subindo o quadril'],
+    'Extensão de Glúteo na Polia': ['M', '60 seg', 'perna', 0, 'Uma perna por vez, tronco firme, leva o calcanhar pra trás e pra cima sem arquear a lombar. Descanso só depois das duas', 'Solta o ar levando a perna pra trás'],
+    'Abdução no Cross': ['L', '45 seg', 'perna', 0, 'Lado do glúteo com a polia, uma perna por vez. Tronco parado, abre a perna pro lado e volta devagar. Descanso só depois das duas', 'Solta o ar abrindo a perna'],
+    'Abdução Deitada com Mini Band': ['B', '30 seg', 'perna', 0, 'Acorda o lado do glúteo antes da carga. Deitada de lado, sobe a perna de cima sem girar o quadril', 'Solta o ar subindo a perna'],
+    'Ostra com Mini Band': ['B', '30 seg', 'perna', 0, 'Acorda o lado do glúteo antes da carga. Deitada de lado, joelhos dobrados e pés juntos, abre o joelho de cima sem girar o quadril', 'Solta o ar abrindo o joelho'],
+    // panturrilha, abdômen, lombar
+    'Panturrilha Sentado': ['L', '45 seg', '', 0, 'Sentado pega a parte de baixo da panturrilha. Sobe na ponta, segura 1 segundo e desce alongando', 'Solta o ar subindo'],
+    'Panturrilha em Pé': ['L', '45 seg', '', 0, 'Sobe na ponta, segura 1 segundo e desce alongando', 'Solta o ar subindo'],
+    'Panturrilha no Leg 45º': ['L', '45 seg', '', 0, 'Só a ponta do pé na plataforma. Empurra até o fim, segura 1 segundo e volta alongando', 'Solta o ar empurrando'],
+    'Abdominal no Banco Declinado': ['L', '45 seg', '', 0, 'Sobe enrolando a coluna, sem puxar o pescoço, e desce em 2 segundos', 'Solta o ar enrolando a coluna'],
+    'Abdominal na Máquina': ['L', '45 seg', '', 0, 'Enrola a coluna levando o peito na direção do quadril e volta devagar', 'Solta o ar enrolando a coluna'],
+    'Abdominal Elevação de Pernas na Paralela': ['L', '45 seg', '', 0, 'Costas no apoio, sobe os joelhos enrolando o quadril e desce sem balançar', 'Solta o ar subindo as pernas'],
+    'Prancha Paravertebrais': ['T', '45 seg', '', 0, 'Segura o tronco parado e reto, sem deixar o quadril cair. Ela fortalece o que sustenta a lombar', 'Respira curto e sem parar, nunca prende o ar'],
+    'Prancha com Retroversão': ['T', '45 seg', '', 0, 'Encaixa o quadril pra dentro e segura sem afundar a lombar', 'Respira curto e sem parar, nunca prende o ar'],
+    'Hiperextensão de Lombar': ['L', '45 seg', '', 0, 'Lombar forte segura a postura. Sobe só até o tronco alinhar com a perna, sem impulso', 'Solta o ar subindo'],
+    // abre o dia
+    'Alongamento Peitoral Menor': ['A', '15 seg', 'lado', 0, 'Abre o dia soltando o peito e a frente do ombro', ''],
+    'Alongamento Escápulas e Ombro': ['A', '15 seg', 'lado', 0, 'Abre o dia soltando a escápula e o ombro', ''],
+    'Alongamento Posterior': ['A', '15 seg', 'lado', 0, 'Abre o dia soltando a parte de trás da coxa antes de carregar ela', ''],
+    'Alongamento Glúteo': ['A', '15 seg', 'lado', 0, 'Abre o dia soltando o glúteo e o quadril', ''],
+    'Alongamento Adutores': ['A', '15 seg', '', 0, 'Abre o dia soltando a parte de dentro da coxa', ''],
+    'Alongamento Tornozelo e Iliopsoas': ['A', '15 seg', 'lado', 0, 'Abre o dia soltando o tornozelo e a frente do quadril', ''],
+    'Mobilidade de Tornozelo': ['A', '15 seg', 'lado', 0, 'Abre o dia de perna soltando o tornozelo, que deixa o joelho ir pra frente no agachamento', ''],
+    'Aquecimento Manguito': ['A', '15 seg', '', 0, 'Prepara o ombro antes de empurrar', ''],
+    'Descompressão Lombar': ['A', '15 seg', '', 0, 'Abre o dia soltando a lombar', ''],
+  };
+  const FAIXA = { ini: { P: '8 a 12', M: '10 a 15', L: '10 a 15' }, int: { P: '6 a 10', M: '8 a 12', L: '10 a 15' }, ava: { P: '6 a 8', M: '8 a 10', L: '10 a 12' } };
+
+  // ── perfil ──
+  function nivelDe(t) { const n = nrm(t); return /AVANC|ATLETA/.test(n) ? 'ava' : /INICIAN/.test(n) ? 'ini' : 'int'; }
+  function priDe(t) {
+    const n = nrm(t);
+    if (!n || /CORPO (TODO|INTEIRO)|NENHUM|TODOS/.test(n)) return '';
+    if (/PEITO/.test(n)) return 'peito'; if (/COSTAS|DORSAL/.test(n)) return 'costas'; if (/DELTOID|OMBRO/.test(n)) return 'ombro';
+    if (/QUADR/.test(n)) return 'quad'; if (/BICEPS|TRICEPS|BRACO/.test(n)) return 'braco'; if (/POSTERIOR/.test(n)) return 'posterior'; if (/GLUTEO/.test(n)) return 'gluteo';
+    return '';
+  }
+
+  // ── vagas: cada sigla vira o primeiro exercício da lista que o perfil permite ──
+  function VAGAS(P) {
+    const o = P.dor.ombro, l = P.dor.lombar, c = P.dor.cotovelo;
+    return {
+      cruI: ['Crucifixo Inclinado', 'Crucifixo Inclinado no Cross'], cruIx: ['Crucifixo Inclinado no Cross', 'Crucifixo Inclinado'],
+      supI: o ? ['Supino Inclinado na Máquina', 'Supino Inclinado com Halteres'] : ['Supino Inclinado com Halteres', 'Supino Inclinado na Máquina'],
+      supR: o ? ['Supino Reto na Máquina', 'Supino Reto com Halteres'] : ['Supino Reto', 'Supino Reto com Halteres', 'Supino Reto na Máquina'],
+      supRm: ['Supino Reto na Máquina', 'Supino Reto com Halteres', 'Supino Reto'],
+      voa: ['Voador', 'Crossover'], cro: ['Crossover', 'Voador'],
+      remP: c ? ['Remada Baixa Supinada na Máquina', 'Remada Baixa com Triângulo'] : l ? ['Remada Pronada na Máquina', 'Remada Baixa com Triângulo'] : ['Remada Curvada Pronada', 'Remada Pronada na Máquina'],
+      remB: ['Remada Baixa com Triângulo', 'Remada Unilateral na Máquina'],
+      remM: c ? ['Remada Baixa Supinada na Máquina', 'Remada Baixa com Triângulo'] : ['Remada Pronada na Máquina', 'Remada Baixa com Triângulo', 'Remada Unilateral na Máquina'],
+      remU: l ? ['Remada Unilateral na Máquina', 'Remada Baixa com Triângulo'] : ['Remada Unilateral na Máquina', 'Remada Baixa com Triângulo', 'Serrote com Halter'],
+      pux: c ? ['Puxada Alta Supinada', 'Puxada Alta com Triângulo'] : ['Puxada Alta Pronada', 'Puxada Alta com Triângulo'],
+      puxT: ['Puxada Alta com Triângulo', 'Puxada Alta Supinada'],
+      pull: ['Pulldown', 'Pullover na Máquina'],
+      des: o ? ['Desenvolvimento na Máquina'] : ['Desenvolvimento com Halteres', 'Desenvolvimento na Máquina'],
+      lat: ['Elevação Lateral', 'Elevação Lateral no Cross'], latX: ['Elevação Lateral no Cross', 'Elevação Lateral na Máquina Sentado', 'Elevação Lateral'],
+      fro: o ? ['Elevação Frontal no Cross', 'Elevação Frontal com Anilha'] : ['Elevação Frontal Neutra com Halteres', 'Elevação Frontal com Anilha', 'Elevação Frontal no Cross'],
+      inv: ['Crucifixo Inverso no Voador', 'Crucifixo Inverso no Cross'], invX: ['Crucifixo Inverso no Cross', 'Crucifixo Inverso no Voador'],
+      lom: l ? ['Prancha Paravertebrais'] : ['Hiperextensão de Lombar'],
+      rosW: c ? ['Rosca Direta com Halteres', 'Rosca Direta com Barra W'] : ['Rosca Direta com Barra W', 'Rosca Direta com Halteres'],
+      mar: ['Rosca Martelo com Halteres', 'Rosca Direta com Halter no Banco Inclinado'],
+      bay: ['Rosca Bayesian', 'Rosca Direta com Halter no Banco Inclinado'], sco: ['Rosca Scott Fechada', 'Rosca Direta com Halteres'],
+      fra: ['Tríceps Francês no Cross', 'Tríceps Testa no Banco Inclinado'], tes: ['Tríceps Testa no Banco Inclinado', 'Tríceps Francês no Cross'],
+      pul: ['Tríceps Pulley com Corda', 'Tríceps Pulley com Barra'], pulB: ['Tríceps Pulley com Barra', 'Tríceps Pulley com Corda'],
+      panS: ['Panturrilha Sentado'], panP: ['Panturrilha em Pé', 'Panturrilha no Leg 45º'],
+      hack: l ? ['Agachamento Hack'] : ['Agachamento Hack', 'Agachamento Smith', 'Agachamento Livre'],
+      agL: l ? ['Agachamento Hack'] : ['Agachamento Smith', 'Agachamento Livre', 'Agachamento Hack'],
+      leg: ['Leg Press 45º'], legU: ['Leg Press 45º Unilateral', 'Búlgaro'], bul: ['Búlgaro', 'Leg Press 45º Unilateral'], bulF: l ? ['Búlgaro'] : ['Búlgaro', 'Afundo Smith'], ext: ['Cadeira Extensora'],
+      mesa: ['Mesa Flexora', 'Cadeira Flexora'], cadF: ['Cadeira Flexora', 'Mesa Flexora'], fleU: ['Flexora Unilateral em Pé', 'Cadeira Flexora'],
+      sti: l ? ['Stiff no Hiperextensor'] : ['Stiff', 'Stiff no Hiperextensor'],
+      abdu: ['Cadeira Abdutora'], adu: ['Cadeira Adutora'], abdX: ['Abdução no Cross', 'Cadeira Abdutora'],
+      pelv: P.sexo === 'M' ? ['Elevação Pélvica na Máquina'] : ['Elevação Pélvica na Máquina', 'Elevação Pélvica 2D ou Livre'], pelv2: ['Elevação Pélvica 2D ou Livre', 'Elevação Pélvica na Máquina'],
+      gpol: ['Extensão de Glúteo na Polia'], mini: ['Abdução Deitada com Mini Band', 'Ostra com Mini Band'],
+      abd: l ? ['Prancha com Retroversão'] : ['Abdominal no Banco Declinado', 'Abdominal na Máquina', 'Prancha com Retroversão'],
+      abd2: l ? ['Prancha com Retroversão'] : ['Abdominal na Máquina', 'Abdominal Elevação de Pernas na Paralela', 'Abdominal no Banco Declinado'],
+    };
+  }
+  const ABRE = P => ({ push: P.dor.ombro ? 'Aquecimento Manguito' : 'Alongamento Peitoral Menor', pull: 'Alongamento Escápulas e Ombro', upper: P.dor.ombro ? 'Aquecimento Manguito' : 'Alongamento Escápulas e Ombro',
+    quad: 'Mobilidade de Tornozelo', post: 'Alongamento Posterior', glut: 'Alongamento Glúteo', lower: 'Alongamento Tornozelo e Iliopsoas', full: 'Alongamento Escápulas e Ombro' });
+
+  // ── dias: [rótulo, abertura, vagas na ordem do treino, vagas do treino curto (teto 6), rótulo do curto se mudar] ──
+  const DD = {
+    PUSH_A: ['Empurrar', 'push', 'cruI supI voa des lat fra pul', 'supI voa des lat fra pul'],
+    PUSH_A_ABS: ['Empurrar', 'push', 'supI voa des lat fra pul abd', 'supI voa des lat pul abd'],
+    PUSH_A_ABD: ['Empurrar', 'push', 'supI voa des lat fra pul abd', 'supI voa des lat fra pul'],
+    PUSH_P: ['Empurrar', 'push', 'cruI supI supR voa des lat pul', 'cruI supI supR voa des lat'],
+    PUSH_P4: ['Empurrar', 'push', 'cruI supI supR voa lat fra pul', 'cruI supI supR voa des lat'],
+    PUSH_P6: ['Empurrar', 'push', 'cruI supI supR voa des lat fra', 'cruI supI supR voa des lat'],
+    PUSH_2L: ['Empurrar', 'push', 'cruI supI voa des lat latX pul', 'cruI supI voa des lat latX'],
+    PUSH_O: ['Empurrar', 'push', 'cruI supI voa des lat fro fra', 'cruI supI voa des lat fro'],
+    PUSH_B: ['Empurrar', 'push', 'cruIx supRm cro latX tes pulB abd', 'supRm cro latX tes pulB abd'],
+    PULL_A: ['Puxar', 'pull', 'remP remB pux inv rosW mar lom', 'remP remB pux inv rosW mar lom'],
+    PULL_A_ABD: ['Puxar', 'pull', 'remP remB pux inv rosW mar abd lom', 'remP pux inv rosW mar abd lom'],
+    PULL_C: ['Puxar', 'pull', 'remP remB pux pull inv rosW mar lom', 'remP remB pux pull inv rosW lom'],
+    PULL_B: ['Puxar', 'pull', 'remM remU puxT pull invX bay sco', 'remM remU puxT invX bay sco'],
+    PULL_B_LOM: ['Puxar', 'pull', 'remM remU puxT invX bay sco lom', 'remM remU puxT invX bay sco lom'],
+    LEGS_A: ['Pernas', 'quad', 'panS hack leg ext mesa sti cadF', 'hack leg ext mesa sti cadF'],
+    LEGS_B: ['Pernas', 'post', 'abdu pelv bul ext fleU mesa panP', 'pelv bul ext fleU mesa panP'],
+    LEGS_Q: ['Pernas', 'quad', 'panS hack leg bul ext mesa sti', 'hack leg bul ext mesa sti'],
+    LEGS_Q4: ['Pernas', 'quad', 'panS hack leg bul ext mesa sti', 'pul hack leg ext mesa sti'],
+    LEGS_Q2: ['Pernas', 'lower', 'adu agL legU ext cadF fleU panP', 'agL legU ext cadF fleU panP'],
+    LEGS_Q2_T: ['Pernas', 'lower', 'fra adu agL legU ext cadF fleU', 'fra agL legU ext cadF fleU'],
+    LEGS_P: ['Pernas', 'post', 'panS mesa cadF sti fleU hack ext', 'mesa cadF sti fleU hack ext'],
+    LEGS_P4: ['Pernas', 'post', 'panS mesa cadF sti fleU hack ext', 'pul mesa cadF sti fleU hack'],
+    LEGS_P2: ['Pernas', 'lower', 'cadF mesa leg bul ext panP abd', 'cadF mesa leg bul ext panP'],
+    LEGS_P2_T: ['Pernas', 'lower', 'fra cadF mesa leg bul ext panP', 'fra cadF mesa leg bul ext'],
+    LEGS_G: ['Pernas', 'glut', 'adu abdu pelv hack ext mesa sti', 'adu abdu pelv hack mesa sti'],
+    LEGS_G2: ['Pernas', 'lower', 'adu abdu pelv agL ext cadF panP', 'adu abdu pelv agL ext cadF'],
+    LEGS_A_PAN: ['Pernas', 'quad', 'panS hack leg ext mesa sti cadF', 'panS hack leg ext mesa sti'],
+    LEGS_P2_NA: ['Pernas', 'lower', 'adu cadF mesa leg bul ext panP', 'cadF mesa leg bul ext panP'],
+    UPPER: ['Superiores', 'upper', 'supRm cro remM puxT latX tes bay', 'supRm cro remM puxT latX tes'],
+    UPPER_C: ['Superiores', 'upper', 'supRm cro remM puxT latX tes bay', 'supRm cro remM puxT latX bay'],
+    UPPER_PP: ['Superiores', 'upper', 'supRm cro remM puxT latX tes bay', 'supRm cro remM latX tes pulB'],
+    UPPER_O: ['Superiores', 'upper', 'supRm cro remM puxT latX invX pul', 'supRm cro remM latX invX tes'],
+    UPPER_O4: ['Superiores', 'upper', 'supRm cro remM puxT latX invX pul', 'remM puxT latX invX tes pul'],
+    LOWER: ['Inferiores', 'lower', 'panP adu abdu pelv bul fleU abd', 'panP abdu pelv bul fleU abd'],
+    LOWER_O: ['Inferiores', 'lower', 'panP adu abdu pelv bul fleU abd', 'pul abd abdu pelv bul fleU'],
+    LOWER_BR: ['Inferiores', 'post', 'pulB sco abd abdu pelv bul fleU', 'pulB sco abd pelv bul fleU'],
+    FULL: ['Corpo inteiro', 'full', 'supRm cro puxT latX abd bul fleU', 'supRm cro latX abd bul fleU'],
+    FULL_P: ['Corpo inteiro', 'full', 'supRm cro des latX abd bul fleU', 'supRm cro latX tes pul abd', 'Superiores'],
+    FULL_C: ['Corpo inteiro', 'full', 'supRm cro remM puxT latX bul fleU', 'remM puxT latX invX mar abd', 'Superiores'],
+    FULL_BR: ['Corpo inteiro', 'full', 'supRm cro latX tes sco bul fleU', 'supRm cro latX tes pulB sco', 'Superiores'],
+    // 3x (teto 8)
+    UP3: ['Superiores', 'upper', 'supI voa remP pux des inv fra rosW lom', 'supI voa remP des lat rosW'],
+    UP3_L: ['Superiores', 'upper', 'supI voa remP des lat latX inv rosW lom', 'supI voa remP des lat latX'],
+    UP3_BR: ['Superiores', 'upper', 'supI voa remP pux des inv fra rosW lom', 'supI voa remP des lat rosW'],
+    LEG3_BR: ['Inferiores', 'quad', 'sco pulB abd hack leg ext mesa sti', 'hack leg ext mesa sti abd'],
+    FB3_BR: ['Corpo inteiro', 'full', 'supRm cro remB lat latX tes bul fleU', 'supRm cro remB latX inv mar', 'Superiores'],
+    LEG3: ['Inferiores', 'quad', 'pul abd panS hack leg ext mesa sti', 'hack leg ext mesa sti abd'],
+    LEG3_Q: ['Inferiores', 'quad', 'pul abd panS hack leg ext mesa sti', 'hack leg ext mesa sti abd'],
+    LEG3_P: ['Inferiores', 'post', 'pul abd panS mesa cadF sti hack ext', 'mesa cadF sti hack ext abd'],
+    LEG3_G: ['Inferiores', 'glut', 'pul abd abdu pelv hack ext mesa sti', 'abdu pelv hack mesa sti abd'],
+    FB3: ['Corpo inteiro', 'full', 'supRm cro remB lat latX mar bul fleU', 'supRm cro remB latX inv mar', 'Superiores'],
+    FB3_L: ['Corpo inteiro', 'full', 'supRm cro puxT pull fra mar bul fleU', 'supRm cro puxT inv rosW mar', 'Superiores'],
+  };
+  // ── mulher: a semana abre por inferiores, tem mais dia de inferiores que de superiores e cada dia de perna tem UM foco ──
+  Object.assign(DD, {
+    // inferiores: glúteo sempre antes do quadríceps, um stiff só na semana (os dias _NS e o FL_PG vão sem ele)
+    FL_PQ: ['Posterior e quadríceps', 'post', 'mesa sti cadF bulF ext panP abd', 'mesa sti cadF bulF ext abd'],
+    FL_PQ_NS: ['Posterior e quadríceps', 'post', 'mesa cadF bulF ext panP abd', 'mesa cadF bulF ext panP abd'],
+    FL_QP: ['Quadríceps e posterior', 'quad', 'hack leg ext mesa sti cadF abd', 'hack leg ext mesa sti cadF'],
+    FL_QP_NS: ['Quadríceps e posterior', 'quad', 'hack leg ext mesa cadF abd', 'hack leg ext mesa cadF abd'],
+    FL_PQ6: ['Posterior e quadríceps', 'post', 'mesa sti cadF bulF panP abd', 'mesa sti cadF bulF panP abd'],
+    FL_PG6: ['Posterior e glúteo', 'glut', 'adu pelv gpol mesa fleU panP', 'adu pelv gpol mesa fleU panP'],
+    FL_QP6: ['Quadríceps e posterior', 'quad', 'hack leg bulF ext cadF abd', 'hack leg bulF ext cadF abd'],
+    FL_QM: ['Quadríceps e glúteo', 'quad', 'mini abdu abdX hack leg ext cadF', 'mini abdu abdX hack leg ext'],
+    FL_QM_P: ['Quadríceps e glúteo', 'quad', 'mini abdu abdX hack leg ext cadF', 'mini abdu hack leg ext cadF'],
+    FL_QM_B: ['Quadríceps e glúteo', 'quad', 'mini abdu abdX hack leg bulF ext', 'mini abdu abdX hack leg ext'],
+    FL_PG: ['Posterior e glúteo', 'glut', 'adu pelv gpol mesa fleU panP abd', 'pelv gpol mesa fleU panP abd'],
+    FL_PG_S: ['Posterior e glúteo', 'glut', 'adu pelv gpol mesa sti fleU abd', 'pelv gpol mesa sti fleU abd'],
+    FL_PM: ['Posterior e glúteo', 'post', 'mini abdu abdX mesa sti cadF bulF', 'mini abdu abdX mesa sti cadF'],
+    FL_QG: ['Quadríceps e glúteo', 'quad', 'adu pelv gpol hack leg ext abd', 'pelv gpol hack leg ext abd'],
+    FL_G: ['Glúteo completo', 'glut', 'mini abdu abdX pelv gpol bulF panP', 'mini abdu abdX pelv gpol bulF'],
+    FL_P: ['Posterior, panturrilha e abdômen', 'post', 'mesa sti cadF fleU panP abd', 'mesa sti cadF fleU panP abd'],
+    FU_1: ['Superiores', 'upper', 'remM pux des lat inv fra rosW', 'remM pux lat inv fra rosW'],
+    FU_OT: ['Ombro e tríceps', 'push', 'supI des lat latX fro fra pul', 'supI des lat latX fra pul'],
+    FU_OT_P: ['Peito, ombro e tríceps', 'push', 'supI voa des lat latX fra pul', 'supI voa des lat fra pul'],
+    FU_OT_O: ['Ombro e tríceps', 'push', 'supI des lat latX fro fra pul', 'des lat latX fro fra pul'],
+    FU_CB_O: ['Costas, ombro e bíceps', 'pull', 'remP pux latX inv rosW mar lom', 'remP pux latX inv rosW mar'],
+    FU_OC: ['Ombro, costas e tríceps', 'upper', 'remU puxT des lat latX fra pul', 'remU puxT des lat fra pul'],
+    FU_CB: ['Costas e bíceps', 'pull', 'remP remB pux pull inv rosW mar lom', 'remP remB pux inv rosW mar lom'],
+    FU_CB_C: ['Costas e bíceps', 'pull', 'remP remB pux pull inv rosW mar lom', 'remP remB pux pull inv rosW lom'],
+    // 3x (teto 8)
+    FL3_A: ['Inferiores', 'quad', 'pelv gpol hack leg ext mesa sti abd', 'pelv hack leg ext mesa sti'],
+    FL3_B: ['Inferiores', 'glut', 'mini abdu abdX agL ext cadF fleU panP', 'mini abdu abdX agL cadF fleU'],
+    FU3: ['Superiores', 'pull', 'remP remB pull des lat inv rosW mar', 'remP pull des lat inv rosW'],
+    FU3_L: ['Superiores', 'upper', 'remP pux des lat latX inv fra rosW', 'remP pux des lat inv rosW'],
+    FU3_P: ['Superiores', 'upper', 'supR remP remB des lat inv fra rosW', 'supR remP des lat inv rosW'],
+    FFB3: ['Corpo inteiro', 'full', 'supI puxT fra mini abdu abdX bulF cadF', 'supI puxT mini abdu abdX cadF'],
+  });
+  function desenhoMulher(f, pri) {
+    const inf = { quad: 1, posterior: 1, gluteo: 1 }[pri];
+    const Ua = { peito: 'FU_OT_P', costas: 'FU_CB_C', ombro: 'FU_OT_O' }[pri] || 'FU_OT', Ub = { costas: 'FU_OC', ombro: 'FU_CB_O' }[pri] || 'FU_CB';
+    if (f === 3) return inf ? ['FEM_3X', 'FL3_A', 'FU3_L', 'FL3_B'] : ['FEM_3X', 'FL3_A', pri === 'peito' ? 'FU3_P' : 'FU3', 'FFB3'];
+    if (f === 4) {
+      if (pri === 'gluteo') return ['FEM_4X', 'FL_PM', 'FL_QG', 'FU_1', 'FL_PG'];
+      if (pri === 'quad') return ['FEM_4X', 'FL_QP', 'FU_1', 'FL_QM', 'FL_PG'];
+      if (!pri || inf) return ['FEM_4X', 'FL_PQ', 'FU_1', pri === 'posterior' ? 'FL_QM_P' : 'FL_QM', 'FL_PG'];
+      return ['FEM_4X', 'FL_QP', Ua, 'FL_G', Ub];
+    }
+    if (f === 5) {
+      if (pri === 'quad') return ['FEM_5X', 'FL_QP_NS', 'FL_G', 'FU_1', 'FL_P', 'FL_QM_B'];
+      if (pri === 'gluteo') return ['FEM_5X', 'FL_G', Ua, 'FL_QM', 'FL_PG_S', Ub];
+      return ['FEM_5X', 'FL_PQ', Ua, pri === 'posterior' ? 'FL_QM_P' : 'FL_QM', Ub, 'FL_PG'];
+    }
+    if (f === 6) {
+      if (pri === 'gluteo') return ['FEM_6X', 'FL_PM', 'FL_QG', Ua, 'FL_G', Ub, 'FL_PQ_NS'];
+      return ['FEM_6X', 'FL_PQ6', Ua, pri === 'posterior' ? 'FL_QM_P' : 'FL_QM', Ub, 'FL_PG6', 'FL_QP6'];
+    }
+    return null;
+  }
+  const PERNA = { quad: 1, posterior: 1, gluteo: 1 };
+  function desenhoHomem(f, pri, curto) {
+    const L1 = { quad: 'LEGS_Q', posterior: 'LEGS_P', gluteo: 'LEGS_G' }[pri], L2 = { quad: 'LEGS_Q2', posterior: 'LEGS_P2', gluteo: 'LEGS_G2' }[pri];
+    if (f === 3) {
+      if (PERNA[pri]) return ['UL_FB_3X', { quad: 'LEG3_Q', posterior: 'LEG3_P', gluteo: 'LEG3_G' }[pri], 'UP3_L', 'FB3_L'];
+      if (pri === 'braco') return ['UL_FB_3X', 'UP3_BR', 'LEG3_BR', 'FB3_BR'];
+      return ['UL_FB_3X', 'UP3', 'LEG3', 'FB3'];
+    }
+    if (f === 4) {
+      if (pri === 'gluteo') return null;
+      if (PERNA[pri]) return ['PPL_' + pri.toUpperCase() + '_4X', L1 + '4', 'PUSH_2L', 'PULL_A_ABD', L2 + '_T'];
+      if (pri === 'peito') return ['PPL_PEITO_4X', 'PUSH_P4', 'PULL_A', 'LEGS_A', 'FULL_P'];
+      if (pri === 'costas') return ['PPL_COSTAS_4X', 'PULL_C', 'PUSH_A_ABD', 'LEGS_A', 'FULL_C'];
+      if (pri === 'ombro') return ['PPL_OMBRO_4X', 'PUSH_O', 'PULL_A_ABD', 'LEGS_A', 'UPPER_O4'];
+      if (pri === 'braco') return ['PPL_BRACO_4X', 'PUSH_A', 'PULL_A_ABD', 'LEGS_A', 'FULL_BR'];
+      return ['PPL_FB_4X', 'PUSH_A', 'PULL_A', 'LEGS_A_PAN', 'FULL'];
+    }
+    if (f === 5) {
+      if (pri === 'posterior') return ['PPL_5X', L1, 'PUSH_A_ABS', 'PULL_A', L2, 'UPPER'];
+      if (PERNA[pri]) return ['PPL_5X', L1, 'PUSH_A', 'PULL_A_ABD', L2, 'UPPER'];
+      if (pri === 'peito') return ['PPL_UL_5X', 'PUSH_P', 'PULL_A', 'LEGS_A', 'UPPER_PP', 'LOWER'];
+      if (pri === 'costas') return ['PPL_5X', 'PULL_C', 'PUSH_A', 'LEGS_A', 'UPPER_C', 'LOWER'];
+      if (pri === 'ombro') return ['PPL_UL_5X', 'PUSH_O', 'PULL_A', 'LEGS_A', 'UPPER_O', 'LOWER_O'];
+      if (pri === 'braco') return ['PPL_UL_5X', 'PUSH_A', 'PULL_A', 'LEGS_A', 'UPPER', 'LOWER_BR'];
+      return ['PPL_UL_5X', 'PUSH_A', 'PULL_A', 'LEGS_A', 'UPPER', 'LOWER'];
+    }
+    if (f === 6) {
+      if (pri === 'posterior') return ['PPL_6X', L1, 'PUSH_A', 'PULL_A', 'LEGS_P2_NA', 'PUSH_B', 'PULL_B'];
+      if (PERNA[pri]) return ['PPL_6X', L1, 'PUSH_A', 'PULL_A', L2, 'PUSH_B', 'PULL_B'];
+      if (pri === 'peito') return ['PPL_6X', 'PUSH_P6', 'PULL_A', 'LEGS_A', 'PUSH_B', 'PULL_B', 'LEGS_B'];
+      if (pri === 'costas') return ['PPL_6X', 'PULL_C', 'PUSH_A', 'LEGS_A', 'PULL_B_LOM', 'PUSH_B', 'LEGS_B'];
+      if (pri === 'ombro') return ['PPL_6X', 'PUSH_O', 'PULL_A', 'LEGS_A', 'PUSH_B', 'PULL_B', 'LEGS_B'];
+      return ['PPL_6X', 'PUSH_A', 'PULL_A', 'LEGS_A', 'PUSH_B', 'PULL_B', 'LEGS_B'];
+    }
+    return null;
+  }
+
+  const FAM = [[/ELEVACAO PELVICA/, 'pelvica'], [/AGACHAMENTO/, 'agachamento'], [/LEG PRESS|LEG HORIZONTAL/, 'leg'], [/CADEIRA EXTENSORA/, 'extensora'], [/MESA FLEXORA/, 'mesa'], [/CADEIRA FLEXORA/, 'cadeira'],
+    [/FLEXORA UNILATERAL|FLEXORA EM PE/, 'flexpe'], [/STIFF/, 'stiff'], [/PANTURRILHA/, 'panturrilha'], [/ABDUTORA|ABDUCAO/, 'abducao'], [/ADUTORA|ADUCAO/, 'aducao'], [/COICE/, 'coice'], [/BULGARO|AFUNDO|PASSADA/, 'avanco'],
+    [/CRUCIFIXO INVERSO/, 'inverso'], [/CRUCIFIXO INCLINADO/, 'cruinc'], [/SUPINO INCLINADO/, 'supinc'], [/SUPINO RETO/, 'supreto'], [/CROSSOVER/, 'crossover'], [/VOADOR/, 'voador'], [/PUXADA ALTA/, 'puxada'], [/PULLDOWN/, 'pulldown'],
+    [/REMADA BAIXA/, 'rembaixa'], [/REMADA CURVADA/, 'remcurv'], [/REMADA (PRONADA|UNILATERAL|NEUTRA)/, 'remmaq'], [/SERROTE/, 'serrote'], [/DESENVOLVIMENTO/, 'desenv'], [/ELEVACAO LATERAL/, 'lateral'], [/ELEVACAO FRONTAL/, 'frontal'],
+    [/ROSCA DIRETA/, 'rdireta'], [/ROSCA SCOTT/, 'rscott'], [/ROSCA MARTELO/, 'rmartelo'], [/TRICEPS TESTA/, 'ttesta'], [/TRICEPS PULLEY/, 'tpulley'], [/TRICEPS FRANCES/, 'tfrances']];
+  const famDe = n => { const s = nrm(n); for (const [re, f] of FAM) if (re.test(s)) return f; return null; };
+  const COSTAS_RE = /REMADA|PUXADA|PULLDOWN|PULLOVER|SERROTE/, FORA_TETO = /ALONGAMENT|MOBILIDAD|MANGUITO/;
+  function tetoDe(P) { const t = String(P.tempo || ''); return (/40|45|menos de 50/i.test(t) && !/60|90/.test(t)) ? 6 : (P.freq === 3 ? 8 : 7); }
+
+  function montaSemana(P, des) {
+    const V = VAGAS(P), ab = ABRE(P), teto = tetoDe(P), curto = teto === 6;
+    const W = { P, dias: [], usados: new Map(), notas: [], split: des[0] };
+    const planos = des.slice(1).map(chave => { const def = DD[chave]; return { def, lista: (curto ? def[3] : def[2]).split(' ').filter(s => (V[s] || []).length) }; });
+    // a panturrilha em pé é a obrigatória: se a semana só tem a sentada, ela troca e vai pro fim do dia
+    if (!planos.some(p => p.lista.includes('panP'))) { const p = planos.find(x => x.lista.includes('panS')); if (p) { p.lista = p.lista.filter(s => s !== 'panS'); const k = p.lista.indexOf('abd'); if (k === p.lista.length - 1 && k >= 0) p.lista.splice(k, 0, 'panP'); else p.lista.push('panP'); } }
+    planos.forEach(({ def, lista }, i) => {
+      const d = { n: i + 1, rot: (curto && def[4]) || def[0], itens: [], vagas: [] };
+      // teto do dia: o dia de costas com lombar e posterior de ombro leva um a mais
+      const cede = () => (lista.some(s => /^(rem|pux|pull)/.test(s)) && lista.includes('lom') && lista.some(s => /^inv/.test(s))) ? 1 : 0;
+      while (lista.length > teto + cede()) { lista.pop(); W.notas.push('D' + d.n + ': saiu um exercício pra caber no teto do dia.'); }
+      const ontem = W.dias[i - 1], famOntem = new Set((ontem ? ontem.itens : []).filter(x => !/[AB]/.test(EX[x][0])).map(famDe).filter(Boolean));
+      for (const s of lista) {
+        const cands = (V[s] || []).filter(n => EX[n] && !P.veto.some(re => re.test(n)) && !d.itens.includes(n) && !(EX[n][0] !== 'B' && famDe(n) && famOntem.has(famDe(n))));
+        const n = cands.find(x => !W.usados.has(x)) || cands[0];
+        if (!n) { W.notas.push('D' + d.n + ': uma vaga ficou vazia por causa das restrições, confere esse dia na mão.'); continue; }
+        d.itens.push(n); d.vagas.push(s); W.usados.set(n, (W.usados.get(n) || 0) + 1);
+      }
+      // abertura casa com o dia: superior sem puxada abre pelo peitoral menor
+      let abre = def[1];
+      if ((abre === 'upper' || abre === 'full' || abre === 'pull') && !d.itens.some(n => COSTAS_RE.test(nrm(n)))) abre = 'push';
+      d.itens.unshift(ab[abre] || ab.full);
+      W.dias.push(d);
+    });
+    return W;
+  }
+
+  function restricaoDe(P) {
+    const f = [];
+    if (P.dor.lombar) f.push('Como tu marcou dor na lombar, o agachamento vai no Hack, que tem encosto, e o stiff vai no banco de lombar, com a coluna reta do começo ao fim.');
+    if (P.dor.ombro) f.push('Como tu marcou dor no ombro, o que empurra vai na máquina e a elevação frontal vai na polia, que pesam menos na articulação.');
+    if (P.dor.cotovelo) f.push('Como tu marcou dor no cotovelo, as puxadas e as roscas vão com a palma pra cima, que poupa a articulação.');
+    if (P.dor.joelho) f.push('Como tu marcou dor no joelho, desce só até onde não dói e sobe a carga com calma. Doeu de verdade, para e me avisa.');
+    return f.join(' ');
+  }
+  const PRI_ROT = { peito: 'peito', costas: 'costas', ombro: 'ombros', quad: 'quadríceps', braco: 'braços', posterior: 'posterior de coxa', gluteo: 'glúteos' };
+  // piso semanal em exercícios do treino masculino (o mesmo do fiscal): o que não coube vira aviso pro treinador
+  const PISO_M = [['peito', 3, 'peito'], ['costas', 3, 'costas'], ['quad', 3, 'quadríceps'], ['posterior', 3, 'posterior de coxa'], ['ombro', 3, 'ombro'], ['biceps', 2, 'bíceps'], ['triceps', 2, 'tríceps'], ['panturrilha', 1, 'panturrilha'], ['abdomen', 1, 'abdômen'], ['lombar', 1, 'lombar']];
+  const GRP_ROT = { peito: 'Peito', costas: 'Costas', quad: 'Quadríceps', posterior: 'Posterior de coxa', ombro: 'Ombro', biceps: 'Bíceps', triceps: 'Tríceps', gluteo: 'Glúteo', gluteo_medio: 'Glúteo médio', gluteo_maximo: 'Glúteo máximo', panturrilha: 'Panturrilha', abdomen: 'Abdômen', lombar: 'Lombar' };
+  function avisos(P, W, rot, grupoDe) {
+    const out = [];
+    if (P.sexo === 'M' && grupoDe) {
+      const c = {};
+      for (const d of W.dias) for (const n of d.itens) { if (/[AB]/.test(EX[n][0])) continue; const u = nrm(n); const g = (!/STIFF|TERRA/.test(u) && /HIPEREXTENS|PARAVERTEBRA|EXTENSAO DE LOMBAR|EXTENSAO LOMBAR/.test(u)) ? 'lombar' : /PANTURRILHA/.test(u) ? 'panturrilha' : grupoDe(n); if (g) c[g] = (c[g] || 0) + 1; }
+      const falta = PISO_M.filter(([g, min]) => (c[g] || 0) < min).map(([g, min, r]) => r + ' (' + (c[g] || 0) + ' de ' + min + ')');
+      if (falta.length) out.push('Não coube o mínimo da semana em exercícios: ' + falta.join(', ') + '. Com ' + (tetoDe(P) === 6 ? 'treino de 40 a 50 minutos (6 por dia)' : P.freq + ' treinos na semana') + ' não fecha tudo. Se quiser, troca um exercício na mão.');
+    }
+    for (const a of (rot && rot.alertas) || []) { const m = String(a).match(/^([a-z_]+): (\d+) v[aá]lida\(s\) na semana mesmo com todos em 4, piso [eé] (\d+)/i); if (m) out.push((GRP_ROT[m[1]] || m[1]) + ' ficou com ' + m[2] + ' séries válidas na semana e o mínimo do grupo é ' + m[3] + ': falta um exercício do grupo, não série.'); }
+    return out;
+  }
+  function monta(perfil, rotula, grupoDe) {
+    const P = Object.assign({ nome: '', sexo: 'M', freq: 0, tempo: '', nivel: '', prioridade: '', dor: {}, veto: [] }, perfil || {});
+    P.dor = P.dor || {}; P.veto = P.veto || [];
+    P.menor = P.idade > 0 && P.idade < 18; if (P.menor) P.nivel = 'Iniciante';
+    P.niv = nivelDe(P.nivel); P.pri = priDe(P.prioridade);
+    if (!P.restricao) P.restricao = restricaoDe(P);
+    if (!(P.freq >= 3 && P.freq <= 6)) return { erro: 'Por enquanto o Montar faz de 3 a 6 treinos na semana. Com ' + (P.freq || 'essa') + ' frequência, monta na mão.' };
+    const des = P.sexo === 'M' ? desenhoHomem(P.freq, P.pri, tetoDe(P) === 6) : desenhoMulher(P.freq, P.pri);
+    if (!des) return { erro: 'Homem com prioridade em glúteo em 4 treinos não fecha nas regras: o glúteo cairia em dias seguidos. Esse eu deixo pra tu montar na mão.' };
+    const W = montaSemana(P, des);
+    const linhas = [];
+    for (const d of W.dias) for (const n of d.itens) linhas.push(linha(P, d.n, n));
+    const cab = cabeca(P, W);
+    let rows = cab.concat(linhas);
+    let rot = null;
+    if (rotula) { rot = rotula(rows, { nivel: P.nivel, prioridade: P.pri === 'braco' ? 'braco' : P.pri || null, sexo: P.sexo, perfil: { nivel: P.nivel, sono: P.sono, estresse: P.estresse, idade: P.idade, lesao: Object.keys(P.dor).filter(k => P.dor[k]) } }); rows = rot.treino; }
+    return { rows, notas: W.notas.concat(avisos(P, W, rot, grupoDe)), split: W.split, dias: W.dias, rot };
+  }
+
+  function linha(P, dia, nome) {
+    const e = EX[nome]; if (!e) throw new Error('exercício fora do catálogo: ' + nome);
+    const [peso, intervalo, lado, pc, dica, ar] = e;
+    const suf = lado ? ' cada ' + lado : '';
+    if (peso === 'A') {
+      const reps = /MANGUITO/.test(nrm(nome)) ? '15' : /MOBILIDADE/.test(nrm(nome)) ? '10' + suf : '30 seg' + suf;
+      return [String(dia), nome, '2X', reps, intervalo, dica, P.video ? P.video(nome) : '', 'sim'];
+    }
+    const dicaS = P.sexo === 'F' ? dica.replace(/\bDeitado\b/g, 'Deitada').replace(/\bdeitado\b/g, 'deitada').replace(/\bsentado\b/g, 'sentada').replace(/\bSentado e\b/g, 'Sentada e') : dica;
+    if (peso === 'B') return [String(dia), nome, '2X', '15' + suf, intervalo, dicaS + '. ' + ar, P.video ? P.video(nome) : '', 'sim'];
+    const reps = peso === 'T' ? '40 seg' : FAIXA[P.niv][peso] + suf;
+    const obs = dicaS + '. ' + ar + (pc ? ', Progressão de carga' : '');
+    return [String(dia), nome, '3X', reps, intervalo, obs, P.video ? P.video(nome) : '', ''];
+  }
+
+  function cabeca(P, W) {
+    const prim = String(P.nome || '').trim().split(/\s+/)[0] || '';
+    const n = W.dias.length, ext = ['zero', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete'][n];
+    const rotulos = W.dias.map(d => 'D' + d.n + ' ' + d.rot.toLowerCase()).join(', ');
+    return [
+      ['TREINO', 'EXERCÍCIO', 'SÉRIES', 'REPETIÇÕES', 'INTERVALO', 'OBS', 'VÍDEO', 'AQUECIMENTO'],
+      ['info', P.nome || '', n + 'x/semana', (P.objetivo || 'Hipertrofia') + ', prioridade ' + (PRI_ROT[P.pri] || 'corpo todo'), '4 semanas', '', '', ''],
+      ['restrict', (prim ? (P.sexo === 'F' ? 'Seja bem-vinda, ' : 'Seja bem-vindo, ') + prim + '. ' : '') + 'São ' + ext + ' treinos na semana: ' + rotulos + '. Segue a ordem, e o próximo treino é sempre o que falta.' + (P.restricao ? ' ' + P.restricao : ''), '', '', '', '', '', ''],
+      P.menor ? ['meta', 'Esforço-alvo', '2 a 3 no tanque', 'Para a série quando ainda sobrarem 2 ou 3 repetições no tanque. Nada de ir até a falha: nessa fase o que constrói é o movimento bem feito e a carga subindo aos poucos', '', '', '', '']
+        : ['meta', 'Esforço-alvo', '0 a 1 no tanque na série válida', 'Mira parar com 0 ou 1 repetição ainda no tanque: esse é o teu alvo. Sobrou até 2, a série conta. Sobrou 3 ou mais, aquela série não valeu, e o app abre outra pra tu fazer com mais carga', '', '', '', ''],
+      ['meta', 'Como ler as tuas séries', 'aq · aj · val', 'aq é aquecimento: carga leve, 10 repetições, só pra lubrificar a articulação. aj é ajuste: carga média, 6 repetições, pro teu sistema nervoso entender que vai haver esforço, sem cansar. val é a série válida, a única que constrói músculo e a única onde a carga vale', '', '', '', ''],
+      ['meta', 'A carga sobe toda semana', 'É a régua do protocolo', 'Anota a carga de cada exercício no app. A regra pra subir o peso: quando tu fizer o número de cima da faixa em todas as séries válidas, dentro do teu Esforço-alvo, no próximo treino sobe uns 5% no peso, e nos grandes de perna (agachamento, leg press, stiff, elevação pélvica) uns 10%. O app te mostra o número. Aí as repetições caem pro começo da faixa, e tu vai subindo de novo até o topo', '', '', '', ''],
+      ['meta', 'Exercício de um lado por vez', 'Descanso só depois dos dois lados', 'No exercício unilateral, o descanso é depois de fazer os dois lados. Faz o direito, emenda o esquerdo, e só aí conta o tempo. Um lado seguido do outro é uma série', '', '', '', ''],
+      ['meta', 'Respiração', 'Solta o ar na força, puxa na volta', 'Em todo exercício: puxa o ar na parte que volta devagar e solta pela boca na hora de fazer força. Nunca prende o ar pra empurrar a carga: prender sobe muito a pressão. Se a série só sai prendendo o ar, a carga passou do ponto pra ti naquele dia', '', '', '', ''],
+      ['meta', 'split', W.split || '', '', '', '', '', ''],
+    ].concat(P.sexo === 'M' && n === 4 && /inteiro/i.test(W.dias[3].rot) ? [['meta', 'Em que dia fazer cada treino', 'D1, D2 e D3 seguidos, D4 depois de um dia de folga', 'Sugestão: D1 na segunda, D2 na terça, D3 na quarta e D4 na sexta. O D4 é corpo inteiro e tem perna de novo, então a quinta de folga separa ele do dia de pernas. Se os teus dias são outros, só mantém um dia de descanso antes do D4', '', '', '', '']] : []);
+  }
+
+  return { monta, EX, nivelDe, priDe, nrm };
+})();
+
+// ── v662 (GH 17/11, plano B): MONTAR O TREINO dentro do editor, sem IA. Lê da anamnese inicial o sexo, a idade, quantos
+// treinos por semana, o tempo de treino, o nível, a prioridade e as dores; o treinador confere e ajusta cada um na janela;
+// o botão monta a semana inteira pelas regras do método (o desenho do split, a ordem dos dias, os exercícios, as séries de
+// aquecimento, ajuste e válidas) e escreve o cabeçalho. O gerador (GHTR) e o rotulador de séries (GHSR, cópia do núcleo da
+// lane Entregas) são conferidos contra o fiscal antes de cada versão. Não toca em protocolo hormonal. As respostas da
+// anamnese ficam só na memória da página, nada vai pro aparelho.
+const _trMo = { car: false, erro: '', senha: false, j: null, v: null, pronto: null };
+const _TRMO_PRI = [['', 'Corpo todo'], ['peito', 'Peito'], ['costas', 'Costas'], ['ombro', 'Ombros'], ['braco', 'Braços'], ['quad', 'Quadríceps'], ['posterior', 'Posterior de coxa'], ['gluteo', 'Glúteo']];
+const _TRMO_PRI_TXT = { '': 'Corpo todo', peito: 'Peito', costas: 'Costas', ombro: 'Deltóides (ombros)', braco: 'Bíceps e tríceps', quad: 'Quadríceps', posterior: 'Posterior de coxa', gluteo: 'Glúteo' };
+const _TRMO_DOR = [['lombar', 'Lombar'], ['ombro', 'Ombro'], ['joelho', 'Joelho'], ['cotovelo', 'Cotovelo']];
+function _trMoLimpa(t) { return String(t == null ? '' : t).replace(/<[^>]*>/g, '').trim(); }
+function _trMoIni(j) {
+  const f = ((j && j.fichas) || []).find(x => x && x.fonte === 'inicial'); if (!f) return null;
+  const R = re => _diMoR(f, re), N = _teFiNorm, resp = f.respostas || [];
+  const sx = N(R(/^sexo/)), sexo = /fem/.test(sx) ? 'F' : (/masc/.test(sx) ? 'M' : '');
+  let idade = _diMoNum(R(/^idade\b/)); if (idade != null && (idade < 12 || idade > 100)) idade = null;
+  const freqTxt = _trMoLimpa(R(/quantas vezes.*treinar|frequencia.*trein/)); let freq = _diMoNum(freqTxt); if (freq != null) freq = Math.round(freq);
+  const tempoTxt = _trMoLimpa(R(/quanto tempo tem disponivel para treinar/)), tn = N(tempoTxt), curto = /40|45|menos de 50/.test(tn) && !/60|90/.test(tn);
+  const nivelTxt = _trMoLimpa(R(/nivel.*experi/)), nn = N(nivelTxt), nivel = /avanc|atleta/.test(nn) ? 'Avançado' : (/inician/.test(nn) ? 'Iniciante' : 'Intermediário');
+  const priTxt = _trMoLimpa(R(/qual musculo.*priorizar/)), pri = /antebra|panturr|abd[oô]m/i.test(priTxt) ? '' : GHTR.priDe(priTxt), priFora = !!(priTxt && !pri && !/corpo (todo|inteiro)|nenhum|todos/.test(N(priTxt)));
+  const prefTxt = _trMoLimpa(R(/curte mais treinar/)), pn = N(prefTxt);
+  const pref = !pn || /tanto faz|decid|render mais|pode (escolher|montar|decidir)|do jeito que/.test(pn) ? 'C' : (/distribu|equilibr|mais vezes|varias vezes|2 ?x|dois dias|espalh|cada musculo mais|frequente/.test(pn) ? 'B' : (/foco|um musculo|um grupo|por vez|por dia|concentr|completo no dia/.test(pn) ? 'A' : 'C'));
+  const sente = re => /\bsim\b|as vezes|sempre|frequente/.test(N(R(re)));
+  const dor = { lombar: sente(/dores?.*(lombar|coluna)/), ombro: sente(/dores?.*ombro/), joelho: sente(/dores?.*joelho/), cotovelo: sente(/dores?.*cotovelo/) };
+  const limites = [];
+  [[/fez cirurgias/, 'Cirurgia'], [/limitacao articular/, 'Limitação articular'], [/nao consegue ou nao pode fazer algum exerc/, 'Exercício que não pode fazer'], [/problema osseo ou articular/, 'Problema ósseo ou articular']].forEach(([re, rot]) => {
+    const k = resp.findIndex(y => re.test(N(_teFiTxt(y.p)))); if (k < 0 || !/^sim\b/.test(N(resp[k].r).trim())) return;
+    const prox = resp[k + 1], t = prox && /resposta anterior|se sim|qual|onde|explique/.test(N(_teFiTxt(prox.p))) ? _trMoLimpa(prox.r) : '';
+    limites.push(rot + (t ? ': ' + t : ' (marcou sim e não escreveu qual)'));
+  });
+  const nota = teste => { const y = resp.find(z => { const q = N(_teFiTxt(z.p)); return teste(q) && /^[1-5]$/.test(String(z.r == null ? '' : z.r).trim()); }); return y ? +String(y.r).trim() : null; };
+  return { f, sexo, idade, freq, freqTxt, tempoTxt, curto, nivel, nivelTxt, pri, priTxt, priFora, pref, prefTxt, dor, limites, objTxt: _trMoLimpa(R(/objetivo principal/)), sono: nota(q => /\bsono\b/.test(q) && !/hora|quant/.test(q)), estresse: nota(q => /nivel de estresse/.test(q)) };
+}
+function _trMoTemTreino() { return Array.isArray(trainerData) && trainerData.some(r => /^\d/.test(String((r && r[0]) || '').trim())); }
+async function _trMoCarrega(fresh) {
+  const sid = String(trainerSheetId || ''); if (!sid) return;
+  _trMo.car = true; _trMo.erro = ''; _trMo.senha = false; _trMoDesenha();
+  try { await _teFichaCarrega(!!fresh); } catch (_) {}
+  if (String(trainerSheetId || '') !== sid) return;
+  _trMo.car = false;
+  const j = _teFi.cache.get(sid);
+  if (j) { _trMo.j = j; _trMo.v = null; }
+  else { _trMo.j = null; _trMo.erro = (_teFi.st && _teFi.st.erro) || 'A ficha não veio agora. Tenta de novo.'; _trMo.senha = !!(_teFi.st && _teFi.st.senha); }
+  _trMoDesenha();
+}
+function trMoSenha() { if (_trainerToken_(true)) _trMoCarrega(true); }
+function trMoAbre() {
+  if (!trainerSheetId || !Array.isArray(trainerData)) return;
+  _trMo.pronto = null;
+  if (!_trMo.j || _teFi.cache.get(String(trainerSheetId)) !== _trMo.j) { _trMo.j = _teFi.cache.get(String(trainerSheetId)) || null; _trMo.v = null; }
+  _trMoDesenha(); if (!_trMo.j) _trMoCarrega(false);
+}
+function trMoFecha(tudo) { const o = document.getElementById('trMo'); if (o) o.hidden = true; _trMo.pronto = null; if (tudo) { _trMo.j = null; _trMo.v = null; _trMo.erro = ''; _trMo.car = false; } }
+function trMoSet(k, val) { const v = _trMo.v; if (!v) return; if (k === 'dor') v.dor[val] = !v.dor[val]; else v[k] = val; _trMoDesenha(); }
+function _trMoValores(ini) {
+  if (_trMo.v) return _trMo.v;
+  _trMo.v = ini ? { sexo: ini.sexo || 'M', freq: ini.freq >= 3 && ini.freq <= 6 ? ini.freq : 0, curto: !!ini.curto, nivel: ini.nivel, pri: ini.pri || '', dor: Object.assign({}, ini.dor) }
+    : { sexo: 'M', freq: 0, curto: false, nivel: 'Intermediário', pri: '', dor: { lombar: false, ombro: false, joelho: false, cotovelo: false } };
+  return _trMo.v;
+}
+function _trMoDesenha() {
+  let o = document.getElementById('trMo');
+  if (!o) { o = document.createElement('div'); o.id = 'trMo'; o.className = 'te-conf di-mo tr-mo'; o.hidden = true; o.addEventListener('click', ev => { if (ev.target === o) trMoFecha(); }); (document.getElementById('trainerEditor') || document.body).appendChild(o); }
+  const e = escTrainer, nome = String(typeof trainerStudentNameHint === 'string' && trainerStudentNameHint ? trainerStudentNameHint : ((_trMo.j && _trMo.j.nome) || ''));
+  let h = '<div class="te-conf-cx" role="dialog" aria-label="Montar o treino">';
+  if (_trMo.pronto) {
+    const r = _trMo.pronto;
+    h += '<div class="te-conf-tit">' + e(r.tit) + '</div><div class="te-conf-sub">' + e(nome) + '</div><div class="te-conf-lista"><div class="te-ent-res">' + e(r.res) + '</div>' + (r.dias || []).map(t => '<div class="tr-mo-dia">' + e(t) + '</div>').join('') + (r.notas || []).map(t => '<div class="te-ent-linha">' + e(t) + '</div>').join('') +
+      (r.ok ? '<div class="di-mo-dica">Não gostou? O botão de desfazer do editor volta o treino como estava.</div>' : '') + '</div><div class="te-conf-pe"><button type="button" class="te-conf-salva ok tr-mo-ver" onclick="trMoFecha()">' + (r.ok ? 'Ver o treino' : 'Fechar') + '</button></div>';
+    o.innerHTML = h + '</div>'; o.hidden = false; return;
+  }
+  h += '<div class="te-conf-tit">Montar o treino</div><div class="te-conf-sub">' + e(nome) + '</div>';
+  if (_trMo.car) { o.innerHTML = h + '<div class="te-ent-res">Buscando a anamnese…</div><div class="te-conf-pe"><button type="button" class="te-conf-salva" onclick="trMoFecha()">Fechar</button></div></div>'; o.hidden = false; return; }
+  if (_trMo.erro || !_trMo.j) { o.innerHTML = h + '<div class="te-ent-linha">' + e(_trMo.erro || 'A ficha não veio agora.') + '</div><div class="te-conf-pe"><button type="button" class="te-conf-salva" onclick="trMoFecha()">Fechar</button><button type="button" class="te-conf-salva ok" onclick="' + (_trMo.senha ? 'trMoSenha()' : '_trMoCarrega(true)') + '">' + (_trMo.senha ? 'Digitar a senha' : 'Tentar de novo') + '</button></div></div>'; o.hidden = false; return; }
+  const ini = _trMoIni(_trMo.j), v = _trMoValores(ini);
+  const grupo = (rot, bts) => '<div class="tr-mo-g"><span class="tr-mo-rot">' + rot + '</span><div class="tr-mo-ops">' + bts.map(b => '<button type="button" class="' + (b[2] ? 'on' : '') + '" onclick="' + b[1] + '">' + b[0] + '</button>').join('') + '</div></div>';
+  h += '<div class="te-conf-lista di-mo-corpo">';
+  if (!ini) h += '<div class="te-ent-aviso">Não achei a anamnese inicial deste aluno. Dá pra montar marcando tudo aqui embaixo, mas confere as limitações com ele antes.</div>';
+  else {
+    const d = [ini.freqTxt ? 'Treinos por semana: ' + ini.freqTxt : '', ini.tempoTxt ? 'Tempo de treino: ' + ini.tempoTxt : '', ini.nivelTxt ? 'Nível: ' + ini.nivelTxt : '', ini.priTxt ? 'Prioridade: ' + ini.priTxt : '', ini.prefTxt ? 'Como curte treinar: ' + ini.prefTxt : '', ini.objTxt ? 'Objetivo: ' + ini.objTxt : '', ini.idade ? 'Idade: ' + Math.round(ini.idade) + ' anos' : ''].filter(Boolean);
+    h += '<div class="di-mo-dados"><b>Na anamnese</b><br>' + (d.length ? d.map(e).join('<br>') : 'Ela veio sem as respostas de treino. Marca aqui embaixo.') + '</div>';
+  }
+  h += grupo('Sexo', [['Homem', "trMoSet('sexo','M')", v.sexo === 'M'], ['Mulher', "trMoSet('sexo','F')", v.sexo === 'F']]);
+  h += grupo('Treinos por semana', [3, 4, 5, 6].map(n => [String(n), "trMoSet('freq'," + n + ')', v.freq === n]));
+  h += grupo('Tempo de treino', [['40 a 50 minutos', "trMoSet('curto',true)", v.curto], ['60 minutos ou mais', "trMoSet('curto',false)", !v.curto]]);
+  h += grupo('Nível', ['Iniciante', 'Intermediário', 'Avançado'].map(n => [n, "trMoSet('nivel','" + n + "')", v.nivel === n]));
+  h += grupo('Prioridade', _TRMO_PRI.map(p => [p[1], "trMoSet('pri','" + p[0] + "')", v.pri === p[0]]));
+  h += grupo('Sente dor em', _TRMO_DOR.map(p => [p[1], "trMoSet('dor','" + p[0] + "')", !!v.dor[p[0]]]));
+  const av = [];
+  if (ini && ini.freq != null && !(ini.freq >= 3 && ini.freq <= 6)) av.push('Ele marcou ' + ini.freqTxt + ' na frequência. O Montar faz de 3 a 6 treinos na semana: escolhe aqui em cima quantos vão ser, ou monta esse na mão.');
+  if (ini && ini.priFora) av.push('A prioridade que ele marcou (' + ini.priTxt + ') não tem desenho próprio. Deixei em corpo todo: escolhe o grupo mais perto, ou acrescenta volume na mão depois.');
+  if (ini && ini.pref === 'A') av.push('Ele marcou que curte treinar um músculo por dia. O Montar usa o método padrão, com cada músculo duas vezes na semana, e a prioridade aparece em volume. Se quiser um dia pra cada músculo, monta na mão.');
+  if (ini && ini.idade && ini.idade < 18) av.push('Menor de 18 anos: sai como iniciante, parando com 2 a 3 repetições no tanque.');
+  (ini ? ini.limites : []).forEach(t => av.push(t + '. O Montar não lê texto livre: depois de montar, confere e troca na mão o que bater nisso.'));
+  if (v.dor.joelho) av.push('Dor no joelho: o Montar mantém os exercícios e escreve o aviso de amplitude. Se for lesão de verdade, troca o agachamento e o búlgaro na mão.');
+  if (v.sexo === 'M' && v.freq === 4 && v.pri === 'gluteo') av.push('Homem com prioridade em glúteo em 4 treinos não fecha nas regras. Escolhe outra prioridade ou monta esse na mão.');
+  if (_trMoTemTreino()) av.push('Este treino já tem exercícios. Montar TROCA todos pelos novos e reescreve as orientações do topo. O link do aluno fica.');
+  h += av.map(t => '<div class="te-ent-aviso">' + e(t) + '</div>').join('');
+  h += '<div class="di-mo-dica">Protocolo hormonal não entra aqui: esse é contigo.</div></div>';
+  h += '<div class="te-conf-pe"><button type="button" class="te-conf-salva" onclick="trMoFecha()">Fechar</button><button type="button" class="te-conf-salva ok tr-mo-vai" onclick="trMoMonta()"' + (v.freq ? '' : ' disabled') + '>Montar o treino</button></div>';
+  o.innerHTML = h + '</div>'; o.hidden = false;
+}
+function _trMoPoe(rows) {
+  const sec = r => String((r && r[0]) || '').toLowerCase().trim(), atual = trainerData || [];
+  const k = rows.findIndex(r => /^\d/.test(sec(r))), cab = rows.slice(0, k), dias = rows.slice(k);
+  const a0 = atual.length && !/^\d/.test(sec(atual[0])) && ['info', 'restrict', 'meta', 'link'].indexOf(sec(atual[0])) < 0 ? atual[0] : cab[0];
+  const infoA = atual.find(r => sec(r) === 'info'), links = atual.filter(r => sec(r) === 'link');
+  const out = [a0];
+  cab.slice(1).forEach(r => { if (sec(r) === 'info' && infoA) { const x = infoA.slice(); while (x.length < 8) x.push(''); if (!String(x[1] || '').trim()) x[1] = r[1]; x[2] = r[2]; x[3] = r[3]; if (!String(x[4] || '').trim()) x[4] = r[4]; out.push(x); } else out.push(r); });
+  links.forEach(r => out.push(r));
+  teUndoStack.push({ mode: 'treino', data: JSON.parse(JSON.stringify(atual)) }); while (teUndoStack.length > TE_UNDO_MAX) teUndoStack.shift(); teUpdateUndoBtn();
+  trainerData = out.concat(dias);
+}
+function trMoMonta() {
+  const v = _trMo.v; if (!v || !v.freq) return;
+  const ini = _trMoIni(_trMo.j);
+  if (_trMoTemTreino() && !confirm('Este treino já tem exercícios. Montar troca todos pelos novos. Confirma?')) return;
+  const nome = String(typeof trainerStudentNameHint === 'string' && trainerStudentNameHint ? trainerStudentNameHint : ((_trMo.j && _trMo.j.nome) || ''));
+  const perfil = { nome, sexo: v.sexo, freq: v.freq, tempo: v.curto ? 'Entre 40 e 50 minutos' : 'Entre 60 e 90 minutos', nivel: v.nivel, prioridade: _TRMO_PRI_TXT[v.pri] || 'Corpo todo', objetivo: 'Hipertrofia', idade: ini && ini.idade ? ini.idade : null, sono: ini ? ini.sono : null, estresse: ini ? ini.estresse : null,
+    dor: Object.assign({}, v.dor), veto: [], video: n => (typeof _BANK_IDX !== 'undefined' && _BANK_IDX[_bankKey(n)]) || '' };
+  let r; try { r = GHTR.monta(perfil, GHSR.rotulaSemana, n => (GHSR.meta(n) || {}).grupo); } catch (_) { r = { erro: 'Não consegui montar com essas escolhas. Tenta outra combinação ou monta na mão.' }; }
+  if (r.erro) { _trMo.pronto = { tit: 'Não montou', res: r.erro, notas: [], ok: false }; _trMoDesenha(); _trMo.pronto = null; return; }
+  _trMoPoe(r.rows);
+  if (typeof currentEditMode !== 'undefined' && currentEditMode !== 'treino') switchEditMode('treino'); else renderCurrentEditor();
+  const notas = r.notas.slice();
+  (ini ? ini.limites : []).forEach(t => notas.push('Confere na mão: ' + t + '.'));
+  _trMo.pronto = { ok: true, tit: 'Treino montado', res: r.dias.length + ' treinos na semana. Lê cada dia, ajusta o que quiser e salva a aba.', dias: r.dias.map(d => 'D' + d.n + ' ' + d.rot + ': ' + (d.itens.length - 1) + ' exercícios'), notas };
+  _trMoDesenha();
+}
+
 function openTrainerSheetModal() {
   document.getElementById('trainerSheetIdInput').value = '';
   teShow('trainerSheetModal');
@@ -32490,6 +33238,7 @@ function renderTrainerEditor() {
   // de uma coluna (abaixo de 800 px); um toque leva pro dia e ela marca em qual dia a pessoa está.
   const _teDk = Object.keys(days).sort((a, b) => +a - +b);
   let html = (_teDk.length > 1 ? '<div class="te-dias-nav" id="teDiasNav">' + _teDk.map(d => `<button type="button" data-d="${d}" onclick="teIrDia(${d})">Dia ${d}</button>`).join('') + '</div>' : '') +
+    '<div class="tr-mo-bar"><button type="button" class="di-mo-abre" onclick="trMoAbre()" title="Montar o treino da semana pela anamnese, sem IA">Montar o treino</button><span>pela anamnese</span></div>' +
     '<div class="te-days-grid">';
   _teDk.forEach(d => {
     const exs = days[d];
@@ -32540,7 +33289,7 @@ function renderTrainerEditor() {
   document.getElementById('trainerDaysContainer').innerHTML = hasDays ? html : `
     <p style="color:#888;text-align:center;padding:30px;">Sem exercícios na aba TREINO.</p>
     <button class="te-new-day-btn" onclick="addNewDay()" style="margin: 0 auto; max-width:340px;">+ Criar primeiro DIA de treino</button>
-    <div class="tf-zero"><button type="button" onclick="openTrainerTemplateModal()">Carregar treino pronto</button><button type="button" onclick="teCopiaAbrir()">Copiar de outro aluno</button></div>`;
+    <div class="tf-zero"><button type="button" onclick="openTrainerTemplateModal()">Carregar treino pronto</button><button type="button" onclick="teCopiaAbrir()">Copiar de outro aluno</button><button type="button" class="tr-mo-zero" onclick="trMoAbre()">Montar pela anamnese</button></div>`;
 }
 
 // v653: no celular o exercício ocupa uma linha; a observação fica resumida embaixo e o exercício abre (observação inteira
@@ -33216,6 +33965,7 @@ function trainerExit() {
   try { _teBaseGuarda_('', null, null); } catch (_) {}   // v659
   try { _teEnt.mandando = false; teEntFecha(); _teEntGuarda_('', null, null); } catch (_) {}   // v660
   try { diMoFecha(true); } catch (_) {}   // v661
+  try { trMoFecha(true); } catch (_) {}   // v662
   try { teFantasmaFechar(); } catch (_) {}   // v605
   try { teFichaSai(); } catch (_) {}   // v656
   _teFant = null;
