@@ -3765,6 +3765,56 @@
   /* ══ v653 (GH 17/11, plano C): editor mais rápido no celular ══ */
   #teMaisBtn, .te-mais-links, .te-undo-cel, .te-ex-resumo { display: none; }
   .di-tudo-bar { display: flex; justify-content: flex-end; margin: 0 0 8px; }
+  /* ══ v656 (GH 17/11, plano C): ficha do aluno no editor ══ */
+  #trainerEditor .te-info-name { cursor: pointer; }
+  #trainerEditor .te-top-bar #teFichaBtn.on { background: #DDB65C; color: #1A1304; border-color: #DDB65C; }
+  #trainerEditor .te-top-bar > #teFichaBtn { display: none; }   /* só no celular, dentro do "⋯"; nas telas maiores vale o botão da linha do nome */
+  #trainerEditor .te-ficha-lk { font-size: 13px; padding: 5px 12px; }
+  #trainerEditor .te-ficha-lk.on { background: #DDB65C; color: #1A1304; border-color: #DDB65C; }
+  @media (max-width: 480px) { #trainerEditor .te-top-bar.mais > #teFichaBtn { display: inline-flex; } }
+  .te-fi { position: absolute; right: 0; bottom: 0; top: 56px; width: 400px; max-width: 42vw; z-index: 40; display: flex; flex-direction: column; min-height: 0; background: #141414; color: #eee; border-left: 1px solid rgba(221, 182, 92, 0.45); font-family: inherit; }
+  .te-fi[hidden] { display: none; }
+  #trainerEditor.com-ficha .te-days-scroll { margin-right: min(400px, 42vw); }
+  .te-fi-cab { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #2a2a2a; flex: 0 0 auto; }
+  .te-fi-cab b { font-size: 15px; font-weight: 800; color: #E3BE6B; flex: 0 0 auto; }
+  .te-fi-cab span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: #bbb; }
+  .te-fi-bt { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 8px; background: transparent; color: #ddd; border: 1px solid #444; font-size: 16px; line-height: 1; cursor: pointer; font-family: inherit; }
+  .te-fi-tam { display: none; }
+  .te-fi-corpo { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: 10px 12px 0; }
+  .te-fi-plano { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; padding: 0 0 10px; flex: 0 0 auto; }
+  .te-fi-plano div { min-width: 0; font-size: 12px; line-height: 1.3; }
+  .te-fi-plano span { display: block; color: #8d8d8d; font-size: 10.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .te-fi-plano b { display: block; color: #eee; font-weight: 700; overflow-wrap: anywhere; }
+  .te-fi-abas, .te-fi-grupos { display: flex; gap: 6px; overflow-x: auto; flex: 0 0 auto; padding-bottom: 8px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .te-fi-abas::-webkit-scrollbar, .te-fi-grupos::-webkit-scrollbar { display: none; }
+  .te-fi-abas button, .te-fi-grupos button { flex: 0 0 auto; white-space: nowrap; background: transparent; color: #ccc; border: 1px solid #444; border-radius: 999px; padding: 7px 12px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .te-fi-abas button { border-radius: 8px; }
+  .te-fi-abas button.on, .te-fi-grupos button.on { background: #DDB65C; color: #1A1304; border-color: #DDB65C; }
+  .te-fi-grupos.apagado { opacity: .4; }
+  .te-fi-nota { font-size: 11px; color: #8d8d8d; margin: -4px 0 8px; flex: 0 0 auto; }
+  .te-fi-busca { flex: 0 0 auto; width: 100%; box-sizing: border-box; background: #1e1e1e; color: #eee; border: 1px solid #3a3a3a; border-radius: 8px; padding: 9px 11px; font-size: 16px; margin: 0 0 8px; font-family: inherit; }
+  .te-fi-lista { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+  .te-fi-gr { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; font-weight: 800; color: #999; margin: 8px 0 5px; }
+  .te-fi-gr.at { color: #f0b34a; }
+  .te-fi-qa { padding: 7px 0; border-bottom: 1px solid #242424; }
+  .te-fi-qa span { display: block; font-size: 11.5px; line-height: 1.3; color: #9a9a9a; }
+  .te-fi-qa span i { font-style: normal; font-weight: 800; color: #777; margin-right: 6px; font-variant-numeric: tabular-nums; }
+  .te-fi-qa p { margin: 2px 0 0; font-size: 14px; line-height: 1.38; color: #f1f1f1; overflow-wrap: anywhere; white-space: pre-wrap; }
+  .te-fi-qa.forte p { color: #ffd98a; font-weight: 700; }
+  .te-fi-qa a { color: #E3BE6B; font-weight: 700; }
+  .te-fi-vazio { font-size: 13px; color: #8d8d8d; padding: 8px 0; }
+  .te-fi-naos { display: block; width: 100%; margin: 10px 0 0; background: transparent; color: #E3BE6B; border: 1px dashed rgba(221, 182, 92, 0.5); border-radius: 8px; padding: 9px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .te-fi-msg { padding: 22px 6px; font-size: 14px; line-height: 1.45; color: #ccc; text-align: center; }
+  .te-fi-msg-bts { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 14px; }
+  .te-fi-msg-bts button { background: #DDB65C; color: #1A1304; border: 1px solid #DDB65C; border-radius: 9px; padding: 10px 14px; font-size: 13.5px; font-weight: 800; cursor: pointer; font-family: inherit; }
+  .te-fi-roda { width: 26px; height: 26px; margin: 0 auto 12px; border-radius: 50%; border: 3px solid #333; border-top-color: #DDB65C; animation: teFiGira .8s linear infinite; }
+  @keyframes teFiGira { to { transform: rotate(360deg); } }
+  @media (max-width: 899px) {
+    .te-fi { left: 0; right: 0; top: auto; width: auto; max-width: none; height: 58vh; border-left: 0; border-top: 1px solid rgba(221, 182, 92, 0.6); border-radius: 16px 16px 0 0; box-shadow: 0 -14px 40px rgba(0, 0, 0, 0.55); }
+    .te-fi.alta { height: auto; }
+    .te-fi-tam { display: inline-block; }
+    #trainerEditor.com-ficha .te-days-scroll { margin-right: 0; padding-bottom: 60vh; }
+  }
   /* ══ v655 (GH 17/11, plano C): conferência antes de salvar ══ */
   .te-conf { position: fixed; inset: 0; z-index: 9700; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; padding: 16px; }
   .te-conf[hidden] { display: none; }
@@ -3850,8 +3900,8 @@
     #trainerEditor .te-top-bar.mais > #teMaisBtn { background: #DDB65C; color: #1A1304; border-color: #DDB65C; }
     #trainerEditor .te-top-bar > #trainerSaveBtn { order: -2; flex: 0 0 auto; padding: 8px 14px; font-size: 13.5px; }
     #trainerEditor .te-top-bar > .te-btn:last-child { order: -1; }
-    #trainerEditor .te-top-bar > #trainerTplBtn, #trainerEditor .te-top-bar > #teCopiaBtn, #trainerEditor .te-top-bar > #teRecadoBtn, #trainerEditor .te-top-bar > #teFantasmaBtn { order: 2; }
-    #trainerEditor .te-top-bar:not(.mais) > #trainerTplBtn, #trainerEditor .te-top-bar:not(.mais) > #teCopiaBtn, #trainerEditor .te-top-bar:not(.mais) > #teRecadoBtn, #trainerEditor .te-top-bar:not(.mais) > #teFantasmaBtn { display: none !important; }
+    #trainerEditor .te-top-bar > #trainerTplBtn, #trainerEditor .te-top-bar > #teFichaBtn, #trainerEditor .te-top-bar > #teCopiaBtn, #trainerEditor .te-top-bar > #teRecadoBtn, #trainerEditor .te-top-bar > #teFantasmaBtn { order: 2; }
+    #trainerEditor .te-top-bar:not(.mais) > #trainerTplBtn, #trainerEditor .te-top-bar:not(.mais) > #teFichaBtn, #trainerEditor .te-top-bar:not(.mais) > #teCopiaBtn, #trainerEditor .te-top-bar:not(.mais) > #teRecadoBtn, #trainerEditor .te-top-bar:not(.mais) > #teFantasmaBtn { display: none !important; }
     #trainerEditor .te-top-bar.mais > .te-mais-links { display: flex; order: 1; flex-basis: 100%; gap: 7px; }
     #trainerEditor .te-mais-links a, #trainerEditor .te-mais-links .te-link-copy { flex: 1 1 0; text-align: center; font-size: 12.5px; padding: 9px 6px; border-radius: 8px; border: 1px solid rgba(221,182,92,.55); background: #2a2a2a; color: #E3BE6B; text-decoration: none; font-weight: 700; line-height: 1.2; font-family: inherit; }
     /* linha da dieta em dois andares: nome inteiro em cima, quantidade e observação embaixo */
@@ -4855,6 +4905,24 @@ html[data-theme="light"] .te-conf-it.erro i { background: #c0392b; }
 html[data-theme="light"] .te-conf-it b { color: #999; }
 html[data-theme="light"] .te-conf-salva { color: #3a3a3a; border-color: rgba(0, 0, 0, 0.3); }
 html[data-theme="light"] .te-conf-alvo { outline-color: #c27a00 !important; }
+html[data-theme="light"] .te-fi { background: #FBFAF7; color: #141414; border-color: rgba(184, 145, 63, 0.55); }
+html[data-theme="light"] .te-fi-cab { border-bottom-color: rgba(0, 0, 0, 0.1); }
+html[data-theme="light"] .te-fi-cab b { color: #7a5c14; }
+html[data-theme="light"] .te-fi-cab span, html[data-theme="light"] .te-fi-msg { color: #4a4a4a; }
+html[data-theme="light"] .te-fi-bt { color: #3a3a3a; border-color: rgba(0, 0, 0, 0.25); }
+html[data-theme="light"] .te-fi-plano span, html[data-theme="light"] .te-fi-nota, html[data-theme="light"] .te-fi-vazio, html[data-theme="light"] .te-fi-gr { color: #6b6b6b; }
+html[data-theme="light"] .te-fi-plano b { color: #141414; }
+html[data-theme="light"] .te-fi-abas button, html[data-theme="light"] .te-fi-grupos button { color: #3a3a3a; border-color: rgba(0, 0, 0, 0.25); }
+html[data-theme="light"] .te-fi-abas button.on, html[data-theme="light"] .te-fi-grupos button.on { background: #DDB65C; color: #1A1304; border-color: #DDB65C; }
+html[data-theme="light"] .te-fi-busca { background: #fff; color: #141414; border-color: rgba(0, 0, 0, 0.2); }
+html[data-theme="light"] .te-fi-gr.at { color: #a86400; }
+html[data-theme="light"] .te-fi-qa { border-bottom-color: rgba(0, 0, 0, 0.08); }
+html[data-theme="light"] .te-fi-qa span { color: #6b6b6b; }
+html[data-theme="light"] .te-fi-qa span i { color: #8a8a8a; }
+html[data-theme="light"] .te-fi-qa p { color: #141414; }
+html[data-theme="light"] .te-fi-qa.forte p { color: #8a5200; }
+html[data-theme="light"] .te-fi-qa a, html[data-theme="light"] .te-fi-naos { color: #7a5c14; }
+html[data-theme="light"] .te-fi-roda { border-color: #ddd; border-top-color: #B8913F; }
 html[data-theme="light"] .di-mac-dia b { color: #141414; }
 html[data-theme="light"] .di-mac-dia small, html[data-theme="light"] .di-mac-dia .fib, html[data-theme="light"] .di-mac-vazio, html[data-theme="light"] .di-mac-painel label, html[data-theme="light"] .di-mac-painel p { color: #6b6b6b; }
 html[data-theme="light"] .di-mac-alvo { color: #2e7d32; }
@@ -8726,6 +8794,7 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
     <div class="te-mode-tabs" id="teModeTabs"></div>
     <button class="te-btn ghost" id="teUndoBtn" onclick="undoTrainerAction()" disabled title="Desfazer última ação (Ctrl+Z)" aria-label="Desfazer"><span class="te-ico">↶ </span><span class="te-undo-cel">↶</span><span class="te-lbl">Desfazer</span></button>
     <button class="te-tpl-btn" id="trainerTplBtn" onclick="openTrainerTemplateModal()" style="display:none;" title="Carregar template oficial (substitui exercícios mantendo info do aluno)"><span class="te-ico">📋 </span>Template</button>
+    <button class="te-btn ghost" id="teFichaBtn" onclick="teFichaAlterna()" title="Ficha do aluno: plano e respostas da anamnese">📄<span class="te-lbl"> Ficha</span></button>
     <button class="te-btn ghost" id="teCopiaBtn" onclick="teCopiaAbrir()" title="Copiar treino, dieta ou parte da dieta de outro aluno">⧉<span class="te-lbl"> Copiar de</span></button>
     <button class="te-btn ghost" id="teRecadoBtn" onclick="openRecadoModal()" title="Gravar recado em áudio pro aluno (entrega inicial). Some em 2 dias.">🎙<span class="te-lbl"> Recado</span></button>
     <button class="te-btn ghost" id="teFantasmaBtn" onclick="teFantasmaAbrir()" title="Ver por cima como este protocolo estava antes (versão anterior). Só a equipe vê.">👻<span class="te-lbl"> Antes</span></button>
@@ -29382,7 +29451,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v655';
+    var APP_SHELL_V = 'metodo-gh-v656';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
@@ -30744,8 +30813,8 @@ function renderEditorTopBar() {
   // a zero pelas abas/botões e o link sumia — GH 2026-07-06).
   const protoUrl = `https://app.metodogh.com.br/?sheet=${encodeURIComponent(trainerSheetId)}&tab=${(currentEditMode === 'dieta' || currentEditMode === 'planta') ? 'DIETA' : 'TREINO'}`;
   document.getElementById('trainerStudentInfo').innerHTML =
-    `<span class="te-info-name"><strong>${escTrainer(studentName)}</strong>${meta ? ' · ' + escTrainer(meta) : ''}</span>` +
-    `<span class="te-info-link">` +
+    `<span class="te-info-name" onclick="teFichaAlterna()" title="Abrir a ficha do aluno"><strong>${escTrainer(studentName)}</strong>${meta ? ' · ' + escTrainer(meta) : ''}</span>` +
+    `<span class="te-info-link"><button type="button" class="te-link-copy te-ficha-lk${teFichaAberta() ? ' on' : ''}" onclick="teFichaAlterna()" title="Ficha do aluno: plano e respostas da anamnese">📄 ficha</button>` +
       (_LOJA ? `<a href="#" onclick="teAbrirProtoAqui();return false;" title="Abrir o protocolo do aluno aqui no app"><span class="te-ico">🔗 </span>abrir protocolo</a>` : `<a href="${protoUrl}" target="_blank" rel="noopener" title="Abrir o protocolo do aluno numa nova aba"><span class="te-ico">🔗 </span>abrir protocolo</a>`) +
       `<button type="button" class="te-link-copy" onclick="teCopyProtoLink(this)" title="Copiar o link do protocolo pra mandar pro aluno">copiar link</button>` +
     `</span>`;
@@ -30761,7 +30830,160 @@ function renderEditorTopBar() {
     <button class="te-mode-tab${currentEditMode === 'raiox' ? ' active' : ''}" ${trainerData ? `onclick="switchEditMode('raiox')"` : 'disabled'}><span class="te-ico">🩻 </span>RAIO-X</button>
   `;
   document.getElementById('teModeTabs').innerHTML = tabs;
+  try { teFichaSinc(); } catch (_) {}   // v656
 }
+
+// ── v656 (GH 17/11, plano C): FICHA do aluno dentro do editor. Lê a rota ficha_aluno do .gs 2026-11-17b (plano da mestre e
+// anamneses em pergunta e resposta, sem CPF, e-mail, valor nem telefone). No notebook fica ao lado do editor; no celular sobe
+// do rodapé. As respostas ficam SÓ na memória da página: nada de anamnese vai pro armazenamento do aparelho.
+const _teFi = { cache: new Map(), sid: '', st: null, sel: 0, grupo: 'resumo', busca: '', ped: 0, naos: false };
+const _TE_FI_GRUPOS = [['resumo', 'Resumo'], ['saude', 'Saúde'], ['treino', 'Treino'], ['comida', 'Comida'], ['supl', 'Suplemento'], ['rotina', 'Rotina'], ['medidas', 'Medidas'], ['tudo', 'Tudo']];
+const _TE_FI_RESUMO = ['16', '17', '18', '19.2', '19.1', '67', '68', '68.1', '83', '83.1', '74', '75', '76', '77', '78', '59', '58.2', '85', '86', '126', '128'];
+const _teFiNorm = s => String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+const _teFiNum = p => { const m = /^\s*(\d+(?:\.\d+)?)\s*[.)]?\s+/.exec(String(p || '')); return m ? m[1] : ''; };
+const _teFiTxt = p => String(p || '').replace(/^\s*\d+(?:\.\d+)?\s*[.)]?\s+/, '');
+// resposta que quer dizer "nada a declarar": some da aba Saúde (com um toque volta) e não entra no bloco Atenção
+const _teFiNeg = r => /^(nao|n|nenhum|nenhuma|nada|nunca|nao tenho|nao possuo|nao uso|nao utilizo|nao sinto|nao fiz|nao sei|n\/a|-+|0)[.!]?$/.test(_teFiNorm(r).trim());
+function _teFiGrupoDe(p) {
+  const s = _teFiNum(p); if (!s) return 'tudo';
+  const n = parseFloat(s);
+  if (s === '30' || s === '32' || s === '52') return 'comida';
+  if (s === '100' || s === '119' || s === '9' || s === '10' || (n >= 105 && n <= 110 && s !== '107')) return 'supl';
+  if ((n >= 20 && n <= 56) || s === '107') return 'saude';
+  if (s === '19.1' || (n >= 69 && n < 84)) return 'treino';
+  if ((n >= 84 && n <= 101) || s === '118') return 'comida';
+  if ((n >= 57 && n <= 66) || (n >= 102 && n <= 104)) return 'rotina';
+  if ((n >= 16 && n < 19) || s === '19.2' || (n >= 121 && n <= 131)) return 'medidas';
+  if (n === 67 || (n >= 68 && n < 69)) return 'treino';
+  return 'tudo';
+}
+function teFichaAberta() { const e = document.getElementById('teFicha'); return !!(e && !e.hidden); }
+function _teFiLargo() { return window.innerWidth >= 900; }
+function _teFiCaixa() {
+  let e = document.getElementById('teFicha');
+  if (e) return e;
+  const ed = document.getElementById('trainerEditor'); if (!ed) return null;
+  e = document.createElement('aside'); e.id = 'teFicha'; e.className = 'te-fi'; e.hidden = true;
+  e.innerHTML = '<div class="te-fi-cab"><b>Ficha</b><span id="teFiNome"></span>' +
+    '<button type="button" class="te-fi-bt" onclick="_teFichaCarrega(true)" title="Buscar a ficha de novo" aria-label="Buscar a ficha de novo">↻</button>' +
+    '<button type="button" class="te-fi-bt te-fi-tam" onclick="teFichaTam()" title="Aumentar ou diminuir" aria-label="Aumentar ou diminuir">⤢</button>' +
+    '<button type="button" class="te-fi-bt" onclick="teFichaAlterna(false)" title="Fechar a ficha" aria-label="Fechar a ficha">✕</button></div>' +
+    '<div class="te-fi-corpo" id="teFiCorpo"></div>';
+  ed.appendChild(e);
+  window.addEventListener('resize', _teFiPosiciona);
+  return e;
+}
+function _teFiPosiciona() {
+  const e = document.getElementById('teFicha'), b = document.querySelector('#trainerEditor .te-top-bar');
+  if (!e || !b) return;
+  const h = Math.round(b.getBoundingClientRect().height) || 56;
+  e.style.top = (_teFiLargo() || e.classList.contains('alta')) ? h + 'px' : '';
+}
+function teFichaTam() { const e = document.getElementById('teFicha'); if (e) { e.classList.toggle('alta'); _teFiPosiciona(); } }
+function teFichaAlterna(abre) {
+  const e = _teFiCaixa(), ed = document.getElementById('trainerEditor'); if (!e || !ed) return;
+  const vai = typeof abre === 'boolean' ? abre : e.hidden;
+  e.hidden = !vai; ed.classList.toggle('com-ficha', vai);
+  document.querySelectorAll('#teFichaBtn, .te-ficha-lk').forEach(b => b.classList.toggle('on', vai));
+  try { localStorage.setItem('gh_te_ficha', vai ? '1' : '0'); } catch (_) {}
+  if (!vai) return;
+  _teFiPosiciona();
+  if (_teFi.sid !== trainerSheetId || !_teFi.st || _teFi.st.erro) _teFichaCarrega(false); else _teFichaDesenha();
+}
+// chamada a cada desenho do topo do editor: troca de aluno recarrega a ficha aberta; no notebook ela reabre sozinha se ficou aberta
+function teFichaSinc() {
+  const ed = document.getElementById('trainerEditor'); if (!ed || !trainerSheetId) return;
+  if (teFichaAberta()) { _teFiPosiciona(); if (_teFi.sid !== trainerSheetId) _teFichaCarrega(false); return; }
+  let quer = false; try { quer = localStorage.getItem('gh_te_ficha') === '1'; } catch (_) {}
+  if (quer && _teFiLargo() && _teFi.sid !== trainerSheetId && localStorage.getItem('gh_trainer_token')) teFichaAlterna(true);
+}
+function teFichaSai() {   // ao sair do editor: fecha sem mexer na preferência e esquece o aluno
+  const e = document.getElementById('teFicha'), ed = document.getElementById('trainerEditor');
+  if (e) e.hidden = true; if (ed) ed.classList.remove('com-ficha');
+  document.querySelectorAll('#teFichaBtn, .te-ficha-lk').forEach(b => b.classList.remove('on'));
+  _teFi.sid = ''; _teFi.st = null; _teFi.ped++; _teFi.cache.clear();
+  const c = document.getElementById('teFiCorpo'); if (c) c.innerHTML = '';
+}
+function teFichaSenha() { if (_trainerToken_(true)) _teFichaCarrega(true); }
+async function _teFichaCarrega(fresh) {
+  const sid = trainerSheetId; if (!sid) return;
+  if (_teFi.sid !== sid) { _teFi.sel = 0; _teFi.grupo = 'resumo'; _teFi.busca = ''; _teFi.naos = false; }
+  _teFi.sid = sid;
+  const guard = _teFi.cache.get(sid);
+  if (guard && !fresh) { _teFi.st = { j: guard }; _teFichaDesenha(); return; }
+  const tok = localStorage.getItem('gh_trainer_token') || '';
+  if (!tok) { _teFi.st = { erro: 'Falta a senha do treinador neste aparelho.', senha: true }; _teFichaDesenha(); return; }
+  const ped = ++_teFi.ped;
+  _teFi.st = { car: true }; _teFichaDesenha();
+  let st;
+  try {
+    const r = await fetch(TRAINER_APPS_SCRIPT + '?action=ficha_aluno&id=' + encodeURIComponent(sid) + '&token=' + encodeURIComponent(tok) + (fresh ? '&fresh=1' : '') + '&_=' + Date.now(), { cache: 'no-store' });
+    const j = await r.json();
+    if (j && j.ok && Array.isArray(j.fichas)) { _teFi.cache.set(sid, j); st = { j }; }
+    else if (j && j.error === 'unauthorized') st = { erro: 'A senha do treinador deste aparelho não confere.', senha: true };
+    else if (j && j.error === 'aluno nao encontrado') st = { erro: 'Não achei este aluno na planilha mestre. O link do protocolo dele ainda não está lá.' };
+    else st = { erro: 'A ficha não veio agora.' };
+  } catch (_) { st = { erro: 'Sem resposta do servidor. Confere a internet.' }; }
+  if (ped !== _teFi.ped || sid !== trainerSheetId) return;   // trocou de aluno no meio do caminho
+  _teFi.st = st; _teFichaDesenha();
+}
+function _teFiResp(r) {   // resposta em texto; link de anexo (foto, exame) vira botão de abrir
+  return escTrainer(String(r || '')).replace(/https:\/\/(?:drive|docs)\.google\.com\/[^\s,;<>"']+/g, u => '<a href="' + u + '" target="_blank" rel="noopener">abrir anexo</a>');
+}
+function _teFiLinha(x, forte) {
+  const n = _teFiNum(x.p);
+  return '<div class="te-fi-qa' + (forte ? ' forte' : '') + '"><span>' + (n ? '<i>' + escTrainer(n) + '</i>' : '') + escTrainer(_teFiTxt(x.p)) + '</span><p>' + _teFiResp(x.r) + '</p></div>';
+}
+function _teFichaLista() {
+  const st = _teFi.st, j = st && st.j; if (!j) return '';
+  const f = j.fichas[_teFi.sel] || j.fichas[0]; if (!f) return '';
+  const resp = f.respostas || [], b = _teFiNorm(_teFi.busca).trim();
+  if (b) {
+    const ach = resp.filter(x => _teFiNorm(x.p).includes(b) || _teFiNorm(x.r).includes(b));
+    return ach.length ? ach.map(x => _teFiLinha(x)).join('') : '<div class="te-fi-vazio">Nada com esse termo nesta ficha.</div>';
+  }
+  if (f.fonte !== 'inicial' || _teFi.grupo === 'tudo') return resp.map(x => _teFiLinha(x)).join('');
+  if (_teFi.grupo === 'resumo') {
+    const por = new Map(resp.map(x => [_teFiNum(x.p), x]));
+    const base = _TE_FI_RESUMO.map(n => por.get(n)).filter(Boolean);
+    const alerta = resp.filter(x => _teFiGrupoDe(x.p) === 'saude' && !_teFiNeg(x.r));
+    const comida = resp.filter(x => ['30', '32', '52'].includes(_teFiNum(x.p)) && !_teFiNeg(x.r));
+    return (alerta.length || comida.length ? '<div class="te-fi-gr at">Atenção</div>' + alerta.concat(comida).map(x => _teFiLinha(x, true)).join('') : '<div class="te-fi-gr">Atenção</div><div class="te-fi-vazio">Nenhuma dor, doença, remédio ou alergia marcada.</div>') +
+      '<div class="te-fi-gr">O principal</div>' + (base.length ? base.map(x => _teFiLinha(x)).join('') : '<div class="te-fi-vazio">Esta ficha não tem as perguntas de sempre. Olha em Tudo.</div>');
+  }
+  let lista = resp.filter(x => _teFiGrupoDe(x.p) === _teFi.grupo), escond = 0;
+  if (_teFi.grupo === 'saude' && !_teFi.naos) { const antes = lista.length; lista = lista.filter(x => !_teFiNeg(x.r)); escond = antes - lista.length; }
+  return (lista.length ? lista.map(x => _teFiLinha(x)).join('') : '<div class="te-fi-vazio">' + (escond ? 'Nada marcado aqui.' : 'Sem resposta neste grupo.') + '</div>') +
+    (_teFi.grupo === 'saude' && (escond || _teFi.naos) ? '<button type="button" class="te-fi-naos" onclick="teFichaNaos()">' + (_teFi.naos ? 'Esconder as respostas "não"' : 'Mostrar ' + (escond === 1 ? 'a resposta "não" escondida' : 'as ' + escond + ' respostas "não" escondidas')) + '</button>' : '');
+}
+function _teFichaDesenha() {
+  const e = document.getElementById('teFicha'), c = document.getElementById('teFiCorpo'); if (!e || !c) return;
+  const st = _teFi.st || {}, nm = document.getElementById('teFiNome');
+  if (nm) nm.textContent = st.j ? st.j.nome || '' : '';
+  if (st.car) { c.innerHTML = '<div class="te-fi-msg"><div class="te-fi-roda"></div>Buscando a ficha. Na primeira vez leva uns 10 segundos.</div>'; return; }
+  if (st.erro) {
+    c.innerHTML = '<div class="te-fi-msg">' + escTrainer(st.erro) + '<div class="te-fi-msg-bts">' + (st.senha ? '<button type="button" onclick="teFichaSenha()">Digitar a senha</button>' : '') + '<button type="button" onclick="_teFichaCarrega(true)">Tentar de novo</button></div></div>';
+    return;
+  }
+  const j = st.j; if (!j) { c.innerHTML = ''; return; }
+  if (_teFi.sel >= j.fichas.length) _teFi.sel = 0;
+  const f = j.fichas[_teFi.sel];
+  const plano = (j.mestre || []).map(x => '<div><span>' + escTrainer(x.p) + '</span><b>' + escTrainer(x.r) + '</b></div>').join('');
+  const abas = j.fichas.map((x, i) => '<button type="button" class="' + (i === _teFi.sel ? 'on' : '') + '" onclick="teFichaAba(' + i + ')">' + (x.fonte === 'inicial' ? 'Inicial' : 'Reajuste') + (x.data ? ' ' + escTrainer(String(x.data).slice(0, 10)) : '') + '</button>').join('');
+  const grupos = f && f.fonte === 'inicial' ? '<div class="te-fi-grupos" id="teFiGrupos">' + _TE_FI_GRUPOS.map(g => '<button type="button" class="' + (g[0] === _teFi.grupo ? 'on' : '') + '" onclick="teFichaGrupo(\'' + g[0] + '\')">' + g[1] + '</button>').join('') + '</div>' : '';
+  c.innerHTML = (plano ? '<div class="te-fi-plano">' + plano + '</div>' : '') +
+    (j.fichas.length ? '<div class="te-fi-abas">' + abas + '</div>' + (j.total > j.fichas.length ? '<div class="te-fi-nota">Mostrando as ' + j.fichas.length + ' mais novas de ' + j.total + '.</div>' : '') +
+      '<input type="search" class="te-fi-busca" id="teFiBusca" placeholder="Buscar na ficha: peso, joelho, horário..." value="' + escTrainer(_teFi.busca) + '" oninput="teFichaBusca(this.value)" autocomplete="off" enterkeyhint="search">' +
+      grupos + '<div class="te-fi-lista" id="teFiLista">' + _teFichaLista() + '</div>'
+      : '<div class="te-fi-msg">Não achei anamnese deste aluno pelo telefone que está na mestre.</div>');
+  const g = document.getElementById('teFiGrupos'), on = g && g.querySelector('.on');   // o grupo escolhido fica à vista na fileira que rola
+  if (on) g.scrollLeft = Math.max(0, on.offsetLeft - g.offsetLeft - 40);
+}
+function _teFiSoLista() { const l = document.getElementById('teFiLista'); if (l) { l.innerHTML = _teFichaLista(); l.scrollTop = 0; } }
+function teFichaBusca(v) { _teFi.busca = String(v || ''); const g = document.getElementById('teFiGrupos'); if (g) g.classList.toggle('apagado', !!_teFi.busca.trim()); _teFiSoLista(); }
+function teFichaGrupo(g) { _teFi.grupo = g; _teFi.busca = ''; _teFichaDesenha(); }
+function teFichaAba(i) { _teFi.sel = i; _teFi.busca = ''; _teFichaDesenha(); }
+function teFichaNaos() { _teFi.naos = !_teFi.naos; _teFiSoLista(); }
 
 // v653: "⋯" do topo do editor no celular
 function teMaisAlterna(abre) {
@@ -30769,7 +30991,7 @@ function teMaisAlterna(abre) {
   b.classList.toggle('mais', typeof abre === 'boolean' ? abre : !b.classList.contains('mais'));
 }
 document.addEventListener('click', e => {
-  const t = e.target && e.target.closest && e.target.closest('#teCopiaBtn, #teRecadoBtn, #teFantasmaBtn, #trainerTplBtn, #teMaisLinks a, #teMaisLinks button');
+  const t = e.target && e.target.closest && e.target.closest('#teFichaBtn, #teCopiaBtn, #teRecadoBtn, #teFantasmaBtn, #trainerTplBtn, #teMaisLinks a, #teMaisLinks button');
   if (t) setTimeout(() => teMaisAlterna(false), 0);
 });
 
@@ -32146,6 +32368,7 @@ function trainerExit() {
   dietaData = null;
   trainerSheetId = null;
   try { teFantasmaFechar(); } catch (_) {}   // v605
+  try { teFichaSai(); } catch (_) {}   // v656
   _teFant = null;
   if (_LOJA && SHEET_ID) location.replace(location.pathname + (params.get('loja') === '1' ? '?loja=1' : ''));   // v630: no app da loja o ✕ volta pro painel
 }
