@@ -3765,6 +3765,12 @@
   /* ══ v653 (GH 17/11, plano C): editor mais rápido no celular ══ */
   #teMaisBtn, .te-mais-links, .te-undo-cel, .te-ex-resumo { display: none; }
   .di-tudo-bar { display: flex; justify-content: flex-end; margin: 0 0 8px; }
+  /* ══ v659: rótulo do dia do ciclo de carbo, no lugar ══ */
+  .di-dia { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 14px 0 6px; padding: 8px 10px; background: #1c1a12; border: 1px solid #6b5a22; border-left: 3px solid var(--gold); border-radius: 7px; }
+  .di-dia-t { font-size: 10.5px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: var(--gold); white-space: nowrap; }
+  .di-dia input { min-width: 0; background: #111; border: 1px solid #333; color: #eee; border-radius: 5px; padding: 6px 8px; font-size: 13px; font-family: inherit; }
+  .di-dia-n { flex: 2 1 160px; font-weight: 700; }
+  .di-dia-d { flex: 1 1 110px; }
   /* ══ v658 (GH 17/11, plano C): fila de quem está sem protocolo ══ */
   .tf-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 4px 2px 2px; }
   .tf-cab b { font-size: 12px; color: var(--gold); letter-spacing: 0.3px; text-transform: uppercase; white-space: nowrap; }
@@ -4939,6 +4945,9 @@ html[data-theme="light"] .te-conf-it.erro i { background: #c0392b; }
 html[data-theme="light"] .te-conf-it b { color: #999; }
 html[data-theme="light"] .te-conf-salva { color: #3a3a3a; border-color: rgba(0, 0, 0, 0.3); }
 html[data-theme="light"] .te-conf-alvo { outline-color: #c27a00 !important; }
+html[data-theme="light"] .di-dia { background: #fbf6e6; border-color: #B8913F; }
+html[data-theme="light"] .di-dia-t { color: #8a6410; }
+html[data-theme="light"] .di-dia input { background: #fff; border-color: rgba(0, 0, 0, 0.2); color: #141414; }
 html[data-theme="light"] .tf-cab b { color: #8a6410; }
 html[data-theme="light"] .tf-cab span, html[data-theme="light"] .tf-nota { color: #6b6b6b; }
 html[data-theme="light"] .tf-conf { background: #fff; border-color: #B8913F; color: #141414; }
@@ -17585,9 +17594,10 @@ function youtubeEmbed(url) {
 // pontuação o travessão some; no resto vira hífen, com os mesmos espaços que tinha (8 a 12 com travessão vira 8-12). O
 // título de grupo da dieta (traço no começo e no fim da célula) segue reconhecido, porque o leitor já aceitava hífen ali.
 // O nome do exercício continua casando com vídeo, carga e recorde: a comparação de nomes já tratava os dois como iguais.
+let _csvCru = false;   // v659: o editor lê a planilha sem essa troca (parseCSVCru)
 function _semTravessao(s) {
   const t = String(s == null ? '' : s);
-  if (!/[\u2013\u2014]/.test(t)) return t;
+  if (_csvCru || !/[\u2013\u2014]/.test(t)) return t;
   return t.replace(/([;:,.!?])\s*[\u2013\u2014]\s*(?=\S)/g, '$1 ').replace(/[\u2013\u2014]/g, '-');
 }
 // leitura linha a linha (a de sempre): fica de reserva pro caso de aspas desencontradas no texto
@@ -29497,7 +29507,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v658';
+    var APP_SHELL_V = 'metodo-gh-v659';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
@@ -30875,6 +30885,84 @@ function _tfBranco_(sid, vazias) {
   };
 }
 
+// ── v659 (17/11, aviso da Reajustes na Sala #4777): o Salvar do editor regrava a aba INTEIRA. Três consertos:
+//  1) o editor lia a planilha pelo leitor do app do aluno, que troca travessão por hífen pra tela; ao salvar, o separador
+//     "— X —" da planilha virava "- X -". Agora o editor lê SEM essa troca (parseCSVCru): o que não foi mexido volta igual.
+//  2) o rótulo do dia do ciclo de carbo (linha "ciclo" com refeição depois) aparecia no bloco de protocolos, longe das
+//     refeições que ele nomeia. Agora aparece como divisor, no lugar, antes da primeira refeição daquele dia.
+//  3) se a aba mudou na planilha depois que o editor abriu (outra conversa gravou), o Salvar avisa antes de passar por cima.
+function parseCSVCru(text) { _csvCru = true; try { return parseCSV(text); } finally { _csvCru = false; } }
+const _teBase = { sid: '', TREINO: null, DIETA: null, vez: 0 };   // texto de cada aba como veio na abertura (só na memória)
+function _teBaseGuarda_(sid, t, d) { _teBase.sid = String(sid || ''); _teBase.TREINO = t; _teBase.DIETA = d; _teBase.vez++; }
+function _teCsvNorm_(txt) {
+  const out = [];
+  parseCSVCru(txt).forEach(r => { const o = (r || []).map(c => String(c == null ? '' : c).trim()); while (o.length && o[o.length - 1] === '') o.pop(); if (o.length) out.push(o); });
+  return JSON.stringify(out);
+}
+async function _teLeAbaCsv_(sid, tab) {
+  const ctl = typeof AbortController === 'function' ? new AbortController() : null, t = setTimeout(() => { try { ctl && ctl.abort(); } catch (_) {} }, 8000);
+  try {
+    const r = await fetch('https://docs.google.com/spreadsheets/d/' + sid + '/gviz/tq?tqx=out:csv&sheet=' + tab + '&headers=0&_=' + Date.now(), ctl ? { signal: ctl.signal } : undefined);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.text();
+  } finally { clearTimeout(t); }
+}
+// true = pode salvar. Sem a leitura da abertura, ou sem conseguir reler agora, não segura o Salvar.
+async function _teMudouPassa_(tab) {
+  const sid = String(trainerSheetId || '');
+  
+  if (_teBase.sid !== sid || _teBase[tab] == null) return true;
+  let agora = null; try { agora = await _teLeAbaCsv_(sid, tab); } catch (_) { return true; }
+  if (String(trainerSheetId || '') !== sid) return false;
+  let igual = agora === _teBase[tab];
+  if (!igual) { try { igual = _teCsvNorm_(agora) === _teCsvNorm_(_teBase[tab]); } catch (_) { igual = true; } }
+  if (igual) return true;
+  return confirm('ATENÇÃO: a aba ' + tab + ' deste aluno mudou na planilha depois que tu abriu o editor (outra conversa ou outra pessoa gravou).\n\nSe salvar agora, o que foi gravado lá é apagado e fica o que está na tua tela.\n\nOK = salvar por cima mesmo assim.\nCancelar = não salvar. Aí fecha o editor e abre o aluno de novo pra ver o que mudou.');
+}
+// depois de salvar, a referência passa a ser o que ficou na planilha. A leitura pode demorar uns segundos pra refletir:
+// fica com a primeira que bate com o que foi gravado; na terceira tentativa fica com o que vier.
+function _teBaseDepois_(tab, gravado) {
+  const sid = String(trainerSheetId || ''), vez = _teBase.vez;
+  if (_teBase.sid !== sid) return;
+  _teBase[tab] = null;
+  let alvo = null;
+  try { const o = []; (gravado || []).forEach(r => { const c = (r || []).map(v => String(v == null ? '' : v).replace(/\s*\r?\n\s*/g, '\n').trim()); while (c.length && c[c.length - 1] === '') c.pop(); if (c.length) o.push(c); }); alvo = JSON.stringify(o); } catch (_) {}
+  let n = 0;
+  const tenta = async () => {
+    if (_teBase.sid !== sid || _teBase.vez !== vez || _teBase[tab] != null) return;
+    n++;
+    let t = null; try { t = await _teLeAbaCsv_(sid, tab); } catch (_) {}
+    if (_teBase.sid !== sid || _teBase.vez !== vez || _teBase[tab] != null) return;
+    let bate = false; if (t != null && alvo != null) { try { bate = _teCsvNorm_(t) === alvo; } catch (_) {} }
+    if (t != null && (bate || n >= 3)) { _teBase[tab] = t; return; }
+    if (n < 3) setTimeout(tenta, 4000);
+  };
+  setTimeout(tenta, 2500);
+}
+// linhas "ciclo" que são CABEÇALHO de dia (têm refeição depois, antes de outro ciclo): mapa da refeição pro cabeçalho dela
+function _diDiaCab_(rows) {
+  const sec = r => String((r && r[0]) || '').toLowerCase().trim();
+  const porRef = new Map(), cab = new Set(); let pend = -1;
+  (rows || []).forEach((r, i) => { const s = sec(r); if (s === 'ciclo') pend = i; else if (s === 'ref' && pend >= 0) { porRef.set(i, pend); cab.add(pend); pend = -1; } });
+  return { porRef, cab };
+}
+function renderDietaDia(idx) {
+  const r = dietaData[idx]; if (!r) return '';
+  const tem3 = String(r[3] || '').trim() !== '';
+  return `<div class="di-dia" data-idx="${idx}"><span class="di-dia-t">Dia do ciclo</span>
+    <input type="text" class="di-dia-n" value="${escTrainer(r[1])}" oninput="dietaData[${idx}][1]=this.value;diMacAgenda()" placeholder="Nome do dia (ex.: DIA ALTO)" aria-label="Nome do dia do ciclo">
+    <input type="text" class="di-dia-d" value="${escTrainer(r[2])}" oninput="dietaData[${idx}][2]=this.value" placeholder="Detalhe" aria-label="Detalhe do dia">
+    ${tem3 ? `<input type="text" class="di-dia-d" value="${escTrainer(r[3])}" oninput="dietaData[${idx}][3]=this.value" placeholder="Observação" aria-label="Observação do dia">` : ''}
+    <button type="button" class="te-trash" onclick="dietaRemoveDia(${idx})" title="Apagar o rótulo do dia" aria-label="Apagar o rótulo do dia">🗑</button></div>`;
+}
+function dietaRemoveDia(idx) {
+  const r = dietaData[idx]; if (!r || String(r[0] || '').toLowerCase().trim() !== 'ciclo') return;
+  if (!confirm('Apagar o rótulo "' + String(r[1] || '').trim() + '"?\n\nAs refeições deste dia NÃO são apagadas: ficam sem rótulo, juntas com as do dia de cima, e o aluno deixa de ver os dias separados.')) return;
+  teSnapshot();
+  dietaData.splice(idx, 1);
+  renderDietaEditor();
+}
+
 function openTrainerSheetModal() {
   document.getElementById('trainerSheetIdInput').value = '';
   teShow('trainerSheetModal');
@@ -30913,8 +31001,9 @@ async function trainerLoadSheet(presetSid) {
     ]);
     const tText = tResp.ok ? await tResp.text() : '';
     const dText = dResp.ok ? await dResp.text() : '';
-    const tParsed = tText ? parseCSV(tText).map(r => { while (r.length < 8) r.push(''); return r.slice(0, 8); }) : [];
-    const dParsed = dText ? parseCSV(dText).map(r => { while (r.length < 4) r.push(''); return r.slice(0, 4); }) : [];
+    const tParsed = tText ? parseCSVCru(tText).map(r => { while (r.length < 8) r.push(''); return r.slice(0, 8); }) : [];
+    const dParsed = dText ? parseCSVCru(dText).map(r => { while (r.length < 4) r.push(''); return r.slice(0, 4); }) : [];
+    _teBaseGuarda_(sid, tResp.ok ? tText : null, dResp.ok ? dText : null);   // v659: referência pro aviso de "mudou depois que abriu"
     trainerData = (tParsed.length >= 2) ? tParsed : null;
     dietaData   = (dParsed.length >= 2) ? dParsed : null;
     // Reseta undo stack ao carregar treino novo (evita misturar histórico de sheets)
@@ -31201,7 +31290,7 @@ function _fantVersoes(j, tab) {
     const csv = tab === 'TREINO' ? m.treinoCsv : m.dietaCsv;
     const p = String(m.data || '').split('-');
     if (!csv || p.length !== 3) return;
-    lista.push({ ms: new Date(+p[0], +p[1] - 1, +p[2], 5).getTime(), rotulo: 'Como estava em ' + p[2] + '/' + p[1] + '/' + p[0] + ' (cópia do mês)', rows: parseCSV(csv) });
+    lista.push({ ms: new Date(+p[0], +p[1] - 1, +p[2], 5).getTime(), rotulo: 'Como estava em ' + p[2] + '/' + p[1] + '/' + p[0] + ' (cópia do mês)', rows: parseCSVCru(csv) });
   });
   lista.sort((a, b) => b.ms - a.ms);
   const atual = tab === 'TREINO' ? trainerData : dietaData;
@@ -32491,6 +32580,7 @@ async function trainerSave() {
       while (out.length < cols) out.push('');
       return out.slice(0, cols);
     });
+    if (!(await _teMudouPassa_(tab))) { btn.textContent = orig; btn.disabled = false; return; }   // v659: a aba mudou depois que o editor abriu
     const _pb = await _publicaAba_(TRAINER_APPS_SCRIPT, { sheetId: trainerSheetId, tab, values: data, skipDispatch: true });   // v554: com a senha do treinador
     const resp = _pb.resp;
     if (!resp.ok) throw new Error(`HTTP ${resp.status} ${resp.statusText}`);
@@ -32499,6 +32589,7 @@ async function trainerSave() {
     try { const j = JSON.parse(txt); ok = j.success; errMsg = j.error || ''; } catch (_) { errMsg = txt.slice(0, 300); }
     btn.textContent = ok ? '✅ Salvo' : '❌ Falhou';
     if (ok) _teFant = null;   // v605: a publicação guardou uma versão nova, o fantasma busca de novo
+    if (ok) { try { _teBaseDepois_(tab, data); } catch (_) {} }   // v659
     if (!ok) alert('Apps Script retornou erro:\n\n' + errMsg);
     setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2500);
   } catch (e) {
@@ -32515,6 +32606,7 @@ function trainerExit() {
   trainerData = null;
   dietaData = null;
   trainerSheetId = null;
+  try { _teBaseGuarda_('', null, null); } catch (_) {}   // v659
   try { teFantasmaFechar(); } catch (_) {}   // v605
   try { teFichaSai(); } catch (_) {}   // v656
   _teFant = null;
@@ -32665,7 +32757,9 @@ function renderDietaEditor() {
     `<button class="di-add-btn" onclick="dietaAddSimple('supl')">+ Suplemento</button>`);
 
   // REFEIÇÕES (cada uma é um bloco colapsável próprio)
+  const _dia = _diDiaCab_(dietaData);   // v659: o rótulo do dia do ciclo aparece antes da primeira refeição dele
   sections.refs.forEach((ref, ri) => {
+    if (_dia.porRef.has(ref.idx)) html += renderDietaDia(_dia.porRef.get(ref.idx));
     html += renderDietaRefeicao(ref, ri);
   });
   html += `<div class="di-ref-novas"><button class="di-add-btn" onclick="dietaAddRefeicao()">+ Refeição</button><button class="di-add-btn di-add-salva" onclick="dietaRefSalvaAbre()" title="Colocar uma das tuas refeições salvas">★ Refeição salva</button></div>`;
@@ -32680,8 +32774,9 @@ function renderDietaEditor() {
 
   // PROTOCOLOS (peptídeos / hormonais / ciclo carbo)
   if (sections.proto.length || true) {
-    html += renderDietaBlock('proto', '💉 PROTOCOLOS / CICLOS', sections.proto.length + ' itens',
-      sections.proto.map(r => renderDietaSimpleRow(r, ['Item', 'Dose', 'Observação'])).join('') +
+    const _protoL = sections.proto.filter(r => !_dia.cab.has(r.idx));
+    html += renderDietaBlock('proto', '💉 PROTOCOLOS / CICLOS', _protoL.length + ' itens',
+      _protoL.map(r => renderDietaSimpleRow(r, ['Item', 'Dose', 'Observação'])).join('') +
       `<div class="di-action-bar">
          <button class="di-add-btn" onclick="dietaAddSimple('proto')">+ Protocolo</button>
        </div>`);
@@ -32991,8 +33086,8 @@ function _teCopTreino_(atual, fonte) {
 async function _teCopLe_(sid) {
   const st = Date.now();
   const [t, d] = await Promise.all(['TREINO', 'DIETA'].map(a => fetch('https://docs.google.com/spreadsheets/d/' + sid + '/gviz/tq?tqx=out:csv&sheet=' + a + '&headers=0&_=' + st).then(r => r.ok ? r.text() : '').catch(() => '')));
-  const tp = t ? parseCSV(t).map(r => { while (r.length < 8) r.push(''); return r.slice(0, 8); }) : [];
-  const dp = d ? parseCSV(d).map(r => { while (r.length < 4) r.push(''); return r.slice(0, 4); }) : [];
+  const tp = t ? parseCSVCru(t).map(r => { while (r.length < 8) r.push(''); return r.slice(0, 8); }) : [];
+  const dp = d ? parseCSVCru(d).map(r => { while (r.length < 4) r.push(''); return r.slice(0, 4); }) : [];
   return { t: tp.length >= 2 ? tp : null, d: dp.length >= 2 ? dp : null };
 }
 function teCopiaAbrir() {
@@ -33973,7 +34068,8 @@ function teConfDieta(rows) {
 }
 function teConfTreino(rows) {
   const out = [], tx = v => String(v == null ? '' : v).trim();
-  _teConfTexto(rows, [1, 2, 3, 4, 5], out);
+  // v659: nome de exercício vem do banco e alguns têm travessão; o app do aluno já mostra com hífen e o nome não se mexe
+  rows.forEach((r, idx) => { if (!r) return; const ex = !isNaN(parseInt(r[0], 10)); [1, 2, 3, 4, 5].forEach(c => GHT.acha(r[c]).forEach(a => { if (ex && c === 1 && a.c === 'trav') return; out.push({ g: a.g, c: a.c, idx, m: a.m + ': "' + _teConfTrecho(r[c], a.c) + '"' }); })); });
   rows.forEach((r, idx) => {
     if (!r || isNaN(parseInt(r[0], 10))) return;
     const nome = tx(r[1]);
@@ -34011,8 +34107,9 @@ function teConfConserta(qual) {
   teSnapshot();
   if (qual === 'trav') {
     const cols = t ? [1, 2, 3, 4, 5] : [1, 2, 3];
-    rows.forEach(r => { if (!r) return; cols.forEach(c => { const v = String(r[c] == null ? '' : r[c]); if (!/[\u2014\u2013]/.test(v) || /^[\u2014\u2013].*[\u2014\u2013]$/.test(v.trim()) || /^https?:/i.test(v.trim())) return;
-      r[c] = v.replace(/\s*[\u2014\u2013]\s*/g, ', ').replace(/^, /, '').replace(/, $/, '').replace(/,\s*,/g, ','); }); });
+    rows.forEach(r => { if (!r) return; const _s = String(r[0] || '').toLowerCase().trim(); if (!t && (_s === 'proto' || _s === 'ciclo')) return;   // v659: linha de protocolo não é mexida pelo botão
+      cols.forEach(c => { if (t && c === 1 && !isNaN(parseInt(r[0], 10))) return; const v = String(r[c] == null ? '' : r[c]); if (!/[\u2014\u2013]/.test(v) || /^[\u2014\u2013].*[\u2014\u2013]$/.test(v.trim()) || /^https?:/i.test(v.trim())) return;
+      r[c] = v.replace(/(\d)\s*[\u2014\u2013]\s*(?=\d)/g, '$1 a ').replace(/\s*[\u2014\u2013]\s*/g, ', ').replace(/^, /, '').replace(/, $/, '').replace(/,\s*,/g, ','); }); });
   } else if (qual === 'vazia' && !t) {
     for (let i = rows.length - 1; i >= 0; i--) { const r = rows[i], s = String((r && r[0]) || '').toLowerCase().trim(); if (_TE_CONF_SIMPLES[s] && !String(r[1] || '').trim() && !String(r[2] || '').trim() && !String(r[3] || '').trim()) rows.splice(i, 1); }
   }
@@ -34025,7 +34122,7 @@ function teConfVai(i) {
   let el = null;
   if (currentEditMode === 'treino') { el = c.querySelector('.te-ex[data-idx="' + x.idx + '"]'); if (el) { try { teExAbre(x.idx); } catch (_) {} } }
   else if (x.idx >= 0) {
-    el = c.querySelector('.di-row[data-idx="' + x.idx + '"], .di-obs-row[data-idx="' + x.idx + '"]') || c.querySelector('.di-block[data-key="ref-' + x.idx + '"]');
+    el = c.querySelector('.di-row[data-idx="' + x.idx + '"], .di-obs-row[data-idx="' + x.idx + '"], .di-dia[data-idx="' + x.idx + '"]') || c.querySelector('.di-block[data-key="ref-' + x.idx + '"]');
     if (!el) { const op = c.querySelector('[data-opkc="' + x.idx + '"]'); if (op) el = op.closest('.di-op-head'); }
     const bl = el && el.closest('.di-block'); if (bl && !bl.classList.contains('open')) dietaToggleBlock(bl.dataset.key);
   } else { const b = document.getElementById('diMac'); if (b) { try { diMacPainel(true); } catch (_) {} el = b; } }
@@ -34292,11 +34389,12 @@ function dietaAddOpcao(refIdx) {
 function dietaAddRefeicao() {
   teSnapshot();
   // Adiciona refeição no final (antes de orient/proto se existirem, senão no fim)
-  const stopSections = new Set(['cardio', 'aerob', 'dica', 'orient', 'proto', 'ciclo']);
-  let insertAt = dietaData.length;
-  for (let j = 0; j < dietaData.length; j++) {
+  const stopSections = new Set(['cardio', 'aerob', 'dica', 'orient', 'proto', 'ciclo', 'regra', 'supl', 'info', 'meta']);
+  let insertAt = dietaData.length, _ultRef = -1;
+  dietaData.forEach((r, j) => { if (String((r && r[0]) || '').toLowerCase().trim() === 'ref') _ultRef = j; });   // v659: com ciclo de carbo entrava antes do primeiro dia
+  for (let j = _ultRef + 1; j < dietaData.length; j++) {
     const s = String(dietaData[j][0] || '').toLowerCase().trim();
-    if (stopSections.has(s)) { insertAt = j; break; }
+    if ((_ultRef >= 0 ? stopSections : new Set(['cardio', 'aerob', 'dica', 'orient', 'proto', 'ciclo'])).has(s)) { insertAt = j; break; }
   }
   dietaData.splice(insertAt, 0, ['ref', 'NOVA REFEIÇÃO', '', '']);
   renderDietaEditor();
