@@ -29212,7 +29212,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v650';
+    var APP_SHELL_V = 'metodo-gh-v651';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
@@ -32223,8 +32223,8 @@ function renderDietaSimpleRow(it, placeholders) {
 // Começa vazio: só entra o que o GH salvar na estrela. Escolher uma linha preenche nome, dose e observação da linha
 // tocada (o tipo da linha não muda); o 💾 Salvar lá em cima continua sendo o que grava na planilha do aluno.
 const _SV_KEY = 'gh_linhas_salvas_v1';
-const _SV_GRUPO = { regra: 'regras', supl: 'supl', cardio: 'orient', aerob: 'orient', dica: 'orient', orient: 'orient', proto: 'proto', ciclo: 'proto' };
-const _SV_NOME = { regras: 'Regras', supl: 'Suplementação', orient: 'Cardio, dicas e orientações', proto: 'Protocolos', outros: 'Outras' };
+const _SV_GRUPO = { '': 'alim', alimento: 'alim', regra: 'regras', supl: 'supl', cardio: 'orient', aerob: 'orient', dica: 'orient', orient: 'orient', proto: 'proto', ciclo: 'proto' };
+const _SV_NOME = { regras: 'Regras', supl: 'Suplementação', orient: 'Cardio, dicas e orientações', proto: 'Protocolos', outros: 'Outras', alim: 'Alimentos' };
 let _svAlvo = null; // { input, idx, filtrou }
 function _svLe_() { try { const o = JSON.parse(localStorage.getItem(_SV_KEY) || '{}'); return (o && typeof o === 'object' && !Array.isArray(o)) ? o : {}; } catch (_) { return {}; } }
 function _svGrava_(o) { try { localStorage.setItem(_SV_KEY, JSON.stringify(o)); return true; } catch (_) { return false; } }
@@ -32236,7 +32236,8 @@ function _svPendLe_() { try { const a = JSON.parse(localStorage.getItem(_SV_PEND
 function _svPendGrava_(a) { try { localStorage.setItem(_SV_PEND, JSON.stringify(a)); } catch (_) {} }
 function _svDoServidor_(linhas) {
   if (!linhas || typeof linhas !== 'object') return;
-  const o = {}; Object.keys(linhas).forEach(g => { const l = Array.isArray(linhas[g]) ? linhas[g] : []; if (l.length) o[g] = l.map(x => ({ n: String(x.n || ''), d: String(x.d || ''), o: String(x.o || '') })); });
+  const _loc = _svLe_(); const o = {}; Object.keys(_loc).forEach(g => { if (!(g in linhas) && Array.isArray(_loc[g]) && _loc[g].length) o[g] = _loc[g]; });
+  Object.keys(linhas).forEach(g => { const l = Array.isArray(linhas[g]) ? linhas[g] : []; if (l.length) o[g] = l.map(x => ({ n: String(x.n || ''), d: String(x.d || ''), o: String(x.o || '') })); });
   // o que ainda está na fila continua valendo por cima do que o servidor mandou
   _svPendLe_().forEach(p => { const l = o[p.bloco] = (o[p.bloco] || []); const i = l.findIndex(x => _svIgual_(x, p.item)); if (p.op === 'salva' && i < 0) l.push(p.item); if (p.op === 'apaga' && i >= 0) l.splice(i, 1); });
   Object.keys(o).forEach(g => o[g].sort((a, b) => a.n.localeCompare(b.n, 'pt') || a.d.localeCompare(b.d, 'pt')));
@@ -32263,6 +32264,7 @@ async function _svEnvia_(perguntaSenha) {
       if (!localStorage.getItem('gh_trainer_token') && !(perguntaSenha && _trainerToken_(true))) break;
       let r; try { r = await _publicaAba_(TRAINER_APPS_SCRIPT, { type: 'linhas_salvas', op: p.op, bloco: p.bloco, item: p.item }); } catch (_) { break; }
       if (!r || !r.j || !r.j.ok || !r.j.linhas) break;   // .gs antigo (sem a rota) responde sem a lista: fica na fila
+      if (!(p.bloco in r.j.linhas)) break;   // v651: .gs sem esse bloco (alim antes do 2026-11-17a): fica na fila
       const resto = _svPendLe_(); if (resto.length && resto[0].op === p.op && resto[0].bloco === p.bloco && _svIgual_(resto[0].item, p.item)) resto.shift();
       _svPendGrava_(resto);
       _svDoServidor_(r.j.linhas);
@@ -32322,7 +32324,7 @@ function _svDesenha_() {
   // v650: campo já com nome e sem digitar = só as do mesmo nome (sem o parêntese); se não tem nenhuma, mostra todas
   const vNome = _svAlvo.input.value.trim(); let soNome = '';
   if (!_svAlvo.filtrou && !_svAlvo.todas && vNome) { const b = _svBase_(vNome); const m = daqui.filter(e => _svBase_(e.x.n) === b); if (m.length) { daqui = m; soNome = vNome.replace(/\s*\(.*$/, '').trim(); } }
-  const outros = q ? Object.keys(o).filter(k => k !== g).flatMap(k => (o[k] || []).map((x, i) => ({ x, g: k, i }))).filter(e => casa(e.x)) : [];
+  const outros = (q && g !== 'alim') ? Object.keys(o).filter(k => k !== g && k !== 'alim').flatMap(k => (o[k] || []).map((x, i) => ({ x, g: k, i }))).filter(e => casa(e.x)) : [];
   const item = e => '<div class="di-sv-item" role="option" onmousedown="event.preventDefault();diSvEscolhe(\'' + e.g + '\',' + e.i + ')">'
     + '<div class="di-sv-txt"><b>' + escTrainer(e.x.n) + '</b>' + (e.x.d ? '<span class="di-sv-d">' + escTrainer(e.x.d) + '</span>' : '') + (e.x.o ? '<small>' + escTrainer(e.x.o) + '</small>' : '') + '</div>'
     + '<button type="button" class="di-sv-x" onmousedown="event.preventDefault();event.stopPropagation();diSvApaga(\'' + e.g + '\',' + e.i + ')" title="Apagar das linhas salvas" aria-label="Apagar das linhas salvas">✕</button></div>';
@@ -32330,10 +32332,21 @@ function _svDesenha_() {
   if (daqui.length) h += daqui.map(item).join('');
   else if (!outros.length) h += '<div class="di-sv-vazio">' + (q ? 'Nenhuma linha salva com “' + escTrainer(_svAlvo.input.value.trim()) + '”.' : 'Nenhuma linha salva neste bloco ainda.') + '<br>Escreve a linha e toca na ☆ do lado do nome pra guardar.</div>';
   if (outros.length) h += '<div class="di-sv-head">De outros blocos</div>' + outros.map(item).join('');
+  if (g === 'alim' && q && typeof FOOD_BANK !== 'undefined') {
+    const ja = new Set((o.alim || []).map(x => _svNorm_(x.n + '|' + x.d)));
+    const bk = FOOD_BANK.map((x, i) => ({ x, i })).filter(e => _svNorm_(e.x.n).includes(q) && !ja.has(_svNorm_(e.x.n + '|' + (e.x.q || '')))).slice(0, 8);
+    if (bk.length) h += '<div class="di-sv-head">Banco de alimentos</div>' + bk.map(e => '<div class="di-sv-item" role="option" onmousedown="event.preventDefault();diSvBanco(' + e.i + ')"><div class="di-sv-txt"><b>' + escTrainer(e.x.n) + '</b>' + (e.x.q ? '<span class="di-sv-d">' + escTrainer(e.x.q) + '</span>' : '') + (e.x.o ? '<small>' + escTrainer(e.x.o) + '</small>' : '') + '</div></div>').join('');
+  }
   if (soNome) h += '<div class="di-sv-todas" role="option" onmousedown="event.preventDefault();diSvTodas()">Ver todas as linhas salvas de ' + _SV_NOME[g] + '</div>';
   d.innerHTML = h; d.hidden = false; _svPosiciona_();
 }
 function _svBase_(s) { return _svNorm_(s).replace(/\s*\(.*$/, '').replace(/\s+/g, ' ').trim(); }
+function diSvBanco(i) {
+  if (!_svAlvo || typeof FOOD_BANK === 'undefined') return; const f = FOOD_BANK[i]; if (!f) return;
+  const idx = _svAlvo.idx; const r = dietaData[idx]; if (!r) return;
+  r[1] = f.n; if (f.q) r[2] = f.q; if (f.o) r[3] = f.o;
+  diSvFecha(true); renderDietaEditor();
+}
 function diSvTodas() { if (!_svAlvo) return; _svAlvo.todas = true; _svDesenha_(); }
 function diSvAbre(input, idx) { _svAlvo = { input, idx, filtrou: false }; _svDesenha_(); _svSincroniza_(); }
 function diSvFiltra(input, idx) { if (!_svAlvo || _svAlvo.input !== input) _svAlvo = { input, idx, filtrou: true }; _svAlvo.filtrou = true; _svDesenha_(); diSvStar(idx); }
@@ -32441,9 +32454,9 @@ function renderDietaItem(it) {
           ondragend="diDragEnd()"
           ondragover="diDragOver(event)"
           ondrop="diDrop(${it.idx}, event)"><i class="te-dots">⋮⋮</i><span class="te-mv"><button type="button" class="te-mv-b" onclick="event.stopPropagation();diMove(${it.idx},-1)" aria-label="Subir" title="Subir">▲</button><button type="button" class="te-mv-b" onclick="event.stopPropagation();diMove(${it.idx},1)" aria-label="Descer" title="Descer">▼</button></span></span>
-    <input type="text" value="${escTrainer(r[1])}" oninput="dietaSetFoodName(${it.idx}, this)" onfocus="dietaSetFoodName(${it.idx}, this)" onblur="setTimeout(hideFoodSuggest, 250)" placeholder="Alimento (digita 2+ letras pra sugestões)">
-    <input type="text" value="${escTrainer(r[2])}" oninput="dietaData[${it.idx}][2]=this.value" placeholder="Qtd">
-    <input type="text" value="${escTrainer(r[3])}" oninput="dietaData[${it.idx}][3]=this.value" placeholder="Obs">
+    <span class="di-sv-wrap"><input type="text" class="di-sv-in" value="${escTrainer(r[1])}" oninput="dietaData[${it.idx}][1]=this.value;diSvFiltra(this,${it.idx})" onfocus="diSvAbre(this,${it.idx})" onblur="diSvFecha()" onkeydown="diSvTecla(event,this,${it.idx})" autocomplete="off" placeholder="Alimento"><button type="button" class="di-sv-star${_svTem_(it.idx) ? ' on' : ''}" onmousedown="event.preventDefault()" onclick="diSvSalva(${it.idx})" title="${_svTem_(it.idx) ? 'Linha salva. Toca pra tirar das tuas linhas salvas' : 'Salvar esta linha pra usar em outros alunos'}" aria-label="Salvar linha">${_svTem_(it.idx) ? '★' : '☆'}</button></span>
+    <input type="text" value="${escTrainer(r[2])}" oninput="dietaData[${it.idx}][2]=this.value;diSvStar(${it.idx})" placeholder="Qtd">
+    <input type="text" value="${escTrainer(r[3])}" oninput="dietaData[${it.idx}][3]=this.value;diSvStar(${it.idx})" placeholder="Obs">
     <button class="te-trash" onclick="dietaRemove(${it.idx})" title="Remover">🗑</button>
   </div>`;
 }
