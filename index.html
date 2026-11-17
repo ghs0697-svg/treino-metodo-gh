@@ -3842,6 +3842,12 @@
   .di-sv-txt small { display: block; color: #999; font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .di-sv-x { background: none; border: 0; color: #777; font-size: 12px; cursor: pointer; padding: 2px 4px; }
   .di-sv-x:hover { color: #e57373; }
+  .te-cop-sub { color: #888; font-size: 11px; margin: 0 0 8px; }
+  #teCopPartes h4 { font-size: 12px; margin: 12px 0 4px; color: var(--gold); font-weight: 700; }
+  .te-cop-parte { display: flex; align-items: center; gap: 10px; padding: 9px 4px; border-bottom: 1px solid #26262c; font-size: 13px; cursor: pointer; }
+  .te-cop-parte small { margin-left: auto; color: #888; font-size: 11px; }
+  .te-cop-parte.off { opacity: .45; cursor: default; }
+  html[data-theme="light"] .te-cop-parte { border-bottom-color: var(--glass-line); }
   .di-sv-todas { padding: 10px; font-size: 12px; color: var(--gold); text-align: center; cursor: pointer; border-top: 1px solid #2c2c2c; }
   .di-sv-todas:hover { text-decoration: underline; }
   .di-sv-vazio { padding: 12px 10px; font-size: 12px; color: #aaa; line-height: 1.5; }
@@ -8574,12 +8580,28 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
     <div class="te-mode-tabs" id="teModeTabs"></div>
     <button class="te-btn ghost" id="teUndoBtn" onclick="undoTrainerAction()" disabled title="Desfazer última ação (Ctrl+Z)"><span class="te-ico">↶ </span>Desfazer</button>
     <button class="te-tpl-btn" id="trainerTplBtn" onclick="openTrainerTemplateModal()" style="display:none;" title="Carregar template oficial (substitui exercícios mantendo info do aluno)"><span class="te-ico">📋 </span>Template</button>
+    <button class="te-btn ghost" id="teCopiaBtn" onclick="teCopiaAbrir()" title="Copiar treino, dieta ou parte da dieta de outro aluno">⧉<span class="te-lbl"> Copiar de</span></button>
     <button class="te-btn ghost" id="teRecadoBtn" onclick="openRecadoModal()" title="Gravar recado em áudio pro aluno (entrega inicial). Some em 2 dias.">🎙<span class="te-lbl"> Recado</span></button>
     <button class="te-btn ghost" id="teFantasmaBtn" onclick="teFantasmaAbrir()" title="Ver por cima como este protocolo estava antes (versão anterior). Só a equipe vê.">👻<span class="te-lbl"> Antes</span></button>
     <button class="te-btn" id="trainerSaveBtn" onclick="trainerSave()">💾 Salvar</button>
     <button class="te-btn ghost" onclick="trainerExit()">✕</button>
   </div>
   <div class="te-days-scroll" id="trainerDaysContainer" ondragover="teEdgeAutoScroll(event)"></div>
+</div>
+
+<!-- Modal: copiar de outro aluno (v652) -->
+<div class="te-modal-overlay" id="teCopiaModal">
+  <div class="te-modal-box" style="max-width:460px;">
+    <h3>⧉ Copiar de outro aluno</h3>
+    <p class="te-cop-sub">Busca um aluno parecido e escolhe o que trazer. O nome, os dados do aluno e o bloco de protocolo continuam os deste aluno.</p>
+    <input type="text" id="teCopBusca" placeholder="Nome do aluno" oninput="teCopiaBusca(this.value)" autocomplete="off">
+    <div class="trainer-student-list" id="teCopLista"></div>
+    <div id="teCopPartes" hidden></div>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button class="te-btn" id="teCopOk" onclick="teCopiaAplica()" disabled>Copiar</button>
+      <button class="te-btn ghost" onclick="teHide('teCopiaModal')">Cancelar</button>
+    </div>
+  </div>
 </div>
 
 <!-- Modal: gravar recado em áudio (só treinador) -->
@@ -29212,7 +29234,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v651';
+    var APP_SHELL_V = 'metodo-gh-v652';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
@@ -32341,6 +32363,129 @@ function _svDesenha_() {
   d.innerHTML = h; d.hidden = false; _svPosiciona_();
 }
 function _svBase_(s) { return _svNorm_(s).replace(/\s*\(.*$/, '').replace(/\s+/g, ' ').trim(); }
+// ── v652: copiar de outro aluno ──
+let _teCop = null;
+const _TECOP_NOMES = { treino: 'Treino (todos os dias)', refeicoes: 'Refeições e metas da dieta', regras: 'Regras', supl: 'Suplementação', orient: 'Cardio, dicas e orientações' };
+function _teCopSec_(r) { return String((r || [])[0] || '').toLowerCase().trim(); }
+function _teCopVazia_(r) { return !(r || []).slice(0, 4).some(c => String(c || '').trim()); }
+// parte de cada linha da DIETA; null = fica a do aluno aberto. Linha vazia (separadora) vai com a de cima.
+function _teCopMarca_(rows) {
+  let ult = null;
+  return rows.map((r, i) => {
+    if (_teCopVazia_(r)) return ult;
+    const s = _teCopSec_(r); let p;
+    if (i === 0 || s === 'info' || s === 'proto' || s === 'ciclo') p = null;
+    else if (s === 'regra') p = 'regras';
+    else if (s === 'supl') p = 'supl';
+    else if (s === 'dica' || s === 'cardio' || s === 'aerob' || s === 'orient') p = 'orient';
+    else if (s === 'meta') p = 'meta';
+    else p = 'refeicoes';
+    ult = p; return p;
+  });
+}
+function _teCopDieta_(atual, fonte, partes) {
+  if (partes.includes('refeicoes')) partes = partes.concat('meta');
+  const pa = _teCopMarca_(atual), pf = _teCopMarca_(fonte);
+  const daFonte = k => fonte.filter((r, i) => pf[i] === k).map(r => r.slice());
+  const out = [], feito = new Set();
+  atual.forEach((r, i) => {
+    const p = pa[i];
+    if (p && partes.includes(p)) { if (!feito.has(p)) { feito.add(p); out.push(...daFonte(p)); } return; }
+    out.push(r);
+  });
+  partes.filter(p => !feito.has(p)).forEach(p => {   // parte que o aluno ainda não tinha: entra antes do bloco de protocolo
+    const rows = daFonte(p); if (!rows.length) return;
+    let at = out.findIndex(r => /^(proto|ciclo)$/.test(_teCopSec_(r))); if (at < 0) at = out.length;
+    out.splice(at, 0, ...rows);
+  });
+  if (partes.includes('refeicoes')) {   // a kcal da linha info anda com as refeições; nome e objetivo ficam
+    const ia = out.findIndex(r => _teCopSec_(r) === 'info'), fi = fonte.find(r => _teCopSec_(r) === 'info');
+    if (ia >= 0 && fi && String(fi[2] || '').trim()) out[ia] = [out[ia][0], out[ia][1], fi[2], out[ia][3]];
+  }
+  return out;
+}
+function _teCopTreino_(atual, fonte) {
+  const ini = fonte.findIndex(r => /^\d/.test(String(r[0] || '').trim())); if (ini < 0) return null;
+  const cab = [];
+  for (let i = 0; i < atual.length; i++) { const s = _teCopSec_(atual[i]); if (/^\d/.test(s)) break; if (i === 0 || s === 'info' || s === 'restrict' || s === 'link') cab.push(atual[i]); }
+  return cab.concat(fonte.slice(ini).map(r => r.slice()));
+}
+async function _teCopLe_(sid) {
+  const st = Date.now();
+  const [t, d] = await Promise.all(['TREINO', 'DIETA'].map(a => fetch('https://docs.google.com/spreadsheets/d/' + sid + '/gviz/tq?tqx=out:csv&sheet=' + a + '&headers=0&_=' + st).then(r => r.ok ? r.text() : '').catch(() => '')));
+  const tp = t ? parseCSV(t).map(r => { while (r.length < 8) r.push(''); return r.slice(0, 8); }) : [];
+  const dp = d ? parseCSV(d).map(r => { while (r.length < 4) r.push(''); return r.slice(0, 4); }) : [];
+  return { t: tp.length >= 2 ? tp : null, d: dp.length >= 2 ? dp : null };
+}
+function teCopiaAbrir() {
+  if (!trainerData && !dietaData) return;
+  _teCop = null;
+  const b = document.getElementById('teCopBusca'); b.value = '';
+  document.getElementById('teCopLista').innerHTML = '';
+  const p = document.getElementById('teCopPartes'); p.hidden = true; p.innerHTML = '';
+  document.getElementById('teCopOk').disabled = true;
+  if (!trainerStudentsLoaded) { try { loadTrainerStudents(); } catch (_) {} }
+  teShow('teCopiaModal');
+  setTimeout(() => { try { b.focus(); } catch (_) {} }, 60);
+}
+function teCopiaBusca(query) {
+  const list = document.getElementById('teCopLista');
+  const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const q = norm(query).trim();
+  if (q.length < 2) { list.innerHTML = ''; return; }
+  if (!trainerStudentsLoaded) { list.innerHTML = '<p class="te-cop-sub">Carregando a lista de alunos…</p>'; return; }
+  const toks = q.split(/\s+/).filter(Boolean);
+  const achou = trainerStudentsList.filter(s => s.s !== trainerSheetId && toks.every(t => norm(s.n).includes(t))).slice(0, 12);
+  list.innerHTML = achou.length ? achou.map(s => '<button class="trainer-student-item" onclick="teCopiaEscolhe(\'' + _jsArgAttr(s.s) + '\', \'' + _jsArgAttr(s.n) + '\')"><span>' + escTrainer(s.n) + '</span>' + (s.d ? '<span class="trainer-student-meta">v ' + escTrainer(s.d) + '</span>' : '') + '</button>').join('') : '<p class="te-cop-sub">Nenhum aluno com esse nome.</p>';
+}
+async function teCopiaEscolhe(sid, nome) {
+  const p = document.getElementById('teCopPartes');
+  document.getElementById('teCopLista').innerHTML = '';
+  p.hidden = false; p.innerHTML = '<p class="te-cop-sub">Lendo o protocolo de ' + escTrainer(nome) + '…</p>';
+  document.getElementById('teCopOk').disabled = true;
+  let li; try { li = await _teCopLe_(sid); } catch (_) { li = { t: null, d: null }; }
+  if (!li.t && !li.d) { p.innerHTML = '<p class="te-cop-sub">Não consegui ler o protocolo de ' + escTrainer(nome) + '. Confere se a planilha dele está compartilhada.</p>'; return; }
+  _teCop = { sid, nome, t: li.t, d: li.d };
+  const pf = li.d ? _teCopMarca_(li.d) : [];
+  const conta = k => li.d ? li.d.filter((r, i) => pf[i] === k && !_teCopVazia_(r) && (k !== 'refeicoes' || _teCopSec_(r) === 'ref')).length : 0;
+  const dias = li.t ? new Set(li.t.map(r => String(r[0] || '').trim()).filter(s => /^\d/.test(s))).size : 0;
+  const exs = li.t ? li.t.filter(r => /^\d/.test(String(r[0] || '').trim()) && String(r[1] || '').trim()).length : 0;
+  const info = {
+    treino: (trainerData && li.t && exs) ? dias + ' dias, ' + exs + ' exercícios' : '',
+    refeicoes: dietaData ? (conta('refeicoes') ? conta('refeicoes') + ' refeições' : '') : '',
+    regras: dietaData ? (conta('regras') ? conta('regras') + ' linhas' : '') : '',
+    supl: dietaData ? (conta('supl') ? conta('supl') + ' linhas' : '') : '',
+    orient: dietaData ? (conta('orient') ? conta('orient') + ' linhas' : '') : '',
+  };
+  p.innerHTML = '<h4>De ' + escTrainer(nome) + ', trazer:</h4>' + Object.keys(_TECOP_NOMES).map(k => '<label class="te-cop-parte' + (info[k] ? '' : ' off') + '"><input type="checkbox" data-k="' + k + '"' + (info[k] ? ' checked' : ' disabled') + ' onchange="teCopiaConfere()"> ' + _TECOP_NOMES[k] + '<small>' + (info[k] || 'não tem') + '</small></label>').join('')
+    + '<p class="te-cop-sub" style="margin-top:8px;">O que estiver marcado substitui o deste aluno. Dá pra voltar no Desfazer.</p>';
+  teCopiaConfere();
+}
+function teCopiaConfere() { document.getElementById('teCopOk').disabled = !document.querySelector('#teCopPartes input[type=checkbox]:checked'); }
+function teCopiaAplica() {
+  if (!_teCop) return;
+  const partes = [...document.querySelectorAll('#teCopPartes input[type=checkbox]:checked')].map(i => i.dataset.k);
+  if (!partes.length) return;
+  const feitas = [];
+  if (partes.includes('treino') && trainerData && _teCop.t) {
+    const novo = _teCopTreino_(trainerData, _teCop.t);
+    if (novo) { teUndoStack.push({ mode: 'treino', data: JSON.parse(JSON.stringify(trainerData)) }); trainerData = novo; feitas.push('treino'); }
+  }
+  const pd = partes.filter(k => k !== 'treino');
+  if (pd.length && dietaData && _teCop.d) {
+    teUndoStack.push({ mode: 'dieta', data: JSON.parse(JSON.stringify(dietaData)) });
+    dietaData = _teCopDieta_(dietaData, _teCop.d, pd);
+    try { DIETA_OPEN_BLOCKS.clear(); _dietaNewFoodRows.clear(); } catch (_) {}
+    feitas.push('dieta');
+  }
+  while (teUndoStack.length > TE_UNDO_MAX) teUndoStack.shift();
+  teUpdateUndoBtn();
+  teHide('teCopiaModal');
+  if (feitas.length === 1 && feitas[0] === 'dieta' && currentEditMode === 'treino') switchEditMode('dieta');
+  else if (feitas.length === 1 && feitas[0] === 'treino' && currentEditMode !== 'treino') switchEditMode('treino');
+  else renderCurrentEditor();
+  if (typeof _ghToast === 'function') _ghToast('Copiado de ' + _teCop.nome + '. Confere e salva', 2600);
+}
 function diSvBanco(i) {
   if (!_svAlvo || typeof FOOD_BANK === 'undefined') return; const f = FOOD_BANK[i]; if (!f) return;
   const idx = _svAlvo.idx; const r = dietaData[idx]; if (!r) return;
