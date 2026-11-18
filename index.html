@@ -29758,7 +29758,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v669';
+    var APP_SHELL_V = 'metodo-gh-v670';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
@@ -33335,6 +33335,7 @@ const GHSU = (() => {
     curcuma: /curcum/, glucosamina: /glucosamina|condroitina/, nac: /(^|[^a-z])nac([^a-z]|$)|acetilciste/, silimarina: /silimarina|cardo mariano/, tudca: /tudca/, selenio: /(^|[,;+\/] ?)selenio/, teanina: /teanina/, sawpalmetto: /saw ?palmetto/, cactin: /cactin/, dimpless: /dimpless/ };
   // anabolizante oral no bloco do protocolo (Entregas #4825: só esteroide oral; cabergolina, anastrozol, tamoxifeno, clomifeno e
   // finasterida não ligam): só o nome serve pra ligar a proteção do fígado, nunca dose
+  const GESTA = /gravid|gestante|gestacao|engravid|tentante/, gesta = t => GESTA.test(nrm(t));
   const ORAL = /oxandrol|anavar|stanoz|winstrol|dianabol|metandrosten|hemogenin|oximetol|turinabol|halotest|fluoximest|metiltestost/;
   const oral = t => ORAL.test(nrm(t));
   function gatilhos(A) {
@@ -33372,8 +33373,11 @@ const GHSU = (() => {
     if (A.pensaDormir && !A.sonoRuim) liga('teanina', 'pensa muito antes de dormir');
     if (A.sexo === 'F' && A.retencao) liga('cactin', 'retenção de líquido');
     if (A.sexo === 'F' && A.celulite) liga('dimpless', 'a celulite incomoda');
+    // v670 (GH 18/11, pela Entregas na Sala #4836, textual: "Mulher tbm usa pra controlar DHT"): queda de cabelo liga o Saw Palmetto nos dois sexos.
+    // Só fica de fora a mulher que a anamnese diz estar grávida ou tentando engravidar (aí nem o "já usa" marca).
     if (/afinando|entradas|topo/.test(queda)) liga('sawpalmetto', 'cabelo afinando nas entradas ou no topo');
-    if (A.sexo === 'M' && (/queda de cabelo/.test(sint) || /geral/.test(queda))) liga('sawpalmetto', 'queda de cabelo');
+    if (/queda de cabelo/.test(sint) || /geral/.test(queda)) liga('sawpalmetto', 'queda de cabelo');
+    if (A.sexo === 'F' && (A.gestante || gesta([A.usa, A.remedios, A.sintomas, A.saude].join(' ')))) delete g.sawpalmetto;
     return g;
   }
 
@@ -33507,7 +33511,7 @@ const GHSU = (() => {
     else if (P.lactose && q.whey) notas.push('Intolerância à lactose: o whey é o isolado.');
     return { rows: saida, entrou, saiu, mudou, ficou, notas, total: saida.filter(r => ehSupl(r) && !sep(r)).length };
   }
-  return { monta, fatoresDe, gatilhos, oral, ITEM, NOME, MULTI_MOTIVO, EXTRAS, estatina, nrm };
+  return { monta, fatoresDe, gatilhos, oral, gesta, ITEM, NOME, MULTI_MOTIVO, EXTRAS, estatina, nrm };
 })();
 
 // ── v664 (GH 17/11, plano B): MONTAR A SUPLEMENTAÇÃO dentro do editor da dieta, sem IA. Lê da anamnese inicial o que ele
@@ -33557,12 +33561,15 @@ function _suMoTemSupl() { return Array.isArray(dietaData) && dietaData.some(r =>
 // v668 (GH 18/11: "não é por toque, é gatilho"): os fatos da anamnese e do bloco do protocolo que ligam cada suplemento do levantamento.
 // Do bloco do protocolo só se olha se existe nome de anabolizante oral: nada dele é lido além disso, nem copiado, nem escrito.
 function _suMoOralBloco() { return (Array.isArray(dietaData) ? dietaData : []).some(r => /^(proto|ciclo)$/.test(String((r && r[0]) || '').toLowerCase().trim()) && GHSU.oral(String(r[1] || ''))); }
+// v670: a anamnese cita gravidez ou tentativa de engravidar (texto livre: não existe pergunta própria). Só vale pra mulher.
+function _suMoGesta(ini) { return !!(ini && ini.sexo === 'F' && GHSU.gesta([(ini.g668 || {}).saude, ini.fatTxt, ini.sint, ini.usa, ini.remedios].join(' '))); }
+function _suMoQueda(ini) { return !!(ini && (/queda de cabelo/.test(_teFiNorm(ini.sint || '')) || /geral|afinando|entradas|topo/.test(_teFiNorm((ini.g668 || {}).queda || '')))); }
 function _suMoGatilhos(ini, sonoRuim) {
   const N = _teFiNorm, oralB = _suMoOralBloco(); if (!ini) return GHSU.gatilhos({ oral: oralB });
   const q = ini.g668 || {}, txt = N([q.saude, ini.fatTxt, ini.sint].join(' '));
   return GHSU.gatilhos({ sexo: ini.sexo, usa: ini.usa, remedios: ini.remedios, sintomas: ini.sint, saude: q.saude, fat: ini.fat, desempenho: q.desempenho, energia: q.energia, fome: q.fome, turno: q.turno, sonoRuim: !!sonoRuim, pressao: !!q.pressao,
     estomago: !!q.estomago, semProbiotico: !!q.semProbiotico, lactose: !!ini.lac, intestinoPreso: /intestino preso|constipa|prisao de ventre/.test(txt), secar: !!ini.secar, dorArticular: !!ini.artic, artrose: !!ini.artrose, artic: ini.artic, bebeTodoDia: !!q.bebeTodoDia,
-    tireoide: !!q.tireoide, pensaDormir: !!q.pensaDormir, celulite: !!q.celulite, intestino: q.intestino, preTreino: q.preTreino, queda: q.queda, retencao: /retencao de liquido/.test(N(ini.sint)) || (!!q.letargia && /retencao|inchac|incha\b/.test(txt)),
+    tireoide: !!q.tireoide, pensaDormir: !!q.pensaDormir, celulite: !!q.celulite, intestino: q.intestino, preTreino: q.preTreino, queda: q.queda, gestante: _suMoGesta(ini), retencao: /retencao de liquido/.test(N(ini.sint)) || (!!q.letargia && /retencao|inchac|incha\b/.test(txt)),
     oral: oralB ? true : (GHSU.oral(q.usaHoje) ? 'ele relatou anabolizante oral no que usa hoje' : '') });
 }
 function _suMoBase(ini) {
@@ -33660,6 +33667,7 @@ function _suMoDesenha() {
   if (ini && ini.secar && !v.deficit) av.push('O objetivo dele é emagrecer. Se a gordura passa de 20%, marca o déficit aqui em cima que entra o Morosil.');
   if (ini && ini.temExame && !_SUMO_EX.some(p => v.exame[p[0]])) av.push('Ele anexou exame de sangue. O Montar não lê o arquivo: abre o exame e marca em "O exame mostrou" o que veio alterado.');
   if (ini && ini.libido && ini.horm) av.push('Marcou queda de libido e contratou o acompanhamento hormonal: essa conduta é com o GH.');
+  if (_suMoGesta(ini) && (_suMoQueda(ini) || /saw ?palmetto/.test(_teFiNorm(ini.usa || '')))) av.push('A anamnese fala em gravidez ou em tentar engravidar: o Saw Palmetto não veio marcado. Confere com ela antes de pôr.');
   if (ini && ini.remedios) av.push('Usa remédio (' + ini.remedios + '). Confere interação antes de entregar.');
   if (ini && v.coq10 && (GHSU.estatina(ini.remedios) || ini.idade > 50)) av.push('A Coenzima Q10 já veio marcada: ' + (GHSU.estatina(ini.remedios) ? 'ele usa estatina' : 'ele tem ' + ini.idade + ' anos, e a regra é acima de 50') + '. Se não for o caso, desmarca em "Também pode entrar".');
   if (_suMoWheyNaDieta() && v.whey !== 'sem') av.push('A dieta já tem whey nas refeições: a linha do whey sai apontando pra elas, sem dose extra de pós-treino.');
