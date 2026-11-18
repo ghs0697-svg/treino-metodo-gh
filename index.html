@@ -6063,6 +6063,21 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   :root[data-theme="light"] .exercise-card:not(.recolhido):not(.warmup):not(.done) { background: linear-gradient(rgba(255,255,255,.22), rgba(255,255,255,.22)), var(--liq-fill); border-color: var(--liq-line); }
   :root[data-theme="light"] .exercise-card .forca-chip, :root[data-theme="light"] .exercise-card .focus-esforco { background: rgba(255,255,255,.40); }
   :root[data-theme="light"] #maisSheetOverlay { background: rgba(40, 32, 16, .34); }
+  /* ══ v675 (GH 18/11: "Deixa perfeito o branco igual ficou o preto"): os miúdos do Claro no mesmo vidro do Escuro.
+     No Escuro as casas de carga são translúcidas (KG e REPS com contorno dourado), os botões do cartão e as pílulas pequenas são
+     vidro com fio claro, e o item ativo da barra de baixo é dourado. No Claro eles eram branco sólido ou bege chapado, e o ativo
+     da barra ficava cinza (regra do bloco v610 mais forte). ══ */
+  :root[data-theme="light"] .set-in { background: rgba(255,255,255,.42); border-color: rgba(110,84,30,.16); box-shadow: inset 0 1px 0 rgba(255,255,255,.7); }
+  :root[data-theme="light"] .set-in:not(:placeholder-shown) { background: rgba(217,179,90,.16); border-color: rgba(167,126,42,.55); }
+  :root[data-theme="light"] .set-in:focus { border-color: var(--gold); background: rgba(255,255,255,.70); }
+  :root[data-theme="light"] .ex-action-btn:not(.on):not(.sub-on), :root[data-theme="light"] .pg-week:not(.hit), :root[data-theme="light"] .ex-fold,
+  :root[data-theme="light"] .hdr-bell, :root[data-theme="light"] .dm-hora, :root[data-theme="light"] .diet-meal-check:not(.done), :root[data-theme="light"] .diet-option-tabs {
+    background: var(--liq-pill); border-color: rgba(255,255,255,.85); box-shadow: 0 0 0 .5px rgba(110,84,30,.20), inset 0 1.5px 0 #fff, inset 0 -1px 0 rgba(110,84,30,.07), 0 4px 12px rgba(92,70,24,.09);
+  }
+  :root[data-theme="light"] .diet-option-tab:not(.active) { background: transparent; }
+  :root[data-theme="light"] .set-add { background: transparent; border-color: rgba(167,126,42,.45); }
+  :root[data-theme="light"] #bottomNav .bn-item.active { color: var(--gold); }
+  :root[data-theme="light"] #bottomNav .bn-item.active svg { filter: drop-shadow(0 0 6px rgba(167, 126, 42, .35)); }
 </style>
 <script>
 // ══ v593 (auditoria 26/10): dois guardas que NÃO dependem do script principal (ES5 puro, primeiro script da página) ══
@@ -29811,7 +29826,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v674';
+var APP_SHELL_V = 'metodo-gh-v675';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
