@@ -422,6 +422,31 @@
   .ts-pill.t-pap, .gl-cor.t-pap, .ept-t.t-pap { color: var(--c-ink); border-color: var(--c-pap); background: var(--c-pap); }
   .ts-pill.t-val, .gl-cor.t-val, .ept-t.t-val { color: var(--c-ink); border-color: var(--c-val); background: var(--c-val); }
   .ts-why { margin-top: 12px; }
+  /* v668: janela "Como fazer cada série" e o "?" da grade */
+  .set-head .sh-tipo { cursor: pointer; color: var(--gold); font-size: 10px; font-weight: 700; text-align: center; white-space: nowrap; line-height: 1.5; }
+  .set-head .sh-tipo i { display: inline-block; width: 13px; height: 13px; line-height: 12px; border: 1px solid currentColor; border-radius: 50%; font-style: normal; font-size: 9px; margin-left: 2px; }
+  .sets-grid.rotulada .set-meta { cursor: pointer; }
+  .ser-ex { color: var(--fg-2, #c9c9cd); font-size: 13px; line-height: 1.6; }
+  .ser-ex .ser-lead { margin: 0 0 12px; }
+  .ser-esc { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-items: end; margin: 0 0 12px; padding: 12px 8px 10px; border: 1px solid rgba(var(--c-val-rgb), .2); border-radius: 12px; background: rgba(var(--c-val-rgb), .05); }
+  .ser-pas { display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; font-size: 11px; line-height: 1.3; min-width: 0; }
+  .ser-bar { display: flex; align-items: flex-end; width: 100%; max-width: 58px; height: 54px; margin-bottom: 3px; }
+  .ser-bar i { display: block; width: 100%; border-radius: 6px 6px 2px 2px; border: 1px solid; }
+  .ser-pas[data-s="aq"] .ser-bar i { height: 34%; border-color: rgba(var(--c-aq-rgb), .55); }
+  .ser-pas[data-s="aj"] .ser-bar i { height: 64%; border-color: rgba(var(--c-aj-rgb), .75); background: rgba(var(--c-aj-rgb), .16); }
+  .ser-pas[data-s="val"] .ser-bar i { height: 100%; border-color: var(--c-val); background: var(--c-val); }
+  .ser-pas .ts-pill { min-width: 0; padding: 2px 8px; font-size: 10.5px; }
+  .ser-pas .ser-p { font-weight: 700; }
+  .ser-cap { grid-column: 1 / -1; text-align: center; font-size: 11.5px; font-weight: 700; color: var(--gold); margin-top: 4px; }
+  .ser-it { padding: 8px 10px; border-radius: 10px; border: 1px solid transparent; scroll-margin: 20px; }
+  .ser-it > b:first-child { display: block; color: var(--gold); margin-bottom: 1px; }
+  .ser-it.ser-on { border-color: rgba(var(--c-val-rgb), .6); background: rgba(var(--c-val-rgb), .09); }
+  .ser-qa { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: rgba(var(--c-val-rgb), .07); border: 1px solid rgba(var(--c-val-rgb), .24); }
+  .ser-qa > b:first-child { display: block; color: var(--gold); margin-bottom: 2px; }
+  .ser-sub { margin: 14px 0 2px 10px; font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--fg-3, #8f8778); }
+  .ser-old { margin: 12px 0 0; font-size: 11.5px; color: var(--fg-3, #8f8778); }
+  .ser-dic { background: none; border: none; color: var(--gold); font: inherit; font-size: 12px; text-decoration: underline; padding: 10px 0 0; cursor: pointer; }
+  .ser-abre { display: block; width: 100%; margin: 10px 0 4px; padding: 10px; border-radius: 9px; border: 1px solid rgba(var(--c-val-rgb), .5); background: rgba(var(--c-val-rgb), .1); color: var(--gold); font: inherit; font-weight: 700; font-size: 13px; cursor: pointer; }
   .gl-cor { display: inline-block; border: 1px solid; border-radius: 999px; padding: 0 8px; font-size: 10px; font-weight: 700; margin-right: 6px; vertical-align: middle; }
   .ex-presc .tp-chip.t-aq { color: var(--c-aq); border-color: rgba(var(--c-aq-rgb),.4); }
   .ex-presc .tp-chip.t-aj { color: var(--c-aj); border-color: rgba(var(--c-aj-rgb),.55); }
@@ -6641,6 +6666,33 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
   </div>
 </div>
 
+<div class="evo-overlay" id="seriesModal" onclick="if(event.target.id==='seriesModal')seriesExplicaClose()">
+  <div class="evo-box evo-rola">
+    <h4>Como fazer cada série</h4>
+    <div class="evo-corpo ser-ex">
+      <p class="ser-lead">Antes da série que vale, tu prepara o corpo. A cada passo o peso sobe e as repetições descem, até chegar na válida.</p>
+      <div class="ser-esc">
+        <div class="ser-pas" data-s="aq"><span class="ser-bar"><i></i></span><span class="ts-pill t-aq">aquecimento</span><span class="ser-p">peso leve</span><span>10 repetições</span></div>
+        <div class="ser-pas" data-s="aj"><span class="ser-bar"><i></i></span><span class="ts-pill t-aj">preparação</span><span class="ser-p">mais peso</span><span>6 repetições</span></div>
+        <div class="ser-pas" data-s="val"><span class="ser-bar"><i></i></span><span class="ts-pill t-val">válida</span><span class="ser-p">o peso do treino</span><span>as repetições da ficha</span></div>
+        <div class="ser-cap">O peso sobe, as repetições descem.</div>
+      </div>
+      <div class="ser-it" data-s="aq"><b>Aquecimento</b>Peso leve, 10 repetições. É só pra esquentar a articulação que vai trabalhar. Não é pra cansar: sobra muito, e é pra sobrar.</div>
+      <div class="ser-it" data-s="aj"><b>Preparação</b>Mais peso que no aquecimento e menos repetições: peso médio, 6 repetições. É pra sentir o peso e preparar o músculo pra válida. Para bem antes de cansar: sobra muito, e é pra sobrar.</div>
+      <div class="ser-it" data-s="val"><b>Válida</b>É a série que constrói músculo. O peso do treino, as repetições da ficha, <span id="serValEsf">até a falha ou sobrando 1 repetição</span>. É a única em que tu anota o "sobrou" e a única que conta no teu volume da semana.</div>
+      <div class="ser-qa"><b>Na preparação é pra pôr mais peso e fazer menos repetições?</b>Sim, de propósito. Mais peso pro músculo sentir o que vem, menos repetições pra não cansar. A força fica guardada pra válida.</div>
+      <div class="ser-qa"><b>Preciso anotar o que sobrou no aquecimento e na preparação?</b>Não. Nelas sobrar é o esperado. O "sobrou" tu só anota na válida.</div>
+      <div class="ser-qa ser-it" data-s="semaq"><b>Por que alguns exercícios não têm aquecimento nem preparação?</b>Porque a articulação e a direção do movimento já vieram prontas do exercício anterior. Barra fixa depois da puxada alta vai direto na válida: mesma direção, mesma articulação. Remada depois delas prepara de novo, porque a direção mudou. Repetir aquecimento numa articulação que já está quente é série perdida.</div>
+      <div class="ser-sub">Só em alguns treinos</div>
+      <div class="ser-it" data-s="pap"><b>PAP</b>Uma repetição só, com carga acima da preparação. É um estímulo forte pro sistema nervoso antes da válida. Não é pra falhar. Só entra em quem já tem experiência, e só quando eu coloco.</div>
+      <div class="ser-it" data-s="bo"><b>Série de volta</b>Vem depois das válidas: tira uns 10% do peso e faz mais repetições, no mesmo esforço. Conta como válida: tu anota o "sobrou" nela também.</div>
+      <p class="ser-old">No teu protocolo a preparação pode aparecer como "ajuste" ou "aj". É a mesma série, só mudou o nome.</p>
+      <button type="button" class="ser-dic" onclick="seriesExplicaDic()">Abrir o dicionário do treino</button>
+    </div>
+    <button type="button" class="evo-close" onclick="seriesExplicaClose()">Entendi 💪</button>
+  </div>
+</div>
+
 <div class="evo-overlay" id="sobrouModal" onclick="if(event.target.id==='sobrouModal')sobrouInfoClose()">
   <div class="evo-box evo-rola">
     <h4>O que é o "sobrou"?</h4>
@@ -7116,16 +7168,16 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
     </svg>
     <div class="gh-il-c">Todo exercício segue o mesmo ritmo: sobe rápido, segura no topo, desce devagar.</div>
   </div>
-  <div class="man-sec" id="manSeries"><span class="n">02</span> Os tipos de série: aquecimento, ajuste, PAP e válida</div>
+  <div class="man-sec" id="manSeries"><span class="n">02</span> Os tipos de série: aquecimento, preparação, PAP e válida</div>
   <p class="man-lead">Cada exercício do teu treino pode ter até quatro tipos de série, e a grade mostra cada uma com a cor dela.</p>
   <div class="tec-card ts-card">
     <div class="ts-row"><span class="ts-pill t-aq">aquecimento</span><div class="tec-body"><b>Carga leve, 10 repetições.</b> Serve pra lubrificar a articulação que vai trabalhar, não pra cansar. É normal sobrar muito. Ela só aparece quando o exercício traz uma articulação que ainda não trabalhou no dia.</div></div>
-    <div class="ts-row"><span class="ts-pill t-aj">ajuste</span><div class="tec-body"><b>Carga média, 6 repetições.</b> Serve pra avisar o teu sistema nervoso que vem esforço pesado, sem gastar energia. Também sobra muito, de propósito. Aparece quando o movimento muda de direção ou de ângulo, mesmo com a articulação já quente.</div></div>
-    <div class="ts-row"><span class="ts-pill t-pap">PAP</span><div class="tec-body"><b>Uma repetição só, com carga acima do ajuste.</b> É um estímulo máximo pro sistema nervoso antes da série válida. Não é pra falhar. Só entra em quem já tem experiência, e só quando eu coloco.</div></div>
+    <div class="ts-row"><span class="ts-pill t-aj">preparação</span><div class="tec-body"><b>Mais peso que no aquecimento e menos repetições.</b> Carga média, 6 repetições. É de propósito: serve pra preparar o músculo e o teu sistema nervoso pro peso da válida, sem cansar. Sobra muito, e é pra sobrar. Aparece quando o movimento muda de direção ou de ângulo, mesmo com a articulação já quente. Ela se chamava ajuste: é a mesma série.</div></div>
+    <div class="ts-row"><span class="ts-pill t-pap">PAP</span><div class="tec-body"><b>Uma repetição só, com carga acima da preparação.</b> É um estímulo máximo pro sistema nervoso antes da série válida. Não é pra falhar. Só entra em quem já tem experiência, e só quando eu coloco.</div></div>
     <div class="ts-row"><span class="ts-pill t-val">válida</span><div class="tec-body"><b>É a série que constrói músculo.</b> Vai até a falha ou fica a uma repetição dela. É a única onde tu anota o "sobrou", e a única que conta como volume na semana. <span class="corte-on">Sobrou 3 ou mais? Então essa não valeu: o app abre outra série pra tu fazer.</span><span class="corte-off">No teu protocolo o esforço-alvo é maior de propósito: toda série tua conta, e o app não abre série a mais.</span> Por tua conta, tu também pode abrir uma válida a mais: é o botão "+ válida extra" embaixo do teu registro.</div></div>
     <div class="ts-row"><span class="ts-pill t-bo">volta</span><div class="tec-body"><b>Série de volta.</b> Vem depois das válidas: tira uns 10% do peso e faz mais repetições, no mesmo esforço. Ela pega o músculo já cansado com um peso que ele ainda aguenta. Conta como válida: tu anota o "sobrou" nela também. Só aparece em alguns exercícios, quando eu coloco.</div></div>
-    <div class="tec-body ts-why"><b>Por que alguns exercícios não têm aquecimento nem ajuste?</b> Porque a articulação e a direção do movimento já vieram prontas do exercício anterior. Barra fixa depois da puxada alta vai direto na válida: mesma direção, mesma articulação. Remada depois delas ajusta de novo, porque a direção mudou. Repetir aquecimento numa articulação que já está quente é série perdida.</div>
-    <div class="tec-body ts-why"><b>Panturrilha, abdômen e lombar</b> levam só ajuste, porque os outros exercícios já usaram eles pra estabilizar. <b>Prancha e isometria</b> vão direto, porque não é carga a calibrar.</div>
+    <div class="tec-body ts-why"><b>Por que alguns exercícios não têm aquecimento nem preparação?</b> Porque a articulação e a direção do movimento já vieram prontas do exercício anterior. Barra fixa depois da puxada alta vai direto na válida: mesma direção, mesma articulação. Remada depois delas prepara de novo, porque a direção mudou. Repetir aquecimento numa articulação que já está quente é série perdida.</div>
+    <div class="tec-body ts-why"><b>Panturrilha, abdômen e lombar</b> levam só preparação, porque os outros exercícios já usaram eles pra estabilizar. <b>Prancha e isometria</b> vão direto, porque não é carga a calibrar.</div>
   </div>
 
   <div class="man-sec" id="manTec"><span class="n">03</span> Técnicas de intensidade</div>
@@ -8238,11 +8290,11 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
       <div class="gloss-it" data-g="cluster"><b>Cluster</b>Série quebrada em blocos pequenos com pausas curtíssimas dentro da própria série.</div>
       <div class="gloss-it" data-g="piramide"><b>Pirâmide</b>O peso sobe a cada série e as repetições descem.</div>
       <div class="gloss-it" data-g="aq"><b><span class="gl-cor t-aq">aquec.</span> Aquecimento</b>Carga leve, 10 repetições. Serve pra lubrificar a articulação que vai trabalhar, não pra cansar. É normal sobrar muito. Ela só aparece quando o exercício traz uma articulação que ainda não trabalhou no dia.</div>
-      <div class="gloss-it" data-g="aj"><b><span class="gl-cor t-aj">ajuste</span> Ajuste</b>Carga média, 6 repetições. Serve pra avisar o teu sistema nervoso que vem esforço pesado, sem gastar energia. Também sobra muito, de propósito. Aparece quando o movimento muda de direção ou de ângulo, mesmo com a articulação já quente.</div>
-      <div class="gloss-it" data-g="pap"><b><span class="gl-cor t-pap">PAP</span> PAP</b>Uma repetição só, com carga acima do ajuste. É um estímulo máximo pro sistema nervoso antes da série válida. Não é pra falhar. Só entra em quem já tem experiência, e só quando eu coloco.</div>
+      <div class="gloss-it" data-g="aj"><b><span class="gl-cor t-aj">prepar.</span> Preparação</b>Mais peso que no aquecimento e menos repetições: carga média, 6 repetições. É de propósito: serve pra preparar o músculo e o teu sistema nervoso pro peso da válida, sem cansar. Sobra muito, e é pra sobrar. Aparece quando o movimento muda de direção ou de ângulo, mesmo com a articulação já quente. Ela se chamava ajuste: é a mesma série.</div>
+      <div class="gloss-it" data-g="pap"><b><span class="gl-cor t-pap">PAP</span> PAP</b>Uma repetição só, com carga acima da preparação. É um estímulo máximo pro sistema nervoso antes da série válida. Não é pra falhar. Só entra em quem já tem experiência, e só quando eu coloco.</div>
       <div class="gloss-it" data-g="val"><b><span class="gl-cor t-val">válida</span> Válida</b>É a série que constrói músculo. Vai até a falha ou fica a uma repetição dela. É a única onde tu anota o "sobrou", e a única que conta como volume na semana. <span class="corte-on">Sobrou 3 ou mais? Então essa não valeu: o app abre outra série pra tu fazer.</span><span class="corte-off">No teu protocolo o esforço-alvo é maior de propósito: toda série tua conta, e o app não abre série a mais.</span> Por tua conta, tu também pode abrir uma válida a mais: é o botão "+ válida extra" embaixo do teu registro. Exercício sem cor na grade é só de válidas.</div>
       <div class="gloss-it" data-g="bo"><b><span class="gl-cor t-bo">volta</span> Série de volta</b>Vem depois das válidas: tira uns 10% do peso e faz mais repetições, no mesmo esforço. Ela pega o músculo já cansado com um peso que ele ainda aguenta. Conta como válida: tu anota o "sobrou" nela também. Só aparece em alguns exercícios, quando eu coloco.</div>
-      <div class="gloss-it" data-g="semaq"><b>Por que alguns exercícios não têm aquecimento nem ajuste?</b>Porque a articulação e a direção do movimento já vieram prontas do exercício anterior. Barra fixa depois da puxada alta vai direto na válida: mesma direção, mesma articulação. Remada depois delas ajusta de novo, porque a direção mudou. Repetir aquecimento numa articulação que já está quente é série perdida. Panturrilha, abdômen e lombar levam só ajuste, porque os outros exercícios já usaram eles pra estabilizar. Prancha e isometria vão direto, porque não é carga a calibrar.</div>
+      <div class="gloss-it" data-g="semaq"><b>Por que alguns exercícios não têm aquecimento nem preparação?</b>Porque a articulação e a direção do movimento já vieram prontas do exercício anterior. Barra fixa depois da puxada alta vai direto na válida: mesma direção, mesma articulação. Remada depois delas prepara de novo, porque a direção mudou. Repetir aquecimento numa articulação que já está quente é série perdida. Panturrilha, abdômen e lombar levam só preparação, porque os outros exercícios já usaram eles pra estabilizar. Prancha e isometria vão direto, porque não é carga a calibrar.</div>
       <div class="gloss-it" data-g="cadencia"><b>Cadência (Pos · Iso · Neg)</b>A velocidade de cada fase do movimento. Pos = subir. Iso = segurar parado. Neg = descer controlando. "Neg 3s" = descer em 3 segundos. O botão "ritmo" marca isso pra ti com som e bolinha.</div>
       <div class="gloss-it" data-g="concentrica"><b>Concêntrica (positiva)</b>A fase de vencer o peso, subindo.</div>
       <div class="gloss-it" data-g="excentrica"><b>Excêntrica (negativa)</b>A fase de descer segurando o peso. É onde mais se constrói músculo, por isso a ficha tanto pede controle aqui.</div>
@@ -9732,7 +9784,7 @@ const I18N_RX = [
   [/^(\d+) opções: arrasta pro lado ou toca aqui$/, (m, a) => a + ' options: swipe sideways or tap here'],
   [/^1 opção: arrasta pro lado ou toca aqui$/, '1 option: swipe sideways or tap here'],
   [/^Descanso de (.+)$/, (m, a) => 'Rest of ' + a],
-  [/^(\d+) válidas? \+ (.+)$/, (m, a, b) => a + ' working set' + (a === '1' ? '' : 's') + ' + ' + b.replace('aquecimento', 'warm-up').replace('ajuste', 'adjustment').replace(' e ', ' and ')],
+  [/^(\d+) válidas? \+ (.+)$/, (m, a, b) => a + ' working set' + (a === '1' ? '' : 's') + ' + ' + b.replace('aquecimento', 'warm-up').replace('preparação', 'prep set').replace('prepar.', 'prep').replace(' e ', ' and ')],
   [/^(\d+) válidas?$/, (m, a) => a + ' working set' + (a === '1' ? '' : 's')],
   [/^Desfazer "não consegui fazer"$/, 'Undo "couldn’t do it"'],
   [/^Abri mais uma série: fechou (\d+) reps e ainda sobrou (\d+)\. Sobe a carga nela\.$/, (m, a, b) => 'I opened one more set: you closed ' + a + ' reps with ' + b + ' left in the tank. Add weight on it.'],
@@ -10723,7 +10775,7 @@ function _sugMostra(di, ei, html) { const e = _sugEl(di, ei); if (!e) return; e.
 // série extra, na força estimada, na evolução, na progressão e no recorde. Aq, aj e PAP existem pra ela
 // render; "sobrou" alto nelas é o esperado.
 const SERIE_TIPO_ROTULO = { aq: 'aq', aj: 'aj', pap: 'PAP', val: 'val', bo: 'bo' };
-const SERIE_TIPO_NOME = { aq: 'aquecimento', aj: 'ajuste', pap: 'PAP', val: 'válida', bo: 'volta' };
+const SERIE_TIPO_NOME = { aq: 'aquecimento', aj: 'preparação', pap: 'PAP', val: 'válida', bo: 'volta' };
 // '1X aq / 1X aj / 2X val' -> [{tipo:'aq',seg:0},{tipo:'aj',seg:1},{tipo:'val',seg:2},{tipo:'val',seg:2}]
 // Mesma contagem do _serieCountPresc (1 a 10 linhas); fora disso devolve [] e tudo vira val.
 function _serieTipos(ex) {
@@ -10752,7 +10804,7 @@ function _serieTemRotulo(ex) {
 // cada tipo tem cor própria (CSS --c-aq/--c-aj/--c-pap/--c-val), o botão da linha diz o tipo por extenso e o card
 // resume em chips na mesma cor: "aquecimento 1×10 · ajuste 1×6 · válidas 2×10 a 12". Placeholder do kg em
 // aquecimento/ajuste/PAP diz a carga esperada (leve / média / pesada), o das reps diz as reps daquele segmento.
-const SERIE_TIPO_CURTO = { aq: 'aquec.', aj: 'ajuste', pap: 'PAP', val: 'válida', bo: 'volta' };
+const SERIE_TIPO_CURTO = { aq: 'aquec.', aj: 'prepar.', pap: 'PAP', val: 'válida', bo: 'volta' };
 const SERIE_TIPO_CARGA = { aq: 'leve', aj: 'média', pap: 'pesada', bo: '-10%' };
 const SERIE_TIPO_ORDEM = ['aq', 'aj', 'pap', 'val', 'bo'];
 // v619 (GH 10/11/2026, "adicionar uma série de Back Off depois das validas, com explicacao inclusa"): 'bo' = série de volta.
@@ -11269,22 +11321,23 @@ function _metaNotasRender() {
   if (!notas.length) { box.style.display = 'none'; return; }
   const esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const lead = notas.find(n => /como\s+ler/i.test(n.titulo)) || notas[0];
+  const _ehSer = n => /como\s+ler/i.test(n.titulo) && /s[ée]rie/i.test(n.titulo), _tx = (n, s) => _ehSer(n) ? _serTrocaNome(s) : s;
   const tEl = document.getElementById('metaNotasTitulo'), rEl = document.getElementById('metaNotasResumo');
   const cEl = document.getElementById('metaNotasCorpo'), hEl = document.getElementById('metaNotasModalTitulo');
   if (tEl) tEl.textContent = lead.titulo + (lead.resumo ? ': ' : '');
-  if (rEl) rEl.textContent = lead.resumo || '';
+  if (rEl) rEl.textContent = _tx(lead, lead.resumo || '');
   if (hEl) hEl.textContent = lead.titulo;
   if (cEl) cEl.innerHTML = notas.map(n => {
     const cab = n === lead
-      ? (n.resumo ? '<p style="margin:0 0 6px;color:var(--gold);font-weight:600;">' + esc(n.resumo) + '</p>' : '')
+      ? (n.resumo ? '<p style="margin:0 0 6px;color:var(--gold);font-weight:600;">' + esc(_tx(n, n.resumo)) + '</p>' : '')
       : '<p style="margin:14px 0 6px;color:var(--gold);font-weight:600;">' + esc(n.titulo) + (n.resumo ? ' <span style="color:#b3a785;font-weight:400;">· ' + esc(n.resumo) + '</span>' : '') + '</p>';
-    return cab + '<p style="margin:0;">' + esc(n.texto) + '</p>';
+    return cab + '<p style="margin:0;">' + esc(_tx(n, n.texto)) + '</p>' + (_ehSer(n) ? '<button type="button" class="ser-abre" onclick="metaNotasClose();openSeriesExplica(\'\')">Ver como fazer cada série</button>' : '');
   }).join('');
   const nv = document.getElementById('metaNotasNovo');
   if (nv) nv.style.display = _metaNotasLido() ? 'none' : 'inline-block';
   box.style.display = 'block';
 }
-function _metaNotasKey() { return 'gh_metanotas_lido:' + (typeof SHEET_ID !== 'undefined' ? SHEET_ID : '') + ':' + ((STUDENT_META_NOTAS || []).length); }
+function _metaNotasKey() { return 'gh_metanotas_lido:' + (typeof SHEET_ID !== 'undefined' ? SHEET_ID : '') + ':' + ((STUDENT_META_NOTAS || []).length) + ':s668'; }
 function _metaNotasLido() { try { return !!localStorage.getItem(_metaNotasKey()); } catch (_) { return true; } }
 function openMetaNotas() {
   try { localStorage.setItem(_metaNotasKey(), '1'); } catch (_) {}
@@ -11958,7 +12011,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
     const _metaTxt = _porTempo ? (_phTempo || '') : ((_rotulada && _tipo !== 'val') ? (_phKg + '<br>' + _phReps) : _phReps);   // v609: a prescrição desta linha, sempre à vista (a última carga vai no campo)
     return `<div class="set-row ${feita ? 'feita' : ''} ${_rotulada ? 't-' + _tipo : ''} ${_nv ? 'nv' : ''} ${si >= _nPresc ? 'extra' : ''}" data-si="${si}" data-tipo="${_tipo}">
         <button type="button" class="set-num ${_rotulada ? 't-' + _tipo : ''}" onclick="toggleSetFeita(${di},'${eiS}',${si})" title="${_rotulada ? 'Série de ' + SERIE_TIPO_NOME[_tipo] + '. ' : ''}Marcar série como feita" aria-label="Marcar série ${si + 1} como feita">${feita ? '✓' : (_rotulada ? (_nv ? 'não valeu' : _rot) : si + 1)}</button>
-        <span class="set-meta">${_metaTxt}</span>
+        <span class="set-meta"${_rotulada ? ` onclick="openSeriesExplica('${_tipo}')"` : ''}>${_metaTxt}</span>
         <input class="set-in set-kg${(_sugL[si] && _sugL[si].ph) ? ' ph-sug' : (_antKg ? ' ph-ant' : '')}" type="number" aria-label="Peso, série ${si + 1}" inputmode="decimal" placeholder="${(_sugL[si] && _sugL[si].ph) || _antKg || _phKg}" data-ph0="${_antKg || _phKg}" data-ant="${_antKg ? '1' : ''}" value="${kgToDisplay(s.kg)}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-pl${(_sugL[si] && _sugL[si].phPl) ? ' ph-sug' : (_antPl ? ' ph-ant' : '')}" type="number" aria-label="Placas, série ${si + 1}" inputmode="numeric" placeholder="${(_sugL[si] && _sugL[si].phPl) || _antPl || 'pl'}" data-ph0="${_antPl || 'pl'}" data-ant="${_antPl ? '1' : ''}" value="${s.pl || ''}" oninput="onSetField(${di},'${eiS}')">
         <input class="set-in set-reps${_antReps ? ' ph-ant' : ''}" type="number" aria-label="Repetições, série ${si + 1}" inputmode="numeric" placeholder="${_antReps || (_porTempo ? _tUnid : _phReps)}" title="${_porTempo ? 'Quantos ' + (_tUnid === 'min' ? 'minutos' : 'segundos') + ' tu segurou' : ''}" value="${s.reps || ''}" oninput="onSetField(${di},'${eiS}')">
@@ -11973,7 +12026,7 @@ function _setsGridHtml(di, ei, label, noAdd, semX) {
       ${(prev && prev.length) ? '<div class="sg-ant-nota">' + ((prevCru && prevCru._origem) ? 'Em cinza, a última vez que tu fez este exercício' + (prevCru._origem.t > 0 ? ' (' + _arqDiaBR_(prevCru._origem.t) + ')' : '') : 'Em cinza, o que tu fez na última vez') + _repeteBtnHtml_(di, eiS, sets) + '</div>' : ''}
       ${label ? `<div class="carga-label" style="font-size:10px;margin-bottom:2px;">${label}</div>` : ''}
       ${evo}${melhor}
-      <div class="set-head"><span class="set-num"></span><span class="sh-meta">meta</span><span class="sh-kg" onclick="openGlossario('kg')" title="De cada lado ou o total?">${getUnit()}</span><span class="sh-pl" onclick="openPlacaInfo()" title="O que e placa?">placa</span><span class="sh-reps">${_porTempo ? _tUnid : 'reps'}</span><span class="sh-rs" onclick="openSobrouInfo()" title="Quantas repetições sobraram">sobrou</span><span class="sh-rpe" title="Esforço de 0 a 10">RPE</span><button type="button" class="rs-info-btn" onclick="openSobrouInfo()" aria-label="O que é o sobrou?">i</button><span class="sh-prev">${(prev && prev.length) ? 'última vez' : ''}</span></div>
+      <div class="set-head">${_rotulada ? `<span class="set-num sh-tipo" role="button" onclick="openSeriesExplica('')" title="Como fazer cada série">tipo<i>?</i></span>` : '<span class="set-num"></span>'}<span class="sh-meta">meta</span><span class="sh-kg" onclick="openGlossario('kg')" title="De cada lado ou o total?">${getUnit()}</span><span class="sh-pl" onclick="openPlacaInfo()" title="O que e placa?">placa</span><span class="sh-reps">${_porTempo ? _tUnid : 'reps'}</span><span class="sh-rs" onclick="openSobrouInfo()" title="Quantas repetições sobraram">sobrou</span><span class="sh-rpe" title="Esforço de 0 a 10">RPE</span><button type="button" class="rs-info-btn" onclick="openSobrouInfo()" aria-label="O que é o sobrou?">i</button><span class="sh-prev">${(prev && prev.length) ? 'última vez' : ''}</span></div>
       ${rows}
       ${(noAdd || sets.length >= _nPresc + 2 || sets.length >= 12) ? '' : `<button type="button" class="set-add" onclick="addSet(${di},'${eiS}')" title="Abre uma série VÁLIDA a mais, além do que foi prescrito (por tua conta)">${_rotulada ? '+ válida extra' : '+ série extra'}</button>`}
     </div>`;
@@ -18474,7 +18527,8 @@ function _hdrExplica_() {
       const lead = notas.find(n => /como\s+ler/i.test(n.titulo)) || notas[0];
       const p = d.nextElementSibling;
       if (p && p.tagName === 'P') {
-        if (lead.resumo && p.textContent.trim() === String(lead.resumo).trim()) p.textContent = lead.titulo + ' · ' + lead.resumo;
+        const _rs = (/como\s+ler/i.test(lead.titulo) && /s[ée]rie/i.test(lead.titulo)) ? _serTrocaNome(lead.resumo) : lead.resumo;
+        if (lead.resumo && p.textContent.trim() === String(_rs).trim()) p.textContent = lead.titulo + ' · ' + _rs;
         else if (!lead.resumo) { const t = document.createElement('p'); t.setAttribute('style', 'margin:0 0 6px;color:var(--gold);font-weight:600;'); t.textContent = lead.titulo; cEl.insertBefore(t, p); }
       }
     }
@@ -27672,7 +27726,33 @@ var RENOV_WA = 'https://wa.me/555520131470?text=';
 // terminada, jornada, atalho das novidades) abre direto o WhatsApp do suporte com a mensagem pronta. O toque fica
 // registrado na CLICKS_AFILIADOS (Parceiro WHATSAPP, Produto "Renovacao whatsapp", Tag = origem) pra CRM seguir contando.
 var _renovOrigem = 'menu';
+// v668 (GH 18/11): tocar no tipo da série abre "Como fazer cada série", com o tipo tocado em destaque. A série "aj" aparece como
+// preparação: mais peso que no aquecimento e menos repetições, pra preparar o músculo sem cansar.
+function openSeriesExplica(key) {
+  try {
+    const m = document.getElementById('seriesModal'); if (!m) return;
+    let esf = 'até a falha ou sobrando 1 repetição';
+    try {
+      const v = (typeof STUDENT_ESFORCO_ALVO !== 'undefined' && STUDENT_ESFORCO_ALVO) ? STUDENT_ESFORCO_ALVO.valor : '';
+      const a = _alvoTopo();
+      esf = ((v && _esforcoEhFalha(v)) || !(a.hi > 0)) ? 'até a falha' : ('sobrando ' + a.lo + (a.hi > a.lo ? ' a ' + a.hi : '') + (a.hi === 1 ? ' repetição' : ' repetições'));
+    } catch (_) {}
+    const e = document.getElementById('serValEsf'); if (e) e.textContent = esf;
+    m.querySelectorAll('.ser-on').forEach(x => x.classList.remove('ser-on'));
+    m.classList.add('show'); _evoTopo('seriesModal');
+    if (key) setTimeout(() => { try { const it = m.querySelector('.ser-it[data-s="' + key + '"]'); if (it) { it.classList.add('ser-on'); it.scrollIntoView({ block: 'center' }); } } catch (_) {} }, 80);
+  } catch (_) {}
+}
+function seriesExplicaClose() { try { document.getElementById('seriesModal').classList.remove('show'); } catch (_) {} }
+function seriesExplicaDic() { seriesExplicaClose(); teShow('glossModal'); }
+// nota "Como ler as tuas séries" escrita antes da v668: a palavra "ajuste" vira "preparação" só na hora de mostrar (a planilha não muda)
+function _serTrocaNome(t) {
+  const M = { o: 'a', um: 'uma', do: 'da', no: 'na', ao: 'à', pelo: 'pela', esse: 'essa', este: 'esta', nenhum: 'nenhuma' };
+  return String(t || '').replace(/(^|[\s(])(o|um|do|no|ao|pelo|esse|este|nenhum) ajuste(?![a-zà-ú])/gi, (m, p, a) => { const n = M[a.toLowerCase()]; return p + (a.charAt(0) !== a.charAt(0).toLowerCase() ? n.charAt(0).toUpperCase() + n.slice(1) : n) + ' preparação'; })
+    .replace(/(^|[^a-zà-ú])Ajuste(?![a-zà-ú])/g, '$1Preparação').replace(/(^|[^a-zà-ú])ajuste(?![a-zà-ú])/g, '$1preparação').replace(/^aq\s*·\s*aj\s*·\s*val$/i, 'aquecimento, preparação e válida');
+}
 function openGlossario(key) {
+  if (/^(aq|aj|pap|val|bo|semaq)$/.test(String(key || ''))) return openSeriesExplica(key);
   teShow('glossModal');
   // abriu de um termo da ficha: rola até a entrada e dá um flash pra situar
   if (key) setTimeout(() => {
@@ -29678,7 +29758,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v667';
+    var APP_SHELL_V = 'metodo-gh-v668';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
@@ -31687,7 +31767,7 @@ function diMoAplicaRea() {
   _diMoDesenha();
 }
 
-// v667: rotulador de séries (cópia do núcleo da lane Entregas, gerada por _gera_series_app.mjs), gerador de treino do Montar e giro do reajuste
+// v668: rotulador de séries (cópia do núcleo da lane Entregas, gerada por _gera_series_app.mjs), gerador de treino do Montar e giro do reajuste
 const GHSR = (function () {
 const TAB = {"ABDOMINAL ARNOLD":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDOMINAL ELEVAÇÃO DE PERNAS COM HALTER OU CANELEIRA":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna","quadril"]},"ABDOMINAL ELEVAÇÃO DE PERNAS NA PARALELA":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna","quadril"]},"ABDOMINAL ELEVAÇÃO DE PERNAS NO BANCO DECLINADO":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna","quadril"]},"ABDOMINAL NA BARRA FIXA":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDOMINAL NA MÁQUINA":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDOMINAL NA REMADA BAIXA OU CROSS":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDOMINAL NO BANCO DECLINADO":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDOMINAL NO BANCO DECLINADO COM PESO":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDOMINAL NO CHÃO":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDUÇÃO DEITADA COM MINI BAND":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"ABDUÇÃO EM PÉ NA MÁQUINA":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"ABDUÇÃO EM QUATRO APOIOS COM MINI BAND":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"ABDUÇÃO LATERAL NA MÁQUINA":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"ABDUÇÃO NO CROSS":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"AFUNDO NO CHÃO":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"AFUNDO SMITH":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"AFUNDO SMITH COM STEP":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"AGACHAMENTO HACK":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["coluna","joelho","quadril","tornozelo"]},"AGACHAMENTO LIVRE":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"AGACHAMENTO SMITH":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"AGACHAMENTO SUMÔ SMITH":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"ALONGAMENTO ADUTORES":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"ALONGAMENTO ESCÁPULAS E OMBRO":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"ALONGAMENTO GLÚTEO":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"ALONGAMENTO PEITORAL MENOR":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"ALONGAMENTO POSTERIOR":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"ALONGAMENTO QUADRIL – RETROVERSÃO":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"ALONGAMENTO TORNOZELO E ILIOPSOAS":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"AQUECIMENTO MANGUITO":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"BARRA FIXA":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"BÚLGARO":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"BÚLGARO NA MÁQUINA":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo"]},"CADEIRA ABDUTORA":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"CADEIRA ABDUTORA 45° EM PÉ":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"CADEIRA ABDUTORA EM PÉ":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"CADEIRA ADUTORA":{"grupo":"adutor","tipo":"isolador","vetor":"aducao-quadril","artic":["quadril"]},"CADEIRA EXTENSORA":{"grupo":"quad","tipo":"isolador","vetor":"extensao-joelho","artic":["joelho"]},"CADEIRA FLEXORA":{"grupo":"posterior","tipo":"isolador","vetor":"flexao-joelho","artic":["joelho"]},"COICE COM CANELEIRA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"COICE NA MÁQUINA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"COICE NO CROSS COM POLIA ALTA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"CROSSOVER":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CROSSOVER POLIA MÉDIA":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO DECLINADO":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO DECLINADO COM HALTERES":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO INCLINADO":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO INCLINADO NO CROSS":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO INVERSO COM HALTERES":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO INVERSO NO CROSS":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO INVERSO NO VOADOR":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO RETO":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO RETO COM HALTERES":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"DESCOMPRESSÃO ESCÁPULAS":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"DESCOMPRESSÃO LOMBAR":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"DESENVOLVIMENTO COM HALTERES":{"grupo":"ombro","tipo":"composto","vetor":"empurrar-vertical","artic":["ombro","cotovelo","escapula"]},"DESENVOLVIMENTO NA MÁQUINA":{"grupo":"ombro","tipo":"composto","vetor":"empurrar-vertical","artic":["ombro","cotovelo","escapula"]},"DESENVOLVIMENTO NA MÁQUINA INCLINADO":{"grupo":"ombro","tipo":"composto","vetor":"empurrar-vertical","artic":["ombro","cotovelo","escapula"]},"ELEVAÇÃO FRONTAL COM ANILHA":{"grupo":"ombro","tipo":"isolador","vetor":"flexao-ombro","artic":["ombro"]},"ELEVAÇÃO FRONTAL COM HALTERES EM ISOMETRIA":{"grupo":"ombro","tipo":"isolador","vetor":"flexao-ombro","artic":["ombro"]},"ELEVAÇÃO FRONTAL NEUTRA COM HALTERES":{"grupo":"ombro","tipo":"isolador","vetor":"flexao-ombro","artic":["ombro"]},"ELEVAÇÃO FRONTAL NO CROSS":{"grupo":"ombro","tipo":"isolador","vetor":"flexao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL NA MÁQUINA":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL NA MÁQUINA SENTADO":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL NO BANCO INCLINADO":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL NO CROSS":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL PARCIAL NO CROSS":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL SENTADO":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO PÉLVICA 2D OU LIVRE":{"grupo":"gluteo","tipo":"composto","vetor":"extensao-quadril","artic":["quadril","joelho"]},"ELEVAÇÃO PÉLVICA NA MÁQUINA":{"grupo":"gluteo","tipo":"composto","vetor":"extensao-quadril","artic":["quadril","joelho"]},"EXTENSÃO DE GLÚTEO COM CANELEIRA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"EXTENSÃO DE GLÚTEO NA MÁQUINA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"EXTENSÃO DE GLÚTEO NA POLIA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"EXTENSÃO DE PUNHO COM BARRA":{"grupo":"antebraco","tipo":"isolador","vetor":"punho","artic":["punho"]},"EXTENSÃO DE PUNHO NO CROSS":{"grupo":"antebraco","tipo":"isolador","vetor":"punho","artic":["punho"]},"FACE PULL":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-horizontal","artic":["ombro","escapula"]},"FACEPULL COM CORDA NO CROSS":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-horizontal","artic":["ombro","escapula"]},"FLEXOR NÓRDICO NA MÁQUINA":{"grupo":"posterior","tipo":"isolador","vetor":"flexao-joelho","artic":["joelho"]},"FLEXORA UNILATERAL EM PÉ":{"grupo":"posterior","tipo":"isolador","vetor":"flexao-joelho","artic":["joelho"]},"FLEXÃO DE PUNHO COM BARRA":{"grupo":"antebraco","tipo":"isolador","vetor":"punho","artic":["punho"]},"GLÚTEO NO HIPEREXTENSOR DE LOMBAR":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"HIPEREXTENSOR DE LOMBAR NA MÁQUINA COM CARGA":{"grupo":"lombar","tipo":"isolador","vetor":"extensao-tronco","artic":["coluna","quadril"]},"HIPEREXTENSÃO DE LOMBAR":{"grupo":"lombar","tipo":"isolador","vetor":"extensao-tronco","artic":["coluna","quadril"]},"LEG HORIZONTAL":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["coluna","joelho","quadril","tornozelo"]},"LEG PRESS 45º":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["coluna","joelho","quadril","tornozelo"]},"LEG PRESS 45º UNILATERAL":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["coluna","joelho","quadril","tornozelo"]},"LEVANTAMENTO TERRA":{"grupo":"quad","tipo":"composto","vetor":"dobradica","artic":["coluna","joelho","quadril","tornozelo"]},"LEVANTAMENTO TERRA HEXAGONAL":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["coluna","joelho","quadril","tornozelo"]},"LEVANTAMENTO TERRA NA MÁQUINA":{"grupo":"quad","tipo":"composto","vetor":"dobradica","artic":["coluna","joelho","quadril","tornozelo"]},"MEIO TERRA":{"grupo":"lombar","tipo":"composto","vetor":"dobradica","artic":["quadril","coluna"]},"MESA FLEXORA":{"grupo":"posterior","tipo":"isolador","vetor":"flexao-joelho","artic":["joelho"]},"MESA FLEXORA LIVRE COM HALTER":{"grupo":"posterior","tipo":"isolador","vetor":"flexao-joelho","artic":["joelho"]},"MOBILIDADE DE TORNOZELO":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"OSTRA COM MINI BAND":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"PANTURRILHA EM PÉ":{"grupo":"panturrilha","tipo":"isolador","vetor":"flexao-plantar","artic":["tornozelo"]},"PANTURRILHA NO LEG 45º":{"grupo":"panturrilha","tipo":"isolador","vetor":"flexao-plantar","artic":["tornozelo"]},"PANTURRILHA SENTADO":{"grupo":"panturrilha","tipo":"isolador","vetor":"flexao-plantar","artic":["tornozelo"]},"PRANCHA COM RETROVERSÃO":{"grupo":"abdomen","tipo":"isolador","vetor":"anti-extensao","artic":["coluna"]},"PRANCHA PARAVERTEBRAIS":{"grupo":"abdomen","tipo":"isolador","vetor":"anti-extensao","artic":["coluna"]},"PULLDOWN":{"grupo":"costas","tipo":"isolador","vetor":"puxar-vertical","artic":["ombro","escapula"]},"PULLDOWN NA MÁQUINA":{"grupo":"costas","tipo":"isolador","vetor":"puxar-vertical","artic":["ombro","escapula"]},"PULLOVER COM HALTER":{"grupo":"costas","tipo":"isolador","vetor":"puxar-vertical","artic":["ombro","escapula"]},"PULLOVER NA MÁQUINA":{"grupo":"costas","tipo":"isolador","vetor":"puxar-vertical","artic":["ombro","escapula"]},"PUXADA ALTA COM TRIÂNGULO":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"PUXADA ALTA NA MÁQUINA ARTICULADA":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"PUXADA ALTA PRONADA":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"PUXADA ALTA SUPINADA":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"PUXADA ALTA SUPINADA NA MÁQUINA":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"PUXADA ALTA UNILATERAL SUPINADA":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"REMADA ALTA NA POLIA":{"grupo":"ombro","tipo":"composto","vetor":"puxar-vertical-alto","artic":["ombro","cotovelo","escapula"]},"REMADA BAIXA ABERTA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA BAIXA COM TRIÂNGULO":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA BAIXA DROP SET MECÂNICO COM TRIÂNGULO":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA BAIXA SUPINADA NA MÁQUINA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA CAVALINHO ABERTA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula","coluna","quadril"]},"REMADA CURVADA NA MÁQUINA GUIADA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA CURVADA PRONADA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula","coluna","quadril"]},"REMADA CURVADA SENTADO":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA NEUTRA NO CROSS":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA PRONADA NA MÁQUINA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA UNILATERAL NA MÁQUINA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"ROSCA BAYESIAN":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo","ombro"]},"ROSCA CONCENTRADA COM HALTER":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA DIRETA ALTERNADA":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA DIRETA COM BARRA W":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA DIRETA COM HALTER NO BANCO INCLINADO":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo","ombro"]},"ROSCA DIRETA COM HALTERES":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA DIRETA NA PUXADA ALTA":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA DIRETA NO CROSS":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA MARTELO COM HALTERES":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA MARTELO NO CROSS":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA SCOTT FECHADA":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA SCOTT UNILATERAL":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA SPIDER":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA UNILATERAL NO CROSS":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"SAPINHO NA MÁQUINA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"SERROTE COM HALTER":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula","coluna","quadril"]},"SERROTE PÊNDULO COM HALTER":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula","coluna","quadril"]},"STEP UP":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"STEP UP NO CROSS":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"STIFF":{"grupo":"posterior","tipo":"composto","vetor":"dobradica","artic":["quadril","coluna"]},"STIFF NA MÁQUINA":{"grupo":"posterior","tipo":"composto","vetor":"dobradica","artic":["quadril"]},"STIFF NO HIPEREXTENSOR":{"grupo":"posterior","tipo":"composto","vetor":"dobradica","artic":["quadril"]},"SUPERMAN – FORTALECIMENTO PARAVERTEBRAIS E GLÚTEO":{"grupo":"lombar","tipo":"isolador","vetor":"extensao-tronco","artic":["coluna","quadril"]},"SUPINO DECLINADO":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO DECLINADO COM BARRA":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO DECLINADO COM HALTERES":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO DECLINADO NA MÁQUINA":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO INCLINADO":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO INCLINADO COM HALTERES":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO INCLINADO NA MÁQUINA":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO RETO":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO RETO COM HALTERES":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO RETO NA MÁQUINA":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO RETO NA MÁQUINA SENTADO":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"TERRA SUMÔ":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["coluna","joelho","quadril","tornozelo"]},"TRÍCEPS FRANCÊS COM HALTER":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo","ombro"]},"TRÍCEPS FRANCÊS NO CROSS":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo","ombro"]},"TRÍCEPS NA PARALELA":{"grupo":"triceps","tipo":"composto","vetor":"extensao-cotovelo","artic":["cotovelo","ombro","escapula"]},"TRÍCEPS PULLEY COM BARRA":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo"]},"TRÍCEPS PULLEY COM CORDA":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo"]},"TRÍCEPS PULLEY NA MÁQUINA":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo"]},"TRÍCEPS PULLEY UNILATERAL":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo"]},"TRÍCEPS SUPINADO":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo"]},"TRÍCEPS TESTA EM PÉ":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo","ombro"]},"TRÍCEPS TESTA NO BANCO INCLINADO":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo","ombro"]},"VOADOR":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]}};
 const norm = s => String(s || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
@@ -32218,10 +32298,11 @@ const GHTR = (() => {
     // v667 (GH 18/11): quem pediu um a dois músculos por dia treinando 3 ou 4 vezes também recebe o desenho dele, com o segundo
     // estímulo de cada músculo grande em outro dia. Em 4 treinos com corpo todo a regra do método (empurrar, puxar, pernas e corpo inteiro) segue valendo.
     if (f === 4) {
-      if (!pri) return null;
       const CB = dia('Costas e bíceps', 'pull', 'remP remB pux pull inv rosW mar lom', 'remP remB pux inv rosW mar lom');
       const PT = dia('Peito e tríceps', 'push', 'abd cruI supI voa fra pul panP', 'abd cruI supI voa fra pul');
       const L = dia('Pernas', 'quad', 'tes hack leg ext mesa sti cadF', 'tes hack leg ext mesa sti');
+      // v668 (GH 18/11: "montar como o aluno pede, só que com bom senso"): sem prioridade também sai no formato pedido
+      if (!pri) return ['BRO_4X', PT, CB, L, dia('Ombro', 'upper', 'supRm cro remU puxT des lat latX', 'supRm cro remU des lat latX')];
       const PO = dia('Peito, ombro e tríceps', 'push', 'cruI supI voa des lat latX pul', 'cruI supI voa des lat pul');
       if (pri === 'peito') return ['BRO_4X', dia('Peito e tríceps', 'push', 'abd cruI supI supR voa fra pul', 'abd cruI supI supR voa pul'), CB, L, dia('Ombro', 'upper', 'supRm cro remU des lat latX panP', 'supRm cro des lat latX panP')];
       if (pri === 'costas') return ['BRO_4X', dia('Costas e bíceps', 'pull', 'remP remB pux pull inv rosW mar lom', 'remP remB pux pull inv rosW lom'), dia('Peito e tríceps', 'push', 'abd cruI supI voa fra pul panP', 'abd cruI supI latX fra pul'), dia('Pernas', 'quad', 'tes hack leg ext mesa sti cadF', 'sco hack leg ext mesa sti'), dia('Ombro', 'upper', 'supRm cro remU puxT des lat latX', 'supRm cro remU puxT des lat')];
@@ -32260,7 +32341,19 @@ const GHTR = (() => {
       if (pri === 'braco') return ['UL_4X', TA, dia('Braços e inferiores', 'quad', 'rosW fra pul hack leg ext mesa', 'rosW fra pul hack leg ext'), dia('Superiores', 'upper', 'supRm cro remM puxT latX invX abd', 'supRm cro remM latX invX abd'), dia('Braços e inferiores', 'lower', 'sco bay tes pelv bul fleU sti', 'sco tes pelv bul fleU sti')];
       if (pri === 'quad') return ['UL_4X', dia('Braços e inferiores', 'quad', 'rosW fra hack leg bul ext mesa', 'rosW fra hack leg bul ext'), TA, dia('Braços e inferiores', 'lower', 'sco pulB agL legU sti fleU panP', 'sco pulB agL legU sti fleU'), TBa];
       if (pri === 'posterior') return ['UL_4X', dia('Braços e inferiores', 'post', 'rosW fra mesa sti cadF fleU leg', 'rosW fra mesa sti cadF fleU'), TA, dia('Braços e inferiores', 'lower', 'sco pulB hack ext mesa cadF panP', 'sco pulB hack ext mesa cadF'), TBa];
+      // v668 (GH 18/11): o pedido do aluno ganha também sem prioridade
+      if (!pri) return ['UL_4X', TA, LA, TB, LB];
+      // costas de prioridade em 4 treinos não cabe: 6 exercícios de costas mais o mínimo de peito, ombro e lombar passam das vagas dos dois dias de superiores
       return null;
+    }
+    // v668: em 6 treinos, superiores e inferiores alternados (três de cada)
+    if (f === 6) {
+      const TC = dia('Superiores', 'upper', 'cruIx supR remB pull lat fro abd2', 'supR cro remB pull lat fro');
+      const LC = dia('Braços e inferiores', 'lower', 'bay tes abdu agL legU cadF panP', 'bay tes agL legU cadF panP');
+      if (!pri) return ['UL_6X', TA, LA, TB, LB, TC, LC];
+      // com prioridade: os mesmos dias do desenho de 5 treinos, mais o dia que falta (inferiores quando a prioridade é de cima, superiores quando é perna)
+      const o = desenhoUL(5, pri, curto); if (!o) return null;
+      return PERNA[pri] ? ['UL_6X', o[1], o[2], o[3], o[4], o[5], TC] : ['UL_6X', o[1], o[2], o[3], o[4], o[5], LC];
     }
     if (f === 5) {
       const TC = dia('Superiores', 'upper', 'cruIx supR remB pull lat fro abd2', 'supR cro remB pull lat fro');
@@ -32380,13 +32473,11 @@ const GHTR = (() => {
     const ele = P.sexo === 'M' ? 'Ele' : 'Ela';
     if (P.prefK !== 'C' && P.sexo !== 'M') notaPref = 'Ela marcou que gosta de treinar com ' + PREF_TXT[P.prefK] + '. Pra mulher o Montar usa o desenho feminino do método, com inferiores abrindo a semana. Se quiser outro formato, monta na mão.';
     else if (P.prefK === 'A') notaPref = proprio ? 'Ele pediu um a dois músculos por dia: a semana saiu nesse formato, com um segundo estímulo dos músculos grandes e de braço em outro dia.'
-      : P.freq === 4 && !P.pri ? 'Ele pediu um a dois músculos por dia. Com 4 treinos e sem prioridade, a regra do método é empurrar, puxar, pernas e corpo inteiro, e a semana saiu assim. Com uma prioridade marcada o Montar faz no formato que ele pediu.'
-        : 'Ele pediu um a dois músculos por dia, mas com ' + P.freq + ' treinos e essa prioridade o formato não fecha nas regras do método. A semana saiu no desenho do método. Confere os dias antes de entregar.';
+      : 'Ele pediu um a dois músculos por dia, mas com ' + P.freq + ' treinos e essa prioridade o formato não fecha o mínimo de cada músculo na semana. A semana saiu no desenho do método. Confere os dias antes de entregar.';
     else if (P.prefK === 'U') notaPref = proprio ? 'Ele pediu superiores em um dia e inferiores em outro: a semana saiu assim, com os braços abrindo os dias de inferiores.'
       : P.freq === 3 ? 'Ele pediu superiores em um dia e inferiores em outro: com 3 treinos o desenho do método já separa superiores e inferiores.'
-        : P.freq === 6 ? 'Ele pediu superiores em um dia e inferiores em outro. Com 6 treinos a regra do método é dois dias de superiores e um de pernas, duas vezes na semana, e a semana saiu assim.'
-          : P.freq === 4 && !P.pri ? 'Ele pediu superiores em um dia e inferiores em outro. Com 4 treinos e sem prioridade, a regra do método é empurrar, puxar, pernas e corpo inteiro, e a semana saiu assim. Com uma prioridade marcada o Montar faz no formato que ele pediu.'
-            : 'Ele pediu superiores em um dia e inferiores em outro. Com ' + P.freq + ' treinos e essa prioridade as regras do método pedem outro desenho, e a semana saiu nele. Confere os dias antes de entregar.';
+        : P.freq === 4 && P.pri === 'costas' ? 'Ele pediu superiores em um dia e inferiores em outro. Com prioridade de costas em 4 treinos não cabe: os 6 exercícios de costas mais o mínimo de peito e de ombro passam do que dois dias de superiores comportam. A semana saiu no desenho do método.'
+          : 'Ele pediu superiores em um dia e inferiores em outro. Com ' + P.freq + ' treinos e essa prioridade o formato não fecha o mínimo de cada músculo na semana, e a semana saiu no desenho do método. Confere os dias antes de entregar.';
     else if (P.prefK === 'P') notaPref = proprio ? 'Ele pediu empurrar, puxar e pernas: a semana saiu com um dia de cada. Cada músculo grande aparece uma vez na semana, com volume maior no dia dele.'
       : 'Ele pediu empurrar, puxar e pernas: o desenho do método pra ' + P.freq + ' treinos já parte dessa divisão.';
     const linhas = [];
@@ -32423,7 +32514,7 @@ const GHTR = (() => {
       ['restrict', (prim ? (P.sexo === 'F' ? 'Seja bem-vinda, ' : 'Seja bem-vindo, ') + prim + '. ' : '') + 'São ' + ext + ' treinos na semana: ' + rotulos + '. Segue a ordem, e o próximo treino é sempre o que falta.' + (P.restricao ? ' ' + P.restricao : ''), '', '', '', '', '', ''],
       P.menor ? ['meta', 'Esforço-alvo', '2 a 3 no tanque', 'Para a série quando ainda sobrarem 2 ou 3 repetições no tanque, sem ir até a falha: nessa fase o que constrói é o movimento bem feito e a carga subindo aos poucos', '', '', '', '']
         : ['meta', 'Esforço-alvo', '0 a 1 no tanque na série válida', 'Mira parar com 0 ou 1 repetição ainda no tanque: esse é o teu alvo. Sobrou até 2, a série conta. Sobrou 3 ou mais, aquela série não valeu, e o app abre outra pra tu fazer com mais carga', '', '', '', ''],
-      ['meta', 'Como ler as tuas séries', 'aq · aj · val', 'aq é aquecimento: carga leve, 10 repetições, só pra lubrificar a articulação. aj é ajuste: carga média, 6 repetições, pro teu sistema nervoso entender que vai haver esforço, sem cansar. val é a série válida, a única que constrói músculo e a única onde a carga vale', '', '', '', ''],
+      ['meta', 'Como ler as tuas séries', 'aq · aj · val', 'aq é aquecimento: carga leve, 10 repetições, só pra lubrificar a articulação. aj é preparação: mais peso que no aquecimento e menos repetições (carga média, 6 repetições), pra preparar o músculo pro peso da válida, sem cansar. val é a série válida, a única que constrói músculo e a única onde a carga vale', '', '', '', ''],
       ['meta', 'A carga sobe toda semana', 'É a régua do protocolo', 'Anota a carga de cada exercício no app. A regra pra subir o peso: quando tu fizer o número de cima da faixa em todas as séries válidas, dentro do teu Esforço-alvo, no próximo treino sobe uns 5% no peso, e nos grandes de perna (agachamento, leg press, stiff, elevação pélvica) uns 10%. O app te mostra o número. Aí as repetições caem pro começo da faixa, e tu vai subindo de novo até o topo', '', '', '', ''],
       ['meta', 'Exercício de um lado por vez', 'Descanso só depois dos dois lados', 'No exercício unilateral, o descanso é depois de fazer os dois lados. Faz o direito, emenda o esquerdo, e só aí conta o tempo. Um lado seguido do outro é uma série', '', '', '', ''],
       ['meta', 'Respiração', 'Solta o ar na força, puxa na volta', 'Em todo exercício: puxa o ar na parte que volta devagar e solta pela boca na hora de fazer força. Nunca prende o ar pra empurrar a carga: prender sobe muito a pressão. Se a série só sai prendendo o ar, a carga passou do ponto pra ti naquele dia', '', '', '', ''],
@@ -33108,14 +33199,13 @@ function _trMoDesenha() {
   if (ini && ini.freq != null && !(ini.freq >= 3 && ini.freq <= 6)) av.push('Ele marcou ' + ini.freqTxt + ' na frequência. O Montar faz de 3 a 6 treinos na semana: escolhe aqui em cima quantos vão ser, ou monta esse na mão.');
   if (ini && ini.priFora) av.push('A prioridade que ele marcou (' + ini.priTxt + ') não tem desenho próprio. Deixei em corpo todo: escolhe o grupo mais perto, ou acrescenta volume na mão depois.');
   if (v.sexo === 'F' && v.pref && v.pref !== 'C') av.push('Pra mulher o Montar usa sempre o desenho feminino do método, com inferiores abrindo a semana. A escolha de como gosta de treinar vale pro treino de homem.');
-  // v667: o pedido da 83.1 ganha desenho próprio em quase toda combinação; o aviso só aparece onde uma regra do método manda outro desenho
+  // v668 (GH 18/11): o pedido da 83.1 ganha sempre que fecha o mínimo de cada músculo; o aviso só aparece onde não fecha
   if (v.sexo === 'M' && v.freq && /^[AUP]$/.test(v.pref || '') && !(v.freq === 4 && v.pri === 'gluteo') && !GHTR.temProprio(v.pref, v.freq, v.pri || null, v.curto)) {
     const ped = { A: 'Um a dois músculos por dia', U: 'Superiores e inferiores', P: 'Empurrar, puxar e pernas' }[v.pref];
     if (v.pref === 'P') { /* de 4 treinos pra cima o desenho do método já é empurrar, puxar e pernas */ }
-    else if (v.freq === 4 && !v.pri) av.push(ped + ' com 4 treinos e sem prioridade: a regra do método é empurrar, puxar, pernas e corpo inteiro, e o Montar usa ela. Marcando uma prioridade, sai no formato que ele pediu.');
     else if (v.pref === 'U' && v.freq === 3) av.push('Com 3 treinos o desenho do método já separa superiores e inferiores.');
-    else if (v.pref === 'U' && v.freq === 6) av.push('Superiores e inferiores com 6 treinos: a regra do método é dois dias de superiores e um de pernas, duas vezes na semana, e o Montar usa ela.');
-    else av.push(ped + ' com ' + v.freq + ' treinos e essa prioridade não fecha nas regras do método. O Montar usa o desenho do método: confere os dias antes de entregar.');
+    else if (v.pref === 'U' && v.freq === 4 && v.pri === 'costas') av.push('Superiores e inferiores com prioridade de costas em 4 treinos não cabe: 6 exercícios de costas mais o mínimo de peito e de ombro passam do que dois dias de superiores comportam. O Montar usa o desenho do método.');
+    else av.push(ped + ' com ' + v.freq + ' treinos e essa prioridade não fecha o mínimo de cada músculo na semana. O Montar usa o desenho do método: confere os dias antes de entregar.');
   }
   if (ini && ini.idade && ini.idade < 18) av.push('Menor de 18 anos: sai como iniciante, parando com 2 a 3 repetições no tanque.');
   (ini ? ini.limites : []).forEach(t => av.push(t + '. O Montar não lê texto livre: depois de montar, confere e troca na mão o que bater nisso.'));
@@ -33218,16 +33308,19 @@ const GHSU = (() => {
     betaalanina: ['Beta-alanina', '3g', 'Pré-treino', /^beta-? ?alanina/],
     citrulina: ['Citrulina malato', '6g', 'Pré-treino, 30 minutos antes', /^(l-? ?)?citrulina/],
     teanina: ['L-Teanina', '200mg', 'Antes de dormir', /^(l-? ?)?teanina/],
+    // v668 (GH 18/11: "são protetores hepáticos naturais, pode fazer aí"): dose e horário mais usados nos protocolos entregues
+    tudca: ['TUDCA', '250mg', 'Ao acordar', /^tudca|^tauroursodes/],
+    sawpalmetto: ['Saw Palmetto', '300mg', 'Pós-desjejum', /^saw ?palmetto|^serenoa/],
   };
-  const ORDEM = ['vinagre', 'boswellia', 'arnica', 'ashwa', 'cactin', 'dimpless', 'canela', 'cromo', 'omega', 'morosil', 'multi', 'd3', 'b12', 'folico', 'policosanol', 'coq10', 'nac', 'silimarina', 'selenio', 'nattokinase', 'vitc', 'biotina', 'bacopa', 'rhodiola', 'berberina', 'psyllium', 'enzimas', 'probiotico', 'ferro', 'inositol', 'glutamina', 'curcuma', 'glucosamina', 'tirosina', 'cafeina', 'taurina', 'betaalanina', 'citrulina', 'whey', 'sono', 'magnesio', 'zinco', 'passiflora', 'teanina', 'htp', 'creatina'];
-  // o que entra só pelo toque do treinador, na ordem em que aparece na tela
-  const EXTRAS = [['cafeina', 'Cafeína'], ['taurina', 'Taurina'], ['betaalanina', 'Beta-alanina'], ['citrulina', 'Citrulina'], ['glutamina', 'Glutamina'], ['probiotico', 'Probiótico'], ['psyllium', 'Psyllium'], ['vinagre', 'Vinagre de maçã'], ['curcuma', 'Cúrcuma'], ['glucosamina', 'Glucosamina e condroitina'], ['nac', 'NAC'], ['silimarina', 'Silimarina'], ['selenio', 'Selênio'], ['teanina', 'L-Teanina'], ['cactin', 'Cactin'], ['dimpless', 'Dimpless']];
+  const ORDEM = ['vinagre', 'tudca', 'boswellia', 'arnica', 'ashwa', 'cactin', 'dimpless', 'canela', 'cromo', 'omega', 'morosil', 'multi', 'd3', 'b12', 'folico', 'policosanol', 'coq10', 'nac', 'silimarina', 'selenio', 'sawpalmetto', 'nattokinase', 'vitc', 'biotina', 'bacopa', 'rhodiola', 'berberina', 'psyllium', 'enzimas', 'probiotico', 'ferro', 'inositol', 'glutamina', 'curcuma', 'glucosamina', 'tirosina', 'cafeina', 'taurina', 'betaalanina', 'citrulina', 'whey', 'sono', 'magnesio', 'zinco', 'passiflora', 'teanina', 'htp', 'creatina'];
+  // o que entra por gatilho da anamnese ou do exame (v668) ou pelo toque do treinador, na ordem em que aparece na tela
+  const EXTRAS = [['cafeina', 'Cafeína'], ['taurina', 'Taurina'], ['betaalanina', 'Beta-alanina'], ['citrulina', 'Citrulina'], ['glutamina', 'Glutamina'], ['probiotico', 'Probiótico'], ['psyllium', 'Psyllium'], ['vinagre', 'Vinagre de maçã'], ['curcuma', 'Cúrcuma'], ['glucosamina', 'Glucosamina e condroitina'], ['nac', 'NAC'], ['silimarina', 'Silimarina'], ['tudca', 'TUDCA'], ['selenio', 'Selênio'], ['sawpalmetto', 'Saw Palmetto'], ['teanina', 'L-Teanina'], ['cactin', 'Cactin'], ['dimpless', 'Dimpless']];
   const ESTATINA = /statina|crestor|lipitor|zocor|vytorin|trezor|rosucor|plenance/, ESTIMULANTE = /venvanse|ritalina|concerta|lisdexanfetamina|metilfenidato|anfetamina|modafinil/;
   const estatina = t => { const m = nrm(t).match(ESTATINA); return m ? m[0] : ''; };
   const NOME = { omega: 'Ômega 3', creatina: 'Creatina', whey: 'Whey', magnesio: 'Magnésio', morosil: 'Morosil', enzimas: 'Enzimas digestivas', ashwa: 'Ashwagandha', rhodiola: 'Rhodiola', htp: '5-HTP', bacopa: 'Bacopa', tirosina: 'L-Tirosina', vitc: 'Vitamina C', zinco: 'Zinco', biotina: 'Biotina',
     sono: 'Fórmula do Sono', passiflora: 'Passiflora', boswellia: 'Boswellia', arnica: 'Arnica', d3: 'Vitamina D3', b12: 'B12', ferro: 'Ferro', policosanol: 'Policosanol', nattokinase: 'Nattokinase', berberina: 'Berberina', folico: 'Metilfolato', multi: 'Multivitamínico',
     coq10: 'Coenzima Q10', canela: 'Canela', cromo: 'Cromo picolinato', inositol: 'Inositol', vinagre: 'Vinagre de maçã', cactin: 'Cactin', dimpless: 'Dimpless', nac: 'NAC', silimarina: 'Silimarina', selenio: 'Selênio', psyllium: 'Psyllium', probiotico: 'Probiótico',
-    glutamina: 'Glutamina', curcuma: 'Cúrcuma', glucosamina: 'Glucosamina e condroitina', cafeina: 'Cafeína', taurina: 'Taurina', betaalanina: 'Beta-alanina', citrulina: 'Citrulina', teanina: 'L-Teanina' };
+    glutamina: 'Glutamina', curcuma: 'Cúrcuma', glucosamina: 'Glucosamina e condroitina', cafeina: 'Cafeína', taurina: 'Taurina', betaalanina: 'Beta-alanina', citrulina: 'Citrulina', teanina: 'L-Teanina', tudca: 'TUDCA', sawpalmetto: 'Saw Palmetto' };
   // o que não é do Montar: fica como está, nunca entra, nunca sai, nunca muda
   const FORA = /testo|enantato|cipionato|propionato|durateston|deca\b|nandrol|\bnpp\b|trembol|oxandrol|primobol|bolden|masteron|drostanol|stanoz|dianabol|hemogenin|oximetol|turinabol|\bdhb\b|anastrozol|tamoxif|clomif|\bhcg\b|gonadotrof|cabergol|tirzep|retatrut|semaglut|ozempic|mounjaro|\bcjc\b|ipamorel|\bbpc\b|tb-? ?500|mots-? ?c|ghk|tesamorel|somatrop|clembut|clenbut|ioimbina|yohimb|sibutram|levotirox|\bt3\b|\bt4\b|glifage|metformina|finaster|minoxidil|sildenafil|tadalafil/;
   const PSIQ = /sertralina|fluoxetina|escitalopram|paroxetina|venlafaxina|desvenlafaxina|duloxetina|bupropiona|citalopram|amitriptilina|nortriptilina|trazodona|mirtazapina|antidepress|venvanse|ritalina|concerta|lisdexanfetamina|metilfenidato|litio|quetiapina|risperidona|olanzapina|aripiprazol|clonazepam|rivotril|alprazolam|zolpidem|lamotrigina|topiramato|pregabalina/;
@@ -33235,6 +33328,44 @@ const GHSU = (() => {
   const dose = t => { const m = String(t || '').replace(',', '.').match(/(\d+(?:\.\d+)?)\s*(mg|g\b|mcg|ui)/i); if (!m) return null; const v = parseFloat(m[1]), u = m[2].toLowerCase(); return u === 'g' ? v * 1000 : v; };
   const FATOR = [[/digest|intestin/, 'digestao'], [/humor|bem-estar|emocional/, 'humor'], [/concentr|foco/, 'foco'], [/imunidade/, 'imunidade'], [/pele|cabelo|unhas/, 'pele']];
   function fatoresDe(txt) { const t = nrm(txt), out = []; FATOR.forEach(([re, k]) => { if (re.test(t)) out.push(k); }); return out; }
+
+  // ── v668 (GH 18/11: "não é por toque, é gatilho"): o que a anamnese diz liga cada suplemento do levantamento. Os motivos saíram
+  // das observações dos protocolos já entregues. Recebe os fatos já lidos da anamnese e devolve { chave: motivo }. ──
+  const JAUSA = { cafeina: /cafeina|pre-? ?treino|termogenico/, taurina: /taurina/, betaalanina: /beta-? ?alanina/, citrulina: /citrulina/, glutamina: /glutamina/, probiotico: /probiotic|lactobac/, psyllium: /psyllium|psilium/, vinagre: /vinagre de maca/,
+    curcuma: /curcum/, glucosamina: /glucosamina|condroitina/, nac: /(^|[^a-z])nac([^a-z]|$)|acetilciste/, silimarina: /silimarina|cardo mariano/, tudca: /tudca/, selenio: /(^|[,;+\/] ?)selenio/, teanina: /teanina/, sawpalmetto: /saw ?palmetto/, cactin: /cactin/, dimpless: /dimpless/ };
+  // comprimido no bloco do protocolo: só o nome serve pra ligar a proteção do fígado, nunca dose
+  const ORAL = /oxandrol|anavar|stanoz|winstrol|dianabol|metandrosten|hemogenin|oximetol|turinabol|halotest|fluoximest|metiltestost|comprimid|via oral/;
+  const oral = t => ORAL.test(nrm(t));
+  function gatilhos(A) {
+    A = A || {}; const g = {}, liga = (k, m) => { if (!g[k]) g[k] = m; };
+    const usa = nrm(A.usa), rem = nrm(A.remedios), sint = nrm(A.sintomas), saude = nrm(A.saude), fat = A.fat || [];
+    Object.keys(JAUSA).forEach(k => { if (usa && JAUSA[k].test(usa)) liga(k, 'ele já usa'); });
+    const est = rem.match(ESTIMULANTE);
+    if (g.cafeina && (est || A.pressao)) delete g.cafeina;
+    // pré-treino: desempenho no treino ou energia do dia em 1 ou 2
+    const dBaixo = A.desempenho != null && A.desempenho <= 2, eBaixa = A.energia != null && A.energia <= 2;
+    if (dBaixo || eBaixa) {
+      const m = dBaixo ? 'desempenho no treino em ' + A.desempenho + ' de 5' : 'energia do dia em ' + A.energia + ' de 5';
+      const semCafe = est ? 'ele usa ' + est[0] : A.pressao ? 'ele toma remédio de pressão ou de coração' : A.sonoRuim ? 'o sono está ruim' : /noite/.test(nrm(A.turno)) ? 'ele treina à noite' : '';
+      if (!semCafe) { liga('cafeina', m); liga('taurina', m + ', junto da cafeína'); }
+      else if (!A.pressao) liga('citrulina', m + ', sem cafeína porque ' + semCafe);
+    }
+    const dig = fat.indexOf('digestao') >= 0;
+    if (dig && A.estomago) liga('glutamina', 'digestão marcada e estômago sensível');
+    if (dig && (A.semProbiotico || A.lactose)) liga('probiotico', 'digestão marcada e ' + (A.semProbiotico ? 'nenhum alimento probiótico na semana' : 'intolerância à lactose'));
+    if (A.intestinoPreso) liga('psyllium', 'intestino preso');
+    else if (A.secar && A.fome >= 4) liga('psyllium', 'quer emagrecer e a fome está em ' + A.fome + ' de 5');
+    if (A.dorArticular && !A.artrose) liga('curcuma', 'dor articular sem laudo');
+    if (/artrose|condropatia|condromalac|desgaste|cartilagem|menisco/.test(nrm(A.artic))) liga('glucosamina', 'desgaste de cartilagem na articulação');
+    const fig = /figado/.test(sint) ? 'marcou alteração de colesterol e fígado nos sintomas' : /esteatose|gordura no figado|hepat/.test(saude) ? 'relatou problema no fígado' : A.bebeTodoDia ? 'bebe praticamente todos os dias' : '';
+    if (A.oral) ['silimarina', 'nac', 'tudca'].forEach(k => liga(k, 'tem comprimido no bloco do protocolo'));
+    else if (fig) { liga('silimarina', fig); liga('nac', fig); }
+    if (A.tireoide) liga('selenio', 'problema de tireoide');
+    if (A.pensaDormir && !A.sonoRuim) liga('teanina', 'pensa muito antes de dormir');
+    if (A.sexo === 'F' && A.retencao) liga('cactin', 'retenção de líquido');
+    if (A.sexo === 'M' && /queda de cabelo/.test(sint)) liga('sawpalmetto', 'queda de cabelo');
+    return g;
+  }
 
   const ANTICOAG = /marevan|varfarina|warfarin|coumadin|eliquis|apixaban|xarelto|rivaroxaban|pradaxa|dabigatran|lixiana|edoxaban|clexane|enoxaparina|heparina|anticoagulante|clopidogrel|plavix|ticagrelor|brilinta|\baas\b|aspirina|acido acetilsalicilico/;
   // o que este aluno leva: { chave: [nome, dose, horário] }
@@ -33263,6 +33394,10 @@ const GHSU = (() => {
     if (ex.glicJejum) { poe('canela'); poe('cromo'); }
     if (ex.insulina) { poe('berberina'); poe('canela'); }
     if (ex.homa) { poe('berberina'); poe('inositol'); }
+    // v668: o que o exame liga dos suplementos do levantamento (motivos das observações dos protocolos entregues)
+    if (ex.glicose || ex.glicJejum) poe('vinagre');
+    if (ex.ldl) poe('psyllium');
+    if (ex.figado) { poe('silimarina'); poe('nac'); poe('tudca'); }
     // v666: hematócrito acima de 50 no exame leva Nattokinase, menos em quem usa remédio que afina o sangue
     if (ex.hemat) {
       const afina = nrm(P.remedios).match(ANTICOAG);
@@ -33280,6 +33415,7 @@ const GHSU = (() => {
       if (est) { notas.push('Cafeína marcada, mas ele usa remédio estimulante (' + est[0] + '): a cafeína ficou fora, pra não somar estímulo.'); return; }
       poe(k);
     });
+    if (q.cafeina && /pre-? ?treino|termogenico/.test(nrm(P.jaUsa))) notas.push('Ele já usa pré-treino ou termogênico: se o produto dele tem cafeína, não soma as duas.');
     return q;
   }
 
@@ -33361,7 +33497,7 @@ const GHSU = (() => {
     else if (P.lactose && q.whey) notas.push('Intolerância à lactose: o whey é o isolado.');
     return { rows: saida, entrou, saiu, mudou, ficou, notas, total: saida.filter(r => ehSupl(r) && !sep(r)).length };
   }
-  return { monta, fatoresDe, ITEM, NOME, MULTI_MOTIVO, EXTRAS, estatina, nrm };
+  return { monta, fatoresDe, gatilhos, oral, ITEM, NOME, MULTI_MOTIVO, EXTRAS, estatina, nrm };
 })();
 
 // ── v664 (GH 17/11, plano B): MONTAR A SUPLEMENTAÇÃO dentro do editor da dieta, sem IA. Lê da anamnese inicial o que ele
@@ -33373,7 +33509,7 @@ const GHSU = (() => {
 const _suMo = { car: false, erro: '', senha: false, j: null, v: null, rv: null, pronto: null, aba: '' };
 const _SUMO_FAT = [['digestao', 'Digestão'], ['humor', 'Humor'], ['foco', 'Foco'], ['imunidade', 'Imunidade'], ['pele', 'Pele, cabelo e unha']];
 const _SUMO_TEM = [['sonoRuim', 'Sono ruim'], ['ansiedadeAlta', 'Ansiedade alta'], ['estresseAlto', 'Estresse alto'], ['dorArticular', 'Dor articular'], ['artrose', 'Artrose ou tendinite em laudo'], ['libido', 'Queda de libido']];
-const _SUMO_EX = [['d3', 'Vitamina D baixa'], ['b12', 'B12 baixa'], ['ferritina', 'Ferritina baixa'], ['ldl', 'Colesterol alto'], ['trig', 'Triglicérides alto'], ['glicose', 'Glicada 5,7 ou mais'], ['glicJejum', 'Glicemia de jejum 100 a 125'], ['insulina', 'Insulina acima de 12'], ['homa', 'HOMA-IR acima de 2,5'], ['zinco', 'Zinco baixo'], ['folico', 'Ácido fólico baixo'], ['hemat', 'Hematócrito acima de 50']];
+const _SUMO_EX = [['d3', 'Vitamina D baixa'], ['b12', 'B12 baixa'], ['ferritina', 'Ferritina baixa'], ['ldl', 'Colesterol alto'], ['trig', 'Triglicérides alto'], ['glicose', 'Glicada 5,7 ou mais'], ['glicJejum', 'Glicemia de jejum 100 a 125'], ['insulina', 'Insulina acima de 12'], ['homa', 'HOMA-IR acima de 2,5'], ['zinco', 'Zinco baixo'], ['folico', 'Ácido fólico baixo'], ['hemat', 'Hematócrito acima de 50'], ['figado', 'TGO, TGP ou GGT alto']];
 const _SUMO_WHEY = [['', 'Comum'], ['iso', 'Isolado (lactose)'], ['veg', 'Vegetal (alergia a leite)'], ['sem', 'Não compra']];
 const _SUMO_MULTI = [['', 'Não'], ['exame', 'Hipovitaminose no exame'], ['escritorio', 'Escritório sem sol'], ['desregrada', 'Alimentação desregrada']];
 function _suMoNao(t) { const n = _teFiNorm(t).trim(); return !n || /^(nao|n|nenhum|nenhuma|nada|nao uso|nao utilizo|nao tomo|-)\b/.test(n); }
@@ -33386,11 +33522,15 @@ function _suMoIni(j) {
   const fatTxt = R(/fatores.*precisa melhorar/), usa = resp.filter(y => /quais suplementos e (vitaminas|manipulados)/.test(N(_teFiTxt(y.p))) && !_suMoNao(y.r)).map(y => L(y.r)).join(' / ');
   const artic = [comResto(/problema osseo ou articular/), comResto(/limitacao articular/)].filter(Boolean).join(' / ');
   const exa = resp.find(y => /exames de sangue/.test(N(_teFiTxt(y.p)))), wheyTxt = R(/pacote de whey/), alergia = String(d.alergia || '');
+  // v668: o que os gatilhos dos suplementos do levantamento leem
+  const sim = re => /^sim\b/.test(N(R(re)).trim()), sonoT = N(R(/como e o seu sono/)), saude = comResto(/apresenta algum problema de saude/);
+  const g668 = { desempenho: nota(/desempenho nos treinos/), energia: nota(/disposicao e energia/), fome: nota(/como esta sua fome/), turno: R(/qual turno treina/), estomago: sim(/estomago e sensivel/), tireoide: sim(/problema de tireoide/), letargia: sim(/letargia ou retencao/),
+    pressao: sim(/medicamento para pressao/), saude, bebeTodoDia: /todos os dias/.test(N(R(/voce bebe\b/))), semProbiotico: /nenhum/.test(N(R(/quais probioticos/))), pensaDormir: /penso muito/.test(sonoT), usaHoje: sim(/utilizando hormonios atualmente/) ? R(/quais substancias/) : '' };
   const sint = R(/atualmente algum desses sintomas/), horm = /^sim\b/.test(N(R(/contratou o acompanhamento hormonal/)).trim());
   return { f, idade: +t.idade || null, sexo: d.sexo || t.sexo || '', objTxt: L(d.objTxt || ''), secar: d.obj === 'secar', fatTxt, fat: GHSU.fatoresDe(fatTxt), sono: t.sono == null ? null : t.sono, sonoTxt: R(/como e o seu sono/),
     ansioso: /^sim\b/.test(N(R(/muito ansioso/)).trim()), ansNota: nota(/nivel de ansiedade/), estressado: /^sim\b/.test(N(R(/muito estressado/)).trim()), estNota: nota(/nivel de estresse/),
     lac: !!d.lac, alergia, alergiaLeite: /leite|lact|caseina|whey/.test(N(alergia)), semWhey: !!wheyTxt && /^nao\b/.test(N(wheyTxt).trim()), wheyTxt, investe: R(/investir em sua suplementacao/), usa,
-    remedios: comResto(/utiliza medicamentos/), temExame: !!(exa && String(exa.r == null ? '' : exa.r).trim() && !_suMoNao(exa.r)), artic, artrose: /artrose|condropatia|condromalac|tendin|bursite|hernia/.test(N(artic)), libido: /libido/.test(N(sint)), horm, sint };
+    remedios: comResto(/utiliza medicamentos/), temExame: !!(exa && String(exa.r == null ? '' : exa.r).trim() && !_suMoNao(exa.r)), artic, artrose: /artrose|condropatia|condromalac|tendin|bursite|hernia/.test(N(artic)), libido: /libido/.test(N(sint)), horm, sint, g668 };
 }
 // formulário de reajuste: as notas de agora, comparadas com a rodada anterior
 function _suMoRea(j) {
@@ -33403,10 +33543,22 @@ function _suMoRea(j) {
 }
 function _suMoWheyNaDieta() { let dentro = false; return (dietaData || []).some(r => { const s = String((r && r[0]) || '').toLowerCase().trim(); if (s === 'ref') { dentro = true; return false; } if (dentro && (s === '' || s === 'alimento' || s === 'food' || s === 'op')) return /whey/i.test(String(r[1] || '')); if (s !== 'obs' && s !== 'nota') dentro = false; return false; }); }
 function _suMoTemSupl() { return Array.isArray(dietaData) && dietaData.some(r => String((r && r[0]) || '').toLowerCase().trim() === 'supl' && String(r[1] || '').trim()); }
+// v668 (GH 18/11: "não é por toque, é gatilho"): os fatos da anamnese e do bloco do protocolo que ligam cada suplemento do levantamento.
+// Do bloco do protocolo só se olha se existe nome de comprimido: nada dele é lido além disso, nem copiado, nem escrito.
+function _suMoOralBloco() { return (Array.isArray(dietaData) ? dietaData : []).some(r => /^(proto|ciclo)$/.test(String((r && r[0]) || '').toLowerCase().trim()) && GHSU.oral(String(r[1] || ''))); }
+function _suMoGatilhos(ini, sonoRuim) {
+  const N = _teFiNorm, oralB = _suMoOralBloco(); if (!ini) return GHSU.gatilhos({ oral: oralB });
+  const q = ini.g668 || {}, txt = N([q.saude, ini.fatTxt, ini.sint].join(' '));
+  return GHSU.gatilhos({ sexo: ini.sexo, usa: ini.usa, remedios: ini.remedios, sintomas: ini.sint, saude: q.saude, fat: ini.fat, desempenho: q.desempenho, energia: q.energia, fome: q.fome, turno: q.turno, sonoRuim: !!sonoRuim, pressao: !!q.pressao,
+    estomago: !!q.estomago, semProbiotico: !!q.semProbiotico, lactose: !!ini.lac, intestinoPreso: /intestino preso|constipa|prisao de ventre/.test(txt), secar: !!ini.secar, dorArticular: !!ini.artic, artrose: !!ini.artrose, artic: ini.artic, bebeTodoDia: !!q.bebeTodoDia,
+    tireoide: !!q.tireoide, pensaDormir: !!q.pensaDormir, retencao: /retencao de liquido/.test(N(ini.sint)) || (!!q.letargia && /retencao|inchac|incha\b/.test(txt)),
+    oral: oralB ? true : (GHSU.oral(q.usaHoje) ? 'ele relatou comprimido no que usa hoje' : '') });
+}
 function _suMoBase(ini) {
   const fat = {}; _SUMO_FAT.forEach(p => { fat[p[0]] = !!(ini && ini.fat.indexOf(p[0]) >= 0); });
-  return { fat, sonoRuim: !!(ini && ini.sono != null && ini.sono <= 2), ansiedadeAlta: !!(ini && ini.ansioso && ini.ansNota >= 4), estresseAlto: !!(ini && ini.estressado && ini.estNota >= 4), dorArticular: !!(ini && ini.artic), artrose: !!(ini && ini.artrose),
-    libido: !!(ini && ini.libido && !ini.horm), whey: ini ? (ini.semWhey ? 'sem' : (ini.alergiaLeite ? 'veg' : (ini.lac ? 'iso' : ''))) : '', deficit: false, multi: '', exame: {}, extra: {}, coq10: !!(ini && (GHSU.estatina(ini.remedios) || ini.idade > 50)) };
+  const sonoRuim = !!(ini && ini.sono != null && ini.sono <= 2), motivo = _suMoGatilhos(ini, sonoRuim), extra = {}; Object.keys(motivo).forEach(k => { extra[k] = true; });
+  return { fat, motivo, sonoRuim, ansiedadeAlta: !!(ini && ini.ansioso && ini.ansNota >= 4), estresseAlto: !!(ini && ini.estressado && ini.estNota >= 4), dorArticular: !!(ini && ini.artic), artrose: !!(ini && ini.artrose),
+    libido: !!(ini && ini.libido && !ini.horm), whey: ini ? (ini.semWhey ? 'sem' : (ini.alergiaLeite ? 'veg' : (ini.lac ? 'iso' : ''))) : '', deficit: false, multi: '', exame: {}, extra, coq10: !!(ini && (GHSU.estatina(ini.remedios) || ini.idade > 50)) };
 }
 function _suMoValores(ini) { if (!_suMo.v) _suMo.v = _suMoBase(ini); return _suMo.v; }
 function _suMoReaValores(ini, rea) {
@@ -33486,9 +33638,11 @@ function _suMoDesenha() {
   h += grupo('Em déficit e com gordura acima de 20%', [['Não', "suMoSet('deficit',false)", !v.deficit], ['Sim', "suMoSet('deficit',true)", !!v.deficit]]);
   h += grupo('O exame mostrou', _SUMO_EX.map(p => [p[1], "suMoSet('exame','" + p[0] + "')", !!v.exame[p[0]]]));
   h += grupo('Multivitamínico', _SUMO_MULTI.map(p => [p[1], "suMoSet('multi','" + p[0] + "')", v.multi === p[0]]));
-  // v667: o que já foi usado nos protocolos entregues e não tem regra escrita entra pelo toque
+  // v668: cada um já vem marcado quando a anamnese, o exame ou o bloco do protocolo pede (o motivo aparece embaixo); o toque acrescenta ou tira
   h += grupo('Também pode entrar', [['Coenzima Q10', "suMoSet('tem','coq10')", !!v.coq10]].concat(GHSU.EXTRAS.map(p => [p[1], "suMoSet('extra','" + p[0] + "')", !!(v.extra && v.extra[p[0]])])));
-  h += '<div class="di-mo-dica su-mo-extra">Cada um entra com a dose e o horário mais usados nos protocolos já entregues. Depois é só ajustar na linha.</div>';
+  const mot = GHSU.EXTRAS.filter(p => v.motivo && v.motivo[p[0]] && v.extra && v.extra[p[0]]).map(p => p[1] + ': ' + v.motivo[p[0]]);
+  if (mot.length) h += '<div class="di-mo-dados su-mo-motivos"><b>Já veio marcado</b><br>' + mot.map(e).join('<br>') + '</div>';
+  h += '<div class="di-mo-dica su-mo-extra">Cada um entra com a dose e o horário mais usados nos protocolos já entregues. Depois é só ajustar na linha. Toca pra tirar o que não for o caso. O Dimpless é só no toque: a anamnese não pergunta sobre celulite.</div>';
   const av = [];
   if (ini && ini.secar && !v.deficit) av.push('O objetivo dele é emagrecer. Se a gordura passa de 20%, marca o déficit aqui em cima que entra o Morosil.');
   if (ini && ini.temExame && !_SUMO_EX.some(p => v.exame[p[0]])) av.push('Ele anexou exame de sangue. O Montar não lê o arquivo: abre o exame e marca em "O exame mostrou" o que veio alterado.');
