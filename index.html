@@ -29762,11 +29762,12 @@ async function painelGateSubmit() {
 //  2. SW novo assumiu (controllerchange) logo depois de abrir → recarrega SOZINHO uma
 //     vez e o aluno já vê a versão nova na MESMA abertura. Só recarrega na janela de
 //     8s e sem campo focado — nunca no meio de treino digitado.
+// v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
+// Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
+var APP_SHELL_V = 'metodo-gh-v672';
+window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
-    // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v671';
-    window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
     try { if (/[?&]atualiza=/.test(location.search) && history.replaceState) { var _u = new URL(location.href); _u.searchParams.delete('atualiza'); history.replaceState(history.state, '', _u.toString()); } } catch (_) {}
