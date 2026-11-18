@@ -3893,6 +3893,50 @@
   #trainerEditor .te-top-bar > #teFichaBtn { display: none; }   /* só no celular, dentro do "⋯"; nas telas maiores vale o botão da linha do nome */
   #trainerEditor .te-ficha-lk { font-size: 13px; padding: 5px 12px; }
   #trainerEditor .te-ficha-lk.on { background: #DDB65C; color: #1A1304; border-color: #DDB65C; }
+  /* ══ v667 (GH 18/11, print do computador: "não aparece o nome nem link"): fora do celular a barra do editor tem dois andares.
+     Em cima o nome do aluno com a ficha e o link do protocolo e, à direita, Desfazer, Entregar, Salvar e fechar. Embaixo as abas
+     e, à direita, as ferramentas (Template, Copiar de, Recado, Antes) em botão menor. O nome nunca mais divide a linha com as abas. ══ */
+  @media (min-width: 481px) {
+    #trainerEditor .te-top-bar { flex-wrap: wrap; align-items: center; gap: 0 10px; padding: 7px 16px; }
+    #trainerEditor .te-top-bar::before { content: ''; order: 20; flex: 0 0 100%; height: 0; }
+    #trainerEditor .te-top-info { order: 1; flex: 1 1 340px; margin: 3px 0; min-width: 0; overflow: visible; white-space: normal; text-overflow: clip; flex-wrap: wrap; gap: 6px 12px; font-size: 14px; }
+    #trainerEditor .te-info-name { flex: 0 1 auto; min-width: 140px; max-width: 100%; font-size: 17px; line-height: 1.3; overflow: visible; text-overflow: clip; white-space: normal; overflow-wrap: anywhere; }
+    #trainerEditor .te-info-link { gap: 6px; flex: none; }
+    #trainerEditor .te-info-link a, #trainerEditor .te-info-link .te-link-copy { display: inline-flex; align-items: center; font-size: 12.5px; padding: 6px 11px; border-radius: 8px; border: 1px solid rgba(221, 182, 92, 0.55); background: #2a2a2a; color: #E3BE6B; text-decoration: none; font-weight: 700; line-height: 1.2; white-space: nowrap; }
+    #trainerEditor .te-info-link a:hover, #trainerEditor .te-info-link .te-link-copy:hover { background: #3a3122; }
+    #trainerEditor .te-info-link .te-ficha-lk.on { background: #DDB65C; color: #1A1304; border-color: #DDB65C; }
+    #trainerEditor .te-top-bar > #teUndoBtn { order: 2; }
+    #trainerEditor .te-top-bar > #teEntregaBtn { order: 3; }
+    #trainerEditor .te-top-bar > #trainerSaveBtn { order: 4; }
+    #trainerEditor .te-top-bar > .te-btn:last-child { order: 5; }
+    #trainerEditor .te-top-bar > #teUndoBtn, #trainerEditor .te-top-bar > #teEntregaBtn, #trainerEditor .te-top-bar > #trainerSaveBtn, #trainerEditor .te-top-bar > .te-btn:last-child { flex: 0 0 auto; margin: 3px 0; font-size: 13.5px; padding: 7px 14px; min-height: 36px; border-radius: 9px; }
+    #trainerEditor .te-top-bar > #trainerSaveBtn { padding: 7px 18px; }
+    #trainerEditor .te-mode-tabs { order: 21; flex: 0 1 auto; margin: 3px auto 3px 0; gap: 5px; flex-wrap: wrap; }
+    #trainerEditor .te-mode-tab { flex: 0 0 auto; font-size: 13px; padding: 7px 16px; border-radius: 8px; white-space: nowrap; overflow: visible; }
+    #trainerEditor .te-top-bar > #trainerTplBtn, #trainerEditor .te-top-bar > #teCopiaBtn, #trainerEditor .te-top-bar > #teRecadoBtn, #trainerEditor .te-top-bar > #teFantasmaBtn { order: 22; flex: 0 0 auto; margin: 3px 0; font-size: 12.5px; padding: 6px 11px; min-height: 32px; border-radius: 8px; }
+    #trainerEditor #teRecadoBtn .te-lbl, #trainerEditor #teFantasmaBtn .te-lbl { display: inline; }
+  }
+  /* tablet em pé e janela estreita: o nome fica com a linha inteira dele; as ferramentas sobem pro andar dos botões (Recado e Antes só com o desenho) */
+  @media (min-width: 481px) and (max-width: 999px) {
+    #trainerEditor .te-top-info { flex-basis: 100%; }
+    #trainerEditor .te-top-bar > #trainerTplBtn, #trainerEditor .te-top-bar > #teCopiaBtn, #trainerEditor .te-top-bar > #teRecadoBtn, #trainerEditor .te-top-bar > #teFantasmaBtn { order: 2; }
+    #trainerEditor .te-top-bar > #teUndoBtn { order: 3; margin-left: auto; }
+    #trainerEditor .te-top-bar > #teEntregaBtn { order: 4; }
+    #trainerEditor .te-top-bar > #trainerSaveBtn { order: 5; }
+    #trainerEditor .te-top-bar > .te-btn:last-child { order: 6; }
+    #trainerEditor #teRecadoBtn .te-lbl, #trainerEditor #teFantasmaBtn .te-lbl { display: none; }
+    #trainerEditor .te-mode-tab { padding: 7px 12px; }
+  }
+  /* tela grande (padrão da v615, que o GH pediu com letra grande): mesmos dois andares, letra de 14 px pra cima */
+  @media (min-width: 1501px) {
+    #trainerEditor .te-top-info { font-size: 15px; }
+    #trainerEditor .te-info-name { font-size: 18px; }
+    #trainerEditor .te-info-link a, #trainerEditor .te-info-link .te-link-copy { font-size: 14px; padding: 7px 13px; }
+    #trainerEditor .te-top-bar > #teUndoBtn, #trainerEditor .te-top-bar > #teEntregaBtn, #trainerEditor .te-top-bar > #trainerSaveBtn, #trainerEditor .te-top-bar > .te-btn:last-child { font-size: 14.5px; padding: 8px 16px; min-height: 38px; }
+    #trainerEditor .te-top-bar > #trainerSaveBtn { padding: 8px 20px; }
+    #trainerEditor .te-mode-tab { font-size: 14.5px; padding: 8px 18px; }
+    #trainerEditor .te-top-bar > #trainerTplBtn, #trainerEditor .te-top-bar > #teCopiaBtn, #trainerEditor .te-top-bar > #teRecadoBtn, #trainerEditor .te-top-bar > #teFantasmaBtn { font-size: 14px; padding: 7px 13px; min-height: 34px; }
+  }
   @media (max-width: 480px) { #trainerEditor .te-top-bar.mais > #teFichaBtn { display: inline-flex; } }
   .te-fi { position: absolute; right: 0; bottom: 0; top: 56px; width: 400px; max-width: 42vw; z-index: 40; display: flex; flex-direction: column; min-height: 0; background: #141414; color: #eee; border-left: 1px solid rgba(221, 182, 92, 0.45); font-family: inherit; }
   .te-fi[hidden] { display: none; }
@@ -4042,10 +4086,7 @@
     #trainerEditor .di-block[data-key^="ref-"] .di-block-meta { display: none; }   /* o horário já está no campo logo abaixo */
   }
   /* notebook (901 a 1500 px): os botões espremiam o nome do aluno e o link do protocolo até sumirem; o nome ganha a linha dele */
-  @media (min-width: 901px) and (max-width: 1500px) {
-    #trainerEditor .te-top-bar { flex-wrap: wrap; }
-    #trainerEditor .te-top-info { flex-basis: 100%; order: -1; }
-  }
+  /* v667: a barra em dois andares (bloco da v667, mais acima) cuida do notebook também */
   @media (max-width: 600px) {
     /* treino: uma linha por exercício; abre ao tocar */
     #trainerEditor .te-ex:not(.aberto) > .te-obs, #trainerEditor .te-ex:not(.aberto) > .te-detail-btn { display: none; }
@@ -29637,7 +29678,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v666';
+    var APP_SHELL_V = 'metodo-gh-v667';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
@@ -31646,7 +31687,7 @@ function diMoAplicaRea() {
   _diMoDesenha();
 }
 
-// v666: rotulador de séries (cópia do núcleo da lane Entregas, gerada por _gera_series_app.mjs), gerador de treino do Montar e giro do reajuste
+// v667: rotulador de séries (cópia do núcleo da lane Entregas, gerada por _gera_series_app.mjs), gerador de treino do Montar e giro do reajuste
 const GHSR = (function () {
 const TAB = {"ABDOMINAL ARNOLD":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDOMINAL ELEVAÇÃO DE PERNAS COM HALTER OU CANELEIRA":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna","quadril"]},"ABDOMINAL ELEVAÇÃO DE PERNAS NA PARALELA":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna","quadril"]},"ABDOMINAL ELEVAÇÃO DE PERNAS NO BANCO DECLINADO":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna","quadril"]},"ABDOMINAL NA BARRA FIXA":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDOMINAL NA MÁQUINA":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDOMINAL NA REMADA BAIXA OU CROSS":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDOMINAL NO BANCO DECLINADO":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDOMINAL NO BANCO DECLINADO COM PESO":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDOMINAL NO CHÃO":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDUÇÃO DEITADA COM MINI BAND":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"ABDUÇÃO EM PÉ NA MÁQUINA":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"ABDUÇÃO EM QUATRO APOIOS COM MINI BAND":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"ABDUÇÃO LATERAL NA MÁQUINA":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"ABDUÇÃO NO CROSS":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"AFUNDO NO CHÃO":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"AFUNDO SMITH":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"AFUNDO SMITH COM STEP":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"AGACHAMENTO HACK":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["coluna","joelho","quadril","tornozelo"]},"AGACHAMENTO LIVRE":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"AGACHAMENTO SMITH":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"AGACHAMENTO SUMÔ SMITH":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"ALONGAMENTO ADUTORES":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"ALONGAMENTO ESCÁPULAS E OMBRO":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"ALONGAMENTO GLÚTEO":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"ALONGAMENTO PEITORAL MENOR":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"ALONGAMENTO POSTERIOR":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"ALONGAMENTO QUADRIL – RETROVERSÃO":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"ALONGAMENTO TORNOZELO E ILIOPSOAS":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"AQUECIMENTO MANGUITO":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"BARRA FIXA":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"BÚLGARO":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"BÚLGARO NA MÁQUINA":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo"]},"CADEIRA ABDUTORA":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"CADEIRA ABDUTORA 45° EM PÉ":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"CADEIRA ABDUTORA EM PÉ":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"CADEIRA ADUTORA":{"grupo":"adutor","tipo":"isolador","vetor":"aducao-quadril","artic":["quadril"]},"CADEIRA EXTENSORA":{"grupo":"quad","tipo":"isolador","vetor":"extensao-joelho","artic":["joelho"]},"CADEIRA FLEXORA":{"grupo":"posterior","tipo":"isolador","vetor":"flexao-joelho","artic":["joelho"]},"COICE COM CANELEIRA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"COICE NA MÁQUINA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"COICE NO CROSS COM POLIA ALTA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"CROSSOVER":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CROSSOVER POLIA MÉDIA":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO DECLINADO":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO DECLINADO COM HALTERES":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO INCLINADO":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO INCLINADO NO CROSS":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO INVERSO COM HALTERES":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO INVERSO NO CROSS":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO INVERSO NO VOADOR":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO RETO":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO RETO COM HALTERES":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"DESCOMPRESSÃO ESCÁPULAS":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"DESCOMPRESSÃO LOMBAR":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"DESENVOLVIMENTO COM HALTERES":{"grupo":"ombro","tipo":"composto","vetor":"empurrar-vertical","artic":["ombro","cotovelo","escapula"]},"DESENVOLVIMENTO NA MÁQUINA":{"grupo":"ombro","tipo":"composto","vetor":"empurrar-vertical","artic":["ombro","cotovelo","escapula"]},"DESENVOLVIMENTO NA MÁQUINA INCLINADO":{"grupo":"ombro","tipo":"composto","vetor":"empurrar-vertical","artic":["ombro","cotovelo","escapula"]},"ELEVAÇÃO FRONTAL COM ANILHA":{"grupo":"ombro","tipo":"isolador","vetor":"flexao-ombro","artic":["ombro"]},"ELEVAÇÃO FRONTAL COM HALTERES EM ISOMETRIA":{"grupo":"ombro","tipo":"isolador","vetor":"flexao-ombro","artic":["ombro"]},"ELEVAÇÃO FRONTAL NEUTRA COM HALTERES":{"grupo":"ombro","tipo":"isolador","vetor":"flexao-ombro","artic":["ombro"]},"ELEVAÇÃO FRONTAL NO CROSS":{"grupo":"ombro","tipo":"isolador","vetor":"flexao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL NA MÁQUINA":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL NA MÁQUINA SENTADO":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL NO BANCO INCLINADO":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL NO CROSS":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL PARCIAL NO CROSS":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL SENTADO":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO PÉLVICA 2D OU LIVRE":{"grupo":"gluteo","tipo":"composto","vetor":"extensao-quadril","artic":["quadril","joelho"]},"ELEVAÇÃO PÉLVICA NA MÁQUINA":{"grupo":"gluteo","tipo":"composto","vetor":"extensao-quadril","artic":["quadril","joelho"]},"EXTENSÃO DE GLÚTEO COM CANELEIRA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"EXTENSÃO DE GLÚTEO NA MÁQUINA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"EXTENSÃO DE GLÚTEO NA POLIA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"EXTENSÃO DE PUNHO COM BARRA":{"grupo":"antebraco","tipo":"isolador","vetor":"punho","artic":["punho"]},"EXTENSÃO DE PUNHO NO CROSS":{"grupo":"antebraco","tipo":"isolador","vetor":"punho","artic":["punho"]},"FACE PULL":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-horizontal","artic":["ombro","escapula"]},"FACEPULL COM CORDA NO CROSS":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-horizontal","artic":["ombro","escapula"]},"FLEXOR NÓRDICO NA MÁQUINA":{"grupo":"posterior","tipo":"isolador","vetor":"flexao-joelho","artic":["joelho"]},"FLEXORA UNILATERAL EM PÉ":{"grupo":"posterior","tipo":"isolador","vetor":"flexao-joelho","artic":["joelho"]},"FLEXÃO DE PUNHO COM BARRA":{"grupo":"antebraco","tipo":"isolador","vetor":"punho","artic":["punho"]},"GLÚTEO NO HIPEREXTENSOR DE LOMBAR":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"HIPEREXTENSOR DE LOMBAR NA MÁQUINA COM CARGA":{"grupo":"lombar","tipo":"isolador","vetor":"extensao-tronco","artic":["coluna","quadril"]},"HIPEREXTENSÃO DE LOMBAR":{"grupo":"lombar","tipo":"isolador","vetor":"extensao-tronco","artic":["coluna","quadril"]},"LEG HORIZONTAL":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["coluna","joelho","quadril","tornozelo"]},"LEG PRESS 45º":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["coluna","joelho","quadril","tornozelo"]},"LEG PRESS 45º UNILATERAL":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["coluna","joelho","quadril","tornozelo"]},"LEVANTAMENTO TERRA":{"grupo":"quad","tipo":"composto","vetor":"dobradica","artic":["coluna","joelho","quadril","tornozelo"]},"LEVANTAMENTO TERRA HEXAGONAL":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["coluna","joelho","quadril","tornozelo"]},"LEVANTAMENTO TERRA NA MÁQUINA":{"grupo":"quad","tipo":"composto","vetor":"dobradica","artic":["coluna","joelho","quadril","tornozelo"]},"MEIO TERRA":{"grupo":"lombar","tipo":"composto","vetor":"dobradica","artic":["quadril","coluna"]},"MESA FLEXORA":{"grupo":"posterior","tipo":"isolador","vetor":"flexao-joelho","artic":["joelho"]},"MESA FLEXORA LIVRE COM HALTER":{"grupo":"posterior","tipo":"isolador","vetor":"flexao-joelho","artic":["joelho"]},"MOBILIDADE DE TORNOZELO":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"OSTRA COM MINI BAND":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"PANTURRILHA EM PÉ":{"grupo":"panturrilha","tipo":"isolador","vetor":"flexao-plantar","artic":["tornozelo"]},"PANTURRILHA NO LEG 45º":{"grupo":"panturrilha","tipo":"isolador","vetor":"flexao-plantar","artic":["tornozelo"]},"PANTURRILHA SENTADO":{"grupo":"panturrilha","tipo":"isolador","vetor":"flexao-plantar","artic":["tornozelo"]},"PRANCHA COM RETROVERSÃO":{"grupo":"abdomen","tipo":"isolador","vetor":"anti-extensao","artic":["coluna"]},"PRANCHA PARAVERTEBRAIS":{"grupo":"abdomen","tipo":"isolador","vetor":"anti-extensao","artic":["coluna"]},"PULLDOWN":{"grupo":"costas","tipo":"isolador","vetor":"puxar-vertical","artic":["ombro","escapula"]},"PULLDOWN NA MÁQUINA":{"grupo":"costas","tipo":"isolador","vetor":"puxar-vertical","artic":["ombro","escapula"]},"PULLOVER COM HALTER":{"grupo":"costas","tipo":"isolador","vetor":"puxar-vertical","artic":["ombro","escapula"]},"PULLOVER NA MÁQUINA":{"grupo":"costas","tipo":"isolador","vetor":"puxar-vertical","artic":["ombro","escapula"]},"PUXADA ALTA COM TRIÂNGULO":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"PUXADA ALTA NA MÁQUINA ARTICULADA":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"PUXADA ALTA PRONADA":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"PUXADA ALTA SUPINADA":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"PUXADA ALTA SUPINADA NA MÁQUINA":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"PUXADA ALTA UNILATERAL SUPINADA":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"REMADA ALTA NA POLIA":{"grupo":"ombro","tipo":"composto","vetor":"puxar-vertical-alto","artic":["ombro","cotovelo","escapula"]},"REMADA BAIXA ABERTA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA BAIXA COM TRIÂNGULO":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA BAIXA DROP SET MECÂNICO COM TRIÂNGULO":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA BAIXA SUPINADA NA MÁQUINA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA CAVALINHO ABERTA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula","coluna","quadril"]},"REMADA CURVADA NA MÁQUINA GUIADA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA CURVADA PRONADA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula","coluna","quadril"]},"REMADA CURVADA SENTADO":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA NEUTRA NO CROSS":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA PRONADA NA MÁQUINA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA UNILATERAL NA MÁQUINA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"ROSCA BAYESIAN":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo","ombro"]},"ROSCA CONCENTRADA COM HALTER":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA DIRETA ALTERNADA":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA DIRETA COM BARRA W":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA DIRETA COM HALTER NO BANCO INCLINADO":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo","ombro"]},"ROSCA DIRETA COM HALTERES":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA DIRETA NA PUXADA ALTA":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA DIRETA NO CROSS":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA MARTELO COM HALTERES":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA MARTELO NO CROSS":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA SCOTT FECHADA":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA SCOTT UNILATERAL":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA SPIDER":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA UNILATERAL NO CROSS":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"SAPINHO NA MÁQUINA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"SERROTE COM HALTER":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula","coluna","quadril"]},"SERROTE PÊNDULO COM HALTER":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula","coluna","quadril"]},"STEP UP":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"STEP UP NO CROSS":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"STIFF":{"grupo":"posterior","tipo":"composto","vetor":"dobradica","artic":["quadril","coluna"]},"STIFF NA MÁQUINA":{"grupo":"posterior","tipo":"composto","vetor":"dobradica","artic":["quadril"]},"STIFF NO HIPEREXTENSOR":{"grupo":"posterior","tipo":"composto","vetor":"dobradica","artic":["quadril"]},"SUPERMAN – FORTALECIMENTO PARAVERTEBRAIS E GLÚTEO":{"grupo":"lombar","tipo":"isolador","vetor":"extensao-tronco","artic":["coluna","quadril"]},"SUPINO DECLINADO":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO DECLINADO COM BARRA":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO DECLINADO COM HALTERES":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO DECLINADO NA MÁQUINA":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO INCLINADO":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO INCLINADO COM HALTERES":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO INCLINADO NA MÁQUINA":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO RETO":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO RETO COM HALTERES":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO RETO NA MÁQUINA":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO RETO NA MÁQUINA SENTADO":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"TERRA SUMÔ":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["coluna","joelho","quadril","tornozelo"]},"TRÍCEPS FRANCÊS COM HALTER":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo","ombro"]},"TRÍCEPS FRANCÊS NO CROSS":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo","ombro"]},"TRÍCEPS NA PARALELA":{"grupo":"triceps","tipo":"composto","vetor":"extensao-cotovelo","artic":["cotovelo","ombro","escapula"]},"TRÍCEPS PULLEY COM BARRA":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo"]},"TRÍCEPS PULLEY COM CORDA":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo"]},"TRÍCEPS PULLEY NA MÁQUINA":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo"]},"TRÍCEPS PULLEY UNILATERAL":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo"]},"TRÍCEPS SUPINADO":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo"]},"TRÍCEPS TESTA EM PÉ":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo","ombro"]},"TRÍCEPS TESTA NO BANCO INCLINADO":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo","ombro"]},"VOADOR":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]}};
 const norm = s => String(s || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
@@ -32064,9 +32105,10 @@ const GHTR = (() => {
     FL_G: ['Glúteo completo', 'glut', 'mini abdu abdX pelv gpol bulF panP', 'mini abdu abdX pelv gpol bulF'],
     FL_P: ['Posterior, panturrilha e abdômen', 'post', 'mesa sti cadF fleU panP abd', 'mesa sti cadF fleU panP abd'],
     FU_1: ['Superiores', 'upper', 'remM pux des lat inv fra rosW', 'remM pux lat inv fra rosW'],
-    FU_OT: ['Ombro e tríceps', 'push', 'supI des lat latX fro fra pul', 'supI des lat latX fra pul'],
+    // v667 (GH 18/11): o dia de ombro e tríceps da mulher leva o abdômen
+    FU_OT: ['Ombro, tríceps e abdômen', 'push', 'supI des lat latX fra pul abd', 'supI des lat fra pul abd'],
     FU_OT_P: ['Peito, ombro e tríceps', 'push', 'supI voa des lat latX fra pul', 'supI voa des lat fra pul'],
-    FU_OT_O: ['Ombro e tríceps', 'push', 'supI des lat latX fro fra pul', 'des lat latX fro fra pul'],
+    FU_OT_O: ['Ombro, tríceps e abdômen', 'push', 'des lat latX fro fra pul abd', 'des lat latX fro fra pul', 'Ombro e tríceps'],
     FU_CB_O: ['Costas, ombro e bíceps', 'pull', 'remP pux latX inv rosW mar lom', 'remP pux latX inv rosW mar'],
     FU_OC: ['Ombro, costas e tríceps', 'upper', 'remU puxT des lat latX fra pul', 'remU puxT des lat fra pul'],
     FU_CB: ['Costas e bíceps', 'pull', 'remP remB pux pull inv rosW mar lom', 'remP remB pux inv rosW mar lom'],
@@ -32090,7 +32132,8 @@ const GHTR = (() => {
       return ['FEM_4X', 'FL_QP', Ua, 'FL_G', Ub];
     }
     if (f === 5) {
-      if (pri === 'quad') return ['FEM_5X', 'FL_QP_NS', 'FL_G', 'FU_1', 'FL_P', 'FL_QM_B'];
+      // v667 (GH 18/11): dia só de posterior quase nunca existe pra mulher; o posterior vai junto do glúteo
+      if (pri === 'quad') return ['FEM_5X', 'FL_QP_NS', 'FL_G', 'FU_1', 'FL_PG_S', 'FL_QM_B'];
       if (pri === 'gluteo') return ['FEM_5X', 'FL_G', Ua, 'FL_QM', 'FL_PG_S', Ub];
       return ['FEM_5X', 'FL_PQ', Ua, pri === 'posterior' ? 'FL_QM_P' : 'FL_QM', Ub, 'FL_PG'];
     }
@@ -32142,7 +32185,7 @@ const GHTR = (() => {
   // braço abrindo o dia de inferiores); C = o método decide (os desenhos de cima). Mulher segue o desenho feminino em todas. ──
   // dia escrito na hora: [rótulo, abertura, vagas, vagas do treino curto]
   const dia = (rot, abre, v, c) => [rot, abre, v, c || v];
-  function desenhoBro(f, pri) {
+  function desenhoBro(f, pri, curto) {
     if (f === 5) {
       const PT = dia('Peito e tríceps', 'push', 'abd cruI supI voa fra pul latX', 'abd cruI supI voa fra pul');
       const CB = dia('Costas e bíceps', 'pull', 'remP remB pux pull inv rosW mar lom', 'remP remB pux inv rosW mar lom');
@@ -32172,20 +32215,75 @@ const GHTR = (() => {
       if (pri === 'gluteo') return ['BRO_6X', dia('Posterior e glúteo', 'glut', 'adu abdu pelv mesa sti fleU'), P, C, dia('Quadríceps e glúteo', 'quad', 'adu abdu pelv agL ext cadF'), O, B];
       return ['BRO_6X', P, C, Q, O, B, PG];
     }
+    // v667 (GH 18/11): quem pediu um a dois músculos por dia treinando 3 ou 4 vezes também recebe o desenho dele, com o segundo
+    // estímulo de cada músculo grande em outro dia. Em 4 treinos com corpo todo a regra do método (empurrar, puxar, pernas e corpo inteiro) segue valendo.
+    if (f === 4) {
+      if (!pri) return null;
+      const CB = dia('Costas e bíceps', 'pull', 'remP remB pux pull inv rosW mar lom', 'remP remB pux inv rosW mar lom');
+      const PT = dia('Peito e tríceps', 'push', 'abd cruI supI voa fra pul panP', 'abd cruI supI voa fra pul');
+      const L = dia('Pernas', 'quad', 'tes hack leg ext mesa sti cadF', 'tes hack leg ext mesa sti');
+      const PO = dia('Peito, ombro e tríceps', 'push', 'cruI supI voa des lat latX pul', 'cruI supI voa des lat pul');
+      if (pri === 'peito') return ['BRO_4X', dia('Peito e tríceps', 'push', 'abd cruI supI supR voa fra pul', 'abd cruI supI supR voa pul'), CB, L, dia('Ombro', 'upper', 'supRm cro remU des lat latX panP', 'supRm cro des lat latX panP')];
+      if (pri === 'costas') return ['BRO_4X', dia('Costas e bíceps', 'pull', 'remP remB pux pull inv rosW mar lom', 'remP remB pux pull inv rosW lom'), dia('Peito e tríceps', 'push', 'abd cruI supI voa fra pul panP', 'abd cruI supI latX fra pul'), dia('Pernas', 'quad', 'tes hack leg ext mesa sti cadF', 'sco hack leg ext mesa sti'), dia('Ombro', 'upper', 'supRm cro remU puxT des lat latX', 'supRm cro remU puxT des lat')];
+      if (pri === 'ombro') return ['BRO_4X', dia('Peito e tríceps', 'push', 'abd cruI supI voa fra pul latX', 'cruI supI fra pul latX fro'), CB, dia('Pernas', 'quad', 'tes hack leg ext mesa sti panP', 'abd hack leg ext mesa sti'), dia('Ombro', 'upper', 'supRm cro remU invX des lat fro', 'supRm cro des lat fro panP')];
+      if (pri === 'braco') return ['BRO_4X', CB, dia('Peito e tríceps', 'push', 'abd cruI supI voa fra pul latX', 'abd cruI supI voa fra pul'), dia('Pernas', 'quad', 'hack leg ext mesa sti cadF panP', 'hack leg ext mesa sti panP'), dia('Ombro e braços', 'upper', 'des lat latX bay sco tes pulB', 'des lat latX bay tes pulB')];
+      if (pri === 'quad') return ['BRO_4X', dia('Quadríceps', 'quad', 'abd hack leg bul ext cadF panP', 'abd hack leg bul ext cadF'), PO, CB, ['Posterior e glúteo', 'post', 'tes pelv agL legU mesa sti fleU', 'tes agL legU mesa sti latX', 'Inferiores']];
+      if (pri === 'posterior') return ['BRO_4X', dia('Posterior e glúteo', 'post', 'tes pelv mesa sti cadF fleU legU', 'tes pelv mesa sti cadF fleU'), PO, CB, dia('Quadríceps', 'quad', 'abd hack leg ext mesa cadF panP', 'abd hack ext mesa cadF latX')];
+      // glúteo em 4 treinos não fecha: os dois dias de glúteo cairiam seguidos, ou peito e costas ficariam longe um do outro
+      return null;
+    }
+    if (f === 3) {
+      // sessão curta com prioridade de peito: o segundo dia de peito, o ombro completo e os braços não cabem em 18 exercícios
+      if (pri === 'peito' && curto) return null;
+      const PO = dia('Peito, ombro e tríceps', 'push', 'cruI supI voa des lat latX fra pul', 'cruI supI des lat fra pul');
+      const L = dia('Pernas', 'quad', 'abd hack leg ext mesa sti cadF panP', 'abd hack leg ext mesa sti');
+      const CB = dia('Costas e bíceps', 'pull', 'remP remB pux pull inv rosW mar lom', 'remP pux inv latX rosW mar lom');
+      if (pri === 'peito') return ['BRO_3X', PO, L, dia('Costas e bíceps', 'pull', 'supRm cro remP remB pux inv rosW mar', 'supRm cro remP pux inv rosW mar')];
+      // prioridade de perna: os dois dias de superiores ficam seguidos, então na sessão curta as duas elevações laterais vão pro primeiro e pro terceiro dia
+      if (PERNA[pri]) return ['BRO_3X', dia('Pernas', 'quad', 'abd hack leg ext mesa sti cadF panP', 'hack leg ext mesa sti latX'), dia('Peito, ombro e tríceps', 'push', 'cruI supI voa des lat latX fra pul', 'cruI supI des fra pul abd'), dia('Costas e bíceps', 'pull', 'remP remB pux pull inv rosW mar lom', 'remP pux inv lat rosW mar lom')];
+      return ['BRO_3X', PO, L, CB];
+    }
     return null;
   }
-  // superiores e inferiores em 4 treinos: o braço abre os dias de inferiores (Torso/Limbs), pra não ficar no fim do dia de superiores
+  // superiores e inferiores: o braço abre os dias de inferiores (Torso/Limbs), pra não ficar no fim do dia de superiores.
+  // v667: também com prioridade de perna em 4 treinos (inferiores abrindo a semana) e em 5 treinos (três de superiores e dois de
+  // inferiores, ou o contrário quando a prioridade é perna). Em 6 treinos os superiores cairiam em dias seguidos: fica o desenho do método.
   function desenhoUL(f, pri, curto) {
-    if (f !== 4 || !pri || PERNA[pri] || pri === 'costas' || (pri === 'ombro' && curto)) return null;
     const TA = dia('Superiores', 'upper', 'cruI supI voa remP pux des lat', 'supI voa remP pux des lat');
     const TB = dia('Superiores', 'upper', 'supRm cro remM puxT latX invX lom', 'supRm cro remM puxT latX invX');
     const LA = dia('Braços e inferiores', 'quad', 'rosW fra hack leg ext mesa sti', 'rosW fra hack leg ext mesa');
     const LB = dia('Braços e inferiores', 'lower', 'abd sco pulB pelv bul fleU panP', 'abd sco pulB bul fleU sti');
-    if (pri === 'peito') return ['UL_4X', dia('Superiores', 'upper', 'cruI supI voa remP pux des lat', 'cruI supI voa remP des lat'), LA, dia('Superiores', 'upper', 'cruIx supRm cro remM puxT latX invX', 'cruIx supRm cro remM latX invX'), LB];
-    if (pri === 'ombro') return ['UL_4X', dia('Superiores', 'upper', 'cruI supI voa remP inv des lat', 'supI voa remP inv des lat'), LA, dia('Superiores', 'upper', 'supRm cro remM puxT invX latX fro', 'supRm cro remM invX latX fro'), LB];
-    if (pri === 'braco') return ['UL_4X', TA, dia('Braços e inferiores', 'quad', 'rosW fra pul hack leg ext mesa', 'rosW fra pul hack leg ext'), dia('Superiores', 'upper', 'supRm cro remM puxT latX invX abd', 'supRm cro remM latX invX abd'), dia('Braços e inferiores', 'lower', 'sco bay tes pelv bul fleU sti', 'sco tes pelv bul fleU sti')];
+    const TBa = dia('Superiores', 'upper', 'supRm cro remM puxT latX invX lom abd', 'supRm cro remM latX invX abd');
+    if (f === 4) {
+      if (pri === 'peito') return ['UL_4X', dia('Superiores', 'upper', 'cruI supI voa remP pux des lat', 'cruI supI voa remP des lat'), LA, dia('Superiores', 'upper', 'cruIx supRm cro remM puxT latX invX', 'cruIx supRm cro remM latX invX'), LB];
+      if (pri === 'ombro' && !curto) return ['UL_4X', dia('Superiores', 'upper', 'cruI supI voa remP inv des lat', 'supI voa remP inv des lat'), LA, dia('Superiores', 'upper', 'supRm cro remM puxT invX latX fro', 'supRm cro remM invX latX fro'), LB];
+      if (pri === 'braco') return ['UL_4X', TA, dia('Braços e inferiores', 'quad', 'rosW fra pul hack leg ext mesa', 'rosW fra pul hack leg ext'), dia('Superiores', 'upper', 'supRm cro remM puxT latX invX abd', 'supRm cro remM latX invX abd'), dia('Braços e inferiores', 'lower', 'sco bay tes pelv bul fleU sti', 'sco tes pelv bul fleU sti')];
+      if (pri === 'quad') return ['UL_4X', dia('Braços e inferiores', 'quad', 'rosW fra hack leg bul ext mesa', 'rosW fra hack leg bul ext'), TA, dia('Braços e inferiores', 'lower', 'sco pulB agL legU sti fleU panP', 'sco pulB agL legU sti fleU'), TBa];
+      if (pri === 'posterior') return ['UL_4X', dia('Braços e inferiores', 'post', 'rosW fra mesa sti cadF fleU leg', 'rosW fra mesa sti cadF fleU'), TA, dia('Braços e inferiores', 'lower', 'sco pulB hack ext mesa cadF panP', 'sco pulB hack ext mesa cadF'), TBa];
+      return null;
+    }
+    if (f === 5) {
+      const TC = dia('Superiores', 'upper', 'cruIx supR remB pull lat fro abd2', 'supR cro remB pull lat fro');
+      if (!pri || pri === 'peito') return ['UL_5X', TA, LA, TB, LB, TC];
+      if (pri === 'costas') return ['UL_5X', dia('Superiores', 'upper', 'remP pux cruI supI voa des lat', 'remP pux supI voa des lat'), LA, dia('Superiores', 'upper', 'remM puxT supRm cro latX invX lom', 'remM puxT supRm cro latX invX'), LB, dia('Superiores', 'upper', 'remB pull cruIx supR lat fro abd2', 'remB pull supR cro lat fro')];
+      if (pri === 'ombro') return ['UL_5X', dia('Superiores', 'upper', 'cruI supI voa remP pux des lat', 'cruI supI voa remP des lat'), LA, dia('Superiores', 'upper', 'supRm cro remM puxT invX latX fro', 'supRm cro remM invX latX fro'), LB, dia('Superiores', 'upper', 'cruIx supR remB inv des latX abd2', 'cruIx supR remB inv des latX')];
+      if (pri === 'braco') return ['UL_5X', TA, dia('Braços e inferiores', 'quad', 'rosW fra pul hack leg ext mesa', 'rosW fra pul hack ext mesa'), TB, dia('Braços e inferiores', 'lower', 'abd sco tes pelv bul fleU sti', 'abd sco tes bul fleU sti'), dia('Superiores e braços', 'upper', 'cruIx supR remB pull lat bay pulB', 'supR cro remB lat bay pulB')];
+      if (pri === 'quad') return ['UL_5X', dia('Braços e quadríceps', 'quad', 'rosW fra hack leg bul ext panP', 'rosW fra hack leg bul ext'), TA, dia('Braços e inferiores', 'lower', 'sco pulB agL legU ext cadF panP', 'sco pulB agL legU ext cadF'), TBa, dia('Posterior e glúteo', 'post', 'abdu adu pelv mesa sti fleU', 'abdu pelv mesa sti fleU')];
+      if (pri === 'posterior') return ['UL_5X', dia('Braços e posterior', 'post', 'rosW fra mesa sti cadF fleU panP', 'rosW fra mesa sti cadF fleU'), TA, dia('Braços e inferiores', 'lower', 'sco pulB hack leg mesa cadF', 'sco pulB hack leg mesa cadF'), TBa, dia('Quadríceps', 'quad', 'hack leg bul ext cadF panP', 'hack leg bul ext cadF')];
+      return null;
+    }
     return null;
   }
+  // v667: empurrar, puxar e pernas em 3 treinos, pra quem pediu esse formato na 83.1 (sem o pedido, o método usa superiores e inferiores).
+  // São os mesmos dias do desenho de um a dois músculos por dia em 3 treinos, com o nome que ele pediu.
+  function desenhoPPL(f, pri, curto) {
+    if (f !== 3) return null;
+    const o = desenhoBro(3, pri, curto); if (!o) return null;
+    const NOME = { 'Peito, ombro e tríceps': 'Empurrar', 'Costas e bíceps': 'Puxar' };
+    return ['PPL_3X'].concat(o.slice(1).map(d => [NOME[d[0]] || d[0], d[1], d[2], d[3]]));
+  }
+  // o pedido da 83.1 tem desenho próprio com esta frequência e esta prioridade? (a tela usa pra avisar antes de montar)
+  function temProprio(pref, f, pri, curto) { return !!(pref === 'A' ? desenhoBro(f, pri, !!curto) : pref === 'U' ? desenhoUL(f, pri, !!curto) : pref === 'P' ? desenhoPPL(f, pri, !!curto) : null); }
   const PREF_TXT = { A: 'um a dois músculos por dia', P: 'empurrar, puxar e pernas', U: 'superiores e inferiores' };
   function prefDe(t) {
     const s = nrm(t);
@@ -32272,8 +32370,9 @@ const GHTR = (() => {
     if (!(P.freq >= 3 && P.freq <= 6)) return { erro: 'Por enquanto o Montar faz de 3 a 6 treinos na semana. Com ' + (P.freq || 'essa') + ' frequência, monta na mão.' };
     P.prefK = prefDe(P.pref);
     let des = null, notaPref = '';
-    if (P.sexo === 'M' && P.prefK === 'A') des = desenhoBro(P.freq, P.pri);
+    if (P.sexo === 'M' && P.prefK === 'A') des = desenhoBro(P.freq, P.pri, tetoDe(P) === 6);
     else if (P.sexo === 'M' && P.prefK === 'U') des = desenhoUL(P.freq, P.pri, tetoDe(P) === 6);
+    else if (P.sexo === 'M' && P.prefK === 'P') des = desenhoPPL(P.freq, P.pri, tetoDe(P) === 6);
     const proprio = !!des;
     if (!des) des = P.sexo === 'M' ? desenhoHomem(P.freq, P.pri, tetoDe(P) === 6) : desenhoMulher(P.freq, P.pri);
     if (!des) return { erro: 'Homem com prioridade em glúteo em 4 treinos não fecha nas regras: o glúteo cairia em dias seguidos. Esse eu deixo pra tu montar na mão.' };
@@ -32281,11 +32380,14 @@ const GHTR = (() => {
     const ele = P.sexo === 'M' ? 'Ele' : 'Ela';
     if (P.prefK !== 'C' && P.sexo !== 'M') notaPref = 'Ela marcou que gosta de treinar com ' + PREF_TXT[P.prefK] + '. Pra mulher o Montar usa o desenho feminino do método, com inferiores abrindo a semana. Se quiser outro formato, monta na mão.';
     else if (P.prefK === 'A') notaPref = proprio ? 'Ele pediu um a dois músculos por dia: a semana saiu nesse formato, com um segundo estímulo dos músculos grandes e de braço em outro dia.'
-      : 'Ele pediu um a dois músculos por dia, mas com ' + P.freq + ' treinos na semana isso deixaria músculo grande com um estímulo só. A semana saiu no desenho do método. Se quiser um músculo por dia mesmo assim, monta na mão.';
+      : P.freq === 4 && !P.pri ? 'Ele pediu um a dois músculos por dia. Com 4 treinos e sem prioridade, a regra do método é empurrar, puxar, pernas e corpo inteiro, e a semana saiu assim. Com uma prioridade marcada o Montar faz no formato que ele pediu.'
+        : 'Ele pediu um a dois músculos por dia, mas com ' + P.freq + ' treinos e essa prioridade o formato não fecha nas regras do método. A semana saiu no desenho do método. Confere os dias antes de entregar.';
     else if (P.prefK === 'U') notaPref = proprio ? 'Ele pediu superiores em um dia e inferiores em outro: a semana saiu assim, com os braços abrindo os dias de inferiores.'
       : P.freq === 3 ? 'Ele pediu superiores em um dia e inferiores em outro: com 3 treinos o desenho do método já separa superiores e inferiores.'
-        : 'Ele pediu superiores em um dia e inferiores em outro. Com ' + P.freq + ' treinos' + (P.freq === 4 ? ' e essa prioridade' : '') + ' as regras do método pedem outro desenho, e a semana saiu nele. Confere os dias antes de entregar.';
-    else if (P.prefK === 'P') notaPref = P.freq === 3 ? 'Ele pediu empurrar, puxar e pernas. Com 3 treinos o método usa superiores e inferiores, pra cada músculo aparecer duas vezes na semana.'
+        : P.freq === 6 ? 'Ele pediu superiores em um dia e inferiores em outro. Com 6 treinos a regra do método é dois dias de superiores e um de pernas, duas vezes na semana, e a semana saiu assim.'
+          : P.freq === 4 && !P.pri ? 'Ele pediu superiores em um dia e inferiores em outro. Com 4 treinos e sem prioridade, a regra do método é empurrar, puxar, pernas e corpo inteiro, e a semana saiu assim. Com uma prioridade marcada o Montar faz no formato que ele pediu.'
+            : 'Ele pediu superiores em um dia e inferiores em outro. Com ' + P.freq + ' treinos e essa prioridade as regras do método pedem outro desenho, e a semana saiu nele. Confere os dias antes de entregar.';
+    else if (P.prefK === 'P') notaPref = proprio ? 'Ele pediu empurrar, puxar e pernas: a semana saiu com um dia de cada. Cada músculo grande aparece uma vez na semana, com volume maior no dia dele.'
       : 'Ele pediu empurrar, puxar e pernas: o desenho do método pra ' + P.freq + ' treinos já parte dessa divisão.';
     const linhas = [];
     for (const d of W.dias) for (const n of d.itens) linhas.push(linha(P, d.n, n));
@@ -32540,12 +32642,13 @@ const GHTR = (() => {
     return tot ? ig / tot : 0;
   }
   // família da semana pelo carimbo: os desenhos que saem da pergunta 83.1 (um a dois músculos por dia, superiores e inferiores)
-  const famCarimbo = c => /^BRO_[56]X$/i.test(String(c || '').trim()) ? 'A' : /^UL_4X$/i.test(String(c || '').trim()) ? 'U' : '';
+  const famCarimbo = c => /^BRO_[3456]X$/i.test(String(c || '').trim()) ? 'A' : /^UL_[45]X$/i.test(String(c || '').trim()) ? 'U' : /^PPL_3X$/i.test(String(c || '').trim()) ? 'P' : '';
   function desenhoPara(P, freq, pri, curto, fam) {
     const P2 = Object.assign({}, P, { freq, pri, tempo: curto ? '45 minutos' : 'Entre 60 e 90 minutos', prefere: null, evita: null, restricao: undefined });
     let des = null;
-    if (P2.sexo === 'M' && fam === 'A') des = desenhoBro(freq, pri);
+    if (P2.sexo === 'M' && fam === 'A') des = desenhoBro(freq, pri, curto);
     else if (P2.sexo === 'M' && fam === 'U') des = desenhoUL(freq, pri, curto);
+    else if (P2.sexo === 'M' && fam === 'P') des = desenhoPPL(freq, pri, curto);
     const daFam = !!des;
     if (!des) des = P2.sexo === 'M' ? desenhoHomem(freq, pri, curto) : desenhoMulher(freq, pri);
     return des ? { P2, des, daFam } : null;
@@ -32820,7 +32923,7 @@ const GHTR = (() => {
   }
   // o que a tela do reajuste mostra antes de girar: quantos dias e exercícios o treino tem e se é de um músculo por dia
   function olha(atual, sexo, prioridade, grupoDe) { const T = leTreino(atual), pri = priDe(prioridade); return { dias: T.dias.length, trab: T.dias.reduce((s, d) => s + d.trab.length, 0), bro: umMusculoPorDia(T.dias, sexo, T.carimbo), carimbo: String(T.carimbo || ''), fam: famCarimbo(T.carimbo), nPri: contaPri(T, pri, sexo, grupoDe), priNome: PRI_NOME[pri] || '', pede: (() => { try { const P = { sexo: sexo || 'M', pri, dor: {}, veto: [], niv: nivelDe('') }; const pd = pedeDesenho(T, P, grupoDe); return { remonta: pd.pede, falta: pd.falta, outro: pd.outro, tem: !!desenhoPara(P, T.dias.length, pri, pd.curto, pd.fam) && T.dias.length >= 3 && T.dias.length <= 6 }; } catch (e) { return { remonta: false, falta: false, outro: false, tem: false }; } })() }; }
-  return { monta, reajusta, olha, leTreino, famMov, EX, nivelDe, priDe, prefDe, famCarimbo, nrm, FASE, GIRA_ANCORA };
+  return { monta, reajusta, olha, leTreino, famMov, EX, nivelDe, priDe, prefDe, famCarimbo, temProprio, nrm, FASE, GIRA_ANCORA };
 })();
 
 // ── v662 (GH 17/11, plano B): MONTAR O TREINO dentro do editor, sem IA. Lê da anamnese inicial o sexo, a idade, quantos
@@ -33005,8 +33108,15 @@ function _trMoDesenha() {
   if (ini && ini.freq != null && !(ini.freq >= 3 && ini.freq <= 6)) av.push('Ele marcou ' + ini.freqTxt + ' na frequência. O Montar faz de 3 a 6 treinos na semana: escolhe aqui em cima quantos vão ser, ou monta esse na mão.');
   if (ini && ini.priFora) av.push('A prioridade que ele marcou (' + ini.priTxt + ') não tem desenho próprio. Deixei em corpo todo: escolhe o grupo mais perto, ou acrescenta volume na mão depois.');
   if (v.sexo === 'F' && v.pref && v.pref !== 'C') av.push('Pra mulher o Montar usa sempre o desenho feminino do método, com inferiores abrindo a semana. A escolha de como gosta de treinar vale pro treino de homem.');
-  if (v.sexo === 'M' && v.pref === 'A' && v.freq && v.freq < 5) av.push('Um a dois músculos por dia só fecha com 5 ou 6 treinos na semana. Com ' + v.freq + ', o Montar usa o desenho do método, pra nenhum músculo grande ficar com um estímulo só.');
-  if (v.sexo === 'M' && v.pref === 'U' && v.freq && v.freq !== 4) av.push(v.freq === 3 ? 'Com 3 treinos o desenho do método já separa superiores e inferiores.' : 'Superiores e inferiores tem desenho próprio com 4 treinos. Com ' + v.freq + ', o Montar usa o desenho do método.');
+  // v667: o pedido da 83.1 ganha desenho próprio em quase toda combinação; o aviso só aparece onde uma regra do método manda outro desenho
+  if (v.sexo === 'M' && v.freq && /^[AUP]$/.test(v.pref || '') && !(v.freq === 4 && v.pri === 'gluteo') && !GHTR.temProprio(v.pref, v.freq, v.pri || null, v.curto)) {
+    const ped = { A: 'Um a dois músculos por dia', U: 'Superiores e inferiores', P: 'Empurrar, puxar e pernas' }[v.pref];
+    if (v.pref === 'P') { /* de 4 treinos pra cima o desenho do método já é empurrar, puxar e pernas */ }
+    else if (v.freq === 4 && !v.pri) av.push(ped + ' com 4 treinos e sem prioridade: a regra do método é empurrar, puxar, pernas e corpo inteiro, e o Montar usa ela. Marcando uma prioridade, sai no formato que ele pediu.');
+    else if (v.pref === 'U' && v.freq === 3) av.push('Com 3 treinos o desenho do método já separa superiores e inferiores.');
+    else if (v.pref === 'U' && v.freq === 6) av.push('Superiores e inferiores com 6 treinos: a regra do método é dois dias de superiores e um de pernas, duas vezes na semana, e o Montar usa ela.');
+    else av.push(ped + ' com ' + v.freq + ' treinos e essa prioridade não fecha nas regras do método. O Montar usa o desenho do método: confere os dias antes de entregar.');
+  }
   if (ini && ini.idade && ini.idade < 18) av.push('Menor de 18 anos: sai como iniciante, parando com 2 a 3 repetições no tanque.');
   (ini ? ini.limites : []).forEach(t => av.push(t + '. O Montar não lê texto livre: depois de montar, confere e troca na mão o que bater nisso.'));
   if (v.dor.joelho) av.push('Dor no joelho: o Montar mantém os exercícios e escreve o aviso de amplitude. Se for lesão de verdade, troca o agachamento e o búlgaro na mão.');
@@ -33055,7 +33165,7 @@ const GHSU = (() => {
   const MULTI = 'Multivitamínico (B12 4mg + C 500mg + D3 4000UI + MK7 50mcg)';
   const MULTI_MOTIVO = { exame: 'Hipovitaminose no exame', escritorio: 'Muitas horas de escritório sem sol', desregrada: 'Alimentação desregrada antes do protocolo' };
   // momento do dia, na ordem em que o aluno toma
-  const MOMENTO = [[/ao acordar|em jejum/, 0], [/desjejum|cafe da manha/, 1], [/antes do almoco/, 2], [/almoco/, 3], [/pre-? ?treino|antes do treino/, 4], [/intra|durante o treino/, 5], [/pos-? ?treino|refeicoes/, 6], [/janta/, 7], [/dormir|deitar|noite/, 8], [/qualquer horario|todo dia/, 9]];
+  const MOMENTO = [[/ao acordar|em jejum/, 0], [/antes do desjejum|pre-? ?desjejum|antes do cafe da manha/, 0.5], [/desjejum|cafe da manha/, 1], [/antes do almoco/, 2], [/almoco/, 3], [/pre-? ?treino|antes do treino/, 4], [/intra|durante o treino/, 5], [/pos-? ?treino|refeicoes/, 6], [/janta/, 7], [/dormir|deitar|noite/, 8], [/qualquer horario|todo dia/, 9]];
   const momentoDe = o => { const t = nrm(o); for (const [re, k] of MOMENTO) if (re.test(t)) return k; return 10; };
   // itens: [nome, dose, horário, como reconhecer numa linha que já existe]
   const ITEM = {
@@ -33064,7 +33174,7 @@ const GHSU = (() => {
     whey: ['Whey protein', '30g', 'Pós-treino', /whey|proteina (vegetal|de ervilha|de arroz|isolada)/],
     magnesio: ['Magnésio Dimalato', '600mg', 'Antes de dormir', /^magnesio (?!treonato)|^magnesio$/],
     morosil: ['Morosil', '500mg', 'Pós-desjejum', /morosil/],
-    enzimas: [ENZ, '01 dose', 'Pós-almoço', /enzima/],
+    enzimas: [ENZ, '01 dose', 'Pós-almoço', /(^|[^a-z])enzima/],
     ashwa: ['Ashwagandha KSM-66', '600mg', 'Ao acordar', /ashwagandha/],
     rhodiola: ['Rhodiola Rosea', '400mg', 'Pós-desjejum', /rhodiola/],
     htp: ['5-HTP', '100mg', 'Antes de dormir, por 60 dias', /5-? ?htp/],
@@ -33082,13 +33192,42 @@ const GHSU = (() => {
     ferro: ['Sulfato ferroso 40mg + Vitamina C 500mg', '01 dose', 'Pós-almoço, longe de café e de laticínio, por 60 dias', /sulfato ferroso|^ferro\b|ferro quelato/],
     policosanol: ['Policosanol', '40mg', 'Pós-desjejum, por 30 dias', /policosanol/],
     nattokinase: ['Nattokinase', '200mg', 'Pós-almoço', /nattokinase|natoquinase|nattoquinase/],
-    berberina: ['Berberina', '500mg', 'Uma cápsula antes do almoço e uma antes da janta', /berberina/],
+    berberina: ['Berberina', '500mg', 'Uma cápsula antes do almoço e uma antes da janta', /berberina/, 'ANTES DO ALMOÇO'],
     folico: ['Metilfolato', '800mcg', 'Pós-desjejum, por 30 dias', /metilfolato|acido folico/],
     multi: [MULTI, '01 cápsula', 'Pós-desjejum', /multivitamin|multi ?vit|polivitamin/],
+    // v667: regras escritas da skill que faltavam (glicemia, insulina, estatina ou mais de 50 anos)
+    coq10: ['Coenzima Q10', '100mg', 'Pós-desjejum', /^(coq ?10|coenzima q|ubiquinol)/],
+    canela: ['Canela em pó', '1g', 'Antes do desjejum', /^canela/],
+    cromo: ['Cromo picolinato', '200mcg', 'Antes do desjejum, junto da canela', /^cromo|picolinato/],
+    inositol: ['Inositol', '2g', 'Duas vezes ao dia: pós-almoço e pós-janta', /^(mio-? ?)?inositol/, 'PÓS-ALMOÇO'],
+    // v667 (GH 18/11: "avaliar todos os suplementos que já foram utilizados"): os que apareceram nos protocolos entregues e não têm
+    // regra escrita entram pelo toque do treinador, com a dose e o horário mais usados no levantamento
+    vinagre: ['Vinagre de maçã', '1 colher de sopa em 200ml de água', 'Ao acordar', /vinagre/],
+    cactin: ['Cactin', '500mg', 'Ao acordar', /^cactin/],
+    dimpless: ['Dimpless', '40mg', 'Ao acordar', /^dimpless/],
+    nac: ['NAC (N-acetilcisteína)', '600mg', 'Duas vezes ao dia: pós-desjejum e pós-janta', /^nac\b|^n-? ?acetil/, 'PÓS-DESJEJUM'],
+    silimarina: ['Silimarina (Cardo Mariano)', '200mg', 'Duas vezes ao dia: pós-desjejum e pós-janta', /^silimarina|^cardo mariano/, 'PÓS-DESJEJUM'],
+    selenio: ['Selênio quelato', '100mcg', 'Pós-desjejum', /^selenio/],
+    psyllium: ['Psyllium', '5g', 'Antes do almoço e da janta, num copo grande de água', /psyllium|psilium/, 'ANTES DO ALMOÇO'],
+    probiotico: ['Probiótico (Lactobacillus acidophilus + Bifidobacterium lactis, 10 bilhões de UFC)', '01 dose', 'Pós-almoço', /^probiotic|^lactobac/],
+    glutamina: ['Glutamina', '5g', 'Pós-almoço', /^(l-? ?)?glutamina/],
+    curcuma: ['Cúrcuma', '500mg', 'Pós-almoço', /^curcum/],
+    glucosamina: ['Glucosamina + Condroitina', '1500mg + 1200mg', 'Pós-almoço', /glucosamina|condroitina/],
+    cafeina: ['Cafeína', '200mg', 'Pré-treino', /^cafeina/],
+    taurina: ['Taurina', '500mg', 'Pré-treino', /^(l-? ?)?taurina/],
+    betaalanina: ['Beta-alanina', '3g', 'Pré-treino', /^beta-? ?alanina/],
+    citrulina: ['Citrulina malato', '6g', 'Pré-treino, 30 minutos antes', /^(l-? ?)?citrulina/],
+    teanina: ['L-Teanina', '200mg', 'Antes de dormir', /^(l-? ?)?teanina/],
   };
-  const ORDEM = ['boswellia', 'arnica', 'ashwa', 'omega', 'morosil', 'multi', 'd3', 'b12', 'folico', 'policosanol', 'nattokinase', 'vitc', 'biotina', 'bacopa', 'rhodiola', 'berberina', 'enzimas', 'ferro', 'tirosina', 'whey', 'sono', 'magnesio', 'zinco', 'passiflora', 'htp', 'creatina'];
+  const ORDEM = ['vinagre', 'boswellia', 'arnica', 'ashwa', 'cactin', 'dimpless', 'canela', 'cromo', 'omega', 'morosil', 'multi', 'd3', 'b12', 'folico', 'policosanol', 'coq10', 'nac', 'silimarina', 'selenio', 'nattokinase', 'vitc', 'biotina', 'bacopa', 'rhodiola', 'berberina', 'psyllium', 'enzimas', 'probiotico', 'ferro', 'inositol', 'glutamina', 'curcuma', 'glucosamina', 'tirosina', 'cafeina', 'taurina', 'betaalanina', 'citrulina', 'whey', 'sono', 'magnesio', 'zinco', 'passiflora', 'teanina', 'htp', 'creatina'];
+  // o que entra só pelo toque do treinador, na ordem em que aparece na tela
+  const EXTRAS = [['cafeina', 'Cafeína'], ['taurina', 'Taurina'], ['betaalanina', 'Beta-alanina'], ['citrulina', 'Citrulina'], ['glutamina', 'Glutamina'], ['probiotico', 'Probiótico'], ['psyllium', 'Psyllium'], ['vinagre', 'Vinagre de maçã'], ['curcuma', 'Cúrcuma'], ['glucosamina', 'Glucosamina e condroitina'], ['nac', 'NAC'], ['silimarina', 'Silimarina'], ['selenio', 'Selênio'], ['teanina', 'L-Teanina'], ['cactin', 'Cactin'], ['dimpless', 'Dimpless']];
+  const ESTATINA = /statina|crestor|lipitor|zocor|vytorin|trezor|rosucor|plenance/, ESTIMULANTE = /venvanse|ritalina|concerta|lisdexanfetamina|metilfenidato|anfetamina|modafinil/;
+  const estatina = t => { const m = nrm(t).match(ESTATINA); return m ? m[0] : ''; };
   const NOME = { omega: 'Ômega 3', creatina: 'Creatina', whey: 'Whey', magnesio: 'Magnésio', morosil: 'Morosil', enzimas: 'Enzimas digestivas', ashwa: 'Ashwagandha', rhodiola: 'Rhodiola', htp: '5-HTP', bacopa: 'Bacopa', tirosina: 'L-Tirosina', vitc: 'Vitamina C', zinco: 'Zinco', biotina: 'Biotina',
-    sono: 'Fórmula do Sono', passiflora: 'Passiflora', boswellia: 'Boswellia', arnica: 'Arnica', d3: 'Vitamina D3', b12: 'B12', ferro: 'Ferro', policosanol: 'Policosanol', nattokinase: 'Nattokinase', berberina: 'Berberina', folico: 'Metilfolato', multi: 'Multivitamínico' };
+    sono: 'Fórmula do Sono', passiflora: 'Passiflora', boswellia: 'Boswellia', arnica: 'Arnica', d3: 'Vitamina D3', b12: 'B12', ferro: 'Ferro', policosanol: 'Policosanol', nattokinase: 'Nattokinase', berberina: 'Berberina', folico: 'Metilfolato', multi: 'Multivitamínico',
+    coq10: 'Coenzima Q10', canela: 'Canela', cromo: 'Cromo picolinato', inositol: 'Inositol', vinagre: 'Vinagre de maçã', cactin: 'Cactin', dimpless: 'Dimpless', nac: 'NAC', silimarina: 'Silimarina', selenio: 'Selênio', psyllium: 'Psyllium', probiotico: 'Probiótico',
+    glutamina: 'Glutamina', curcuma: 'Cúrcuma', glucosamina: 'Glucosamina e condroitina', cafeina: 'Cafeína', taurina: 'Taurina', betaalanina: 'Beta-alanina', citrulina: 'Citrulina', teanina: 'L-Teanina' };
   // o que não é do Montar: fica como está, nunca entra, nunca sai, nunca muda
   const FORA = /testo|enantato|cipionato|propionato|durateston|deca\b|nandrol|\bnpp\b|trembol|oxandrol|primobol|bolden|masteron|drostanol|stanoz|dianabol|hemogenin|oximetol|turinabol|\bdhb\b|anastrozol|tamoxif|clomif|\bhcg\b|gonadotrof|cabergol|tirzep|retatrut|semaglut|ozempic|mounjaro|\bcjc\b|ipamorel|\bbpc\b|tb-? ?500|mots-? ?c|ghk|tesamorel|somatrop|clembut|clenbut|ioimbina|yohimb|sibutram|levotirox|\bt3\b|\bt4\b|glifage|metformina|finaster|minoxidil|sildenafil|tadalafil/;
   const PSIQ = /sertralina|fluoxetina|escitalopram|paroxetina|venlafaxina|desvenlafaxina|duloxetina|bupropiona|citalopram|amitriptilina|nortriptilina|trazodona|mirtazapina|antidepress|venvanse|ritalina|concerta|lisdexanfetamina|metilfenidato|litio|quetiapina|risperidona|olanzapina|aripiprazol|clonazepam|rivotril|alprazolam|zolpidem|lamotrigina|topiramato|pregabalina/;
@@ -33120,6 +33259,10 @@ const GHSU = (() => {
     if (P.artrose) { poe('boswellia'); poe('arnica'); }
     const ex = P.exame || {};
     if (ex.d3) poe('d3'); if (ex.b12) poe('b12'); if (ex.ferritina) poe('ferro'); if (ex.ldl) poe('policosanol'); if (ex.trig) poe('omega', { d: '3000mg' }); if (ex.glicose) poe('berberina'); if (ex.zinco) poe('zinco'); if (ex.folico) poe('folico');
+    // v667: o resto da tabela de glicemia e insulina da skill
+    if (ex.glicJejum) { poe('canela'); poe('cromo'); }
+    if (ex.insulina) { poe('berberina'); poe('canela'); }
+    if (ex.homa) { poe('berberina'); poe('inositol'); }
     // v666: hematócrito acima de 50 no exame leva Nattokinase, menos em quem usa remédio que afina o sangue
     if (ex.hemat) {
       const afina = nrm(P.remedios).match(ANTICOAG);
@@ -33127,6 +33270,16 @@ const GHSU = (() => {
       else { poe('nattokinase'); notas.push('Nattokinase entrou pelo hematócrito alto. Confere antes de entregar: não vale pra quem usa anticoagulante, tem hemofilia ou fez cirurgia nas últimas 4 semanas.'); }
     }
     if (P.multi && MULTI_MOTIVO[P.multi]) poe('multi', { o: 'Pós-desjejum. ' + MULTI_MOTIVO[P.multi] });
+    // v667: Coenzima Q10 pra quem usa estatina ou tem mais de 50 anos (o painel já traz marcado e o treinador confirma)
+    if (P.coq10) poe('coq10');
+    // v667: o que o treinador escolheu acrescentar
+    const pedidos = new Set(P.extras || []);
+    EXTRAS.forEach(([k]) => {
+      if (!pedidos.has(k)) return;
+      const est = k === 'cafeina' && nrm(P.remedios).match(ESTIMULANTE);
+      if (est) { notas.push('Cafeína marcada, mas ele usa remédio estimulante (' + est[0] + '): a cafeína ficou fora, pra não somar estímulo.'); return; }
+      poe(k);
+    });
     return q;
   }
 
@@ -33146,7 +33299,7 @@ const GHSU = (() => {
       if (sep(r)) { saida.push(r); continue; }
       const n = nrm(r[1] + ' ' + r[2] + ' ' + r[3]);
       if (FORA.test(n)) {
-        if (!rea && /glifage|metformina/.test(n)) { saiu.push(r[1]); notas.push('Glifage não entra mais no protocolo inicial: a linha saiu. Se a glicose pede controle, marca "glicose alterada" que entra a Berberina.'); continue; }
+        if (!rea && /glifage|metformina/.test(n)) { saiu.push(r[1]); notas.push('Glifage não entra mais no protocolo inicial: a linha saiu. Se a glicose pede controle, marca em "O exame mostrou" o que veio da glicose.'); continue; }
         fora++; saida.push(r); continue;
       }
       if (/colageno/.test(n)) { saiu.push(r[1]); notas.push('Colágeno não entra no método: a linha saiu. Pra pele, cabelo e unha é Biotina, Vitamina C e Zinco.'); continue; }
@@ -33179,7 +33332,7 @@ const GHSU = (() => {
         let dentro = false, ult = -1;
         saida.forEach((x, i) => { if (!ehSupl(x)) { dentro = false; return; } if (sep(x)) { dentro = momentoDe(String(x[1]).replace(/[\u2014\u2013\-]/g, ' ')) === m; if (dentro) ult = i; return; } if (dentro) ult = i; });
         if (ult >= 0) pos = ult + 1;
-        else { let fim = -1, achou = false; saida.forEach((x, i) => { if (achou) return; if (ehSupl(x) && sep(x) && momentoDe(String(x[1]).replace(/[\u2014\u2013\-]/g, ' ')) > m) { achou = true; return; } if (ehSupl(x)) fim = i; }); const mod = String((saida.find(sep) || [])[1] || '').trim().match(/^([\u2014\u2013\-]+\s*).+?(\s*[\u2014\u2013\-]+)$/), tit = r[3].split(/[,.]/)[0].toUpperCase(); saida.splice(fim + 1, 0, ['supl', mod ? mod[1] + tit + mod[2] : '- ' + tit + ' -', '', '']); pos = fim + 2; }
+        else { let fim = -1, achou = false; saida.forEach((x, i) => { if (achou) return; if (ehSupl(x) && sep(x) && momentoDe(String(x[1]).replace(/[\u2014\u2013\-]/g, ' ')) > m) { achou = true; return; } if (ehSupl(x)) fim = i; }); const mod = String((saida.find(sep) || [])[1] || '').trim().match(/^([\u2014\u2013\-]+\s*).+?(\s*[\u2014\u2013\-]+)$/), tit = ITEM[k][4] || r[3].split(/[,.]/)[0].toUpperCase(); saida.splice(fim + 1, 0, ['supl', mod ? mod[1] + tit + mod[2] : '- ' + tit + ' -', '', '']); pos = fim + 2; }
       } else {
         // sem separador: depois da última linha do mesmo momento, ou antes da primeira de um momento mais tarde
         let ult = -1, antes = -1, fim = -1;
@@ -33201,14 +33354,14 @@ const GHSU = (() => {
     saida.forEach(x => { if (!ehSupl(x) || sep(x)) return; if (!/\d+\s*(mg|g\b|mcg|ui|ml|c[áa]ps|caps|dose|colher|gota|comprimid|sache|scoop)/i.test(x.slice(1).join(' '))) notas.push('Linha sem dose: ' + x[1] + '. Completa antes de entregar.'); else if (!String(x[3]).trim() && !temSep) notas.push('Linha sem horário: ' + x[1] + '. Completa antes de entregar.'); });
     if (fora) notas.push('Tem ' + fora + (fora === 1 ? ' linha' : ' linhas') + ' de remédio, hormônio ou queima na suplementação: o Montar não mexe ' + (fora === 1 ? 'nela' : 'nelas') + '. Confere com o GH.');
     if (P.temExame && !Object.keys(P.exame || {}).some(k => P.exame[k])) notas.push('Tem exame anexado: lê e marca em "O exame mostrou" o que veio alterado. O Montar não lê o arquivo.');
-    else if (!rea) notas.push('Sem exame anexado: a corretiva saiu só pela anamnese. Vale pedir os exames.');
+    else if (!rea && !P.temExame && !Object.keys(P.exame || {}).some(k => P.exame[k])) notas.push('Sem exame anexado: a corretiva saiu só pela anamnese. Vale pedir os exames.');
     if (P.jaUsa) notas.push('Na anamnese, o que já usa: ' + String(P.jaUsa).slice(0, 160) + '. Confere se algo repete ou precisa sair.');
     if (P.remedios) notas.push('Usa remédio: ' + String(P.remedios).slice(0, 160) + '. Confere interação antes de entregar.');
     if (P.alergiaLeite) notas.push('Alergia a leite: o whey virou proteína vegetal.');
     else if (P.lactose && q.whey) notas.push('Intolerância à lactose: o whey é o isolado.');
     return { rows: saida, entrou, saiu, mudou, ficou, notas, total: saida.filter(r => ehSupl(r) && !sep(r)).length };
   }
-  return { monta, fatoresDe, ITEM, NOME, MULTI_MOTIVO, nrm };
+  return { monta, fatoresDe, ITEM, NOME, MULTI_MOTIVO, EXTRAS, estatina, nrm };
 })();
 
 // ── v664 (GH 17/11, plano B): MONTAR A SUPLEMENTAÇÃO dentro do editor da dieta, sem IA. Lê da anamnese inicial o que ele
@@ -33220,7 +33373,7 @@ const GHSU = (() => {
 const _suMo = { car: false, erro: '', senha: false, j: null, v: null, rv: null, pronto: null, aba: '' };
 const _SUMO_FAT = [['digestao', 'Digestão'], ['humor', 'Humor'], ['foco', 'Foco'], ['imunidade', 'Imunidade'], ['pele', 'Pele, cabelo e unha']];
 const _SUMO_TEM = [['sonoRuim', 'Sono ruim'], ['ansiedadeAlta', 'Ansiedade alta'], ['estresseAlto', 'Estresse alto'], ['dorArticular', 'Dor articular'], ['artrose', 'Artrose ou tendinite em laudo'], ['libido', 'Queda de libido']];
-const _SUMO_EX = [['d3', 'Vitamina D baixa'], ['b12', 'B12 baixa'], ['ferritina', 'Ferritina baixa'], ['ldl', 'Colesterol alto'], ['trig', 'Triglicérides alto'], ['glicose', 'Glicose alterada'], ['zinco', 'Zinco baixo'], ['folico', 'Ácido fólico baixo'], ['hemat', 'Hematócrito acima de 50']];
+const _SUMO_EX = [['d3', 'Vitamina D baixa'], ['b12', 'B12 baixa'], ['ferritina', 'Ferritina baixa'], ['ldl', 'Colesterol alto'], ['trig', 'Triglicérides alto'], ['glicose', 'Glicada 5,7 ou mais'], ['glicJejum', 'Glicemia de jejum 100 a 125'], ['insulina', 'Insulina acima de 12'], ['homa', 'HOMA-IR acima de 2,5'], ['zinco', 'Zinco baixo'], ['folico', 'Ácido fólico baixo'], ['hemat', 'Hematócrito acima de 50']];
 const _SUMO_WHEY = [['', 'Comum'], ['iso', 'Isolado (lactose)'], ['veg', 'Vegetal (alergia a leite)'], ['sem', 'Não compra']];
 const _SUMO_MULTI = [['', 'Não'], ['exame', 'Hipovitaminose no exame'], ['escritorio', 'Escritório sem sol'], ['desregrada', 'Alimentação desregrada']];
 function _suMoNao(t) { const n = _teFiNorm(t).trim(); return !n || /^(nao|n|nenhum|nenhuma|nada|nao uso|nao utilizo|nao tomo|-)\b/.test(n); }
@@ -33234,7 +33387,7 @@ function _suMoIni(j) {
   const artic = [comResto(/problema osseo ou articular/), comResto(/limitacao articular/)].filter(Boolean).join(' / ');
   const exa = resp.find(y => /exames de sangue/.test(N(_teFiTxt(y.p)))), wheyTxt = R(/pacote de whey/), alergia = String(d.alergia || '');
   const sint = R(/atualmente algum desses sintomas/), horm = /^sim\b/.test(N(R(/contratou o acompanhamento hormonal/)).trim());
-  return { f, sexo: d.sexo || t.sexo || '', objTxt: L(d.objTxt || ''), secar: d.obj === 'secar', fatTxt, fat: GHSU.fatoresDe(fatTxt), sono: t.sono == null ? null : t.sono, sonoTxt: R(/como e o seu sono/),
+  return { f, idade: +t.idade || null, sexo: d.sexo || t.sexo || '', objTxt: L(d.objTxt || ''), secar: d.obj === 'secar', fatTxt, fat: GHSU.fatoresDe(fatTxt), sono: t.sono == null ? null : t.sono, sonoTxt: R(/como e o seu sono/),
     ansioso: /^sim\b/.test(N(R(/muito ansioso/)).trim()), ansNota: nota(/nivel de ansiedade/), estressado: /^sim\b/.test(N(R(/muito estressado/)).trim()), estNota: nota(/nivel de estresse/),
     lac: !!d.lac, alergia, alergiaLeite: /leite|lact|caseina|whey/.test(N(alergia)), semWhey: !!wheyTxt && /^nao\b/.test(N(wheyTxt).trim()), wheyTxt, investe: R(/investir em sua suplementacao/), usa,
     remedios: comResto(/utiliza medicamentos/), temExame: !!(exa && String(exa.r == null ? '' : exa.r).trim() && !_suMoNao(exa.r)), artic, artrose: /artrose|condropatia|condromalac|tendin|bursite|hernia/.test(N(artic)), libido: /libido/.test(N(sint)), horm, sint };
@@ -33253,7 +33406,7 @@ function _suMoTemSupl() { return Array.isArray(dietaData) && dietaData.some(r =>
 function _suMoBase(ini) {
   const fat = {}; _SUMO_FAT.forEach(p => { fat[p[0]] = !!(ini && ini.fat.indexOf(p[0]) >= 0); });
   return { fat, sonoRuim: !!(ini && ini.sono != null && ini.sono <= 2), ansiedadeAlta: !!(ini && ini.ansioso && ini.ansNota >= 4), estresseAlto: !!(ini && ini.estressado && ini.estNota >= 4), dorArticular: !!(ini && ini.artic), artrose: !!(ini && ini.artrose),
-    libido: !!(ini && ini.libido && !ini.horm), whey: ini ? (ini.semWhey ? 'sem' : (ini.alergiaLeite ? 'veg' : (ini.lac ? 'iso' : ''))) : '', deficit: false, multi: '', exame: {} };
+    libido: !!(ini && ini.libido && !ini.horm), whey: ini ? (ini.semWhey ? 'sem' : (ini.alergiaLeite ? 'veg' : (ini.lac ? 'iso' : ''))) : '', deficit: false, multi: '', exame: {}, extra: {}, coq10: !!(ini && (GHSU.estatina(ini.remedios) || ini.idade > 50)) };
 }
 function _suMoValores(ini) { if (!_suMo.v) _suMo.v = _suMoBase(ini); return _suMo.v; }
 function _suMoReaValores(ini, rea) {
@@ -33272,7 +33425,7 @@ function _suMoReaValores(ini, rea) {
 function suMoAba(a) { _suMo.aba = a; _suMo.pronto = null; _suMoDesenha(); }
 function suMoSet(k, val) {
   const v = _suMo.aba === 'rea' ? _suMo.rv : _suMo.v; if (!v) return;
-  if (k === 'fat') v.fat[val] = !v.fat[val]; else if (k === 'exame') v.exame[val] = !v.exame[val]; else if (k === 'tem') { v[val] = !v[val]; if (val === 'artrose' && v.artrose) v.dorArticular = true; } else v[k] = val;
+  if (k === 'fat') v.fat[val] = !v.fat[val]; else if (k === 'exame') v.exame[val] = !v.exame[val]; else if (k === 'extra') { if (!v.extra) v.extra = {}; v.extra[val] = !v.extra[val]; } else if (k === 'tem') { v[val] = !v[val]; if (val === 'artrose' && v.artrose) v.dorArticular = true; } else v[k] = val;
   _suMoDesenha();
 }
 async function _suMoCarrega(fresh) {
@@ -33333,11 +33486,15 @@ function _suMoDesenha() {
   h += grupo('Em déficit e com gordura acima de 20%', [['Não', "suMoSet('deficit',false)", !v.deficit], ['Sim', "suMoSet('deficit',true)", !!v.deficit]]);
   h += grupo('O exame mostrou', _SUMO_EX.map(p => [p[1], "suMoSet('exame','" + p[0] + "')", !!v.exame[p[0]]]));
   h += grupo('Multivitamínico', _SUMO_MULTI.map(p => [p[1], "suMoSet('multi','" + p[0] + "')", v.multi === p[0]]));
+  // v667: o que já foi usado nos protocolos entregues e não tem regra escrita entra pelo toque
+  h += grupo('Também pode entrar', [['Coenzima Q10', "suMoSet('tem','coq10')", !!v.coq10]].concat(GHSU.EXTRAS.map(p => [p[1], "suMoSet('extra','" + p[0] + "')", !!(v.extra && v.extra[p[0]])])));
+  h += '<div class="di-mo-dica su-mo-extra">Cada um entra com a dose e o horário mais usados nos protocolos já entregues. Depois é só ajustar na linha.</div>';
   const av = [];
   if (ini && ini.secar && !v.deficit) av.push('O objetivo dele é emagrecer. Se a gordura passa de 20%, marca o déficit aqui em cima que entra o Morosil.');
   if (ini && ini.temExame && !_SUMO_EX.some(p => v.exame[p[0]])) av.push('Ele anexou exame de sangue. O Montar não lê o arquivo: abre o exame e marca em "O exame mostrou" o que veio alterado.');
   if (ini && ini.libido && ini.horm) av.push('Marcou queda de libido e contratou o acompanhamento hormonal: essa conduta é com o GH.');
   if (ini && ini.remedios) av.push('Usa remédio (' + ini.remedios + '). Confere interação antes de entregar.');
+  if (ini && v.coq10 && (GHSU.estatina(ini.remedios) || ini.idade > 50)) av.push('A Coenzima Q10 já veio marcada: ' + (GHSU.estatina(ini.remedios) ? 'ele usa estatina' : 'ele tem ' + ini.idade + ' anos, e a regra é acima de 50') + '. Se não for o caso, desmarca em "Também pode entrar".');
   if (_suMoWheyNaDieta() && v.whey !== 'sem') av.push('A dieta já tem whey nas refeições: a linha do whey sai apontando pra elas, sem dose extra de pós-treino.');
   if (ehRea && tem) av.push('No reajuste o que ele já usa fica como está. O Montar só acrescenta o que falta e tira o que o método não usa.');
   if (!ehRea && tem) av.push('A suplementação já tem linhas. Montar reescreve as que são do método com a dose e o horário padrão e mantém as outras.');
@@ -33350,7 +33507,7 @@ function suMoMonta() {
   const ehRea = _suMo.aba === 'rea', v = ehRea ? _suMo.rv : _suMo.v; if (!v || !Array.isArray(dietaData)) return;
   const ini = _suMoIni(_suMo.j);
   const perfil = { tipo: ehRea ? 'reajuste' : 'inicial', fatores: _SUMO_FAT.map(p => p[0]).filter(k => v.fat[k]), sonoRuim: !!v.sonoRuim, ansiedadeAlta: !!v.ansiedadeAlta, estresseAlto: !!v.estresseAlto, dorArticular: !!v.dorArticular, artrose: !!v.artrose, libido: !!v.libido,
-    lactose: v.whey === 'iso', alergiaLeite: v.whey === 'veg', semWhey: v.whey === 'sem', wheyNaDieta: _suMoWheyNaDieta(), deficit: !!v.deficit, multi: v.multi || '', exame: Object.assign({}, v.exame), temExame: !!(ini && ini.temExame), jaUsa: ini ? ini.usa : '', remedios: ini ? ini.remedios : '' };
+    lactose: v.whey === 'iso', alergiaLeite: v.whey === 'veg', semWhey: v.whey === 'sem', wheyNaDieta: _suMoWheyNaDieta(), deficit: !!v.deficit, multi: v.multi || '', exame: Object.assign({}, v.exame), coq10: !!v.coq10, extras: GHSU.EXTRAS.map(p => p[0]).filter(k => v.extra && v.extra[k]), temExame: !!(ini && ini.temExame), jaUsa: ini ? ini.usa : '', remedios: ini ? ini.remedios : '' };
   let r; try { r = GHSU.monta(dietaData.map(x => (x || []).slice()), perfil); } catch (_) { r = null; }
   if (!r) { _suMo.pronto = { tit: 'Não montou', res: 'Não consegui montar a suplementação. Ajusta na mão pelo editor.', notas: [], ok: false }; _suMoDesenha(); _suMo.pronto = null; return; }
   const antes = dietaData.map(x => (x || []).slice());
@@ -34063,9 +34220,9 @@ function renderEditorTopBar() {
   const protoUrl = `https://app.metodogh.com.br/?sheet=${encodeURIComponent(trainerSheetId)}&tab=${(currentEditMode === 'dieta' || currentEditMode === 'planta') ? 'DIETA' : 'TREINO'}`;
   document.getElementById('trainerStudentInfo').innerHTML =
     `<span class="te-info-name" onclick="teFichaAlterna()" title="Abrir a ficha do aluno"><strong>${escTrainer(studentName)}</strong>${meta ? ' · ' + escTrainer(meta) : ''}</span>` +
-    `<span class="te-info-link"><button type="button" class="te-link-copy te-ficha-lk${teFichaAberta() ? ' on' : ''}" onclick="teFichaAlterna()" title="Ficha do aluno: plano e respostas da anamnese">📄 ficha</button>` +
-      (_LOJA ? `<a href="#" onclick="teAbrirProtoAqui();return false;" title="Abrir o protocolo do aluno aqui no app"><span class="te-ico">🔗 </span>abrir protocolo</a>` : `<a href="${protoUrl}" target="_blank" rel="noopener" title="Abrir o protocolo do aluno numa nova aba"><span class="te-ico">🔗 </span>abrir protocolo</a>`) +
-      `<button type="button" class="te-link-copy" onclick="teCopyProtoLink(this)" title="Copiar o link do protocolo pra mandar pro aluno">copiar link</button>` +
+    `<span class="te-info-link"><button type="button" class="te-link-copy te-ficha-lk${teFichaAberta() ? ' on' : ''}" onclick="teFichaAlterna()" title="Ficha do aluno: plano e respostas da anamnese">📄 Ficha</button>` +
+      (_LOJA ? `<a href="#" onclick="teAbrirProtoAqui();return false;" title="Abrir o protocolo do aluno aqui no app"><span class="te-ico">🔗 </span>Abrir protocolo</a>` : `<a href="${protoUrl}" target="_blank" rel="noopener" title="Abrir o protocolo do aluno numa nova aba"><span class="te-ico">🔗 </span>Abrir protocolo</a>`) +
+      `<button type="button" class="te-link-copy" onclick="teCopyProtoLink(this)" title="Copiar o link do protocolo pra mandar pro aluno">Copiar link</button>` +
     `</span>`;
   // v653: no celular os dois botões do link moram no "⋯"
   const _ml = document.getElementById('teMaisLinks');
