@@ -3777,6 +3777,27 @@
   .tr-mo-dia { font-size: 13.5px; line-height: 1.45; color: #eee; padding: 2px 0; }
   .tr-mo .di-mo-abas { margin-top: 2px; }
   .tr-mo-fase { margin: -4px 0 10px; }
+  .me-mo-lida, .me-mo-solta { padding: 5px 0; border-bottom: 1px solid rgba(128,128,128,.18); }
+  .me-mo-solta { opacity: .8; }
+  .me-mo-como, .me-mo-fora, .me-mo-pergs { margin-top: 10px; }
+  .me-mo .me-mo-pg-rot, .me-mo .me-mo-rg-rot { display: block; margin: 10px 0 6px; }
+  .me-mo .me-mo-pl { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; }
+  .me-mo .me-mo-pn { flex: 0 0 18px; text-align: right; opacity: .6; font-size: 12px; }
+  .me-mo .me-mo-pl input { flex: 1 1 auto; min-width: 0; box-sizing: border-box; background: #161616; color: #eee; border: 1px solid #3a3a3a; border-radius: 9px; padding: 9px 10px; font: inherit; font-size: 14px; }
+  .me-mo .me-mo-pl input:focus { outline: none; border-color: var(--gold); }
+  .me-mo .me-mo-px { flex: 0 0 36px; height: 36px; background: none; color: inherit; border: 1px solid #3a3a3a; border-radius: 9px; font-size: 18px; line-height: 1; cursor: pointer; }
+  .me-mo .me-mo-pbts { display: flex; gap: 8px; margin: 4px 0 10px; }
+  .me-mo .me-mo-pbts button { flex: 1 1 0; min-height: 40px; background: none; color: inherit; border: 1px solid #3a3a3a; border-radius: 9px; font: inherit; font-size: 13px; font-weight: 600; padding: 8px 10px; cursor: pointer; }
+  html[data-theme="light"] .me-mo .me-mo-pl input { background: #fff; color: #141414; border-color: rgba(0, 0, 0, 0.22); }
+  html[data-theme="light"] .me-mo .me-mo-px { border-color: rgba(0, 0, 0, 0.22); }
+  [data-theme="light"] .me-mo .me-mo-pbts button { border-color: rgba(0, 0, 0, 0.22); }
+  @media (pointer: coarse) { .me-mo .me-mo-pl input { font-size: 16px; } }
+  .me-mo .me-mo-pick { max-height: 38vh; overflow-y: auto; -webkit-overflow-scrolling: touch; border: 1px solid #3a3a3a; border-radius: 9px; margin: 0 0 10px; }
+  .me-mo .me-mo-op { display: block; width: 100%; box-sizing: border-box; text-align: left; background: none; color: inherit; border: 0; border-bottom: 1px solid rgba(128,128,128,.18); padding: 10px 10px 10px 34px; font: inherit; font-size: 13px; line-height: 1.35; position: relative; cursor: pointer; }
+  .me-mo .me-mo-op::before { content: ''; position: absolute; left: 10px; top: 11px; width: 14px; height: 14px; border: 1.5px solid #777; border-radius: 4px; box-sizing: border-box; }
+  .me-mo .me-mo-op.on { color: var(--gold); }
+  .me-mo .me-mo-op.on::before { background: var(--gold); border-color: var(--gold); }
+  html[data-theme="light"] .me-mo .me-mo-pick { border-color: rgba(0, 0, 0, 0.22); }
   .tr-mo-hoje { margin-top: -2px; }
   .tr-mo .te-ent-linha { margin-top: 6px; }
   .tr-mo .te-conf-salva[disabled] { opacity: .45; cursor: default; }
@@ -29616,7 +29637,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v665';
+    var APP_SHELL_V = 'metodo-gh-v666';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
@@ -31141,6 +31162,8 @@ function _teEntDesenha() {
     h += '<div class="te-ent-res">Treino: ' + n.dias + (n.dias === 1 ? ' dia, ' : ' dias, ') + n.ex + (n.ex === 1 ? ' exercício' : ' exercícios') + '. Dieta: ' + n.ref + (n.ref === 1 ? ' refeição.' : ' refeições.') + '</div>';
     h += '<div class="te-ent-aviso">O aluno recebe AGORA no WhatsApp a mensagem com o link do protocolo. A mestre recebe a data de hoje, a versão e o link. Não dá pra desfazer.</div>';
     const fut = _teEntFutura_();
+    // v666: o Montar não escreve protocolo hormonal nem remédio do bloco; sem esse bloco na dieta, a tela lembra antes de entregar
+    if (!(dietaData || []).some(r => r && /^(proto|ciclo)$/i.test(String(r[0] == null ? '' : r[0]).trim()))) h += '<div class="te-ent-res te-ent-horm">Sem protocolo hormonal na dieta. Hormônio, peptídeo e remédio do bloco (anastrozol, tamoxifeno, cabergolina) nenhum Montar escreve: essa parte é tua, à mão. Se este aluno usa, escreve antes de entregar.</div>';
     if (fut) h += '<div class="te-ent-aviso te-ent-fut">Atenção: a data de compra dele na mestre é ' + e(fut) + ', que ainda não chegou. Se o protocolo está agendado pra essa data, não entrega agora.</div>';
     if (tot) {
       h += '<div class="te-conf-lista">';
@@ -31623,7 +31646,7 @@ function diMoAplicaRea() {
   _diMoDesenha();
 }
 
-// v663: rotulador de séries (cópia do núcleo da lane Entregas, gerada por _gera_series_app.mjs), gerador de treino do Montar e giro do reajuste
+// v666: rotulador de séries (cópia do núcleo da lane Entregas, gerada por _gera_series_app.mjs), gerador de treino do Montar e giro do reajuste
 const GHSR = (function () {
 const TAB = {"ABDOMINAL ARNOLD":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDOMINAL ELEVAÇÃO DE PERNAS COM HALTER OU CANELEIRA":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna","quadril"]},"ABDOMINAL ELEVAÇÃO DE PERNAS NA PARALELA":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna","quadril"]},"ABDOMINAL ELEVAÇÃO DE PERNAS NO BANCO DECLINADO":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna","quadril"]},"ABDOMINAL NA BARRA FIXA":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDOMINAL NA MÁQUINA":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDOMINAL NA REMADA BAIXA OU CROSS":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDOMINAL NO BANCO DECLINADO":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDOMINAL NO BANCO DECLINADO COM PESO":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDOMINAL NO CHÃO":{"grupo":"abdomen","tipo":"isolador","vetor":"flexao-tronco","artic":["coluna"]},"ABDUÇÃO DEITADA COM MINI BAND":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"ABDUÇÃO EM PÉ NA MÁQUINA":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"ABDUÇÃO EM QUATRO APOIOS COM MINI BAND":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"ABDUÇÃO LATERAL NA MÁQUINA":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"ABDUÇÃO NO CROSS":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"AFUNDO NO CHÃO":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"AFUNDO SMITH":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"AFUNDO SMITH COM STEP":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"AGACHAMENTO HACK":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["coluna","joelho","quadril","tornozelo"]},"AGACHAMENTO LIVRE":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"AGACHAMENTO SMITH":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"AGACHAMENTO SUMÔ SMITH":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"ALONGAMENTO ADUTORES":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"ALONGAMENTO ESCÁPULAS E OMBRO":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"ALONGAMENTO GLÚTEO":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"ALONGAMENTO PEITORAL MENOR":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"ALONGAMENTO POSTERIOR":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"ALONGAMENTO QUADRIL – RETROVERSÃO":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"ALONGAMENTO TORNOZELO E ILIOPSOAS":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"AQUECIMENTO MANGUITO":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"BARRA FIXA":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"BÚLGARO":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"BÚLGARO NA MÁQUINA":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo"]},"CADEIRA ABDUTORA":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"CADEIRA ABDUTORA 45° EM PÉ":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"CADEIRA ABDUTORA EM PÉ":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"CADEIRA ADUTORA":{"grupo":"adutor","tipo":"isolador","vetor":"aducao-quadril","artic":["quadril"]},"CADEIRA EXTENSORA":{"grupo":"quad","tipo":"isolador","vetor":"extensao-joelho","artic":["joelho"]},"CADEIRA FLEXORA":{"grupo":"posterior","tipo":"isolador","vetor":"flexao-joelho","artic":["joelho"]},"COICE COM CANELEIRA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"COICE NA MÁQUINA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"COICE NO CROSS COM POLIA ALTA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"CROSSOVER":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CROSSOVER POLIA MÉDIA":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO DECLINADO":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO DECLINADO COM HALTERES":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO INCLINADO":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO INCLINADO NO CROSS":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO INVERSO COM HALTERES":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO INVERSO NO CROSS":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO INVERSO NO VOADOR":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO RETO":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"CRUCIFIXO RETO COM HALTERES":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]},"DESCOMPRESSÃO ESCÁPULAS":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"DESCOMPRESSÃO LOMBAR":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"DESENVOLVIMENTO COM HALTERES":{"grupo":"ombro","tipo":"composto","vetor":"empurrar-vertical","artic":["ombro","cotovelo","escapula"]},"DESENVOLVIMENTO NA MÁQUINA":{"grupo":"ombro","tipo":"composto","vetor":"empurrar-vertical","artic":["ombro","cotovelo","escapula"]},"DESENVOLVIMENTO NA MÁQUINA INCLINADO":{"grupo":"ombro","tipo":"composto","vetor":"empurrar-vertical","artic":["ombro","cotovelo","escapula"]},"ELEVAÇÃO FRONTAL COM ANILHA":{"grupo":"ombro","tipo":"isolador","vetor":"flexao-ombro","artic":["ombro"]},"ELEVAÇÃO FRONTAL COM HALTERES EM ISOMETRIA":{"grupo":"ombro","tipo":"isolador","vetor":"flexao-ombro","artic":["ombro"]},"ELEVAÇÃO FRONTAL NEUTRA COM HALTERES":{"grupo":"ombro","tipo":"isolador","vetor":"flexao-ombro","artic":["ombro"]},"ELEVAÇÃO FRONTAL NO CROSS":{"grupo":"ombro","tipo":"isolador","vetor":"flexao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL NA MÁQUINA":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL NA MÁQUINA SENTADO":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL NO BANCO INCLINADO":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL NO CROSS":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL PARCIAL NO CROSS":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO LATERAL SENTADO":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-ombro","artic":["ombro"]},"ELEVAÇÃO PÉLVICA 2D OU LIVRE":{"grupo":"gluteo","tipo":"composto","vetor":"extensao-quadril","artic":["quadril","joelho"]},"ELEVAÇÃO PÉLVICA NA MÁQUINA":{"grupo":"gluteo","tipo":"composto","vetor":"extensao-quadril","artic":["quadril","joelho"]},"EXTENSÃO DE GLÚTEO COM CANELEIRA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"EXTENSÃO DE GLÚTEO NA MÁQUINA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"EXTENSÃO DE GLÚTEO NA POLIA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"EXTENSÃO DE PUNHO COM BARRA":{"grupo":"antebraco","tipo":"isolador","vetor":"punho","artic":["punho"]},"EXTENSÃO DE PUNHO NO CROSS":{"grupo":"antebraco","tipo":"isolador","vetor":"punho","artic":["punho"]},"FACE PULL":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-horizontal","artic":["ombro","escapula"]},"FACEPULL COM CORDA NO CROSS":{"grupo":"ombro","tipo":"isolador","vetor":"abducao-horizontal","artic":["ombro","escapula"]},"FLEXOR NÓRDICO NA MÁQUINA":{"grupo":"posterior","tipo":"isolador","vetor":"flexao-joelho","artic":["joelho"]},"FLEXORA UNILATERAL EM PÉ":{"grupo":"posterior","tipo":"isolador","vetor":"flexao-joelho","artic":["joelho"]},"FLEXÃO DE PUNHO COM BARRA":{"grupo":"antebraco","tipo":"isolador","vetor":"punho","artic":["punho"]},"GLÚTEO NO HIPEREXTENSOR DE LOMBAR":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"HIPEREXTENSOR DE LOMBAR NA MÁQUINA COM CARGA":{"grupo":"lombar","tipo":"isolador","vetor":"extensao-tronco","artic":["coluna","quadril"]},"HIPEREXTENSÃO DE LOMBAR":{"grupo":"lombar","tipo":"isolador","vetor":"extensao-tronco","artic":["coluna","quadril"]},"LEG HORIZONTAL":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["coluna","joelho","quadril","tornozelo"]},"LEG PRESS 45º":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["coluna","joelho","quadril","tornozelo"]},"LEG PRESS 45º UNILATERAL":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["coluna","joelho","quadril","tornozelo"]},"LEVANTAMENTO TERRA":{"grupo":"quad","tipo":"composto","vetor":"dobradica","artic":["coluna","joelho","quadril","tornozelo"]},"LEVANTAMENTO TERRA HEXAGONAL":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["coluna","joelho","quadril","tornozelo"]},"LEVANTAMENTO TERRA NA MÁQUINA":{"grupo":"quad","tipo":"composto","vetor":"dobradica","artic":["coluna","joelho","quadril","tornozelo"]},"MEIO TERRA":{"grupo":"lombar","tipo":"composto","vetor":"dobradica","artic":["quadril","coluna"]},"MESA FLEXORA":{"grupo":"posterior","tipo":"isolador","vetor":"flexao-joelho","artic":["joelho"]},"MESA FLEXORA LIVRE COM HALTER":{"grupo":"posterior","tipo":"isolador","vetor":"flexao-joelho","artic":["joelho"]},"MOBILIDADE DE TORNOZELO":{"grupo":"aq","tipo":"aq","vetor":"aquecimento","artic":[]},"OSTRA COM MINI BAND":{"grupo":"gluteo","tipo":"isolador","vetor":"abducao-quadril","artic":["quadril"]},"PANTURRILHA EM PÉ":{"grupo":"panturrilha","tipo":"isolador","vetor":"flexao-plantar","artic":["tornozelo"]},"PANTURRILHA NO LEG 45º":{"grupo":"panturrilha","tipo":"isolador","vetor":"flexao-plantar","artic":["tornozelo"]},"PANTURRILHA SENTADO":{"grupo":"panturrilha","tipo":"isolador","vetor":"flexao-plantar","artic":["tornozelo"]},"PRANCHA COM RETROVERSÃO":{"grupo":"abdomen","tipo":"isolador","vetor":"anti-extensao","artic":["coluna"]},"PRANCHA PARAVERTEBRAIS":{"grupo":"abdomen","tipo":"isolador","vetor":"anti-extensao","artic":["coluna"]},"PULLDOWN":{"grupo":"costas","tipo":"isolador","vetor":"puxar-vertical","artic":["ombro","escapula"]},"PULLDOWN NA MÁQUINA":{"grupo":"costas","tipo":"isolador","vetor":"puxar-vertical","artic":["ombro","escapula"]},"PULLOVER COM HALTER":{"grupo":"costas","tipo":"isolador","vetor":"puxar-vertical","artic":["ombro","escapula"]},"PULLOVER NA MÁQUINA":{"grupo":"costas","tipo":"isolador","vetor":"puxar-vertical","artic":["ombro","escapula"]},"PUXADA ALTA COM TRIÂNGULO":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"PUXADA ALTA NA MÁQUINA ARTICULADA":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"PUXADA ALTA PRONADA":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"PUXADA ALTA SUPINADA":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"PUXADA ALTA SUPINADA NA MÁQUINA":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"PUXADA ALTA UNILATERAL SUPINADA":{"grupo":"costas","tipo":"composto","vetor":"puxar-vertical","artic":["ombro","cotovelo","escapula"]},"REMADA ALTA NA POLIA":{"grupo":"ombro","tipo":"composto","vetor":"puxar-vertical-alto","artic":["ombro","cotovelo","escapula"]},"REMADA BAIXA ABERTA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA BAIXA COM TRIÂNGULO":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA BAIXA DROP SET MECÂNICO COM TRIÂNGULO":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA BAIXA SUPINADA NA MÁQUINA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA CAVALINHO ABERTA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula","coluna","quadril"]},"REMADA CURVADA NA MÁQUINA GUIADA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA CURVADA PRONADA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula","coluna","quadril"]},"REMADA CURVADA SENTADO":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA NEUTRA NO CROSS":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA PRONADA NA MÁQUINA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"REMADA UNILATERAL NA MÁQUINA":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula"]},"ROSCA BAYESIAN":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo","ombro"]},"ROSCA CONCENTRADA COM HALTER":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA DIRETA ALTERNADA":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA DIRETA COM BARRA W":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA DIRETA COM HALTER NO BANCO INCLINADO":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo","ombro"]},"ROSCA DIRETA COM HALTERES":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA DIRETA NA PUXADA ALTA":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA DIRETA NO CROSS":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA MARTELO COM HALTERES":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA MARTELO NO CROSS":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA SCOTT FECHADA":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA SCOTT UNILATERAL":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA SPIDER":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"ROSCA UNILATERAL NO CROSS":{"grupo":"biceps","tipo":"isolador","vetor":"flexao-cotovelo","artic":["cotovelo"]},"SAPINHO NA MÁQUINA":{"grupo":"gluteo","tipo":"isolador","vetor":"extensao-quadril","artic":["quadril"]},"SERROTE COM HALTER":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula","coluna","quadril"]},"SERROTE PÊNDULO COM HALTER":{"grupo":"costas","tipo":"composto","vetor":"puxar-horizontal","artic":["ombro","cotovelo","escapula","coluna","quadril"]},"STEP UP":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"STEP UP NO CROSS":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["quadril","joelho","tornozelo","coluna"]},"STIFF":{"grupo":"posterior","tipo":"composto","vetor":"dobradica","artic":["quadril","coluna"]},"STIFF NA MÁQUINA":{"grupo":"posterior","tipo":"composto","vetor":"dobradica","artic":["quadril"]},"STIFF NO HIPEREXTENSOR":{"grupo":"posterior","tipo":"composto","vetor":"dobradica","artic":["quadril"]},"SUPERMAN – FORTALECIMENTO PARAVERTEBRAIS E GLÚTEO":{"grupo":"lombar","tipo":"isolador","vetor":"extensao-tronco","artic":["coluna","quadril"]},"SUPINO DECLINADO":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO DECLINADO COM BARRA":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO DECLINADO COM HALTERES":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO DECLINADO NA MÁQUINA":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO INCLINADO":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO INCLINADO COM HALTERES":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO INCLINADO NA MÁQUINA":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO RETO":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO RETO COM HALTERES":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO RETO NA MÁQUINA":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"SUPINO RETO NA MÁQUINA SENTADO":{"grupo":"peito","tipo":"composto","vetor":"empurrar-horizontal","artic":["ombro","cotovelo","escapula"]},"TERRA SUMÔ":{"grupo":"quad","tipo":"composto","vetor":"agachar","artic":["coluna","joelho","quadril","tornozelo"]},"TRÍCEPS FRANCÊS COM HALTER":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo","ombro"]},"TRÍCEPS FRANCÊS NO CROSS":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo","ombro"]},"TRÍCEPS NA PARALELA":{"grupo":"triceps","tipo":"composto","vetor":"extensao-cotovelo","artic":["cotovelo","ombro","escapula"]},"TRÍCEPS PULLEY COM BARRA":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo"]},"TRÍCEPS PULLEY COM CORDA":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo"]},"TRÍCEPS PULLEY NA MÁQUINA":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo"]},"TRÍCEPS PULLEY UNILATERAL":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo"]},"TRÍCEPS SUPINADO":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo"]},"TRÍCEPS TESTA EM PÉ":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo","ombro"]},"TRÍCEPS TESTA NO BANCO INCLINADO":{"grupo":"triceps","tipo":"isolador","vetor":"extensao-cotovelo","artic":["cotovelo","ombro"]},"VOADOR":{"grupo":"peito","tipo":"isolador","vetor":"empurrar-horizontal","artic":["ombro","escapula"]}};
 const norm = s => String(s || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
@@ -31812,7 +31835,7 @@ return { rotulaSemana, meta, norm };
 // Puro: não toca em tela. Entra o perfil, sai { rows, notas, split } ou { erro }.
 // A rotulagem das séries (aq, aj, val) é do GHS.rotulaSemana, que entra por parâmetro.
 const GHTR = (() => {
-  const nrm = s => String(s == null ? '' : s).toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+  const nrm = s => String(s == null ? '' : s).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
 
   // nome: [peso da faixa (P pesado, M médio, L leve, T tempo, A alongamento), intervalo, lado ('' | 'lado' | 'perna'), progressão de carga, dica, respiração]
   const EX = {
@@ -32114,6 +32137,71 @@ const GHTR = (() => {
     return null;
   }
 
+  // ── v666 (GH 17/11): a pergunta 83.1 escolhe a família da semana. A = um a dois músculos por dia (ABCDE), sempre com estímulo
+  // do grupo num segundo dia; P = empurrar, puxar e pernas; U = superiores e inferiores (com prioridade de braço vira Torso/Limbs,
+  // braço abrindo o dia de inferiores); C = o método decide (os desenhos de cima). Mulher segue o desenho feminino em todas. ──
+  // dia escrito na hora: [rótulo, abertura, vagas, vagas do treino curto]
+  const dia = (rot, abre, v, c) => [rot, abre, v, c || v];
+  function desenhoBro(f, pri) {
+    if (f === 5) {
+      const PT = dia('Peito e tríceps', 'push', 'abd cruI supI voa fra pul latX', 'abd cruI supI voa fra pul');
+      const CB = dia('Costas e bíceps', 'pull', 'remP remB pux pull inv rosW mar lom', 'remP remB pux inv rosW mar lom');
+      const Q = dia('Quadríceps', 'quad', 'tes hack leg bul ext cadF');
+      const O = dia('Ombro', 'upper', 'supRm cro des lat fro remU panP', 'supRm cro des lat latX remU');
+      const PG = dia('Posterior e glúteo', 'post', 'sco abdu pelv mesa sti fleU legU', 'sco pelv mesa sti fleU legU');
+      if (pri === 'peito') return ['BRO_5X', dia('Peito e tríceps', 'push', 'abd cruI supI supR voa fra pul', 'abd cruI supI supR voa pul'), CB, Q, dia('Ombro', 'upper', 'supRm cro des lat latX remU panP', 'supRm cro des lat latX remU'), PG];
+      if (pri === 'costas') return ['BRO_5X', dia('Costas e bíceps', 'pull', 'remP remB pux pull inv rosW mar lom', 'remP remB pux pull inv rosW lom'), dia('Peito e tríceps', 'push', 'abd cruI supI voa fra pul latX', 'abd cruI supI voa pul latX'), Q, dia('Ombro', 'upper', 'supRm cro des lat remU puxT panP', 'supRm cro des lat remU puxT'), PG];
+      if (pri === 'ombro') return ['BRO_5X', dia('Peito e tríceps', 'push', 'abd cruI supI voa fra pul latX', 'cruI supI voa pul latX fro'), dia('Costas e bíceps', 'pull', 'remP remB pux pull inv rosW mar lom', 'remP remB pux inv rosW lom abd'), dia('Quadríceps', 'quad', 'tes hack leg bul ext cadF panP', 'tes hack leg bul ext cadF'), dia('Ombro', 'upper', 'supRm cro remU invX des lat fro', 'supRm cro remU invX des lat'), PG];
+      if (pri === 'braco') return ['BRO_5X', CB, PT, dia('Pernas', 'quad', 'hack leg bul ext mesa sti cadF', 'hack leg ext mesa sti cadF'), dia('Braços', 'nada', 'abd2 remU sco bay tes pulB panP', 'remU sco bay tes pulB panP'), dia('Ombro', 'upper', 'supRm cro des lat fro latX', 'supRm cro des lat fro latX')];
+      if (pri === 'quad') return ['BRO_5X', Q, PT, CB, dia('Posterior e glúteo', 'post', 'sco pelv agL legU mesa sti fleU', 'sco agL legU mesa sti fleU'), O];
+      if (pri === 'posterior') return ['BRO_5X', dia('Posterior e glúteo', 'post', 'sco pelv mesa sti cadF fleU legU', 'sco pelv mesa sti cadF fleU'), PT, CB, dia('Quadríceps', 'quad', 'tes hack leg ext mesa cadF'), O];
+      if (pri === 'gluteo') return ['BRO_5X', dia('Posterior e glúteo', 'glut', 'sco adu abdu pelv mesa sti fleU', 'adu abdu pelv mesa sti fleU'), PT, CB, dia('Quadríceps e glúteo', 'quad', 'tes adu abdu pelv agL ext cadF', 'adu abdu pelv agL ext cadF'), O];
+      return ['BRO_5X', PT, CB, Q, O, PG];
+    }
+    if (f === 6) {
+      const P = dia('Peito', 'push', 'abd cruI supI supR voa pul');
+      const C = dia('Costas', 'pull', 'remP remB pux pull inv mar lom');
+      const Q = dia('Quadríceps', 'quad', 'hack leg bul ext cadF');
+      const O = dia('Ombro', 'upper', 'supRm cro des lat fro latX panP', 'supRm cro des lat latX panP');
+      const B = dia('Braços', 'nada', 'remU rosW sco bay fra tes pulB', 'remU rosW sco fra tes pulB');
+      const PG = dia('Posterior e glúteo', 'post', 'abdu pelv mesa sti fleU legU');
+      if (pri === 'costas') return ['BRO_6X', C, P, Q, dia('Ombro', 'upper', 'supRm cro remM des lat latX panP', 'supRm cro remM des lat latX'), B, PG];
+      if (pri === 'ombro') return ['BRO_6X', P, C, Q, dia('Ombro', 'upper', 'supRm cro des lat fro latX panP', 'supRm cro des lat fro latX'), dia('Braços', 'nada', 'remU invX rosW sco fra tes pulB', 'remU invX rosW sco fra tes'), PG];
+      if (pri === 'quad') return ['BRO_6X', Q, P, C, dia('Posterior e glúteo', 'post', 'pelv agL legU mesa sti fleU'), O, B];
+      if (pri === 'posterior') return ['BRO_6X', dia('Posterior e glúteo', 'post', 'pelv mesa sti cadF fleU legU'), P, C, dia('Quadríceps', 'quad', 'hack leg ext mesa cadF'), O, B];
+      if (pri === 'gluteo') return ['BRO_6X', dia('Posterior e glúteo', 'glut', 'adu abdu pelv mesa sti fleU'), P, C, dia('Quadríceps e glúteo', 'quad', 'adu abdu pelv agL ext cadF'), O, B];
+      return ['BRO_6X', P, C, Q, O, B, PG];
+    }
+    return null;
+  }
+  // superiores e inferiores em 4 treinos: o braço abre os dias de inferiores (Torso/Limbs), pra não ficar no fim do dia de superiores
+  function desenhoUL(f, pri, curto) {
+    if (f !== 4 || !pri || PERNA[pri] || pri === 'costas' || (pri === 'ombro' && curto)) return null;
+    const TA = dia('Superiores', 'upper', 'cruI supI voa remP pux des lat', 'supI voa remP pux des lat');
+    const TB = dia('Superiores', 'upper', 'supRm cro remM puxT latX invX lom', 'supRm cro remM puxT latX invX');
+    const LA = dia('Braços e inferiores', 'quad', 'rosW fra hack leg ext mesa sti', 'rosW fra hack leg ext mesa');
+    const LB = dia('Braços e inferiores', 'lower', 'abd sco pulB pelv bul fleU panP', 'abd sco pulB bul fleU sti');
+    if (pri === 'peito') return ['UL_4X', dia('Superiores', 'upper', 'cruI supI voa remP pux des lat', 'cruI supI voa remP des lat'), LA, dia('Superiores', 'upper', 'cruIx supRm cro remM puxT latX invX', 'cruIx supRm cro remM latX invX'), LB];
+    if (pri === 'ombro') return ['UL_4X', dia('Superiores', 'upper', 'cruI supI voa remP inv des lat', 'supI voa remP inv des lat'), LA, dia('Superiores', 'upper', 'supRm cro remM puxT invX latX fro', 'supRm cro remM invX latX fro'), LB];
+    if (pri === 'braco') return ['UL_4X', TA, dia('Braços e inferiores', 'quad', 'rosW fra pul hack leg ext mesa', 'rosW fra pul hack leg ext'), dia('Superiores', 'upper', 'supRm cro remM puxT latX invX abd', 'supRm cro remM latX invX abd'), dia('Braços e inferiores', 'lower', 'sco bay tes pelv bul fleU sti', 'sco tes pelv bul fleU sti')];
+    return null;
+  }
+  const PREF_TXT = { A: 'um a dois músculos por dia', P: 'empurrar, puxar e pernas', U: 'superiores e inferiores' };
+  function prefDe(t) {
+    const s = nrm(t);
+    if (!s) return 'C';
+    if (/^[APUC]$/.test(s)) return s;
+    if (s === 'B') return 'C';
+    if (/ABCDE|MUSCULOS?.{0,3}DIA|EMPILHAMENTO/.test(s)) return 'A';
+    if (/\bPPL\b|PUXAR.*EMPURRAR|EMPURRAR.*PUXAR/.test(s)) return 'P';
+    if (/UPPER|TORSO|LIMBS|SUPERIORES EM UM DIA/.test(s)) return 'U';
+    if (/OTIMIZACAO|VOLUME DE SERIES|OLHANDO PRO MEU OBJETIVO/.test(s)) return 'C';
+    if (/TANTO FAZ|DECID|RENDER MAIS|PODE (ESCOLHER|MONTAR|DECIDIR)|DO JEITO QUE/.test(s)) return 'C';
+    if (/DISTRIBU|EQUILIBR|MAIS VEZES|VARIAS VEZES|2 ?X|DOIS DIAS|ESPALH|CADA MUSCULO MAIS|FREQUENTE/.test(s)) return 'C';
+    if (/FOCO|UM MUSCULO|UM GRUPO|POR VEZ|POR DIA|CONCENTR|COMPLETO NO DIA/.test(s)) return 'A';
+    return 'C';
+  }
+
   const FAM = [[/ELEVACAO PELVICA/, 'pelvica'], [/AGACHAMENTO/, 'agachamento'], [/LEG PRESS|LEG HORIZONTAL/, 'leg'], [/CADEIRA EXTENSORA/, 'extensora'], [/MESA FLEXORA/, 'mesa'], [/CADEIRA FLEXORA/, 'cadeira'],
     [/FLEXORA UNILATERAL|FLEXORA EM PE/, 'flexpe'], [/STIFF/, 'stiff'], [/PANTURRILHA/, 'panturrilha'], [/ABDUTORA|ABDUCAO/, 'abducao'], [/ADUTORA|ADUCAO/, 'aducao'], [/COICE/, 'coice'], [/BULGARO|AFUNDO|PASSADA/, 'avanco'],
     [/CRUCIFIXO INVERSO/, 'inverso'], [/CRUCIFIXO INCLINADO/, 'cruinc'], [/SUPINO INCLINADO/, 'supinc'], [/SUPINO RETO/, 'supreto'], [/CROSSOVER/, 'crossover'], [/VOADOR/, 'voador'], [/PUXADA ALTA/, 'puxada'], [/PULLDOWN/, 'pulldown'],
@@ -32126,7 +32214,7 @@ const GHTR = (() => {
   function montaSemana(P, des) {
     const V = VAGAS(P), ab = ABRE(P), teto = tetoDe(P), curto = teto === 6;
     const W = { P, dias: [], usados: new Map(), notas: [], split: des[0] };
-    const planos = des.slice(1).map(chave => { const def = DD[chave]; return { def, lista: (curto ? def[3] : def[2]).split(' ').filter(s => (V[s] || []).length) }; });
+    const planos = des.slice(1).map(chave => { const def = typeof chave === 'string' ? DD[chave] : chave; return { def, lista: (curto ? def[3] : def[2]).split(' ').filter(s => (V[s] || []).length) }; });
     // a panturrilha em pé é a obrigatória: se a semana só tem a sentada, ela troca e vai pro fim do dia
     if (!planos.some(p => p.lista.includes('panP'))) { const p = planos.find(x => x.lista.includes('panS')); if (p) { p.lista = p.lista.filter(s => s !== 'panS'); const k = p.lista.indexOf('abd'); if (k === p.lista.length - 1 && k >= 0) p.lista.splice(k, 0, 'panP'); else p.lista.push('panP'); } }
     planos.forEach(({ def, lista }, i) => {
@@ -32145,7 +32233,8 @@ const GHTR = (() => {
       // abertura casa com o dia: superior sem puxada abre pelo peitoral menor
       let abre = def[1];
       if ((abre === 'upper' || abre === 'full' || abre === 'pull') && !d.itens.some(n => COSTAS_RE.test(nrm(n)))) abre = 'push';
-      d.itens.unshift(ab[abre] || ab.full);
+      if (abre !== 'nada') d.itens.unshift(ab[abre] || ab.full);
+      d.nTrab = d.itens.length - (abre !== 'nada' ? 1 : 0);
       W.dias.push(d);
     });
     return W;
@@ -32181,16 +32270,30 @@ const GHTR = (() => {
     P.niv = nivelDe(P.nivel); P.pri = priDe(P.prioridade);
     if (!P.restricao) P.restricao = restricaoDe(P);
     if (!(P.freq >= 3 && P.freq <= 6)) return { erro: 'Por enquanto o Montar faz de 3 a 6 treinos na semana. Com ' + (P.freq || 'essa') + ' frequência, monta na mão.' };
-    const des = P.sexo === 'M' ? desenhoHomem(P.freq, P.pri, tetoDe(P) === 6) : desenhoMulher(P.freq, P.pri);
+    P.prefK = prefDe(P.pref);
+    let des = null, notaPref = '';
+    if (P.sexo === 'M' && P.prefK === 'A') des = desenhoBro(P.freq, P.pri);
+    else if (P.sexo === 'M' && P.prefK === 'U') des = desenhoUL(P.freq, P.pri, tetoDe(P) === 6);
+    const proprio = !!des;
+    if (!des) des = P.sexo === 'M' ? desenhoHomem(P.freq, P.pri, tetoDe(P) === 6) : desenhoMulher(P.freq, P.pri);
     if (!des) return { erro: 'Homem com prioridade em glúteo em 4 treinos não fecha nas regras: o glúteo cairia em dias seguidos. Esse eu deixo pra tu montar na mão.' };
     const W = montaSemana(P, des);
+    const ele = P.sexo === 'M' ? 'Ele' : 'Ela';
+    if (P.prefK !== 'C' && P.sexo !== 'M') notaPref = 'Ela marcou que gosta de treinar com ' + PREF_TXT[P.prefK] + '. Pra mulher o Montar usa o desenho feminino do método, com inferiores abrindo a semana. Se quiser outro formato, monta na mão.';
+    else if (P.prefK === 'A') notaPref = proprio ? 'Ele pediu um a dois músculos por dia: a semana saiu nesse formato, com um segundo estímulo dos músculos grandes e de braço em outro dia.'
+      : 'Ele pediu um a dois músculos por dia, mas com ' + P.freq + ' treinos na semana isso deixaria músculo grande com um estímulo só. A semana saiu no desenho do método. Se quiser um músculo por dia mesmo assim, monta na mão.';
+    else if (P.prefK === 'U') notaPref = proprio ? 'Ele pediu superiores em um dia e inferiores em outro: a semana saiu assim, com os braços abrindo os dias de inferiores.'
+      : P.freq === 3 ? 'Ele pediu superiores em um dia e inferiores em outro: com 3 treinos o desenho do método já separa superiores e inferiores.'
+        : 'Ele pediu superiores em um dia e inferiores em outro. Com ' + P.freq + ' treinos' + (P.freq === 4 ? ' e essa prioridade' : '') + ' as regras do método pedem outro desenho, e a semana saiu nele. Confere os dias antes de entregar.';
+    else if (P.prefK === 'P') notaPref = P.freq === 3 ? 'Ele pediu empurrar, puxar e pernas. Com 3 treinos o método usa superiores e inferiores, pra cada músculo aparecer duas vezes na semana.'
+      : 'Ele pediu empurrar, puxar e pernas: o desenho do método pra ' + P.freq + ' treinos já parte dessa divisão.';
     const linhas = [];
     for (const d of W.dias) for (const n of d.itens) linhas.push(linha(P, d.n, n));
     const cab = cabeca(P, W);
     let rows = cab.concat(linhas);
     let rot = null;
     if (rotula) { rot = rotula(rows, { nivel: P.nivel, prioridade: P.pri === 'braco' ? 'braco' : P.pri || null, sexo: P.sexo, perfil: { nivel: P.nivel, sono: P.sono, estresse: P.estresse, idade: P.idade, lesao: Object.keys(P.dor).filter(k => P.dor[k]) } }); rows = rot.treino; }
-    return { rows, notas: W.notas.concat(avisos(P, W, rot, grupoDe)), split: W.split, dias: W.dias, rot };
+    return { rows, notas: (notaPref ? [notaPref] : []).concat(W.notas, avisos(P, W, rot, grupoDe)), split: W.split, dias: W.dias, rot, pref: P.prefK, proprio, notaPref };
   }
 
   function linha(P, dia, nome) {
@@ -32436,21 +32539,28 @@ const GHTR = (() => {
     }
     return tot ? ig / tot : 0;
   }
-  function desenhoPara(P, freq, pri, curto) {
+  // família da semana pelo carimbo: os desenhos que saem da pergunta 83.1 (um a dois músculos por dia, superiores e inferiores)
+  const famCarimbo = c => /^BRO_[56]X$/i.test(String(c || '').trim()) ? 'A' : /^UL_4X$/i.test(String(c || '').trim()) ? 'U' : '';
+  function desenhoPara(P, freq, pri, curto, fam) {
     const P2 = Object.assign({}, P, { freq, pri, tempo: curto ? '45 minutos' : 'Entre 60 e 90 minutos', prefere: null, evita: null, restricao: undefined });
-    const des = P2.sexo === 'M' ? desenhoHomem(freq, pri, curto) : desenhoMulher(freq, pri);
-    return des ? { P2, des } : null;
+    let des = null;
+    if (P2.sexo === 'M' && fam === 'A') des = desenhoBro(freq, pri);
+    else if (P2.sexo === 'M' && fam === 'U') des = desenhoUL(freq, pri, curto);
+    const daFam = !!des;
+    if (!des) des = P2.sexo === 'M' ? desenhoHomem(freq, pri, curto) : desenhoMulher(freq, pri);
+    return des ? { P2, des, daFam } : null;
   }
   // de qual prioridade é o desenho deste treino: compara com a semana que o método monta pra cada prioridade
   function reconhece(T, P, grupoDe) {
     if (!grupoDe || T.dias.length < 3 || T.dias.length > 6) return null;
     const velho = assina(T.dias.map(d => d.trab.map(r => r[1])), grupoDe), por = {}; let melhor = null;
-    for (const curto of [false, true]) for (const x of PRIS) {
-      const o = desenhoPara(P, T.dias.length, x, curto); if (!o) continue;
+    const fc = famCarimbo(T.carimbo);
+    for (const fam of fc ? [fc, ''] : ['']) for (const curto of [false, true]) for (const x of PRIS) {
+      const o = desenhoPara(P, T.dias.length, x, curto, fam); if (!o || (fam && !o.daFam)) continue;
       let W; try { W = montaSemana(o.P2, o.des); } catch (e) { continue; }
       const sim = parecido(velho, assina(W.dias.map(d => d.itens), grupoDe));
       if (!por[x] || sim > por[x].s) por[x] = { s: sim, curto };
-      if (!melhor || sim > melhor.s) melhor = { s: sim, pri: x, curto };
+      if (!melhor || sim > melhor.s) melhor = { s: sim, pri: x, curto, fam };
     }
     return melhor ? { melhor, por } : null;
   }
@@ -32461,7 +32571,7 @@ const GHTR = (() => {
     // treino que já está no desenho da prioridade marcada não remonta, mesmo com menos de 6 do grupo (é o desenho do método)
     const nPri = contaPri(T, P.pri, P.sexo, grupoDe), falta = nPri != null && nPri < 6 && !(meu && !outro);
     const maior = T.dias.reduce((m, d) => Math.max(m, d.trab.filter(r => !FORA_TETO.test(nrm(r[1]))).length), 0);
-    return { nPri, falta, outro, pede: outro || falta, curto: meu ? rec.melhor.curto : maior <= 6, de: meu ? rec.melhor.pri : null };
+    return { nPri, falta, outro, pede: outro || falta, curto: meu ? rec.melhor.curto : maior <= 6, de: meu ? rec.melhor.pri : null, fam: famCarimbo(T.carimbo) };
   }
   function reajusta(atual, perfil, rotula, grupoDe) {
     const P = Object.assign({ nome: '', sexo: 'M', nivel: '', prioridade: '', dor: {}, veto: [], versao: 0 }, perfil || {});
@@ -32477,11 +32587,13 @@ const GHTR = (() => {
     const optRot = { nivel: P.nivel, prioridade: P.pri === 'braco' ? 'braco' : P.pri || null, sexo: P.sexo, perfil: perfRot };
 
     // um músculo por dia: passa pro desenho do método, levando os pesados que o aluno já faz (ou trocando, na versão de rotação)
-    const pd = P._semPri ? { nPri: null, falta: false, outro: false, pede: false, curto: false } : pedeDesenho(T, P, grupoDe), nPri = pd.nPri, faltaPri = pd.falta;
+    const pd = P._semPri ? { nPri: null, falta: false, outro: false, pede: false, curto: false, fam: '' } : pedeDesenho(T, P, grupoDe), nPri = pd.nPri, faltaPri = pd.falta;
     const querBro = bro && P.migra !== false, querPri = !querBro && !P._semPri && (P.remonta === true || (pd.pede && P.remonta !== false));
     // prioridade nova: a semana remonta no desenho dela, levando o que o aluno já faz, e o giro da versão roda por cima
     if (querPri && T.dias.length >= 3 && T.dias.length <= 6) {
-      const o = desenhoPara(P, T.dias.length, P.pri, pd.curto);
+      // treino antigo de um músculo por dia, sem carimbo, de quem pediu ABCDE na 83.1: remonta na família que ele pediu
+      const famPede = pd.fam || (bro && P.sexo === 'M' && prefDe(P.pref) === 'A' ? 'A' : '');
+      const o = desenhoPara(P, T.dias.length, P.pri, pd.curto, famPede);
       if (o) {
         const dele = new Set(); T.dias.forEach(d => d.trab.forEach(r => dele.add(chave(r[1]))));
         o.P2.prefere = dele;
@@ -32497,7 +32609,7 @@ const GHTR = (() => {
           const velhos = T.dias.map(d => new Set(d.trab.map(r => chave(r[1])))), T3 = leTreino(r2.rows);
           const dias = T3.dias.map((d, i) => { const ns = d.trab.map(r => r[1]), v = velhos[i] || new Set(), ficam = ns.filter(n => v.has(chave(n))); return { n: d.n, rot: (W.dias[i] || {}).rot || '', total: ns.length, trocados: ns.length - ficam.length, ficam, semTroca: [], veio: [], forcado: null }; });
           const motivo = pd.falta ? 'A prioridade marcada pede pelo menos 6 exercícios de ' + PRI_NOME[P.pri] + ' na semana e o treino tinha ' + nPri + '. ' : 'O treino estava no desenho de outra prioridade. ';
-          const nota = motivo + 'A semana foi remontada no desenho do método pra prioridade marcada (' + W.split + ') e os exercícios giraram por cima. ' + (GIRA_ANCORA[V] ? 'Versão de rotação: os pesados também mudaram.' : 'Os pesados que o aluno já fazia ficaram onde o desenho tem o mesmo movimento.');
+          const nota = motivo + 'A semana foi remontada no desenho ' + (o.daFam ? (pd.fam ? 'que ele já usa' : 'de um a dois músculos por dia, que ele pediu') : 'do método') + ' pra prioridade marcada (' + W.split + ') e os exercícios giraram por cima. ' + (GIRA_ANCORA[V] ? 'Versão de rotação: os pesados também mudaram.' : 'Os pesados que o aluno já fazia ficaram onde o desenho tem o mesmo movimento.');
           return Object.assign({}, r2, { notas: [nota].concat(W.notas, r2.notas), split: W.split, migrou: true, remontou: true, dias });
         }
       }
@@ -32518,7 +32630,7 @@ const GHTR = (() => {
         if (rotula) { rot = rotula(rows, optRot); rows = rot.treino; }
         notas.push('O treino era de um músculo por dia e passou pro desenho do método (' + W.split + '). ' + (GIRA_ANCORA[V] ? 'Versão de rotação: os pesados também mudaram.' : 'Os pesados que ele já fazia ficaram onde o desenho tem o mesmo movimento.'));
         notas.push('Confere o texto de orientações do topo: mantive o que já estava escrito depois da frase da fase.');
-        return { rows, notas: notas.concat(W.notas, avisos(P2, W, rot, grupoDe)), split: W.split, rot, migrou: true, fase: FASE[V], dias: W.dias.map(d => ({ n: d.n, rot: d.rot, total: d.itens.length - 1, trocados: d.itens.length - 1, ficam: [] })) };
+        return { rows, notas: notas.concat(W.notas, avisos(P2, W, rot, grupoDe)), split: W.split, rot, migrou: true, fase: FASE[V], dias: W.dias.map(d => ({ n: d.n, rot: d.rot, total: d.nTrab, trocados: d.nTrab, ficam: [] })) };
       }
     }
     if (querPri) notas.push(faltaPri ? 'A prioridade marcada pede pelo menos 6 exercícios de ' + PRI_NOME[P.pri] + ' na semana e este treino tem ' + nPri + ', mas não tem desenho do método pra essa combinação. Girei mantendo os dias: acrescenta exercício do grupo na mão.' : 'Não tem desenho do método pra essa prioridade com ' + T.dias.length + ' treinos na semana. Girei mantendo os dias: confere a prioridade na mão.');
@@ -32707,8 +32819,8 @@ const GHTR = (() => {
     return { rows, notas, split: T.carimbo, rot, migrou: false, fase: FASE[V], dias: resumo };
   }
   // o que a tela do reajuste mostra antes de girar: quantos dias e exercícios o treino tem e se é de um músculo por dia
-  function olha(atual, sexo, prioridade, grupoDe) { const T = leTreino(atual), pri = priDe(prioridade); return { dias: T.dias.length, trab: T.dias.reduce((s, d) => s + d.trab.length, 0), bro: umMusculoPorDia(T.dias, sexo, T.carimbo), carimbo: String(T.carimbo || ''), nPri: contaPri(T, pri, sexo, grupoDe), priNome: PRI_NOME[pri] || '', pede: (() => { try { const P = { sexo: sexo || 'M', pri, dor: {}, veto: [], niv: nivelDe('') }; const pd = pedeDesenho(T, P, grupoDe); return { remonta: pd.pede, falta: pd.falta, outro: pd.outro, tem: !!desenhoPara(P, T.dias.length, pri, pd.curto) && T.dias.length >= 3 && T.dias.length <= 6 }; } catch (e) { return { remonta: false, falta: false, outro: false, tem: false }; } })() }; }
-  return { monta, reajusta, olha, leTreino, famMov, EX, nivelDe, priDe, nrm, FASE, GIRA_ANCORA };
+  function olha(atual, sexo, prioridade, grupoDe) { const T = leTreino(atual), pri = priDe(prioridade); return { dias: T.dias.length, trab: T.dias.reduce((s, d) => s + d.trab.length, 0), bro: umMusculoPorDia(T.dias, sexo, T.carimbo), carimbo: String(T.carimbo || ''), fam: famCarimbo(T.carimbo), nPri: contaPri(T, pri, sexo, grupoDe), priNome: PRI_NOME[pri] || '', pede: (() => { try { const P = { sexo: sexo || 'M', pri, dor: {}, veto: [], niv: nivelDe('') }; const pd = pedeDesenho(T, P, grupoDe); return { remonta: pd.pede, falta: pd.falta, outro: pd.outro, tem: !!desenhoPara(P, T.dias.length, pri, pd.curto, pd.fam) && T.dias.length >= 3 && T.dias.length <= 6 }; } catch (e) { return { remonta: false, falta: false, outro: false, tem: false }; } })() }; }
+  return { monta, reajusta, olha, leTreino, famMov, EX, nivelDe, priDe, prefDe, famCarimbo, nrm, FASE, GIRA_ANCORA };
 })();
 
 // ── v662 (GH 17/11, plano B): MONTAR O TREINO dentro do editor, sem IA. Lê da anamnese inicial o sexo, a idade, quantos
@@ -32726,6 +32838,7 @@ const _TRMO_DEF = { 2: true, 3: true, 8: true, 9: true };   // versões em que o
 const _TRMO_PRI = [['', 'Corpo todo'], ['peito', 'Peito'], ['costas', 'Costas'], ['ombro', 'Ombros'], ['braco', 'Braços'], ['quad', 'Quadríceps'], ['posterior', 'Posterior de coxa'], ['gluteo', 'Glúteo']];
 const _TRMO_PRI_TXT = { '': 'Corpo todo', peito: 'Peito', costas: 'Costas', ombro: 'Deltóides (ombros)', braco: 'Bíceps e tríceps', quad: 'Quadríceps', posterior: 'Posterior de coxa', gluteo: 'Glúteo' };
 const _TRMO_DOR = [['lombar', 'Lombar'], ['ombro', 'Ombro'], ['joelho', 'Joelho'], ['cotovelo', 'Cotovelo']];
+const _TRMO_PREF = [['A', '1 a 2 músculos por dia'], ['P', 'Empurrar, puxar e pernas'], ['U', 'Superiores e inferiores'], ['C', 'O método decide']];   // v666: pergunta 83.1
 function _trMoLimpa(t) { return String(t == null ? '' : t).replace(/<[^>]*>/g, '').trim(); }
 function _trMoIni(j) {
   const f = ((j && j.fichas) || []).find(x => x && x.fonte === 'inicial'); if (!f) return null;
@@ -32736,8 +32849,8 @@ function _trMoIni(j) {
   const tempoTxt = _trMoLimpa(R(/quanto tempo tem disponivel para treinar/)), tn = N(tempoTxt), curto = /40|45|menos de 50/.test(tn) && !/60|90/.test(tn);
   const nivelTxt = _trMoLimpa(R(/nivel.*experi/)), nn = N(nivelTxt), nivel = /avanc|atleta/.test(nn) ? 'Avançado' : (/inician/.test(nn) ? 'Iniciante' : 'Intermediário');
   const priTxt = _trMoLimpa(R(/qual musculo.*priorizar/)), pri = /antebra|panturr|abd[oô]m/i.test(priTxt) ? '' : GHTR.priDe(priTxt), priFora = !!(priTxt && !pri && !/corpo (todo|inteiro)|nenhum|todos/.test(N(priTxt)));
-  const prefTxt = _trMoLimpa(R(/curte mais treinar/)), pn = N(prefTxt);
-  const pref = !pn || /tanto faz|decid|render mais|pode (escolher|montar|decidir)|do jeito que/.test(pn) ? 'C' : (/distribu|equilibr|mais vezes|varias vezes|2 ?x|dois dias|espalh|cada musculo mais|frequente/.test(pn) ? 'B' : (/foco|um musculo|um grupo|por vez|por dia|concentr|completo no dia/.test(pn) ? 'A' : 'C'));
+  // v666: a pergunta 83.1 nova ("Como você gosta de treinar?") e a antiga ("curte mais treinar") caem na mesma leitura
+  const prefTxt = _trMoLimpa(R(/gosta de treinar|curte mais treinar/)), pref = prefTxt ? GHTR.prefDe(prefTxt) : 'C';
   const sente = re => /\bsim\b|as vezes|sempre|frequente/.test(N(R(re)));
   const dor = { lombar: sente(/dores?.*(lombar|coluna)/), ombro: sente(/dores?.*ombro/), joelho: sente(/dores?.*joelho/), cotovelo: sente(/dores?.*cotovelo/) };
   const limites = [];
@@ -32765,7 +32878,7 @@ function _trMoReaValores(ini, rea) {
   // sono: o formulário compara com o início. Pior (1 ou 2) vale como está, igual (3) vale o da anamnese inicial, melhor (4 ou 5) vale 4
   const si = ini ? ini.sono : null, c = rea ? rea.sonoCmp : null, sono = c == null ? si : (c <= 2 ? c : (c === 3 ? si : 4));
   _trMo.rv = { versao: 0, sexo: (ini && ini.sexo) || 'M', nivel: ini ? ini.nivel : 'Intermediário', pri: (rea && rea.pri) || (ini && ini.pri) || '', dor: ini ? Object.assign({}, ini.dor) : { lombar: false, ombro: false, joelho: false, cotovelo: false },
-    sono: sono || 0, estresse: (rea && rea.estresse) || (ini && ini.estresse) || 0, hormonal: false, deficit: null, migra: true, remonta: true };
+    sono: sono || 0, estresse: (rea && rea.estresse) || (ini && ini.estresse) || 0, hormonal: false, deficit: null, migra: null, remonta: true };
   return _trMo.rv;
 }
 function trMoAba(a) { _trMo.aba = a; _trMo.pronto = null; _trMoDesenha(); }
@@ -32794,7 +32907,10 @@ function _trMoDesenhaRea(o, h) {
   const def = v.deficit == null ? !!_TRMO_DEF[v.versao] : v.deficit;
   h += grupo('Déficit médio ou forte', [['Não', "trMoSetR('deficit',false)", !def], ['Sim', "trMoSetR('deficit',true)", def]]);
   h += grupo('Acompanhamento hormonal ativo', [['Não', "trMoSetR('hormonal',false)", !v.hormonal], ['Sim', "trMoSetR('hormonal',true)", !!v.hormonal]]);
-  if (olha && olha.bro) h += grupo('Um músculo por dia', [['Passar pro desenho do método', "trMoSetR('migra',true)", v.migra !== false], ['Manter os dias', "trMoSetR('migra',false)", v.migra === false]]);
+  // v666: quem pediu um a dois músculos por dia na anamnese segue assim no reajuste, a não ser que o treinador mude
+  const pediuA = !!((olha && olha.fam === 'A') || (ini && ini.pref === 'A'));
+  if (v.migra == null) v.migra = !pediuA;
+  if (olha && olha.bro) h += grupo('Um músculo por dia', [['Passar pro desenho do método', "trMoSetR('migra',true)", v.migra !== false], ['Manter os dias', "trMoSetR('migra',false)", v.migra === false]]) + (pediuA ? '<div class="di-mo-dica tr-mo-fase">Ele pediu um a dois músculos por dia: o giro mantém os dias, a não ser que tu mude aqui.</div>' : '');
   if (olha && !(olha.bro && v.migra !== false) && olha.pede && olha.pede.remonta && olha.pede.tem) h += grupo('A prioridade pede outro desenho de semana', [['Remontar a semana pra ela', "trMoSetR('remonta',true)", v.remonta !== false], ['Manter os dias', "trMoSetR('remonta',false)", v.remonta === false]]);
   const av = [];
   if (rea && rea.priFora) av.push('O músculo que ele quer continuar priorizando (' + rea.musc + ') não tem desenho próprio. Escolhe o grupo mais perto na prioridade.');
@@ -32812,7 +32928,7 @@ function trMoGira() {
   const ini = _trMoIni(_trMo.j), atual = trainerData || [];
   const nome = String(typeof trainerStudentNameHint === 'string' && trainerStudentNameHint ? trainerStudentNameHint : ((_trMo.j && _trMo.j.nome) || ''));
   const perfil = { nome, sexo: v.sexo, nivel: v.nivel, prioridade: _TRMO_PRI_TXT[v.pri] || 'Corpo todo', objetivo: 'Hipertrofia', tempo: ini && ini.curto ? 'Entre 40 e 50 minutos' : 'Entre 60 e 90 minutos', idade: ini && ini.idade ? ini.idade : null, sono: v.sono || null, estresse: v.estresse || null,
-    dor: Object.assign({}, v.dor), veto: [], versao: v.versao, hormonal: !!v.hormonal, deficitForte: v.deficit == null ? !!_TRMO_DEF[v.versao] : !!v.deficit, migra: v.migra !== false, remonta: v.remonta === false ? false : undefined, video: n => (typeof _BANK_IDX !== 'undefined' && _BANK_IDX[_bankKey(n)]) || '' };
+    dor: Object.assign({}, v.dor), veto: [], versao: v.versao, hormonal: !!v.hormonal, deficitForte: v.deficit == null ? !!_TRMO_DEF[v.versao] : !!v.deficit, migra: v.migra !== false, remonta: v.remonta === false ? false : undefined, pref: (ini && ini.pref) || 'C', video: n => (typeof _BANK_IDX !== 'undefined' && _BANK_IDX[_bankKey(n)]) || '' };
   let r; try { r = GHTR.reajusta(atual.map(x => (x || []).slice()), perfil, GHSR.rotulaSemana, n => (GHSR.meta(n) || {}).grupo); } catch (_) { r = { erro: 'Não consegui girar esse treino. Ajusta na mão pelo editor.' }; }
   if (r.erro) { _trMo.pronto = { tit: 'Não girou', res: r.erro, notas: [], ok: false }; _trMoDesenha(); _trMo.pronto = null; return; }
   teUndoStack.push({ mode: 'treino', data: JSON.parse(JSON.stringify(atual)) }); while (teUndoStack.length > TE_UNDO_MAX) teUndoStack.shift(); teUpdateUndoBtn();
@@ -32850,8 +32966,8 @@ function trMoFecha(tudo) { const o = document.getElementById('trMo'); if (o) o.h
 function trMoSet(k, val) { const v = _trMo.v; if (!v) return; if (k === 'dor') v.dor[val] = !v.dor[val]; else v[k] = val; _trMoDesenha(); }
 function _trMoValores(ini) {
   if (_trMo.v) return _trMo.v;
-  _trMo.v = ini ? { sexo: ini.sexo || 'M', freq: ini.freq >= 3 && ini.freq <= 6 ? ini.freq : 0, curto: !!ini.curto, nivel: ini.nivel, pri: ini.pri || '', dor: Object.assign({}, ini.dor) }
-    : { sexo: 'M', freq: 0, curto: false, nivel: 'Intermediário', pri: '', dor: { lombar: false, ombro: false, joelho: false, cotovelo: false } };
+  _trMo.v = ini ? { sexo: ini.sexo || 'M', freq: ini.freq >= 3 && ini.freq <= 6 ? ini.freq : 0, curto: !!ini.curto, nivel: ini.nivel, pri: ini.pri || '', pref: ini.pref || 'C', dor: Object.assign({}, ini.dor) }
+    : { sexo: 'M', freq: 0, curto: false, nivel: 'Intermediário', pri: '', pref: 'C', dor: { lombar: false, ombro: false, joelho: false, cotovelo: false } };
   return _trMo.v;
 }
 function _trMoDesenha() {
@@ -32866,7 +32982,7 @@ function _trMoDesenha() {
     o.innerHTML = h + '</div>'; o.hidden = false; return;
   }
   h += '<div class="te-conf-tit">Montar o treino</div><div class="te-conf-sub">' + e(nome) + '</div>';
-  if (_trMo.car) { o.innerHTML = h + '<div class="te-ent-res">Buscando a anamnese…</div><div class="te-conf-pe"><button type="button" class="te-conf-salva" onclick="trMoFecha()">Fechar</button></div></div>'; o.hidden = false; return; }
+  if (_trMo.car) { o.innerHTML = h + '<div class="te-ent-res">Buscando a anamnese\u2026</div><div class="te-conf-pe"><button type="button" class="te-conf-salva" onclick="trMoFecha()">Fechar</button></div></div>'; o.hidden = false; return; }
   if (_trMo.erro || !_trMo.j) { o.innerHTML = h + '<div class="te-ent-linha">' + e(_trMo.erro || 'A ficha não veio agora.') + '</div><div class="te-conf-pe"><button type="button" class="te-conf-salva" onclick="trMoFecha()">Fechar</button><button type="button" class="te-conf-salva ok" onclick="' + (_trMo.senha ? 'trMoSenha()' : '_trMoCarrega(true)') + '">' + (_trMo.senha ? 'Digitar a senha' : 'Tentar de novo') + '</button></div></div>'; o.hidden = false; return; }
   if (!_trMo.aba) _trMo.aba = _trMoTemTreino() && _trMoRea(_trMo.j) ? 'rea' : 'ini';
   h += '<div class="di-mo-abas"><button type="button" class="' + (_trMo.aba === 'ini' ? 'on' : '') + '" onclick="trMoAba(\'ini\')">Anamnese inicial</button><button type="button" class="' + (_trMo.aba === 'rea' ? 'on' : '') + '" onclick="trMoAba(\'rea\')">Anamnese de reajuste</button></div>';
@@ -32875,7 +32991,7 @@ function _trMoDesenha() {
   h += '<div class="te-conf-lista di-mo-corpo">';
   if (!ini) h += '<div class="te-ent-aviso">Não achei a anamnese inicial deste aluno. Dá pra montar marcando tudo aqui embaixo, mas confere as limitações com ele antes.</div>';
   else {
-    const d = [ini.freqTxt ? 'Treinos por semana: ' + ini.freqTxt : '', ini.tempoTxt ? 'Tempo de treino: ' + ini.tempoTxt : '', ini.nivelTxt ? 'Nível: ' + ini.nivelTxt : '', ini.priTxt ? 'Prioridade: ' + ini.priTxt : '', ini.prefTxt ? 'Como curte treinar: ' + ini.prefTxt : '', ini.objTxt ? 'Objetivo: ' + ini.objTxt : '', ini.idade ? 'Idade: ' + Math.round(ini.idade) + ' anos' : ''].filter(Boolean);
+    const d = [ini.freqTxt ? 'Treinos por semana: ' + ini.freqTxt : '', ini.tempoTxt ? 'Tempo de treino: ' + ini.tempoTxt : '', ini.nivelTxt ? 'Nível: ' + ini.nivelTxt : '', ini.priTxt ? 'Prioridade: ' + ini.priTxt : '', ini.prefTxt ? 'Como gosta de treinar: ' + ini.prefTxt : '', ini.objTxt ? 'Objetivo: ' + ini.objTxt : '', ini.idade ? 'Idade: ' + Math.round(ini.idade) + ' anos' : ''].filter(Boolean);
     h += '<div class="di-mo-dados"><b>Na anamnese</b><br>' + (d.length ? d.map(e).join('<br>') : 'Ela veio sem as respostas de treino. Marca aqui embaixo.') + '</div>';
   }
   h += grupo('Sexo', [['Homem', "trMoSet('sexo','M')", v.sexo === 'M'], ['Mulher', "trMoSet('sexo','F')", v.sexo === 'F']]);
@@ -32883,11 +32999,14 @@ function _trMoDesenha() {
   h += grupo('Tempo de treino', [['40 a 50 minutos', "trMoSet('curto',true)", v.curto], ['60 minutos ou mais', "trMoSet('curto',false)", !v.curto]]);
   h += grupo('Nível', ['Iniciante', 'Intermediário', 'Avançado'].map(n => [n, "trMoSet('nivel','" + n + "')", v.nivel === n]));
   h += grupo('Prioridade', _TRMO_PRI.map(p => [p[1], "trMoSet('pri','" + p[0] + "')", v.pri === p[0]]));
+  h += grupo('Como gosta de treinar', _TRMO_PREF.map(p => [p[1], "trMoSet('pref','" + p[0] + "')", (v.pref || 'C') === p[0]]));
   h += grupo('Sente dor em', _TRMO_DOR.map(p => [p[1], "trMoSet('dor','" + p[0] + "')", !!v.dor[p[0]]]));
   const av = [];
   if (ini && ini.freq != null && !(ini.freq >= 3 && ini.freq <= 6)) av.push('Ele marcou ' + ini.freqTxt + ' na frequência. O Montar faz de 3 a 6 treinos na semana: escolhe aqui em cima quantos vão ser, ou monta esse na mão.');
   if (ini && ini.priFora) av.push('A prioridade que ele marcou (' + ini.priTxt + ') não tem desenho próprio. Deixei em corpo todo: escolhe o grupo mais perto, ou acrescenta volume na mão depois.');
-  if (ini && ini.pref === 'A') av.push('Ele marcou que curte treinar um músculo por dia. O Montar usa o método padrão, com cada músculo duas vezes na semana, e a prioridade aparece em volume. Se quiser um dia pra cada músculo, monta na mão.');
+  if (v.sexo === 'F' && v.pref && v.pref !== 'C') av.push('Pra mulher o Montar usa sempre o desenho feminino do método, com inferiores abrindo a semana. A escolha de como gosta de treinar vale pro treino de homem.');
+  if (v.sexo === 'M' && v.pref === 'A' && v.freq && v.freq < 5) av.push('Um a dois músculos por dia só fecha com 5 ou 6 treinos na semana. Com ' + v.freq + ', o Montar usa o desenho do método, pra nenhum músculo grande ficar com um estímulo só.');
+  if (v.sexo === 'M' && v.pref === 'U' && v.freq && v.freq !== 4) av.push(v.freq === 3 ? 'Com 3 treinos o desenho do método já separa superiores e inferiores.' : 'Superiores e inferiores tem desenho próprio com 4 treinos. Com ' + v.freq + ', o Montar usa o desenho do método.');
   if (ini && ini.idade && ini.idade < 18) av.push('Menor de 18 anos: sai como iniciante, parando com 2 a 3 repetições no tanque.');
   (ini ? ini.limites : []).forEach(t => av.push(t + '. O Montar não lê texto livre: depois de montar, confere e troca na mão o que bater nisso.'));
   if (v.dor.joelho) av.push('Dor no joelho: o Montar mantém os exercícios e escreve o aviso de amplitude. Se for lesão de verdade, troca o agachamento e o búlgaro na mão.');
@@ -32915,14 +33034,14 @@ function trMoMonta() {
   if (_trMoTemTreino() && !confirm('Este treino já tem exercícios. Montar troca todos pelos novos. Confirma?')) return;
   const nome = String(typeof trainerStudentNameHint === 'string' && trainerStudentNameHint ? trainerStudentNameHint : ((_trMo.j && _trMo.j.nome) || ''));
   const perfil = { nome, sexo: v.sexo, freq: v.freq, tempo: v.curto ? 'Entre 40 e 50 minutos' : 'Entre 60 e 90 minutos', nivel: v.nivel, prioridade: _TRMO_PRI_TXT[v.pri] || 'Corpo todo', objetivo: 'Hipertrofia', idade: ini && ini.idade ? ini.idade : null, sono: ini ? ini.sono : null, estresse: ini ? ini.estresse : null,
-    dor: Object.assign({}, v.dor), veto: [], video: n => (typeof _BANK_IDX !== 'undefined' && _BANK_IDX[_bankKey(n)]) || '' };
+    dor: Object.assign({}, v.dor), veto: [], pref: v.pref || 'C', video: n => (typeof _BANK_IDX !== 'undefined' && _BANK_IDX[_bankKey(n)]) || '' };
   let r; try { r = GHTR.monta(perfil, GHSR.rotulaSemana, n => (GHSR.meta(n) || {}).grupo); } catch (_) { r = { erro: 'Não consegui montar com essas escolhas. Tenta outra combinação ou monta na mão.' }; }
   if (r.erro) { _trMo.pronto = { tit: 'Não montou', res: r.erro, notas: [], ok: false }; _trMoDesenha(); _trMo.pronto = null; return; }
   _trMoPoe(r.rows);
   if (typeof currentEditMode !== 'undefined' && currentEditMode !== 'treino') switchEditMode('treino'); else renderCurrentEditor();
   const notas = r.notas.slice();
   (ini ? ini.limites : []).forEach(t => notas.push('Confere na mão: ' + t + '.'));
-  _trMo.pronto = { ok: true, tit: 'Treino montado', res: r.dias.length + ' treinos na semana. Lê cada dia, ajusta o que quiser e salva a aba.', dias: r.dias.map(d => 'D' + d.n + ' ' + d.rot + ': ' + (d.itens.length - 1) + ' exercícios'), notas };
+  _trMo.pronto = { ok: true, tit: 'Treino montado', res: r.dias.length + ' treinos na semana. Lê cada dia, ajusta o que quiser e salva a aba.', dias: r.dias.map(d => 'D' + d.n + ' ' + d.rot + ': ' + (d.nTrab != null ? d.nTrab : d.itens.length - 1) + ' exercícios'), notas };
   _trMoDesenha();
 }
 
@@ -32930,7 +33049,7 @@ function trMoMonta() {
 // ── GHSU: suplementação do Montar (plano B, sem IA). Base do método + corretiva pela anamnese + o que o exame mostrou (marcado pelo treinador).
 // Só linhas `supl`. Hormônio, peptídeo e remédio não entram aqui: o que já estiver escrito fica como está.
 const GHSU = (() => {
-  const nrm = s => String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+  const nrm = s => String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
   const ENZ = 'Enzimas digestivas (Amilase 50mg + Protease 25mg + Bromelina 25mg + Papaína 50mg + Pepsina 100mg + Lipase 25mg)';
   const SONO = 'Fórmula do Sono (Magnésio Treonato 300mg + Apigenina 50mg + Teanina 200mg + Melatonina 10mg)';
   const MULTI = 'Multivitamínico (B12 4mg + C 500mg + D3 4000UI + MK7 50mcg)';
@@ -32962,13 +33081,14 @@ const GHSU = (() => {
     b12: ['Metilcobalamina (B12)', '1000mcg', 'Pós-desjejum, por 60 dias', /metilcobalamina|^vitamina b12|^b12\b/],
     ferro: ['Sulfato ferroso 40mg + Vitamina C 500mg', '01 dose', 'Pós-almoço, longe de café e de laticínio, por 60 dias', /sulfato ferroso|^ferro\b|ferro quelato/],
     policosanol: ['Policosanol', '40mg', 'Pós-desjejum, por 30 dias', /policosanol/],
+    nattokinase: ['Nattokinase', '200mg', 'Pós-almoço', /nattokinase|natoquinase|nattoquinase/],
     berberina: ['Berberina', '500mg', 'Uma cápsula antes do almoço e uma antes da janta', /berberina/],
     folico: ['Metilfolato', '800mcg', 'Pós-desjejum, por 30 dias', /metilfolato|acido folico/],
     multi: [MULTI, '01 cápsula', 'Pós-desjejum', /multivitamin|multi ?vit|polivitamin/],
   };
-  const ORDEM = ['boswellia', 'arnica', 'ashwa', 'omega', 'morosil', 'multi', 'd3', 'b12', 'folico', 'policosanol', 'vitc', 'biotina', 'bacopa', 'rhodiola', 'berberina', 'enzimas', 'ferro', 'tirosina', 'whey', 'sono', 'magnesio', 'zinco', 'passiflora', 'htp', 'creatina'];
+  const ORDEM = ['boswellia', 'arnica', 'ashwa', 'omega', 'morosil', 'multi', 'd3', 'b12', 'folico', 'policosanol', 'nattokinase', 'vitc', 'biotina', 'bacopa', 'rhodiola', 'berberina', 'enzimas', 'ferro', 'tirosina', 'whey', 'sono', 'magnesio', 'zinco', 'passiflora', 'htp', 'creatina'];
   const NOME = { omega: 'Ômega 3', creatina: 'Creatina', whey: 'Whey', magnesio: 'Magnésio', morosil: 'Morosil', enzimas: 'Enzimas digestivas', ashwa: 'Ashwagandha', rhodiola: 'Rhodiola', htp: '5-HTP', bacopa: 'Bacopa', tirosina: 'L-Tirosina', vitc: 'Vitamina C', zinco: 'Zinco', biotina: 'Biotina',
-    sono: 'Fórmula do Sono', passiflora: 'Passiflora', boswellia: 'Boswellia', arnica: 'Arnica', d3: 'Vitamina D3', b12: 'B12', ferro: 'Ferro', policosanol: 'Policosanol', berberina: 'Berberina', folico: 'Metilfolato', multi: 'Multivitamínico' };
+    sono: 'Fórmula do Sono', passiflora: 'Passiflora', boswellia: 'Boswellia', arnica: 'Arnica', d3: 'Vitamina D3', b12: 'B12', ferro: 'Ferro', policosanol: 'Policosanol', nattokinase: 'Nattokinase', berberina: 'Berberina', folico: 'Metilfolato', multi: 'Multivitamínico' };
   // o que não é do Montar: fica como está, nunca entra, nunca sai, nunca muda
   const FORA = /testo|enantato|cipionato|propionato|durateston|deca\b|nandrol|\bnpp\b|trembol|oxandrol|primobol|bolden|masteron|drostanol|stanoz|dianabol|hemogenin|oximetol|turinabol|\bdhb\b|anastrozol|tamoxif|clomif|\bhcg\b|gonadotrof|cabergol|tirzep|retatrut|semaglut|ozempic|mounjaro|\bcjc\b|ipamorel|\bbpc\b|tb-? ?500|mots-? ?c|ghk|tesamorel|somatrop|clembut|clenbut|ioimbina|yohimb|sibutram|levotirox|\bt3\b|\bt4\b|glifage|metformina|finaster|minoxidil|sildenafil|tadalafil/;
   const PSIQ = /sertralina|fluoxetina|escitalopram|paroxetina|venlafaxina|desvenlafaxina|duloxetina|bupropiona|citalopram|amitriptilina|nortriptilina|trazodona|mirtazapina|antidepress|venvanse|ritalina|concerta|lisdexanfetamina|metilfenidato|litio|quetiapina|risperidona|olanzapina|aripiprazol|clonazepam|rivotril|alprazolam|zolpidem|lamotrigina|topiramato|pregabalina/;
@@ -32977,6 +33097,7 @@ const GHSU = (() => {
   const FATOR = [[/digest|intestin/, 'digestao'], [/humor|bem-estar|emocional/, 'humor'], [/concentr|foco/, 'foco'], [/imunidade/, 'imunidade'], [/pele|cabelo|unhas/, 'pele']];
   function fatoresDe(txt) { const t = nrm(txt), out = []; FATOR.forEach(([re, k]) => { if (re.test(t)) out.push(k); }); return out; }
 
+  const ANTICOAG = /marevan|varfarina|warfarin|coumadin|eliquis|apixaban|xarelto|rivaroxaban|pradaxa|dabigatran|lixiana|edoxaban|clexane|enoxaparina|heparina|anticoagulante|clopidogrel|plavix|ticagrelor|brilinta|\baas\b|aspirina|acido acetilsalicilico/;
   // o que este aluno leva: { chave: [nome, dose, horário] }
   function pede(P, notas) {
     const q = {}, poe = (k, o) => { const era = q[k] && dose(q[k].d); q[k] = Object.assign({ n: ITEM[k][0], d: ITEM[k][1], o: ITEM[k][2] }, q[k] || {}, o || {}); if (era && dose(q[k].d) < era) q[k].d = era >= 1000 && k === 'omega' ? era + 'mg' : q[k].d; };
@@ -32999,6 +33120,12 @@ const GHSU = (() => {
     if (P.artrose) { poe('boswellia'); poe('arnica'); }
     const ex = P.exame || {};
     if (ex.d3) poe('d3'); if (ex.b12) poe('b12'); if (ex.ferritina) poe('ferro'); if (ex.ldl) poe('policosanol'); if (ex.trig) poe('omega', { d: '3000mg' }); if (ex.glicose) poe('berberina'); if (ex.zinco) poe('zinco'); if (ex.folico) poe('folico');
+    // v666: hematócrito acima de 50 no exame leva Nattokinase, menos em quem usa remédio que afina o sangue
+    if (ex.hemat) {
+      const afina = nrm(P.remedios).match(ANTICOAG);
+      if (afina) notas.push('Hematócrito alto marcado, mas ele usa remédio que afina o sangue (' + afina[0] + '): a Nattokinase ficou fora. Esse caso é com o médico dele.');
+      else { poe('nattokinase'); notas.push('Nattokinase entrou pelo hematócrito alto. Confere antes de entregar: não vale pra quem usa anticoagulante, tem hemofilia ou fez cirurgia nas últimas 4 semanas.'); }
+    }
     if (P.multi && MULTI_MOTIVO[P.multi]) poe('multi', { o: 'Pós-desjejum. ' + MULTI_MOTIVO[P.multi] });
     return q;
   }
@@ -33093,7 +33220,7 @@ const GHSU = (() => {
 const _suMo = { car: false, erro: '', senha: false, j: null, v: null, rv: null, pronto: null, aba: '' };
 const _SUMO_FAT = [['digestao', 'Digestão'], ['humor', 'Humor'], ['foco', 'Foco'], ['imunidade', 'Imunidade'], ['pele', 'Pele, cabelo e unha']];
 const _SUMO_TEM = [['sonoRuim', 'Sono ruim'], ['ansiedadeAlta', 'Ansiedade alta'], ['estresseAlto', 'Estresse alto'], ['dorArticular', 'Dor articular'], ['artrose', 'Artrose ou tendinite em laudo'], ['libido', 'Queda de libido']];
-const _SUMO_EX = [['d3', 'Vitamina D baixa'], ['b12', 'B12 baixa'], ['ferritina', 'Ferritina baixa'], ['ldl', 'Colesterol alto'], ['trig', 'Triglicérides alto'], ['glicose', 'Glicose alterada'], ['zinco', 'Zinco baixo'], ['folico', 'Ácido fólico baixo']];
+const _SUMO_EX = [['d3', 'Vitamina D baixa'], ['b12', 'B12 baixa'], ['ferritina', 'Ferritina baixa'], ['ldl', 'Colesterol alto'], ['trig', 'Triglicérides alto'], ['glicose', 'Glicose alterada'], ['zinco', 'Zinco baixo'], ['folico', 'Ácido fólico baixo'], ['hemat', 'Hematócrito acima de 50']];
 const _SUMO_WHEY = [['', 'Comum'], ['iso', 'Isolado (lactose)'], ['veg', 'Vegetal (alergia a leite)'], ['sem', 'Não compra']];
 const _SUMO_MULTI = [['', 'Não'], ['exame', 'Hipovitaminose no exame'], ['escritorio', 'Escritório sem sol'], ['desregrada', 'Alimentação desregrada']];
 function _suMoNao(t) { const n = _teFiNorm(t).trim(); return !n || /^(nao|n|nenhum|nenhuma|nada|nao uso|nao utilizo|nao tomo|-)\b/.test(n); }
@@ -33179,7 +33306,7 @@ function _suMoDesenha() {
     o.innerHTML = h + '</div>'; o.hidden = false; return;
   }
   h += '<div class="te-conf-tit">Montar a suplementação</div><div class="te-conf-sub">' + e(nome) + '</div>';
-  if (_suMo.car) { o.innerHTML = h + '<div class="te-ent-res">Buscando a anamnese…</div><div class="te-conf-pe"><button type="button" class="te-conf-salva" onclick="suMoFecha()">Fechar</button></div></div>'; o.hidden = false; return; }
+  if (_suMo.car) { o.innerHTML = h + '<div class="te-ent-res">Buscando a anamnese\u2026</div><div class="te-conf-pe"><button type="button" class="te-conf-salva" onclick="suMoFecha()">Fechar</button></div></div>'; o.hidden = false; return; }
   if (_suMo.erro || !_suMo.j) { o.innerHTML = h + '<div class="te-ent-linha">' + e(_suMo.erro || 'A ficha não veio agora.') + '</div><div class="te-conf-pe"><button type="button" class="te-conf-salva" onclick="suMoFecha()">Fechar</button><button type="button" class="te-conf-salva ok" onclick="' + (_suMo.senha ? 'suMoSenha()' : '_suMoCarrega(true)') + '">' + (_suMo.senha ? 'Digitar a senha' : 'Tentar de novo') + '</button></div></div>'; o.hidden = false; return; }
   const ini = _suMoIni(_suMo.j), rea = _suMoRea(_suMo.j);
   if (!_suMo.aba) _suMo.aba = _suMoTemSupl() && rea ? 'rea' : 'ini';
@@ -33259,85 +33386,287 @@ const GHME = (() => {
   const aspas = t => String(t).replace(/[\u201c\u201d\u201e\u00ab\u00bb]/g, '"').replace(/[\u2018\u2019]/g, "'");
 
   // ── leitura do arquivo de regras ──
+  // v666: o leitor aceita o jeito que a regra for escrita (com ou sem título, com ou sem dois pontos, tudo numa linha só,
+  // com barra, ponto e vírgula ou texto corrido) e nunca descarta linha calado: o que não vira regra é erro apontado na
+  // linha, ou aparece na lista do que ficou de fora como anotação. O que é ambíguo não é chutado: vira erro com o conserto.
+  const NQ = '(?:"[^"]+"|#?\\d+(?:\\.\\d+)*)', N1 = '(-?\\d+(?:[.,]\\d+)?)';
   function valores(txt) {
-    const t = String(txt).trim();
+    const t = String(txt).trim().replace(/[.;]+$/, '').trim();
     if (/"/.test(t)) {
-      const vs = [], re = /"([^"]*)"/g; let m, resto = t;
+      const vs = [], re = /"([^"]*)"/g; let m;
       while ((m = re.exec(t))) vs.push(m[1].trim());
-      resto = t.replace(/"[^"]*"/g, ' ').replace(/\s+/g, ' ').trim();
+      const resto = t.replace(/"[^"]*"/g, ' ').replace(/\s+/g, ' ').trim();
       if (/(^|\s)e(\s|$)/i.test(resto)) return { erro: 'pra exigir dois valores ao mesmo tempo, usa uma linha "E:" pra cada um (aqui só vale "ou")' };
       if (resto.replace(/\b(ou)\b|,/gi, '').trim()) return { erro: 'texto fora das aspas: ' + resto };
       if (!vs.length || vs.some(v => !v)) return { erro: 'valor vazio' };
       return { vs };
     }
-    const v = t.replace(/[.;]+$/, '').trim();
-    return v ? { vs: [v] } : { erro: 'falta o valor' };
+    if (!t) return { erro: 'falta o valor' };
+    if (/,/.test(t)) return { erro: 'valor com vírgula: põe entre aspas pra não ter dúvida. Um valor só: "' + t + '". Mais de um: ' + t.split(/\s*,\s*/).filter(Boolean).map(v => '"' + v + '"').join(' ou ') };
+    const vs = t.split(/\s+ou\s+/i).map(v => v.trim()).filter(Boolean);
+    if (vs.some(v => /(^|\s)e(\s|$)/i.test(v))) return { erro: 'valor com "e" no meio: se é um valor só, põe entre aspas ("' + t + '"). Se são duas exigências, usa uma linha "E:" pra cada' };
+    return vs.length ? { vs } : { erro: 'falta o valor' };
+  }
+  function fonteDe(t) {
+    let s = t.replace(/^(?:n[ao]|a|o)\s+(?!\d)/i, '').replace(/^resposta\s+(?:d[ao]|[aà])\s+/i, '').replace(/^(?:a|o)\s+(?=pergunta|quest|item|reajuste)/i, ''), rea = false;
+    let m = /^(?:anamnese\s+(?:de\s+)?)?(reajuste|inicial)\s*[,:]?\s*/i.exec(s);
+    if (m) { rea = /reaj/i.test(m[1]); s = s.slice(m[0].length); }
+    m = new RegExp('^(?:(?:pergunta|quest[aã]o|item|perg|p|q)\\.?\\s*)?(?:n[ºo°]\\.?\\s*)?(?:"([^"]+)"|#?(\\d+(?:\\.\\d+)*))(?:\\s+d[ao]\\s+(?:anamnese\\s+(?:de\\s+)?)?(reajuste|inicial))?\\s*[.:,]?\\s*(.*)$', 'i').exec(s);
+    if (!m) return null;
+    if (m[3]) rea = /reaj/i.test(m[3]);
+    return { fonte: rea ? 'rea' : 'ini', trecho: (m[1] || '').trim(), num: m[2] || '', resto: m[4].trim() };
+  }
+  function opDe(r0) {
+    let r = String(r0).replace(/^(?:do\s+aluno|da\s+aluna|dele|dela)\s+/i, '').trim(), x;
+    if (!r) return { erro: 'falta dizer o que a resposta tem que ser: é "Sim", contém "todo dia", maior que 30, respondeu...' };
+    if (/^(?:n[aã]o\s+(?:respondeu|preencheu|foi\s+respondid[ao]|tem\s+resposta|est[aá]\s+(?:respondid[ao]|preenchid[ao]))|(?:(?:est[aá]|ficou|veio)\s+)?(?:em\s+branco|vazi[ao])|sem\s+resposta)$/i.test(r)) return { c: { op: 'vazio' } };
+    if (/^(?:respondeu|preencheu|foi\s+respondid[ao]|tem\s+resposta|est[aá]\s+(?:respondid[ao]|preenchid[ao])|n[aã]o\s+(?:est[aá]|ficou|veio)\s+(?:em\s+branco|vazi[ao]))$/i.test(r)) return { c: { op: 'tem' } };
+    r = r.replace(/^(?:[eé]|for|foi|seja|est[aá]|deu|ficou)\s+(?=(?:maior|menor|acima|abaixo|mais|menos|superior|inferior|entre|pelo\s+menos|no\s+m[ií]nimo|no\s+m[aá]ximo|at[eé]|a\s+partir|igual\s+ou)\s|[<>≥≤])/i, '');
+    const Q = '(?:\\s+do\\s+que|\\s+que|\\s+de|\\s+a)?\\s*';
+    if ((x = new RegExp('^(?:entre|de)\\s+' + N1 + '\\s+(?:e|a|at[eé])\\s+' + N1 + '(?!\\d)', 'i').exec(r))) { let a = num(x[1]), b = num(x[2]); if (a > b) { const t = a; a = b; b = t; } return { c: { op: 'entre', a, b } }; }
+    if ((x = new RegExp('^(?:>=|≥|=>|(?:maior|acima|mais|superior)\\s+ou\\s+igual' + Q + '|igual\\s+ou\\s+(?:maior|acima|superior)' + Q + '|pelo\\s+menos\\s+|no\\s+m[ií]nimo\\s+|a\\s+partir\\s+de\\s+)\\s*' + N1, 'i').exec(r))) return { c: { op: 'maiorig', a: num(x[1]) } };
+    if ((x = new RegExp('^(?:<=|≤|=<|(?:menor|abaixo|menos|inferior)\\s+ou\\s+igual' + Q + '|igual\\s+ou\\s+(?:menor|abaixo|inferior)' + Q + '|no\\s+m[aá]ximo\\s+|at[eé]\\s+)\\s*' + N1, 'i').exec(r))) return { c: { op: 'menorig', a: num(x[1]) } };
+    if ((x = new RegExp('^(?:>|(?:maior|acima|mais|superior)(?:\\s+do\\s+que|\\s+que|\\s+de|\\s+a)\\s)\\s*' + N1, 'i').exec(r))) return { c: { op: 'maior', a: num(x[1]) } };
+    if ((x = new RegExp('^(?:<|(?:menor|abaixo|menos|inferior)(?:\\s+do\\s+que|\\s+que|\\s+de|\\s+a)\\s)\\s*' + N1, 'i').exec(r))) return { c: { op: 'menor', a: num(x[1]) } };
+    let op = '', v = '';
+    if ((x = /^(?:n[aã]o\s+(?:cont[eé]m|contiver|inclui|cita|citou|menciona|mencionou|relata|relatou|refere|referiu|apresenta|possui|usa|toma|faz\s+uso\s+de|tem|tiver|fala\s+(?:em|de))|sem)\s+(.+)$/i.exec(r))) { op = 'ncontem'; v = x[1]; }
+    else if ((x = /^(?:cont[eé]m|contiver|inclui|cita|citou|menciona|mencionou|relata|relatou|refere|referiu|apresenta|possui|usa|toma|faz\s+uso\s+de|tem|tiver|fala\s+(?:em|de))\s+(.+)$/i.exec(r))) { op = 'contem'; v = x[1]; }
+    else if ((x = /^(?:n[aã]o\s+(?:[eé]|for|foi|seja|respondeu|marcou|disse)\s+|(?:[eé]\s+)?diferente\s+de\s+|(?:!=|≠|<>)\s*)(?:que\s+)?(.+)$/i.exec(r))) { op = 'nao_e'; v = x[1]; }
+    else if ((x = /^(?:(?:[eé]\s+igual\s+a|igual\s+a|[eé]|for|foi|seja|respondeu|marcou|disse)\s+|(?:==|=|:)\s*)(?:que\s+)?(.+)$/i.exec(r))) { op = 'e'; v = x[1]; }
+    else if (r.split(/\s+/).length <= 6 && !/[<>=]/.test(r) && !/^(?:parece|talvez|indica|sugere|mostra|deve|pode|costuma|tende|aparenta|provavelmente|acho|quase)\s/i.test(r)) { op = 'e'; v = r; }
+    else return { erro: 'condição que o montador não entende: "' + r + '". Vale: é, não é, contém, não contém, maior que, menor que, entre X e Y, respondeu, não respondeu' };
+    const vv = valores(v); if (vv.erro) return { erro: vv.erro };
+    return { c: { op, vs: vv.vs } };
+  }
+  const aspa = v => '"' + v + '"';
+  const rotulo = c => (c.fonte === 'rea' ? 'a pergunta do reajuste ' : 'a pergunta ') + (c.num || '"' + c.trecho + '"');
+  function falaC(c) {
+    const p = rotulo(c), vs = (c.vs || []).map(aspa).join(' ou '), n = x => String(x).replace('.', ',');
+    return p + ({ tem: ' tem resposta', vazio: ' está em branco', e: ' é ' + vs, nao_e: ' não é ' + vs, contem: ' contém ' + vs, ncontem: ' não contém ' + vs, maior: ' é maior que ' + n(c.a), maiorig: ' é ' + n(c.a) + ' ou mais', menor: ' é menor que ' + n(c.a), menorig: ' é ' + n(c.a) + ' ou menos', entre: ' está entre ' + n(c.a) + ' e ' + n(c.b) })[c.op];
   }
   function condicao(txtBruto) {
-    const txt = aspas(txtBruto).replace(/\s{2,}\([^()]*\)\s*$/, '').trim();
-    const m = /^(pergunta|reajuste)\s+(?:"([^"]+)"|(\d+(?:\.\d+)*))\s*[.:]?\s+(.+)$/i.exec(txt);
-    if (!m) return { erro: 'começa com "pergunta 58.1 ..." ou "reajuste 12 ...", ou com o trecho do enunciado entre aspas' };
-    const c = { fonte: m[1].toLowerCase() === 'reajuste' ? 'rea' : 'ini', num: m[3] || '', trecho: (m[2] || '').trim(), txt };
-    const r = m[4].trim();
-    let x;
-    if (/^n[aã]o\s+respondeu\b/i.test(r)) c.op = 'vazio';
-    else if (/^respondeu\b/i.test(r)) c.op = 'tem';
-    else if ((x = /^(?:[eé]\s+)?entre\s+(-?\d+(?:[.,]\d+)?)\s+e\s+(-?\d+(?:[.,]\d+)?)\b/i.exec(r))) { c.op = 'entre'; c.a = num(x[1]); c.b = num(x[2]); if (c.a > c.b) { const t = c.a; c.a = c.b; c.b = t; } }
-    else if ((x = /^(?:[eé]\s+)?(maior|menor)(\s+ou\s+igual)?\s+(?:do\s+que|que|a)\s+(-?\d+(?:[.,]\d+)?)\b/i.exec(r))) { c.op = x[1].toLowerCase() + (x[2] ? 'ig' : ''); c.a = num(x[3]); }
-    else if ((x = /^n[aã]o\s+cont[eé]m\s+(.+)$/i.exec(r))) { c.op = 'ncontem'; c.v = x[1]; }
-    else if ((x = /^cont[eé]m\s+(.+)$/i.exec(r))) { c.op = 'contem'; c.v = x[1]; }
-    else if ((x = /^n[aã]o\s+[eé]\s+(.+)$/i.exec(r))) { c.op = 'nao_e'; c.v = x[1]; }
-    else if ((x = /^[eé]\s+(.+)$/i.exec(r))) { c.op = 'e'; c.v = x[1]; }
-    else return { erro: 'condição que o montador não entende: "' + r + '". Vale: é, não é, contém, não contém, maior que, menor que, entre X e Y, respondeu, não respondeu' };
-    if ('v' in c) { const v = valores(c.v); if (v.erro) return { erro: v.erro }; c.vs = v.vs; delete c.v; }
+    let t = aspas(txtBruto).replace(/\s{2,}\([^()]*\)\s*$/, '').trim().replace(/[.;]+$/, '').trim();
+    t = t.replace(/^(?:se|quando|caso)\s+/i, '').replace(/^(?:(?:o|a)\s+)?(?:aluno|aluna|paciente|pessoa|ele|ela|quem)\s+/i, '');
+    // ordem invertida: respondeu "Sim" na pergunta 58.1
+    const inv = new RegExp('^(n[aã]o\\s+)?(?:respondeu|marcou|disse|assinalou|escolheu|colocou)\\s+(?:que\\s+)?(.+?)\\s+(?:n[ao]|para\\s+a|pra|em|[aà])\\s+((?:(?:(?:pergunta|quest[aã]o|item|reajuste)\\s+)|(?:[pq]\\.?\\s*))?(?:n[ºo°]\\.?\\s*)?' + NQ + '(?:\\s+d[ao]\\s+(?:anamnese\\s+(?:de\\s+)?)?(?:reajuste|inicial))?)$', 'i').exec(t);
+    if (inv) t = inv[3] + (inv[1] ? ' não é ' : ' é ') + inv[2];
+    const f = fonteDe(t);
+    if (!f) return { erro: 'não achei de qual pergunta é. Começa com "pergunta 58.1 ...", "reajuste 12 ...", ou com o trecho do enunciado entre aspas' };
+    const o = opDe(f.resto); if (o.erro) return { erro: o.erro };
+    const c = Object.assign({ fonte: f.fonte, num: f.num, trecho: f.trecho }, o.c);
+    c.txt = falaC(c);
     return { c };
   }
-  function le(texto) {
-    const regras = [], erros = [], avisos = [];
+  // uma linha de condição pode trazer mais de uma: "pergunta 5 é Sim e pergunta 9 contém x" (todas) ou "... ou pergunta 9 ..." (qualquer uma)
+  const OUTRA = '(?=(?:(?:se|quando)\\s+)?(?:n[ao]\\s+)?(?:(?:pergunta|quest[aã]o|item|reajuste|perg)\\b|[pq]\\.?\\s*\\d|#\\d))';
+  const RE_E = new RegExp('\\s*[,;]?\\s+e\\s+' + OUTRA, 'i'), RE_OU = new RegExp('\\s*[,;]?\\s+ou\\s+' + OUTRA, 'i');
+  function conds(txt) {
+    const grupos = [];
+    for (const parte of aspas(txt).split(RE_OU)) {
+      const g = [];
+      for (const p of parte.split(RE_E)) { const r = condicao(p); if (r.erro) return { erro: r.erro }; g.push(r.c); }
+      grupos.push(g);
+    }
+    return { grupos };
+  }
+  const UNID = '(?:mcg|µg|ug|mg|miligramas?|microgramas?|gramas?|g|kg|ml|l|ui|u\\.i\\.|gotas?|c[aá]psulas?|caps?|comprimidos?|comp|cps?|doses?|sach[eê]s?|scoops?|medidas?|unidades?|ampolas?|jatos?|borrifadas?|colher(?:es)?(?:\\s+de\\s+(?:sopa|ch[aá]|sobremesa|caf[eé]))?|bilh[oõ]es)';
+  const RE_DOSE = new RegExp('^(.+?)[\\s,:]+((?:\\d+(?:[.,]\\d+)*\\s*(?:a\\s+\\d+(?:[.,]\\d+)*\\s*)?' + UNID + ')(?![a-zà-ú0-9])(?:\\s*(?:\\/|por|ao)\\s*(?:dia|kg|dose)(?![a-zà-ú]))?)(?:[\\s,:;.\\-]+(.*))?$', 'i');
+  const TEM_DOSE = new RegExp('\\d\\s*(?:mcg|µg|mg|ui|ml|g|gotas?|c[aá]psulas?|comprimidos?)(?![a-zà-ú0-9])', 'i');
+  function item(txt) {
+    const bruto = String(txt).replace(/\s{2,}\([^()]*\)\s*$/, '').trim();
+    let ps = null;
+    if (bruto.indexOf('|') >= 0) ps = bruto.replace(/^\|/, '').replace(/\|$/, '').split('|');
+    else if (/\t/.test(bruto)) ps = bruto.split(/\t+/);
+    else if ((bruto.match(/;/g) || []).length === 2) ps = bruto.split(';');
+    else if ((bruto.match(/\s[-\u2013\u2014]\s/g) || []).length === 2) ps = bruto.split(/\s[-\u2013\u2014]\s/);
+    if (ps) { ps = ps.map(limpa); if (ps.length > 3) ps = [ps[0], ps[1], ps.slice(2).filter(Boolean).join(', ')]; while (ps.length < 3) ps.push(''); }
+    else {
+      const m = RE_DOSE.exec(limpa(bruto));
+      if (m && /^\s*\+/.test(m[3] || '')) return { erro: 'nome composto com mais de uma dose: separa com barra pra não ter dúvida, assim: Nome | dose | horário' };
+      if (m) ps = [limpa(m[1]), limpa(m[2]), limpa(m[3] || '')];
+    }
+    if (!ps || !ps[0] || !ps[1]) return { erro: 'não achei o nome e a dose dessa linha. Escreve assim: Nome | dose | horário' };
+    ps[2] = ps[2].replace(/^[,;:.\-\s]+/, '');
+    return { ps };
+  }
+  const BUL = /^(?:[-*+\u2022\u2013\u2014▪●]|\d{1,2}[.)])\s+/;
+  const FIM_KW = '(?:\\s*[:\\-]\\s*|\\s+|$)(.*)$';
+  const KW = [
+    ['menos', new RegExp('^(?:menos\\s+(?:se|quando)|exceto\\s+(?:se|quando|para|pra)|exceto|a\\s+n[aã]o\\s+ser\\s+(?:que|se)|salvo\\s+(?:se|quando)|salvo|n[aã]o\\s+(?:prescrever|prescreve|receitar|indicar|usar|entra|vale)\\s+(?:se|quando|para|pra)|contraindicad[oa]\\s+(?:se|quando|para|pra)|contraindica[cç][aã]o|exce[cç][aã]o)' + FIM_KW, 'i')],
+    ['entao', new RegExp('^(?:ent[aã]o|prescrever|prescreve|prescri[cç][aã]o|receitar|indicar|conduta|tomar)' + FIM_KW, 'i')],
+    ['entao', /^(?:=>|->|→|⇒)\s*(.*)$/],
+    ['ou', new RegExp('^(?:ou\\s+se|ou\\s+quando|ou)(?:\\s*:\\s*|\\s+' + OUTRA + ')(.*)$', 'i')],
+    ['e', new RegExp('^(?:e\\s+tamb[eé]m|e\\s+se|e\\s+quando|e)(?:\\s*:\\s*|\\s+' + OUTRA + ')(.*)$', 'i')],
+    ['se', /^(?:se|quando|caso)(?:\s*[:\-]\s*|\s+)(.*)$/i],
+  ];
+  const RE_ENTAO_MEIO = /\s*[,;:]?\s*(?:(?:^|\s)ent[aã]o\b\s*:?|=>|->|→|⇒|(?:^|\s)prescrever\b\s*:?|(?:^|\s)prescreve\b\s*:?)\s*/i;
+  const ANOTA = /^(?:\/\/|>|\(|obs(?:erva[cç][aã]o|erva[cç][oõ]es)?\s*[:.]|nota\s*:|aten[cç][aã]o\s*:|coment[aá]rio\s*:|fonte\s*:|refer[eê]ncia\s*:)/i;
+  const RE_LISTA = /^(?:[-*\u2022]\s*)?(?:\*\*)?(?:#{1,6}\s*)?(?:perguntas?\s+d[oa]s?\s+m[e\u00e9]dic[oa]s?|perguntas?\s+de\s+refer[e\u00ea]ncias?|perguntas?\s+(?:m[e\u00e9]tricas?|usadas|que\s+contam|da\s+anamnese)|perguntas|m[e\u00e9]tricas?)(?:\*\*)?\s*:(?:\*\*)?\s*(.*)$/i;
+  // as perguntas de referência moram no topo do texto guardado, uma por linha: separa pra tela, junta pra guardar
+  const BULP = /^[-*+\u2022▪●]\s+/;
+  const RE_PN = /^(?:(reajuste|inicial)\s*[,:]?\s+)?(?:(?:pergunta|quest[aã]o)\s+)?(?:n[ºo°]\.?\s*)?#?(\d+(?:\.\d+)*)(?:\s+d[ao]\s+(reajuste|inicial))?(?=$|[\s.:)\-,;(])\s*[.:)\-]?\s*(.*)$/i;
+  const RE_PT = /^(?:(reajuste|inicial)\s*[,:]?\s+)?"([^"]+)"\s*(?:d[ao]\s+(reajuste|inicial))?\s*$/i;
+  const pareceItem = b => /^(?:"|#?\d|(?:reajuste|inicial)\b)/i.test(aspas(b));
+  const fimLista = l => !pareceItem(l.replace(BULP, '')) && (/^#/.test(l) || KW.some(k => k[1].test(l.replace(BUL, ''))));
+  // uma pergunta de referência: o número dela, "reajuste" e o número, ou o enunciado (inteiro ou um pedaço)
+  function itemP(t0) {
+    const t = aspas(t0).trim(); let m;
+    if ((m = RE_PN.exec(t))) return { fonte: /reaj/i.test((m[1] || '') + (m[3] || '')) ? 'rea' : 'ini', num: m[2], trecho: '', nota: (m[4] || '').trim() };
+    if ((m = RE_PT.exec(t))) return { fonte: /reaj/i.test((m[1] || '') + (m[3] || '')) ? 'rea' : 'ini', num: '', trecho: m[2].trim() };
+    m = /^(reajuste|inicial)\s*[:,]\s*(.+)$/i.exec(t);
+    const tr = (m ? m[2] : t).replace(/"/g, '').trim();
+    if (nrm(tr).replace(/[^a-z0-9]/g, '').length < 3) return { erro: 'ficou curta demais pra achar a pergunta: põe o número dela ou o enunciado' };
+    return { fonte: m && /reaj/i.test(m[1]) ? 'rea' : 'ini', num: '', trecho: tr };
+  }
+  const partesLista = txt => { const qs = [], semQ = aspas(txt).replace(/"[^"]*"/g, q => '\u0001' + (qs.push(q) - 1) + '\u0001'); return semQ.split(/\s*[,;]\s*|\s+e\s+/).map(t => t.replace(/\u0001(\d+)\u0001/g, (_, i) => qs[+i]).trim()).filter(Boolean); };
+  function separa(txt) {
+    const t = String(txt || '').replace(/\r/g, ''), ls = t.split('\n'); let i = 0; while (i < ls.length && !ls[i].trim()) i++;
+    const m = i < ls.length ? RE_LISTA.exec(ls[i].trim()) : null;
+    if (!m) return { pergs: [], resto: t };
+    let j = i + 1, pergs = [];
+    if (m[1].trim()) pergs = partesLista(m[1]);
+    else while (j < ls.length && ls[j].trim() && !fimLista(ls[j].trim())) { pergs.push(ls[j].trim().replace(BULP, '').trim()); j++; }
+    while (j < ls.length && !ls[j].trim()) j++;
+    return { pergs: pergs.map(x => { const q = /^"([^"]*)"$/.exec(aspas(x)); return q ? q[1] : x; }).filter(Boolean), resto: ls.slice(j).join('\n') };
+  }
+  function junta(pergs, resto) {
+    const pg = (Array.isArray(pergs) ? pergs : String(pergs || '').split('\n')).map(x => aspas(String(x == null ? '' : x)).replace(/[\r\n]+/g, ' ').trim()).filter(Boolean)
+      .map(x => (RE_PN.test(x) || RE_PT.test(x)) ? x : (/^(reajuste|inicial)\s*[:,]\s*(.+)$/i.test(x) ? x.replace(/^(reajuste|inicial)\s*[:,]\s*(.+)$/i, (_, a, b) => a.toLowerCase() + ' "' + b.replace(/"/g, "'").trim() + '"') : '"' + x.replace(/"/g, "'") + '"'));
+    const r = String(resto || '').replace(/\r/g, '');
+    return pg.length ? 'Perguntas do médico:\n' + pg.map(x => '- ' + x).join('\n') + (r.trim() ? '\n\n' + r.replace(/^\n+/, '') : '') : r;
+  }
+  function le(texto, pergs) {
+    const regras = [], erros = [], avisos = [], soltas = [], perguntas = [];
+    let naLista = false;
+    const chaveP = c => c.fonte + '|' + (c.num || nrm(c.trecho));
+    const guarda = (c, n, raw) => { c.linha = n; c.raw = raw; if (perguntas.some(x => chaveP(x) === chaveP(c))) avisos.push(rotulo(c).charAt(0).toUpperCase() + rotulo(c).slice(1) + ' está repetida nas perguntas de referência.'); else perguntas.push(c); };
+    // forma de uma linha só, separada por vírgula: "Perguntas do médico: 57, 58.1, reajuste 21"
+    const leLista = (n, txt) => {
+      partesLista(txt).forEach(t => {
+        const m = /^(?:(reajuste|inicial)\s+)?(?:pergunta\s+)?(?:n[ºo°]\.?\s*)?(?:"([^"]+)"|#?(\d+(?:\.\d+)*))(?:\s+d[ao]\s+(reajuste|inicial))?\.?(?:\s*[:\-]\s*.*|\s+\(.*\))?$/i.exec(t);
+        if (!m) { erros.push({ linha: n, regra: '', txt: 'nas perguntas de referência, não entendi "' + t.slice(0, 60) + '". Vale o número da pergunta, "reajuste" e o número pra pergunta do reajuste, ou um trecho do enunciado entre aspas' }); return; }
+        guarda({ fonte: /reaj/i.test((m[1] || '') + (m[4] || '')) ? 'rea' : 'ini', num: m[3] || '', trecho: (m[2] || '').trim() }, n, t);
+      });
+    };
+    // uma pergunta por linha
+    const leItem = (n, txt, pos) => {
+      const c = itemP(txt);
+      if (c.erro) { erros.push({ linha: n, item: pos || 0, regra: '', txt: 'a pergunta de referência "' + String(txt).trim().slice(0, 60) + '" ' + c.erro }); return; }
+      if (c.num && /^(?:[,;]|e\s+(?:reajuste\s+)?#?\d)/i.test(c.nota || '')) { leLista(n, txt); return; }   // "57, 58, 59" numa linha só
+      guarda(c, n, String(txt).trim());
+    };
+    if (Array.isArray(pergs)) pergs.forEach((x, i) => { if (String(x == null ? '' : x).trim()) leItem(0, x, i + 1); });
+    else if (pergs != null && String(pergs).trim()) leLista(0, String(pergs).replace(/\s*[\r\n]+\s*/g, ', ').replace(/^[\s,;]+|[\s,;]+$/g, ''));
     const linhas = String(texto == null ? '' : texto).replace(/\r/g, '').split('\n');
-    let cur = null, cerca = false, naCerca = 0;
+    let cur = null, cerca = false, naCerca = 0, titulo = null, tabela = false;
+    const erro = (n, txt, mais) => { erros.push(Object.assign({ linha: n, regra: cur ? cur.nome : '', txt }, mais || {})); if (cur) cur.ruim = true; };
     const fecha = () => {
       if (!cur) return;
-      if (!cur.se.length && !cur.entao.length && !cur.menos.length && !cur.ruim) { cur = null; return; }   // título sem regra embaixo: é só texto
+      const temSe = cur.grupos.some(g => g.length);
+      if (!temSe && !cur.entao.length && !cur.menos.length && !cur.ruim) { if (cur.dado) soltas.push({ linha: cur.linha, txt: cur.nome }); cur = null; return; }   // título sem regra embaixo: é só texto
       if (!cur.ruim) {   // regra que já tem linha errada não ganha um segundo aviso por causa dela
-        if (!cur.se.length) { erros.push({ linha: cur.linha, regra: cur.nome, txt: 'falta a linha "Se:"' }); cur.ruim = true; }
-        if (!cur.entao.length) { erros.push({ linha: cur.linha, regra: cur.nome, txt: 'falta a linha "Então:"' }); cur.ruim = true; }
+        if (!temSe) { erros.push({ linha: cur.linha, regra: cur.nome, txt: 'falta a linha "Se:"' }); cur.ruim = true; }
+        if (!cur.entao.length) { erros.push({ linha: cur.linha, regra: cur.nome, txt: 'falta a linha "Então:" (o que essa regra escreve: Nome | dose | horário)' }); cur.ruim = true; }
       }
-      if (!cur.ruim) { if (regras.some(r => nrm(r.nome) === nrm(cur.nome))) avisos.push('Duas regras com o mesmo nome: ' + cur.nome + '. As duas valem, mas fica difícil saber qual entrou.'); regras.push({ nome: cur.nome, linha: cur.linha, se: cur.se, menos: cur.menos, entao: cur.entao }); }
+      if (!cur.ruim) {
+        if (regras.some(r => nrm(r.nome) === nrm(cur.nome))) avisos.push('Duas regras com o mesmo nome: ' + cur.nome + '. As duas valem, mas fica difícil saber qual entrou.');
+        const grupos = cur.grupos.filter(g => g.length);
+        regras.push({ nome: cur.nome, linha: cur.linha, se: grupos[0], grupos, menos: cur.menos, entao: cur.entao });
+      }
       cur = null;
     };
+    const abre = (n, nome, dado) => { fecha(); cur = { nome: limpa(nome).replace(/[:.]+$/, '').slice(0, 80) || ('Regra da linha ' + n), linha: n, grupos: [[]], menos: [], entao: [], ruim: false, modo: '', lista: false, dado: !!dado }; titulo = null; };
+    const poeItem = (n, txt) => {
+      const r = item(txt);
+      if (r.erro) return erro(n, r.erro);
+      const ps = r.ps;
+      if (ehFora(ps.join(' '))) return erro(n, 'hormônio, peptídeo e remédio do protocolo hormonal não entram por regra: essa linha é escrita à mão no editor. Tira ela daqui', { fora: true });
+      if (ps[0].length > 120 || ps[1].length > 60 || ps[2].length > 300) return erro(n, 'linha comprida demais (nome até 120, dose até 60, horário e observação até 300 letras)');
+      if (cur.entao.some(x => nrm(x[0]) === nrm(ps[0]))) return erro(n, 'a mesma regra manda "' + ps[0] + '" duas vezes');
+      if (!ps[2]) avisos.push('Linha ' + n + ' (' + cur.nome + '): ' + ps[0] + ' ficou sem horário. Entra assim, mas o aluno não vai saber quando tomar.');
+      cur.entao.push(ps);
+    };
+    const poeCond = (n, tipo, txt) => {
+      const r = conds(txt);
+      if (r.erro) return erro(n, r.erro + (cur.dado || tipo !== 'se' ? '' : '. Se essa linha for só anotação, começa ela com "Obs:"'));
+      r.grupos.forEach(g => g.forEach(c => { c.linha = n; }));
+      if (tipo === 'menos') {
+        if (r.grupos.some(g => g.length > 1)) return erro(n, 'no "Menos se" não vale "e" entre perguntas: cada linha "Menos se" já tira a regra sozinha. Usa uma linha pra cada, ou "ou"');
+        r.grupos.forEach(g => cur.menos.push(g[0]));
+      } else if (tipo === 'ou') cur.grupos = cur.grupos.filter(g => g.length).concat(r.grupos);
+      else { const novo = []; cur.grupos.forEach(g => r.grupos.forEach(h => novo.push(g.concat(h)))); cur.grupos = novo; }
+      if (cur.grupos.length > 16) return erro(n, 'combinações demais de "ou" numa regra só: divide em duas regras');
+    };
     linhas.forEach((bruta, i) => {
-      const n = i + 1, l = bruta.trim();
+      const n = i + 1; let l = bruta.trim();
       if (/^(```|~~~)/.test(l)) { cerca = !cerca; return; }
       if (cerca) { if (l) naCerca++; return; }
+      if (!l) { if (cur) cur.lista = false; tabela = false; naLista = false; return; }
+      if (/^[-=_*]{3,}$/.test(l)) { titulo = null; return; }   // linha de separação
       let m;
-      if ((m = /^#{3,6}\s+(.+?)\s*#*$/.exec(l))) { fecha(); cur = { nome: limpa(m[1]).slice(0, 80), linha: n, se: [], menos: [], entao: [], ruim: false }; return; }
-      if (/^#{1,2}\s/.test(l)) { fecha(); return; }
-      m = /^(?:[-*\u2022]\s*)?(se|e|ent[aã]o|menos\s+se|exceto\s+se)\s*:\s*(.*)$/i.exec(l);
-      if (!m) { if (cur && /^[-*\u2022]\s+\S/.test(l)) { erros.push({ linha: n, regra: cur.nome, txt: 'linha que o montador não entende. Vale "Se:", "E:", "Então:" e "Menos se:"' }); cur.ruim = true; } return; }
-      if (!cur) { erros.push({ linha: n, regra: '', txt: 'linha de regra sem o título antes (### Nome da regra)' }); return; }
-      const tipo = nrm(m[1]).replace(/\s+/g, ' '), resto = m[2].trim();
-      if (tipo === 'entao') {
-        const ps = resto.replace(/\s{2,}\([^()]*\)\s*$/, '').split('|').map(limpa);
-        if (ps.length !== 3 || !ps[0] || !ps[1] || !ps[2]) { erros.push({ linha: n, regra: cur.nome, txt: 'o "Então:" pede três partes separadas por barra: nome | dose | horário e observação' }); cur.ruim = true; return; }
-        if (ehFora(ps[0])) { erros.push({ linha: n, regra: cur.nome, txt: 'hormônio e peptídeo não entram por regra: essa linha é escrita à mão no editor. Tira ela daqui', fora: true }); cur.ruim = true; return; }
-        if (ps[0].length > 120 || ps[1].length > 60 || ps[2].length > 300) { erros.push({ linha: n, regra: cur.nome, txt: 'linha comprida demais (nome até 120, dose até 60, horário e observação até 300 letras)' }); cur.ruim = true; return; }
-        if (cur.entao.some(x => nrm(x[0]) === nrm(ps[0]))) { erros.push({ linha: n, regra: cur.nome, txt: 'a mesma regra manda "' + ps[0] + '" duas vezes' }); cur.ruim = true; return; }
-        cur.entao.push(ps);
-      } else {
-        const r = condicao(resto);
-        if (r.erro) { erros.push({ linha: n, regra: cur.nome, txt: r.erro }); cur.ruim = true; return; }
-        r.c.linha = n;
-        (tipo === 'se' || tipo === 'e' ? cur.se : cur.menos).push(r.c);
+      if ((m = RE_LISTA.exec(l))) { fecha(); titulo = null; naLista = !m[1].trim(); if (m[1].trim()) leLista(n, m[1]); return; }
+      if (naLista) { if (fimLista(l)) naLista = false; else { leItem(n, l.replace(BULP, '')); return; } }
+      if ((m = /^#{3,6}\s+(.+?)\s*#*$/.exec(l))) { abre(n, m[1], true); return; }
+      if (/^#{1,2}\s/.test(l)) { fecha(); titulo = null; return; }
+      if ((m = /^\*\*(.+?)\*\*:?$/.exec(l)) || (m = /^__(.+?)__:?$/.exec(l)) || (m = /^regra\s*(?:n[ºo°]\.?\s*)?(?:\d+\s*)?[:.)\-]\s*(.+)$/i.exec(l)) || (m = /^(regra\s+\d+)$/i.exec(l))) { abre(n, m[1], true); return; }
+      if (/^\|/.test(l) && !cur) { if (!tabela) erros.push({ linha: n, regra: '', txt: 'tabela o montador não lê. Escreve cada linha dela como regra: "Se: pergunta ... é ..." e "Então: Nome | dose | horário"' }); tabela = true; return; }
+      if (/^\|?\s*:?-{3,}/.test(l)) return;
+      const comBul = BUL.test(l); if (comBul) l = l.replace(BUL, '').trim();
+      l = l.replace(/^\*\*(.+?)\*\*(?=\s*:)/, '$1').replace(/^\*\*(se|e|ou|ent[aã]o|menos se|exceto se)\s*:\*\*/i, '$1:');
+      if (ANOTA.test(l)) { soltas.push({ linha: n, txt: limpa(l).slice(0, 160), anot: true }); return; }
+      let tipo = '', resto = '';
+      for (const [k, re] of KW) { const x = re.exec(l); if (x) { tipo = k; resto = (x[1] || '').trim(); break; } }
+      if (!tipo) {
+        // linha sem palavra-chave: item ou condição de uma lista aberta, ou texto solto
+        if (cur && cur.modo && (comBul || cur.lista)) { if (cur.modo === 'entao') poeItem(n, l); else poeCond(n, cur.modo, l); return; }
+        if (TEM_DOSE.test(l) || /\|/.test(l) || /(?:pergunta|quest[aã]o)\s+(?:n[ºo°]\.?\s*)?\d/i.test(l) || /=>|->|→/.test(l)) { erro(n, 'parece parte de uma regra, mas não está numa linha de "Se:" nem de "Então:". Se for só anotação, começa ela com "Obs:"'); return; }
+        if (comBul && cur) { erro(n, 'linha que o montador não entende. Vale "Se:", "E:", "Ou:", "Então:" e "Menos se:". Se for só anotação, começa ela com "Obs:"'); return; }
+        soltas.push({ linha: n, txt: limpa(l).slice(0, 160) }); titulo = { n, txt: l, k: soltas.length - 1 };
+        return;
       }
+      if (tipo === 'se') {
+        // "Se" novo depois de uma regra já completa, ou sem título antes: abre regra sozinho (o texto solto logo acima vira o nome)
+        if (!cur || cur.entao.length || cur.menos.length) {
+          if (titulo && titulo.n === n - 1 && (!cur || !cur.dado || cur.entao.length)) { const t = titulo; soltas.splice(t.k, 1); abre(n, t.txt.replace(BUL, ''), false); cur.linha = t.n; }
+          else abre(n, '', false);
+        }
+      } else if (!cur) { erros.push({ linha: n, regra: '', txt: tipo === 'entao' ? '"Então" sem o "Se" antes: toda regra começa dizendo quando ela vale ("Se: pergunta 58.1 é Sim")' : 'linha de regra sem o "Se" antes' }); return; }
+      titulo = null; cur.modo = tipo === 'e' || tipo === 'ou' ? tipo : tipo; cur.lista = !resto;
+      if (!resto) return;
+      if (tipo === 'entao') { poeItem(n, resto); return; }
+      if (tipo === 'se' || tipo === 'e' || tipo === 'ou') {
+        // tudo numa linha: "Se pergunta 5 é Sim, então Vitamina D | 2000UI | manhã"
+        const k = resto.search(RE_ENTAO_MEIO);
+        if (k > 0) { const mm = RE_ENTAO_MEIO.exec(resto), a = resto.slice(0, k), b = resto.slice(k + mm[0].length).trim(); poeCond(n, tipo, a); if (b && !cur.ruim) { cur.modo = 'entao'; poeItem(n, b); } else if (!b) { cur.modo = 'entao'; cur.lista = true; } return; }
+        // "Se pergunta 5 é Sim: Vitamina D 2000UI de manhã": depois dos dois pontos vem a linha que a regra escreve
+        const d = resto.lastIndexOf(': ');
+        if (d > 0) { const dir = resto.slice(d + 2).trim(); if ((TEM_DOSE.test(dir) || dir.indexOf('|') > 0) && !item(dir).erro && !conds(resto.slice(0, d)).erro) { poeCond(n, tipo, resto.slice(0, d)); cur.modo = 'entao'; poeItem(n, dir); return; } }
+      }
+      poeCond(n, tipo, resto);
     });
     fecha();
     if (naCerca) avisos.push('Tem ' + naCerca + (naCerca === 1 ? ' linha' : ' linhas') + ' dentro de cerca de código (```): o montador trata como exemplo e não lê.');
-    return { regras, erros, avisos };
+    // as perguntas de referência e as regras têm que falar das mesmas perguntas (número com número, enunciado com enunciado; misturado não dá pra saber sem a anamnese, então não acusa)
+    if (perguntas.length) {
+      const usadas = []; regras.forEach(rg => rg.grupos.concat([rg.menos]).forEach(g => g.forEach(c => { if (!usadas.some(u => chaveP(u.c) === chaveP(c))) usadas.push({ c, regra: rg.nome }); })));
+      const bate = (a, b) => a.fonte === b.fonte && (a.num && b.num ? a.num === b.num : (!a.num && !b.num) && (nrm(a.trecho).indexOf(nrm(b.trecho)) >= 0 || nrm(b.trecho).indexOf(nrm(a.trecho)) >= 0));
+      const outroTipo = (a, lista) => lista.some(b => a.fonte === b.fonte && !!a.num !== !!b.num);
+      usadas.forEach(u => { if (!perguntas.some(p => bate(p, u.c)) && !outroTipo(u.c, perguntas)) avisos.push('A regra "' + u.regra + '" olha ' + rotulo(u.c) + ', que não está nas perguntas de referência. Confere, ou acrescenta ela na lista.'); });
+      if (!erros.length && regras.length) perguntas.forEach(p => { if (!usadas.some(u => bate(p, u.c)) && !outroTipo(p, usadas.map(u => u.c))) avisos.push(rotulo(p).charAt(0).toUpperCase() + rotulo(p).slice(1) + ' está nas perguntas de referência, mas nenhuma regra olha pra ela.'); });
+    }
+    return { regras, erros, avisos, soltas, perguntas };
+  }
+  // o que o aluno respondeu em cada pergunta da lista do médico
+  function respostas(perguntas, fichas) {
+    return (perguntas || []).map(c => { const a = acha(c, fichas), rot = rotulo(c).replace(/^a /, ''); return a.falta ? { rot, fonte: c.fonte, num: c.num, falta: a.falta } : { rot, fonte: c.fonte, num: c.num, r: a.r, p: a.p }; });
+  }
+  // a regra lida, em português, pra conferir na tela
+  function fala(rg) {
+    const gs = (rg.grupos || [rg.se]).map(g => g.map(falaC).join(' e '));
+    return { quando: gs.length > 1 ? gs.map(t => '(' + t + ')').join(' ou ') : gs[0], escreve: rg.entao.map(x => x.filter(Boolean).join(', ')), menos: rg.menos.map(falaC) };
   }
 
   // ── conferência com a anamnese ──
-  const rotulo = c => (c.fonte === 'rea' ? 'a pergunta do reajuste ' : 'a pergunta ') + (c.num || '"' + c.trecho + '"');
   function acha(c, fichas) {
     const lista = fichas && fichas[c.fonte];
     if (!Array.isArray(lista)) return { falta: c.fonte === 'rea' ? 'ele não tem anamnese de reajuste' : 'ele não tem anamnese inicial' };
@@ -33347,7 +33676,7 @@ const GHME = (() => {
     if (!ach.length) return { falta: rotulo(c) + ' não está na anamnese dele' };
     const rs = ach.map(y => limpa(y.r));
     if (ach.length > 1 && rs.some(r => nrm(r) !== nrm(rs[0]))) return { falta: rotulo(c) + ' aparece ' + ach.length + ' vezes na anamnese: troca na regra pelo trecho do enunciado entre aspas' };
-    return { r: rs[0] };
+    return { r: rs[0], p: limpa(ach[0].p) };
   }
   const contem = (resp, v) => new RegExp('(^|[^a-z0-9])' + esc(nrm(v))).test(nrm(resp));
   // devolve true, false ou null (não deu pra conferir); em "menos se" a pergunta em branco barra na negação
@@ -33374,10 +33703,12 @@ const GHME = (() => {
   function aplica(regras, fichas) {
     const porRegra = [], cand = [];
     (regras || []).forEach(rg => {
-      const se = rg.se.map(c => avalia(c, fichas, false));
-      if (se.some(x => x.v === false)) { porRegra.push({ nome: rg.nome, estado: 'nao' }); return; }
-      const inc = se.find(x => x.v === null);
-      if (inc) { porRegra.push({ nome: rg.nome, estado: 'incerta', por: inc.por }); return; }
+      // qualquer grupo de condições inteiro verdadeiro faz a regra valer; sem nenhum, um grupo que não deu pra conferir segura a regra
+      const gs = (rg.grupos || [rg.se]).map(g => g.map(c => avalia(c, fichas, false)));
+      if (!gs.some(g => g.every(x => x.v === true))) {
+        const inc = gs.filter(g => !g.some(x => x.v === false)).map(g => g.find(x => x.v === null))[0];
+        porRegra.push(inc ? { nome: rg.nome, estado: 'incerta', por: inc.por } : { nome: rg.nome, estado: 'nao' }); return;
+      }
       const me = rg.menos.map(c => ({ c, x: avalia(c, fichas, true) }));
       const barra = me.find(y => y.x.v === true);
       if (barra) { porRegra.push({ nome: rg.nome, estado: 'barrada', por: 'Menos se: ' + barra.c.txt + (barra.x.vazia ? ' (ele deixou em branco)' : ' (ele respondeu "' + String(barra.x.r).slice(0, 80) + '")') }); return; }
@@ -33433,7 +33764,7 @@ const GHME = (() => {
     }
     return { rows: saida, entrou, saiu, mudou, ficou, notas, total: saida.filter(r => sec(r) === 'med').length };
   }
-  return { le, aplica, poe, ehFora, nrm, limpa };
+  return { le, aplica, poe, fala, respostas, separa, junta, ehFora, nrm, limpa };
 })();
 
 // ── v665 (GH 17/11, plano B): TRILHA DO MÉDICO, dentro do editor da dieta ──
@@ -33442,7 +33773,7 @@ const GHME = (() => {
 // "Prescrição médica" (seção med), separado da suplementação. Sem IA. Hormônio e peptídeo não entram por regra.
 // As respostas ficam só na memória da página; nada delas vai pro aparelho.
 const _ME_CHAVE = 'regras_medico';
-let _meMo = { car: false, erro: '', senha: false, j: null, txt: '', em: '', lido: false, lidoEm: 0, edita: false, rasc: null, conf: null, salvando: false, apaga: false, msg: '', pronto: null };
+let _meMo = { car: false, erro: '', senha: false, j: null, txt: '', em: '', lido: false, lidoEm: 0, edita: false, rasc: null, conf: null, salvando: false, apaga: false, msg: '', pronto: null, pergs: [], pick: false, ops: [] };
 function _meMoFichas(j) {
   const fs = (j && j.fichas) || [], ini = fs.find(x => x && x.fonte === 'inicial'), rea = fs.find(x => x && x.fonte === 'reajuste');
   const le = f => f ? (f.respostas || []).map(y => ({ p: String((y && y.p) || ''), r: _trMoLimpa(y && y.r) })) : null;
@@ -33469,7 +33800,7 @@ async function _meMoCarrega(fresh) {
   const j = _teFi.cache.get(sid) || null; _meMo.j = j;
   if (!okR) _meMo.erro = _meMo.senha ? 'Precisa da senha do treinador pra ler as regras do médico.' : 'As regras do médico não vieram agora. Tenta de novo.';
   else if (!j) { _meMo.erro = (_teFi.st && _teFi.st.erro) || 'A ficha não veio agora. Tenta de novo.'; _meMo.senha = !!(_teFi.st && _teFi.st.senha); }
-  if (okR && j && !String(_meMo.txt || '').trim()) { _meMo.edita = true; _meMo.rasc = ''; }
+  if (okR && j && !String(_meMo.txt || '').trim()) { _meMo.edita = true; _meMo.rasc = ''; _meMo.pergs = []; _meMo.pick = false; }
   _meMoDesenha();
 }
 function meMoSenha() { if (_trainerToken_(true)) _meMoCarrega(true); }
@@ -33486,25 +33817,47 @@ function _meMoConta() {
   return { l, res, p };
 }
 function _meMoData(iso) { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; }
-function meMoEdita(sim) { _meMo.edita = !!sim; _meMo.rasc = sim ? String(_meMo.txt || '') : null; _meMo.conf = null; _meMo.msg = ''; _meMo.apaga = false; _meMoDesenha(); }
-function meMoConfere() { _meMo.conf = GHME.le(_meMo.rasc || ''); _meMo.msg = ''; _meMo.apaga = false; _meMoDesenha(); }
+function meMoEdita(sim) { const sp = sim ? GHME.separa(_meMo.txt || '') : null; _meMo.edita = !!sim; _meMo.rasc = sim ? sp.resto : null; _meMo.pergs = sim ? sp.pergs.slice() : []; _meMo.pick = false; _meMo.conf = null; _meMo.msg = ''; _meMo.apaga = false; _meMoDesenha(); }
+function meMoConfere() { _meMo.conf = GHME.le(_meMo.rasc || '', Array.isArray(_meMo.pergs) ? _meMo.pergs : []); _meMo.msg = ''; _meMo.apaga = false; _meMoDesenha(); }
+// v666: perguntas de referência. Uma por linha: o treinador escreve (número ou enunciado), troca, tira, ou marca na lista da anamnese do aluno aberto
+function _meMoOpcoes(fi) {
+  const out = [], visto = new Set();
+  [['ini', fi && fi.ini], ['rea', fi && fi.rea]].forEach(par => (par[1] || []).forEach(y => {
+    const t = String((y && y.p) || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(), m = /^(\d+(?:\.\d+)*)\s*[.):\-]?\s*(.*)$/.exec(t);
+    if (!m || visto.has(par[0] + '|' + m[1])) return; visto.add(par[0] + '|' + m[1]);
+    out.push({ fonte: par[0], num: m[1], txt: m[1] + '. ' + m[2].slice(0, 110) });
+  }));
+  return out;
+}
+function _meMoPgChave(t) { try { const c = GHME.le('', [t]).perguntas[0]; return c ? c.fonte + '|' + (c.num || GHME.nrm(c.trecho)) : ''; } catch (_) { return ''; } }
+function meMoPick() { _meMo.pick = !_meMo.pick; _meMoDesenha(); }
+function meMoPgSet(i, v) { if (!Array.isArray(_meMo.pergs)) _meMo.pergs = []; _meMo.pergs[i] = String(v == null ? '' : v); _meMo.apaga = false; }
+function meMoPgMais() { if (!Array.isArray(_meMo.pergs)) _meMo.pergs = []; _meMo.pergs.push(''); _meMo.apaga = false; _meMoDesenha(); const f = document.querySelectorAll('#meMo .me-mo-pl input'); if (f.length) { try { f[f.length - 1].focus(); } catch (_) {} } }
+function meMoPgTira(i) { if (!Array.isArray(_meMo.pergs)) return; _meMo.pergs.splice(i, 1); _meMo.apaga = false; _meMoDesenha(); }
+function meMoPerg(i) {
+  const x = (_meMo.ops || [])[i]; if (!x) return;
+  const alvo = x.fonte + '|' + x.num, linhas = (Array.isArray(_meMo.pergs) ? _meMo.pergs : []).filter(t => String(t || '').trim());
+  const fica = linhas.filter(t => _meMoPgChave(t) !== alvo);
+  _meMo.pergs = fica.length < linhas.length ? fica : linhas.concat([(x.fonte === 'rea' ? 'reajuste ' : '') + x.txt]);
+  _meMo.apaga = false; _meMoDesenha();
+}
 async function meMoGuarda() {
   if (_meMo.salvando) return;
-  const txt = String(_meMo.rasc == null ? '' : _meMo.rasc).replace(/\r/g, '');
+  const corpo = String(_meMo.rasc == null ? '' : _meMo.rasc).replace(/\r/g, ''), pg = (Array.isArray(_meMo.pergs) ? _meMo.pergs : []).filter(t => String(t || '').trim()), txt = GHME.junta(pg, corpo);
   if (txt.length > 200000) { _meMo.msg = 'O texto passou de 200 mil letras. Divide ou enxuga antes de guardar.'; _meMoDesenha(); return; }
-  const l = GHME.le(txt); _meMo.conf = l;
+  const l = GHME.le(corpo, pg); _meMo.conf = l;
   if (l.erros.length) { _meMo.msg = 'Tem linha com erro: arruma antes de guardar.'; _meMoDesenha(); return; }
   const vazio = !txt.trim();
   if (vazio && String(_meMo.txt || '').trim() && !_meMo.apaga) { _meMo.apaga = true; _meMo.msg = 'O texto está vazio: guardar assim apaga as regras do médico. Toca de novo pra confirmar.'; _meMoDesenha(); return; }
-  if (!vazio && !l.regras.length) { _meMo.msg = 'Não achei nenhuma regra no texto. Cada regra começa com "### Nome" e tem as linhas "Se:" e "Então:".'; _meMoDesenha(); return; }
+  if (!vazio && !l.regras.length && !l.perguntas.length) { _meMo.msg = 'Não achei nenhuma regra no texto. Cada regra precisa de um "Se" e de um "Então" com a dose.'; _meMoDesenha(); return; }
   _meMo.salvando = true; _meMo.msg = ''; _meMoDesenha();
   const em = new Date().toISOString();
   let r = null; try { r = await _publicaAba_(TRAINER_APPS_SCRIPT, vazio ? { type: 'editor_dados', chave: _ME_CHAVE, op: 'apaga' } : { type: 'editor_dados', chave: _ME_CHAVE, op: 'grava', valor: { txt, em } }); } catch (_) { r = null; }
   _meMo.salvando = false; _meMo.apaga = false;
   if (!r || !r.j || !r.j.ok) { _meMo.msg = 'Não guardou agora (sem internet, ou a senha não bateu). O texto continua aqui: tenta de novo.'; _meMoDesenha(); return; }
   _meMo.txt = vazio ? '' : txt; _meMo.em = vazio ? '' : em; _meMo.lido = true; _meMo.lidoEm = Date.now();
-  if (vazio) { _meMo.rasc = ''; _meMo.conf = null; _meMo.msg = 'Regras apagadas.'; _meMoDesenha(); return; }
-  _meMo.edita = false; _meMo.rasc = null; _meMo.conf = null; _meMo.msg = l.regras.length + (l.regras.length === 1 ? ' regra guardada.' : ' regras guardadas.');
+  if (vazio) { _meMo.rasc = ''; _meMo.pergs = []; _meMo.conf = null; _meMo.msg = 'Regras apagadas.'; _meMoDesenha(); return; }
+  _meMo.edita = false; _meMo.rasc = null; _meMo.conf = null; _meMo.msg = l.regras.length ? l.regras.length + (l.regras.length === 1 ? ' regra guardada.' : ' regras guardadas.') : 'Perguntas de referência guardadas. Ainda não tem regra do médico.';
   _meMoDesenha();
 }
 function meMoMonta() {
@@ -33564,18 +33917,34 @@ function _meMoDesenha() {
   if (_meMo.edita) {
     const c = _meMo.conf, tinha = !!String(_meMo.txt || '').trim();
     h += '<div class="te-conf-tit">Regras do médico</div><div class="te-conf-sub">Valem pra todos os alunos</div><div class="te-conf-lista di-mo-corpo">';
-    if (!tinha) h += '<div class="te-ent-aviso">Ainda não tem regra do médico guardada. Cola aqui o texto do regras-medico.md, confere e guarda.</div>';
-    h += '<textarea class="me-mo-txt" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="### Nome da regra&#10;- Se: pergunta 58.1 é &quot;Sim&quot;&#10;- E: pergunta 59 contém &quot;raramente&quot;&#10;- Então: Nome | dose | horário e observação&#10;- Menos se: pergunta 47 contém &quot;anticoagulante&quot;" oninput="_meMo.rasc=this.value;_meMo.apaga=false">' + e(_meMo.rasc == null ? '' : _meMo.rasc) + '</textarea>';
+    if (!tinha) h += '<div class="te-ent-aviso">Ainda não tem regra do médico guardada. Põe as perguntas de referência, escreve ou cola as regras, confere e guarda.</div>';
+    const fiE = _meMoFichas(_meMo.j), opE = _meMoOpcoes(fiE), pgE = Array.isArray(_meMo.pergs) ? _meMo.pergs : [];
+    _meMo.ops = opE;
+    h += '<div class="te-conf-gr me-mo-pg-rot">Perguntas de referência</div>';
+    h += '<div class="di-mo-dica me-mo-pg-dica">As perguntas da anamnese que as regras do médico usam. Uma por linha: o número da pergunta ou o enunciado dela. Tu troca, tira e põe mais quando quiser.</div>';
+    h += '<div class="me-mo-pls">' + (pgE.length ? pgE.map((t, i) => '<div class="me-mo-pl"><span class="me-mo-pn">' + (i + 1) + '</span><input type="text" value="' + e(t) + '" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="Número ou enunciado da pergunta" oninput="meMoPgSet(' + i + ',this.value)" aria-label="Pergunta de referência ' + (i + 1) + '"><button type="button" class="me-mo-px" onclick="meMoPgTira(' + i + ')" aria-label="Tirar a pergunta ' + (i + 1) + '">×</button></div>').join('') : '<div class="tr-mo-dia me-mo-pl0">Nenhuma pergunta de referência ainda.</div>') + '</div>';
+    h += '<div class="me-mo-pbts"><button type="button" class="te-conf-salva me-mo-pmais" onclick="meMoPgMais()">+ Pergunta</button>' + (opE.length ? '<button type="button" class="te-conf-salva me-mo-pick-bt" onclick="meMoPick()">' + (_meMo.pick ? 'Esconder a anamnese' : 'Escolher na anamnese') + '</button>' : '') + '</div>';
+    if (_meMo.pick && opE.length) { const temE = new Set(pgE.map(_meMoPgChave)); h += '<div class="me-mo-pick">' + opE.map((x, i) => '<button type="button" class="me-mo-op' + (temE.has(x.fonte + '|' + x.num) ? ' on' : '') + '" onclick="meMoPerg(' + i + ')">' + e((x.fonte === 'rea' ? 'Reajuste, ' : '') + x.txt) + '</button>').join('') + '</div>'; }
+    h += '<div class="te-conf-gr me-mo-rg-rot">Regras do médico</div>';
+    h += '<textarea class="me-mo-txt" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="Vitamina D pra quem não pega sol&#10;Se: pergunta 58.1 é Sim&#10;E: pergunta 59 contém raramente&#10;Então: Vitamina D3 | 2000UI | Pós-desjejum&#10;Menos se: pergunta 47 contém anticoagulante" oninput="_meMo.rasc=this.value;_meMo.apaga=false">' + e(_meMo.rasc == null ? '' : _meMo.rasc) + '</textarea>';
     if (_meMo.msg) h += '<div class="te-ent-aviso me-mo-msg">' + e(_meMo.msg) + '</div>';
     if (c) {
-      h += '<div class="di-mo-dados me-mo-lidas"><b>' + (c.regras.length === 1 ? '1 regra lida' : c.regras.length + ' regras lidas') + '</b>' + (c.erros.length ? ', ' + (c.erros.length === 1 ? '1 linha com erro' : c.erros.length + ' linhas com erro') : (c.regras.length ? ', sem erro' : '')) + '</div>';
-      h += c.erros.map(x => '<div class="te-ent-linha me-mo-erro">Linha ' + x.linha + (x.regra ? ' (' + e(x.regra) + ')' : '') + ': ' + e(x.txt) + '</div>').join('');
+      const soltas = (c.soltas || []);
+      h += '<div class="di-mo-dados me-mo-lidas"><b>' + (c.regras.length === 1 ? '1 regra lida' : c.regras.length + ' regras lidas') + '</b>' + (c.erros.length ? ', ' + (c.erros.length === 1 ? '1 linha com erro' : c.erros.length + ' linhas com erro') : (c.regras.length ? ', sem erro' : '')) + (soltas.length ? ', ' + (soltas.length === 1 ? '1 linha de fora como anotação' : soltas.length + ' linhas de fora como anotação') : '') + '</div>';
+      h += c.erros.filter(x => !x.linha).map(x => '<div class="te-ent-linha me-mo-erro">' + (x.item ? 'Pergunta de referência ' + x.item : 'Perguntas de referência') + ': ' + e(x.txt) + '</div>').join('');
+      if ((c.perguntas || []).length) { const rpE = GHME.respostas(c.perguntas, fiE), cap = t => t.charAt(0).toUpperCase() + t.slice(1); h += '<div class="te-conf-gr me-mo-pergs">Perguntas de referência, como eu achei na anamnese</div>' + rpE.map(x => '<div class="tr-mo-dia me-mo-perg">' + (x.p ? e((x.fonte === 'rea' ? 'Reajuste, ' : '') + x.p.slice(0, 160)) : e(cap(x.rot)) + ((fiE.ini || fiE.rea) ? ': <i>' + e(x.falta) + '</i>' : '')) + '</div>').join('') + ((fiE.ini || fiE.rea) ? '<div class="di-mo-dica">O enunciado vem da anamnese do aluno aberto. Confere se cada uma é a pergunta que tu quer. A que eu não achei precisa existir na anamnese pra valer.</div>' : ''); }
+      h += c.erros.filter(x => x.linha).map(x => '<div class="te-ent-linha me-mo-erro">Linha ' + x.linha + (x.regra ? ' (' + e(x.regra) + ')' : '') + ': ' + e(x.txt) + '</div>').join('');
       h += c.avisos.map(t => '<div class="te-ent-aviso">' + e(t) + '</div>').join('');
-      if (!c.erros.length && c.regras.length) h += c.regras.map(rg => '<div class="tr-mo-dia"><b>' + e(rg.nome) + '</b>: ' + e(rg.entao.map(x => x[0] + ' ' + x[1]).join(', ')) + '</div>').join('');
+      // v666: cada regra lida volta em português, pra conferir se foi entendida do jeito certo; o que ficou de fora também aparece
+      if (c.regras.length) h += '<div class="te-conf-gr me-mo-como">Como eu li cada regra</div>' + c.regras.map(rg => { const f = GHME.fala(rg); return '<div class="tr-mo-dia me-mo-lida"><b>' + e(rg.nome) + '</b> (linha ' + rg.linha + ')<br>Vale quando ' + e(f.quando) + '.<br>Escreve: ' + e(f.escreve.join('; ')) + '.' + (f.menos.length ? '<br>Não vale se ' + e(f.menos.join(', ou se ')) + '.' : '') + '</div>'; }).join('');
+      if (soltas.length) h += '<div class="te-conf-gr me-mo-fora">Ficou de fora, como anotação</div>' + soltas.slice(0, 40).map(x => '<div class="tr-mo-dia me-mo-solta">Linha ' + x.linha + ': ' + e(x.txt) + '</div>').join('') + (soltas.length > 40 ? '<div class="tr-mo-dia">e mais ' + (soltas.length - 40) + '</div>' : '') + '<div class="di-mo-dica">Se alguma dessas era pra ser regra, ela precisa de uma linha "Se" e uma linha "Então".</div>';
     }
-    h += '<div class="di-mo-dica">Cada regra: "### Nome", depois "Se:", "E:" (quantas quiser), "Então: nome | dose | horário e observação" e "Menos se:". Condições: é, não é, contém, não contém, maior que, menor que, entre X e Y, respondeu, não respondeu. Hormônio e peptídeo não entram por regra: essa linha é escrita à mão no bloco.</div></div>';
+    h += '<div class="di-mo-dica">Cada regra diz quando vale e o que escreve, com a dose. Pode ser do teu jeito: "Se pergunta 58.1 é Sim, então Vitamina D3 2000UI de manhã", ou em linhas separadas com "Se:", "E:", "Ou:", "Então: nome | dose | horário" e "Menos se:". A tela de cada aluno mostra o que ele respondeu nas perguntas de referência, e eu aviso se uma regra olhar pergunta que não está lá. Toca em Conferir: eu mostro como li cada regra e aponto a linha do que não entendi. Nada do que tu colar some calado. Hormônio, peptídeo e remédio do protocolo hormonal não entram por regra: essa linha é escrita à mão no bloco.</div></div>';
     h += pe((tinha ? '<button type="button" class="te-conf-salva" onclick="meMoEdita(false)">Voltar</button>' : '<button type="button" class="te-conf-salva" onclick="meMoFecha()">Fechar</button>') + '<button type="button" class="te-conf-salva me-mo-conf" onclick="meMoConfere()">Conferir</button><button type="button" class="te-conf-salva ok me-mo-guarda" onclick="meMoGuarda()">' + (_meMo.salvando ? 'Guardando\u2026' : (_meMo.apaga ? 'Apagar as regras' : 'Guardar as regras')) + '</button>');
-    o.innerHTML = h + '</div>'; o.hidden = false; return;
+    const rolA = o.querySelector('.te-conf-lista'), rolB = o.querySelector('.me-mo-pick'), sA = rolA ? rolA.scrollTop : 0, sB = rolB ? rolB.scrollTop : 0;
+    o.innerHTML = h + '</div>'; o.hidden = false;
+    const nA = o.querySelector('.te-conf-lista'), nB = o.querySelector('.me-mo-pick'); if (nA && sA) nA.scrollTop = sA; if (nB && sB) nB.scrollTop = sB;
+    return;
   }
   h += '<div class="te-conf-tit">Prescrição médica</div><div class="te-conf-sub">' + e(nome) + '</div>';
   if (_meMo.car) { o.innerHTML = h + '<div class="te-ent-res">Buscando as regras do médico e a anamnese\u2026</div>' + pe('<button type="button" class="te-conf-salva" onclick="meMoFecha()">Fechar</button>') + '</div>'; o.hidden = false; return; }
@@ -33586,6 +33955,9 @@ function _meMoDesenha() {
   else {
     const pr = c.res.porRegra, de = est => pr.filter(x => x.estado === est), fichas = _meMoFichas(_meMo.j), d = _meMoData(_meMo.em);
     h += '<div class="di-mo-dados"><b>' + (c.l.regras.length === 1 ? '1 regra do médico' : c.l.regras.length + ' regras do médico') + '</b>' + (d ? ', guardadas em ' + e(d) : '') + '<br>' + (fichas.ini ? 'Conferidas com a anamnese inicial' + (fichas.rea ? ' e com o último reajuste' : '') + ' dele.' : 'Ele não tem anamnese inicial: nenhuma regra dá pra conferir.') + '</div>';
+    // v666: as respostas dele nas perguntas que o treinador listou como do médico
+    const rp = GHME.respostas(c.l.perguntas, fichas);
+    if (rp.length) h += '<div class="di-mo-dados me-mo-resp"><b>O que ele respondeu nas perguntas de referência</b><br>' + rp.map(x => e(x.p ? (x.fonte === 'rea' ? 'Reajuste, ' : '') + x.p.slice(0, 120) : x.rot.charAt(0).toUpperCase() + x.rot.slice(1)) + ': ' + (x.falta ? '<i>não achei na anamnese dele</i>' : (String(x.r).trim() ? e(String(x.r).slice(0, 200)) : '<i>em branco</i>'))).join('<br>') + '</div>';
     if (_meMo.msg) h += '<div class="te-ent-aviso me-mo-msg">' + e(_meMo.msg) + '</div>';
     if (c.l.erros.length) h += '<div class="te-ent-aviso">As regras guardadas têm ' + (c.l.erros.length === 1 ? '1 linha com erro' : c.l.erros.length + ' linhas com erro') + ': a regra dela não vale até arrumar. Abre "Ver as regras".</div>';
     const ent = de('entrou');
