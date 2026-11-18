@@ -6016,6 +6016,53 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
       radial-gradient(60% 40% at 108% 78%, rgba(47, 111, 214, .13) 0%, transparent 64%),
       radial-gradient(76% 46% at 50% 110%, rgba(217, 179, 90, .26) 0%, transparent 64%),
       var(--bg); }
+
+  /* ══ v674 (GH 18/11): VIDRO LÍQUIDO NO CLARO, igual ao Escuro ("o preto tá muito bonito no Liquid Glass mas o branco não tá com o mesmo tema").
+     O Claro tinha cartão quase branco chapado em cima de fundo quase branco: sem borda que brilha e sem cor passando por dentro.
+     Agora o Claro segue a mesma receita do Escuro: fundo com luz dourada e azul, vidro que deixa essa luz passar (claro em cima,
+     transparente no meio, dourado no canto de baixo), aro branco por dentro e um fio quente bem fino por fora desenhando a borda,
+     sombra quente. Pílulas, barra de baixo e o Mais no mesmo vidro. Só o Claro muda; o Escuro fica como está. ══ */
+  :root[data-theme="light"] {
+    --bg: #E3DAC6;
+    --liq-fill: radial-gradient(110% 75% at 0% 0%, rgba(255,255,255,.95) 0%, rgba(255,255,255,0) 56%), radial-gradient(110% 80% at 100% 100%, rgba(232,196,110,.30) 0%, rgba(232,196,110,0) 60%), linear-gradient(rgba(255,255,255,.34), rgba(255,255,255,.34));
+    --liq-line: rgba(255,255,255,.80);
+    --liq-rim: 0 0 0 .5px rgba(110,84,30,.22), inset 0 1.5px 0 #fff, inset 1px 0 0 rgba(255,255,255,.80), inset -1px 0 0 rgba(255,255,255,.35), inset 0 -1px 0 rgba(110,84,30,.10), inset 0 0 22px rgba(255,255,255,.30), inset 0 26px 34px -26px rgba(255,255,255,.95);
+    --liq-sombra: 0 18px 40px rgba(92,70,24,.17), 0 3px 8px rgba(92,70,24,.08);
+    --liq-pill: linear-gradient(160deg, rgba(255,255,255,.92) 0%, rgba(255,255,255,.50) 55%, rgba(255,250,236,.62) 100%);
+    --liq-pill-sombra: 0 0 0 .5px rgba(110,84,30,.22), inset 0 1.5px 0 #fff, inset 0 -1px 0 rgba(110,84,30,.08), 0 6px 16px rgba(92,70,24,.12), 0 1px 3px rgba(92,70,24,.08);
+    --sheet-bg: linear-gradient(180deg, rgba(255,253,246,.74) 0%, rgba(243,236,220,.70) 100%);
+    --nav-bg: linear-gradient(160deg, rgba(255,255,255,.84) 0%, rgba(255,255,255,.50) 60%, rgba(255,249,234,.66) 100%);
+  }
+  :root[data-theme="light"] body::before { background:
+      radial-gradient(64% 42% at 8% 2%, rgba(214, 170, 72, .72) 0%, transparent 64%),
+      radial-gradient(56% 40% at 106% 26%, rgba(70, 130, 230, .34) 0%, transparent 64%),
+      radial-gradient(54% 36% at -8% 60%, rgba(214, 170, 72, .44) 0%, transparent 64%),
+      radial-gradient(60% 40% at 108% 78%, rgba(70, 130, 230, .24) 0%, transparent 64%),
+      radial-gradient(76% 46% at 50% 110%, rgba(214, 170, 72, .48) 0%, transparent 64%),
+      var(--bg); }
+  /* cartão de dúvida, linhas do Mais e as faixas de Aparência e Cronômetro: mesmo vidro dos cartões */
+  :root[data-theme="light"] #chatBanner, :root[data-theme="light"] .mais-opt, :root[data-theme="light"] .tema-row {
+    background: var(--liq-fill) !important; border-color: var(--liq-line) !important; box-shadow: var(--liq-rim), 0 8px 22px rgba(92,70,24,.11), 0 1px 3px rgba(92,70,24,.06);
+  }
+  :root[data-theme="light"] .mais-opt.destaque { background: linear-gradient(155deg, rgba(255,247,226,.92) 0%, rgba(240,215,150,.40) 100%) !important; border-color: rgba(217,179,90,.55) !important; }
+  /* pílulas: dias, semana, Esforço e Como ler, e os seletores (Modo do app, Aparência, Cronômetro) */
+  :root[data-theme="light"] .day-tab:not(.active):not(.feito), :root[data-theme="light"] .week-btn,
+  :root[data-theme="light"] .hdr-chips > .last-mod[style*="display: block"], :root[data-theme="light"] .modo-seg, :root[data-theme="light"] .tema-seg {
+    background: var(--liq-pill); border-color: rgba(255,255,255,.85); box-shadow: var(--liq-pill-sombra);
+  }
+  :root[data-theme="light"] .day-tab.active, :root[data-theme="light"] .modo-seg button.on, :root[data-theme="light"] .tema-seg button.on {
+    box-shadow: inset 0 1.5px 0 rgba(255,255,255,.65), inset 0 -1px 0 rgba(110,84,30,.18), 0 6px 16px rgba(170,130,40,.30);
+  }
+  /* barra de baixo e folha do Mais: vidro fosco de verdade (blur), com aro branco em cima */
+  :root[data-theme="light"] #bottomNav { border-color: rgba(255,255,255,.85); box-shadow: 0 0 0 .5px rgba(110,84,30,.20), inset 0 1.5px 0 #fff, inset 0 -1px 0 rgba(110,84,30,.08), 0 14px 34px rgba(92,70,24,.20), 0 2px 6px rgba(92,70,24,.08); }
+  :root[data-theme="light"] #maisSheet { border-color: rgba(255,255,255,.85); box-shadow: 0 0 0 .5px rgba(110,84,30,.18), inset 0 1.5px 0 #fff, 0 -14px 40px rgba(40,30,10,.22); }
+  /* parte das cargas dentro do cartão aberto: era branco leitoso (var(--glass) do bloco v610); agora deixa o vidro aparecer, igual ao Escuro */
+  :root[data-theme="light"] .carga-section { background: rgba(255,255,255,.14); border-top-color: rgba(110,84,30,.12); }
+  /* cartão de exercício aberto: no Escuro ele fica um tom mais claro que os fechados (--glass-2); no Claro esse tom era branco 90% e
+     escondia o vidro. Agora é o mesmo vidro com um véu branco por cima, e as faixas de dentro (força estimada, como foi) translúcidas */
+  :root[data-theme="light"] .exercise-card:not(.recolhido):not(.warmup):not(.done) { background: linear-gradient(rgba(255,255,255,.22), rgba(255,255,255,.22)), var(--liq-fill); border-color: var(--liq-line); }
+  :root[data-theme="light"] .exercise-card .forca-chip, :root[data-theme="light"] .exercise-card .focus-esforco { background: rgba(255,255,255,.40); }
+  :root[data-theme="light"] #maisSheetOverlay { background: rgba(40, 32, 16, .34); }
 </style>
 <script>
 // ══ v593 (auditoria 26/10): dois guardas que NÃO dependem do script principal (ES5 puro, primeiro script da página) ══
@@ -29764,7 +29811,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v673';
+var APP_SHELL_V = 'metodo-gh-v674';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
