@@ -6088,7 +6088,7 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   } catch (_) {}
 })();
 </script>
-<script>try{if(localStorage.getItem('gh-tema')!=='escuro')document.documentElement.setAttribute('data-theme','light');}catch(e){}</script>
+<script>/* v673 (GH 18/11): no app da loja o padrão é o Escuro (igual às capturas das lojas); no navegador segue o Claro. Escolha gravada no Mais sempre vence. */try{var _t=localStorage.getItem('gh-tema'),_lj=false;try{_lj=/[?&]loja=1(&|$)/.test(location.search)||!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());}catch(_){}if(_t==='claro'||(_t!=='escuro'&&!_lj))document.documentElement.setAttribute('data-theme','light');}catch(e){}</script>
 <script>/* v641: a abertura é decidida aqui, antes do primeiro quadro (medidas da tela e letra grande já descontada) */try{(function(){var p=new URLSearchParams(location.search);if(p.has('editor')||p.has('admin')||p.get('edit')==='1')return;var nat=false;try{nat=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform());}catch(e){}var loja=nat||p.get('loja')==='1';if(!loja&&window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)return;if(sessionStorage.getItem('gh_intro_seen')==='1')return;sessionStorage.setItem('gh_intro_seen','1');var d=document.documentElement,fz=({g:1.15,gg:1.3,ggg:1.45,gggg:1.6})[localStorage.getItem('gh_fonte')]||1;var ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);var sw=screen.width||0,sh=screen.height||0,side=Math.max(sw,sh),vw=window.innerWidth||0,vh=window.innerHeight||0;var nIos=loja&&ios&&side>0,nAnd=loja&&!ios&&/Android/.test(navigator.userAgent)&&vw>0&&vh>0;if(nAnd)side=748.3;else if(!nIos)side=Math.max(vw,vh);if(side>0)d.style.setProperty('--is-side',(side/fz)+'px');if(nIos)d.style.setProperty('--is-cy',(((vw>vh)?Math.min(sw,sh):side)/2/fz)+'px');if(nAnd){d.style.setProperty('--is-cy',((vh/2+side*0.007687)/fz)+'px');d.style.setProperty('--is-cx',((vw/2+side*0.000915)/fz)+'px');}d.classList.add('intro-on');if(!loja||performance.now()>1300)d.classList.add('intro-fade');window._introHead=(nIos||nAnd)?2:1;})();}catch(e){}</script>
 </head>
 <body>
@@ -18430,7 +18430,7 @@ document.addEventListener('click', function (e) {
     if (card && (card.querySelector('.diet-meal-check.done') || card.classList.contains('dm-fora'))) card.classList.toggle('ver');
   } catch (_) {}
 });
-// tema: CLARO é o padrão pra todo mundo (GH 05/11); escuro é opção no Mais, guardada em gh-tema (só neste aparelho).
+// tema: CLARO é o padrão no navegador (GH 05/11) e ESCURO no app da loja (GH 18/11, v673); a escolha do Mais fica em gh-tema (só neste aparelho) e sempre vence.
 // O claro vive em html[data-theme="light"]; sem o atributo o CSS é o escuro.
 function ghTema(t) {
   try {
@@ -29764,7 +29764,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v672';
+var APP_SHELL_V = 'metodo-gh-v673';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
