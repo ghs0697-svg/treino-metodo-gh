@@ -26393,6 +26393,28 @@ const _DC_DOSE_ENGOLE = /\b(comprimidos?|c[áa]psulas?|caps|cp|gotas)\b|sach[êe
 // Suplemento de vidro/pote (16/08: o Ômega 3 do João Márcio apareceu com botão de seringa
 // porque a observação dele não dizia a via). Ninguém puxa ômega em seringa.
 const _DC_SUPL = /([oô]mega|vitamina|\bvit\b|creatina|whey|multivitamin|magn[ée]sio|zinco|sel[eê]nio|natto|coenzima|curcuma|c[uú]rcuma|resveratrol|berberina|ashwagandha|melatonina|col[áa]geno|glutamina|cafe[íi]na|ioimbina|taurina|arginina|citrulina|beta ?alanina|psyllium|probi[óo]tico|enzimas|pic?olinato|inositol|espirulina|cloreto de magn|epa e dha)/i;
+// v671 (pedido da Ajustes, Sala #4849): o que é de aplicar saía com o desenho de comprimido e um aluno leu "NPP" como remédio de engolir.
+// A pílula fica só pro que é de engolir; o que é de aplicar e não tem desenho próprio sai com a seringa. Decide só pelo nome e pela via escrita.
+const _PROTO_ICONES = {
+      'testo': '💪', 'testosterona': '💪', 'enantato': '💪', 'cipionato': '💪', 'propionato': '💪', 'sustanon': '💪',
+      'gh': '🧬', 'hgh': '🧬', 'somatropina': '🧬',
+      'bpc': '🩹', 'tb-500': '🩹', 'tb500': '🩹',
+      'mk-677': '🧪', 'ipamorelin': '🧪', 'cjc': '🧪', 'ghrp': '🧪', 'sermorelin': '🧪',
+      'oxan': '💊', 'stano': '💊', 'diana': '💊', 'primo': '💊', 'trembo': '💊', 'bolde': '💊', 'deca': '💊', 'masteron': '💊',
+      'hcg': '🔬', 'clomid': '🔬', 'tamox': '🔬', 'anastro': '🔬', 'exemestano': '🔬', 'letro': '🔬',
+      'insulina': '💉', 't3': '⚡', 't4': '⚡', 'clenbu': '⚡',
+      'melanotan': '☀️', 'pt-141': '☀️',
+      'sema': '💊', 'tirze': '💊', 'ozempic': '💊'
+};
+const _PROTO_INJ_MARCA = /ozempic|wegovy|mounjaro|saxenda|zepbound/i;
+function _protoIcone(p) {
+  const nome = String((p && p.nome) || ''), baixo = nome.toLowerCase(), obs = (p && p.obs) || '', dose = (p && p.dose) || '';
+  let icon = '💊';
+  for (const [key, emoji] of Object.entries(_PROTO_ICONES)) { if (baixo.includes(key)) { icon = emoji; break; } }
+  if (icon !== '💊' || _dcEhOral(nome, obs, dose)) return icon;
+  const base = nome.replace(/\([^)]*\)/g, ' ');
+  return (_DC_INJ.test(base) || _PROTO_INJ_MARCA.test(base) || /(intramuscular|subcut[âa]n|\bIM\b|\bSC\b|seringa|gl[úu]teo|deltoid)/i.test(base + ' ' + obs)) ? '💉' : '💊';
+}
 function _dcEhOral(nome, obs, dose) {
   // A Entregas escreve a FINALIDADE entre parênteses ("GHK-Cu (colágeno, pele e cabelo)").
   // Isso é o efeito, não a composição: sem tirar, o GHK-Cu virava "suplemento de colágeno"
@@ -27450,24 +27472,9 @@ function renderDiet() {
     html += `<div class="diet-section-toggle" onclick="toggleDietSection('proto')"><span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></span><span class="tog-label">Protocolo</span><span class="tog-chev" id="protoArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></div>`;
     html += `<div class="diet-section-content" id="protoContent">`;
 
-    const icons = {
-      'testo': '💪', 'testosterona': '💪', 'enantato': '💪', 'cipionato': '💪', 'propionato': '💪', 'sustanon': '💪',
-      'gh': '🧬', 'hgh': '🧬', 'somatropina': '🧬',
-      'bpc': '🩹', 'tb-500': '🩹', 'tb500': '🩹',
-      'mk-677': '🧪', 'ipamorelin': '🧪', 'cjc': '🧪', 'ghrp': '🧪', 'sermorelin': '🧪',
-      'oxan': '💊', 'stano': '💊', 'diana': '💊', 'primo': '💊', 'trembo': '💊', 'bolde': '💊', 'deca': '💊', 'masteron': '💊',
-      'hcg': '🔬', 'clomid': '🔬', 'tamox': '🔬', 'anastro': '🔬', 'exemestano': '🔬', 'letro': '🔬',
-      'insulina': '💉', 't3': '⚡', 't4': '⚡', 'clenbu': '⚡',
-      'melanotan': '☀️', 'pt-141': '☀️',
-      'sema': '💊', 'tirze': '💊', 'ozempic': '💊'
-    };
 
     d.protocolos.forEach((p, _pi) => {
-      const nameLower = String(p.nome || '').toLowerCase();
-      let icon = '💊';
-      for (const [key, emoji] of Object.entries(icons)) {
-        if (nameLower.includes(key)) { icon = emoji; break; }
-      }
+      const icon = _protoIcone(p);
 
       if (!String(p.nome || '').trim() && !p.dose && !p.obs) return;   // linha em branco da planilha
       // Orientação do protocolo (frase longa sem dose) não é substância: sai como nota,
@@ -29758,7 +29765,7 @@ async function painelGateSubmit() {
 if ('serviceWorker' in navigator) {
   (function () {
     // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-    var APP_SHELL_V = 'metodo-gh-v670';
+    var APP_SHELL_V = 'metodo-gh-v671';
     window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
     var carregouEm = Date.now();
     // v593: tira o ?atualiza= da URL depois que a recarga forçada serviu (ficava pra sempre na barra e virava mais uma cópia do shell no cache)
