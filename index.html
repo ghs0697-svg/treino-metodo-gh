@@ -1456,6 +1456,23 @@
   .proto-aviso { display: flex; align-items: center; gap: 12px; margin: 12px 14px 0; padding: 12px 14px; background: var(--card); border: 1px solid rgba(212,175,106,0.42); border-radius: 14px; box-shadow: var(--hairline); }
   .proto-aviso-ic { width: 34px; height: 34px; border-radius: 10px; background: var(--gold-soft); color: var(--gold); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .proto-aviso-ic svg { width: 18px; height: 18px; }
+  /* v679: aviso do app na loja */
+  .loja-aviso { margin: 12px 14px 0; padding: 14px; border-radius: 16px; border: 1px solid rgba(212,175,106,.5);
+    background: radial-gradient(120% 120% at 0% 0%, rgba(212,175,106,.16) 0%, rgba(0,0,0,0) 60%), var(--card); box-shadow: var(--hairline); }
+  .loja-aviso-top { display: flex; gap: 12px; align-items: flex-start; }
+  .loja-aviso-ic img { width: 40px; height: 40px; border-radius: 10px; display: block; }
+  .loja-aviso-txt { flex: 1; min-width: 0; }
+  .loja-aviso-title { font-weight: 800; font-size: 15px; color: var(--white); line-height: 1.25; }
+  .loja-aviso-sub { font-size: 12.5px; color: var(--muted, #a39b8e); line-height: 1.45; margin-top: 3px; }
+  .loja-aviso-passos { margin: 11px 0 0; padding-left: 20px; font-size: 12.5px; line-height: 1.6; color: var(--white); }
+  .loja-aviso-passos b { color: var(--gold); }
+  .loja-aviso-bts { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .loja-bt { flex: 1 1 140px; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 12px; border-radius: 12px; background: #000; color: #fff; text-decoration: none; border: 1px solid rgba(255,255,255,.22); }
+  .loja-bt svg { width: 22px; height: 22px; flex-shrink: 0; }
+  .loja-bt span { display: flex; flex-direction: column; font-weight: 700; font-size: 15px; line-height: 1.05; text-align: left; }
+  .loja-bt small { font-size: 9.5px; font-weight: 600; opacity: .8; }
+  .loja-aviso-ja { display: block; margin: 9px auto 0; background: none; border: 0; color: var(--muted, #a39b8e); font-family: inherit; font-size: 12px; font-weight: 700; text-decoration: underline; cursor: pointer; padding: 4px; }
+  html.app-loja #lojaAviso, html.app-loja .mais-loja { display: none !important; }
   .proto-aviso-txt { flex: 1; min-width: 0; }
   .proto-aviso-title { color: var(--white); font-weight: 700; font-size: 13px; letter-spacing: 0.01em; }
   .proto-aviso-sub { color: var(--muted); font-size: 11.5px; line-height: 1.45; margin-top: 1px; }
@@ -6234,6 +6251,28 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
 <div id="equipeVencidoBanner" style="display:none;background:#2a1f10;border-bottom:1px solid #6b5324;padding:9px 14px;color:#e8d9ac;font-size:12px;line-height:1.5;"></div>
 
 <!-- ══ AVISO DE REAJUSTE / AJUSTE NO PROTOCOLO (substitui o hook do WhatsApp) ══ -->
+<!-- v679: o app chegou na App Store e no Google Play (aviso pra quem usa pelo navegador ou pelo app instalado pelo navegador) -->
+<div id="lojaAviso" class="loja-aviso" style="display:none;">
+  <div class="loja-aviso-top">
+    <span class="loja-aviso-ic"><img src="icon-192.png" alt="" width="40" height="40"></span>
+    <div class="loja-aviso-txt">
+      <div class="loja-aviso-title">O app do Método GH chegou na loja</div>
+      <div class="loja-aviso-sub">Baixa o app oficial, com o ícone na tela e abrindo direto no teu protocolo. Teus treinos, cargas e dieta vão junto.</div>
+    </div>
+    <button class="proto-aviso-x" onclick="fechaLojaAviso()" title="Fechar" aria-label="Fechar aviso">&times;</button>
+  </div>
+  <ol class="loja-aviso-passos">
+    <li>Toca no botão e baixa o <b>Método GH</b>.</li>
+    <li>Na primeira vez, toca em <b>Primeiro acesso? Cria tua senha</b>.</li>
+    <li>Coloca o <b>e-mail que tu usou na anamnese</b>, o <b>CPF</b> e uma senha tua.</li>
+  </ol>
+  <div class="loja-aviso-bts">
+    <a class="loja-bt" id="lojaBtIos" href="https://apps.apple.com/br/app/id6833762884" target="_blank" rel="noopener" onclick="_lojaToque('App Store')"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.3-.9-1.7 0-3.3 1-4.2 2.5-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8 1.6 0 2 .8 3.4.8 1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9 0 0-2.8-1.1-2.8-4zM13.9 5c.7-.9 1.2-2 1.1-3.2-1 0-2.3.7-3 1.6-.7.8-1.3 2-1.1 3.1 1.1.1 2.3-.6 3-1.5z"/></svg><span><small>Baixar na</small>App Store</span></a>
+    <a class="loja-bt" id="lojaBtAnd" href="https://play.google.com/store/apps/details?id=br.com.metodogh.app" target="_blank" rel="noopener" onclick="_lojaToque('Google Play')"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3.6 1.8c-.3.3-.4.7-.4 1.2v18c0 .5.1.9.4 1.2l10-10.2-10-10.2zm11.1 11.3 2.8 2.9-11.9 6.8 9.1-9.7zm0-2.2L5.6 1.2l11.9 6.8-2.8 2.9zm3.9-2.2 3.2 1.8c.9.5.9 1.4 0 1.9l-3.2 1.8-3.1-2.8 3.1-2.7z"/></svg><span><small>Disponível no</small>Google Play</span></a>
+  </div>
+  <button type="button" class="loja-aviso-ja" onclick="fechaLojaAviso(true)">Já baixei</button>
+</div>
+
 <div id="protoAviso" class="proto-aviso" style="display:none;">
   <span class="proto-aviso-ic" id="protoAvisoIc"></span>
   <div class="proto-aviso-txt">
@@ -8607,7 +8646,10 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
     <button type="button" class="mais-opt" style="position:relative;" onclick="closeMaisSheet(); switchView('novidades')">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span><span>Novidades</span><span class="sup-dot" id="novDotMais" style="top:50%;transform:translateY(-50%);right:10px;"></span>
     </button>
-    <button type="button" class="mais-opt destaque" onclick="closeMaisSheet(); showInstallInstructions()">
+    <button type="button" class="mais-opt destaque mais-loja" onclick="closeMaisSheet(); abrirLojaAviso()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2.5"/><line x1="12" y1="18" x2="12" y2="18.01"/><polyline points="9 9 12 12 15 9"/><line x1="12" y1="5" x2="12" y2="12"/></svg></span><span>Baixar o app (App Store e Google Play)</span>
+    </button>
+    <button type="button" class="mais-opt" onclick="closeMaisSheet(); showInstallInstructions()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span><span>Instalar app na tela inicial</span>
     </button>
     <button type="button" class="mais-opt" style="position:relative;" onclick="closeMaisSheet(); openChatModal()">
@@ -14849,6 +14891,40 @@ function _renderProtoAviso() {
     el.style.display = 'flex';
   } catch (_) { el.style.display = 'none'; }
 }
+// v679: aviso do app na loja. Só pra aluno (sem editor/admin) fora do app da loja. "Já baixei" some de vez; o X some por 5 dias.
+const LOJA_AVISO = true;
+function _renderLojaAviso() {
+  const el = document.getElementById('lojaAviso'); if (!el) return;
+  try {
+    const bp = new URLSearchParams(location.search);
+    if (!LOJA_AVISO || _LOJA || !SHEET_ID || bp.has('editor') || bp.has('admin') || bp.get('edit') === '1') { el.style.display = 'none'; return; }
+    const st = JSON.parse(localStorage.getItem('gh_loja_aviso') || 'null');
+    if (st && (st.ja || (Date.now() - (Number(st.at) || 0)) < 5 * 86400000)) { el.style.display = 'none'; return; }
+    const ua = navigator.userAgent || '', ios = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1), and = /Android/i.test(ua);
+    document.getElementById('lojaBtIos').style.display = and && !ios ? 'none' : '';
+    document.getElementById('lojaBtAnd').style.display = ios && !and ? 'none' : '';
+    el.style.display = 'block';
+  } catch (_) { el.style.display = 'none'; }
+}
+function _lojaToque(qual) {
+  try {
+    if (typeof LOG_ENDPOINT !== 'undefined' && SHEET_ID) fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true,
+      body: JSON.stringify({ type: 'click', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome') ? document.getElementById('infoNome').textContent : '').trim(),
+        partner: 'loja', productName: qual, url: '', tag: 'AVISO INICIO', ts: new Date().toISOString() }) }).catch(function () {});
+  } catch (_) {}
+}
+function fechaLojaAviso(ja) {
+  try { localStorage.setItem('gh_loja_aviso', JSON.stringify({ ja: !!ja, at: Date.now() })); } catch (_) {}
+  _lojaToque(ja ? 'já baixei' : 'fechou');
+  const el = document.getElementById('lojaAviso'); if (el) el.style.display = 'none';
+}
+function abrirLojaAviso() {
+  try { localStorage.removeItem('gh_loja_aviso'); } catch (_) {}
+  try { switchView('treino'); } catch (_) {}
+  _renderLojaAviso();
+  const el = document.getElementById('lojaAviso');
+  if (el && el.style.display !== 'none') setTimeout(function () { try { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {} }, 90);
+}
 function dismissProtoAviso() {
   try {
     var K = _avisoKeys();
@@ -18285,6 +18361,7 @@ async function loadFromSheets(injectedText) {
     _ok_('tabs', () => renderTabs());
     _ok_('migra', () => migrateLegacyDoneKeys_());
     _ok_('aviso', () => { if (typeof _renderProtoAviso === 'function') _renderProtoAviso(); }); // mostra aviso salvo na hora (antes do fetch)
+    _ok_('lojaAviso', () => { if (typeof _renderLojaAviso === 'function') _renderLojaAviso(); });   // v679
     _ok_('lastmod', () => loadAndShowLastModified());
     _ok_('unidade', () => updateUnitToggleLabel());
     renderExercises();   // render IMEDIATO dos exercicios (do local) — NAO espera rede. Senao um flush numa rede ruim segurava os cards do dia em branco.
@@ -25568,7 +25645,9 @@ function _cupomCopia(codigo, btn) {
 // com mais alguns nomes comerciais); a Prescrição médica (outra seção, d.med); e o que farmácia de manipulação não faz (whey e
 // proteína em pó). A lista vai na URL da rota do CRM (itens=), que escreve a mensagem do WhatsApp com o código de indicação.
 const _RENATO_SEC = /hormon|protocolo|\bciclo\b|\btpc\b|pept|aplica|injet|medicament|remedio|prescri|\bmedic/;
-const _RENATO_FORA = /testo|enantato|cipionato|propionato|undecanoato|durateston|deca\b|nandrol|\bnpp\b|trembol|oxandrol|anavar|primobol|bolden|equipoise|masteron|drostanol|stanoz|winstrol|dianabol|metandrost|hemogenin|oximetol|turinabol|halotest|fluoximest|\bdhb\b|clomif|\bhcg\b|gonadotrof|tirzep|retatrut|semaglut|ozempic|mounjaro|wegovy|saxenda|liraglut|\bcjc\b|ipamorel|\bbpc\b|tb-? ?500|mots-? ?c|ghk|tesamorel|somatrop|hormonio|peptideo|clembut|clenbut|ioimbina|yohimb|sibutram|levotirox|puran\b|synthroid|\bt3\b|\bt4\b|finaster|dutaster|minoxidil|sildenafil|tadalafil|insulina|seringa|agulha|intramusc|subcut|statina|crestor|lipitor|losartan|valsartan|olmesartan|janumet|sitaglipt|vildaglipt|dapaglif|empaglif|forxiga|jardiance|anlodipin|enalapril|captopril|hidroclorot|atenolol|propranolol|omeprazol|pantoprazol|esomeprazol|roacutan|isotretino|anticoncep/;
+const _RENATO_FORA = /testo|enantato|cipionato|propionato|undecanoato|durateston|deca\b|nandrol|\bnpp\b|trembol|primobol|bolden|equipoise|masteron|drostanol|stanoz|winstrol|dianabol|metandrost|turinabol|halotest|fluoximest|\bdhb\b|clomif|\bhcg\b|gonadotrof|tirzep|retatrut|semaglut|ozempic|mounjaro|wegovy|saxenda|liraglut|\bcjc\b|ipamorel|\bbpc\b|tb-? ?500|mots-? ?c|ghk|tesamorel|somatrop|hormonio|peptideo|clembut|clenbut|ioimbina|yohimb|sibutram|levotirox|puran\b|synthroid|\bt3\b|\bt4\b|finaster|dutaster|minoxidil|sildenafil|tadalafil|insulina|seringa|agulha|intramusc|subcut|statina|crestor|lipitor|losartan|valsartan|olmesartan|janumet|sitaglipt|vildaglipt|dapaglif|empaglif|forxiga|jardiance|anlodipin|enalapril|captopril|hidroclorot|atenolol|propranolol|omeprazol|pantoprazol|esomeprazol|roacutan|isotretino|anticoncep/;
+// v679 (GH 19/11): orais anabolizantes que a farmácia manipula e vão na lista, até do bloco do protocolo
+const _RENATO_ORAL = /oxandrol|anavar|hemogenin|oximetol/;
 const _RENATO_NAO = /whey|proteina (em po|isolada|concentrada|vegetal)|albumina|hipercalor|caseina|barra de proteina/;
 function _suplRenatoItens(d) {
   const nrm = function (t) { return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); };
@@ -25585,6 +25664,14 @@ function _suplRenatoItens(d) {
       if (idx[k] === undefined) { idx[k] = mapa.length; mapa.push({ nome: nome, dose: dose, horas: [] }); }
       const it = mapa[idx[k]]; if (hora && it.horas.indexOf(hora) < 0) it.horas.push(hora);
     });
+  });
+  // v679: oxandrolona e oximetolona escritas no bloco do protocolo (não na Suplementação) entram também, sem horário
+  ((d && d.protocolos) || []).forEach(function (p) {
+    const nome = String(p.nome || '').trim(), dose = String(p.dose || '').trim();
+    if (!nome || !_RENATO_ORAL.test(nrm(nome))) return;
+    if (/injet|intramusc|\bml\b|ampola|aplica/.test(nrm(nome + ' ' + dose))) return;
+    const k = nrm(nome).replace(/\s+/g, ' ') + '|' + nrm(dose).replace(/\s+/g, '');
+    if (idx[k] === undefined) { idx[k] = mapa.length; mapa.push({ nome: nome, dose: dose, horas: [] }); }
   });
   return mapa.map(function (it) {
     const hs = it.horas.length > 1 ? it.horas.slice(0, -1).join(', ') + ' e ' + it.horas[it.horas.length - 1] : (it.horas[0] || '');
@@ -30017,7 +30104,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v678';
+var APP_SHELL_V = 'metodo-gh-v679';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
