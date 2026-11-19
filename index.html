@@ -29948,7 +29948,7 @@ function _clErro(cod) {
     login: 'E-mail ou senha não conferem.', muitas_tentativas: 'Muitas tentativas. Espera 15 minutos e tenta de novo.',
     sessao: 'Entra de novo com teu e-mail e senha.', cota: 'Não consegui mandar o e-mail agora. Tenta de novo amanhã ou fala com o suporte.',
     rede: 'Sem conexão com o servidor. Confere a internet e tenta de novo.',
-    sem_forms: 'Não achei esse e-mail nas respostas da anamnese. Confere se é o mesmo e-mail que tu colocou nela.',
+    sem_forms: 'Não achei esse e-mail na tua anamnese. Se lá tu colocou outro e-mail, usa ele aqui. Ou confirma este e-mail com o teu WhatsApp:',
     nao_confere: 'O CPF não bate com o desse e-mail. Confere os números.'
   };
   return m[cod] || 'Não deu certo agora. Tenta de novo em instantes.';
@@ -29986,7 +29986,7 @@ function contaTela(tela) {
         _clCampo('clCpf', 'CPF', 'text', 'inputmode="numeric" autocomplete="off" maxlength="14" oninput="contaMascaraCpf(this)"') +
         _clCampo('clSenha', 'Crie uma senha (6 ou mais caracteres)', 'password', 'autocomplete="new-password"') +
         '<button class="cl-btn" id="clBtn" onclick="contaPrimeiro()">Criar minha senha</button>' +
-        '<div id="clSemForms" style="display:none"><button class="cl-btn2" onclick="contaAnamnese()">Ainda não respondi: abrir a anamnese</button></div>' +
+        '<div id="clSemForms" style="display:none"><button class="cl-btn2" onclick="contaTela(\'criar\')">Usar este e-mail: confirmar pelo WhatsApp</button><button class="cl-link cl-fraco" onclick="contaAnamnese()">Ainda não respondi a anamnese</button></div>' +   // v685 (GH 19/11): aluno que trocou de e-mail ia pra anamnese e ficava sem saída
         '<button class="cl-link" onclick="contaTela(\'entrar\')">Já tenho conta</button>' +
         '<button class="cl-link cl-fraco" onclick="contaTela(\'criar\')">Não consegui? Confirmar pelo e-mail</button>';
   } else if (tela === 'criar') {
@@ -30265,7 +30265,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v684';
+var APP_SHELL_V = 'metodo-gh-v685';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
