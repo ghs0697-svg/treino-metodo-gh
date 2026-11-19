@@ -29943,7 +29943,7 @@ function _clErro(cod) {
   var m = {
     email: 'Confere o e-mail.', cpf: 'Confere o CPF, ele não está batendo.', telefone: 'Confere o WhatsApp com DDD.',
     nome: 'Escreve teu nome completo.', senha: 'A senha precisa ter pelo menos 6 caracteres.',
-    ja_existe: 'Esse e-mail já tem conta. Toca em Entrar.', codigo_errado: 'Código errado. Confere no teu e-mail.',
+    ja_existe: 'Esse e-mail já tem conta. Toca em Entrar.', sem_conta: 'Esse e-mail ainda não tem conta. Cria tua senha aqui, com o e-mail da anamnese e o teu CPF.', codigo_errado: 'Código errado. Confere no teu e-mail.',
     codigo_expirado: 'O código venceu. Pede um novo.', muitos_codigos: 'Muitos códigos pedidos. Tenta de novo daqui a uma hora.',
     login: 'E-mail ou senha não conferem.', muitas_tentativas: 'Muitas tentativas. Espera 15 minutos e tenta de novo.',
     sessao: 'Entra de novo com teu e-mail e senha.', cota: 'Não consegui mandar o e-mail agora. Tenta de novo amanhã ou fala com o suporte.',
@@ -30011,6 +30011,7 @@ function contaTela(tela) {
     sub.textContent = 'Trocar a senha';
     h = _clCampo('clEmail', 'E-mail da conta', 'email', 'autocomplete="email" inputmode="email" autocapitalize="off"') +
         '<button class="cl-btn" id="clBtn" onclick="contaPedeCodigo(\'senha\')">Mandar código</button>' +
+        '<button class="cl-link" onclick="contaTela(\'primeiro\')">Nunca criei senha? Primeiro acesso</button>' +
         '<button class="cl-link" onclick="contaTela(\'entrar\')">Voltar</button>';
   } else if (tela === 'carregando') {
     sub.textContent = '';
@@ -30067,6 +30068,10 @@ async function contaPedeCodigo(motivo, reenvio) {
   _clOcupado(true);
   var r = await _clPost({ type: 'conta_codigo', email: email, motivo: motivo });
   _clOcupado(false);
+  if (r && r.erro === 'sem_conta') {   // v684 (GH 19/11): sem conta, "Esqueci a senha" leva pro Primeiro acesso com o e-mail já preenchido
+    contaTela('primeiro'); try { document.getElementById('clEmail').value = email; } catch (_) {}
+    document.getElementById('clErr').textContent = _clErro('sem_conta'); return;
+  }
   if (!r || !r.ok) { document.getElementById('clErr').textContent = _clErro(r && r.erro); return; }
   if (reenvio) { document.getElementById('clErr').textContent = 'Mandei um código novo.'; return; }
   contaTela(motivo === 'criar' ? 'criar_codigo' : 'senha_codigo');
@@ -30260,7 +30265,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v683';
+var APP_SHELL_V = 'metodo-gh-v684';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
