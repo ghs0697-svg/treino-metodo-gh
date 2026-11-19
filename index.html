@@ -479,7 +479,7 @@
   .modo-seg { display: flex; flex: none; background: #0f0e0c; border: 1px solid rgba(212,175,106,.3); border-radius: 999px; padding: 3px; }
   .modo-seg button { border: 0; background: transparent; color: #a39a86; font-family: inherit; font-size: 12.5px; font-weight: 700; line-height: 1; padding: 8px 13px; border-radius: 999px; cursor: pointer; }
   .modo-seg button.on { background: var(--gold-bg, var(--gold)); color: #15100a; }
-  body:not(.has-bnav) .modo-bar, body.view-dieta .modo-bar, body.view-ghflix .modo-bar, body.view-progresso .modo-bar, body.view-novidades .modo-bar { display: none; }
+  body:not(.has-bnav) .modo-bar, body.view-dieta .modo-bar, body.view-ghflix .modo-bar, body.view-progresso .modo-bar, body.view-novidades .modo-bar, body.view-hoje .modo-bar { display: none; }
   body.modo-simples #studentInfo, body.modo-simples #protoProgress, body.modo-simples #dayHero,
   body.modo-simples #esforcoAlvoBadge, body.modo-simples #metaNotasBadge,
   body.modo-simples .instructions-toggle, body.modo-simples .instructions-content,
@@ -507,7 +507,7 @@
   .intu-ajuda ol { margin: 0; padding-left: 20px; }
   .intu-ajuda li { margin: 3px 0; }
   .intu-ajuda .ia-x { position: absolute; top: 6px; right: 6px; width: 34px; height: 34px; border: 0; background: transparent; color: #a39a86; font-size: 22px; line-height: 1; cursor: pointer; }
-  body.modo-simples.has-bnav:not(.aj-t-off):not(.view-dieta):not(.view-ghflix):not(.view-progresso):not(.view-novidades) #intuAjudaT { display: block; }
+  body.modo-simples.has-bnav:not(.aj-t-off):not(.view-dieta):not(.view-ghflix):not(.view-progresso):not(.view-novidades):not(.view-hoje) #intuAjudaT { display: block; }
   body.modo-simples.has-bnav:not(.aj-d-off) #intuAjudaD { display: block; }
   /* treino */
   body.modo-simples .exercise-name { font-size: 17px; }
@@ -1895,7 +1895,7 @@
   :root[data-theme="light"] .parc-tile { background: radial-gradient(120% 90% at 0% 0%, var(--pc) 0%, rgba(255, 255, 255, 0) 65%), var(--liq-fill, #fff); border-color: rgba(255, 255, 255, .85); box-shadow: 0 0 0 .5px rgba(110, 84, 30, .2), inset 0 1.5px 0 #fff, 0 6px 16px rgba(92, 70, 24, .10); color: #2a2418; }
   :root[data-theme="light"] .parc-tile .pt-ic { background: rgba(255, 255, 255, .7); border-color: rgba(255, 255, 255, .9); }
   :root[data-theme="light"] .parc-tile .pt-s, :root[data-theme="light"] .parc-strip-v { color: #6f6553; }
-  body.view-dieta #parcStripT, body.view-ghflix #parcStripT, body.view-progresso #parcStripT, body.view-novidades #parcStripT { display: none !important; }
+  body.view-dieta #parcStripT, body.view-ghflix #parcStripT, body.view-progresso #parcStripT, body.view-novidades #parcStripT, body.view-hoje #parcStripT { display: none !important; }
   .parc-flash { animation: parcFlash 1.8s ease 1; }
   @keyframes parcFlash { 0%, 55% { box-shadow: 0 0 0 2px var(--gold), 0 0 24px rgba(212, 175, 106, .55); } 100% { box-shadow: 0 0 0 0 rgba(212, 175, 106, 0); } }
   /* v678: atalho do Renato no aviso de reajuste */
@@ -1941,7 +1941,7 @@
   :root[data-theme="light"] .guia-tile .gt-s { color: #6f6553; }
   body:not(.modo-simples) .instructions-toggle.guia-src:not(.guia-aberta) { display: none !important; }
   body:not(.modo-simples) .instructions-toggle.guia-aberta { margin-top: 14px; }
-  body.modo-simples #guiasT, body.view-ghflix #guiasT, body.view-progresso #guiasT, body.view-novidades #guiasT { display: none !important; }
+  body.modo-simples #guiasT, body.view-ghflix #guiasT, body.view-progresso #guiasT, body.view-novidades #guiasT, body.view-hoje #guiasT { display: none !important; }
   body.view-dieta .guia-tile[data-g="instr"], body.view-dieta .guia-tile[data-g="hipo"] { display: none !important; }
   .parc-toast { position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 9999; max-width: calc(100% - 40px);
     background: #1f1c17; color: #f3ead8; border: 1px solid rgba(212, 175, 106, .6); border-radius: 14px; padding: 10px 14px; font-size: 13px; font-weight: 700; text-align: center;
@@ -2205,6 +2205,30 @@
   body.view-progresso #cardioTreino,
   body.view-progresso .instructions-toggle,
   body.view-progresso .instructions-content { display: none !important; }
+  body.view-hoje #studentInfo,
+  body.view-hoje #dayHero,
+  body.view-hoje #muscleMap,
+  body.view-hoje #dayProgress,
+  body.view-hoje #dayTabs,
+  body.view-hoje #weekSelector,
+  body.view-hoje #exerciseContainer,
+  body.view-hoje #instrToggle,
+  body.view-hoje #instructionsContent,
+  body.view-hoje #hipoToggle,
+  body.view-hoje #hipoContent,
+  body.view-hoje #errorBox,
+  body.view-hoje #loadingScreen,
+  body.view-hoje #videoOverlay,
+  body.view-hoje #adminPanel,
+  body.view-hoje #treinoBlocoTabs,
+  body.view-hoje #protoProgress,
+  body.view-hoje .focus-entry,
+  body.view-hoje #dietaView,
+  body.view-hoje #ghflixView,
+  body.view-hoje #cardioTreino,
+  body.view-hoje .instructions-toggle,
+  body.view-hoje .instructions-content,
+  body.view-hoje #progressoView { display: none !important; }
   /* ══ NOVIDADES (v476, GH 18/09/2026): feed de cards alimentado pela aba NOVIDADES da mestre ══ */
   body.view-novidades #studentInfo,
   body.view-novidades #dayHero,
@@ -2287,6 +2311,20 @@
   #novDotBn { top: 6px; right: 26px; }
   #progressoView { display: none; }
   body.view-progresso #progressoView { display: block !important; }
+  /* v686 (GH 19/11, ideia do estudo do Rodolfo): aba Hoje, a tela de abertura com só o que é de hoje. Mesmo visual dos cards do Progresso. */
+  #hojeView { display: none; }
+  body.view-hoje #hojeView { display: block !important; }
+  body.view-hoje .hdr-chips { display: none !important; }   /* esforço e Como ler são da ficha de treino */
+  .hj-ola { font-size: 22px; font-weight: 700; color: var(--fg, #f5f1e8); margin: 4px 2px 2px; }
+  .hj-sub { font-size: 12.5px; color: var(--fg-3, #9a9389); margin: 0 2px 14px; }
+  .hj-nome { font-size: 17px; font-weight: 700; margin: 2px 2px 8px; color: var(--fg, #f5f1e8); }
+  .hj-txt { font-size: 12.5px; color: var(--fg-3, #9a9389); margin: 0 2px 10px; line-height: 1.5; }
+  .hj-par { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .hj-par .pg-card { margin-bottom: 14px; }
+  .hj-num { font-size: 20px; font-weight: 700; margin: 2px 2px 10px; color: var(--fg, #f5f1e8); }
+  .hj-num small { font-size: 12px; font-weight: 500; color: var(--fg-3, #9a9389); }
+  .hj-pm { display: flex; gap: 8px; }
+  .hj-pm .te-btn { flex: 1; padding-left: 0; padding-right: 0; }
   .prog-screen { padding: 14px 14px 26px; max-width: 620px; margin: 0 auto; }
   .pg-card { background: var(--card); border: 1px solid rgba(212, 175, 106, .16); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
   /* títulos de seção na serif da marca (elegância 14/08: mesma família do TREINO DE HOJE) */
@@ -4467,6 +4505,7 @@
         Mais já fazem isso. 3) chips do exercício com palavra (Séries / Reps / Interv) no lugar de S/R/I. */
   body.view-dieta #esforcoAlvoBadge { display: none !important; }
   body.view-progresso #lastModBadge, body.view-progresso #proxReajusteBadge, body.view-progresso #esforcoAlvoBadge,
+  body.view-hoje #lastModBadge, body.view-hoje #proxReajusteBadge, body.view-hoje #esforcoAlvoBadge,
   body.view-ghflix #lastModBadge, body.view-ghflix #proxReajusteBadge, body.view-ghflix #esforcoAlvoBadge { display: none !important; }
   .exercise-tag .tl { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; opacity: .85; margin-right: 4px; }
   .focus-tag b { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
@@ -6415,6 +6454,7 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
 </div>
 <div id="ghflixView"></div>
 <div id="progressoView"></div>
+<div id="hojeView"></div>
 <div id="novidadesView"></div>
 
 <!-- ══ LOADING STATE ══ -->
@@ -8667,8 +8707,12 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
   <button class="renov-banner-x" onclick="dietBannerDismiss()" aria-label="Fechar">&times;</button>
 </div>
 
-<!-- ══ BARRA DE NAVEGAÇÃO INFERIOR (Treino · Dieta · Progresso · GHFlix · Mais) ══ -->
+<!-- ══ BARRA DE NAVEGAÇÃO INFERIOR (Hoje · Treino · Dieta · Progresso · Mais) ══ v686: o GHFlix foi pro Mais -->
 <div id="bottomNav">
+  <button type="button" class="bn-item" id="bnHoje" onclick="switchView('hoje')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></svg>
+    <span>Hoje</span>
+  </button>
   <button type="button" class="bn-item active" id="bnTreino" onclick="switchView('treino')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5h11v11h-11z" opacity="0"/><path d="M14.4 14.4 9.6 9.6"/><path d="M18.657 21.485a2 2 0 1 1-2.829-2.828l-1.767 1.768a2 2 0 1 1-2.829-2.829l6.364-6.364a2 2 0 1 1 2.829 2.829l1.767-1.768a2 2 0 1 1 2.829 2.828z"/><path d="m21.5 21.5-1.4-1.4"/><path d="M3.9 3.9 2.5 2.5"/><path d="M6.404 12.768a2 2 0 1 1-2.829-2.829l1.768-1.767a2 2 0 1 1-2.828-2.829l2.828-2.828a2 2 0 1 1 2.829 2.828l1.767-1.768a2 2 0 1 1 2.829 2.829z"/></svg>
     <span>Treino</span>
@@ -8680,10 +8724,6 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
   <button type="button" class="bn-item" id="bnProgresso" onclick="switchView('progresso')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
     <span>Progresso</span>
-  </button>
-  <button type="button" class="bn-item" id="bnGhflix" onclick="switchView('ghflix')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-    <span>GHFlix</span>
   </button>
   <button type="button" class="bn-item" id="bnMais" onclick="openMaisSheet()">
     <span class="sup-dot" id="supDotBn"></span>
@@ -8750,6 +8790,9 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
     </button>
     </div>
     <div class="mais-sep">APP E NOVIDADES</div>
+    <button type="button" class="mais-opt" id="maisGhflix" onclick="closeMaisSheet(); switchView('ghflix')">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg></span><span>GHFlix <span style="color:#9a9488;font-weight:500;">(aulas do método)</span></span>
+    </button>
     <button type="button" class="mais-opt" style="position:relative;" onclick="closeMaisSheet(); switchView('novidades')">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span><span>Novidades</span><span class="sup-dot" id="novDotMais" style="top:50%;transform:translateY(-50%);right:10px;"></span>
     </button>
@@ -9969,6 +10012,8 @@ const I18N_EN = {
 };
 // v479: telas novas (aviso da live, semana, timer, indicacao, banner, letra, novidades, resultado, pill de troca)
 Object.assign(I18N_EN, {
+  'Hoje': 'Today', 'HOJE': 'TODAY', 'TREINO DE HOJE': 'TODAY\'S WORKOUT', 'PRÓXIMA REFEIÇÃO': 'NEXT MEAL', 'DIETA DE HOJE': 'TODAY\'S DIET', 'ÁGUA': 'WATER', 'CARDIO DA SEMANA': 'CARDIO THIS WEEK',
+  'Ir pro treino': 'Go to workout', 'Ver dieta': 'See diet', 'Ver cardio': 'See cardio', 'Ver meus treinos': 'See my workouts', 'Refeições de hoje feitas ✓': 'Today\'s meals done ✓', 'Treinos desta semana feitos ✓': 'This week\'s workouts done ✓', 'Olá!': 'Hi!', '(aulas do método)': '(method classes)',
   'NOVIDADES': 'NEWS', 'Novidades': 'News', 'Novidade': 'News', 'Link no grupo dos alunos': 'Link in the students group',
   'Entrar no grupo dos alunos': 'Join the students group', 'Ver mais': 'See more', 'Ver menos': 'See less', 'hoje': 'today', 'ontem': 'yesterday',
   'Nenhuma novidade por enquanto. Quando tiver, aparece aqui e o sino acende.': 'No news for now. When there is, it shows up here and the bell lights up.',
@@ -10028,7 +10073,13 @@ const I18N_RX = [
   [/^Semana passada: (.+)$/, 'Last week: $1'],
   [/^FORÇA ESTIMADA · (.+)$/, 'ESTIMATED STRENGTH · $1'],
   [/^Protocolo v(.+) · Atualizado em (.+)$/, 'Protocol v$1 · Updated on $2'],
-  [/^🎯 Teu alvo atual: (.+)$/, '🎯 Your current target: $1']
+  [/^🎯 Teu alvo atual: (.+)$/, '🎯 Your current target: $1'],
+  [/^Olá, (.+)!$/, 'Hi, $1!'],
+  [/^Tua etapa (.+)$/, 'Your stage $1'],
+  [/^Semana (\d+) do teu treino$/, 'Week $1 of your training'],
+  [/^(\d+) de (\d+) refeições? feitas? hoje$/, '$1 of $2 meals done today'],
+  [/^de (\d+) copos( ✓)?$/, 'of $1 glasses$2'],
+  [/^Semana (\d+) fechada\. O próximo treino abre na aba Treino\.$/, 'Week $1 closed. The next workout opens in the Workout tab.']
 ];
 function _i18nTxt(t) {
   const k = String(t == null ? '' : t).trim();
@@ -16024,6 +16075,7 @@ function _tourAlvo_(sel) {
   try { return document.querySelector('.day-content.active ' + sel) || document.querySelector(sel); } catch (_) { return document.querySelector(sel); }
 }
 function tourStart() {
+  try { if (document.body.classList.contains('view-hoje')) switchView('treino'); } catch (_) {}   // v686
   const passos = _tourSteps().filter(s => {
     const el = _tourAlvo_(s.sel);
     return el && (el.offsetParent !== null || getComputedStyle(el).position === 'fixed');
@@ -18442,6 +18494,7 @@ async function loadFromSheets(injectedText) {
     // saía calada e o app ficava sem barra nenhuma, com o treino inteiro na tela. Treino
     // renderizado = navegação ligada, a dieta não manda mais nisso.
     _showNav();
+    try { _hojeAbertura(); } catch (_) {}   // v686
     // Dispara o restore do servidor JA (assincrono, nao-awaited): em device NOVO (local vazio) os pesos
     // do servidor aparecem assim que o fetch volta, sem esperar o flush — evita o flash de carga em branco.
     // Seguro: restore e IF-EMPTY (nunca sobrescreve peso local), entao a ordem vs flush nao afeta o dado.
@@ -28107,11 +28160,95 @@ function toggleInstallGuide(show) {
   if (show) window.scrollTo(0, 0);
 }
 
+// ══ v686 (GH 19/11, do estudo de design do aluno Rodolfo): aba HOJE. O app abre nela com só o que é de hoje: o treino do dia,
+// a refeição da hora, água e cardio. O resto (lista do treino, dieta inteira, guias) fica nas abas de sempre. Visual = cards do Progresso.
+// Abre na Hoje uma vez por abertura. Fica no Treino quem mexeu no treino há menos de 90 min e não fechou o dia (está no meio do treino),
+// quem abriu o link da dieta, e o treinador (?edit=1).
+var _hojeAbriu = false;
+function _hojeAbertura() {
+  if (_hojeAbriu) return; _hojeAbriu = true;
+  try { if (/[?&]edit=1/.test(location.search)) return; } catch (_) {}
+  try { if (typeof TAB_NAME !== 'undefined' && String(TAB_NAME).toUpperCase() === 'DIETA') return; } catch (_) {}
+  try {
+    var b = document.body.classList;
+    if (b.contains('view-dieta') || b.contains('view-progresso') || b.contains('view-ghflix') || b.contains('view-novidades')) return;
+  } catch (_) {}
+  try {
+    var p = JSON.parse(localStorage.getItem(_posKey()) || 'null');
+    if (p && (Date.now() - (Number(p.ts) || 0)) < 90 * 60000 && Number.isInteger(p.di) && p.di === currentDay) {
+      var mexeu = false; try { var ex = (WORKOUT[p.di] || {}).exercises || []; for (var ei = 0; ei < ex.length; ei++) { if (isDone(p.di, ei)) { mexeu = true; break; } } } catch (_) {}
+      var fechou = false; try { fechou = allDoneOfDay(p.di, true); } catch (_) {}
+      if (mexeu && !fechou) return;
+    }
+  } catch (_) {}
+  switchView('hoje');
+}
+function _hjEsc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function renderHojeScreen() {
+  var host = document.getElementById('hojeView'); if (!host) return;
+  var h = '<div class="prog-screen">';
+  var nome = ''; try { nome = String((document.getElementById('infoNome') || {}).textContent || '').trim().split(/\s+/)[0] || ''; } catch (_) {}
+  if (nome) nome = nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
+  h += '<div class="hj-ola">' + (nome ? 'Olá, ' + _hjEsc(nome) + '!' : 'Olá!') + '</div>';
+  var etapa = ''; try { etapa = String((document.getElementById('maisPlanoTxt') || {}).textContent || '').trim(); } catch (_) {}
+  h += '<div class="hj-sub">' + ((etapa && !/conferindo|não consegui|sem data|vitalício/i.test(etapa)) ? 'Tua etapa ' + _hjEsc(etapa) : (typeof currentWeek !== 'undefined' ? 'Semana ' + currentWeek + ' do teu treino' : '')) + '</div>';
+  // treino de hoje
+  try {
+    if (typeof WORKOUT !== 'undefined' && WORKOUT && WORKOUT.length) {
+      var vis = []; for (var i = 0; i < WORKOUT.length; i++) if (_isVisibleDay(WORKOUT[i])) vis.push(i);
+      var todos = vis.length && vis.every(function (di) { try { return allDoneOfDay(di, true); } catch (_) { return false; } });
+      var di = currentDay, w = WORKOUT[di] || {};
+      h += '<div class="pg-card"><div class="pg-sec-t">TREINO DE HOJE</div>';
+      if (todos) {
+        h += '<div class="hj-nome">Treinos desta semana feitos ✓</div><div class="hj-txt">Semana ' + currentWeek + ' fechada. O próximo treino abre na aba Treino.</div>';
+        h += '<button type="button" class="te-btn" style="width:100%;" onclick="switchView(\'treino\')">Ver meus treinos</button>';
+      } else {
+        h += '<div class="hj-nome">' + _hjEsc(w.day || 'Treino') + '</div>' + (_diaProgHtml_(di) || '');
+        h += '<button type="button" class="te-btn" style="width:100%;" onclick="switchView(\'treino\')">Ir pro treino</button>';
+      }
+      h += '</div>';
+    }
+  } catch (_) {}
+  // refeição da hora
+  var D = (typeof DIET_DATA !== 'undefined' && DIET_DATA && DIET_DATA.ciclos && DIET_DATA.ciclos.length) ? DIET_DATA : null;
+  try {
+    if (D) {
+      var cy = D.ciclos[_dietCycleIdx] || D.ciclos[0], refs = (cy && cy.refeicoes) || [];
+      if (refs.length) {
+        var ri = _mealAgoraRi_(cy);
+        if (ri == null || isMealDone(ri)) { var prox = null; for (var r = (ri == null ? 0 : ri + 1); r < refs.length; r++) { if (!isMealDone(r)) { prox = r; break; } } ri = prox; }
+        var feitas = dietMealsDone(), tot = dietTotalMeals();
+        h += '<div class="pg-card"><div class="pg-sec-t">' + (ri == null ? 'DIETA DE HOJE' : 'PRÓXIMA REFEIÇÃO') + '</div>';
+        if (ri == null) h += '<div class="hj-nome">Refeições de hoje feitas ✓</div>';
+        else { var hr = ''; try { var hs = _refHoras(); hr = (hs[ri] && hs[ri].h) || ''; } catch (_) {} h += '<div class="hj-nome">' + _hjEsc(refs[ri].nome || ('Refeição ' + (ri + 1))) + (hr ? ' · ' + _hjEsc(hr) : '') + '</div>'; }
+        h += '<div class="hj-txt">' + feitas + ' de ' + tot + (tot === 1 ? ' refeição feita hoje' : ' refeições feitas hoje') + '</div>';
+        h += '<button type="button" class="te-btn" style="width:100%;" onclick="switchView(\'dieta\')">Ver dieta</button></div>';
+      }
+    }
+  } catch (_) {}
+  // água e cardio
+  try {
+    var n = waterCount(), metaL = _waterMetaLitros(), metaC = Math.ceil(metaL * 1000 / 200 - 1e-9);
+    var temCardio = !!(D && ((D.aerobicos || []).length || (D.orientacoes || []).some(function (o) { return /a[eé]r[oó]bic|cardio/i.test(o.categoria || ''); })));
+    var agua = '<div class="pg-card"><div class="pg-sec-t">ÁGUA</div><div class="hj-num">' + n + ' <small>de ' + metaC + ' copos' + (n >= metaC ? ' ✓' : '') + '</small></div>'
+      + '<div class="hj-pm"><button type="button" class="te-btn ghost" aria-label="Tirar um copo" onclick="hojeAgua(-1)">−</button><button type="button" class="te-btn" aria-label="Mais um copo" onclick="hojeAgua(1)">+</button></div></div>';
+    if (temCardio) {
+      var cc = cardioWeekCount(), ct = cardioTarget();
+      h += '<div class="hj-par">' + agua + '<div class="pg-card"><div class="pg-sec-t">CARDIO DA SEMANA</div><div class="hj-num">' + cc + ' <small>de ' + ct + (cc >= ct ? ' ✓' : '') + '</small></div>'
+        + '<button type="button" class="te-btn ghost" style="width:100%;" onclick="switchView(\'dieta\')">Ver cardio</button></div></div>';
+    } else h += agua;
+  } catch (_) {}
+  host.innerHTML = h + '</div>';
+}
+function hojeAgua(d) { try { addWater(d); } catch (_) {} renderHojeScreen(); }
+
 function switchView(view) {
   document.body.classList.toggle('view-dieta', view === 'dieta');
   document.body.classList.toggle('view-ghflix', view === 'ghflix');
   document.body.classList.toggle('view-progresso', view === 'progresso');
   document.body.classList.toggle('view-novidades', view === 'novidades');   // v476
+  document.body.classList.toggle('view-hoje', view === 'hoje');   // v686
+  if (view === 'hoje') { try { renderHojeScreen(); } catch (_) {} }
   if (view === 'novidades' && typeof novidadesAbrir === 'function') novidadesAbrir();
   // A15: se já falhou de verdade, NÃO re-tenta sozinho a cada toque (o aviso na aba tem botão "Tentar de novo");
   // se ainda não carregou e não falhou, carrega.
@@ -28122,11 +28259,11 @@ function switchView(view) {
   document.getElementById('navDieta').classList.toggle('active', view === 'dieta');
   var ng = document.getElementById('navGhflix'); if (ng) ng.classList.toggle('active', view === 'ghflix');
   // barra inferior acompanha
-  [['bnTreino', 'treino'], ['bnDieta', 'dieta'], ['bnProgresso', 'progresso'], ['bnGhflix', 'ghflix'], ['bnMais', 'novidades']].forEach(function (par) {
+  [['bnHoje', 'hoje'], ['bnTreino', 'treino'], ['bnDieta', 'dieta'], ['bnProgresso', 'progresso'], ['bnMais', 'novidades|ghflix']].forEach(function (par) {
     var b = document.getElementById(par[0]);
-    if (b) b.classList.toggle('active', view === par[1]);
+    if (b) b.classList.toggle('active', par[1].split('|').indexOf(view) !== -1);   // v686: GHFlix mora no Mais
   });
-  var titles = { dieta: 'PROTOCOLO ALIMENTAR', ghflix: 'GHFLIX', progresso: 'MEU PROGRESSO', treino: 'PROTOCOLO DE TREINO', novidades: 'NOVIDADES' };
+  var titles = { hoje: 'HOJE', dieta: 'PROTOCOLO ALIMENTAR', ghflix: 'GHFLIX', progresso: 'MEU PROGRESSO', treino: 'PROTOCOLO DE TREINO', novidades: 'NOVIDADES' };
   document.getElementById('headerTitle').textContent = titles[view] || titles.treino;
   if (typeof updatePdfButtonLabel === 'function') updatePdfButtonLabel();
   window.scrollTo(0, 0);
@@ -28385,6 +28522,7 @@ function _maisPlanoRender(j) {
     var dias = Math.round((v.getTime() - hoje.getTime()) / 86400000);
     var dBR = ('0' + v.getDate()).slice(-2) + '/' + ('0' + (v.getMonth() + 1)).slice(-2) + '/' + v.getFullYear();
     el.textContent = dias < 0 ? 'terminou em ' + dBR : (dias === 0 ? 'termina hoje (' + dBR + ')' : 'termina em ' + dBR + ' (' + dias + (dias === 1 ? ' dia' : ' dias') + ')');   // v566: etapa, não plano
+    try { if (document.body.classList.contains('view-hoje')) renderHojeScreen(); } catch (_) {}   // v686
   } catch (e) {}
 }
 // v539: entrada fixa pra anamnese de reajuste (GuiSBorges 28/09 "não tá aparecendo no app"; Leonardo 24/09 "onde coloco minhas medidas";
@@ -30265,7 +30403,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v685';
+var APP_SHELL_V = 'metodo-gh-v686';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
@@ -30930,7 +31068,7 @@ function novidadeAtalho(q) {
   _novRegistra('', 'atalho_' + q);
   if (q === 'indicacao') { openIndicacao(); return; }
   if (q === 'renovar') { openRenovModal('menu'); return; }
-  if (q === 'treino' || q === 'dieta' || q === 'progresso' || q === 'ghflix') { switchView(q); return; }
+  if (q === 'hoje' || q === 'treino' || q === 'dieta' || q === 'progresso' || q === 'ghflix') { switchView(q); return; }
   if (q === 'mais') { openMaisSheet(); return; }
 }
 function _novRegistra(id, tag) {   // uso da tela: CLICKS_AFILIADOS, Parceiro novidades (1 'abriu' por dia por aparelho)
