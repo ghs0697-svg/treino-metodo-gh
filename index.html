@@ -2354,6 +2354,47 @@
   .hj-evo { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 7px 2px; border-top: 1px solid var(--glass-3, rgba(255,255,255,.08)); font-size: 13px; color: var(--fg-2, #d8d2c6); }
   .hj-evo span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .hj-evo b { color: var(--gold); white-space: nowrap; flex: none; }
+  /* v688 (GH 19/11: "capricha no design, deixa isso aí foda"): passe de design da Hoje. Anéis do dia, exercício da vez em
+     destaque, água e cardio em barra de segmentos, evolução com gráfico. Cores só por variável, pros dois temas. */
+  #hojeView { --hj-dieta: #62c394; --hj-agua: #5ea6f2; }
+  :root[data-theme="light"] #hojeView, html[data-theme="light"] #hojeView { --hj-dieta: #2e8b62; --hj-agua: #2f7fd6; }
+  .hj-data { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); margin: 6px 2px 6px; }
+  .hj .hj-ola { font-family: var(--font-display); font-size: 28px; line-height: 1.1; font-weight: 800; letter-spacing: -.01em; margin: 0 2px 4px; }
+  .hj .hj-sub { font-size: 13px; margin-bottom: 16px; }
+  .hj .pg-card { border-radius: 20px; padding: 16px; }
+  .hj-dia-card { display: flex; align-items: center; gap: 16px; }
+  .hj-aneis { width: 118px; height: 118px; flex: none; position: relative; }
+  .hj-aneis svg { width: 100%; height: 100%; display: block; }
+  .hj-aneis circle { fill: none; stroke-width: 9; stroke-linecap: round; }
+  .hj-aneis .tr { stroke: var(--glass-3, rgba(255,255,255,.12)); }
+  .hj-aneis .ar { stroke-dasharray: var(--p) 100; }
+  .hj-anim .hj-aneis .ar { animation: hjAnel .9s cubic-bezier(.2, .8, .2, 1) both; }
+  @keyframes hjAnel { from { stroke-dasharray: 0 100; } }
+  @media (prefers-reduced-motion: reduce) { .hj-anim .hj-aneis .ar { animation: none; } }
+  .hj-aneis-c { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; color: var(--fg, #f5f1e8); font-variant-numeric: tabular-nums; }
+  .hj-leg { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 11px; }
+  .hj-leg button { all: unset; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+  .hj-leg i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .hj-leg b { display: block; font-size: 13.5px; font-weight: 700; color: var(--fg, #f5f1e8); line-height: 1.2; }
+  .hj-leg small { display: block; font-size: 12px; color: var(--fg-3, #9a9389); font-variant-numeric: tabular-nums; }
+  .hj-topo { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .hj-topo > span { font-size: 12px; color: var(--fg-3, #9a9389); font-weight: 600; white-space: nowrap; }
+  .hj .hj-nome.g { font-family: var(--font-display); font-size: 22px; font-weight: 800; margin: 0 2px 8px; }
+  .hj-pills { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 2px 12px; }
+  .hj-pills span { font-size: 11.5px; font-weight: 600; color: var(--gold); background: rgba(212, 175, 106, .13); border-radius: 999px; padding: 3px 10px; }
+  .hj .hj-ex img.hj-th, .hj .hj-ex .hj-ph { width: 46px; height: 46px; border-radius: 12px; }
+  .hj-ex.prox { background: rgba(212, 175, 106, .09); box-shadow: inset 0 0 0 1px rgba(212, 175, 106, .3); border-radius: 14px; margin: -5px -7px; padding: 5px 7px; }
+  .hj-tag { font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+  .hj-seg { display: grid; gap: 3px; margin: 0 2px 12px; }
+  .hj-seg i { height: 6px; border-radius: 3px; background: var(--glass-3, rgba(255,255,255,.12)); display: block; }
+  .hj-seg.agua i.on { background: var(--hj-agua); }
+  .hj-seg.cardio i.on { background: var(--gold-fill, var(--gold)); }
+  .hj .hj-num { font-size: 24px; font-weight: 800; margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+  .hj-evo-h { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin: 0 2px 2px; }
+  .hj-evo-h b { display: block; font-size: 15px; font-weight: 700; color: var(--fg, #f5f1e8); }
+  .hj-evo-h small { font-size: 12.5px; color: var(--fg-3, #9a9389); font-variant-numeric: tabular-nums; }
+  .hj-pct { font-size: 12.5px; font-weight: 800; color: var(--gold-ink, #1a1304); background: var(--gold-fill, #ddb65c); border-radius: 999px; padding: 3px 10px; flex: none; font-variant-numeric: tabular-nums; }
+  .hj-spark { width: 100%; height: auto; display: block; margin: 6px 0 10px; }
   .prog-screen { padding: 14px 14px 26px; max-width: 620px; margin: 0 auto; }
   .pg-card { background: var(--card); border: 1px solid rgba(212, 175, 106, .16); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
   /* títulos de seção na serif da marca (elegância 14/08: mesma família do TREINO DE HOJE) */
@@ -5481,7 +5522,7 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
     --glass: rgba(255, 255, 255, 0.065);
     --glass-2: rgba(255, 255, 255, 0.11);
     --glass-3: rgba(255, 255, 255, 0.16);
-    --glass-line: rgba(255, 255, 255, 0.13);
+    --glass-line: rgba(255, 255, 255, 0.10);
     --glass-brilho: inset 0 1px 0 rgba(255, 255, 255, 0.10);
     --glass-sombra: 0 10px 30px rgba(0, 0, 0, 0.30);
     --glass-fosco: blur(26px) saturate(180%);
@@ -6168,8 +6209,8 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
 
   :root {
     --liq-fill: radial-gradient(130% 95% at 0% 0%, rgba(255,255,255,.16) 0%, rgba(255,255,255,0) 54%), radial-gradient(115% 85% at 100% 100%, rgba(221,182,92,.13) 0%, rgba(221,182,92,0) 56%), linear-gradient(rgba(255,255,255,.035), rgba(255,255,255,.035));
-    --liq-line: rgba(255,255,255,.22);
-    --liq-rim: inset 0 1.5px 0 rgba(255,255,255,.42), inset 1px 0 0 rgba(255,255,255,.10), inset -1px 0 0 rgba(255,255,255,.06), inset 0 -1px 0 rgba(255,255,255,.14), inset 0 0 26px rgba(255,255,255,.05), inset 0 26px 34px -26px rgba(255,255,255,.16);
+    --liq-line: rgba(255,255,255,.07);
+    --liq-rim: inset 0 1px 0 rgba(255,255,255,.15), inset 0 0 26px rgba(255,255,255,.035), inset 0 26px 34px -26px rgba(255,255,255,.12);
     --liq-sombra: 0 18px 40px rgba(0,0,0,.42), 0 2px 6px rgba(0,0,0,.26);
   }
   :root[data-theme="light"] {
@@ -6201,8 +6242,8 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   :root[data-theme="light"] {
     --bg: #E3DAC6;
     --liq-fill: radial-gradient(110% 75% at 0% 0%, rgba(255,255,255,.95) 0%, rgba(255,255,255,0) 56%), radial-gradient(110% 80% at 100% 100%, rgba(232,196,110,.30) 0%, rgba(232,196,110,0) 60%), linear-gradient(rgba(255,255,255,.34), rgba(255,255,255,.34));
-    --liq-line: rgba(255,255,255,.80);
-    --liq-rim: 0 0 0 .5px rgba(110,84,30,.22), inset 0 1.5px 0 #fff, inset 1px 0 0 rgba(255,255,255,.80), inset -1px 0 0 rgba(255,255,255,.35), inset 0 -1px 0 rgba(110,84,30,.10), inset 0 0 22px rgba(255,255,255,.30), inset 0 26px 34px -26px rgba(255,255,255,.95);
+    --liq-line: rgba(255,255,255,.55);
+    --liq-rim: 0 0 0 .5px rgba(110,84,30,.18), inset 0 1px 0 #fff, inset 0 0 22px rgba(255,255,255,.30), inset 0 26px 34px -26px rgba(255,255,255,.95);
     --liq-sombra: 0 18px 40px rgba(92,70,24,.17), 0 3px 8px rgba(92,70,24,.08);
     --liq-pill: linear-gradient(160deg, rgba(255,255,255,.92) 0%, rgba(255,255,255,.50) 55%, rgba(255,250,236,.62) 100%);
     --liq-pill-sombra: 0 0 0 .5px rgba(110,84,30,.22), inset 0 1.5px 0 #fff, inset 0 -1px 0 rgba(110,84,30,.08), 0 6px 16px rgba(92,70,24,.12), 0 1px 3px rgba(92,70,24,.08);
@@ -6254,6 +6295,11 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   :root[data-theme="light"] .set-add { background: transparent; border-color: rgba(167,126,42,.45); }
   :root[data-theme="light"] #bottomNav .bn-item.active { color: var(--gold); }
   :root[data-theme="light"] #bottomNav .bn-item.active svg { filter: drop-shadow(0 0 6px rgba(167, 126, 42, .35)); }
+  /* ══ v688 (GH 19/11: "borda branca muito chamativa, dá a impressão de linha sobre linha"): acabamento geral.
+     A faixa da semana ia de ponta a ponta da tela, com o canto arredondado cortado e os botões colados em cima: agora é um cartão
+     alinhado com os outros. O tempo do treino no dia aceso (dourado) estava cinza claro em cima do dourado: agora escuro. ══ */
+  .week-selector { margin: 0 14px 4px; padding: 6px 16px; }
+  .day-tab.active .wt-badge, :root[data-theme="light"] .day-tab.active .wt-badge { color: rgba(21, 16, 10, .70); }
 </style>
 <script>
 // ══ v593 (auditoria 26/10): dois guardas que NÃO dependem do script principal (ES5 puro, primeiro script da página) ══
@@ -10042,7 +10088,7 @@ const I18N_EN = {
 // v479: telas novas (aviso da live, semana, timer, indicacao, banner, letra, novidades, resultado, pill de troca)
 Object.assign(I18N_EN, {
   'Hoje': 'Today', 'HOJE': 'TODAY', 'TREINO DE HOJE': 'TODAY\'S WORKOUT', 'PRÓXIMA REFEIÇÃO': 'NEXT MEAL', 'DIETA DE HOJE': 'TODAY\'S DIET', 'ÁGUA': 'WATER', 'CARDIO DA SEMANA': 'CARDIO THIS WEEK',
-  'Ir pro treino': 'Go to workout', 'Começar treino': 'Start workout', 'Continuar treino': 'Continue workout', 'TUA EVOLUÇÃO': 'YOUR PROGRESS', 'Ver meu progresso': 'See my progress', 'Anota a carga das tuas séries. Da segunda semana em diante, os exercícios que mais subiram aparecem aqui.': 'Log the load of your sets. From the second week on, the exercises that went up the most show here.', 'Ver dieta': 'See diet', 'Ver cardio': 'See cardio', 'Ver meus treinos': 'See my workouts', 'Refeições de hoje feitas ✓': 'Today\'s meals done ✓', 'Treinos desta semana feitos ✓': 'This week\'s workouts done ✓', 'Olá!': 'Hi!', '(aulas do método)': '(method classes)',
+  'Ir pro treino': 'Go to workout', 'Começar treino': 'Start workout', 'Continuar treino': 'Continue workout', 'TUA EVOLUÇÃO': 'YOUR PROGRESS', 'Ver meu progresso': 'See my progress', 'Feita ✓': 'Done ✓', 'TEU DIA': 'YOUR DAY', 'Próximo': 'Next', 'semana fechada ✓': 'week closed ✓', '📸 Foto do prato': '📸 Photo of the plate', 'Anota a carga das tuas séries. Da segunda semana em diante, os exercícios que mais subiram aparecem aqui.': 'Log the load of your sets. From the second week on, the exercises that went up the most show here.', 'Ver dieta': 'See diet', 'Ver cardio': 'See cardio', 'Ver meus treinos': 'See my workouts', 'Refeições de hoje feitas ✓': 'Today\'s meals done ✓', 'Treinos desta semana feitos ✓': 'This week\'s workouts done ✓', 'Olá!': 'Hi!', '(aulas do método)': '(method classes)',
   'NOVIDADES': 'NEWS', 'Novidades': 'News', 'Novidade': 'News', 'Link no grupo dos alunos': 'Link in the students group',
   'Entrar no grupo dos alunos': 'Join the students group', 'Ver mais': 'See more', 'Ver menos': 'See less', 'hoje': 'today', 'ontem': 'yesterday',
   'Nenhuma novidade por enquanto. Quando tiver, aparece aqui e o sino acende.': 'No news for now. When there is, it shows up here and the bell lights up.',
@@ -10110,6 +10156,11 @@ const I18N_RX = [
   [/^Semana (\d+)$/, 'Week $1'],
   [/^Hoje (.+)$/, 'Today $1'],
   [/^Manter ou descer$/, 'Keep or go down'],
+  [/^✓ (.+) marcada$/, '✓ $1 marked'],
+  [/^(\d+) de (\d+) exercícios?$/, '$1 of $2 exercises'],
+  [/^(\d+) de (\d+) refeiç(ão|ões)$/, '$1 of $2 meals'],
+  [/^(\d+) de (\d+) copos$/, '$1 of $2 glasses'],
+  [/^(.+) → (.+) desde a primeira semana$/, '$1 → $2 since the first week'],
   [/^(\d+) séries? válidas?( · (.+))?$/, '$1 working set(s)$2'],
   [/^e mais (\d+) exercícios?$/, 'and $1 more exercise(s)'],
   [/^e mais (\d+) ite(ns|m)$/, 'and $1 more item(s)'],
@@ -28274,64 +28325,43 @@ function _hjEvolucao() {
         for (var w = 1, wt = _weekTeto(); w <= wt; w++) { var v = parseFloat(_cargaTopo(di, String(ei), w)) || 0; if (v > 0) serie.push(v); }
         if (serie.length < 2) return;
         var a = serie[0], b = serie[serie.length - 1];
-        if (b > a) items.push({ nome: nome, a: a, b: b, pct: (b - a) / a * 100 });
+        if (b > a) items.push({ nome: nome, a: a, b: b, pct: (b - a) / a * 100, serie: serie });
       });
     });
   } catch (_) {}
   return items.sort(function (x, y) { return y.pct - x.pct; });
 }
 function _hjVaiDia(i) { try { switchView('treino'); _fmTrocaDia(i); } catch (_) {} }
-function renderHojeScreen() {
+function _hjSpark(serie) {
+  try {
+    var n = serie.length, mn = Math.min.apply(null, serie), mx = Math.max.apply(null, serie), W = 300, H = 56;
+    var px = function (k) { return 8 + (W - 16) * (n === 1 ? 0 : k / (n - 1)); }, py = function (v) { return mx === mn ? H / 2 : 46 - 36 * (v - mn) / (mx - mn); };
+    var pts = serie.map(function (v, k) { return px(k).toFixed(1) + ',' + py(v).toFixed(1); });
+    return '<svg class="hj-spark" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true"><polygon points="8,' + H + ' ' + pts.join(' ') + ' ' + (W - 8) + ',' + H + '" fill="var(--gold)" opacity=".13"/>'
+      + '<polyline points="' + pts.join(' ') + '" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'
+      + '<circle cx="' + px(n - 1).toFixed(1) + '" cy="' + py(serie[n - 1]).toFixed(1) + '" r="4.5" fill="var(--gold)"/></svg>';
+  } catch (_) { return ''; }
+}
+function _hjSeg(n, tot, cls) {
+  var c = Math.max(1, Math.min(tot, 14)), on = tot > 14 ? Math.round(Math.min(n, tot) / tot * c) : Math.min(n, c), s = '<div class="hj-seg ' + cls + '" style="grid-template-columns:repeat(' + c + ',1fr)">';
+  for (var k = 0; k < c; k++) s += '<i' + (k < on ? ' class="on"' : '') + '></i>';
+  return s + '</div>';
+}
+function renderHojeScreen(semAnim) {
   var host = document.getElementById('hojeView'); if (!host) return;
-  var h = '<div class="prog-screen">';
-  var nome = ''; try { nome = String((document.getElementById('infoNome') || {}).textContent || '').trim().split(/\s+/)[0] || ''; } catch (_) {}
-  if (nome) nome = nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
-  h += '<div class="hj-ola">' + (nome ? 'Olá, ' + _hjEsc(nome) + '!' : 'Olá!') + '</div>';
-  var etapa = ''; try { etapa = String((document.getElementById('maisPlanoTxt') || {}).textContent || '').trim(); } catch (_) {}
-  h += '<div class="hj-sub">' + ((etapa && !/conferindo|não consegui|sem data|vitalício/i.test(etapa)) ? 'Tua etapa ' + _hjEsc(etapa) : (typeof currentWeek !== 'undefined' ? 'Semana ' + currentWeek + ' do teu treino' : '')) + '</div>';
-  // treino de hoje
+  var h = '<div class="prog-screen hj' + (semAnim === true ? '' : ' hj-anim') + '">';
+  // ── o que é de hoje (lido uma vez; os anéis e os cartões usam os mesmos números) ──
+  var T = null, R = null, A = null;
   try {
     if (typeof WORKOUT !== 'undefined' && WORKOUT && WORKOUT.length) {
       var vis = []; for (var i = 0; i < WORKOUT.length; i++) if (_isVisibleDay(WORKOUT[i])) vis.push(i);
       var feitoDia = {}; vis.forEach(function (x) { try { feitoDia[x] = !!allDoneOfDay(x, true); } catch (_) { feitoDia[x] = false; } });
+      var di = currentDay, w = WORKOUT[di] || {}, lista = []; (w.exercises || []).forEach(function (ex, ei) { if (ex && !ex.warmup) lista.push(ei); });
+      var fz = lista.filter(function (ei) { try { return isDone(di, ei); } catch (_) { return false; } }).length;
       var nFeitos = vis.filter(function (x) { return feitoDia[x]; }).length;
-      var todos = vis.length && nFeitos === vis.length;
-      var di = currentDay, w = WORKOUT[di] || {};
-      h += '<div class="pg-card"><div class="pg-sec-t">TREINO DE HOJE</div>';
-      if (vis.length > 1) {
-        h += '<div class="hj-semana"><span>Semana ' + currentWeek + '</span><span>' + nFeitos + ' de ' + vis.length + ' treinos feitos</span></div><div class="hj-dias">';
-        vis.forEach(function (x) { h += '<button type="button" class="hj-dia' + (feitoDia[x] ? ' feito' : '') + (x === di && !todos ? ' hoje' : '') + '" onclick="_hjVaiDia(' + x + ')">' + _hjEsc(WORKOUT[x].day || ('Dia ' + (x + 1))) + (feitoDia[x] ? ' ✓' : '') + '</button>'; });
-        h += '</div>';
-      }
-      if (todos) {
-        h += '<div class="hj-nome">Treinos desta semana feitos ✓</div><div class="hj-txt">Semana ' + currentWeek + ' fechada. O próximo treino abre na aba Treino.</div>';
-        h += '<button type="button" class="te-btn" style="width:100%;" onclick="switchView(\'treino\')">Ver meus treinos</button>';
-      } else {
-        h += '<div class="hj-nome">' + _hjEsc(w.day || 'Treino') + '</div>';
-        var mus = _hjMusculos(w); if (mus.length) h += '<div class="hj-musc">' + mus.map(_hjEsc).join(' · ') + '</div>';
-        h += (_diaProgHtml_(di) || '');
-        var lista = []; (w.exercises || []).forEach(function (ex, ei) { if (ex && !ex.warmup) lista.push(ei); });
-        var MAX = 6, fezAlgum = false;
-        h += '<div class="hj-lista">';
-        lista.slice(0, MAX).forEach(function (ei) {
-          var ex = w.exercises[ei], feito = false; try { feito = isDone(di, ei); } catch (_) {}
-          if (feito) fezAlgum = true;
-          var act = ex.biset ? null : ((typeof _exAtivo === 'function' && _exAtivo(di, ei)) || ex);
-          var nomeEx = ex.biset ? [(ex.a || {}).name, (ex.b || {}).name].filter(Boolean).join(' + ') : (act.name || '');
-          var thumb = ''; try { thumb = _thumbHtml(ex.biset ? (ex.a || {}).video : act.video, 'hj-th') || ''; } catch (_) {}
-          var alvo = (!ex.biset && !feito) ? _hjAlvo(di, ei, act.name) : '';
-          h += '<div class="hj-ex' + (feito ? ' feito' : '') + '" onclick="switchView(\'treino\')">' + (thumb || '<div class="hj-ph">' + (lista.indexOf(ei) + 1) + '</div>')
-            + '<div class="hj-ex-i"><div class="hj-ex-n">' + _hjEsc(nomeEx) + '</div><div class="hj-ex-p">' + _hjEsc(_hjPresc(ex.biset ? (ex.a || ex) : ex)) + '</div></div>'
-            + (feito ? '<div class="hj-ex-c">✓</div>' : (alvo ? '<div class="hj-ex-c">' + _hjEsc(alvo) + '</div>' : '')) + '</div>';
-        });
-        h += '</div>';
-        if (lista.length > MAX) h += '<div class="hj-mais">e mais ' + (lista.length - MAX) + (lista.length - MAX === 1 ? ' exercício' : ' exercícios') + '</div>';
-        h += '<button type="button" class="te-btn" style="width:100%;" onclick="switchView(\'treino\')">' + (fezAlgum ? 'Continuar treino' : 'Começar treino') + '</button>';
-      }
-      h += '</div>';
+      T = { vis: vis, feitoDia: feitoDia, nFeitos: nFeitos, todos: !!(vis.length && nFeitos === vis.length), di: di, w: w, lista: lista, fz: fz };
     }
   } catch (_) {}
-  // refeição da hora
   var D = (typeof DIET_DATA !== 'undefined' && DIET_DATA && DIET_DATA.ciclos && DIET_DATA.ciclos.length) ? DIET_DATA : null;
   try {
     if (D) {
@@ -28339,55 +28369,145 @@ function renderHojeScreen() {
       if (refs.length) {
         var ri = _mealAgoraRi_(cy);
         if (ri == null || isMealDone(ri)) { var prox = null; for (var r = (ri == null ? 0 : ri + 1); r < refs.length; r++) { if (!isMealDone(r)) { prox = r; break; } } ri = prox; }
-        var feitas = dietMealsDone(), tot = dietTotalMeals();
-        var cont = feitas + ' de ' + tot + (tot === 1 ? ' refeição feita hoje' : ' refeições feitas hoje');
-        h += '<div class="pg-card"><div class="pg-sec-t">' + (ri == null ? 'DIETA DE HOJE' : 'PRÓXIMA REFEIÇÃO') + '</div>';
-        if (ri == null) h += '<div class="hj-nome">Refeições de hoje feitas ✓</div><div class="hj-txt">' + cont + '</div>';
-        else {
-          var ref = refs[ri], hr = ''; try { var hs = _refHoras(); hr = (hs[ri] && hs[ri].h) || ''; } catch (_) {}
-          var foto = ''; try { var fs = _refFotos_(ref); if (fs && fs[0]) foto = '<img src="thumbs/refeicoes/' + fs[0] + '.jpg" alt="" loading="lazy" decoding="async" onerror="this.remove()">'; } catch (_) {}
-          h += '<div class="hj-ref">' + foto + '<div><div class="hj-nome">' + _hjEsc(ref.nome || ('Refeição ' + (ri + 1))) + (hr ? ' · ' + _hjEsc(hr) : '') + '</div><div class="hj-txt">' + cont + '</div></div></div>';
-          var ops = ref.opcoes || [], ali = (ref.alimentos || []).filter(function (a) { return a && !a.alt; });
-          if (ops.length) ali = ali.concat(((ops[0] || {}).alimentos || []).filter(function (a) { return a && !a.alt; }));
-          if (ops.length > 1) h += '<div class="hj-op">' + _hjEsc(String(ops[0].nome || 'Opção 1')) + ' (tem ' + ops.length + ' opções na dieta)</div>';
-          var MAXA = 6;
-          h += '<div class="hj-ali-wrap">';
-          ali.slice(0, MAXA).forEach(function (a) { h += '<div class="hj-ali"><span>' + _hjEsc(String(a.nome || '').replace(/<[^>]+>/g, '')) + '</span><span>' + _hjEsc(String(a.qtd || '').replace(/<[^>]+>/g, '')) + '</span></div>'; });
-          h += '</div>';
-          if (ali.length > MAXA) h += '<div class="hj-mais">e mais ' + (ali.length - MAXA) + (ali.length - MAXA === 1 ? ' item' : ' itens') + '</div>';
-        }
+        R = { refs: refs, ri: ri, feitas: dietMealsDone(), tot: dietTotalMeals() };
+      }
+    }
+  } catch (_) {}
+  try { var na = waterCount(), metaL = _waterMetaLitros(); A = { n: na, meta: Math.ceil(metaL * 1000 / 200 - 1e-9) }; } catch (_) {}
+  // ── cabeçalho ──
+  var dt = ''; try { dt = new Date().toLocaleDateString(_lang() === 'en' ? 'en-US' : 'pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }); } catch (_) {}
+  if (dt) h += '<div class="hj-data">' + _hjEsc(dt) + '</div>';
+  var nome = ''; try { nome = String((document.getElementById('infoNome') || {}).textContent || '').trim().split(/\s+/)[0] || ''; } catch (_) {}
+  if (nome) nome = nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
+  h += '<div class="hj-ola">' + (nome ? 'Olá, ' + _hjEsc(nome) + '!' : 'Olá!') + '</div>';
+  var etapa = ''; try { etapa = String((document.getElementById('maisPlanoTxt') || {}).textContent || '').trim(); } catch (_) {}
+  h += '<div class="hj-sub">' + ((etapa && !/conferindo|não consegui|sem data|vitalício/i.test(etapa)) ? 'Tua etapa ' + _hjEsc(etapa) : (typeof currentWeek !== 'undefined' ? 'Semana ' + currentWeek + ' do teu treino' : '')) + '</div>';
+  // ── TEU DIA: anéis de treino, dieta e água ──
+  try {
+    var an = [];
+    if (T && (T.lista.length || T.todos)) an.push({ k: 'treino', nome: 'Treino', cor: 'var(--gold)', p: T.todos ? 100 : (T.lista.length ? T.fz / T.lista.length * 100 : 0), txt: T.todos ? 'semana fechada ✓' : (T.fz + ' de ' + T.lista.length + (T.lista.length === 1 ? ' exercício' : ' exercícios')), ir: "switchView('treino')" });
+    if (R && R.tot) an.push({ k: 'dieta', nome: 'Dieta', cor: 'var(--hj-dieta)', p: R.feitas / R.tot * 100, txt: R.feitas + ' de ' + R.tot + (R.tot === 1 ? ' refeição' : ' refeições'), ir: "switchView('dieta')" });
+    if (A && A.meta > 0) an.push({ k: 'agua', nome: 'Água', cor: 'var(--hj-agua)', p: Math.min(100, A.n / A.meta * 100), txt: A.n + ' de ' + A.meta + ' copos', ir: 'hojeAgua(1)' });
+    if (an.length) {
+      var raios = [52, 40, 28], media = Math.round(an.reduce(function (t, x) { return t + x.p; }, 0) / an.length);
+      var svg = '<svg viewBox="0 0 120 120" aria-hidden="true">';
+      an.forEach(function (x, k) {
+        svg += '<circle class="tr" cx="60" cy="60" r="' + raios[k] + '"/>';
+        if (x.p > 0) svg += '<circle class="ar" cx="60" cy="60" r="' + raios[k] + '" pathLength="100" transform="rotate(-90 60 60)" style="stroke:' + x.cor + ';--p:' + Math.max(1.5, Math.min(100, x.p)).toFixed(1) + '"/>';
+      });
+      svg += '</svg>';
+      h += '<div class="pg-card"><div class="pg-sec-t">TEU DIA</div><div class="hj-dia-card"><div class="hj-aneis">' + svg + '<div class="hj-aneis-c">' + media + '%</div></div><div class="hj-leg">';
+      an.forEach(function (x) { h += '<button type="button" onclick="' + x.ir + '"' + (x.k === 'agua' ? ' aria-label="Mais um copo de água"' : '') + '><i style="background:' + x.cor + '"></i><span><b>' + x.nome + '</b><small>' + x.txt + '</small></span></button>'; });
+      h += '</div></div></div>';
+    }
+  } catch (_) {}
+  // ── treino de hoje ──
+  try {
+    if (T) {
+      var di = T.di, w = T.w;
+      h += '<div class="pg-card"><div class="hj-topo"><div class="pg-sec-t">TREINO DE HOJE</div>' + (T.vis.length > 1 ? '<span>' + T.nFeitos + ' de ' + T.vis.length + ' treinos feitos</span>' : '') + '</div>';
+      if (T.vis.length > 1) {
+        h += '<div class="hj-dias">';
+        T.vis.forEach(function (x) { h += '<button type="button" class="hj-dia' + (T.feitoDia[x] ? ' feito' : '') + (x === di && !T.todos ? ' hoje' : '') + '" onclick="_hjVaiDia(' + x + ')">' + _hjEsc(WORKOUT[x].day || ('Dia ' + (x + 1))) + (T.feitoDia[x] ? ' ✓' : '') + '</button>'; });
+        h += '</div>';
+      }
+      if (T.todos) {
+        h += '<div class="hj-nome g">Treinos desta semana feitos ✓</div><div class="hj-txt">Semana ' + currentWeek + ' fechada. O próximo treino abre na aba Treino.</div>';
+        h += '<button type="button" class="te-btn" style="width:100%;" onclick="switchView(\'treino\')">Ver meus treinos</button>';
+      } else {
+        h += '<div class="hj-nome g">' + _hjEsc(w.day || 'Treino') + '</div>';
+        var mus = _hjMusculos(w); if (mus.length) h += '<div class="hj-pills">' + mus.map(function (m) { return '<span>' + _hjEsc(m) + '</span>'; }).join('') + '</div>';
+        h += (_diaProgHtml_(di) || '');
+        var MAX = 6, daVez = -1;
+        if (T.fz > 0) for (var q = 0; q < T.lista.length; q++) { var okq = false; try { okq = isDone(di, T.lista[q]); } catch (_) {} if (!okq) { daVez = T.lista[q]; break; } }
+        // a lista sempre mostra o exercício da vez: se ele está depois do 6º, a janela anda
+        var ini = 0; if (daVez >= 0) { var pos = T.lista.indexOf(daVez); if (pos >= MAX) ini = Math.min(pos - 1, T.lista.length - MAX); }
+        h += '<div class="hj-lista">';
+        T.lista.slice(ini, ini + MAX).forEach(function (ei) {
+          var ex = w.exercises[ei], feito = false; try { feito = isDone(di, ei); } catch (_) {}
+          var act = ex.biset ? null : ((typeof _exAtivo === 'function' && _exAtivo(di, ei)) || ex);
+          var nomeEx = ex.biset ? [(ex.a || {}).name, (ex.b || {}).name].filter(Boolean).join(' + ') : (act.name || '');
+          var thumb = ''; try { thumb = _thumbHtml(ex.biset ? (ex.a || {}).video : act.video, 'hj-th') || ''; } catch (_) {}
+          var alvo = (!ex.biset && !feito) ? _hjAlvo(di, ei, act.name) : '';
+          var dir = feito ? '<div class="hj-ex-c">✓</div>' : (alvo ? '<div class="hj-ex-c">' + _hjEsc(alvo) + '</div>' : (ei === daVez ? '<div class="hj-ex-c hj-tag">Próximo</div>' : ''));
+          h += '<div class="hj-ex' + (feito ? ' feito' : '') + (ei === daVez ? ' prox' : '') + '" onclick="switchView(\'treino\')">' + (thumb || '<div class="hj-ph">' + (T.lista.indexOf(ei) + 1) + '</div>')
+            + '<div class="hj-ex-i"><div class="hj-ex-n">' + _hjEsc(nomeEx) + '</div><div class="hj-ex-p">' + _hjEsc(_hjPresc(ex.biset ? (ex.a || ex) : ex)) + '</div></div>' + dir + '</div>';
+        });
+        h += '</div>';
+        var resto = T.lista.length - Math.min(MAX, T.lista.length);
+        if (resto > 0) h += '<div class="hj-mais">e mais ' + resto + (resto === 1 ? ' exercício' : ' exercícios') + '</div>';
+        h += '<button type="button" class="te-btn" style="width:100%;" onclick="switchView(\'treino\')">' + (T.fz > 0 ? 'Continuar treino' : 'Começar treino') + '</button>';
+      }
+      h += '</div>';
+    }
+  } catch (_) {}
+  // ── refeição da hora ──
+  try {
+    if (R) {
+      var refs = R.refs, ri = R.ri;
+      var cont = R.feitas + ' de ' + R.tot + (R.tot === 1 ? ' refeição feita hoje' : ' refeições feitas hoje');
+      h += '<div class="pg-card"><div class="pg-sec-t">' + (ri == null ? 'DIETA DE HOJE' : 'PRÓXIMA REFEIÇÃO') + '</div>';
+      if (_hjUltRef != null && refs[_hjUltRef] && isMealDone(_hjUltRef)) h += '<div class="hj-op">✓ ' + _hjEsc(refs[_hjUltRef].nome || ('Refeição ' + (_hjUltRef + 1))) + ' marcada</div>';
+      else _hjUltRef = null;
+      if (ri == null) h += '<div class="hj-nome g">Refeições de hoje feitas ✓</div><div class="hj-txt">' + cont + '</div>';
+      else {
+        var ref = refs[ri], hr = ''; try { var hs = _refHoras(); hr = (hs[ri] && hs[ri].h) || ''; } catch (_) {}
+        var foto = ''; try { var fs = _refFotos_(ref); if (fs && fs[0]) foto = '<img src="thumbs/refeicoes/' + fs[0] + '.jpg" alt="" loading="lazy" decoding="async" onerror="this.remove()">'; } catch (_) {}
+        h += '<div class="hj-ref">' + foto + '<div><div class="hj-nome">' + _hjEsc(ref.nome || ('Refeição ' + (ri + 1))) + (hr ? ' · ' + _hjEsc(hr) : '') + '</div><div class="hj-txt">' + cont + '</div></div></div>';
+        var ops = ref.opcoes || [], ali = (ref.alimentos || []).filter(function (a) { return a && !a.alt; });
+        if (ops.length) ali = ali.concat(((ops[0] || {}).alimentos || []).filter(function (a) { return a && !a.alt; }));
+        if (ops.length > 1) h += '<div class="hj-op">' + _hjEsc(String(ops[0].nome || 'Opção 1')) + ' (tem ' + ops.length + ' opções na dieta)</div>';
+        var MAXA = 6;
+        h += '<div class="hj-ali-wrap">';
+        ali.slice(0, MAXA).forEach(function (a) { h += '<div class="hj-ali"><span>' + _hjEsc(String(a.nome || '').replace(/<[^>]+>/g, '')) + '</span><span>' + _hjEsc(String(a.qtd || '').replace(/<[^>]+>/g, '')) + '</span></div>'; });
+        h += '</div>';
+        if (ali.length > MAXA) h += '<div class="hj-mais">e mais ' + (ali.length - MAXA) + (ali.length - MAXA === 1 ? ' item' : ' itens') + '</div>';
+      }
+      if (ri != null) {
+        h += '<div class="hj-pm" style="margin-bottom:8px;"><button type="button" class="te-btn" onclick="hojeRefFeita(' + ri + ')">Feita ✓</button>'
+          + '<button type="button" class="te-btn ghost" onclick="hojeRefFoto(' + ri + ')">📸 Foto do prato</button></div>';
+        h += '<button type="button" class="te-btn ghost" style="width:100%;" onclick="switchView(\'dieta\')">Ver dieta</button></div>';
+      } else {
+        if (_hjUltRef != null) h += '<button type="button" class="te-btn ghost" style="width:100%;margin-bottom:8px;" onclick="hojeRefFoto(' + _hjUltRef + ')">📸 Foto do prato</button>';
         h += '<button type="button" class="te-btn" style="width:100%;" onclick="switchView(\'dieta\')">Ver dieta</button></div>';
       }
     }
   } catch (_) {}
-  // água e cardio
+  // ── água e cardio ──
   try {
-    var n = waterCount(), metaL = _waterMetaLitros(), metaC = Math.ceil(metaL * 1000 / 200 - 1e-9);
-    var temCardio = !!(D && ((D.aerobicos || []).length || (D.orientacoes || []).some(function (o) { return /a[eé]r[oó]bic|cardio/i.test(o.categoria || ''); })));
-    var agua = '<div class="pg-card"><div class="pg-sec-t">ÁGUA</div><div class="hj-num">' + n + ' <small>de ' + metaC + ' copos' + (n >= metaC ? ' ✓' : '') + '</small></div>'
-      + '<div class="hj-pm"><button type="button" class="te-btn ghost" aria-label="Tirar um copo" onclick="hojeAgua(-1)">−</button><button type="button" class="te-btn" aria-label="Mais um copo" onclick="hojeAgua(1)">+</button></div></div>';
-    if (temCardio) {
-      var cc = cardioWeekCount(), ct = cardioTarget();
-      h += '<div class="hj-par">' + agua + '<div class="pg-card"><div class="pg-sec-t">CARDIO DA SEMANA</div><div class="hj-num">' + cc + ' <small>de ' + ct + (cc >= ct ? ' ✓' : '') + '</small></div>'
-        + '<button type="button" class="te-btn ghost" style="width:100%;" onclick="switchView(\'dieta\')">Ver cardio</button></div></div>';
-    } else h += agua;
+    if (A) {
+      var temCardio = !!(D && ((D.aerobicos || []).length || (D.orientacoes || []).some(function (o) { return /a[eé]r[oó]bic|cardio/i.test(o.categoria || ''); })));
+      var agua = '<div class="pg-card"><div class="pg-sec-t">ÁGUA</div><div class="hj-num">' + A.n + ' <small>de ' + A.meta + ' copos' + (A.n >= A.meta ? ' ✓' : '') + '</small></div>' + _hjSeg(A.n, A.meta, 'agua')
+        + '<div class="hj-pm"><button type="button" class="te-btn ghost" aria-label="Tirar um copo" onclick="hojeAgua(-1)">−</button><button type="button" class="te-btn" aria-label="Mais um copo" onclick="hojeAgua(1)">+</button></div></div>';
+      if (temCardio) {
+        var cc = cardioWeekCount(), ct = cardioTarget();
+        h += '<div class="hj-par">' + agua + '<div class="pg-card"><div class="pg-sec-t">CARDIO DA SEMANA</div><div class="hj-num">' + cc + ' <small>de ' + ct + (cc >= ct ? ' ✓' : '') + '</small></div>' + (ct > 0 ? _hjSeg(cc, ct, 'cardio') : '')
+          + '<button type="button" class="te-btn ghost" style="width:100%;" onclick="switchView(\'dieta\')">Ver cardio</button></div></div>';
+      } else h += agua;
+    }
   } catch (_) {}
-  // evolução
+  // ── evolução ──
   try {
-    if (typeof WORKOUT !== 'undefined' && WORKOUT && WORKOUT.length) {
+    if (T) {
       var ev = _hjEvolucao(), un = getUnit(), fk = function (kg) { return kgToDisplay(kg) + un; };
       h += '<div class="pg-card"><div class="pg-sec-t">TUA EVOLUÇÃO</div>';
       if (ev.length) {
-        h += '<div class="hj-txt">' + ev.length + (ev.length === 1 ? ' exercício já está' : ' exercícios já estão') + ' com mais carga que na primeira semana.</div>';
-        ev.slice(0, 3).forEach(function (x) { h += '<div class="hj-evo"><span>' + _hjEsc(x.nome) + '</span><b>' + fk(x.a) + ' → ' + fk(x.b) + ' (+' + Math.round(x.pct) + '%)</b></div>'; });
-        h += '<div style="height:12px"></div>';
+        var e0 = ev[0];
+        h += '<div class="hj-evo-h"><span><b>' + _hjEsc(e0.nome) + '</b><small>' + fk(e0.a) + ' → ' + fk(e0.b) + ' desde a primeira semana</small></span><span class="hj-pct">+' + Math.round(e0.pct) + '%</span></div>' + _hjSpark(e0.serie);
+        ev.slice(1, 3).forEach(function (x) { h += '<div class="hj-evo"><span>' + _hjEsc(x.nome) + '</span><b>' + fk(x.a) + ' → ' + fk(x.b) + ' (+' + Math.round(x.pct) + '%)</b></div>'; });
+        h += '<div class="hj-txt" style="margin-top:10px;">' + ev.length + (ev.length === 1 ? ' exercício já está' : ' exercícios já estão') + ' com mais carga que na primeira semana.</div>';
       } else h += '<div class="hj-txt">Anota a carga das tuas séries. Da segunda semana em diante, os exercícios que mais subiram aparecem aqui.</div>';
       h += '<button type="button" class="te-btn ghost" style="width:100%;" onclick="switchView(\'progresso\')">Ver meu progresso</button></div>';
     }
   } catch (_) {}
   host.innerHTML = h + '</div>';
 }
-function hojeAgua(d) { try { addWater(d); } catch (_) {} renderHojeScreen(); }
+// v688 (GH 19/11, decisão 2a): marcar a refeição direto na Hoje. É o MESMO onCheckMeal da Dieta (registro, ranking, dia fechado);
+// a Hoje passa pra próxima refeição e guarda a que acabou de marcar, pra foto do prato continuar a um toque.
+var _hjUltRef = null;
+function hojeRefFeita(ri) { try { if (!isMealDone(ri)) { onCheckMeal(ri); _hjUltRef = ri; } } catch (_) {} renderHojeScreen(true); }
+function hojeRefFoto(ri) { try { showMealPhotoCard(ri); } catch (_) {} }
+function hojeAgua(d) { try { addWater(d); } catch (_) {} renderHojeScreen(true); }
 
 function switchView(view) {
   document.body.classList.toggle('view-dieta', view === 'dieta');
@@ -30550,7 +30670,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v687';
+var APP_SHELL_V = 'metodo-gh-v688';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
