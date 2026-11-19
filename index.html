@@ -8004,8 +8004,8 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
       <span class="partner-discount">DESCONTO</span>
     </div>
     <div class="partner-desc">Farmácia de manipulação. GH usa há mais de 7 anos.</div>
-    <div class="partner-msg-tip">Ao clicar, abre o WhatsApp com a mensagem padrão "Olá, sou [seu nome]. Vim por indicação do GH.", só revisa e envia.</div>
-    <a class="partner-link whatsapp" id="parceiroArteCiencia" href="https://api.whatsapp.com/send?phone=5516997693445" target="_blank" rel="noopener">Falar no WhatsApp →</a>
+    <div class="partner-msg-tip">Ao clicar, abre o WhatsApp do Renato com a mensagem pronta e o teu código de indicação do GH, só revisa e envia.</div>
+    <a class="partner-link whatsapp" id="parceiroArteCiencia" href="https://links.metodogh.com.br/renato?de=app" target="_blank" rel="noopener">Falar no WhatsApp →</a>
   </div>
 </div>
 
@@ -14830,7 +14830,7 @@ function trackPartnerClick(link) {
   if (/alphaco/i.test(url)) partner = 'alphaco';
   else if (/yangfit/i.test(url)) partner = 'yangfit';
   else if (/shopee/i.test(url)) partner = 'shopee';
-  else if (/wa\.me|whatsapp|w\.app/i.test(url)) partner = 'whatsapp';
+  else if (/wa\.me|whatsapp|w\.app|links\.metodogh\.com\.br\/renato/i.test(url)) partner = 'whatsapp';   // v676: rota do Renato segue contando como whatsapp
   const payload = {
     type: 'click',
     sheetId: typeof SHEET_ID !== 'undefined' ? SHEET_ID : '',
@@ -25522,12 +25522,23 @@ function toggleParceiros() {
   c.classList.toggle('show');
   a.classList.toggle('open', c.classList.contains('show'));
   if (c.classList.contains('show')) injectAffiliateUTM();
-  // Atualiza link Arte e Ciência com nome do aluno
-  const nome = (document.getElementById('infoNome')?.textContent || '').trim();
-  const firstName = nome.split(/\s+/)[0] || '';
-  const msg = `Olá, sou ${nome || '(seu nome)'}. Vim por indicação do GH.`;
+  // v676 (CRM #4888, decisão 1a do GH 18/11): o card do Renato vai pela rota rastreada do CRM (links.metodogh.com.br/renato?de=app),
+  // que gera o código GH-XXXXX, grava na BIO_CLIQUES e abre o WhatsApp com a mensagem pronta. Este toggle não escreve mais a mensagem.
+  // s= leva só um resumo do ID da planilha do aluno (SHA-256, 12 primeiros caracteres em hexadecimal): a CRM casa com a mestre e,
+  // sem a mestre, ninguém chega no aluno nem no protocolo. Nunca nome, telefone, CPF nem o ID da planilha em si na URL.
   const link = document.getElementById('parceiroArteCiencia');
-  if (link) link.href = `https://api.whatsapp.com/send?phone=5516997693445&text=${encodeURIComponent(msg)}`;
+  if (link && !link.dataset.sOk) {
+    const base = 'https://links.metodogh.com.br/renato?de=app';
+    try {
+      const sid = (typeof SHEET_ID !== 'undefined' && SHEET_ID && SHEET_ID !== 'demo') ? String(SHEET_ID) : '';
+      if (sid && window.crypto && crypto.subtle && window.TextEncoder) {
+        crypto.subtle.digest('SHA-256', new TextEncoder().encode(sid)).then(function (buf) {
+          const hex = Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('').slice(0, 12);
+          link.href = base + '&s=' + hex; link.dataset.sOk = '1';
+        }).catch(function () {});
+      }
+    } catch (_) {}
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -29826,7 +29837,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v675';
+var APP_SHELL_V = 'metodo-gh-v676';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
