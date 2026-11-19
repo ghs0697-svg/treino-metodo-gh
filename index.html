@@ -1860,6 +1860,33 @@
   .supl-renato .partner-link { border-radius: 10px; padding: 11px; font-size: 13px; }
   :root[data-theme="light"] .supl-renato { background: var(--liq-fill, #fff); border-color: rgba(167, 126, 42, .45); }
   :root[data-theme="light"] .supl-renato .partner-msg-tip { color: #6f6553; }
+  /* v678: vitrine de parceiros */
+  .parc-strip { margin: 20px 14px 8px; }
+  #dietContent .parc-strip { margin: 22px 0 8px; }
+  .parc-strip-h { display: flex; align-items: baseline; justify-content: space-between; margin: 0 2px 9px; }
+  .parc-strip-t { color: var(--gold); font-weight: 800; font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; }
+  .parc-strip-v { background: none; border: 0; color: #9a9389; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; padding: 4px 2px; }
+  .parc-row { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 2px 2px 10px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .parc-row::-webkit-scrollbar { display: none; }
+  .parc-tile { flex: 0 0 136px; scroll-snap-align: start; display: flex; flex-direction: column; align-items: flex-start; gap: 5px; min-height: 140px; padding: 12px; border-radius: 18px; text-align: left; cursor: pointer; font-family: inherit; color: var(--white);
+    background: radial-gradient(120% 90% at 0% 0%, var(--pc) 0%, rgba(0, 0, 0, 0) 62%), #151412; border: 1px solid rgba(255, 255, 255, .09); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07); }
+  .parc-tile:active { transform: scale(.97); }
+  .parc-tile .pt-ic { width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; background: rgba(255, 255, 255, .10); border: 1px solid rgba(255, 255, 255, .14); }
+  .parc-tile .pt-n { font-weight: 800; font-size: 14px; line-height: 1.15; margin-top: 3px; }
+  .parc-tile .pt-s { color: #a39b8e; font-size: 11px; line-height: 1.3; }
+  .parc-tile .pt-off { margin-top: auto; background: var(--gold-bg, var(--gold)); color: #15100a; font-weight: 800; font-size: 10.5px; letter-spacing: .05em; padding: 3px 9px; border-radius: 999px; }
+  :root[data-theme="light"] .parc-tile { background: radial-gradient(120% 90% at 0% 0%, var(--pc) 0%, rgba(255, 255, 255, 0) 65%), var(--liq-fill, #fff); border-color: rgba(255, 255, 255, .85); box-shadow: 0 0 0 .5px rgba(110, 84, 30, .2), inset 0 1.5px 0 #fff, 0 6px 16px rgba(92, 70, 24, .10); color: #2a2418; }
+  :root[data-theme="light"] .parc-tile .pt-ic { background: rgba(255, 255, 255, .7); border-color: rgba(255, 255, 255, .9); }
+  :root[data-theme="light"] .parc-tile .pt-s, :root[data-theme="light"] .parc-strip-v { color: #6f6553; }
+  body.view-dieta #parcStripT, body.view-ghflix #parcStripT, body.view-progresso #parcStripT, body.view-novidades #parcStripT { display: none !important; }
+  .parc-flash { animation: parcFlash 1.8s ease 1; }
+  @keyframes parcFlash { 0%, 55% { box-shadow: 0 0 0 2px var(--gold), 0 0 24px rgba(212, 175, 106, .55); } 100% { box-shadow: 0 0 0 0 rgba(212, 175, 106, 0); } }
+  /* v678: atalho do Renato no aviso de reajuste */
+  .proto-aviso-cta { display: block; margin-top: 9px; padding: 8px 11px; border-radius: 11px; text-align: left; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 700; line-height: 1.35;
+    background: rgba(46, 139, 98, .16); border: 1px solid rgba(46, 139, 98, .55); color: #8fe0b8; }
+  :root[data-theme="light"] .proto-aviso-cta { background: rgba(46, 139, 98, .12); color: #1d6b48; }
+  body.modo-simples.ver-parceiros #suplementosToggle { display: flex !important; }
+  body.modo-simples.ver-parceiros #suplementosContent.show { display: block !important; }
   /* v677: Parceiros aberto pelo Mais aparece também no modo Intuitivo */
   body.modo-simples.ver-parceiros #parceirosToggle { display: flex !important; }
   body.modo-simples.ver-parceiros #parceirosContent.show { display: block !important; }
@@ -6212,6 +6239,7 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   <div class="proto-aviso-txt">
     <div class="proto-aviso-title" id="protoAvisoTitle"></div>
     <div class="proto-aviso-sub" id="protoAvisoSub"></div>
+    <button type="button" class="proto-aviso-cta" id="protoAvisoRenato" style="display:none;" onclick="abrirSuplRenato()">💊 Suplementação nova? Manda a lista pra farmácia de manipulação com desconto ›</button>
   </div>
   <button class="proto-aviso-x" onclick="dismissProtoAviso()" title="Fechar" aria-label="Fechar aviso">&times;</button>
 </div>
@@ -7114,6 +7142,9 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
   <div id="dietContent" style="display:none;"></div>
 </div>
 
+<!-- v678: vitrine de parceiros no fim do Treino (fora das seções que o modo Intuitivo esconde) -->
+<div id="parcStripT" class="parc-strip" style="display:none;"></div>
+
 <!-- ══ INSTRUCTIONS ══ -->
 <div class="instructions-toggle" id="instrToggle" onclick="toggleInstructions()" style="display:none;">
   <span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span><span class="tog-label">Manual de Execução</span><span class="tog-chev" id="instrArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span>
@@ -8009,11 +8040,11 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
 
   <div class="partner-card">
     <div class="partner-card-head">
-      <span class="partner-name">💊 Arte e Ciência (Renato)</span>
+      <span class="partner-name">💊 Arte e Ciência (manipulação)</span>
       <span class="partner-discount">DESCONTO</span>
     </div>
     <div class="partner-desc">Farmácia de manipulação. GH usa há mais de 7 anos.</div>
-    <div class="partner-msg-tip">Ao clicar, abre o WhatsApp do Renato com a mensagem pronta e o teu código de indicação do GH, só revisa e envia.</div>
+    <div class="partner-msg-tip">Ao clicar, abre o WhatsApp da farmácia com a mensagem pronta e o teu código de indicação do GH, só revisa e envia.</div>
     <a class="partner-link whatsapp" id="parceiroArteCiencia" href="https://links.metodogh.com.br/renato?de=app" target="_blank" rel="noopener">Falar no WhatsApp →</a>
   </div>
 </div>
@@ -14808,7 +14839,9 @@ function _renderProtoAviso() {
       document.getElementById('protoAvisoIc').innerHTML = icRefresh;
       document.getElementById('protoAvisoTitle').textContent = 'Protocolo reajustado';
       document.getElementById('protoAvisoSub').textContent = 'Teu treino e dieta foram atualizados, confere aí.';
+      try { document.getElementById('protoAvisoRenato').style.display = 'block'; } catch (_) {}   // v678
     } else {
+      try { document.getElementById('protoAvisoRenato').style.display = 'none'; } catch (_) {}
       document.getElementById('protoAvisoIc').innerHTML = icSliders;
       document.getElementById('protoAvisoTitle').textContent = 'Ajuste feito no protocolo';
       document.getElementById('protoAvisoSub').textContent = 'Demos um ajuste no teu protocolo. Dá uma olhada no que mudou.';
@@ -18224,6 +18257,7 @@ async function loadFromSheets(injectedText) {
     document.getElementById('suplementosToggle').style.display = 'flex';
     document.getElementById('acessoriosToggle').style.display = 'flex';
     document.getElementById('parceirosToggle').style.display = 'flex';
+    try { const _ps = document.getElementById('parcStripT'); if (_ps && !_ps.innerHTML) _ps.innerHTML = _parcStrip('treino'); if (_ps) _ps.style.display = 'block'; } catch (_) {}   // v678
     _quemAbriuMostra();   // v594: abriu sem o link pessoal? a faixa diz de quem é o treino
     if (isWaterNotifOn()) startWaterNotif();
     document.getElementById('hipoToggle').style.display = 'flex';
@@ -25534,7 +25568,7 @@ function _cupomCopia(codigo, btn) {
 // com mais alguns nomes comerciais); a Prescrição médica (outra seção, d.med); e o que farmácia de manipulação não faz (whey e
 // proteína em pó). A lista vai na URL da rota do CRM (itens=), que escreve a mensagem do WhatsApp com o código de indicação.
 const _RENATO_SEC = /hormon|protocolo|\bciclo\b|\btpc\b|pept|aplica|injet|medicament|remedio|prescri|\bmedic/;
-const _RENATO_FORA = /testo|enantato|cipionato|propionato|undecanoato|durateston|deca\b|nandrol|\bnpp\b|trembol|oxandrol|anavar|primobol|bolden|equipoise|masteron|drostanol|stanoz|winstrol|dianabol|metandrost|hemogenin|oximetol|turinabol|halotest|fluoximest|\bdhb\b|anastrozol|letrozol|exemestan|tamoxif|clomif|\bhcg\b|gonadotrof|cabergol|dostinex|tirzep|retatrut|semaglut|ozempic|mounjaro|wegovy|saxenda|liraglut|\bcjc\b|ipamorel|\bbpc\b|tb-? ?500|mots-? ?c|ghk|tesamorel|somatrop|hormonio|peptideo|clembut|clenbut|ioimbina|yohimb|sibutram|levotirox|puran\b|synthroid|\bt3\b|\bt4\b|glifage|metformina|finaster|dutaster|minoxidil|sildenafil|tadalafil|insulina|seringa|agulha|intramusc|subcut|statina|crestor|lipitor|losartan|valsartan|olmesartan|janumet|sitaglipt|vildaglipt|dapaglif|empaglif|forxiga|jardiance|anlodipin|enalapril|captopril|hidroclorot|atenolol|propranolol|omeprazol|pantoprazol|esomeprazol|roacutan|isotretino|anticoncep/;
+const _RENATO_FORA = /testo|enantato|cipionato|propionato|undecanoato|durateston|deca\b|nandrol|\bnpp\b|trembol|oxandrol|anavar|primobol|bolden|equipoise|masteron|drostanol|stanoz|winstrol|dianabol|metandrost|hemogenin|oximetol|turinabol|halotest|fluoximest|\bdhb\b|clomif|\bhcg\b|gonadotrof|tirzep|retatrut|semaglut|ozempic|mounjaro|wegovy|saxenda|liraglut|\bcjc\b|ipamorel|\bbpc\b|tb-? ?500|mots-? ?c|ghk|tesamorel|somatrop|hormonio|peptideo|clembut|clenbut|ioimbina|yohimb|sibutram|levotirox|puran\b|synthroid|\bt3\b|\bt4\b|finaster|dutaster|minoxidil|sildenafil|tadalafil|insulina|seringa|agulha|intramusc|subcut|statina|crestor|lipitor|losartan|valsartan|olmesartan|janumet|sitaglipt|vildaglipt|dapaglif|empaglif|forxiga|jardiance|anlodipin|enalapril|captopril|hidroclorot|atenolol|propranolol|omeprazol|pantoprazol|esomeprazol|roacutan|isotretino|anticoncep/;
 const _RENATO_NAO = /whey|proteina (em po|isolada|concentrada|vegetal)|albumina|hipercalor|caseina|barra de proteina/;
 function _suplRenatoItens(d) {
   const nrm = function (t) { return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); };
@@ -25589,9 +25623,9 @@ function _suplRenatoCard(d) {
   const esc = function (t) { return String(t).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
   return '<div class="partner-card supl-renato">'
     + '<div class="partner-card-head"><span class="partner-name">💊 Manipular na Arte e Ciência</span><span class="partner-discount">DESCONTO</span></div>'
-    + '<div class="partner-desc">Farmácia do Renato, que o GH usa há mais de 7 anos. Manda a tua lista e recebe o orçamento com desconto de aluno.</div>'
-    + '<div class="partner-msg-tip">Vai na mensagem: ' + esc(prev) + '. Abre o WhatsApp do Renato com a lista e o teu código de indicação do GH, só revisa e envia.</div>'
-    + '<a class="partner-link whatsapp" id="suplRenatoLink" href="' + esc(href) + '" data-lista="' + esc(lista) + '" target="_blank" rel="noopener">Mandar minha lista pro Renato →</a>'
+    + '<div class="partner-desc">Farmácia de manipulação que o GH usa há mais de 7 anos. Manda a tua lista e recebe o orçamento com desconto de aluno.</div>'
+    + '<div class="partner-msg-tip">Vai na mensagem: ' + esc(prev) + '. Abre o WhatsApp da farmácia com a lista e o teu código de indicação do GH, só revisa e envia.</div>'
+    + '<a class="partner-link whatsapp" id="suplRenatoLink" href="' + esc(href) + '" data-lista="' + esc(lista) + '" target="_blank" rel="noopener">Mandar minha lista pra farmácia →</a>'
     + '</div>';
 }
 // no toque: põe o s= (se o resumo já ficou pronto) e copia a lista, pro caso de a mensagem abrir sem ela
@@ -25599,15 +25633,74 @@ document.addEventListener('click', function (e) {
   const a = e.target && e.target.closest ? e.target.closest('#suplRenatoLink') : null;
   if (!a) return;
   try { if (_renatoHex && !/[?&]s=/.test(a.href)) a.href = a.href.replace('?de=app-supl', '?de=app-supl&s=' + _renatoHex); } catch (_) {}
-  try { const l = a.getAttribute('data-lista') || ''; if (l && navigator.clipboard) navigator.clipboard.writeText('Olá, Renato! Vim por indicação do GH. Quero um orçamento pra manipular a minha suplementação:\n\n' + l).catch(function () {}); } catch (_) {}
+  try { const l = a.getAttribute('data-lista') || ''; if (l && navigator.clipboard) navigator.clipboard.writeText('Olá! Vim por indicação do GH. Quero um orçamento pra manipular a minha suplementação:\n\n' + l).catch(function () {}); } catch (_) {}
 }, true);
 // v677: Parceiros pelo Mais (funciona também no modo Intuitivo, que esconde as seções do fim da aba Treino desde a v584)
-function abrirParceiros() {
+// v678: abre direto no parceiro tocado na vitrine (k) e acende o card; "lojas" abre o Onde comprar
+function _parcFlash(el) { if (!el) return; try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.remove('parc-flash'); void el.offsetWidth; el.classList.add('parc-flash'); } catch (_) {} }
+function abrirParceiros(k) {
   try { switchView('treino'); } catch (_) {}
   document.body.classList.add('ver-parceiros');
+  if (k === 'lojas') {
+    const s = document.getElementById('suplementosContent');
+    if (s && !s.classList.contains('show')) toggleSuplementos();
+    setTimeout(function () { _parcFlash(document.getElementById('suplementosToggle')); }, 120);
+    return;
+  }
   const c = document.getElementById('parceirosContent');
   if (c && !c.classList.contains('show')) toggleParceiros();
-  setTimeout(function () { try { (document.getElementById('parceirosToggle') || c).scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {} }, 90);
+  setTimeout(function () {
+    let alvo = null;
+    const P = { renato: /Arte e Ci/, yangfit: /YangFit/, alphaco: /AlphaCo/, biotech: /Biotech/ };
+    if (k && P[k]) alvo = Array.from(document.querySelectorAll('#parceirosContent .partner-card')).find(function (x) { return P[k].test(x.textContent); }) || null;
+    if (alvo) _parcFlash(alvo);
+    else try { (document.getElementById('parceirosToggle') || c).scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {}
+  }, 120);
+}
+// v678: vitrine de parceiros (fim do Treino e fim da Dieta). Toque abre o card do parceiro com cupom e link; conta na CLICKS_AFILIADOS
+// como parceiro "vitrine" (não é toque no link do parceiro, é só a abertura do card).
+const _PARC = [
+  { k: 'renato', ic: '💊', n: 'Arte e Ciência', s: 'Manipula a tua suplementação', off: 'DESCONTO', c: 'rgba(46, 139, 98, .55)' },
+  { k: 'yangfit', ic: '🏋️', n: 'YangFit', s: 'Equipamentos e acessórios', off: '15% OFF', c: 'rgba(214, 96, 48, .5)' },
+  { k: 'alphaco', ic: '👕', n: 'AlphaCo', s: 'Roupas de treino', off: '5% OFF', c: 'rgba(150, 150, 172, .5)' },
+  { k: 'biotech', ic: '🧪', n: 'Biotech', s: 'Fala com o Aquiles', off: 'DESCONTO', c: 'rgba(70, 130, 230, .5)' },
+  { k: 'lojas', ic: '🛒', n: 'Onde comprar', s: 'Suplementos e acessórios indicados', off: 'ALUNO', c: 'rgba(212, 175, 106, .55)' },
+];
+function _parcStrip(onde) {
+  let t = '<div class="parc-strip"><div class="parc-strip-h"><span class="parc-strip-t">Descontos de aluno</span>'
+    + '<button type="button" class="parc-strip-v" onclick="_parcToque(\'todos\', \'' + onde + '\')">Ver todos ›</button></div><div class="parc-row">';
+  _PARC.forEach(function (p) {
+    t += '<button type="button" class="parc-tile" style="--pc:' + p.c + '" onclick="_parcToque(\'' + p.k + '\', \'' + onde + '\')">'
+      + '<span class="pt-ic">' + p.ic + '</span><span class="pt-n">' + p.n + '</span><span class="pt-s">' + p.s + '</span><span class="pt-off">' + p.off + '</span></button>';
+  });
+  return t + '</div></div>';
+}
+function _parcToque(k, onde) {
+  try {
+    if (typeof LOG_ENDPOINT !== 'undefined' && typeof SHEET_ID !== 'undefined' && SHEET_ID) {
+      const p = _PARC.find(function (x) { return x.k === k; });
+      fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true, body: JSON.stringify({ type: 'click', sheetId: SHEET_ID,
+        studentName: (document.getElementById('infoNome') ? document.getElementById('infoNome').textContent : '').trim(), partner: 'vitrine', productName: p ? p.n : 'Ver todos',
+        url: '', tag: 'VITRINE ' + String(onde || '').toUpperCase(), ts: new Date().toISOString() }) }).catch(function () {});
+    }
+  } catch (_) {}
+  abrirParceiros(k === 'todos' ? '' : k);
+}
+// v678: atalho do aviso de reajuste: vai pra Dieta, abre a Suplementação e acende o card do Renato (sem lista manipulável, abre o card em Parceiros)
+function abrirSuplRenato() {
+  try { switchView('dieta'); } catch (_) {}
+  let n = 0;
+  (function tenta() {
+    const cont = document.getElementById('suplsContent');
+    const card = cont ? cont.querySelector('.supl-renato') : null;
+    if (cont && card) {
+      if (!cont.classList.contains('show')) toggleDietSection('supls');
+      setTimeout(function () { _parcFlash(card); }, 150);
+      return;
+    }
+    if ((typeof dietLoaded !== 'undefined' && dietLoaded) || ++n > 40) { abrirParceiros('renato'); return; }
+    setTimeout(tenta, 200);
+  })();
 }
 function toggleParceiros() {
   const c = document.getElementById('parceirosContent');
@@ -25804,6 +25897,7 @@ async function loadDietFromSheets(injectedText) {
     document.getElementById('suplementosToggle').style.display = 'flex';
     document.getElementById('acessoriosToggle').style.display = 'flex';
     document.getElementById('parceirosToggle').style.display = 'flex';
+    try { const _ps = document.getElementById('parcStripT'); if (_ps && !_ps.innerHTML) _ps.innerHTML = _parcStrip('treino'); if (_ps) _ps.style.display = 'block'; } catch (_) {}   // v678
     if (isWaterNotifOn()) startWaterNotif();
     renderDiet();
     // banner da novidade de dieta: agora que DIET_DATA existe, re-avalia (o 1º check pode
@@ -27660,6 +27754,7 @@ function renderDiet() {
     html += `</div>`;
   }
 
+  html += _parcStrip('dieta');   // v678
   container.innerHTML = html;
   container.style.display = 'block';
   if (typeof _introDayReady === 'function') _introDayReady('');
@@ -29922,7 +30017,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v677';
+var APP_SHELL_V = 'metodo-gh-v678';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
