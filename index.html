@@ -1920,6 +1920,29 @@
   :root[data-theme="light"] .parc-tile .pt-via { color: #1d6b48; }
   .parc-strip.grade .parc-row { flex-wrap: wrap; overflow: visible; scroll-snap-type: none; }
   .parc-strip.grade .parc-tile { flex: 1 1 calc(50% - 5px); }
+  /* v682 (GH 19/11): as seções do fim do Treino viram cards. No Completo a barra antiga só aparece como cabeçalho da seção aberta */
+  #guiasT { margin: 18px 14px 4px; }
+  .guias-h { color: var(--gold); font-weight: 800; font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; margin: 0 2px 9px; }
+  .guias-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .guia-tile { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 5px; min-height: 124px; padding: 12px; border-radius: 18px; text-align: left; cursor: pointer; font-family: inherit; color: var(--white);
+    background: radial-gradient(120% 90% at 0% 0%, var(--gc) 0%, rgba(0, 0, 0, 0) 62%), #151412; border: 1px solid rgba(255, 255, 255, .09); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07); -webkit-tap-highlight-color: transparent; }
+  .guia-tile[hidden] { display: none !important; }
+  .guia-tile:active { transform: scale(.97); }
+  .guia-tile .gt-ic { width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--gold); background: rgba(255, 255, 255, .10); border: 1px solid rgba(255, 255, 255, .14); }
+  .guia-tile .gt-ic svg { width: 19px; height: 19px; }
+  .guia-tile .gt-n { font-weight: 800; font-size: 14px; line-height: 1.15; margin-top: 3px; }
+  .guia-tile .gt-s { color: #a39b8e; font-size: 11px; line-height: 1.3; }
+  .guia-tile .gt-ab { position: absolute; top: 12px; right: 12px; font-size: 9.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #15100a; background: var(--gold); border-radius: 999px; padding: 3px 8px; display: none; }
+  .guia-tile.on { border-color: rgba(212, 175, 106, .8); box-shadow: 0 0 0 1px rgba(212, 175, 106, .45), inset 0 1px 0 rgba(255, 255, 255, .07); }
+  .guia-tile.on .gt-ab { display: block; }
+  :root[data-theme="light"] .guia-tile { background: radial-gradient(120% 90% at 0% 0%, var(--gc) 0%, rgba(255, 255, 255, 0) 65%), var(--liq-fill, #fff); border-color: rgba(255, 255, 255, .85); box-shadow: 0 0 0 .5px rgba(110, 84, 30, .2), inset 0 1.5px 0 #fff, 0 6px 16px rgba(92, 70, 24, .10); color: #2a2418; }
+  :root[data-theme="light"] .guia-tile.on { box-shadow: 0 0 0 1.5px rgba(190, 150, 70, .85), inset 0 1.5px 0 #fff, 0 6px 16px rgba(92, 70, 24, .14); }
+  :root[data-theme="light"] .guia-tile .gt-ic { background: rgba(255, 255, 255, .7); border-color: rgba(255, 255, 255, .9); color: #a87f2c; }
+  :root[data-theme="light"] .guia-tile .gt-s { color: #6f6553; }
+  body:not(.modo-simples) .instructions-toggle.guia-src:not(.guia-aberta) { display: none !important; }
+  body:not(.modo-simples) .instructions-toggle.guia-aberta { margin-top: 14px; }
+  body.modo-simples #guiasT, body.view-ghflix #guiasT, body.view-progresso #guiasT, body.view-novidades #guiasT { display: none !important; }
+  body.view-dieta .guia-tile[data-g="instr"], body.view-dieta .guia-tile[data-g="hipo"] { display: none !important; }
   .parc-toast { position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 9999; max-width: calc(100% - 40px);
     background: #1f1c17; color: #f3ead8; border: 1px solid rgba(212, 175, 106, .6); border-radius: 14px; padding: 10px 14px; font-size: 13px; font-weight: 700; text-align: center;
     box-shadow: 0 10px 30px rgba(0, 0, 0, .45); opacity: 0; transition: opacity .2s; pointer-events: none; }
@@ -2549,6 +2572,21 @@
   .mais-opt .ic svg { width: 18px; height: 18px; color: var(--gold); }
   .mais-opt.destaque { background: rgba(212, 175, 106, .12); border-color: rgba(212, 175, 106, .4); }
   .mais-sep { font-size: 10px; font-weight: 700; letter-spacing: 1.2px; color: #6f6a60; margin: 12px 2px 8px; }
+  /* v682 (GH 19/11): Mais por função. Atendimento e Conquistas em cards de 2 colunas; o que conserta o app em botões menores */
+  .mais-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .mais-grid > .mais-opt { margin-bottom: 0; }
+  .mais-tile { flex-direction: column; align-items: flex-start; gap: 5px; min-height: 98px; padding: 12px; }
+  .mais-tile .ic { width: 34px; height: 34px; border-radius: 10px; align-items: center; justify-content: center; background: rgba(212, 175, 106, .14); margin-bottom: 3px; }
+  .mais-tile > span:not(.ic):not(.sup-dot) { font-weight: 700; font-size: 13.5px; line-height: 1.2; }
+  .mais-tile .mt-s { color: #9a9488; font-size: 11px; font-weight: 500; line-height: 1.3; }
+  .mais-tile .sup-dot { top: 12px; right: 12px; }
+  .mais-tile.span2 { grid-column: span 2; min-height: 0; display: grid; grid-template-columns: auto 1fr; column-gap: 12px; row-gap: 1px; align-items: center; }
+  .mais-tile.span2 .ic { grid-row: span 2; margin-bottom: 0; }
+  .mais-grid.mini .mais-opt { padding: 10px 11px; font-size: 12.5px; gap: 9px; line-height: 1.25; }
+  .mais-grid.mini .mais-opt .ic svg { width: 16px; height: 16px; }
+  .mais-opt .sup-dot#novDotMais { top: 50%; transform: translateY(-50%); right: 12px; }
+  :root[data-theme="light"] .mais-tile .mt-s { color: #6f6553; }
+  :root[data-theme="light"] .mais-tile .ic { background: rgba(212, 175, 106, .22); }
 
   /* ── TOUR DE PRIMEIRO ACESSO (spotlight: escurece tudo, destaca um feature por vez) ── */
   #tourOverlay { position: fixed; inset: 0; z-index: 100060; display: none; touch-action: none; }   /* v555: arrastar o dedo no tutorial não rola a tela por baixo do destaque */
@@ -7200,6 +7238,7 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
 
 <!-- v678: vitrine de parceiros no fim do Treino (fora das seções que o modo Intuitivo esconde) -->
 <div id="parcStripT" class="parc-strip" style="display:none;"></div>
+<div id="guiasT" style="display:none;"><div class="guias-h">Guias do método</div><div class="guias-grid" id="guiasGrid"></div></div>
 
 <!-- ══ INSTRUCTIONS ══ -->
 <div class="instructions-toggle" id="instrToggle" onclick="toggleInstructions()" style="display:none;">
@@ -8658,26 +8697,25 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
 <div id="maisSheetOverlay" onclick="if(event.target.id==='maisSheetOverlay')closeMaisSheet()">
   <div id="maisSheet">
     <div class="mais-grab"></div>
-    <div class="tema-row"><span>Aparência</span><div class="tema-seg" id="temaSeg"><button type="button" id="temaCla" onclick="ghTema('claro')">Claro</button><button type="button" id="temaEsc" onclick="ghTema('escuro')">Escuro</button></div></div>
-    <div class="tema-row da-row"><span>Cronômetro automático<small>O descanso começa sozinho quando tu anota a série</small></span><div class="tema-seg" id="daSeg"><button type="button" id="daDes" aria-pressed="false" onclick="descAutoSet(false)">Desligado</button><button type="button" id="daLig" class="on" aria-pressed="true" onclick="descAutoSet(true)">Ligado</button></div></div>
-    <button type="button" class="mais-opt" style="position:relative;" onclick="closeMaisSheet(); switchView('novidades')">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span><span>Novidades</span><span class="sup-dot" id="novDotMais" style="top:50%;transform:translateY(-50%);right:10px;"></span>
-    </button>
     <button type="button" class="mais-opt destaque mais-loja" onclick="closeMaisSheet(); abrirLojaAviso()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2.5"/><line x1="12" y1="18" x2="12" y2="18.01"/><polyline points="9 9 12 12 15 9"/><line x1="12" y1="5" x2="12" y2="12"/></svg></span><span>Baixar o app (App Store e Google Play)</span>
     </button>
-    <button type="button" class="mais-opt" onclick="closeMaisSheet(); showInstallInstructions()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span><span>Instalar app na tela inicial</span>
+    <div class="mais-sep">ATENDIMENTO</div>
+    <div class="mais-grid">
+    <button type="button" class="mais-opt mais-tile" onclick="closeMaisSheet(); openChatModal()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></span><span id="maisChatLabel">Tirar dúvida ou pedir ajuste</span><small class="mt-s">Pelo chat do app</small><span class="sup-dot" id="supDotMais"></span>
     </button>
-    <button type="button" class="mais-opt" style="position:relative;" onclick="closeMaisSheet(); openChatModal()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></span><span id="maisChatLabel">Tirar dúvida ou pedir ajuste</span><span class="sup-dot" id="supDotMais" style="top:50%;transform:translateY(-50%);right:10px;"></span>
+    <button type="button" class="mais-opt mais-tile" onclick="closeMaisSheet(); openCaderno()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span><span>Anotações</span><small class="mt-s">Do teu acompanhamento</small>
     </button>
-    <a class="mais-opt" href="https://wa.me/555520131470" target="_blank" rel="noopener">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span><span>Suporte no WhatsApp</span>
+    <a class="mais-opt mais-tile" href="https://wa.me/555520131470" target="_blank" rel="noopener">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span><span>WhatsApp</span><small class="mt-s">Suporte do time</small>
     </a>
-    <button type="button" class="mais-opt" onclick="closeMaisSheet(); openRenovModal('menu')">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span><span>Próxima etapa</span>
+    <button type="button" class="mais-opt mais-tile" data-agenda="1" onclick="closeMaisSheet(); openAgendaModal()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span>Personal &amp; Psicóloga</span><small class="mt-s">Agenda com o time</small>
     </button>
+    </div>
+    <div class="mais-sep">MEU PROTOCOLO</div>
     <button type="button" class="mais-opt" id="maisPlanoOpt" onclick="closeMaisSheet(); openRenovModal('menu')">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
       <span>Minha etapa: <b id="maisPlanoTxt" style="color:var(--gold);font-weight:700;">conferindo…</b></span>
@@ -8686,37 +8724,50 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></span>
       <span>Anamnese de reajuste <span style="color:#9a9488;font-weight:500;">(fotos e medidas)</span></span>
     </button>
-    <button type="button" class="mais-opt" onclick="closeMaisSheet(); openIndicacao()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></span><span>Indicação: indica um amigo e ganha</span>
-    </button>
-    <button type="button" class="mais-opt" onclick="closeMaisSheet(); abrirParceiros()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></span><span>Parceiros e descontos <span style="color:#9a9488;font-weight:500;">(lojas e farmácia)</span></span>
-    </button>
-    <div class="mais-sep">FERRAMENTAS</div>
-    <button type="button" class="mais-opt" onclick="closeMaisSheet(); openRankingModal()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg></span><span>Ranking</span>
-    </button>
-    <button type="button" class="mais-opt" onclick="closeMaisSheet(); abrirSelos()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-4"/></svg></span><span>Meus selos</span>
-    </button>
     <button type="button" class="mais-opt" onclick="closeMaisSheet(); openFotosModal()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span><span>Minhas fotos do reajuste</span>
     </button>
-    <button type="button" class="mais-opt" data-agenda="1" onclick="closeMaisSheet(); openAgendaModal()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span>Personal &amp; Psicóloga</span>
-    </button>
     <button type="button" class="mais-opt" onclick="closeMaisSheet(); downloadPDF()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span><span id="pdfBtnLabelMais">Baixar treino em PDF</span>
-    </button>
-    <button type="button" class="mais-opt" onclick="closeMaisSheet(); openCaderno()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span>
-      <span>Anotações do acompanhamento</span>
     </button>
     <button type="button" class="mais-opt" onclick="closeMaisSheet(); openGlossario()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
       Dicionário do treino
     </button>
-    <div class="mais-sep">AJUSTES</div>
+    <div class="mais-sep">CONQUISTAS E BENEFÍCIOS</div>
+    <div class="mais-grid">
+    <button type="button" class="mais-opt mais-tile" onclick="closeMaisSheet(); openRankingModal()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg></span><span>Ranking</span><small class="mt-s">Tua posição entre os alunos</small>
+    </button>
+    <button type="button" class="mais-opt mais-tile" onclick="closeMaisSheet(); abrirSelos()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-4"/></svg></span><span>Meus selos</span><small class="mt-s">O que tu já conquistou</small>
+    </button>
+    <button type="button" class="mais-opt mais-tile" onclick="closeMaisSheet(); openIndicacao()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></span><span>Indicação</span><small class="mt-s">Indica um amigo e ganha</small>
+    </button>
+    <button type="button" class="mais-opt mais-tile" onclick="closeMaisSheet(); abrirParceiros()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></span><span>Parceiros e descontos</span><small class="mt-s">Lojas e farmácia</small>
+    </button>
+    </div>
+    <div class="mais-sep">APP E NOVIDADES</div>
+    <button type="button" class="mais-opt" style="position:relative;" onclick="closeMaisSheet(); switchView('novidades')">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span><span>Novidades</span><span class="sup-dot" id="novDotMais" style="top:50%;transform:translateY(-50%);right:10px;"></span>
+    </button>
+    <button type="button" class="mais-opt" onclick="closeMaisSheet(); showInstallInstructions()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span><span>Instalar app na tela inicial</span>
+    </button>
+    <button type="button" class="mais-opt" onclick="closeMaisSheet(); reverTutorial()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><span>Rever o tour do app</span>
+    </button>
+    <div class="mais-sep">PREFERÊNCIAS</div>
+    <div class="tema-row"><span>Aparência</span><div class="tema-seg" id="temaSeg"><button type="button" id="temaCla" onclick="ghTema('claro')">Claro</button><button type="button" id="temaEsc" onclick="ghTema('escuro')">Escuro</button></div></div>
+    <div class="tema-row da-row"><span>Cronômetro automático<small>O descanso começa sozinho quando tu anota a série</small></span><div class="tema-seg" id="daSeg"><button type="button" id="daDes" aria-pressed="false" onclick="descAutoSet(false)">Desligado</button><button type="button" id="daLig" class="on" aria-pressed="true" onclick="descAutoSet(true)">Ligado</button></div></div>
+    <button type="button" class="mais-opt" onclick="modoAplica(_modoAtual() === 'simples' ? 'completo' : 'simples')">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="14" y1="17.5" x2="21" y2="17.5"/></svg></span><span id="modoToggleLabel">Modo do app: Completo (tocar pra Intuitivo)</span>
+    </button>
+    <button type="button" class="mais-opt" onclick="toggleFonte()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg></span><span id="fonteToggleLabel">Tamanho da letra: normal (tocar pra aumentar)</span>
+    </button>
     <button type="button" class="mais-opt" onclick="toggleUnit()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></span><span id="unitToggleLabelMais">Unidade: kg (trocar pra lb)</span>
     </button>
@@ -8726,27 +8777,22 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
     <button type="button" class="mais-opt" onclick="toggleCeleb()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg></span><span id="celebToggleLabel">Comemorações: ligadas (desligar)</span>
     </button>
-    <button type="button" class="mais-opt" onclick="modoAplica(_modoAtual() === 'simples' ? 'completo' : 'simples')">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="14" y1="17.5" x2="21" y2="17.5"/></svg></span><span id="modoToggleLabel">Modo do app: Completo (tocar pra Intuitivo)</span>
-    </button>
-    <button type="button" class="mais-opt" onclick="toggleFonte()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg></span><span id="fonteToggleLabel">Tamanho da letra: normal (tocar pra aumentar)</span>
-    </button>
-    <button type="button" class="mais-opt" onclick="closeMaisSheet(); reverTutorial()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><span>Rever o tour do app</span>
+    <div class="mais-sep">SE ALGO NÃO FUNCIONAR</div>
+    <div class="mais-grid mini">
+    <button type="button" class="mais-opt" onclick="forcarAtualizacaoApp()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></span><span>Atualizar o app agora</span>
     </button>
     <button type="button" class="mais-opt" onclick="closeMaisSheet(); forceSyncFromServer()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span><span>Recarregar do servidor</span>
     </button>
-    <button type="button" class="mais-opt" onclick="closeMaisSheet(); apagarPesosMarcados()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span><span>Apagar pesos marcados</span>
-    </button>
     <button type="button" class="mais-opt" onclick="closeMaisSheet(); apagarVideosBaixados()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span><span>Apagar vídeos baixados</span>
     </button>
-    <button type="button" class="mais-opt" onclick="forcarAtualizacaoApp()">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></span><span>Atualizar o app agora</span>
+    <button type="button" class="mais-opt" onclick="closeMaisSheet(); apagarPesosMarcados()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span><span>Apagar pesos marcados</span>
     </button>
+    </div>
+    <div class="mais-sep conta-opt" style="display:none">CONTA</div>
     <button type="button" class="mais-opt conta-opt" style="display:none" onclick="closeMaisSheet(); contaSair()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span><span>Sair da conta</span>
     </button>
@@ -9895,6 +9941,17 @@ const I18N_EN = {
   'Palmas das mãos viradas uma pra outra.': 'Palms facing each other.',
   'O descanso entre as séries. O botão "descanso" do exercício cronometra sozinho.': 'The rest between sets. The exercise\'s "rest" button times it for you.',
   'Fechar': 'Close', 'AJUSTES': 'SETTINGS', 'Mais opções': 'More options',
+  'ATENDIMENTO': 'SUPPORT', 'MEU PROTOCOLO': 'MY PLAN', 'CONQUISTAS E BENEFÍCIOS': 'ACHIEVEMENTS AND PERKS', 'APP E NOVIDADES': 'APP AND NEWS',
+  'PREFERÊNCIAS': 'PREFERENCES', 'SE ALGO NÃO FUNCIONAR': 'IF SOMETHING ISN\'T WORKING', 'CONTA': 'ACCOUNT',
+  'Pelo chat do app': 'Through the app chat', 'Anotações': 'Notes', 'Do teu acompanhamento': 'From your coaching', 'Suporte do time': 'Team support',
+  'Agenda com o time': 'Book with the team', 'Tua posição entre os alunos': 'Your rank among students', 'Meus selos': 'My badges', 'O que tu já conquistou': 'What you have earned',
+  'Indicação': 'Referral', 'Indica um amigo e ganha': 'Refer a friend and earn', 'Parceiros e descontos': 'Partners and discounts', 'Lojas e farmácia': 'Stores and pharmacy',
+  'Instalar app na tela inicial': 'Add the app to your home screen', 'Baixar o app (App Store e Google Play)': 'Get the app (App Store and Google Play)',
+  'Minhas fotos do reajuste': 'My check-in photos', 'Aparência': 'Appearance', 'Sair da conta': 'Sign out', 'Excluir minha conta': 'Delete my account',
+  'Guias do método': 'Method guides', 'aberto': 'open', 'Manual de Execução': 'Execution manual', 'Cadência, técnicas e como fazer as séries': 'Tempo, techniques and how to do the sets',
+  'Hipopressivo': 'Hypopressive', 'Vácuo abdominal, passo a passo': 'Stomach vacuum, step by step', 'Acompanhamento': 'Tracking', 'Água, peso, recordes e sequência': 'Water, weight, records and streak',
+  'Glossário do Método': 'Method glossary', 'Os termos do protocolo explicados': 'The plan terms explained', 'Onde comprar': 'Where to buy', 'Lojas de suplemento indicadas': 'Recommended supplement stores',
+  'Acessórios': 'Accessories', 'O que o GH recomenda pro treino e pra casa': 'What GH recommends for training and home',
   'Unidade: kg (trocar pra lb)': 'Units: kg (switch to lb)', 'Unidade: lb (trocar pra kg)': 'Units: lb (switch to kg)',
   'Rever o tour do app': 'Replay the app tour', 'Recarregar do servidor': 'Reload from server',
   'Apagar pesos marcados': 'Clear saved weights', 'Atualizar o app agora': 'Update the app now',
@@ -18351,6 +18408,7 @@ async function loadFromSheets(injectedText) {
     document.getElementById('acessoriosToggle').style.display = 'flex';
     document.getElementById('parceirosToggle').style.display = 'flex';
     try { const _ps = document.getElementById('parcStripT'); if (_ps && !_ps.innerHTML) _ps.innerHTML = _parcStrip('treino'); if (_ps) _ps.style.display = 'block'; } catch (_) {}   // v678
+    try { _guiasMonta(); } catch (_) {}   // v682
     _quemAbriuMostra();   // v594: abriu sem o link pessoal? a faixa diz de quem é o treino
     if (isWaterNotifOn()) startWaterNotif();
     document.getElementById('hipoToggle').style.display = 'flex';
@@ -25739,6 +25797,57 @@ document.addEventListener('click', function (e) {
   try { if (_renatoHex && !/[?&]s=/.test(a.href)) a.href = a.href.replace('?de=app-supl', '?de=app-supl&s=' + _renatoHex); } catch (_) {}
   try { const l = a.getAttribute('data-lista') || ''; if (l && navigator.clipboard) navigator.clipboard.writeText('Olá! Vim por indicação do GH. Quero um orçamento pra manipular a minha suplementação:\n\n' + l).catch(function () {}); } catch (_) {}
 }, true);
+// v682 (GH 19/11): "Guias do método". As seções do fim do Treino viram cards, igual à vitrine. O card abre a seção logo abaixo
+// (uma aberta por vez) e a barra antiga vira o cabeçalho dela. No Intuitivo nada muda (as seções continuam escondidas, v584).
+const _GUIAS = [
+  { g: 'instr', t: 'instrToggle', c: 'instructionsContent', f: 'toggleInstructions', n: 'Manual de Execução', s: 'Cadência, técnicas e como fazer as séries', cor: 'rgba(212, 175, 106, .5)' },
+  { g: 'hipo', t: 'hipoToggle', c: 'hipoContent', f: 'toggleHipo', n: 'Hipopressivo', s: 'Vácuo abdominal, passo a passo', cor: 'rgba(60, 170, 170, .45)' },
+  { g: 'accomp', t: 'accompToggle', c: 'accompContent', f: 'toggleAccomp', n: 'Acompanhamento', s: 'Água, peso, recordes e sequência', cor: 'rgba(70, 130, 230, .45)' },
+  { g: 'gloss', t: 'glossarioToggle', c: 'glossarioContent', f: 'toggleGlossario', n: 'Glossário do Método', s: 'Os termos do protocolo explicados', cor: 'rgba(150, 110, 220, .45)' },
+  { g: 'supl', t: 'suplementosToggle', c: 'suplementosContent', f: 'toggleSuplementos', n: 'Onde comprar', s: 'Lojas de suplemento indicadas', cor: 'rgba(46, 139, 98, .5)' },
+  { g: 'acess', t: 'acessoriosToggle', c: 'acessoriosContent', f: 'toggleAcessorios', n: 'Acessórios', s: 'O que o GH recomenda pro treino e pra casa', cor: 'rgba(214, 96, 48, .45)' },
+];
+function _guiasMonta() {
+  const gr = document.getElementById('guiasGrid'); if (!gr) return;
+  if (!gr.children.length) {
+    let t = '';
+    _GUIAS.forEach(function (x) {
+      const tg = document.getElementById(x.t); if (!tg) return;
+      tg.classList.add('guia-src');
+      const ic = tg.querySelector('.tog-ic');
+      t += '<button type="button" class="guia-tile" data-g="' + x.g + '" style="--gc:' + x.cor + '" onclick="_guiaAbre(\'' + x.g + '\')" hidden>'
+        + '<span class="gt-ic">' + (ic ? ic.innerHTML : '') + '</span><span class="gt-n">' + x.n + '</span><span class="gt-s">' + x.s + '</span><span class="gt-ab">aberto</span></button>';
+    });
+    gr.innerHTML = t;
+    try {
+      const mo = new MutationObserver(_guiasSync);
+      _GUIAS.forEach(function (x) { const a = document.getElementById(x.t), b = document.getElementById(x.c); if (a) mo.observe(a, { attributes: true, attributeFilter: ['style'] }); if (b) mo.observe(b, { attributes: true, attributeFilter: ['class'] }); });
+    } catch (_) {}
+  }
+  _guiasSync();
+}
+function _guiasSync() {
+  let algum = false;
+  _GUIAS.forEach(function (x) {
+    const tg = document.getElementById(x.t), ct = document.getElementById(x.c), tl = document.querySelector('.guia-tile[data-g="' + x.g + '"]');
+    if (!tg) return;
+    const vis = tg.style.display !== 'none', ab = !!(ct && ct.classList.contains('show'));
+    tg.classList.toggle('guia-aberta', ab);
+    if (!tl) return;
+    tl.hidden = !vis; if (vis) algum = true;
+    tl.classList.toggle('on', ab);
+  });
+  const box = document.getElementById('guiasT'); if (box && document.getElementById('guiasGrid').children.length) box.style.display = algum ? 'block' : 'none';
+}
+function _guiaAbre(g) {
+  const x = _GUIAS.find(function (y) { return y.g === g; }); if (!x) return;
+  const ct = document.getElementById(x.c); if (!ct) return;
+  const ja = ct.classList.contains('show');
+  _GUIAS.forEach(function (y) { if (y.g === g) return; const o = document.getElementById(y.c); if (o && o.classList.contains('show')) { try { window[y.f](); } catch (_) {} } });
+  try { window[x.f](); } catch (_) {}
+  _guiasSync();
+  if (!ja) setTimeout(function () { try { (document.getElementById(x.t) || ct).scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {} }, 60);
+}
 // v677: Parceiros pelo Mais (funciona também no modo Intuitivo, que esconde as seções do fim da aba Treino desde a v584)
 // v678: abre direto no parceiro tocado na vitrine (k) e acende o card; "lojas" abre o Onde comprar
 function _parcFlash(el) { if (!el) return; try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.remove('parc-flash'); void el.offsetWidth; el.classList.add('parc-flash'); } catch (_) {} }
@@ -25748,6 +25857,7 @@ function abrirParceiros(k) {
   if (k === 'lojas') {
     const s = document.getElementById('suplementosContent');
     if (s && !s.classList.contains('show')) toggleSuplementos();
+    try { _guiasSync(); } catch (_) {}   // v682
     setTimeout(function () { _parcFlash(document.getElementById('suplementosToggle')); }, 120);
     return;
   }
@@ -26030,6 +26140,7 @@ async function loadDietFromSheets(injectedText) {
     document.getElementById('acessoriosToggle').style.display = 'flex';
     document.getElementById('parceirosToggle').style.display = 'flex';
     try { const _ps = document.getElementById('parcStripT'); if (_ps && !_ps.innerHTML) _ps.innerHTML = _parcStrip('treino'); if (_ps) _ps.style.display = 'block'; } catch (_) {}   // v678
+    try { _guiasMonta(); } catch (_) {}   // v682
     if (isWaterNotifOn()) startWaterNotif();
     renderDiet();
     // banner da novidade de dieta: agora que DIET_DATA existe, re-avalia (o 1º check pode
@@ -28044,6 +28155,7 @@ function openMaisSheet() {
   if (typeof updatePdfButtonLabel === 'function') updatePdfButtonLabel();
   try { _fonteBtnRefresh(); } catch (_) {}   // v469
   try { _modoBtnRefresh(); } catch (_) {}   // v584
+  try { document.querySelectorAll('#maisSheet .mais-grid').forEach(function (g) { var vs = [].filter.call(g.children, function (b) { b.classList.remove('span2'); return getComputedStyle(b).display !== 'none'; }); if (vs.length % 2) vs[vs.length - 1].classList.add('span2'); }); } catch (_) {}   // v682
   var mv = document.getElementById('maisVersao');
   if (mv) mv.textContent = 'Método GH · app ' + String(window.GH_APP_V || '').replace('metodo-gh-', '');
 }
@@ -28549,6 +28661,7 @@ function protoProgressTap() {
     if (!t || t.style.display === 'none') return;
     var c = document.getElementById('accompContent');
     if (c && !c.classList.contains('show')) toggleAccomp();
+    try { _guiasSync(); } catch (_) {}   // v682
     t.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (e) {}
 }
@@ -30149,7 +30262,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v681';
+var APP_SHELL_V = 'metodo-gh-v682';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
