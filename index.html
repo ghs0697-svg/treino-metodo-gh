@@ -2325,6 +2325,35 @@
   .hj-num small { font-size: 12px; font-weight: 500; color: var(--fg-3, #9a9389); }
   .hj-pm { display: flex; gap: 8px; }
   .hj-pm .te-btn { flex: 1; padding-left: 0; padding-right: 0; }
+  /* v687 (GH 19/11: "tá muito vazio"): a Hoje mostra o conteúdo do dia, não só números */
+  .hj-semana { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 2px 8px; font-size: 12px; color: var(--fg-3, #9a9389); font-weight: 600; }
+  .hj-dias { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 2px 14px; }
+  .hj-dia { font: inherit; font-size: 11.5px; font-weight: 600; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--glass-3, rgba(255,255,255,.14)); color: var(--fg-3, #9a9389); background: transparent; cursor: pointer; }
+  .hj-dia.feito { color: var(--gold); border-color: rgba(212, 175, 106, .45); }
+  .hj-dia.hoje { color: var(--fg, #f5f1e8); border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+  .hj-musc { font-size: 12.5px; color: var(--gold); font-weight: 600; margin: -4px 2px 10px; }
+  .hj-lista { display: flex; flex-direction: column; gap: 10px; margin: 6px 0 12px; }
+  .hj-ex { display: flex; align-items: center; gap: 11px; cursor: pointer; }
+  .hj-ex img.hj-th, .hj-ex .hj-ph { width: 42px; height: 42px; border-radius: 10px; object-fit: cover; flex: none; }
+  .hj-ex .hj-ph { background: var(--glass-3, rgba(255,255,255,.08)); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--fg-3, #9a9389); }
+  .hj-ex-i { flex: 1; min-width: 0; }
+  .hj-ex-n { font-size: 13.5px; font-weight: 600; color: var(--fg, #f5f1e8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hj-ex-p { font-size: 11.5px; color: var(--fg-3, #9a9389); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+  .hj-ex-c { font-size: 12px; font-weight: 700; color: var(--gold); flex: none; text-align: right; }
+  .hj-ex.feito .hj-ex-n { color: var(--fg-3, #9a9389); text-decoration: line-through; }
+  .hj-ex.feito .hj-ex-c { color: var(--fg-3, #9a9389); }
+  .hj-mais { font-size: 12px; color: var(--fg-3, #9a9389); margin: -2px 2px 12px; }
+  .hj-ref { display: flex; gap: 12px; align-items: center; margin: 0 0 8px; }
+  .hj-ref img { width: 58px; height: 58px; border-radius: 12px; object-fit: cover; flex: none; }
+  .hj-ref .hj-nome { margin-bottom: 2px; }
+  .hj-ref .hj-txt { margin-bottom: 0; }
+  .hj-op { font-size: 11.5px; color: var(--gold); font-weight: 600; margin: 6px 2px 2px; }
+  .hj-ali { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--fg-2, #d8d2c6); padding: 7px 2px; border-top: 1px solid var(--glass-3, rgba(255,255,255,.08)); }
+  .hj-ali span:last-child { color: var(--fg-3, #9a9389); white-space: nowrap; flex: none; }
+  .hj-ali-wrap { margin-bottom: 12px; }
+  .hj-evo { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 7px 2px; border-top: 1px solid var(--glass-3, rgba(255,255,255,.08)); font-size: 13px; color: var(--fg-2, #d8d2c6); }
+  .hj-evo span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hj-evo b { color: var(--gold); white-space: nowrap; flex: none; }
   .prog-screen { padding: 14px 14px 26px; max-width: 620px; margin: 0 auto; }
   .pg-card { background: var(--card); border: 1px solid rgba(212, 175, 106, .16); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
   /* títulos de seção na serif da marca (elegância 14/08: mesma família do TREINO DE HOJE) */
@@ -10013,7 +10042,7 @@ const I18N_EN = {
 // v479: telas novas (aviso da live, semana, timer, indicacao, banner, letra, novidades, resultado, pill de troca)
 Object.assign(I18N_EN, {
   'Hoje': 'Today', 'HOJE': 'TODAY', 'TREINO DE HOJE': 'TODAY\'S WORKOUT', 'PRÓXIMA REFEIÇÃO': 'NEXT MEAL', 'DIETA DE HOJE': 'TODAY\'S DIET', 'ÁGUA': 'WATER', 'CARDIO DA SEMANA': 'CARDIO THIS WEEK',
-  'Ir pro treino': 'Go to workout', 'Ver dieta': 'See diet', 'Ver cardio': 'See cardio', 'Ver meus treinos': 'See my workouts', 'Refeições de hoje feitas ✓': 'Today\'s meals done ✓', 'Treinos desta semana feitos ✓': 'This week\'s workouts done ✓', 'Olá!': 'Hi!', '(aulas do método)': '(method classes)',
+  'Ir pro treino': 'Go to workout', 'Começar treino': 'Start workout', 'Continuar treino': 'Continue workout', 'TUA EVOLUÇÃO': 'YOUR PROGRESS', 'Ver meu progresso': 'See my progress', 'Anota a carga das tuas séries. Da segunda semana em diante, os exercícios que mais subiram aparecem aqui.': 'Log the load of your sets. From the second week on, the exercises that went up the most show here.', 'Ver dieta': 'See diet', 'Ver cardio': 'See cardio', 'Ver meus treinos': 'See my workouts', 'Refeições de hoje feitas ✓': 'Today\'s meals done ✓', 'Treinos desta semana feitos ✓': 'This week\'s workouts done ✓', 'Olá!': 'Hi!', '(aulas do método)': '(method classes)',
   'NOVIDADES': 'NEWS', 'Novidades': 'News', 'Novidade': 'News', 'Link no grupo dos alunos': 'Link in the students group',
   'Entrar no grupo dos alunos': 'Join the students group', 'Ver mais': 'See more', 'Ver menos': 'See less', 'hoje': 'today', 'ontem': 'yesterday',
   'Nenhuma novidade por enquanto. Quando tiver, aparece aqui e o sino acende.': 'No news for now. When there is, it shows up here and the bell lights up.',
@@ -10077,6 +10106,15 @@ const I18N_RX = [
   [/^Olá, (.+)!$/, 'Hi, $1!'],
   [/^Tua etapa (.+)$/, 'Your stage $1'],
   [/^Semana (\d+) do teu treino$/, 'Week $1 of your training'],
+  [/^(\d+) de (\d+) treinos feitos$/, '$1 of $2 workouts done'],
+  [/^Semana (\d+)$/, 'Week $1'],
+  [/^Hoje (.+)$/, 'Today $1'],
+  [/^Manter ou descer$/, 'Keep or go down'],
+  [/^(\d+) séries? válidas?( · (.+))?$/, '$1 working set(s)$2'],
+  [/^e mais (\d+) exercícios?$/, 'and $1 more exercise(s)'],
+  [/^e mais (\d+) ite(ns|m)$/, 'and $1 more item(s)'],
+  [/^(.+) \(tem (\d+) opções na dieta\)$/, '$1 ($2 options in the diet)'],
+  [/^(\d+) exercícios? já est(ão|á) com mais carga que na primeira semana\.$/, '$1 exercise(s) already above the first week load.'],
   [/^(\d+) de (\d+) refeições? feitas? hoje$/, '$1 of $2 meals done today'],
   [/^de (\d+) copos( ✓)?$/, 'of $1 glasses$2'],
   [/^Semana (\d+) fechada\. O próximo treino abre na aba Treino\.$/, 'Week $1 closed. The next workout opens in the Workout tab.']
@@ -28184,6 +28222,65 @@ function _hojeAbertura() {
   switchView('hoje');
 }
 function _hjEsc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+// v687 (GH 19/11: "tá muito vazio aquilo ali"): a Hoje mostra o CONTEÚDO do dia. Treino: a semana em chips, os músculos do dia,
+// os exercícios com a prescrição e o peso de hoje (o mesmo do aviso 💡 do card, lido dele pra nunca dar dois números). Refeição: a
+// foto, os alimentos e as quantidades. Evolução: as cargas que mais subiram desde a primeira semana (mesma conta dos Recordes).
+function _hjPresc(ex) {
+  try {
+    var p = [];
+    // ficha rotulada (aq/aj/pap/val/bo): só as válidas e as reps delas, sem o código interno das séries
+    var sg = _serieSegs(String(ex.series || '')), rg = String(ex.reps || '').replace(/<[^>]+>/g, '').split('/').map(function (x) { return x.trim(); });
+    if (sg.length && sg.some(function (s) { return /\d+\s*[xX]\s*(aq|aj|pap|bo|val)\b/i.test(s); })) {
+      var nv = 0, rv = '';
+      sg.forEach(function (s, k) { var m = s.match(/(\d+)\s*[xX]\s*([a-zA-Z]*)/); if (!m) return; var t = String(m[2] || '').toLowerCase(); if (t === 'aq' || t === 'aj' || t === 'pap' || t === 'bo') return; nv += parseInt(m[1], 10) || 0; if (!rv && rg.length === sg.length) rv = rg[k]; });
+      if (nv) return nv + (nv === 1 ? ' série válida' : ' séries válidas') + (rv ? ' · ' + ((/seg|min|\bs\b/i.test(rv) || !/\d\s*$/.test(rv)) ? rv : rv + ' reps') : '');
+    }
+    var s = (typeof _seriesTxtSoma === 'function' && _seriesTxtSoma(ex)) || (ex.series ? String(ex.series).replace(/\s*[xX]\s*$/, '') + (/^\s*0?1\s*$/.test(String(ex.series).replace(/\s*[xX]\s*$/, '')) ? ' série' : ' séries') : '');
+    if (s) p.push(String(s).replace(/<[^>]+>/g, '').trim());
+    if (ex.reps) { var r = String(ex.reps).replace(/<[^>]+>/g, '').trim(); if (r) p.push((/seg|min|\bs\b/i.test(r) || !/\d\s*$/.test(r)) ? r : r + ' reps'); }
+    return p.join(' · ');
+  } catch (_) { return ''; }
+}
+function _hjAlvo(di, ei, nome) {
+  try {
+    var c = _progChipHtml(di, ei, nome); if (!c) return '';
+    var m = c.match(/tenta ([^<]+)<\/b>/) || c.match(/mantém ([^<]+)<\/b>/);
+    if (m) return 'Hoje ' + m[1].trim();
+    if (/manter ou descer/.test(c)) return 'Manter ou descer';
+  } catch (_) {}
+  return '';
+}
+function _hjMusculos(day) {
+  try {
+    var cont = {}, ordem = [];
+    (day.exercises || []).forEach(function (ex) {
+      if (!ex || ex.warmup) return;
+      [ex.name, ex.a && ex.a.name, ex.b && ex.b.name].forEach(function (n) {
+        if (!n) return; var m = MUSCULOS_ALVO[_normEx(n)]; if (!m || !m.p) return;
+        m.p.forEach(function (x) { if (!cont[x]) { cont[x] = 0; ordem.push(x); } cont[x]++; });
+      });
+    });
+    return ordem.sort(function (a, b) { return cont[b] - cont[a] || ordem.indexOf(a) - ordem.indexOf(b); }).slice(0, 3);
+  } catch (_) { return []; }
+}
+function _hjEvolucao() {
+  var items = [];
+  try {
+    WORKOUT.forEach(function (day, di) {
+      (day.exercises || []).forEach(function (ex, ei) {
+        if (!ex || ex.warmup || ex.biset) return;
+        var nome = (typeof _exAtivo === 'function' ? _exAtivo(di, ei).name : ex.name); if (!nome) return;
+        var serie = [];
+        for (var w = 1, wt = _weekTeto(); w <= wt; w++) { var v = parseFloat(_cargaTopo(di, String(ei), w)) || 0; if (v > 0) serie.push(v); }
+        if (serie.length < 2) return;
+        var a = serie[0], b = serie[serie.length - 1];
+        if (b > a) items.push({ nome: nome, a: a, b: b, pct: (b - a) / a * 100 });
+      });
+    });
+  } catch (_) {}
+  return items.sort(function (x, y) { return y.pct - x.pct; });
+}
+function _hjVaiDia(i) { try { switchView('treino'); _fmTrocaDia(i); } catch (_) {} }
 function renderHojeScreen() {
   var host = document.getElementById('hojeView'); if (!host) return;
   var h = '<div class="prog-screen">';
@@ -28196,15 +28293,40 @@ function renderHojeScreen() {
   try {
     if (typeof WORKOUT !== 'undefined' && WORKOUT && WORKOUT.length) {
       var vis = []; for (var i = 0; i < WORKOUT.length; i++) if (_isVisibleDay(WORKOUT[i])) vis.push(i);
-      var todos = vis.length && vis.every(function (di) { try { return allDoneOfDay(di, true); } catch (_) { return false; } });
+      var feitoDia = {}; vis.forEach(function (x) { try { feitoDia[x] = !!allDoneOfDay(x, true); } catch (_) { feitoDia[x] = false; } });
+      var nFeitos = vis.filter(function (x) { return feitoDia[x]; }).length;
+      var todos = vis.length && nFeitos === vis.length;
       var di = currentDay, w = WORKOUT[di] || {};
       h += '<div class="pg-card"><div class="pg-sec-t">TREINO DE HOJE</div>';
+      if (vis.length > 1) {
+        h += '<div class="hj-semana"><span>Semana ' + currentWeek + '</span><span>' + nFeitos + ' de ' + vis.length + ' treinos feitos</span></div><div class="hj-dias">';
+        vis.forEach(function (x) { h += '<button type="button" class="hj-dia' + (feitoDia[x] ? ' feito' : '') + (x === di && !todos ? ' hoje' : '') + '" onclick="_hjVaiDia(' + x + ')">' + _hjEsc(WORKOUT[x].day || ('Dia ' + (x + 1))) + (feitoDia[x] ? ' ✓' : '') + '</button>'; });
+        h += '</div>';
+      }
       if (todos) {
         h += '<div class="hj-nome">Treinos desta semana feitos ✓</div><div class="hj-txt">Semana ' + currentWeek + ' fechada. O próximo treino abre na aba Treino.</div>';
         h += '<button type="button" class="te-btn" style="width:100%;" onclick="switchView(\'treino\')">Ver meus treinos</button>';
       } else {
-        h += '<div class="hj-nome">' + _hjEsc(w.day || 'Treino') + '</div>' + (_diaProgHtml_(di) || '');
-        h += '<button type="button" class="te-btn" style="width:100%;" onclick="switchView(\'treino\')">Ir pro treino</button>';
+        h += '<div class="hj-nome">' + _hjEsc(w.day || 'Treino') + '</div>';
+        var mus = _hjMusculos(w); if (mus.length) h += '<div class="hj-musc">' + mus.map(_hjEsc).join(' · ') + '</div>';
+        h += (_diaProgHtml_(di) || '');
+        var lista = []; (w.exercises || []).forEach(function (ex, ei) { if (ex && !ex.warmup) lista.push(ei); });
+        var MAX = 6, fezAlgum = false;
+        h += '<div class="hj-lista">';
+        lista.slice(0, MAX).forEach(function (ei) {
+          var ex = w.exercises[ei], feito = false; try { feito = isDone(di, ei); } catch (_) {}
+          if (feito) fezAlgum = true;
+          var act = ex.biset ? null : ((typeof _exAtivo === 'function' && _exAtivo(di, ei)) || ex);
+          var nomeEx = ex.biset ? [(ex.a || {}).name, (ex.b || {}).name].filter(Boolean).join(' + ') : (act.name || '');
+          var thumb = ''; try { thumb = _thumbHtml(ex.biset ? (ex.a || {}).video : act.video, 'hj-th') || ''; } catch (_) {}
+          var alvo = (!ex.biset && !feito) ? _hjAlvo(di, ei, act.name) : '';
+          h += '<div class="hj-ex' + (feito ? ' feito' : '') + '" onclick="switchView(\'treino\')">' + (thumb || '<div class="hj-ph">' + (lista.indexOf(ei) + 1) + '</div>')
+            + '<div class="hj-ex-i"><div class="hj-ex-n">' + _hjEsc(nomeEx) + '</div><div class="hj-ex-p">' + _hjEsc(_hjPresc(ex.biset ? (ex.a || ex) : ex)) + '</div></div>'
+            + (feito ? '<div class="hj-ex-c">✓</div>' : (alvo ? '<div class="hj-ex-c">' + _hjEsc(alvo) + '</div>' : '')) + '</div>';
+        });
+        h += '</div>';
+        if (lista.length > MAX) h += '<div class="hj-mais">e mais ' + (lista.length - MAX) + (lista.length - MAX === 1 ? ' exercício' : ' exercícios') + '</div>';
+        h += '<button type="button" class="te-btn" style="width:100%;" onclick="switchView(\'treino\')">' + (fezAlgum ? 'Continuar treino' : 'Começar treino') + '</button>';
       }
       h += '</div>';
     }
@@ -28218,10 +28340,22 @@ function renderHojeScreen() {
         var ri = _mealAgoraRi_(cy);
         if (ri == null || isMealDone(ri)) { var prox = null; for (var r = (ri == null ? 0 : ri + 1); r < refs.length; r++) { if (!isMealDone(r)) { prox = r; break; } } ri = prox; }
         var feitas = dietMealsDone(), tot = dietTotalMeals();
+        var cont = feitas + ' de ' + tot + (tot === 1 ? ' refeição feita hoje' : ' refeições feitas hoje');
         h += '<div class="pg-card"><div class="pg-sec-t">' + (ri == null ? 'DIETA DE HOJE' : 'PRÓXIMA REFEIÇÃO') + '</div>';
-        if (ri == null) h += '<div class="hj-nome">Refeições de hoje feitas ✓</div>';
-        else { var hr = ''; try { var hs = _refHoras(); hr = (hs[ri] && hs[ri].h) || ''; } catch (_) {} h += '<div class="hj-nome">' + _hjEsc(refs[ri].nome || ('Refeição ' + (ri + 1))) + (hr ? ' · ' + _hjEsc(hr) : '') + '</div>'; }
-        h += '<div class="hj-txt">' + feitas + ' de ' + tot + (tot === 1 ? ' refeição feita hoje' : ' refeições feitas hoje') + '</div>';
+        if (ri == null) h += '<div class="hj-nome">Refeições de hoje feitas ✓</div><div class="hj-txt">' + cont + '</div>';
+        else {
+          var ref = refs[ri], hr = ''; try { var hs = _refHoras(); hr = (hs[ri] && hs[ri].h) || ''; } catch (_) {}
+          var foto = ''; try { var fs = _refFotos_(ref); if (fs && fs[0]) foto = '<img src="thumbs/refeicoes/' + fs[0] + '.jpg" alt="" loading="lazy" decoding="async" onerror="this.remove()">'; } catch (_) {}
+          h += '<div class="hj-ref">' + foto + '<div><div class="hj-nome">' + _hjEsc(ref.nome || ('Refeição ' + (ri + 1))) + (hr ? ' · ' + _hjEsc(hr) : '') + '</div><div class="hj-txt">' + cont + '</div></div></div>';
+          var ops = ref.opcoes || [], ali = (ref.alimentos || []).filter(function (a) { return a && !a.alt; });
+          if (ops.length) ali = ali.concat(((ops[0] || {}).alimentos || []).filter(function (a) { return a && !a.alt; }));
+          if (ops.length > 1) h += '<div class="hj-op">' + _hjEsc(String(ops[0].nome || 'Opção 1')) + ' (tem ' + ops.length + ' opções na dieta)</div>';
+          var MAXA = 6;
+          h += '<div class="hj-ali-wrap">';
+          ali.slice(0, MAXA).forEach(function (a) { h += '<div class="hj-ali"><span>' + _hjEsc(String(a.nome || '').replace(/<[^>]+>/g, '')) + '</span><span>' + _hjEsc(String(a.qtd || '').replace(/<[^>]+>/g, '')) + '</span></div>'; });
+          h += '</div>';
+          if (ali.length > MAXA) h += '<div class="hj-mais">e mais ' + (ali.length - MAXA) + (ali.length - MAXA === 1 ? ' item' : ' itens') + '</div>';
+        }
         h += '<button type="button" class="te-btn" style="width:100%;" onclick="switchView(\'dieta\')">Ver dieta</button></div>';
       }
     }
@@ -28237,6 +28371,19 @@ function renderHojeScreen() {
       h += '<div class="hj-par">' + agua + '<div class="pg-card"><div class="pg-sec-t">CARDIO DA SEMANA</div><div class="hj-num">' + cc + ' <small>de ' + ct + (cc >= ct ? ' ✓' : '') + '</small></div>'
         + '<button type="button" class="te-btn ghost" style="width:100%;" onclick="switchView(\'dieta\')">Ver cardio</button></div></div>';
     } else h += agua;
+  } catch (_) {}
+  // evolução
+  try {
+    if (typeof WORKOUT !== 'undefined' && WORKOUT && WORKOUT.length) {
+      var ev = _hjEvolucao(), un = getUnit(), fk = function (kg) { return kgToDisplay(kg) + un; };
+      h += '<div class="pg-card"><div class="pg-sec-t">TUA EVOLUÇÃO</div>';
+      if (ev.length) {
+        h += '<div class="hj-txt">' + ev.length + (ev.length === 1 ? ' exercício já está' : ' exercícios já estão') + ' com mais carga que na primeira semana.</div>';
+        ev.slice(0, 3).forEach(function (x) { h += '<div class="hj-evo"><span>' + _hjEsc(x.nome) + '</span><b>' + fk(x.a) + ' → ' + fk(x.b) + ' (+' + Math.round(x.pct) + '%)</b></div>'; });
+        h += '<div style="height:12px"></div>';
+      } else h += '<div class="hj-txt">Anota a carga das tuas séries. Da segunda semana em diante, os exercícios que mais subiram aparecem aqui.</div>';
+      h += '<button type="button" class="te-btn ghost" style="width:100%;" onclick="switchView(\'progresso\')">Ver meu progresso</button></div>';
+    }
   } catch (_) {}
   host.innerHTML = h + '</div>';
 }
@@ -30403,7 +30550,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v686';
+var APP_SHELL_V = 'metodo-gh-v687';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
