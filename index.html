@@ -1904,12 +1904,26 @@
   :root[data-theme="light"] .proto-aviso-cta { background: rgba(46, 139, 98, .12); color: #1d6b48; }
   body.modo-simples.ver-parceiros #suplementosToggle { display: flex !important; }
   body.modo-simples.ver-parceiros #suplementosContent.show { display: block !important; }
-  /* v677: Parceiros aberto pelo Mais aparece também no modo Intuitivo */
-  body.modo-simples.ver-parceiros #parceirosToggle { display: flex !important; }
-  body.modo-simples.ver-parceiros #parceirosContent.show { display: block !important; }
-  /* v680 (GH 19/11, "Tem que colocar no modo intuitivo o negócio do Renato"): Marcas de confiança aparece no Intuitivo, Arte e Ciência primeiro */
-  body.modo-simples #parceirosToggle[style*="flex"] { display: flex !important; }
-  body.modo-simples #parceirosContent.show { display: block !important; }
+  /* v681 (GH 19/11, "essa parte das marcas de confiança fica sem sentido se tem os cards, é informação duplicada"): a seção sai dos
+     dois modos; cupom e desconto vão no card da vitrine, que abre o parceiro direto. O HTML fica escondido (código antigo procura os ids). */
+  #parceirosToggle, #parceirosContent { display: none !important; }
+  a.parc-tile { text-decoration: none; -webkit-tap-highlight-color: transparent; }
+  .parc-tile { flex-basis: 148px; min-height: 168px; }
+  .parc-tile .pt-cup { display: inline-flex; align-items: center; gap: 5px; margin-top: 4px; font-size: 10.5px; color: #cfc6b6; }
+  .parc-tile .pt-cup b { font-family: ui-monospace, Menlo, monospace; font-size: 12px; letter-spacing: .08em; color: var(--white, #fff); border: 1px dashed rgba(212, 175, 106, .75); border-radius: 7px; padding: 2px 6px; }
+  .parc-tile .pt-via { margin-top: 4px; font-size: 10.5px; color: #8fe0b8; font-weight: 700; }
+  .parc-tile .pt-off + .pt-cup, .parc-tile .pt-off + .pt-via { margin-top: 0; }
+  .parc-tile .pt-pe { margin-top: auto; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+  .parc-tile .pt-pe .pt-off { margin-top: 0; }
+  :root[data-theme="light"] .parc-tile .pt-cup { color: #6f6553; }
+  :root[data-theme="light"] .parc-tile .pt-cup b { color: #2a2218; }
+  :root[data-theme="light"] .parc-tile .pt-via { color: #1d6b48; }
+  .parc-strip.grade .parc-row { flex-wrap: wrap; overflow: visible; scroll-snap-type: none; }
+  .parc-strip.grade .parc-tile { flex: 1 1 calc(50% - 5px); }
+  .parc-toast { position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 9999; max-width: calc(100% - 40px);
+    background: #1f1c17; color: #f3ead8; border: 1px solid rgba(212, 175, 106, .6); border-radius: 14px; padding: 10px 14px; font-size: 13px; font-weight: 700; text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .45); opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .parc-toast.on { opacity: 1; }
 
   /* ── Footer ── */
   .app-footer {
@@ -25737,44 +25751,72 @@ function abrirParceiros(k) {
     setTimeout(function () { _parcFlash(document.getElementById('suplementosToggle')); }, 120);
     return;
   }
-  const c = document.getElementById('parceirosContent');
-  if (c && !c.classList.contains('show')) toggleParceiros();
+  // v681: sem a seção Marcas de confiança, o Mais e o atalho do Renato levam pra vitrine do Treino (aberta em grade) e acendem o card
   setTimeout(function () {
-    let alvo = null;
-    const P = { renato: /Arte e Ci/, yangfit: /YangFit/, alphaco: /AlphaCo/, biotech: /Biotech/ };
-    if (k && P[k]) alvo = Array.from(document.querySelectorAll('#parceirosContent .partner-card')).find(function (x) { return P[k].test(x.textContent); }) || null;
-    if (alvo) _parcFlash(alvo);
-    else try { (document.getElementById('parceirosToggle') || c).scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {}
-  }, 120);
+    const st = document.getElementById('parcStripT'); if (!st) return;
+    if (!k) _parcGrade(st, true);
+    const t = k ? st.querySelector('.parc-tile[data-k="' + k + '"]') : null;
+    _parcFlash(t || st);
+  }, 150);
 }
-// v678: vitrine de parceiros (fim do Treino e fim da Dieta). Toque abre o card do parceiro com cupom e link; conta na CLICKS_AFILIADOS
-// como parceiro "vitrine" (não é toque no link do parceiro, é só a abertura do card).
+// v678: vitrine de parceiros (fim do Treino e fim da Dieta). v681 (GH 19/11): o card mostra cupom e desconto e o toque abre o parceiro
+// direto (link de verdade, igual aos cards antigos), copiando o cupom. Conta na CLICKS_AFILIADOS como parceiro "vitrine", com a URL.
 const _PARC = [
-  { k: 'renato', ic: '💊', n: 'Arte e Ciência', s: 'Manipula a tua suplementação', off: 'DESCONTO', c: 'rgba(46, 139, 98, .55)' },
-  { k: 'yangfit', ic: '🏋️', n: 'YangFit', s: 'Equipamentos e acessórios', off: '15% OFF', c: 'rgba(214, 96, 48, .5)' },
-  { k: 'alphaco', ic: '👕', n: 'AlphaCo', s: 'Roupas de treino', off: '5% OFF', c: 'rgba(150, 150, 172, .5)' },
-  { k: 'biotech', ic: '🧪', n: 'Biotech', s: 'Fala com o Aquiles', off: 'DESCONTO', c: 'rgba(70, 130, 230, .5)' },
+  { k: 'renato', ic: '💊', n: 'Arte e Ciência', s: 'Farmácia de manipulação', off: 'DESCONTO', via: 'Pelo WhatsApp', url: 'https://links.metodogh.com.br/renato?de=app', c: 'rgba(46, 139, 98, .55)' },
+  { k: 'yangfit', ic: '🏋️', n: 'YangFit', s: 'Equipamentos e acessórios', off: '15% OFF', cup: 'GH15', url: 'https://yangfit.com.br/?utm_source=instagram&utm_medium=GH&utm_campaign=afiliado&utm_content=parceiro%3D7865&from=app-vitrine', c: 'rgba(214, 96, 48, .5)' },
+  { k: 'alphaco', ic: '👕', n: 'AlphaCo', s: 'Roupas de treino', off: '5% OFF', cup: 'GH', url: 'https://usealphaco.com.br/discount/GH?utm_source=app&utm_medium=protocolo&utm_campaign=vitrine', c: 'rgba(150, 150, 172, .5)' },
+  { k: 'ftw', ic: '🥤', n: 'FTW', s: 'Whey, creatina e pré-treino', off: '', cup: 'GHS', url: 'https://ftw.com.br/', c: 'rgba(200, 60, 60, .5)' },
+  { k: 'biotech', ic: '🧪', n: 'Biotech', s: 'Desconto com o Aquiles', off: 'DESCONTO', via: 'Pelo WhatsApp', url: 'https://w.app/m4akut', c: 'rgba(70, 130, 230, .5)' },
   { k: 'lojas', ic: '🛒', n: 'Onde comprar', s: 'Suplementos e acessórios indicados', off: 'ALUNO', c: 'rgba(212, 175, 106, .55)' },
 ];
+function _parcEsc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 function _parcStrip(onde) {
   let t = '<div class="parc-strip"><div class="parc-strip-h"><span class="parc-strip-t">Descontos de aluno</span>'
-    + '<button type="button" class="parc-strip-v" onclick="_parcToque(\'todos\', \'' + onde + '\')">Ver todos ›</button></div><div class="parc-row">';
+    + '<button type="button" class="parc-strip-v" onclick="_parcGrade(this.closest(\'.parc-strip\'))">Ver todos ›</button></div><div class="parc-row">';
   _PARC.forEach(function (p) {
-    t += '<button type="button" class="parc-tile" style="--pc:' + p.c + '" onclick="_parcToque(\'' + p.k + '\', \'' + onde + '\')">'
-      + '<span class="pt-ic">' + p.ic + '</span><span class="pt-n">' + p.n + '</span><span class="pt-s">' + p.s + '</span><span class="pt-off">' + p.off + '</span></button>';
+    const miolo = '<span class="pt-ic">' + p.ic + '</span><span class="pt-n">' + _parcEsc(p.n) + '</span><span class="pt-s">' + _parcEsc(p.s) + '</span><span class="pt-pe">'
+      + (p.off ? '<span class="pt-off">' + _parcEsc(p.off) + '</span>' : '')
+      + (p.cup ? '<span class="pt-cup">Cupom <b>' + _parcEsc(p.cup) + '</b></span>' : '')
+      + (p.via ? '<span class="pt-via">' + _parcEsc(p.via) + ' ›</span>' : '') + '</span>';
+    const toque = 'onclick="_parcToque(\'' + p.k + '\', \'' + onde + '\')"';
+    t += p.url
+      ? '<a class="parc-tile" data-k="' + p.k + '" style="--pc:' + p.c + '" href="' + _parcEsc(p.url) + '" target="_blank" rel="noopener" ' + toque + '>' + miolo + '</a>'
+      : '<button type="button" class="parc-tile" data-k="' + p.k + '" style="--pc:' + p.c + '" ' + toque + '>' + miolo + '</button>';
   });
+  // o card da farmácia vai pela rota do CRM com o mesmo s= da v676 (resumo do ID da planilha, nunca o ID)
+  setTimeout(function () { try { _renatoS().then(function (hex) { if (!hex) return; document.querySelectorAll('.parc-tile[data-k="renato"]').forEach(function (a) { a.href = 'https://links.metodogh.com.br/renato?de=app&s=' + hex; }); }); } catch (_) {} }, 0);
   return t + '</div></div>';
 }
+function _parcGrade(st, abre) {
+  if (!st) return;
+  const fora = st.parentElement && st.parentElement.closest('.parc-strip'); if (fora) st = fora;   // no Treino a faixa mora dentro do #parcStripT
+  const on = abre === true ? true : !st.classList.contains('grade');
+  st.classList.toggle('grade', on);
+  const v = st.querySelector('.parc-strip-v'); if (v) v.textContent = on ? 'Recolher' : 'Ver todos ›';
+}
+function _parcAviso(txt) {
+  try {
+    let el = document.getElementById('parcToast');
+    if (!el) { el = document.createElement('div'); el.id = 'parcToast'; el.className = 'parc-toast'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+    el.textContent = txt; el.classList.add('on');
+    clearTimeout(el._t); el._t = setTimeout(function () { el.classList.remove('on'); }, 2600);
+  } catch (_) {}
+}
 function _parcToque(k, onde) {
+  const p = _PARC.find(function (x) { return x.k === k; });
   try {
     if (typeof LOG_ENDPOINT !== 'undefined' && typeof SHEET_ID !== 'undefined' && SHEET_ID) {
-      const p = _PARC.find(function (x) { return x.k === k; });
+      const a = document.querySelector('.parc-tile[data-k="' + k + '"]');
       fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true, body: JSON.stringify({ type: 'click', sheetId: SHEET_ID,
-        studentName: (document.getElementById('infoNome') ? document.getElementById('infoNome').textContent : '').trim(), partner: 'vitrine', productName: p ? p.n : 'Ver todos',
-        url: '', tag: 'VITRINE ' + String(onde || '').toUpperCase(), ts: new Date().toISOString() }) }).catch(function () {});
+        studentName: (document.getElementById('infoNome') ? document.getElementById('infoNome').textContent : '').trim(), partner: 'vitrine', productName: p ? p.n : '',
+        url: (a && a.getAttribute('href')) || '', tag: 'VITRINE ' + String(onde || '').toUpperCase(), ts: new Date().toISOString() }) }).catch(function () {});
     }
   } catch (_) {}
-  abrirParceiros(k === 'todos' ? '' : k);
+  if (!p || !p.url) { abrirParceiros(k); return; }
+  if (p.cup) {
+    try { navigator.clipboard.writeText(p.cup).then(function () { _parcAviso('Cupom ' + p.cup + ' copiado. Cola na hora de pagar.'); }, function () { _parcAviso('Cupom ' + p.cup + ': usa na hora de pagar.'); }); }
+    catch (_) { _parcAviso('Cupom ' + p.cup + ': usa na hora de pagar.'); }
+  }
 }
 // v678: atalho do aviso de reajuste: vai pra Dieta, abre a Suplementação e acende o card do Renato (sem lista manipulável, abre o card em Parceiros)
 function abrirSuplRenato() {
@@ -30107,7 +30149,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v680';
+var APP_SHELL_V = 'metodo-gh-v681';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
