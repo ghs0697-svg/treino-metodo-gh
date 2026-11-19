@@ -1854,6 +1854,15 @@
   }
   .partner-link:active { opacity: 0.75; }
   .partner-link.whatsapp { background: #25d366; color: #fff; }
+  /* v677: card do Renato na Suplementação da Dieta */
+  .supl-renato { border-color: rgba(212, 175, 106, .45); background: linear-gradient(rgba(212, 175, 106, .10), rgba(212, 175, 106, .03)), #151412; border-radius: 14px; margin: 0 0 14px; }
+  .supl-renato .partner-msg-tip { font-style: normal; font-size: 11px; color: #9a9389; line-height: 1.45; }
+  .supl-renato .partner-link { border-radius: 10px; padding: 11px; font-size: 13px; }
+  :root[data-theme="light"] .supl-renato { background: var(--liq-fill, #fff); border-color: rgba(167, 126, 42, .45); }
+  :root[data-theme="light"] .supl-renato .partner-msg-tip { color: #6f6553; }
+  /* v677: Parceiros aberto pelo Mais aparece também no modo Intuitivo */
+  body.modo-simples.ver-parceiros #parceirosToggle { display: flex !important; }
+  body.modo-simples.ver-parceiros #parceirosContent.show { display: block !important; }
 
   /* ── Footer ── */
   .app-footer {
@@ -8589,6 +8598,9 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
     </button>
     <button type="button" class="mais-opt" onclick="closeMaisSheet(); openIndicacao()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></span><span>Indicação: indica um amigo e ganha</span>
+    </button>
+    <button type="button" class="mais-opt" onclick="closeMaisSheet(); abrirParceiros()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></span><span>Parceiros e descontos <span style="color:#9a9488;font-weight:500;">(lojas e farmácia)</span></span>
     </button>
     <div class="mais-sep">FERRAMENTAS</div>
     <button type="button" class="mais-opt" onclick="closeMaisSheet(); openRankingModal()">
@@ -25516,6 +25528,87 @@ function _cupomCopia(codigo, btn) {
   try { navigator.clipboard.writeText(codigo).then(ok, () => { try { prompt('Copia o cupom:', codigo); } catch (_) {} }); }
   catch (_) { try { prompt('Copia o cupom:', codigo); } catch (__) {} }
 }
+// ── v677: lista da suplementação pro Renato (Arte e Ciência) ──
+// Sai SÓ da seção Suplementação da dieta. Nunca entra: bloco que a Entregas ou a Reajustes escreve com cabeçalho de protocolo,
+// hormônio, ciclo, TPC, peptídeo ou remédio; item com nome de hormônio, peptídeo ou remédio (mesma lista do Montar, FORA do GHSU,
+// com mais alguns nomes comerciais); a Prescrição médica (outra seção, d.med); e o que farmácia de manipulação não faz (whey e
+// proteína em pó). A lista vai na URL da rota do CRM (itens=), que escreve a mensagem do WhatsApp com o código de indicação.
+const _RENATO_SEC = /hormon|protocolo|\bciclo\b|\btpc\b|pept|aplica|injet|medicament|remedio|prescri|\bmedic/;
+const _RENATO_FORA = /testo|enantato|cipionato|propionato|undecanoato|durateston|deca\b|nandrol|\bnpp\b|trembol|oxandrol|anavar|primobol|bolden|equipoise|masteron|drostanol|stanoz|winstrol|dianabol|metandrost|hemogenin|oximetol|turinabol|halotest|fluoximest|\bdhb\b|anastrozol|letrozol|exemestan|tamoxif|clomif|\bhcg\b|gonadotrof|cabergol|dostinex|tirzep|retatrut|semaglut|ozempic|mounjaro|wegovy|saxenda|liraglut|\bcjc\b|ipamorel|\bbpc\b|tb-? ?500|mots-? ?c|ghk|tesamorel|somatrop|hormonio|peptideo|clembut|clenbut|ioimbina|yohimb|sibutram|levotirox|puran\b|synthroid|\bt3\b|\bt4\b|glifage|metformina|finaster|dutaster|minoxidil|sildenafil|tadalafil|insulina|seringa|agulha|intramusc|subcut|statina|crestor|lipitor|losartan|valsartan|olmesartan|janumet|sitaglipt|vildaglipt|dapaglif|empaglif|forxiga|jardiance|anlodipin|enalapril|captopril|hidroclorot|atenolol|propranolol|omeprazol|pantoprazol|esomeprazol|roacutan|isotretino|anticoncep/;
+const _RENATO_NAO = /whey|proteina (em po|isolada|concentrada|vegetal)|albumina|hipercalor|caseina|barra de proteina/;
+function _suplRenatoItens(d) {
+  const nrm = function (t) { return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); };
+  const mapa = [], idx = {};
+  Object.keys((d && d.supls) || {}).forEach(function (timing) {
+    if (_RENATO_SEC.test(nrm(timing))) return;
+    (d.supls[timing] || []).forEach(function (s) {
+      const nome = String(s.nome || '').trim(), dose = String(s.dose || '').trim();
+      if (!nome) return;
+      const t = nrm(nome + ' ' + dose);
+      if (_RENATO_FORA.test(t) || _RENATO_SEC.test(nrm(nome)) || _RENATO_NAO.test(t)) return;
+      const k = nrm(nome).replace(/\s+/g, ' ') + '|' + nrm(dose).replace(/\s+/g, '');
+      const hora = /^outros$/i.test(timing) ? '' : String(timing).trim().toLowerCase().slice(0, 40);
+      if (idx[k] === undefined) { idx[k] = mapa.length; mapa.push({ nome: nome, dose: dose, horas: [] }); }
+      const it = mapa[idx[k]]; if (hora && it.horas.indexOf(hora) < 0) it.horas.push(hora);
+    });
+  });
+  return mapa.map(function (it) {
+    const hs = it.horas.length > 1 ? it.horas.slice(0, -1).join(', ') + ' e ' + it.horas[it.horas.length - 1] : (it.horas[0] || '');
+    return { nome: it.nome, linha: ('• ' + it.nome + (it.dose ? ': ' + it.dose : '') + (hs ? ', ' + hs : '')).replace(/[\u2014\u2013]/g, '-').slice(0, 110) };
+  });
+}
+function _suplRenatoTexto(itens) {
+  const L = []; let n = 0;
+  for (const it of itens) { if (L.length >= 28 || n + it.linha.length > 1350) break; L.push(it.linha); n += it.linha.length + 1; }
+  if (L.length < itens.length) L.push('• e mais ' + (itens.length - L.length) + ' da minha lista');
+  return L.join('\n');
+}
+// resumo do ID da planilha pro s= (o mesmo da v676): SHA-256, 12 primeiros caracteres em hexadecimal. Calcula uma vez.
+let _renatoHexP = null, _renatoHex = '';
+function _renatoS() {
+  if (_renatoHexP) return _renatoHexP;
+  _renatoHexP = new Promise(function (ok) {
+    try {
+      const sid = (typeof SHEET_ID !== 'undefined' && SHEET_ID && SHEET_ID !== 'demo') ? String(SHEET_ID) : '';
+      if (!sid || !(window.crypto && crypto.subtle && window.TextEncoder)) return ok('');
+      crypto.subtle.digest('SHA-256', new TextEncoder().encode(sid)).then(function (buf) {
+        _renatoHex = Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('').slice(0, 12); ok(_renatoHex);
+      }).catch(function () { ok(''); });
+    } catch (_) { ok(''); }
+  });
+  return _renatoHexP;
+}
+function _suplRenatoCard(d) {
+  const itens = _suplRenatoItens(d);
+  if (!itens.length) return '';
+  _renatoS();
+  const lista = _suplRenatoTexto(itens);
+  const nomes = itens.map(function (i) { return i.nome; });
+  const prev = nomes.length <= 3 ? nomes.join(', ') : nomes.slice(0, 3).join(', ') + ' e mais ' + (nomes.length - 3);
+  const href = 'https://links.metodogh.com.br/renato?de=app-supl&itens=' + encodeURIComponent(lista);
+  const esc = function (t) { return String(t).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+  return '<div class="partner-card supl-renato">'
+    + '<div class="partner-card-head"><span class="partner-name">💊 Manipular na Arte e Ciência</span><span class="partner-discount">DESCONTO</span></div>'
+    + '<div class="partner-desc">Farmácia do Renato, que o GH usa há mais de 7 anos. Manda a tua lista e recebe o orçamento com desconto de aluno.</div>'
+    + '<div class="partner-msg-tip">Vai na mensagem: ' + esc(prev) + '. Abre o WhatsApp do Renato com a lista e o teu código de indicação do GH, só revisa e envia.</div>'
+    + '<a class="partner-link whatsapp" id="suplRenatoLink" href="' + esc(href) + '" data-lista="' + esc(lista) + '" target="_blank" rel="noopener">Mandar minha lista pro Renato →</a>'
+    + '</div>';
+}
+// no toque: põe o s= (se o resumo já ficou pronto) e copia a lista, pro caso de a mensagem abrir sem ela
+document.addEventListener('click', function (e) {
+  const a = e.target && e.target.closest ? e.target.closest('#suplRenatoLink') : null;
+  if (!a) return;
+  try { if (_renatoHex && !/[?&]s=/.test(a.href)) a.href = a.href.replace('?de=app-supl', '?de=app-supl&s=' + _renatoHex); } catch (_) {}
+  try { const l = a.getAttribute('data-lista') || ''; if (l && navigator.clipboard) navigator.clipboard.writeText('Olá, Renato! Vim por indicação do GH. Quero um orçamento pra manipular a minha suplementação:\n\n' + l).catch(function () {}); } catch (_) {}
+}, true);
+// v677: Parceiros pelo Mais (funciona também no modo Intuitivo, que esconde as seções do fim da aba Treino desde a v584)
+function abrirParceiros() {
+  try { switchView('treino'); } catch (_) {}
+  document.body.classList.add('ver-parceiros');
+  const c = document.getElementById('parceirosContent');
+  if (c && !c.classList.contains('show')) toggleParceiros();
+  setTimeout(function () { try { (document.getElementById('parceirosToggle') || c).scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {} }, 90);
+}
 function toggleParceiros() {
   const c = document.getElementById('parceirosContent');
   const a = document.getElementById('parceirosArrow');
@@ -25528,16 +25621,7 @@ function toggleParceiros() {
   // sem a mestre, ninguém chega no aluno nem no protocolo. Nunca nome, telefone, CPF nem o ID da planilha em si na URL.
   const link = document.getElementById('parceiroArteCiencia');
   if (link && !link.dataset.sOk) {
-    const base = 'https://links.metodogh.com.br/renato?de=app';
-    try {
-      const sid = (typeof SHEET_ID !== 'undefined' && SHEET_ID && SHEET_ID !== 'demo') ? String(SHEET_ID) : '';
-      if (sid && window.crypto && crypto.subtle && window.TextEncoder) {
-        crypto.subtle.digest('SHA-256', new TextEncoder().encode(sid)).then(function (buf) {
-          const hex = Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('').slice(0, 12);
-          link.href = base + '&s=' + hex; link.dataset.sOk = '1';
-        }).catch(function () {});
-      }
-    } catch (_) {}
+    _renatoS().then(function (hex) { if (hex) { link.href = 'https://links.metodogh.com.br/renato?de=app&s=' + hex; link.dataset.sOk = '1'; } });
   }
 }
 
@@ -27400,6 +27484,7 @@ function renderDiet() {
     html += `<div class="diet-section-toggle" onclick="toggleDietSection('supls')"><span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 20.5 3.5 13.5a5 5 0 0 1 7-7l7 7a5 5 0 0 1-7 7z"/><line x1="8.5" y1="8.5" x2="15.5" y2="15.5"/></svg></span><span class="tog-label">Suplementação</span><span class="tog-chev" id="suplsArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></div>`;
     html += `<div class="diet-section-content" id="suplsContent">`;
     html += `<div style="color:#8d8579;font-size:11.5px;line-height:1.5;margin:0 0 10px;">Esta é a <b style="color:#e7e2d8">tua</b> suplementação: o que tomar, dose e horário. Onde comprar com desconto fica na seção <b style="color:#e7e2d8">Onde comprar (lojas indicadas)</b>, e comprar por lá é opcional.</div>`;
+    html += _suplRenatoCard(d);   // v677
     suplTimings.forEach(timing => {
       const items = d.supls[timing] || [];
       if (!items.length) return; // section vazia (separator sem suplementos depois)
@@ -29837,7 +29922,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v676';
+var APP_SHELL_V = 'metodo-gh-v677';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
