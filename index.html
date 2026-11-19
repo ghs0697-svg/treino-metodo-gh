@@ -1907,6 +1907,9 @@
   /* v677: Parceiros aberto pelo Mais aparece também no modo Intuitivo */
   body.modo-simples.ver-parceiros #parceirosToggle { display: flex !important; }
   body.modo-simples.ver-parceiros #parceirosContent.show { display: block !important; }
+  /* v680 (GH 19/11, "Tem que colocar no modo intuitivo o negócio do Renato"): Marcas de confiança aparece no Intuitivo, Arte e Ciência primeiro */
+  body.modo-simples #parceirosToggle[style*="flex"] { display: flex !important; }
+  body.modo-simples #parceirosContent.show { display: block !important; }
 
   /* ── Footer ── */
   .app-footer {
@@ -8050,6 +8053,16 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
 
   <div class="partner-card">
     <div class="partner-card-head">
+      <span class="partner-name">💊 Arte e Ciência (manipulação)</span>
+      <span class="partner-discount">DESCONTO</span>
+    </div>
+    <div class="partner-desc">Farmácia de manipulação. GH usa há mais de 7 anos.</div>
+    <div class="partner-msg-tip">Ao clicar, abre o WhatsApp da farmácia com a mensagem pronta e o teu código de indicação do GH, só revisa e envia.</div>
+    <a class="partner-link whatsapp" id="parceiroArteCiencia" href="https://links.metodogh.com.br/renato?de=app" target="_blank" rel="noopener">Falar no WhatsApp →</a>
+  </div>
+
+  <div class="partner-card">
+    <div class="partner-card-head">
       <span class="partner-name">👕 AlphaCo</span>
       <span class="partner-discount">5% OFF</span>
     </div>
@@ -8075,16 +8088,6 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
     </div>
     <div class="partner-desc">Fala com o Aquiles no WhatsApp pro desconto exclusivo de aluno.</div>
     <a class="partner-link whatsapp" href="https://w.app/m4akut" target="_blank" rel="noopener">Falar no WhatsApp →</a>
-  </div>
-
-  <div class="partner-card">
-    <div class="partner-card-head">
-      <span class="partner-name">💊 Arte e Ciência (manipulação)</span>
-      <span class="partner-discount">DESCONTO</span>
-    </div>
-    <div class="partner-desc">Farmácia de manipulação. GH usa há mais de 7 anos.</div>
-    <div class="partner-msg-tip">Ao clicar, abre o WhatsApp da farmácia com a mensagem pronta e o teu código de indicação do GH, só revisa e envia.</div>
-    <a class="partner-link whatsapp" id="parceiroArteCiencia" href="https://links.metodogh.com.br/renato?de=app" target="_blank" rel="noopener">Falar no WhatsApp →</a>
   </div>
 </div>
 
@@ -30104,7 +30107,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v679';
+var APP_SHELL_V = 'metodo-gh-v680';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
