@@ -6341,6 +6341,13 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   body:not(.modo-simples) .exercise-card:not(.recolhido) .sets-footer > .carga-saved { position: absolute; right: 2px; top: -27px; pointer-events: none; }
   body:not(.modo-simples) .exercise-card:not(.recolhido) .sets-footer > .ex-actions { display: flex; flex: 1; }
   body:not(.modo-simples) .exercise-card:not(.recolhido) .sets-footer > .ex-actions > .ex-action-btn:not(.save-btn) { flex: 1 1 0; }
+  /* ══ v692 (GH 19/11, "melhora no geral"): Dieta. A refeição recolhida (fora da hora ou já feita) mostrava só o nome.
+     Agora traz embaixo do nome o que tem nela (até 2 linhas) e uma seta, porque nada dizia que o toque no nome abre. ══ */
+  .dm-nome .dm-res { display: none; margin-top: 4px; font-size: 12.5px; font-weight: 400; letter-spacing: 0; text-transform: none; line-height: 1.35; color: var(--fg-3); overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+  .diet-meal-card.dm-fora:not(.ver) .dm-res, .diet-meal-card:has(.diet-meal-check.done):not(.ver) .dm-res { display: -webkit-box; }
+  .diet-meal-card.dm-fora .dm-nome, .diet-meal-card:has(.diet-meal-check.done) .dm-nome { position: relative; padding-right: 26px; cursor: pointer; }
+  .diet-meal-card.dm-fora .dm-nome::after, .diet-meal-card:has(.diet-meal-check.done) .dm-nome::after { content: ''; position: absolute; right: 5px; top: 4px; width: 7px; height: 7px; border-right: 2px solid var(--fg-3); border-bottom: 2px solid var(--fg-3); transform: rotate(45deg); transition: transform .2s ease, top .2s ease; opacity: .85; }
+  .diet-meal-card.dm-fora.ver .dm-nome::after, .diet-meal-card.ver:has(.diet-meal-check.done) .dm-nome::after { transform: rotate(-135deg); top: 8px; }
 </style>
 <script>
 // ══ v593 (auditoria 26/10): dois guardas que NÃO dependem do script principal (ES5 puro, primeiro script da página) ══
@@ -10133,7 +10140,7 @@ const I18N_EN = {
 Object.assign(I18N_EN, {
   'Hoje': 'Today', 'HOJE': 'TODAY', 'TREINO DE HOJE': 'TODAY\'S WORKOUT', 'PRÓXIMA REFEIÇÃO': 'NEXT MEAL', 'DIETA DE HOJE': 'TODAY\'S DIET', 'ÁGUA': 'WATER', 'CARDIO DA SEMANA': 'CARDIO THIS WEEK',
   'Ir pro treino': 'Go to workout', 'Começar treino': 'Start workout', 'Continuar treino': 'Continue workout', 'TUA EVOLUÇÃO': 'YOUR PROGRESS', 'Ver meu progresso': 'See my progress', 'Feita ✓': 'Done ✓', 'TEU DIA': 'YOUR DAY', 'Próximo': 'Next', 'semana fechada ✓': 'week closed ✓',
-  'Meta da tua dieta': 'Goal from your diet', 'Meta do dia': 'Daily goal', 'Meta de hoje batida': 'Today\'s goal reached', 'Meta de hoje batida.': 'Today\'s goal reached.', 'Trocar recipiente': 'Change container', 'Meu recipiente': 'My container',
+  'Meta da tua dieta': 'Goal from your diet', 'Meta pelo teu peso': 'Goal from your weight', 'Meta do dia': 'Daily goal', 'Meta de hoje batida': 'Today\'s goal reached', 'Meta de hoje batida.': 'Today\'s goal reached.', 'Trocar recipiente': 'Change container', 'Meu recipiente': 'My container',
   'Com o que tu bebe água? Escolhe uma vez e o + soma a quantidade certa.': 'What do you drink water from? Pick once and the + adds the right amount.',
   'Copo 200 ml': 'Glass 200 ml', 'Copo 300 ml': 'Glass 300 ml', 'Garrafa 500 ml': 'Bottle 500 ml', 'Garrafa 1 L': 'Bottle 1 L', 'Já tomou? Marca aqui.': 'Had some? Log it here.', '📸 Foto do prato': '📸 Photo of the plate', 'Anota a carga das tuas séries. Da segunda semana em diante, os exercícios que mais subiram aparecem aqui.': 'Log the load of your sets. From the second week on, the exercises that went up the most show here.', 'Ver dieta': 'See diet', 'Ver cardio': 'See cardio', 'Ver meus treinos': 'See my workouts', 'Refeições de hoje feitas ✓': 'Today\'s meals done ✓', 'Treinos desta semana feitos ✓': 'This week\'s workouts done ✓', 'Olá!': 'Hi!', '(aulas do método)': '(method classes)',
   'NOVIDADES': 'NEWS', 'Novidades': 'News', 'Novidade': 'News', 'Link no grupo dos alunos': 'Link in the students group',
@@ -10220,7 +10227,7 @@ const I18N_RX = [
   [/^Faltam ([\d.,]+ (?:L|ml)) \((\d+) × ([\d.,]+ (?:L|ml))\)$/, '$1 to go ($2 × $3)'],
   [/^Pelo horário, o ideal agora seria ([\d.,]+ (?:L|ml))$/, 'By the clock, the ideal by now would be $1'],
   [/^([\d.,]+ (?:L|ml)) de ([\d.,]+ (?:L|ml)) até agora\.$/, '$1 of $2 so far.'],
-  [/^de ([\d.,]+ (?:L|ml)) hoje( \(meta da tua dieta\))?(?: · (meta batida ✅)| · faltam ([\d.,]+ (?:L|ml)))$/, (m, a, b, c, e) => 'of ' + a + ' today' + (b ? ' (goal from your diet)' : '') + (c ? ' · goal reached ✅' : ' · ' + e + ' to go')],
+  [/^de ([\d.,]+ (?:L|ml)) hoje( \(meta da tua dieta\)| \(pelo teu peso: (\d+) ml por kg\))?(?: · (meta batida ✅)| · faltam ([\d.,]+ (?:L|ml)))$/, (m, a, b, k, c, e) => 'of ' + a + ' today' + (k ? ' (from your weight: ' + k + ' ml per kg)' : (b ? ' (goal from your diet)' : '')) + (c ? ' · goal reached ✅' : ' · ' + e + ' to go')],
   [/^Semana (\d+) fechada\. O próximo treino abre na aba Treino\.$/, 'Week $1 closed. The next workout opens in the Workout tab.']
 ];
 function _i18nTxt(t) {
@@ -17886,6 +17893,7 @@ async function renderPeso(force) {
       const j = await r.json().catch(() => ({}));
       _pesoPts = (j && j.ok && Array.isArray(j.pontos)) ? j.pontos.map(p => (p && typeof p === 'object') ? Object.assign({}, p, { peso: Number(String(p.peso).replace(',', '.')) }) : null).filter(p => p && p.peso > 0) : [];   // v592: peso "82,5" em texto entrava como 0 e sumia do gráfico
     } catch (_) { _pesoPts = []; }
+    try { _aguaPesoGuarda(_pesoPts); } catch (_) {}
   }
   const porDia = {};
   _pesoPts.forEach(p => { porDia[p.data] = p; });   // 1 ponto por dia (o último do dia)
@@ -17920,6 +17928,7 @@ function registrarPeso() {
       const now = new Date();
       const dBR = ('0' + now.getDate()).slice(-2) + '/' + ('0' + (now.getMonth() + 1)).slice(-2) + '/' + now.getFullYear();
       (_pesoPts = _pesoPts || []).push({ ts: now.getTime(), data: dBR, fonte: 'app', peso: v });
+      try { _aguaPesoGuarda([{ ts: now.getTime(), peso: v }]); } catch (_) {}
       if (Array.isArray(_medTL)) _medTL.push({ ts: now.getTime(), data: dBR, fonte: 'app', peso: v });   // v582: o peso do cartão Tua evolução
       inp.value = '';
       renderPeso();
@@ -20883,7 +20892,7 @@ function _aguaIdealAgora(meta) {
 function _waterMetaInfo() {
   try {
     const D = (typeof DIET_DATA !== 'undefined' && DIET_DATA) ? DIET_DATA : null;
-    if (!D) return { l: 2, daDieta: false };
+    if (!D) return _aguaMetaSemDieta();
     const fontes = [];
     (D.metas || []).forEach(m => fontes.push([m.campo, (m.valor || '') + ' ' + (m.detalhe || '')]));
     (D.regras || []).forEach(r => fontes.push([r.nome, (r.valor || '') + ' ' + (r.detalhe || '')]));
@@ -20894,15 +20903,50 @@ function _waterMetaInfo() {
       if (m) { const v = parseFloat(m[1].replace(',', '.')); if (v >= 1 && v <= 8) return { l: v, daDieta: true }; }
     }
   } catch (_) {}
-  return { l: 2, daDieta: false };
+  return _aguaMetaSemDieta();
+}
+// ══ v691 (GH 19/11/2026: "tem regra por kg corporal, pode implementar") ══
+// Dieta sem número de água: a meta sai do peso do aluno, AGUA_ML_KG ml por kg, arredondada pro meio litro (entre 1,5 e 5 L).
+// O peso é o último da linha do tempo de medidas (anamnese, reajuste ou pesagem no app), guardado no aparelho pra meta não
+// depender de internet. Sem peso nenhum, segue 2 L. Trocar a regra = trocar AGUA_ML_KG.
+const AGUA_ML_KG = 35;
+function _aguaPesoKey() { return 'gh_pesokg_' + STUDENT_ID; }
+function _aguaPesoKg() { try { const o = JSON.parse(localStorage.getItem(_aguaPesoKey()) || 'null'); const k = o ? Number(o.kg) : 0; return (k >= 30 && k <= 300) ? k : 0; } catch (_) { return 0; } }
+function _aguaMetaDoPeso(kg) { return Math.min(5, Math.max(1.5, Math.round(kg * AGUA_ML_KG / 500) * 0.5)); }
+function _aguaMetaSemDieta() { const kg = _aguaPesoKg(); return kg ? { l: _aguaMetaDoPeso(kg), daDieta: false, doPeso: true, kg: kg } : { l: 2, daDieta: false }; }
+// a meta de hoje pode mudar quando o peso chega: a marca de "bateu a meta" de hoje acompanha, e as telas de água se refazem
+function _aguaMetaMudou() {
+  try { if (localStorage.getItem(waterMlKey()) !== null) { if (waterMl() >= waterMetaMl()) localStorage.setItem(waterOkKey(), '1'); else localStorage.removeItem(waterOkKey()); } } catch (_) {}
+  try { renderWater(); } catch (_) {}
+  try { const hv = document.getElementById('hojeView'); if (hv && hv.querySelector('.hj-agua')) renderHojeScreen(true); } catch (_) {}
+}
+function _aguaPesoGuarda(pontos) {
+  try {
+    let ult = null;
+    (pontos || []).forEach(p => { if (!p) return; const k = Number(String(p.peso).replace(',', '.')), t = Number(p.ts) || 0; if (k >= 30 && k <= 300 && (!ult || t >= ult.ts)) ult = { kg: Math.round(k * 10) / 10, ts: t }; });
+    if (!ult) return;
+    const antes = _waterMetaInfo().l;
+    localStorage.setItem(_aguaPesoKey(), JSON.stringify(ult));
+    if (_waterMetaInfo().l !== antes) _aguaMetaMudou();
+  } catch (_) {}
+}
+// dieta carregada e sem número de água: busca o peso uma vez por abertura (a mesma busca que a evolução e as medidas já usam)
+var _aguaPesoPediu = false;
+function _aguaPesoGarante() {
+  try {
+    if (_aguaPesoPediu || typeof SHEET_ID === 'undefined' || !SHEET_ID) return;
+    if (typeof DIET_DATA === 'undefined' || !DIET_DATA || _waterMetaInfo().daDieta) return;
+    _aguaPesoPediu = true; _medBusca();
+  } catch (_) {}
 }
 function _waterMetaLitros() { return _waterMetaInfo().l; }
 function _litrosTxt(v) { return String(Math.round(v * 10) / 10).replace('.', ','); }
 function renderWater() {
   const ml = waterMl(), meta = waterMetaMl(), rec = waterRecMl(), info = _waterMetaInfo();
+  _aguaPesoGarante();
   const elC = document.getElementById('waterCounter'), elM = document.getElementById('waterMeta'), elB = document.getElementById('waterAddBtn'), elS = document.getElementById('waterRecSel');
   if (elC) elC.textContent = _aguaTxt(ml);
-  if (elM) elM.textContent = 'de ' + _aguaTxt(meta) + ' hoje' + (info.daDieta ? ' (meta da tua dieta)' : '') + (ml >= meta ? ' · meta batida ✅' : ' · faltam ' + _aguaTxt(meta - ml));
+  if (elM) elM.textContent = 'de ' + _aguaTxt(meta) + ' hoje' + (info.daDieta ? ' (meta da tua dieta)' : (info.doPeso ? ' (pelo teu peso: ' + AGUA_ML_KG + ' ml por kg)' : '')) + (ml >= meta ? ' · meta batida ✅' : ' · faltam ' + _aguaTxt(meta - ml));
   if (elB) elB.textContent = '+ ' + _aguaTxt(rec);
   if (elS) { if (!elS.options.length) AGUA_RECS.forEach(r => elS.add(new Option(r[1], String(r[0])))); elS.value = String(rec); }
 }
@@ -25654,7 +25698,7 @@ function _medBusca() {
   if (_medBuscaP) return _medBuscaP;
   _medBuscaP = fetch(LOG_ENDPOINT + '?action=medidas&id=' + encodeURIComponent(SHEET_ID), { redirect: 'follow' })
     .then(r => r.json()).catch(() => ({}))
-    .then(j => { if (j && j.ok && Array.isArray(j.pontos)) _medTL = j.pontos; return _medTL; })
+    .then(j => { if (j && j.ok && Array.isArray(j.pontos)) { _medTL = j.pontos; try { _aguaPesoGuarda(_medTL); } catch (_) {} } return _medTL; })
     .catch(() => null)
     .finally(() => { _medBuscaP = null; });
   return _medBuscaP;
@@ -28128,7 +28172,7 @@ function renderDiet() {
       // v549: o botão "não rolou?" e a anotação existem uma vez POR CICLO (aba Alto / Baixo): saíram os ids repetidos, que
       // faziam o toque na 2ª aba atualizar só a 1ª. O nome da refeição não vai mais dentro do onclick (aspas quebravam o botão).
       const _fotos = _refFotos_(ref);   // v639: foto da refeição pelos alimentos (uma por opção)
-      html += `<div class="diet-meal-header${_fotos ? ' tem-thumb' : ''}">${_fotos ? `<img class="dm-thumb" id="dmThumb${uid}" data-fotos="${_fotos.join(',')}" src="thumbs/refeicoes/${_fotos[0]}.jpg" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}<span class="dm-nome">${_dx(ref.nome)}${_refOpcional(ref) ? ' <span class="dm-opc">opcional, não conta pro dia</span>' : ''}</span>${_refHoraChipHtml(ri)}<button type="button" class="dm-nao${_mealNaoMotivo(ri) ? ' marcado' : ''}" data-nao-ri="${ri}" onclick="openMealNao(${ri})">${_mealNaoMotivo(ri) ? 'anotado 🤝' : 'não rolou?'}</button><button type="button" class="dm-foto" onclick="showMealPhotoCard(${ri})" aria-label="Foto da refeição"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Foto</button><button type="button" class="diet-meal-check${isMealDone(ri) ? ' done' : ''}" data-meal-ri="${ri}" onclick="onCheckMeal(${ri})" aria-label="Marcar refeição feita"><svg class="dm-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><svg class="dm-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span class="dm-txt">Feita</span></button></div>`;
+      html += `<div class="diet-meal-header${_fotos ? ' tem-thumb' : ''}">${_fotos ? `<img class="dm-thumb" id="dmThumb${uid}" data-fotos="${_fotos.join(',')}" src="thumbs/refeicoes/${_fotos[0]}.jpg" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}<span class="dm-nome">${_dx(ref.nome)}${_refOpcional(ref) ? ' <span class="dm-opc">opcional, não conta pro dia</span>' : ''}${_refResumoHtml_(ref, uid)}</span>${_refHoraChipHtml(ri)}<button type="button" class="dm-nao${_mealNaoMotivo(ri) ? ' marcado' : ''}" data-nao-ri="${ri}" onclick="openMealNao(${ri})">${_mealNaoMotivo(ri) ? 'anotado 🤝' : 'não rolou?'}</button><button type="button" class="dm-foto" onclick="showMealPhotoCard(${ri})" aria-label="Foto da refeição"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Foto</button><button type="button" class="diet-meal-check${isMealDone(ri) ? ' done' : ''}" data-meal-ri="${ri}" onclick="onCheckMeal(${ri})" aria-label="Marcar refeição feita"><svg class="dm-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><svg class="dm-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span class="dm-txt">Feita</span></button></div>`;
       if (_mealNota(ri)) html += `<div class="dm-nota" data-nota-ri="${ri}">📝 ${String(_mealNota(ri)).replace(/&/g, '&amp;').replace(/</g, '&lt;')}</div>`;   // v537
       if (ref.instrucao) html += `<div class="diet-meal-instruction">${_dx(ref.instrucao)}</div>`;
 
@@ -28248,6 +28292,25 @@ function renderDiet() {
   try { _fdRender_(); } catch (_) {}   // v581
 }
 
+// v692: refeição recolhida (fora da hora ou já feita) mostra o que tem nela, pra o aluno não precisar abrir uma por uma.
+// Só os nomes dos alimentos (os de base e os da opção escolhida), sem quantidade; a troca equivalente ("ou ...") fica de fora.
+function _refResumoTxt_(ref, oi) {
+  try {
+    const nomes = [];
+    const pega = arr => (arr || []).forEach(a => { if (!a || a.alt) return; const n = String(_dx(a.nome) || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(); if (n && nomes.indexOf(n) < 0) nomes.push(n); });
+    pega(ref.alimentos);
+    if (ref.opcoes && ref.opcoes.length) pega((ref.opcoes[oi] || ref.opcoes[0]).alimentos);
+    return nomes.join(', ');
+  } catch (_) { return ''; }
+}
+function _refResumoHtml_(ref, uid) {
+  try {
+    const n = Math.max(1, (ref.opcoes || []).length), partes = [];
+    for (let i = 0; i < n; i++) partes.push(_refResumoTxt_(ref, i));
+    if (!partes[0]) return '';
+    return '<small class="dm-res" id="dmRes' + uid + '" data-res="' + partes.map(encodeURIComponent).join('|') + '">' + partes[0] + '</small>';
+  } catch (_) { return ''; }
+}
 function renderFoodItem(a) {
   if (a.alt) {
     // linha de alternativa inline ("op" no meio da refeição): troca equivalente, não item novo
@@ -28472,7 +28535,7 @@ function renderHojeScreen(semAnim) {
       }
     }
   } catch (_) {}
-  try { A = { ml: waterMl(), meta: waterMetaMl(), rec: waterRecMl(), daDieta: _waterMetaInfo().daDieta }; } catch (_) {}
+  try { var _ai = _waterMetaInfo(); A = { ml: waterMl(), meta: waterMetaMl(), rec: waterRecMl(), daDieta: _ai.daDieta, doPeso: !!_ai.doPeso }; _aguaPesoGarante(); } catch (_) {}
   // ── cabeçalho ──
   var dt = ''; try { dt = new Date().toLocaleDateString(_lang() === 'en' ? 'en-US' : 'pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }); } catch (_) {}
   if (dt) h += '<div class="hj-data">' + _hjEsc(dt) + '</div>';
@@ -28582,7 +28645,7 @@ function renderHojeScreen(semAnim) {
         ? '<div class="hj-txt hj-rec-t">' + (escolheu ? 'Meu recipiente' : 'Com o que tu bebe água? Escolhe uma vez e o + soma a quantidade certa.') + '</div><div class="hj-dias hj-recs">'
           + AGUA_RECS.map(function (r) { return '<button type="button" class="hj-dia' + (escolheu && r[0] === A.rec ? ' hoje' : '') + '" onclick="hojeAguaRec(' + r[0] + ')">' + r[1] + '</button>'; }).join('') + '</div>'
         : '<button type="button" class="hj-link" onclick="hojeAguaRecAbre()">Trocar recipiente</button>';
-      h += '<div class="pg-card hj-agua"><div class="hj-topo"><div class="pg-sec-t">ÁGUA</div><span>' + (A.daDieta ? 'Meta da tua dieta' : 'Meta do dia') + '</span></div>'
+      h += '<div class="pg-card hj-agua"><div class="hj-topo"><div class="pg-sec-t">ÁGUA</div><span>' + (A.daDieta ? 'Meta da tua dieta' : (A.doPeso ? 'Meta pelo teu peso' : 'Meta do dia')) + '</span></div>'
         + '<div class="hj-num"><span>' + _aguaTxt(A.ml) + '</span> <small>de ' + _aguaTxt(A.meta) + (A.ml >= A.meta ? ' ✓' : '') + '</small></div>'
         + _hjSeg(Math.floor(A.ml / A.rec + 1e-9), Math.ceil(A.meta / A.rec - 1e-9), 'agua')
         + '<div class="hj-txt">' + (falta > 0 ? 'Faltam ' + _aguaTxt(falta) + ' (' + nrec + ' × ' + _aguaTxt(A.rec) + ')' : 'Meta de hoje batida') + '</div>'
@@ -29475,6 +29538,7 @@ function selectDietOption(uid, opIdx) {
   allOpts.forEach((c, i) => c.classList.toggle('active', i === opIdx));
   const th = document.getElementById('dmThumb' + uid);   // v639: a foto acompanha a opção escolhida
   if (th && th.dataset.fotos) { const k = th.dataset.fotos.split(',')[opIdx]; if (k && th.src.indexOf('/' + k + '.jpg') < 0) th.src = 'thumbs/refeicoes/' + k + '.jpg'; }
+  try { const rs = document.getElementById('dmRes' + uid); if (rs && rs.dataset.res) { const k = rs.dataset.res.split('|')[opIdx]; if (k) rs.innerHTML = decodeURIComponent(k); } } catch (_) {}   // v692: o resumo acompanha a opção escolhida
 }
 
 function selectDietCycle(idx) {
@@ -30783,7 +30847,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v690';
+var APP_SHELL_V = 'metodo-gh-v692';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
