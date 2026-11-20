@@ -710,6 +710,12 @@
     flex-shrink: 0; transition: background 0.15s;
   }
   .water-toast .wt-close:hover { background: rgba(255,255,255,0.35); }
+  .water-toast { width: max-content; }
+  .water-toast .wt-text strong { white-space: nowrap; }
+  .water-btns { display: flex; gap: 8px; flex-basis: 100%; }
+  .water-btns .water-btn { flex: 1; }
+  .water-btns .water-btn.minus { flex: 0 0 56px; }
+  .water-toast .wt-add { background: #fff; color: #1565c0; border: none; border-radius: 999px; padding: 8px 12px; font-size: 12.5px; font-weight: 800; white-space: nowrap; cursor: pointer; flex-shrink: 0; }
 
   /* ── VIDEO OVERLAY ── */
   .video-overlay {
@@ -1892,7 +1898,7 @@
   .parc-tile .pt-n { font-weight: 800; font-size: 14px; line-height: 1.15; margin-top: 3px; }
   .parc-tile .pt-s { color: #a39b8e; font-size: 11px; line-height: 1.3; }
   .parc-tile .pt-off { margin-top: auto; background: var(--gold-bg, var(--gold)); color: #15100a; font-weight: 800; font-size: 10.5px; letter-spacing: .05em; padding: 3px 9px; border-radius: 999px; }
-  :root[data-theme="light"] .parc-tile { background: radial-gradient(120% 90% at 0% 0%, var(--pc) 0%, rgba(255, 255, 255, 0) 65%), var(--liq-fill, #fff); border-color: rgba(255, 255, 255, .85); box-shadow: 0 0 0 .5px rgba(110, 84, 30, .2), inset 0 1.5px 0 #fff, 0 6px 16px rgba(92, 70, 24, .10); color: #2a2418; }
+  :root[data-theme="light"] .parc-tile { background: radial-gradient(120% 90% at 0% 0%, var(--pc) 0%, rgba(255, 255, 255, 0) 65%), var(--liq-fill, #fff); border-color: rgba(255, 255, 255, .40); box-shadow: 0 0 0 .5px rgba(110, 84, 30, .14), inset 0 1px 0 rgba(255, 255, 255, .9), 0 6px 16px rgba(92, 70, 24, .10); color: #2a2418; }
   :root[data-theme="light"] .parc-tile .pt-ic { background: rgba(255, 255, 255, .7); border-color: rgba(255, 255, 255, .9); }
   :root[data-theme="light"] .parc-tile .pt-s, :root[data-theme="light"] .parc-strip-v { color: #6f6553; }
   body.view-dieta #parcStripT, body.view-ghflix #parcStripT, body.view-progresso #parcStripT, body.view-novidades #parcStripT, body.view-hoje #parcStripT { display: none !important; }
@@ -1935,7 +1941,7 @@
   .guia-tile .gt-ab { position: absolute; top: 12px; right: 12px; font-size: 9.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #15100a; background: var(--gold); border-radius: 999px; padding: 3px 8px; display: none; }
   .guia-tile.on { border-color: rgba(212, 175, 106, .8); box-shadow: 0 0 0 1px rgba(212, 175, 106, .45), inset 0 1px 0 rgba(255, 255, 255, .07); }
   .guia-tile.on .gt-ab { display: block; }
-  :root[data-theme="light"] .guia-tile { background: radial-gradient(120% 90% at 0% 0%, var(--gc) 0%, rgba(255, 255, 255, 0) 65%), var(--liq-fill, #fff); border-color: rgba(255, 255, 255, .85); box-shadow: 0 0 0 .5px rgba(110, 84, 30, .2), inset 0 1.5px 0 #fff, 0 6px 16px rgba(92, 70, 24, .10); color: #2a2418; }
+  :root[data-theme="light"] .guia-tile { background: radial-gradient(120% 90% at 0% 0%, var(--gc) 0%, rgba(255, 255, 255, 0) 65%), var(--liq-fill, #fff); border-color: rgba(255, 255, 255, .40); box-shadow: 0 0 0 .5px rgba(110, 84, 30, .14), inset 0 1px 0 rgba(255, 255, 255, .9), 0 6px 16px rgba(92, 70, 24, .10); color: #2a2418; }
   :root[data-theme="light"] .guia-tile.on { box-shadow: 0 0 0 1.5px rgba(190, 150, 70, .85), inset 0 1.5px 0 #fff, 0 6px 16px rgba(92, 70, 24, .14); }
   :root[data-theme="light"] .guia-tile .gt-ic { background: rgba(255, 255, 255, .7); border-color: rgba(255, 255, 255, .9); color: #a87f2c; }
   :root[data-theme="light"] .guia-tile .gt-s { color: #6f6553; }
@@ -2389,6 +2395,20 @@
   .hj-seg i { height: 6px; border-radius: 3px; background: var(--glass-3, rgba(255,255,255,.12)); display: block; }
   .hj-seg.agua i.on { background: var(--hj-agua); }
   .hj-seg.cardio i.on { background: var(--gold-fill, var(--gold)); }
+  /* v689: água na medida do aluno */
+  .hj-seg.fim { margin-bottom: 2px; }
+  .hj-agua .hj-num span { color: var(--hj-agua); }
+  .hj-agua .hj-txt { margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+  .hj-agua .hj-ritmo { color: var(--gold); font-weight: 600; }
+  .hj-agua .hj-pm { margin-top: 10px; }
+  .hj-agua .hj-pm .te-btn.ghost { flex: 0 0 58px; }
+  .hj-link { all: unset; display: block; box-sizing: border-box; width: 100%; text-align: center; margin-top: 12px; font-size: 12px; font-weight: 600; color: var(--fg-3, #9a9389); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  .hj-rec-t { margin: 14px 2px 8px !important; }
+  .hj-recs { margin-bottom: 0; }
+  .hj-recs .hj-dia { font-size: 12.5px; padding: 8px 12px; }
+  .hj-cardio { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+  .hj-cardio .hj-num { margin-bottom: 0; }
+  .hj-cardio .te-btn { flex: none; }
   .hj .hj-num { font-size: 24px; font-weight: 800; margin-bottom: 8px; font-variant-numeric: tabular-nums; }
   .hj-evo-h { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin: 0 2px 2px; }
   .hj-evo-h b { display: block; font-size: 15px; font-weight: 700; color: var(--fg, #f5f1e8); }
@@ -6242,11 +6262,11 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   :root[data-theme="light"] {
     --bg: #E3DAC6;
     --liq-fill: radial-gradient(110% 75% at 0% 0%, rgba(255,255,255,.95) 0%, rgba(255,255,255,0) 56%), radial-gradient(110% 80% at 100% 100%, rgba(232,196,110,.30) 0%, rgba(232,196,110,0) 60%), linear-gradient(rgba(255,255,255,.34), rgba(255,255,255,.34));
-    --liq-line: rgba(255,255,255,.55);
-    --liq-rim: 0 0 0 .5px rgba(110,84,30,.18), inset 0 1px 0 #fff, inset 0 0 22px rgba(255,255,255,.30), inset 0 26px 34px -26px rgba(255,255,255,.95);
+    --liq-line: rgba(255,255,255,.30);
+    --liq-rim: 0 0 0 .5px rgba(110,84,30,.12), inset 0 1px 0 rgba(255,255,255,.85), inset 0 0 22px rgba(255,255,255,.30), inset 0 26px 34px -26px rgba(255,255,255,.95);
     --liq-sombra: 0 18px 40px rgba(92,70,24,.17), 0 3px 8px rgba(92,70,24,.08);
     --liq-pill: linear-gradient(160deg, rgba(255,255,255,.92) 0%, rgba(255,255,255,.50) 55%, rgba(255,250,236,.62) 100%);
-    --liq-pill-sombra: 0 0 0 .5px rgba(110,84,30,.22), inset 0 1.5px 0 #fff, inset 0 -1px 0 rgba(110,84,30,.08), 0 6px 16px rgba(92,70,24,.12), 0 1px 3px rgba(92,70,24,.08);
+    --liq-pill-sombra: 0 0 0 .5px rgba(110,84,30,.14), inset 0 1px 0 rgba(255,255,255,.9), 0 6px 16px rgba(92,70,24,.12), 0 1px 3px rgba(92,70,24,.08);
     --sheet-bg: linear-gradient(180deg, rgba(255,253,246,.74) 0%, rgba(243,236,220,.70) 100%);
     --nav-bg: linear-gradient(160deg, rgba(255,255,255,.84) 0%, rgba(255,255,255,.50) 60%, rgba(255,249,234,.66) 100%);
   }
@@ -6265,14 +6285,14 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   /* pílulas: dias, semana, Esforço e Como ler, e os seletores (Modo do app, Aparência, Cronômetro) */
   :root[data-theme="light"] .day-tab:not(.active):not(.feito), :root[data-theme="light"] .week-btn,
   :root[data-theme="light"] .hdr-chips > .last-mod[style*="display: block"], :root[data-theme="light"] .modo-seg, :root[data-theme="light"] .tema-seg {
-    background: var(--liq-pill); border-color: rgba(255,255,255,.85); box-shadow: var(--liq-pill-sombra);
+    background: var(--liq-pill); border-color: rgba(255,255,255,.40); box-shadow: var(--liq-pill-sombra);
   }
   :root[data-theme="light"] .day-tab.active, :root[data-theme="light"] .modo-seg button.on, :root[data-theme="light"] .tema-seg button.on {
     box-shadow: inset 0 1.5px 0 rgba(255,255,255,.65), inset 0 -1px 0 rgba(110,84,30,.18), 0 6px 16px rgba(170,130,40,.30);
   }
   /* barra de baixo e folha do Mais: vidro fosco de verdade (blur), com aro branco em cima */
-  :root[data-theme="light"] #bottomNav { border-color: rgba(255,255,255,.85); box-shadow: 0 0 0 .5px rgba(110,84,30,.20), inset 0 1.5px 0 #fff, inset 0 -1px 0 rgba(110,84,30,.08), 0 14px 34px rgba(92,70,24,.20), 0 2px 6px rgba(92,70,24,.08); }
-  :root[data-theme="light"] #maisSheet { border-color: rgba(255,255,255,.85); box-shadow: 0 0 0 .5px rgba(110,84,30,.18), inset 0 1.5px 0 #fff, 0 -14px 40px rgba(40,30,10,.22); }
+  :root[data-theme="light"] #bottomNav { border-color: rgba(255,255,255,.40); box-shadow: 0 0 0 .5px rgba(110,84,30,.14), inset 0 1px 0 rgba(255,255,255,.9), 0 14px 34px rgba(92,70,24,.20), 0 2px 6px rgba(92,70,24,.08); }
+  :root[data-theme="light"] #maisSheet { border-color: rgba(255,255,255,.40); box-shadow: 0 0 0 .5px rgba(110,84,30,.12), inset 0 1px 0 rgba(255,255,255,.9), 0 -14px 40px rgba(40,30,10,.22); }
   /* parte das cargas dentro do cartão aberto: era branco leitoso (var(--glass) do bloco v610); agora deixa o vidro aparecer, igual ao Escuro */
   :root[data-theme="light"] .carga-section { background: rgba(255,255,255,.14); border-top-color: rgba(110,84,30,.12); }
   /* cartão de exercício aberto: no Escuro ele fica um tom mais claro que os fechados (--glass-2); no Claro esse tom era branco 90% e
@@ -6289,7 +6309,7 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
   :root[data-theme="light"] .set-in:focus { border-color: var(--gold); background: rgba(255,255,255,.70); }
   :root[data-theme="light"] .ex-action-btn:not(.on):not(.sub-on), :root[data-theme="light"] .pg-week:not(.hit), :root[data-theme="light"] .ex-fold,
   :root[data-theme="light"] .hdr-bell, :root[data-theme="light"] .dm-hora, :root[data-theme="light"] .diet-meal-check:not(.done), :root[data-theme="light"] .diet-option-tabs {
-    background: var(--liq-pill); border-color: rgba(255,255,255,.85); box-shadow: 0 0 0 .5px rgba(110,84,30,.20), inset 0 1.5px 0 #fff, inset 0 -1px 0 rgba(110,84,30,.07), 0 4px 12px rgba(92,70,24,.09);
+    background: var(--liq-pill); border-color: rgba(255,255,255,.40); box-shadow: 0 0 0 .5px rgba(110,84,30,.14), inset 0 1px 0 rgba(255,255,255,.9), 0 4px 12px rgba(92,70,24,.09);
   }
   :root[data-theme="light"] .diet-option-tab:not(.active) { background: transparent; }
   :root[data-theme="light"] .set-add { background: transparent; border-color: rgba(167,126,42,.45); }
@@ -7838,9 +7858,12 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
     <h4>💧 Hidratação</h4>
     <div class="water-row">
       <span class="water-counter" id="waterCounter">0</span>
-      <span class="water-meta" id="waterMeta">copos (200ml) hoje · meta 10 (2L)</span>
-      <button class="water-btn" onclick="addWater(1)">+1 copo</button>
-      <button class="water-btn minus" onclick="addWater(-1)">−1</button>
+      <span class="water-meta" id="waterMeta">de 2 L hoje</span>
+      <div class="water-btns"><button class="water-btn minus" onclick="addWater(-1)" aria-label="Tirar o último">−</button><button class="water-btn" id="waterAddBtn" onclick="addWater(1)">+ 200 ml</button></div>
+    </div>
+    <div class="water-janela-row">
+      <span class="wj-lb">Meu recipiente</span>
+      <select class="pg-sel wj-sel" id="waterRecSel" onchange="setWaterRec(this.value)" aria-label="recipiente em que tu bebe água"></select>
     </div>
     <div class="water-toggle-row">
       <div class="water-toggle" id="waterNotifToggle" onclick="toggleWaterNotif()"></div>
@@ -10088,7 +10111,10 @@ const I18N_EN = {
 // v479: telas novas (aviso da live, semana, timer, indicacao, banner, letra, novidades, resultado, pill de troca)
 Object.assign(I18N_EN, {
   'Hoje': 'Today', 'HOJE': 'TODAY', 'TREINO DE HOJE': 'TODAY\'S WORKOUT', 'PRÓXIMA REFEIÇÃO': 'NEXT MEAL', 'DIETA DE HOJE': 'TODAY\'S DIET', 'ÁGUA': 'WATER', 'CARDIO DA SEMANA': 'CARDIO THIS WEEK',
-  'Ir pro treino': 'Go to workout', 'Começar treino': 'Start workout', 'Continuar treino': 'Continue workout', 'TUA EVOLUÇÃO': 'YOUR PROGRESS', 'Ver meu progresso': 'See my progress', 'Feita ✓': 'Done ✓', 'TEU DIA': 'YOUR DAY', 'Próximo': 'Next', 'semana fechada ✓': 'week closed ✓', '📸 Foto do prato': '📸 Photo of the plate', 'Anota a carga das tuas séries. Da segunda semana em diante, os exercícios que mais subiram aparecem aqui.': 'Log the load of your sets. From the second week on, the exercises that went up the most show here.', 'Ver dieta': 'See diet', 'Ver cardio': 'See cardio', 'Ver meus treinos': 'See my workouts', 'Refeições de hoje feitas ✓': 'Today\'s meals done ✓', 'Treinos desta semana feitos ✓': 'This week\'s workouts done ✓', 'Olá!': 'Hi!', '(aulas do método)': '(method classes)',
+  'Ir pro treino': 'Go to workout', 'Começar treino': 'Start workout', 'Continuar treino': 'Continue workout', 'TUA EVOLUÇÃO': 'YOUR PROGRESS', 'Ver meu progresso': 'See my progress', 'Feita ✓': 'Done ✓', 'TEU DIA': 'YOUR DAY', 'Próximo': 'Next', 'semana fechada ✓': 'week closed ✓',
+  'Meta da tua dieta': 'Goal from your diet', 'Meta do dia': 'Daily goal', 'Meta de hoje batida': 'Today\'s goal reached', 'Meta de hoje batida.': 'Today\'s goal reached.', 'Trocar recipiente': 'Change container', 'Meu recipiente': 'My container',
+  'Com o que tu bebe água? Escolhe uma vez e o + soma a quantidade certa.': 'What do you drink water from? Pick once and the + adds the right amount.',
+  'Copo 200 ml': 'Glass 200 ml', 'Copo 300 ml': 'Glass 300 ml', 'Garrafa 500 ml': 'Bottle 500 ml', 'Garrafa 1 L': 'Bottle 1 L', 'Já tomou? Marca aqui.': 'Had some? Log it here.', '📸 Foto do prato': '📸 Photo of the plate', 'Anota a carga das tuas séries. Da segunda semana em diante, os exercícios que mais subiram aparecem aqui.': 'Log the load of your sets. From the second week on, the exercises that went up the most show here.', 'Ver dieta': 'See diet', 'Ver cardio': 'See cardio', 'Ver meus treinos': 'See my workouts', 'Refeições de hoje feitas ✓': 'Today\'s meals done ✓', 'Treinos desta semana feitos ✓': 'This week\'s workouts done ✓', 'Olá!': 'Hi!', '(aulas do método)': '(method classes)',
   'NOVIDADES': 'NEWS', 'Novidades': 'News', 'Novidade': 'News', 'Link no grupo dos alunos': 'Link in the students group',
   'Entrar no grupo dos alunos': 'Join the students group', 'Ver mais': 'See more', 'Ver menos': 'See less', 'hoje': 'today', 'ontem': 'yesterday',
   'Nenhuma novidade por enquanto. Quando tiver, aparece aqui e o sino acende.': 'No news for now. When there is, it shows up here and the bell lights up.',
@@ -10168,6 +10194,12 @@ const I18N_RX = [
   [/^(\d+) exercícios? já est(ão|á) com mais carga que na primeira semana\.$/, '$1 exercise(s) already above the first week load.'],
   [/^(\d+) de (\d+) refeições? feitas? hoje$/, '$1 of $2 meals done today'],
   [/^de (\d+) copos( ✓)?$/, 'of $1 glasses$2'],
+  [/^de ([\d.,]+ (?:L|ml))( ✓)?$/, 'of $1$2'],
+  [/^([\d.,]+ (?:L|ml)) de ([\d.,]+ (?:L|ml))$/, '$1 of $2'],
+  [/^Faltam ([\d.,]+ (?:L|ml)) \((\d+) × ([\d.,]+ (?:L|ml))\)$/, '$1 to go ($2 × $3)'],
+  [/^Pelo horário, o ideal agora seria ([\d.,]+ (?:L|ml))$/, 'By the clock, the ideal by now would be $1'],
+  [/^([\d.,]+ (?:L|ml)) de ([\d.,]+ (?:L|ml)) até agora\.$/, '$1 of $2 so far.'],
+  [/^de ([\d.,]+ (?:L|ml)) hoje( \(meta da tua dieta\))?(?: · (meta batida ✅)| · faltam ([\d.,]+ (?:L|ml)))$/, (m, a, b, c, e) => 'of ' + a + ' today' + (b ? ' (goal from your diet)' : '') + (c ? ' · goal reached ✅' : ' · ' + e + ' to go')],
   [/^Semana (\d+) fechada\. O próximo treino abre na aba Treino\.$/, 'Week $1 closed. The next workout opens in the Workout tab.']
 ];
 function _i18nTxt(t) {
@@ -20105,6 +20137,22 @@ function achComoMotivo(di, m) {
 function achComoMais(di) { try { achClose(); } catch (_) {} setTimeout(() => fechaTreinoAbrir(di, 'nota'), 150); }
 
 // ── METAS: cardio pelas duas marcas (a do botão e a do envio), uma vez por dia; e a linha "Hoje" ──
+// v689: água. Dia com a conta em ml vale pela marca de meta batida (gh_aguaok); dia antigo, só em copos, vale com 10 como sempre.
+function _mtAguaDias(wid, ini, fim) {
+  const dias = new Set(), RC = /^(\d{4})-(\d{2})-(\d{2})$/;
+  const pOk = 'gh_aguaok_' + wid + '_', pMl = 'gh_aguaml_' + wid + '_', pAnt = 'gh_water_' + wid + '_';
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i); if (!k) continue;
+      const ok = k.indexOf(pOk) === 0, ant = !ok && k.indexOf(pAnt) === 0; if (!ok && !ant) continue;
+      const dk = k.slice((ok ? pOk : pAnt).length), m = dk.match(RC); if (!m) continue;
+      const d = new Date(+m[1], +m[2] - 1, +m[3]); d.setHours(0, 0, 0, 0); if (d < ini || d > fim) continue;
+      if (ok) { if (localStorage.getItem(k) === '1') dias.add(dk); }
+      else if (localStorage.getItem(pMl + dk) == null && parseInt(localStorage.getItem(k), 10) >= 10) dias.add(dk);
+    }
+  } catch (_) {}
+  return dias.size;
+}
 function _mtCardioDias(wid, ini, fim) {
   const dias = new Set(), RC = /^(\d{4})-(\d{2})-(\d{2})$/;
   const p1 = 'gh_cardioreg_' + SHEET_ID + '_', p2 = 'gh_cardio_' + wid + '_';
@@ -20130,8 +20178,8 @@ function _mtHojeHtml(temDieta) {
     for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.indexOf(pref) === 0 && /_concl$/.test(k)) { trOk = true; break; } }
     p.push(trOk ? 'treino <b>fechado</b>' : '<b>nenhum treino fechado</b>');
     if (temDieta) { let t = 0, f = 0; try { t = dietTotalMeals(); f = dietMealsDone(); } catch (_) {} if (t > 0) p.push('dieta <b>' + f + ' de ' + t + '</b> refeições'); }
-    let c = 0; try { c = waterCount() || 0; } catch (_) {}
-    p.push('água <b>' + c + '</b> ' + (c === 1 ? 'copo' : 'copos') + ' (o dia conta com 10)');
+    let am = 0, at = 2000; try { am = waterMl() || 0; at = waterMetaMl(); } catch (_) {}
+    p.push('água <b>' + _aguaTxt(am) + '</b> de ' + _aguaTxt(at));
     let cd = false; try { cd = isCardioDoneToday(); } catch (_) {}
     p.push('cardio <b>' + (cd ? 'feito' : 'não marcado') + '</b>');
     return '<div class="mt-hoje">Hoje: ' + p.join(' · ') + '</div>';
@@ -20778,19 +20826,43 @@ function toggleGlossario() {
 // ══ Hidratação ══
 function waterKey() { return `gh_water_${STUDENT_ID}_${todayKey()}`; }
 function waterCount() { return parseInt(localStorage.getItem(waterKey()) || '0', 10); }
-function addWater(delta) {
-  let n = waterCount() + delta;
-  if (n < 0) n = 0;
-  if (n > 50) n = 50;
-  try { localStorage.setItem(waterKey(), String(n)); } catch (_) {}
+// ══ v689 (GH 19/11: "melhorar a opção de água, deixar ajustada pro aluno, de acordo com a quantidade que ele precisa tomar") ══
+// A água passa a contar em ml, com o recipiente que o aluno usa (copo ou garrafa), contra a meta da dieta DELE. A chave antiga
+// (gh_water, em copos de 200 ml) continua sendo escrita pra nada do que já lê ela mudar. O dia conta nas metas da semana quando
+// ele bate a meta dele (marca gh_aguaok); dia antigo, sem a conta em ml, segue valendo com 10 copos.
+const AGUA_RECS = [[200, 'Copo 200 ml'], [300, 'Copo 300 ml'], [500, 'Garrafa 500 ml'], [1000, 'Garrafa 1 L']];
+function waterRecKey() { return 'gh_aguarec_' + STUDENT_ID; }
+function waterRecEscolhido() { try { const v = parseInt(localStorage.getItem(waterRecKey()) || '0', 10); return AGUA_RECS.some(r => r[0] === v); } catch (_) { return false; } }
+function waterRecMl() { try { const v = parseInt(localStorage.getItem(waterRecKey()) || '0', 10); return AGUA_RECS.some(r => r[0] === v) ? v : 200; } catch (_) { return 200; } }
+function setWaterRec(ml) { ml = parseInt(ml, 10); if (!AGUA_RECS.some(r => r[0] === ml)) return; try { localStorage.setItem(waterRecKey(), String(ml)); } catch (_) {} renderWater(); }
+function waterMlKey() { return `gh_aguaml_${STUDENT_ID}_${todayKey()}`; }
+function waterOkKey() { return `gh_aguaok_${STUDENT_ID}_${todayKey()}`; }
+function waterMl() { try { const v = localStorage.getItem(waterMlKey()); if (v != null && v !== '') return Math.max(0, parseInt(v, 10) || 0); } catch (_) {} return waterCount() * 200; }
+function waterMetaMl() { return Math.round(_waterMetaLitros() * 1000); }
+function _aguaTxt(ml) { ml = Math.max(0, Math.round(ml)); return ml < 1000 ? ml + ' ml' : _litrosTxt(ml / 1000) + ' L'; }
+function addWaterMl(delta) {
+  let ml = waterMl() + delta;
+  if (ml < 0) ml = 0;
+  if (ml > 10000) ml = 10000;
+  try {
+    localStorage.setItem(waterMlKey(), String(ml));
+    localStorage.setItem(waterKey(), String(Math.round(ml / 200)));
+    if (ml >= waterMetaMl()) localStorage.setItem(waterOkKey(), '1'); else localStorage.removeItem(waterOkKey());
+  } catch (_) {}
   renderWater();
+}
+function addWater(delta) { addWaterMl(delta * waterRecMl()); }   // delta em recipientes do aluno (1 = mais um copo ou garrafa dele)
+// quanto já era pra ter bebido a esta hora, espalhando a meta pela janela que ele escolheu pro lembrete (padrão 7h às 23h)
+function _aguaIdealAgora(meta) {
+  try { const j = _waterJanela(), d = new Date(), hr = d.getHours() + d.getMinutes() / 60; if (!(j.ini < j.fim)) return null; if (hr <= j.ini) return 0;
+    return Math.round(meta * Math.min(1, (hr - j.ini) / (j.fim - j.ini)) / 100) * 100; } catch (_) { return null; }
 }
 // v549: a meta de água vem da DIETA (345 dietas trazem "Água: 3,5 litros por dia"; o app dava a meta por batida aos 2 L pra
 // todo mundo). Faixa ("3 a 4 litros") usa o piso. Sem número na dieta, segue 2 L.
-function _waterMetaLitros() {
+function _waterMetaInfo() {
   try {
     const D = (typeof DIET_DATA !== 'undefined' && DIET_DATA) ? DIET_DATA : null;
-    if (!D) return 2;
+    if (!D) return { l: 2, daDieta: false };
     const fontes = [];
     (D.metas || []).forEach(m => fontes.push([m.campo, (m.valor || '') + ' ' + (m.detalhe || '')]));
     (D.regras || []).forEach(r => fontes.push([r.nome, (r.valor || '') + ' ' + (r.detalhe || '')]));
@@ -20798,19 +20870,20 @@ function _waterMetaLitros() {
     for (let i = 0; i < fontes.length; i++) {
       if (!/^(?:á|a)gua\b|^hidrata/i.test(String(fontes[i][0] || '').trim())) continue;
       const m = /(\d+(?:[.,]\d+)?)\s*(?:(?:a|ou|-)\s*\d+(?:[.,]\d+)?\s*)?(?:l\b|litros?\b)/i.exec(String(fontes[i][1] || ''));
-      if (m) { const v = parseFloat(m[1].replace(',', '.')); if (v >= 1 && v <= 8) return v; }
+      if (m) { const v = parseFloat(m[1].replace(',', '.')); if (v >= 1 && v <= 8) return { l: v, daDieta: true }; }
     }
   } catch (_) {}
-  return 2;
+  return { l: 2, daDieta: false };
 }
+function _waterMetaLitros() { return _waterMetaInfo().l; }
 function _litrosTxt(v) { return String(Math.round(v * 10) / 10).replace('.', ','); }
 function renderWater() {
-  const n = waterCount();
-  const elC = document.getElementById('waterCounter'), elM = document.getElementById('waterMeta');
-  if (elC) elC.textContent = n;
-  const ml = n * 200; // copo padrão = 200ml
-  const metaL = _waterMetaLitros(), metaCopos = Math.ceil(metaL * 1000 / 200 - 1e-9);
-  if (elM) elM.textContent = `copos (200ml) hoje · ${_litrosTxt(ml / 1000)} L · meta ${metaCopos} (${_litrosTxt(metaL)} L)${n >= metaCopos ? ' ✅' : ''}`;
+  const ml = waterMl(), meta = waterMetaMl(), rec = waterRecMl(), info = _waterMetaInfo();
+  const elC = document.getElementById('waterCounter'), elM = document.getElementById('waterMeta'), elB = document.getElementById('waterAddBtn'), elS = document.getElementById('waterRecSel');
+  if (elC) elC.textContent = _aguaTxt(ml);
+  if (elM) elM.textContent = 'de ' + _aguaTxt(meta) + ' hoje' + (info.daDieta ? ' (meta da tua dieta)' : '') + (ml >= meta ? ' · meta batida ✅' : ' · faltam ' + _aguaTxt(meta - ml));
+  if (elB) elB.textContent = '+ ' + _aguaTxt(rec);
+  if (elS) { if (!elS.options.length) AGUA_RECS.forEach(r => elS.add(new Option(r[1], String(r[0])))); elS.value = String(rec); }
 }
 
 // Notificação de hidratação
@@ -21051,7 +21124,7 @@ function _waterTick_(d) {
     // Notificação do sistema só pra quem NÃO tem a do app fechado registrada (com ela chegavam duas por hora)
     try {
       if (!localStorage.getItem('gh_pushEndpoint') && 'Notification' in window && Notification.permission === 'granted') {
-        new Notification('💧 Hora da água!', { body: 'Já tomou água? Marca +1 copo no app.', icon: 'icon-192.png' });
+        new Notification('💧 Hora da água!', { body: 'Já tomou água? Marca no app.', icon: 'icon-192.png' });
       }
     } catch (_) {}
 }
@@ -21064,20 +21137,25 @@ function showWaterReminder() {
     toast = document.createElement('div');
     toast.id = 'waterToast';
     toast.className = 'water-toast';
-    toast.innerHTML = `
+    document.body.appendChild(toast);
+  }
+  // v689: o aviso diz onde ele está na meta dele e já soma o recipiente dele ali mesmo
+  let onde = 'Já tomou? Marca aqui.', mais = '+ 200 ml';
+  try { const ml = waterMl(), meta = waterMetaMl(); onde = ml >= meta ? 'Meta de hoje batida.' : (_aguaTxt(ml) + ' de ' + _aguaTxt(meta) + ' até agora.'); mais = '+ ' + _aguaTxt(waterRecMl()); } catch (_) {}
+  toast.innerHTML = `
       <span class="wt-icon">💧</span>
       <div class="wt-text">
         <strong>Hora da água!</strong>
-        <span>Já tomou? Marca +1 copo aqui no app.</span>
+        <span>${onde}</span>
       </div>
-      <button class="wt-close" onclick="hideWaterReminder()">×</button>`;
-    document.body.appendChild(toast);
-  }
+      <button class="wt-add" onclick="aguaToastMais()">${mais}</button>
+      <button class="wt-close" onclick="hideWaterReminder()" aria-label="Fechar">×</button>`;
   toast.classList.add('show');
   // Auto-fecha em 12s se aluno não dispensar
   clearTimeout(window._waterToastTimeout);
   window._waterToastTimeout = setTimeout(() => toast.classList.remove('show'), 12000);
 }
+function aguaToastMais() { try { addWater(1); } catch (_) {} hideWaterReminder(); try { if (document.body.classList.contains('view-hoje')) renderHojeScreen(true); } catch (_) {} }
 function hideWaterReminder() {
   const toast = document.getElementById('waterToast');
   if (toast) toast.classList.remove('show');
@@ -25095,8 +25173,8 @@ function _metasCardHtml() {
     // olhava gh_cardioreg_ (a marca do envio): cardio recuperado não aparecia. Agora o anel conta as duas, uma vez por dia.
     const caS = _mtCardioDias(wid, js[0], js[1]);
     const caM = _mtCardioDias(wid, jm[0], jm[1]);
-    const agS = _mtDias('gh_water_' + wid + '_', RC, js[0], js[1], 10);
-    const agM = _mtDias('gh_water_' + wid + '_', RC, jm[0], jm[1], 10);
+    const agS = _mtAguaDias(wid, js[0], js[1]);
+    const agM = _mtAguaDias(wid, jm[0], jm[1]);
     const cardioExtra = '<button type="button" class="mt-def" onclick="metasCardioUi(event)">' + (metaCardio ? metaCardio + 'd &middot; ' + (_cardioEscolhida > _cardioPresc ? 'minha meta' : 'do protocolo') : 'definir meta') + '</button>';
     // semana PASSADA (seg-7 até dom-7): contexto de narrativa, "de onde eu vim"
     const segPrev = new Date(js[0]); segPrev.setDate(js[0].getDate() - 7);
@@ -27575,7 +27653,7 @@ function _faxinaChavesDiarias_() {
     if (localStorage.getItem('gh_faxina_dia') === hoje) return;
     localStorage.setItem('gh_faxina_dia', hoje);
     const corte = Date.now() - 130 * 86400000;   // v592: 70 dias apagava marca diária que o Progresso (3 meses) ainda mostra
-    const re = /^gh_(?:meal|meallog|mealnao|mealnota|dietlog|dietciclo|dietshare|refnotif|water|cardio|cardioreg|cardiolog)_.*?_(\d{4})-(\d{1,2})-(\d{1,2})(?:_|$)/;
+    const re = /^gh_(?:meal|meallog|mealnao|mealnota|dietlog|dietciclo|dietshare|refnotif|water|aguaml|aguaok|cardio|cardioreg|cardiolog)_.*?_(\d{4})-(\d{1,2})-(\d{1,2})(?:_|$)/;
     const apagar = [];
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i), m = k && re.exec(k);
@@ -28373,7 +28451,7 @@ function renderHojeScreen(semAnim) {
       }
     }
   } catch (_) {}
-  try { var na = waterCount(), metaL = _waterMetaLitros(); A = { n: na, meta: Math.ceil(metaL * 1000 / 200 - 1e-9) }; } catch (_) {}
+  try { A = { ml: waterMl(), meta: waterMetaMl(), rec: waterRecMl(), daDieta: _waterMetaInfo().daDieta }; } catch (_) {}
   // ── cabeçalho ──
   var dt = ''; try { dt = new Date().toLocaleDateString(_lang() === 'en' ? 'en-US' : 'pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }); } catch (_) {}
   if (dt) h += '<div class="hj-data">' + _hjEsc(dt) + '</div>';
@@ -28387,7 +28465,7 @@ function renderHojeScreen(semAnim) {
     var an = [];
     if (T && (T.lista.length || T.todos)) an.push({ k: 'treino', nome: 'Treino', cor: 'var(--gold)', p: T.todos ? 100 : (T.lista.length ? T.fz / T.lista.length * 100 : 0), txt: T.todos ? 'semana fechada ✓' : (T.fz + ' de ' + T.lista.length + (T.lista.length === 1 ? ' exercício' : ' exercícios')), ir: "switchView('treino')" });
     if (R && R.tot) an.push({ k: 'dieta', nome: 'Dieta', cor: 'var(--hj-dieta)', p: R.feitas / R.tot * 100, txt: R.feitas + ' de ' + R.tot + (R.tot === 1 ? ' refeição' : ' refeições'), ir: "switchView('dieta')" });
-    if (A && A.meta > 0) an.push({ k: 'agua', nome: 'Água', cor: 'var(--hj-agua)', p: Math.min(100, A.n / A.meta * 100), txt: A.n + ' de ' + A.meta + ' copos', ir: 'hojeAgua(1)' });
+    if (A && A.meta > 0) an.push({ k: 'agua', nome: 'Água', cor: 'var(--hj-agua)', p: Math.min(100, A.ml / A.meta * 100), txt: _aguaTxt(A.ml) + ' de ' + _aguaTxt(A.meta), ir: 'hojeAgua(1)' });
     if (an.length) {
       var raios = [52, 40, 28], media = Math.round(an.reduce(function (t, x) { return t + x.p; }, 0) / an.length);
       var svg = '<svg viewBox="0 0 120 120" aria-hidden="true">';
@@ -28397,7 +28475,7 @@ function renderHojeScreen(semAnim) {
       });
       svg += '</svg>';
       h += '<div class="pg-card"><div class="pg-sec-t">TEU DIA</div><div class="hj-dia-card"><div class="hj-aneis">' + svg + '<div class="hj-aneis-c">' + media + '%</div></div><div class="hj-leg">';
-      an.forEach(function (x) { h += '<button type="button" onclick="' + x.ir + '"' + (x.k === 'agua' ? ' aria-label="Mais um copo de água"' : '') + '><i style="background:' + x.cor + '"></i><span><b>' + x.nome + '</b><small>' + x.txt + '</small></span></button>'; });
+      an.forEach(function (x) { h += '<button type="button" onclick="' + x.ir + '"' + (x.k === 'agua' ? ' aria-label="Somar água"' : '') + '><i style="background:' + x.cor + '"></i><span><b>' + x.nome + '</b><small>' + x.txt + '</small></span></button>'; });
       h += '</div></div></div>';
     }
   } catch (_) {}
@@ -28477,13 +28555,24 @@ function renderHojeScreen(semAnim) {
   try {
     if (A) {
       var temCardio = !!(D && ((D.aerobicos || []).length || (D.orientacoes || []).some(function (o) { return /a[eé]r[oó]bic|cardio/i.test(o.categoria || ''); })));
-      var agua = '<div class="pg-card"><div class="pg-sec-t">ÁGUA</div><div class="hj-num">' + A.n + ' <small>de ' + A.meta + ' copos' + (A.n >= A.meta ? ' ✓' : '') + '</small></div>' + _hjSeg(A.n, A.meta, 'agua')
-        + '<div class="hj-pm"><button type="button" class="te-btn ghost" aria-label="Tirar um copo" onclick="hojeAgua(-1)">−</button><button type="button" class="te-btn" aria-label="Mais um copo" onclick="hojeAgua(1)">+</button></div></div>';
+      // v689: água em ml, com o recipiente do aluno e a meta da dieta dele; cartão inteiro (o cardio vem embaixo)
+      var falta = Math.max(0, A.meta - A.ml), nrec = Math.ceil(falta / A.rec - 1e-9), ideal = _aguaIdealAgora(A.meta), escolheu = waterRecEscolhido();
+      var recs = (!escolheu || _hjRecAberto)
+        ? '<div class="hj-txt hj-rec-t">' + (escolheu ? 'Meu recipiente' : 'Com o que tu bebe água? Escolhe uma vez e o + soma a quantidade certa.') + '</div><div class="hj-dias hj-recs">'
+          + AGUA_RECS.map(function (r) { return '<button type="button" class="hj-dia' + (escolheu && r[0] === A.rec ? ' hoje' : '') + '" onclick="hojeAguaRec(' + r[0] + ')">' + r[1] + '</button>'; }).join('') + '</div>'
+        : '<button type="button" class="hj-link" onclick="hojeAguaRecAbre()">Trocar recipiente</button>';
+      h += '<div class="pg-card hj-agua"><div class="hj-topo"><div class="pg-sec-t">ÁGUA</div><span>' + (A.daDieta ? 'Meta da tua dieta' : 'Meta do dia') + '</span></div>'
+        + '<div class="hj-num"><span>' + _aguaTxt(A.ml) + '</span> <small>de ' + _aguaTxt(A.meta) + (A.ml >= A.meta ? ' ✓' : '') + '</small></div>'
+        + _hjSeg(Math.floor(A.ml / A.rec + 1e-9), Math.ceil(A.meta / A.rec - 1e-9), 'agua')
+        + '<div class="hj-txt">' + (falta > 0 ? 'Faltam ' + _aguaTxt(falta) + ' (' + nrec + ' × ' + _aguaTxt(A.rec) + ')' : 'Meta de hoje batida') + '</div>'
+        + (falta > 0 && ideal != null && ideal - A.ml >= 500 ? '<div class="hj-txt hj-ritmo">Pelo horário, o ideal agora seria ' + _aguaTxt(ideal) + '</div>' : '')
+        + '<div class="hj-pm"><button type="button" class="te-btn ghost" aria-label="Tirar o último" onclick="hojeAgua(-1)">−</button><button type="button" class="te-btn" aria-label="Somar água" onclick="hojeAgua(1)">+ ' + _aguaTxt(A.rec) + '</button></div>'
+        + recs + '</div>';
       if (temCardio) {
         var cc = cardioWeekCount(), ct = cardioTarget();
-        h += '<div class="hj-par">' + agua + '<div class="pg-card"><div class="pg-sec-t">CARDIO DA SEMANA</div><div class="hj-num">' + cc + ' <small>de ' + ct + (cc >= ct ? ' ✓' : '') + '</small></div>' + (ct > 0 ? _hjSeg(cc, ct, 'cardio') : '')
-          + '<button type="button" class="te-btn ghost" style="width:100%;" onclick="switchView(\'dieta\')">Ver cardio</button></div></div>';
-      } else h += agua;
+        h += '<div class="pg-card"><div class="pg-sec-t">CARDIO DA SEMANA</div><div class="hj-cardio"><div class="hj-num">' + cc + ' <small>de ' + ct + (cc >= ct ? ' ✓' : '') + '</small></div>'
+          + '<button type="button" class="te-btn ghost" onclick="switchView(\'dieta\')">Ver cardio</button></div>' + (ct > 0 ? _hjSeg(cc, ct, 'cardio fim') : '') + '</div>';
+      }
     }
   } catch (_) {}
   // ── evolução ──
@@ -28508,6 +28597,9 @@ var _hjUltRef = null;
 function hojeRefFeita(ri) { try { if (!isMealDone(ri)) { onCheckMeal(ri); _hjUltRef = ri; } } catch (_) {} renderHojeScreen(true); }
 function hojeRefFoto(ri) { try { showMealPhotoCard(ri); } catch (_) {} }
 function hojeAgua(d) { try { addWater(d); } catch (_) {} renderHojeScreen(true); }
+var _hjRecAberto = false;
+function hojeAguaRec(ml) { try { setWaterRec(ml); } catch (_) {} _hjRecAberto = false; renderHojeScreen(true); }
+function hojeAguaRecAbre() { _hjRecAberto = !_hjRecAberto; renderHojeScreen(true); }
 
 function switchView(view) {
   document.body.classList.toggle('view-dieta', view === 'dieta');
@@ -30670,7 +30762,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v688';
+var APP_SHELL_V = 'metodo-gh-v689';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
