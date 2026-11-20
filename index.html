@@ -1886,6 +1886,7 @@
   /* v678: vitrine de parceiros */
   .parc-strip { margin: 20px 14px 8px; }
   #dietContent .parc-strip { margin: 22px 0 8px; }
+  #parcStripT > .parc-strip { margin: 0; }   /* v693: a faixa de dentro somava outra margem; o título fica na linha do Guias do método */
   .parc-strip-h { display: flex; align-items: baseline; justify-content: space-between; margin: 0 2px 9px; }
   .parc-strip-t { color: var(--gold); font-weight: 800; font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; }
   .parc-strip-v { background: none; border: 0; color: #9a9389; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; padding: 4px 2px; }
@@ -1901,7 +1902,7 @@
   :root[data-theme="light"] .parc-tile { background: radial-gradient(120% 90% at 0% 0%, var(--pc) 0%, rgba(255, 255, 255, 0) 65%), var(--liq-fill, #fff); border-color: rgba(255, 255, 255, .40); box-shadow: 0 0 0 .5px rgba(110, 84, 30, .14), inset 0 1px 0 rgba(255, 255, 255, .9), 0 6px 16px rgba(92, 70, 24, .10); color: #2a2418; }
   :root[data-theme="light"] .parc-tile .pt-ic { background: rgba(255, 255, 255, .7); border-color: rgba(255, 255, 255, .9); }
   :root[data-theme="light"] .parc-tile .pt-s, :root[data-theme="light"] .parc-strip-v { color: #6f6553; }
-  body.view-dieta #parcStripT, body.view-ghflix #parcStripT, body.view-progresso #parcStripT, body.view-novidades #parcStripT, body.view-hoje #parcStripT { display: none !important; }
+  body.view-dieta #parcStripT, body.view-ghflix #parcStripT, body.view-progresso #parcStripT, body.view-novidades #parcStripT { display: none !important; }   /* v693: na Hoje aparece */
   .parc-flash { animation: parcFlash 1.8s ease 1; }
   @keyframes parcFlash { 0%, 55% { box-shadow: 0 0 0 2px var(--gold), 0 0 24px rgba(212, 175, 106, .55); } 100% { box-shadow: 0 0 0 0 rgba(212, 175, 106, 0); } }
   /* v678: atalho do Renato no aviso de reajuste */
@@ -1947,7 +1948,7 @@
   :root[data-theme="light"] .guia-tile .gt-s { color: #6f6553; }
   body:not(.modo-simples) .instructions-toggle.guia-src:not(.guia-aberta) { display: none !important; }
   body:not(.modo-simples) .instructions-toggle.guia-aberta { margin-top: 14px; }
-  body.modo-simples #guiasT, body.view-ghflix #guiasT, body.view-progresso #guiasT, body.view-novidades #guiasT, body.view-hoje #guiasT { display: none !important; }
+  body.modo-simples #guiasT, body.view-ghflix #guiasT, body.view-progresso #guiasT, body.view-novidades #guiasT { display: none !important; }   /* v693: na Hoje aparece */
   body.view-dieta .guia-tile[data-g="instr"], body.view-dieta .guia-tile[data-g="hipo"] { display: none !important; }
   .parc-toast { position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 9999; max-width: calc(100% - 40px);
     background: #1f1c17; color: #f3ead8; border: 1px solid rgba(212, 175, 106, .6); border-radius: 14px; padding: 10px 14px; font-size: 13px; font-weight: 700; text-align: center;
@@ -2218,10 +2219,10 @@
   body.view-hoje #dayTabs,
   body.view-hoje #weekSelector,
   body.view-hoje #exerciseContainer,
-  body.view-hoje #instrToggle,
-  body.view-hoje #instructionsContent,
-  body.view-hoje #hipoToggle,
-  body.view-hoje #hipoContent,
+  body.view-hoje.modo-simples #instrToggle,
+  body.view-hoje.modo-simples #instructionsContent,
+  body.view-hoje.modo-simples #hipoToggle,
+  body.view-hoje.modo-simples #hipoContent,
   body.view-hoje #errorBox,
   body.view-hoje #loadingScreen,
   body.view-hoje #videoOverlay,
@@ -2232,8 +2233,8 @@
   body.view-hoje #dietaView,
   body.view-hoje #ghflixView,
   body.view-hoje #cardioTreino,
-  body.view-hoje .instructions-toggle,
-  body.view-hoje .instructions-content,
+  body.view-hoje.modo-simples .instructions-toggle,
+  body.view-hoje.modo-simples .instructions-content,
   body.view-hoje #progressoView { display: none !important; }
   /* ══ NOVIDADES (v476, GH 18/09/2026): feed de cards alimentado pela aba NOVIDADES da mestre ══ */
   body.view-novidades #studentInfo,
@@ -26201,7 +26202,7 @@ function _parcToque(k, onde) {
       const a = document.querySelector('.parc-tile[data-k="' + k + '"]');
       fetch(LOG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true, body: JSON.stringify({ type: 'click', sheetId: SHEET_ID,
         studentName: (document.getElementById('infoNome') ? document.getElementById('infoNome').textContent : '').trim(), partner: 'vitrine', productName: p ? p.n : '',
-        url: (a && a.getAttribute('href')) || '', tag: 'VITRINE ' + String(onde || '').toUpperCase(), ts: new Date().toISOString() }) }).catch(function () {});
+        url: (a && a.getAttribute('href')) || '', tag: 'VITRINE ' + String((onde === 'treino' && document.body.classList.contains('view-hoje')) ? 'hoje' : (onde || '')).toUpperCase(), ts: new Date().toISOString() }) }).catch(function () {});
     }
   } catch (_) {}
   if (!p || !p.url) { abrirParceiros(k); return; }
@@ -30847,7 +30848,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v692';
+var APP_SHELL_V = 'metodo-gh-v693';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
