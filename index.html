@@ -6320,6 +6320,27 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
      alinhado com os outros. O tempo do treino no dia aceso (dourado) estava cinza claro em cima do dourado: agora escuro. ══ */
   .week-selector { margin: 0 14px 4px; padding: 6px 16px; }
   .day-tab.active .wt-badge, :root[data-theme="light"] .day-tab.active .wt-badge { color: rgba(21, 16, 10, .70); }
+  /* ══ v690 (GH 19/11, "melhora no geral"): cartão de exercício ABERTO.
+     A explicação do exercício e a linha de descanso e cadência ficavam espremidas na coluna ao lado da foto (5 a 7 linhas de
+     180 px). Agora o topo é foto, nome e músculo; descanso, cadência e a explicação descem e usam a largura toda do cartão.
+     Os botões de ação (trocar, ritmo, descanso, histórico, mais) ocupam a linha inteira em vez de ficarem encostados na direita.
+     Só desenho: as casas de carga e o que salva não mudam. Bi-set e cartão recolhido ficam como estavam. ══ */
+  .exercise-card:not(.recolhido):not(.biset) > .exercise-main { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; column-gap: 0; row-gap: 0; align-items: start; }
+  .exercise-card:not(.recolhido):not(.biset) > .exercise-main > .ex-check { grid-column: 1; grid-row: 1 / span 2; margin-right: 12px; }
+  .exercise-card:not(.recolhido):not(.biset) > .exercise-main > .ex-thumb { grid-column: 2; grid-row: 1 / span 2; margin-right: 12px; }
+  .exercise-card:not(.recolhido):not(.biset) > .exercise-main > .ex-fold { grid-column: 4; grid-row: 1 / span 2; margin-left: 10px; }
+  .exercise-card:not(.recolhido):not(.biset) > .exercise-main > .exercise-info { display: contents; }
+  .exercise-card:not(.recolhido):not(.biset) > .exercise-main > .exercise-info > * { grid-column: 1 / -1; min-width: 0; }
+  .exercise-card:not(.recolhido):not(.biset) > .exercise-main > .exercise-info > .exercise-name { grid-column: 3; grid-row: 1; }
+  .exercise-card:not(.recolhido):not(.biset) > .exercise-main > .exercise-info > .musc-tag { grid-column: 3; grid-row: 2; align-self: start; }
+  .exercise-card:not(.recolhido):not(.biset):not(.warmup) > .exercise-main > .exercise-info > .ex-presc { margin-top: 12px; }
+  .exercise-card.warmup:not(.recolhido) > .exercise-main > .exercise-info > .ex-presc { grid-column: 3; grid-row: 2; align-self: start; }
+  .exercise-card:not(.recolhido):not(.biset) > .exercise-main > .exercise-info > .exercise-obs { margin-top: 10px; padding-left: 11px; border-left: 2px solid rgba(212, 175, 106, .45); line-height: 1.5; }
+  .exercise-card:not(.recolhido):not(.biset) > .exercise-main > .exercise-info > .ex-skip-btn { justify-self: start; }
+  body:not(.modo-simples) .exercise-card:not(.recolhido) .sets-footer { position: relative; }
+  body:not(.modo-simples) .exercise-card:not(.recolhido) .sets-footer > .carga-saved { position: absolute; right: 2px; top: -27px; pointer-events: none; }
+  body:not(.modo-simples) .exercise-card:not(.recolhido) .sets-footer > .ex-actions { display: flex; flex: 1; }
+  body:not(.modo-simples) .exercise-card:not(.recolhido) .sets-footer > .ex-actions > .ex-action-btn:not(.save-btn) { flex: 1 1 0; }
 </style>
 <script>
 // ══ v593 (auditoria 26/10): dois guardas que NÃO dependem do script principal (ES5 puro, primeiro script da página) ══
@@ -30762,7 +30783,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v689';
+var APP_SHELL_V = 'metodo-gh-v690';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
