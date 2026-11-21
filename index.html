@@ -2521,6 +2521,10 @@
   .tdp-min { background: linear-gradient(135deg, #1d180f, #141312); border: 1px solid #3d3524; border-radius: 12px; padding: 11px; }
   .tdp-mi { display: flex; gap: 8px; align-items: center; font-size: 13px; color: #e7e2d8; padding: 3px 0; }
   .tdp-mi::before { content: ""; width: 13px; height: 13px; border-radius: 4px; border: 1.5px solid #D4AF6A; flex-shrink: 0; }
+  .fds-card { background: linear-gradient(135deg, #1d180f, #141312); border: 1px solid #3d3524; border-radius: 12px; padding: 12px 13px; margin-top: 4px; }
+  .fds-card h4 { margin: 0 0 6px; font-size: 14px; color: #F1D69E; }
+  .fds-card p { margin: 0 0 5px; font-size: 13px; line-height: 1.5; color: #e7e2d8; } .fds-card p:last-child { margin-bottom: 0; }
+  .fds-nota { font-size: 12.5px; color: #b9b3a6; line-height: 1.5; margin: 10px 0 2px; }
   .tdp-pct { display: flex; justify-content: space-between; font-size: 12.5px; color: #e7e2d8; margin-top: 6px; } .tdp-pct b { color: #F1D69E; }
   .tdp-ov { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 9000; display: none; align-items: flex-end; justify-content: center; }
   .tdp-ov.show { display: flex; }
@@ -5029,6 +5033,10 @@ html[data-theme="light"] .tdp-se b { color: hsl(40, 45%, 30%); }
 html[data-theme="light"] .tdp-min { border-color: hsl(41, 35%, 72%); }
 html[data-theme="light"] .tdp-mi { color: var(--fg); }
 html[data-theme="light"] .tdp-pct { color: var(--fg); }
+html[data-theme="light"] .fds-card { background: linear-gradient(135deg, hsl(42, 60%, 96%), hsl(40, 30%, 99%)); border-color: hsl(41, 35%, 72%); }
+html[data-theme="light"] .fds-card h4 { color: hsl(40, 45%, 30%); }
+html[data-theme="light"] .fds-card p { color: var(--fg); }
+html[data-theme="light"] .fds-nota { color: var(--fg-2); }
 html[data-theme="light"] .tdp-pct b { color: hsl(40, 45%, 30%); }
 html[data-theme="light"] .tdp-ov { background: rgba(20, 18, 12, 0.40); }
 html[data-theme="light"] .tdp-sheet { background: hsl(38, 45%, 92%); border-top-color: hsl(42, 35%, 72%); }
@@ -24417,6 +24425,33 @@ function _teuDiaHtml_(d) {
   }
   return h + `</div>`;
 }
+// v695 FIM DE SEMANA (GH 20/11 e 21/11): bloco próprio na Dieta. Mostra a planta do tipo de dia de fim de semana
+// ("Teu dia · Fim de semana", "Sábado", "Domingo", "Folga") quando o protocolo tem, e sempre a explicação da refeição
+// livre (texto aprovado pelo GH 21/11, 1a): uma por semana e LIVRE, o bloco só explica quando e como encaixar, nunca
+// o que comer. Sem planta de fim de semana, avisa que vem no próximo reajuste. Abre sozinho no sábado e no domingo.
+const _FDS_LIVRE = ['Uma por semana. É uma refeição, não o dia inteiro.',
+  'Escolhe antes o dia e a refeição, de preferência num momento com gente (almoço de família, jantar fora).',
+  'Nela, tu come o que quiser, sem contar nada e sem culpa.',
+  'As outras refeições do dia seguem normais, e a água também.',
+  'No dia seguinte, segue a dieta normal. Não precisa compensar nem pular refeição.'];
+function _fdsHtml_(d) {
+  if (!d) return '';
+  const fds = [0, 6].indexOf(new Date().getDay()) >= 0;
+  const rot = (d.teuDia && d.teuDia.rotina) || [];
+  const itens = rot.filter(x => _TD_FDS.test(x.tipo || ''));
+  let h = `<div class="diet-section-toggle" onclick="toggleDietSection('fds')"><span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span class="tog-label">Fim de semana</span><span class="tog-chev${fds ? ' open' : ''}" id="fdsArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></div>`;
+  h += `<div class="diet-section-content${fds ? ' show' : ''}" id="fdsContent">`;
+  if (itens.length) {
+    const tipos = []; itens.forEach(x => { if (tipos.indexOf(x.tipo) < 0) tipos.push(x.tipo); });
+    tipos.forEach(tp => {
+      h += `<div class="td-tipo">${_tdEsc_(tp)}</div>`;
+      itens.filter(x => x.tipo === tp).forEach(x => { h += `<div class="td-item"><span class="td-hora">${_tdEsc_(x.hora)}</span><span>${_tdEsc_(x.texto)}</span></div>`; });
+    });
+  }
+  h += `<div class="td-tipo">Refeição livre</div><div class="fds-card">${_FDS_LIVRE.map(t => `<p>${t}</p>`).join('')}</div>`;
+  if (!itens.length) h += `<p class="fds-nota">O teu plano de fim de semana, montado pra tua rotina, vem no próximo reajuste.</p>`;
+  return h + `</div>`;
+}
 function _fdKey_() { return 'gh_fd_' + SHEET_ID; }
 function _fdMapa_() { try { const o = JSON.parse(localStorage.getItem(_fdKey_()) || '{}'); return (o && typeof o === 'object' && !Array.isArray(o)) ? o : {}; } catch (_) { return {}; } }
 function _fdGuarda_(m) { try { const o = {}; Object.keys(m).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)).sort().reverse().slice(0, 120).forEach(k => { o[k] = m[k]; }); localStorage.setItem(_fdKey_(), JSON.stringify(o)); } catch (_) {} }
@@ -28233,6 +28268,7 @@ function renderDiet() {
   }
 
   html += _teuDiaHtml_(d);   // v581
+  html += _fdsHtml_(d);   // v695
 
   // Orientações (sem aeróbicos — esses agora têm seção própria)
   if (orientacoesReais.length > 0) {
@@ -30847,7 +30883,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v694';
+var APP_SHELL_V = 'metodo-gh-v695';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
