@@ -4151,6 +4151,10 @@
   .rs-usa i { display: block; font-style: normal; font-size: 12px; color: #9a9a9a; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .rs-x { flex: 0 0 auto; min-width: 42px; background: transparent; color: #999; border: 1px solid #3a3a3a; border-radius: 9px; font-size: 14px; cursor: pointer; font-family: inherit; padding: 0 10px; }
   .rs-x.certeza { color: #fff; background: #b0392e; border-color: #b0392e; font-weight: 800; font-size: 12.5px; }
+  .bp-nome-cx { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 10px; }
+  .bp-linhas { font-size: 12.5px; line-height: 1.5; color: #bdbdbd; background: #171717; border: 1px solid #2a2a2a; border-radius: 9px; padding: 8px 10px; max-height: 180px; overflow: auto; }
+  .bp-linhas div { overflow-wrap: anywhere; }
+  .te-ent-bp { margin-top: 8px; }
   .rs-vazio { font-size: 13.5px; line-height: 1.5; color: #aaa; text-align: center; padding: 22px 8px; }
   /* ══ v656 (GH 17/11, plano C): ficha do aluno no editor ══ */
   #trainerEditor .te-info-name { cursor: pointer; }
@@ -5372,6 +5376,7 @@ html[data-theme="light"] .di-head-sv.on { color: #8a6410; border-color: #B8913F;
 html[data-theme="light"] .rs-usa { background: #fff; border-color: rgba(0, 0, 0, 0.12); color: #141414; }
 html[data-theme="light"] .rs-usa span { color: #7a5c14; }
 html[data-theme="light"] .rs-usa i, html[data-theme="light"] .rs-vazio { color: #6b6b6b; }
+html[data-theme="light"] .bp-linhas { background: #faf8f3; border-color: rgba(0, 0, 0, 0.1); color: #3a3a3a; }
 html[data-theme="light"] .rs-x { color: #6b6b6b; border-color: rgba(0, 0, 0, 0.2); }
 html[data-theme="light"] .rs-x.certeza { color: #fff; background: #c0392b; border-color: #c0392b; }
 html[data-theme="light"] .te-fi { background: #FBFAF7; color: #141414; border-color: rgba(184, 145, 63, 0.55); }
@@ -30883,7 +30888,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v695';
+var APP_SHELL_V = 'metodo-gh-v696';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
@@ -32411,7 +32416,7 @@ function _teEntDesenha() {
     h += '<div class="te-ent-aviso">O aluno recebe AGORA no WhatsApp a mensagem com o link do protocolo. A mestre recebe a data de hoje, a versão e o link. Não dá pra desfazer.</div>';
     const fut = _teEntFutura_();
     // v666: o Montar não escreve protocolo hormonal nem remédio do bloco; sem esse bloco na dieta, a tela lembra antes de entregar
-    if (!(dietaData || []).some(r => r && /^(proto|ciclo)$/i.test(String(r[0] == null ? '' : r[0]).trim()))) h += '<div class="te-ent-res te-ent-horm">Sem protocolo hormonal na dieta. Hormônio, peptídeo e remédio do bloco (anastrozol, tamoxifeno, cabergolina) nenhum Montar escreve: essa parte é tua, à mão. Se este aluno usa, escreve antes de entregar.</div>';
+    if (!(dietaData || []).some(r => r && /^(proto|ciclo)$/i.test(String(r[0] == null ? '' : r[0]).trim()))) h += '<div class="te-ent-res te-ent-horm">Sem protocolo hormonal na dieta. Hormônio, peptídeo e remédio do bloco (anastrozol, tamoxifeno, cabergolina) nenhum Montar escreve: essa parte é tua, à mão. Se este aluno usa, escreve antes de entregar.<div class="te-ent-bp"><button type="button" class="te-conf-volta" onclick="teEntFecha();bpAbre()">★ Puxar meu bloco salvo</button></div></div>';
     if (fut) h += '<div class="te-ent-aviso te-ent-fut">Atenção: a data de compra dele na mestre é ' + e(fut) + ', que ainda não chegou. Se o protocolo está agendado pra essa data, não entrega agora.</div>';
     if (tot) {
       h += '<div class="te-conf-lista">';
@@ -37267,6 +37272,8 @@ function renderDietaEditor() {
       _protoL.map(r => renderDietaSimpleRow(r, ['Item', 'Dose', 'Observação'])).join('') +
       `<div class="di-action-bar">
          <button class="di-add-btn" onclick="dietaAddSimple('proto')">+ Protocolo</button>
+         <button class="di-add-btn di-add-salva" onclick="bpAbre()" title="Colocar um bloco que tu escreveu e salvou">★ Puxar meu bloco salvo</button>
+         ${_protoL.length ? `<button class="di-add-btn" onclick="bpSalvaAbre()" title="Guardar as linhas deste bloco pra usar em outro aluno">☆ Salvar este bloco</button>` : ''}
        </div>`);
   }
 
@@ -38794,6 +38801,145 @@ function rsEscolhe(id) {
   const el = document.querySelector('.di-block[data-key="ref-' + em + '"]');
   if (el) { try { el.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (_) {} }
   _ghToast('Refeição colocada. Confere as gramas pra este aluno', 3000);
+}
+
+// ── v696 (GH 21/11): BLOCOS SALVOS DO PROTOCOLO. "☆ Salvar este bloco" guarda as linhas de protocolo (proto e ciclo, fora o
+// rótulo de dia do ciclo de carbo) que o GH escreveu neste aluno, com um nome que ELE dá; "★ Puxar meu bloco salvo" coloca um
+// desses blocos, do jeito que foi salvo, no fim da dieta de outro aluno. Quem escolhe o bloco é o GH: o app não sugere, não
+// escolhe, não calcula nem mexe em dose nenhuma, e nenhum Montar usa isto sozinho. Começa VAZIO, ninguém semeia.
+// Mora no SERVIDOR (depósito do editor, chave "blocos_proto" da rota editor_dados do .gs 2026-11-17b, igual às refeições).
+const _BP_KEY = 'gh_ed_blocos_proto_v1', _BP_PEND = 'gh_ed_blocos_proto_pend_v1', _BP_CHAVE = 'blocos_proto', _BP_TETO = 100;
+let _bpUltima = 0, _bpEnviando = false, _bpBusca = '', _bpApagar = '', _bpModo = 'lista';
+function _bpItem_(v) {
+  if (!v || typeof v !== 'object' || !Array.isArray(v.rows)) return null;
+  const rows = v.rows.slice(0, 40).filter(r => Array.isArray(r) && /^(proto|ciclo)$/.test(String(r[0] || '').toLowerCase().trim()))
+    .map(r => [String(r[0]).toLowerCase().trim()].concat([1, 2, 3].map(i => String(r[i] == null ? '' : r[i]).replace(/[—–]/g, ',').slice(0, 400))))
+    .filter(r => r[1].trim() || r[2].trim() || r[3].trim());
+  const n = String(v.n || '').trim().slice(0, 80);
+  if (!rows.length || !n) return null;
+  return { n, rows, em: +v.em || 0 };
+}
+function _bpObj_(o) { const out = {}; if (o && typeof o === 'object' && !Array.isArray(o)) Object.keys(o).forEach(id => { const it = _bpItem_(o[id]); if (it && /^[\w-]{1,80}$/.test(id)) out[id] = it; }); return out; }
+function _bpLe_() { try { return _bpObj_(JSON.parse(localStorage.getItem(_BP_KEY) || '{}')); } catch (_) { return {}; } }
+function _bpGrava_(o) { try { localStorage.setItem(_BP_KEY, JSON.stringify(_bpObj_(o))); } catch (_) {} }
+function _bpPendLe_() { try { const a = JSON.parse(localStorage.getItem(_BP_PEND) || '[]'); return Array.isArray(a) ? a.filter(p => p && (p.op === 'poe' || p.op === 'tira') && p.id) : []; } catch (_) { return []; } }
+function _bpPendGrava_(a) { try { localStorage.setItem(_BP_PEND, JSON.stringify(a)); } catch (_) {} }
+function _bpVista_() { const o = _bpLe_(); _bpPendLe_().forEach(p => { if (p.op === 'poe') { const it = _bpItem_(p.valor); if (it) o[p.id] = it; } else delete o[p.id]; }); return o; }
+function _bpAssin_(rows) { return JSON.stringify(rows.map(r => [0, 1, 2, 3].map(i => _rsNorm(r[i])))); }
+function _bpLinhasAluno_() {   // linhas de protocolo deste aluno, na ordem, sem o rótulo de dia do ciclo de carbo
+  if (!dietaData) return [];
+  const cab = _diDiaCab_(dietaData).cab;
+  return dietaData.map((r, i) => ({ r, i })).filter(x => x.r && !cab.has(x.i) && /^(proto|ciclo)$/i.test(String(x.r[0] == null ? '' : x.r[0]).trim()))
+    .map(x => [String(x.r[0]).toLowerCase().trim()].concat([1, 2, 3].map(i => String(x.r[i] == null ? '' : x.r[i]))))
+    .filter(r => r[1].trim() || r[2].trim() || r[3].trim());
+}
+function _bpLinhaTxt_(r) { return [r[1], r[2], r[3]].map(x => String(x || '').trim()).filter(Boolean).join(' · '); }
+async function _bpEnvia_(perguntaSenha) {
+  if (_bpEnviando) return; _bpEnviando = true;
+  try {
+    while (true) {
+      const fila = _bpPendLe_(); if (!fila.length) break;
+      const p = fila[0];
+      if (!localStorage.getItem('gh_trainer_token') && !(perguntaSenha && _trainerToken_(true))) break;
+      let r; try { r = await _publicaAba_(TRAINER_APPS_SCRIPT, { type: 'editor_dados', chave: _BP_CHAVE, op: p.op, id: p.id, valor: p.valor }); } catch (_) { break; }
+      if (!r || !r.j || !r.j.ok || !r.j.dados || !(_BP_CHAVE in r.j.dados)) break;
+      const resto = _bpPendLe_(); if (resto.length && resto[0].op === p.op && resto[0].id === p.id) resto.shift();
+      _bpPendGrava_(resto); _bpGrava_(r.j.dados[_BP_CHAVE]);
+    }
+  } finally { _bpEnviando = false; }
+  if (_bpAberto_()) _bpDesenha_();
+}
+async function _bpSincroniza_() {
+  if (Date.now() - _bpUltima < 60000) return; _bpUltima = Date.now();
+  const tok = localStorage.getItem('gh_trainer_token') || ''; if (!tok) { _bpUltima = 0; return; }
+  try {
+    const r = await fetch(TRAINER_APPS_SCRIPT + '?action=editor_dados&chave=' + _BP_CHAVE + '&token=' + encodeURIComponent(tok) + '&_=' + Date.now(), { cache: 'no-store' });
+    const j = await r.json();
+    if (j && j.ok && j.dados && _BP_CHAVE in j.dados) { _bpGrava_(j.dados[_BP_CHAVE] || {}); if (_bpAberto_()) _bpDesenha_(); _bpEnvia_(); }
+    else _bpUltima = 0;
+  } catch (_) { _bpUltima = 0; }
+}
+function _bpAberto_() { const e = document.getElementById('bpPainel'); return !!(e && !e.hidden); }
+function _bpPainel_() {
+  let e = document.getElementById('bpPainel');
+  if (!e) {
+    e = document.createElement('div'); e.id = 'bpPainel'; e.className = 'te-conf rs-painel'; e.hidden = true;
+    e.innerHTML = '<div class="te-conf-cx"><div class="te-conf-tit" id="bpTit"></div><div class="te-conf-sub" id="bpSub"></div><div id="bpCorpo"></div>' +
+      '<div class="te-conf-pe" id="bpPe"></div></div>';
+    e.addEventListener('click', ev => { if (ev.target === e) bpFecha(); });
+    (document.getElementById('trainerEditor') || document.body).appendChild(e);
+  }
+  return e;
+}
+function _bpDesenha_() {
+  const tit = document.getElementById('bpTit'), sub = document.getElementById('bpSub'), corpo = document.getElementById('bpCorpo'), pe = document.getElementById('bpPe');
+  if (!corpo) return;
+  const e = escTrainer, o = _bpVista_();
+  if (_bpModo === 'salva') {
+    const L = _bpLinhasAluno_(), ja = Object.keys(o).find(id => _bpAssin_(o[id].rows) === _bpAssin_(L));
+    tit.textContent = 'Salvar este bloco';
+    sub.textContent = L.length + (L.length === 1 ? ' linha de protocolo' : ' linhas de protocolo') + ', do jeito que estão aqui.';
+    corpo.innerHTML = '<div class="bp-nome-cx">' + (ja ? '<div class="te-ent-aviso">Este bloco já está salvo como "' + e(o[ja].n) + '".</div>' : '') +
+      '<input type="text" class="te-fi-busca" id="bpNome" maxlength="80" placeholder="Nome do bloco" autocomplete="off" enterkeyhint="done" onkeydown="if(event.key===\'Enter\'){event.preventDefault();bpSalva()}">' +
+      '<div class="bp-linhas">' + L.map(r => '<div>' + e(_bpLinhaTxt_(r)) + '</div>').join('') + '</div></div>';
+    pe.innerHTML = '<button type="button" class="te-conf-volta" onclick="bpFecha()">Cancelar</button><button type="button" class="te-conf-salva ok" onclick="bpSalva()">Salvar</button>';
+    return;
+  }
+  tit.textContent = 'Meus blocos salvos';
+  let ids = Object.keys(o).sort((x, y) => o[x].n.localeCompare(o[y].n, 'pt', { numeric: true }) || (o[y].em - o[x].em));
+  const total = ids.length, b = _rsNorm(_bpBusca), tem = _bpLinhasAluno_().length;
+  if (b) ids = ids.filter(id => _rsNorm(o[id].n).includes(b) || o[id].rows.some(r => _rsNorm(r[1]).includes(b)));
+  sub.textContent = total ? (total === 1 ? '1 bloco salvo' : total + ' blocos salvos') + '. Tocar coloca o bloco do jeito que tu salvou' + (tem ? ', embaixo das ' + tem + (tem === 1 ? ' linha' : ' linhas') + ' que este aluno já tem.' : '.') : '';
+  let h = total ? '<input type="search" class="te-fi-busca" placeholder="Buscar pelo nome do bloco ou de um item" value="' + e(_bpBusca) + '" oninput="bpFiltra(this.value)" autocomplete="off" enterkeyhint="search">' : '';
+  h += '<div class="te-conf-lista">';
+  if (!total) h += '<div class="rs-vazio">Nenhum bloco salvo ainda.<br>Abre um aluno com o protocolo que tu escreveu e toca em "☆ Salvar este bloco".</div>';
+  else if (!ids.length) h += '<div class="rs-vazio">Nenhum bloco com esse nome ou item.</div>';
+  else h += ids.map(id => { const it = o[id];
+    return '<div class="rs-it"><button type="button" class="rs-usa" onclick="bpEscolhe(\'' + e(id) + '\')"><b>' + e(it.n) + '</b><span>' + it.rows.length + (it.rows.length === 1 ? ' linha' : ' linhas') + '</span><i>' + e(it.rows.slice(0, 4).map(r => String(r[1] || '').trim()).filter(Boolean).join(', ') + (it.rows.length > 4 ? '...' : '')) + '</i></button>' +
+      '<button type="button" class="rs-x' + (_bpApagar === id ? ' certeza' : '') + '" onclick="bpApaga(\'' + e(id) + '\')" aria-label="Apagar dos salvos">' + (_bpApagar === id ? 'Apagar?' : '✕') + '</button></div>'; }).join('');
+  corpo.innerHTML = h + '</div>';
+  pe.innerHTML = '<button type="button" class="te-conf-salva" onclick="bpFecha()">Fechar</button>';
+}
+function bpAbre() {
+  if (!dietaData) { _ghToast('Abre a dieta do aluno primeiro', 2600); return; }
+  const e = _bpPainel_(); _bpModo = 'lista'; _bpBusca = ''; _bpApagar = '';
+  e.hidden = false; _bpDesenha_(); _bpSincroniza_();
+}
+function bpSalvaAbre() {
+  if (!_bpLinhasAluno_().length) { _ghToast('Este aluno não tem linha de protocolo pra salvar', 2800); return; }
+  const e = _bpPainel_(); _bpModo = 'salva'; e.hidden = false; _bpDesenha_(); _bpSincroniza_();
+  const i = document.getElementById('bpNome'); if (i) setTimeout(() => { try { i.focus(); } catch (_) {} }, 80);
+}
+function bpFecha() { const e = document.getElementById('bpPainel'); if (e) e.hidden = true; }
+function bpFiltra(v) { _bpBusca = String(v || ''); _bpApagar = ''; const c = document.getElementById('bpCorpo'), pos = c && c.querySelector('input') ? c.querySelector('input').selectionStart : null; _bpDesenha_(); const i = c && c.querySelector('input'); if (i) { i.focus(); if (pos != null) try { i.setSelectionRange(pos, pos); } catch (_) {} } }
+function bpSalva() {
+  const nome = String((document.getElementById('bpNome') || {}).value || '').trim();
+  if (!nome) { _ghToast('Dá um nome pro bloco antes de salvar', 2600); return; }
+  const o = _bpVista_();
+  if (Object.keys(o).length >= _BP_TETO) { _ghToast('Já são ' + _BP_TETO + ' blocos salvos. Apaga algum antes', 3200); return; }
+  if (Object.keys(o).some(id => _rsNorm(o[id].n) === _rsNorm(nome))) { _ghToast('Já tem um bloco com esse nome. Usa outro', 2800); return; }
+  const it = _bpItem_({ n: nome, rows: _bpLinhasAluno_(), em: Date.now() });
+  if (!it) { _ghToast('Não deu pra salvar este bloco', 2800); return; }
+  const fila = _bpPendLe_(); fila.push({ op: 'poe', id: 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), valor: it });
+  _bpPendGrava_(fila); bpFecha();
+  _ghToast('Bloco salvo. Ele aparece em "★ Puxar meu bloco salvo"', 3000);
+  _bpEnvia_(true);
+}
+function bpApaga(id) {
+  if (_bpApagar !== id) { _bpApagar = id; _bpDesenha_(); setTimeout(() => { if (_bpApagar === id) { _bpApagar = ''; if (_bpAberto_()) _bpDesenha_(); } }, 3500); return; }
+  _bpApagar = ''; const fila = _bpPendLe_(); fila.push({ op: 'tira', id }); _bpPendGrava_(fila);
+  _bpDesenha_(); _bpEnvia_(true);
+}
+function bpEscolhe(id) {
+  const it = _bpVista_()[id]; if (!it || !dietaData) return;
+  teSnapshot();
+  // sempre no FIM da dieta: uma linha "ciclo" seguida de refeição vira rótulo de dia do ciclo de carbo, no fim nunca vira
+  dietaData.push(...it.rows.map(r => r.slice()));
+  DIETA_OPEN_BLOCKS.add('proto');
+  bpFecha(); renderDietaEditor();
+  const el = document.querySelector('.di-block[data-key="proto"]');
+  if (el) { try { el.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (_) {} }
+  _ghToast('Bloco "' + it.n + '" colocado. Confere cada linha pra este aluno antes de salvar', 3400);
 }
 
 function dietaDuplicaRef(idx) {
