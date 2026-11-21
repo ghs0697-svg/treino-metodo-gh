@@ -4155,6 +4155,9 @@
   .bp-linhas { font-size: 12.5px; line-height: 1.5; color: #bdbdbd; background: #171717; border: 1px solid #2a2a2a; border-radius: 9px; padding: 8px 10px; max-height: 180px; overflow: auto; }
   .bp-linhas div { overflow-wrap: anywhere; }
   .te-ent-bp { margin-top: 8px; }
+  .di-mo-fds { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 10px 0 2px; padding: 9px 11px; border: 1px solid #3d3524; border-radius: 10px; background: #18150f; font-size: 13px; color: #ddd; }
+  .di-mo-fds b { color: #E3BE6B; } .di-mo-fds span { flex: 1 1 180px; min-width: 0; } .di-mo-fds small { color: #9a9a9a; }
+  .di-mo-fds button { border: 1px solid #E3BE6B; background: transparent; color: #E3BE6B; border-radius: 8px; padding: 6px 10px; font: inherit; font-weight: 700; cursor: pointer; }
   .rs-vazio { font-size: 13.5px; line-height: 1.5; color: #aaa; text-align: center; padding: 22px 8px; }
   /* ══ v656 (GH 17/11, plano C): ficha do aluno no editor ══ */
   #trainerEditor .te-info-name { cursor: pointer; }
@@ -5376,6 +5379,8 @@ html[data-theme="light"] .di-head-sv.on { color: #8a6410; border-color: #B8913F;
 html[data-theme="light"] .rs-usa { background: #fff; border-color: rgba(0, 0, 0, 0.12); color: #141414; }
 html[data-theme="light"] .rs-usa span { color: #7a5c14; }
 html[data-theme="light"] .rs-usa i, html[data-theme="light"] .rs-vazio { color: #6b6b6b; }
+html[data-theme="light"] .di-mo-fds { background: #faf6ec; border-color: hsl(41, 35%, 72%); color: #2a2a2a; }
+html[data-theme="light"] .di-mo-fds b, html[data-theme="light"] .di-mo-fds button { color: #7a5c14; border-color: #b08a2e; }
 html[data-theme="light"] .bp-linhas { background: #faf8f3; border-color: rgba(0, 0, 0, 0.1); color: #3a3a3a; }
 html[data-theme="light"] .rs-x { color: #6b6b6b; border-color: rgba(0, 0, 0, 0.2); }
 html[data-theme="light"] .rs-x.certeza { color: #fff; background: #c0392b; border-color: #c0392b; }
@@ -24409,7 +24414,9 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') _tdFecha_();
 function _teuDiaTem_(d) { const t = d && d.teuDia; return !!(t && (t.rotina.length || t.planos.length || t.minimo.length)); }
 function _teuDiaHtml_(d) {
   if (!_teuDiaTem_(d)) return '';
-  const t = d.teuDia;
+  let t = d.teuDia;
+  // v697: protocolo que só tem a planta do fim de semana (Montar) mostra ela no bloco Fim de semana; no Teu dia ficam os planos e o mínimo
+  if (t.rotina.length && t.rotina.every(x => _TD_FDS.test(x.tipo || ''))) { t = { rotina: [], planos: t.planos, minimo: t.minimo }; if (!t.planos.length && !t.minimo.length) return ''; }
   const _pl = t.rotina.some(x => x.hab || x.antes || x.antesG || x.porque || x.veio);   // v608
   let h = `<div class="diet-section-toggle" onclick="toggleDietSection('teudia')"><span class="tog-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg></span><span class="tog-label">${_pl ? 'Teu dia, hora a hora' : 'Teu dia'}</span><span class="tog-chev${_pl ? ' open' : ''}" id="teudiaArrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></div>`;
   h += `<div class="diet-section-content${_pl ? ' show' : ''}" id="teudiaContent">`;
@@ -30888,7 +30895,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v696';
+var APP_SHELL_V = 'metodo-gh-v697';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
@@ -32766,6 +32773,139 @@ function _diMoMonta(rows, ini, op) {
   return { rows: out, tot, alvo: { kc: K, p: P, c: C, g: G }, notas, refs: n };
 }
 
+// ── v697 FIM DE SEMANA NO MONTAR (GH 21/11: "isso tem que atualizar nos motores do plano B"). Lê as perguntas do fim de
+// semana (inicial 86.5 a 86.10, reajuste 12.1 a 12.6; vale a resposta mais nova) e escreve a planta "Teu dia · Fim de semana"
+// (linhas dica que o app mostra no bloco Fim de semana da v695): hora de acordar, quantas refeições e quais andam juntas,
+// treino e onde entra a refeição livre. Churrasco, restaurante ou família viram um "Se acontecer · Evento ou gente" com o
+// texto da refeição livre que o GH aprovou. Bebida, doce, fome e falta de horário NÃO viram texto pro aluno: é aviso pro GH.
+// Nunca mexe em alimento, quantidade, cardápio nem caloria: refeição que some no fim de semana vai JUNTO com outra, nada sai.
+const _FDS_ROT = { desjejum: 'desjejum', lanchemanha: 'lanche da manhã', almoco: 'almoço', lanche: 'lanche da tarde', janta: 'janta', ceia: 'ceia' };
+const _FDS_ART = { janta: 'a', ceia: 'a' };
+function _diMoFdsLe(j) {
+  const fs = ((j && j.fichas) || []).filter(f => f && (f.fonte === 'reajuste' || f.fonte === 'inicial'));
+  const tem = f => (f.respostas || []).some(y => /no fim de semana|no sabado e no domingo/.test(_teFiNorm(_teFiTxt(y.p))) && String(y.r == null ? '' : y.r).trim());
+  const f = fs.filter(x => x.fonte === 'reajuste').find(tem) || fs.find(x => x.fonte === 'inicial' && tem(x));
+  const ini = fs.find(x => x.fonte === 'inicial');
+  const out = { f: f || null, rea: !!(f && f.fonte === 'reajuste'), wake: null };
+  if (ini) { const t = _diMoR(ini, /quais horarios acorda e dorme/), m = /(\d{1,2})\s*(?:h|:|horas?\b)\s*(\d{2})?/i.exec(t) || /\b(\d{1,2})\b/.exec(t); if (m) { const H = +m[1], M = +(m[2] || 0); if (H >= 3 && H <= 13 && M < 60) out.wake = H * 60 + M; } }
+  if (!f) return out;
+  const R = re => _teFiNorm(_diMoR(f, re));
+  const ac = R(/que horas tu (acorda|tem acordado) no sabado/);
+  out.desloca = /mesmo horario/.test(ac) ? 0 : /ate 1 hora/.test(ac) ? 60 : /2 a 3 horas/.test(ac) ? 150 : /mais de 3/.test(ac) ? 210 : null;
+  const fo = R(/onde tu mais (come|comeu) fora no fim de semana/);
+  out.fora = [['churrasco', /churrasco/], ['restaurante', /restaurante/], ['lanche', /lanche, pizza|hamburguer|pizza/], ['delivery', /delivery/], ['familia', /casa da familia|de amigos/]].filter(x => x[1].test(fo)).map(x => x[0]);
+  out.foraNao = /nao (como|comi) fora/.test(fo);
+  const be = R(/quanto tu (bebe|bebeu) num fim de semana/);
+  out.bebe = /nao (bebo|bebi)/.test(be) ? 0 : /1 a 3/.test(be) ? 1 : /4 a 8/.test(be) ? 2 : /mais de 8/.test(be) ? 3 : null;
+  out.bebeTxt = _diMoR(f, /quanto tu (bebe|bebeu) num fim de semana/);
+  const tr = R(/(tu treina|tu treinou) no fim de semana/);
+  out.treino = []; ['sabado', 'domingo'].forEach(d => [['manha', 'de manhã'], ['tarde', 'à tarde'], ['noite', 'à noite']].forEach(t => { if (new RegExp(d + ' (de |a )?' + t[0]).test(tr)) out.treino.push([d, t[1]]); }));
+  out.semTreino = /nao (treino|treinei)/.test(tr);
+  const rf = R(/quantas refeicoes tu (faz|fez) por dia no fim de semana/);
+  out.refs = /2 ou menos/.test(rf) ? 2 : /6 ou mais/.test(rf) ? 6 : (_diMoNum(rf) || null);
+  const ti = R(/o que mais te (tira|tirou) da dieta no fim de semana/);
+  out.tira = [['familia', /comida da familia|de amigos/], ['bebida', /bebida/], ['doce', /doce/], ['fome', /fome fora/], ['horario', /sem horario|baguncada/]].filter(x => x[1].test(ti)).map(x => x[0]);
+  return out;
+}
+function _diMoFdsHora(min) { min = ((Math.round(min / 30) * 30) % 1440 + 1440) % 1440; return _diMoP2(Math.floor(min / 60)) + ':' + _diMoP2(min % 60); }
+function _diMoFdsTok(nome) {
+  const n = _teFiNorm(nome).replace(/^\s*\d+\s*[ªa°o]?\s*refeicao\s*[.:\-]?\s*/, '');
+  return /desjejum|cafe da manha/.test(n) ? 'desjejum' : /lanche da manha|colacao/.test(n) ? 'lanchemanha' : /almoc/.test(n) ? 'almoco' : /ceia/.test(n) ? 'ceia' : /jant/.test(n) ? 'janta' : /lanche/.test(n) ? 'lanche' : '';
+}
+function _diMoFdsNome(x) { return x.tok ? _FDS_ROT[x.tok] : String(x.nome || '').replace(/^\s*\d+\s*[ªº°]?\s*REFEI[CÇ][AÃ]O\s*[.:\-]?\s*/i, '').trim().toLowerCase(); }
+function _diMoFdsLinhas(rows, fd) {
+  const L = [], notas = [], sec = r => String((r && r[0]) || '').toLowerCase().trim(), T = 'Teu dia · Fim de semana';
+  // acordar
+  if (fd.desloca != null) {
+    const rel = fd.desloca === 0 ? 'no mesmo horário da semana' : fd.desloca === 60 ? 'até 1 hora mais tarde que na semana' : fd.desloca === 150 ? '2 a 3 horas mais tarde que na semana' : 'mais de 3 horas mais tarde que na semana';
+    if (fd.wake != null) L.push(['dica', T, _diMoFdsHora(fd.wake + fd.desloca), fd.desloca === 0 ? 'Acorda no mesmo horário da semana' : 'Acorda']);
+    else { L.push(['dica', T, 'Acorda ' + rel, '']); notas.push('Não achei a hora que ele acorda na semana (pergunta 59). A linha de acordar do fim de semana saiu sem número.'); }
+  }
+  // refeições: as do cardápio, na ordem; a que some no fim de semana vai junto com a vizinha, nunca sai comida
+  const refs = rows.filter(r => sec(r) === 'ref').map(r => ({ nome: String(r[1] || ''), tok: _diMoFdsTok(r[1]) }));
+  if (fd.refs && refs.length) {
+    let lista = refs.map(x => Object.assign({ junto: [] }, x));
+    const tarde = fd.desloca != null && fd.desloca >= 150, ordem = ['lanchemanha', 'ceia'].concat(tarde ? ['desjejum'] : [], ['lanche', '', 'desjejum']);
+    while (lista.length > Math.max(2, fd.refs)) {
+      let i = -1; ordem.some(t => { i = lista.findIndex(x => x.tok === t); return i >= 0; });
+      if (i < 0) break;
+      const v = lista[i], alvo = (v.tok === 'ceia' || i === lista.length - 1) ? i - 1 : i + 1;
+      if (alvo < 0 || alvo >= lista.length) break;
+      lista[alvo].junto = lista[alvo].junto.concat([v], v.junto); lista.splice(i, 1);
+    }
+    const nomes = lista.map(_diMoFdsNome), jn = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1];
+    if (lista.length === refs.length) L.push(['dica', T, '', 'As mesmas ' + refs.length + ' refeições da semana, só que no teu horário do fim de semana']);
+    else {
+      L.push(['dica', T, '', 'No fim de semana são ' + lista.length + ' refeições: ' + jn(nomes)]);
+      lista.forEach(x => x.junto.forEach(v => { const a = _FDS_ART[v.tok] || 'o', b = _FDS_ART[x.tok] || 'o'; L.push(['dica', T, '', (a === 'a' ? 'A ' : 'O ') + _diMoFdsNome(v) + ' vai junto com ' + b + ' ' + _diMoFdsNome(x) + '. Come tudo, nada sai']); }));
+    }
+    if (fd.refs > refs.length) notas.push('Ele faz ' + (fd.refs === 6 ? '6 ou mais' : fd.refs) + ' refeições no fim de semana e o cardápio tem ' + refs.length + '. Saiu "as mesmas refeições da semana": se quiser dividir em mais, é na mão.');
+    if (fd.refs < Math.min(2, refs.length) || (lista.length > fd.refs && fd.refs >= 2)) notas.push('Não deu pra juntar até ' + fd.refs + ' refeições sem mexer no almoço e na janta. Confere a planta.');
+  } else if (fd.refs && !refs.length) notas.push('A dieta ainda não tem refeição: a linha das refeições do fim de semana fica pra depois de montar.');
+  // treino
+  if (fd.treino.length) {
+    const por = {}; fd.treino.forEach(t => (por[t[0]] = por[t[0]] || []).push(t[1]));
+    const ds = Object.keys(por).map(d => 'no ' + (d === 'sabado' ? 'sábado' : 'domingo') + ' ' + por[d].join(' ou ').replace(/ ou (de|à) /g, ' ou '));
+    L.push(['dica', T, '', 'Treino ' + ds.join(' e ')]);
+  } else if (fd.semTreino) L.push(['dica', T, '', 'Sem treino no fim de semana. A dieta segue a mesma']);
+  // refeição livre
+  const LUG = { churrasco: 'no churrasco', restaurante: 'no restaurante', lanche: 'no lanche', delivery: 'no delivery', familia: 'na casa da família' };
+  const lug = fd.fora.map(k => LUG[k]);
+  L.push(['dica', T, '', lug.length ? 'Tua refeição livre da semana: usa ' + (lug.length < 2 ? lug[0] : lug.slice(0, -1).join(', ') + ' ou ' + lug[lug.length - 1]) : 'Tua refeição livre da semana: escolhe antes o dia e a refeição']);
+  // Se acontecer · Evento ou gente (texto da refeição livre aprovado pelo GH em 21/11)
+  let se = null;
+  const ev = ['churrasco', 'familia', 'restaurante'].filter(k => fd.fora.indexOf(k) >= 0 || (k === 'familia' && fd.tira.indexOf('familia') >= 0));
+  if (ev.length && !rows.some(r => /^se acontecer\s*·?\s*evento/i.test(String(r[1] || '').trim()))) {
+    const Q = { churrasco: 'Churrasco', familia: 'almoço na família', restaurante: 'restaurante' }, q = ev.slice(0, 2).map(k => Q[k]);
+    const pq = q.join(' ou '); se = ['dica', 'Se acontecer · Evento ou gente', pq.charAt(0).toUpperCase() + pq.slice(1) + ' no fim de semana?', 'Usa nele a tua refeição livre da semana. As outras refeições do dia seguem normais.'];
+  }
+  // avisos pro GH (decisão de método, nunca texto pro aluno)
+  if (fd.bebe >= 2) notas.push('Bebe ' + String(fd.bebeTxt || '').toLowerCase() + ' num fim de semana normal. O plano pra bebida (um "Se acontecer · Evento ou gente") é contigo.');
+  const OUT = { doce: 'doce (Recompensa)', fome: 'fome fora de hora (Fome)', horario: 'sem horário (Sem comida pronta)' }, ot = fd.tira.filter(k => OUT[k]).map(k => OUT[k]);
+  if (fd.tira.indexOf('bebida') >= 0 && !(fd.bebe >= 2)) ot.push('bebida (Evento ou gente)');
+  if (ot.length) notas.push('No fim de semana o que mais tira ele da dieta: ' + ot.join(', ') + '. Se quiser um "Se acontecer" pra isso, escreve na mão.');
+  return { L, se, notas };
+}
+// põe a planta nas linhas: troca a planta de fim de semana que já existe (só com troca=true) e entra logo depois das refeições
+function _diMoFdsPoe(rows, j, troca) {
+  const fd = _diMoFdsLe(j), sec = r => String((r && r[0]) || '').toLowerCase().trim(), eFds = r => /^(dica|orient)$/.test(sec(r)) && /^teu dia\s*·?\s*fim de semana/i.test(String(r[1] || '').trim());
+  if (!fd.f) return { n: 0, notas: ['Ele não respondeu as perguntas do fim de semana (anamnese de antes de 21/11). A planta do fim de semana fica pro próximo reajuste.'] };
+  const ja = rows.findIndex(eFds);
+  if (ja >= 0 && !troca) return { n: 0, notas: ['A dieta já tinha a planta do fim de semana: ficou como estava. O botão "Só o fim de semana" refaz ela.'] };
+  // refazer: sai também o "Se acontecer" que o próprio Montar escreveu (texto exato), pra não ficar um velho
+  const eSeMo = r => /^se acontecer\s*·?\s*evento/i.test(String(r[1] || '').trim()) && /^usa nele a tua refeição livre da semana/i.test(String(r[3] || '').trim());
+  let em = ja;
+  for (let i = rows.length - 1; i >= 0; i--) if (eSeMo(rows[i])) { rows.splice(i, 1); if (i < em) em--; }
+  const b = _diMoFdsLinhas(rows, fd);
+  if (em < 0) {
+    let ult = -1; rows.forEach((r, i) => { if (sec(r) === 'ref') ult = i; });
+    em = rows.length;
+    if (ult >= 0) { em = ult + 1; while (em < rows.length && ['', 'alimento', 'food', 'op', 'obs', 'nota', 'cardio', 'aerob'].indexOf(sec(rows[em])) >= 0) em++; }
+  }
+  for (let i = rows.length - 1; i >= 0; i--) if (eFds(rows[i])) { rows.splice(i, 1); if (i < em) em--; }
+  const novas = b.L.concat(b.se ? [b.se] : []);
+  rows.splice.apply(rows, [em, 0].concat(novas));
+  return { n: b.L.length, se: !!b.se, notas: b.notas, rea: fd.rea };
+}
+function diMoFds() {
+  if (!dietaData || !_diMo.j) return;
+  const copia = dietaData.map(r => r.slice()), res = _diMoFdsPoe(copia, _diMo.j, true);
+  if (!res.n) { _diMo.pronto = { tit: 'Fim de semana', res: res.notas[0] || 'Nada pra montar.', notas: res.notas.slice(1) }; _diMoDesenha(); return; }
+  _diMoPoe(copia); DIETA_OPEN_BLOCKS.add('orient'); renderDietaEditor();
+  _diMo.pronto = { tit: 'Fim de semana montado', res: res.n + (res.n === 1 ? ' linha' : ' linhas') + ' em "Teu dia · Fim de semana"' + (res.se ? ' e um "Se acontecer" pro churrasco ou a família' : '') + ', pela anamnese ' + (res.rea ? 'de reajuste' : 'inicial') + '. O aluno vê no bloco Fim de semana da dieta. Confere e salva a aba.', notas: res.notas };
+  _diMoDesenha();
+}
+function _diMoFdsCard() {
+  const fd = _diMoFdsLe(_diMo.j), e = escTrainer;
+  if (!fd.f) return '<div class="di-mo-fds"><b>Fim de semana</b><span>Ele não respondeu as perguntas do fim de semana (anamnese de antes de 21/11).</span></div>';
+  const d = [fd.desloca == null ? '' : 'acorda ' + (fd.desloca === 0 ? 'no mesmo horário' : fd.desloca === 60 ? 'até 1 h mais tarde' : fd.desloca === 150 ? '2 a 3 h mais tarde' : 'mais de 3 h mais tarde'),
+    fd.refs ? (fd.refs === 2 ? '2 ou menos' : fd.refs === 6 ? '6 ou mais' : fd.refs) + ' refeições' : '', fd.treino.length ? 'treina' : (fd.semTreino ? 'não treina' : ''),
+    fd.bebe == null ? '' : ['não bebe', 'bebe 1 a 3 doses', 'bebe 4 a 8 doses', 'bebe mais de 8 doses'][fd.bebe]].filter(Boolean).join(' · ');
+  const ok = !!_diMoAgora();
+  return '<div class="di-mo-fds"><b>Fim de semana</b><span>' + e(d || 'respondeu') + ' <small>(anamnese ' + (fd.rea ? 'de reajuste' : 'inicial') + ')</small></span>' +
+    (ok ? '<button type="button" onclick="diMoFds()">Só o fim de semana</button>' : '<span>Montar a dieta já monta o fim de semana junto.</span>') + '</div>';
+}
+
 // ── tela ──
 function _diMoFicha() { return _diMo.j || null; }
 async function _diMoCarrega(fresh) {
@@ -32843,6 +32983,7 @@ function _diMoDesenha() {
       h += '<div class="di-mo-com"><b>Vai usar</b> ' + e(cm.protMain.join(', ')) + '. ' + e(cm.carbMain.join(', ')) + '. ' + (cm.frutas.length ? e(cm.frutas.map(x => x.nome).join(', ')) + '. ' : 'Sem fruta marcada. ') + (cm.gord ? e(cm.gord) + (cm.gordPadrao ? ' (ele não marcou gordura).' : '.') : 'Sem gordura.') + '</div>';
       if (ini.alergia) h += '<div class="te-ent-aviso">Alergia: ' + e(ini.alergia) + '</div>';
       if (agora) h += '<div class="te-ent-aviso">Esta dieta já tem refeições. Montar TROCA as refeições de agora pelas novas. Suplemento, protocolo, regra e orientação ficam.</div>';
+      h += _diMoFdsCard();   // v697
       vai = 'Montar a dieta'; fn = 'diMoMontaIni()';
     }
   } else {
@@ -32860,6 +33001,7 @@ function _diMoDesenha() {
       h += chips([['Secar 300', 'diMoKcal(-300,' + kcA + ')'], ['Secar 200', 'diMoKcal(-200,' + kcA + ')'], ['Manter', 'diMoKcal(0,' + kcA + ')'], ['Crescer 200', 'diMoKcal(200,' + kcA + ')'], ['Crescer 300', 'diMoKcal(300,' + kcA + ')']]);
       h += chips([['1,8 g por kg', 'diMoProt(1.8)'], ['2,0 g por kg', 'diMoProt(2)'], ['2,2 g por kg', 'diMoProt(2.2)']]);
       h += '<div class="di-mo-calc" id="diMoCalc"></div><div class="di-mo-com">Mexe no carbo e, se faltar, na gordura. A proteína vai pro número digitado e nunca baixa sem tu confirmar. As refeições e os alimentos continuam os mesmos.</div>';
+      h += _diMoFdsCard();   // v697
       vai = 'Aplicar na dieta'; fn = 'diMoAplicaRea()';
     }
   }
@@ -32878,6 +33020,7 @@ function diMoMontaIni() {
   const ini = _diMoIni(_diMo.j); if (!ini) return; const op = _diMoValida(); if (!op) return;
   let r; try { r = _diMoMonta(dietaData, ini, op); } catch (_) { r = { erro: 'Não consegui montar com esses números. Confere as calorias e a proteína.' }; }
   if (r.erro) { _diMo.pronto = { tit: 'Não montou', res: r.erro, notas: [] }; _diMoDesenha(); _diMo.pronto = null; return; }
+  try { const fs = _diMoFdsPoe(r.rows, _diMo.j, false); if (fs.n) r.notas.unshift('Fim de semana: ' + fs.n + (fs.n === 1 ? ' linha' : ' linhas') + ' em "Teu dia · Fim de semana"' + (fs.se ? ' e um "Se acontecer" pro churrasco ou a família' : '') + '.'); r.notas = r.notas.concat(fs.notas); } catch (_) {}   // v697
   _diMoPoe(r.rows);
   DIETA_OPEN_BLOCKS.add('info'); dietaData.forEach((x, i) => { if (String((x && x[0]) || '').toLowerCase().trim() === 'ref') DIETA_OPEN_BLOCKS.add('ref-' + i); });
   renderDietaEditor();
