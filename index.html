@@ -6862,6 +6862,13 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
   .dm-nao, .dm-hora, .wt-edit, .ex-dica-troca .x, .parc-strip-v { position: relative; }
   .dm-nao::after, .dm-hora::after, .wt-edit::after, .ex-dica-troca .x::after, .parc-strip-v::after { content: ''; position: absolute; inset: -10px -4px; }
   .ex-dica-troca .x::after { inset: -12px; }
+  /* v699: aviso de troca de exercício embaixo do gráfico de carga */
+  .hist-troca { margin-top: 12px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--glass-line, rgba(255,255,255,.1)); background: rgba(212,175,106,.07); color: var(--fg-2, #b9b3a6); font-size: 12px; line-height: 1.5; }
+  .hist-troca b { color: var(--gold, #D4AF6A); font-weight: 700; }
+  .hist-troca-bs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .hist-troca-bs button { font: inherit; font-size: 12px; font-weight: 700; padding: 7px 12px; min-height: 34px; border-radius: 999px; border: 1px solid rgba(212,175,106,.45); background: transparent; color: var(--gold, #D4AF6A); cursor: pointer; }
+  html[data-theme="light"] .hist-troca { background: rgba(167,126,42,.07); color: var(--fg-2); }
+  html[data-theme="light"] .hist-troca b, html[data-theme="light"] .hist-troca-bs button { color: #8a6410; border-color: rgba(138,100,16,.4); }
 </style>
 <div id="painelGate" style="display:none;position:fixed;inset:0;z-index:99999;background:#0D0D0D;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:14px;text-align:center;">
   <div style="font-family:'Cinzel',serif;font-size:34px;letter-spacing:6px;color:var(--gold);font-weight:700;">MÉTODO GH</div>
@@ -10846,8 +10853,55 @@ function _viagemBtnRefresh() {
   b.classList.toggle('viagem-on', on);
   b.innerHTML = on ? '✈️ Viagem/Livre ligado' : '✈️ Viagem/Livre';
 }
+// v699 (GH 22/11: "tem que levar em consideração quando ele troca o exercício, isso gera ruído no gráfico"). A troca nunca
+// misturou carga (cada exercício do lugar tem a sua, pelo _cargaSlotSuffix), mas o gráfico só mostrava o exercício ATIVO: quem
+// trocava na semana 4 parava de ver as 3 semanas do anterior e não tinha aviso nenhum de que o gráfico tinha recomeçado.
+// _comoExercicio_ lê as mesmas funções de sempre como se outro exercício do lugar estivesse ativo (só leitura, síncrono, nada
+// é gravado). _slotOutros_ devolve os exercícios do lugar que têm carga anotada neste ciclo e não são o ativo.
+let _exForca = null;
+function _comoExercicio_(di, ei, r, fn) { const a = _exForca; _exForca = { di: di, ei: Number(ei), r: r }; try { return fn(); } finally { _exForca = a; } }
+function _slotOutros_(di, ei) {
+  const out = [];
+  try {
+    const ex = WORKOUT[di] && WORKOUT[di].exercises && WORKOUT[di].exercises[ei];
+    if (!ex || ex.biset || ex.warmup) return out;
+    const ativo = _normEx(_exAtivo(di, ei).name), orig = _normEx(ex.name), wt = _weekTeto();
+    const cands = [{ name: ex.name, video: ex.video || '', sub: false }];
+    (_grupoDe(ex.name) || []).forEach(g => { if (g.norm !== orig) cands.push({ name: g.name, video: '', sub: true }); });
+    cands.forEach(c => {
+      if (_normEx(c.name) === ativo) return;
+      const sem = _comoExercicio_(di, ei, c, () => { const l = []; for (let w = 1; w <= wt; w++) if ((parseFloat(_cargaTopo(di, String(ei), w)) || parseFloat(_placasTopo(di, String(ei), w)) || 0) > 0) l.push(w); return l; });
+      if (sem.length) out.push({ r: c, sem: sem });
+    });
+  } catch (_) {}
+  return out;
+}
+function _semanasTxt_(l) {
+  if (l.length === 1) return 'semana ' + l[0];
+  const seguido = l.every((w, i) => !i || w === l[i - 1] + 1);
+  return 'semanas ' + (seguido ? l[0] + ' a ' + l[l.length - 1] : l.slice(0, -1).join(', ') + ' e ' + l[l.length - 1]);
+}
+function _histTrocaHtml_(di, ei) {
+  try {
+    const o = _slotOutros_(di, ei); if (!o.length) return '';
+    const e = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+    return '<div class="hist-troca"><b>Tu trocou de exercício neste lugar do treino.</b> Também tem carga anotada em ' + o.map(x => e(x.r.name) + ' (' + _semanasTxt_(x.sem) + ')').join(' e em ')
+      + '. Cada exercício tem o seu gráfico, porque a carga de um não se compara com a do outro.<div class="hist-troca-bs">'
+      + o.map(x => '<button type="button" onclick="_histVerOutro(' + di + ',' + ei + ',\'' + encodeURIComponent(_normEx(x.r.name)).replace(/'/g, '%27') + '\')">Ver ' + e(x.r.name) + '</button>').join('') + '</div></div>';
+  } catch (_) { return ''; }
+}
+function _histVerOutro(di, ei, alvo) {
+  try {
+    alvo = decodeURIComponent(alvo);
+    const ex = WORKOUT[di].exercises[ei], at = _exAtivo(di, ei);   // no toque nada está forçado: é o exercício ativo de verdade
+    if (_normEx(at.name) === alvo) { showHistory(di, ei); return; }
+    const c = [{ name: ex.name, video: ex.video || '', sub: false }].concat((_grupoDe(ex.name) || []).filter(g => g.norm !== _normEx(ex.name)).map(g => ({ name: g.name, video: '', sub: true }))).find(x => _normEx(x.name) === alvo);
+    if (c) _comoExercicio_(di, ei, c, () => showHistory(di, ei));
+  } catch (_) {}
+}
 // Exercício a EXIBIR na posição (di,ei): substituto ativo (se trocado e sem colidir) OU original.
 function _exAtivo(di, ei) {
+  if (_exForca && _exForca.di === di && _exForca.ei === Number(ei)) return _exForca.r;   // v699
   try { const r = _resolveDayActive(di)[ei]; if (r) return r; } catch (_) {}
   const ex = WORKOUT[di] && WORKOUT[di].exercises && WORKOUT[di].exercises[ei];
   return { name: (ex && ex.name) || '', video: (ex && ex.video) || '', sub: false };
@@ -17844,14 +17898,15 @@ function _histChartData(di, ei) {
   let antesHtml = '';   // v580: o que o aluno fez neste exercício antes do protocolo atual
   try { _arqDoAparelho_(true); antesHtml = _histAntesHtml_(_hnm); } catch (_) { antesHtml = ''; }
   if (!filled.length && antesHtml) { html = ''; trendText = 'Ainda sem carga anotada neste protocolo. Abaixo, o que tu fez antes dele.'; trendCls = ''; }
-  return { name: _hnm, html, trendText, trendCls, hasData: filled.length > 0, antesHtml };
+  const trocaHtml = ex.biset ? '' : _histTrocaHtml_(di, ei);   // v699
+  return { name: _hnm, html, trendText, trendCls, hasData: filled.length > 0, antesHtml, trocaHtml };
 }
 function showHistory(di, ei) {
   const d = _histChartData(di, ei);
   if (!d) return;
   document.getElementById('historyTitle').textContent = '📈 ' + d.name;
   document.getElementById('historyBars').innerHTML = d.html;
-  try { const ha = document.getElementById('historyAntes'); if (ha) ha.innerHTML = d.antesHtml || ''; } catch (_) {}   // v580
+  try { const ha = document.getElementById('historyAntes'); if (ha) ha.innerHTML = (d.trocaHtml || '') + (d.antesHtml || ''); } catch (_) {}   // v580; v699: aviso da troca
   const trend = document.getElementById('historyTrend');
   trend.classList.remove('up', 'down');
   if (d.trendCls) trend.classList.add(d.trendCls);
@@ -24178,12 +24233,13 @@ function _progCollect() {
         // v546: o nome é o do exercício ATIVO (a carga lida é a do substituto quando o aluno trocou)
         let nm = ex.name; try { const a = _exAtivo(di, ei); if (a && a.name) nm = a.name; } catch (_) {}
         items.push({ di, key: String(ei), plainEi: ei, name: nm, dia: diaTxt });
+        try { _slotOutros_(di, ei).forEach(o => items.push({ di, key: String(ei), plainEi: ei, name: o.r.name, dia: diaTxt, alt: o.r, altTxt: o.r.sub ? 'usado na troca' : 'antes da troca' })); } catch (_) {}   // v699
       }
     });
   });
   const out = [];
   const _wt = _weekTeto();
-  items.forEach(it => {
+  items.forEach(it => { const calc = () => {
     let vals = [];
     for (let w = 1; w <= _wt; w++) vals.push(parseFloat(_cargaTopo(it.di, it.key, w)) || 0);   // v544
     // v546: quem registra só PLACAS também entra (a tela dizia "anota o peso" pra quem tinha 8 semanas de placa)
@@ -24205,8 +24261,9 @@ function _progCollect() {
     } else {
       it.isNewPR = false; it.delta = 0; it.pct = 0; it.multi = false;
     }
+    if (it.alt) it.isNewPR = false;   // v699: exercício que não está mais no treino não vira "recorde novo"
     out.push(it);
-  });
+  }; if (it.alt) _comoExercicio_(it.di, it.plainEi, it.alt, calc); else calc(); });
   return out;
 }
 function _progSpark(vals, color) {
@@ -24843,9 +24900,10 @@ function _progDiasNoMes() {
     return dates.size;
   } catch (_) { return 0; }
 }
-function _progOpenHistory(di, ei) {
+function _progOpenHistory(di, ei, i) {
   teHide('progressoModal');
-  showHistory(di, ei);
+  const it = i >= 0 ? _pgItems[i] : null;   // v699: linha de exercício que saiu na troca abre o gráfico DELE
+  if (it && it.alt && it.di === di && it.plainEi === ei) _comoExercicio_(di, ei, it.alt, () => showHistory(di, ei)); else showHistory(di, ei);
 }
 // Meu Progresso virou TELA (GH 2026-08-13) — o modal antigo redireciona pra ela.
 function openProgressoModal() { switchView('progresso'); }
@@ -24857,9 +24915,9 @@ function _pgBigDraw() {
   if (!sel || !box) return;
   const it = _pgItems[parseInt(sel.value, 10)];
   if (!it || it.plainEi === null) { box.innerHTML = ''; return; }
-  const d = _histChartData(it.di, it.plainEi);
+  const d = it.alt ? _comoExercicio_(it.di, it.plainEi, it.alt, () => _histChartData(it.di, it.plainEi)) : _histChartData(it.di, it.plainEi);   // v699
   if (!d) { box.innerHTML = ''; return; }
-  box.innerHTML = d.html + (d.trendText ? `<div class="pg-trendline ${d.trendCls}">${d.trendText}</div>` : '');
+  box.innerHTML = d.html + (d.trendText ? `<div class="pg-trendline ${d.trendCls}">${d.trendText}</div>` : '') + (d.trocaHtml || '');
 }
 // Exemplo estático (dados fictícios) pra quem ainda não anotou nada ver o que ganha
 function _pgExemploSvg() {
@@ -25599,9 +25657,9 @@ function renderProgressoScreen() {
   _pgItems = items;
   const comCurva = items.map((it, i) => ({ it, i })).filter(x => x.it.plainEi !== null && (x.it.vals || []).filter(v => v > 0).length >= 1);
   if (comCurva.length) {
-    const def = comCurva.slice().sort((a, b) => ((b.it.vals || []).filter(v => v > 0).length - (a.it.vals || []).filter(v => v > 0).length) || (b.it.pct - a.it.pct))[0];
+    const def = (comCurva.some(x => !x.it.alt) ? comCurva.filter(x => !x.it.alt) : comCurva).slice().sort((a, b) => ((b.it.vals || []).filter(v => v > 0).length - (a.it.vals || []).filter(v => v > 0).length) || (b.it.pct - a.it.pct))[0];
     const opts = comCurva.slice().sort((a, b) => a.it.name.localeCompare(b.it.name))
-      .map(x => `<option value="${x.i}" ${x.i === def.i ? 'selected' : ''}>${x.it.name.replace(/</g, '&lt;')}</option>`).join('');
+      .map(x => `<option value="${x.i}" ${x.i === def.i ? 'selected' : ''}>${x.it.name.replace(/</g, '&lt;')}${x.it.altTxt ? ' · ' + x.it.altTxt : ''}</option>`).join('');
     html += `<div class="pg-card">
       <div class="pg-sec-t">EVOLUÇÃO DE CARGA</div>
       <select id="pgExSel" class="pg-sel" onchange="_pgBigDraw()">${opts}</select>
@@ -25681,7 +25739,7 @@ function _progBodyHtml(items, fmt) {
     html += `<div style="display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid #26262c;">
       <div style="flex:1;min-width:0;">
         <div style="color:#fff;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_dx(it.name)}</div>
-        <div style="color:#7a7a82;font-size:10px;">Dia ${it.dia}</div>
+        <div style="color:#7a7a82;font-size:10px;">Dia ${it.dia}${it.altTxt ? ' · ' + it.altTxt : ''}</div>
       </div>
       ${it.isNewPR ? '<span style="background:var(--gold-bg, var(--gold));color:#111;font-size:9px;font-weight:800;padding:2px 7px;border-radius:8px;">NOVO!</span>' : ''}
       <div style="color:var(--gold);font-size:14px;font-weight:800;min-width:54px;text-align:right;">${fmtIt(it, it.max)}</div>
@@ -25694,12 +25752,12 @@ function _progBodyHtml(items, fmt) {
       const up = it.delta > 0, flat = it.delta === 0;
       const cor = up ? '#4caf50' : flat ? '#9a9aa0' : '#ff9800';
       const pctTxt = (up ? '+' : '') + it.pct + '%';
-      const click = it.plainEi !== null ? ` onclick="_progOpenHistory(${it.di}, ${it.plainEi})" style="cursor:pointer;"` : '';
+      const click = it.plainEi !== null ? ` onclick="_progOpenHistory(${it.di}, ${it.plainEi}, ${it.alt ? _pgItems.indexOf(it) : -1})" style="cursor:pointer;"` : '';
       html += `<div${click} class="prog-row">
         <div style="display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid #26262c;">
           <div style="flex:1;min-width:0;">
             <div style="color:#fff;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_dx(it.name)}</div>
-            <div style="color:#7a7a82;font-size:10px;">Dia ${it.dia} · ${fmtIt(it, it.vals.filter(v => v > 0)[0])} → ${fmtIt(it, it.vals.filter(v => v > 0).pop())}</div>
+            <div style="color:#7a7a82;font-size:10px;">Dia ${it.dia}${it.altTxt ? ' · ' + it.altTxt : ''} · ${fmtIt(it, it.vals.filter(v => v > 0)[0])} → ${fmtIt(it, it.vals.filter(v => v > 0).pop())}</div>
           </div>
           ${_progSpark(it.vals, cor)}
           <div style="color:${cor};font-size:12px;font-weight:800;min-width:44px;text-align:right;">${pctTxt}</div>
@@ -30911,7 +30969,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v698';
+var APP_SHELL_V = 'metodo-gh-v699';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
