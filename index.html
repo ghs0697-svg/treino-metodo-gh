@@ -25553,6 +25553,21 @@ function _evoPesoHtml() {
   return '<div class="ev-sub">Peso</div>'
     + '<div class="ev-linha">' + _evoNum(a.peso) + ' kg em ' + dt(a.data) + ' · <b>' + _evoNum(b.peso) + ' kg</b> em ' + dt(b.data) + ' ' + chip + '</div>' + svg;
 }
+// v700 (GH 22/11: "arruma o cargas que mais subiram tbm"): o exercício que saiu numa troca continua na lista, porque a
+// história é dele, mas com a marca de que não é o que está no treino hoje. A história vem do servidor por NOME de exercício
+// (o substituto tem a dele), e desde 22/11 a carga do dia é a da maior série da grade, não a da primeira linha (aquecimento).
+function _evoTrocaTags_() {
+  const tag = {}, ativos = {};
+  try {
+    WORKOUT.forEach((day, di) => (day.exercises || []).forEach((ex, ei) => {
+      if (!ex || ex.biset || ex.warmup) return;
+      ativos[_normEx(_exAtivo(di, ei).name)] = 1;
+      _slotOutros_(di, ei).forEach(o => { tag[_normEx(o.r.name)] = o.r.sub ? 'usado na troca' : 'antes da troca'; });
+    }));
+  } catch (_) {}
+  Object.keys(ativos).forEach(k => { delete tag[k]; });
+  return tag;
+}
 // as 3 cargas que mais subiram (histórico do servidor, aba CARGAS): o primeiro registro contra o maior dos 3 últimos
 function _evoForcaHtml() {
   if (!_evoHist || typeof _evoHist !== 'object') return '';
@@ -25569,8 +25584,10 @@ function _evoForcaHtml() {
   let un = 'kg'; try { un = getUnit(); } catch (_) {}
   const v = kg => { let t; try { t = kgToDisplay(kg); } catch (_) { t = String(kg); } return String(t).replace('.', ','); };
   let h = '<div class="ev-sub">Cargas que mais subiram</div>';
+  const tg = _evoTrocaTags_();
   lst.slice(0, 3).forEach(e => {
-    h += '<div class="ev-fr"><div class="ev-fn">' + _evoEsc(e.nome) + (e.desde ? '<small>desde ' + _evoEsc(e.desde) + '</small>' : '') + '</div>'
+    const sob = [e.desde ? 'desde ' + _evoEsc(e.desde) : '', tg[_normEx(e.nome)] || ''].filter(Boolean).join(' · ');
+    h += '<div class="ev-fr"><div class="ev-fn">' + _evoEsc(e.nome) + (sob ? '<small>' + sob + '</small>' : '') + '</div>'
       + '<div class="ev-fv">' + v(e.de) + ' → <b>' + v(e.ate) + ' ' + un + '</b> <span class="med-chip">+' + Math.round(e.pct * 100) + '%</span></div></div>';
   });
   return h;
@@ -30969,7 +30986,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v699';
+var APP_SHELL_V = 'metodo-gh-v700';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
