@@ -6848,6 +6848,20 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
   /* 18 (v637, GH 12/11) marca do topo e números grandes um passo mais claros, na paleta do botão Entrar. Texto pequeno segue no --gold escuro, que é o que dá leitura em fundo claro */
   html[data-theme="light"] .app-header .brand-name { background-image: linear-gradient(135deg, #E6C76A 0%, #C9A24B 55%, #B8913F 100%); }
   html[data-theme="light"] :is(.diet-macro-stat, .pg-stat) .v:not(.kcal) { color: #B8913F; }
+  /* ── v698 (varredura 22/11) ──
+     Suplementação: o bloco de cada horário ganhou o fundo de vidro sem margem interna nem canto (texto colado na borda).
+     Tema claro: miniatura carregando era um quadrado preto; cartões de número do Progresso e rótulos do gráfico de carga
+     estavam nas cores do tema escuro (quase invisíveis no claro). Botões pequenos: área de toque maior, visual igual. */
+  .diet-supl-group { padding: 10px 12px; border-radius: 14px; border: 1px solid var(--glass-line, rgba(255,255,255,.08)); }
+  html[data-theme="light"] .ex-thumb, html[data-theme="light"] .focus-thumb, html[data-theme="light"] .hj-th { background: #e9e3d4; }
+  html[data-theme="light"] .pg-stat { background: rgba(255,255,255,.55); border-color: rgba(167,126,42,.28); }
+  html[data-theme="light"] .pg-stat svg { color: #a77e2a; }
+  html[data-theme="light"] .hc-pr { fill: #8a6410; }
+  html[data-theme="light"] .hc-pt { fill: #6f6553; }
+  html[data-theme="light"] .hc-base { stroke: rgba(40,30,10,.2); }
+  .dm-nao, .dm-hora, .wt-edit, .ex-dica-troca .x, .parc-strip-v { position: relative; }
+  .dm-nao::after, .dm-hora::after, .wt-edit::after, .ex-dica-troca .x::after, .parc-strip-v::after { content: ''; position: absolute; inset: -10px -4px; }
+  .ex-dica-troca .x::after { inset: -12px; }
 </style>
 <div id="painelGate" style="display:none;position:fixed;inset:0;z-index:99999;background:#0D0D0D;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:14px;text-align:center;">
   <div style="font-family:'Cinzel',serif;font-size:34px;letter-spacing:6px;color:var(--gold);font-weight:700;">MÉTODO GH</div>
@@ -17769,8 +17783,8 @@ function _histChartData(di, ei) {
     const areaD = lineD + ` L${pts[pts.length-1].px.toFixed(1)} ${H - padB} L${pts[0].px.toFixed(1)} ${H - padB} Z`;
     let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Evolução da carga por semana">`;
     svg += `<defs><linearGradient id="ghGradCarga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(212,175,106,.30)"/><stop offset="1" stop-color="rgba(212,175,106,0)"/></linearGradient></defs>`;
-    svg += `<line x1="${padL}" y1="${H - padB}" x2="${W - padR}" y2="${H - padB}" stroke="rgba(255,255,255,.12)" stroke-width="1"/>`;
-    values.forEach(v => { svg += `<line x1="${x(v.w).toFixed(1)}" y1="${H - padB}" x2="${x(v.w).toFixed(1)}" y2="${H - padB + 3}" stroke="rgba(255,255,255,.2)" stroke-width="1"/>`; });
+    svg += `<line class="hc-base" x1="${padL}" y1="${H - padB}" x2="${W - padR}" y2="${H - padB}" stroke="rgba(255,255,255,.12)" stroke-width="1"/>`;
+    values.forEach(v => { svg += `<line class="hc-base" x1="${x(v.w).toFixed(1)}" y1="${H - padB}" x2="${x(v.w).toFixed(1)}" y2="${H - padB + 3}" stroke="rgba(255,255,255,.2)" stroke-width="1"/>`; });
     svg += `<text x="${x(1).toFixed(1)}" y="${H - 8}" fill="#8a8579" font-size="9.5" text-anchor="middle">S1</text>`;
     svg += `<text x="${x(_WT).toFixed(1)}" y="${H - 8}" fill="#8a8579" font-size="9.5" text-anchor="middle">S${_WT}</text>`;
     if (pts.length > 1) svg += `<path d="${areaD}" fill="url(#ghGradCarga)"/>`;
@@ -17783,10 +17797,12 @@ function _histChartData(di, ei) {
       const isPr = p.v.w === pr.w && val(p.v) === val(pr);
       svg += `<circle cx="${p.px.toFixed(1)}" cy="${p.py.toFixed(1)}" r="${isPr ? 5 : 3.5}" fill="${isPr ? '#E6CF9C' : '#D4AF6A'}" stroke="#14110c" stroke-width="1.5"/>`;
       // âncora do rótulo clampada pra dentro do quadro (na S1 o "PR 4kg" saía cortado: "R 4kg")
-      if (isPr) { const prx = Math.max(padL + 36, Math.min(p.px, W - padR - 30)); svg += `<text x="${prx.toFixed(1)}" y="${(p.py - 9).toFixed(1)}" fill="#E6CF9C" font-size="10" font-weight="800" text-anchor="middle">Recorde ${fmt(val(p.v))}</text>`; }
+      if (isPr) { const prx = Math.max(padL + 36, Math.min(p.px, W - padR - 30)); svg += `<text x="${prx.toFixed(1)}" y="${(p.py - 9).toFixed(1)}" class="hc-pr" fill="#E6CF9C" font-size="10" font-weight="800" text-anchor="middle">Recorde ${fmt(val(p.v))}</text>`; }
       // valores de início e fim marcados nas pontas (sem duplicar o rótulo do PR)
       else if (pts.length > 1 && (pi === 0 || pi === pts.length - 1)) {
-        svg += `<text x="${clampX(p.px).toFixed(1)}" y="${(p.py - 9).toFixed(1)}" fill="#9a9389" font-size="9.5" font-weight="700" text-anchor="middle">${fmt(val(p.v))}</text>`;
+        // v698: com a carga subindo, o valor da primeira semana ficava em cima da linha; vai pra baixo do ponto, à direita
+        if (pi === 0 && pts[1].py < p.py) svg += `<text x="${(p.px + 7).toFixed(1)}" y="${(p.py + 13).toFixed(1)}" class="hc-pt" fill="#9a9389" font-size="9.5" font-weight="700" text-anchor="start">${fmt(val(p.v))}</text>`;
+        else svg += `<text x="${clampX(p.px).toFixed(1)}" y="${(p.py - 9).toFixed(1)}" class="hc-pt" fill="#9a9389" font-size="9.5" font-weight="700" text-anchor="middle">${fmt(val(p.v))}</text>`;
       }
     });
     svg += `</svg>`;
@@ -30895,7 +30911,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v697';
+var APP_SHELL_V = 'metodo-gh-v698';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {

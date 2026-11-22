@@ -1,11 +1,10 @@
-const CACHE_NAME = 'metodo-gh-v697';
+const CACHE_NAME = 'metodo-gh-v698';
 const ASSETS = [
   './',
   './index.html',
   './editor-data.js',
   './substitutos.js',
   './manifest.json',
-  './gh-logo.png',
   './icon-192.png',
   './icon-512.png',
   './icon-192-maskable.png',
@@ -47,7 +46,10 @@ self.addEventListener('activate', e => {
     await Promise.all(keys.filter(k => k !== CACHE_NAME && k !== 'gh-videos-v1' && k !== 'gh-thumbs-v1').map(k => caches.delete(k)));
     await self.clients.claim();
     // v519/v520: shell e assets entram em segundo plano, sem segurar a ativação.
-    caches.open(CACHE_NAME).then(c => Promise.all(ASSETS.map(u => c.add(new Request(u, { cache: 'reload' })).catch(() => {})))).catch(() => {});
+    // v698: só o shell vem forçado da rede ('reload'). Imagem, ícone e os dois .js vão com 'no-cache': o navegador pergunta ao
+    // servidor se mudou e, se não mudou, reaproveita o que já tem. Antes cada versão nova baixava tudo de novo (cerca de
+    // 1,8 MB por atualização, 1,1 MB só de um logo que o app nem usa mais e saiu da lista).
+    caches.open(CACHE_NAME).then(c => Promise.all(ASSETS.map(u => c.add(new Request(u, { cache: (u === './' || u === './index.html') ? 'reload' : 'no-cache' })).catch(() => {})))).catch(() => {});
     // v488 (GH 20/09, aluno preso na v467): quando o SW novo assume, as janelas que NÃO estão
     // na frente do aluno recarregam por aqui, sem depender do JS velho que está rodando nelas.
     // A janela visível fica quieta (pode estar digitando carga); essa o próprio app recarrega.
