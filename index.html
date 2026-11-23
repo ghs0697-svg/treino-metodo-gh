@@ -30734,7 +30734,8 @@ function _clErro(cod) {
     sessao: 'Entra de novo com teu e-mail e senha.', cota: 'Não consegui mandar o e-mail agora. Tenta de novo amanhã ou fala com o suporte.',
     rede: 'Sem conexão com o servidor. Confere a internet e tenta de novo.',
     sem_forms: 'Não achei esse e-mail na tua anamnese. Se lá tu colocou outro e-mail, usa ele aqui. Ou confirma este e-mail com o teu WhatsApp:',
-    nao_confere: 'O CPF não bate com o desse e-mail. Confere os números.'
+    nao_confere: 'O CPF ou o WhatsApp não bate com o desse e-mail. Confere os números (WhatsApp com DDD, ou com o código do país se tu mora fora).',
+    cpf_tel: 'Coloca o teu CPF ou o teu WhatsApp com DDD (quem mora fora, com o código do país).'
   };
   return m[cod] || 'Não deu certo agora. Tenta de novo em instantes.';
 }
@@ -30766,9 +30767,11 @@ function contaTela(tela) {
     // v628: primeiro acesso com e-mail + CPF conferidos na anamnese, sem código (rota conta_primeiro). O código por e-mail
     // (tela 'criar') fica de plano B pra quem não consegue por aqui.
     sub.textContent = 'Primeiro acesso';
-    h = '<div class="cl-txt" style="margin-bottom:4px">Usa o mesmo e-mail que tu colocou na anamnese e o teu CPF. É por eles que a gente acha o teu protocolo.</div>' +
+    // v705 (GH 23/11, caso Junio, mora fora e não tem CPF: "CPF ou telefone quem sabe"): o campo aceita CPF OU WhatsApp
+    h = '<div class="cl-txt" style="margin-bottom:4px">Usa o mesmo e-mail que tu colocou na anamnese e o teu CPF ou o WhatsApp que tu informou lá. É por eles que a gente acha o teu protocolo.</div>' +
         _clCampo('clEmail', 'E-mail', 'email', 'autocomplete="email" inputmode="email" autocapitalize="off"') +
-        _clCampo('clCpf', 'CPF', 'text', 'inputmode="numeric" autocomplete="off" maxlength="14" oninput="contaMascaraCpf(this)"') +
+        _clCampo('clCpf', 'CPF ou WhatsApp com DDD', 'text', 'inputmode="tel" autocomplete="off" maxlength="22" oninput="contaMascaraCpf(this)"') +
+        '<div class="cl-txt" style="font-size:12.5px;color:#999;margin-top:-4px">Mora fora do Brasil? Usa o WhatsApp com o código do país.</div>' +
         _clCampo('clSenha', 'Crie uma senha (6 ou mais caracteres)', 'password', 'autocomplete="new-password"') +
         '<button class="cl-btn" id="clBtn" onclick="contaPrimeiro()">Criar minha senha</button>' +
         '<div id="clSemForms" style="display:none"><button class="cl-btn2" onclick="contaTela(\'criar\')">Usar este e-mail: confirmar pelo WhatsApp</button><button class="cl-link cl-fraco" onclick="contaAnamnese()">Ainda não respondi a anamnese</button></div>' +   // v685 (GH 19/11): aluno que trocou de e-mail ia pra anamnese e ficava sem saída
@@ -30825,6 +30828,7 @@ function contaTela(tela) {
   c.querySelectorAll('input').forEach(function (inp) { inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { var b = document.getElementById('clBtn'); if (b) b.click(); } }); });
 }
 function contaMascaraCpf(el) {
+  if (el && el.id === 'clCpf' && _cl.tela === 'primeiro' && (/[+()\s]/.test(el.value) || String(el.value || '').replace(/\D/g, '').length > 11)) return;   // v705: WhatsApp, sem máscara de CPF
   var d = String(el.value || '').replace(/\D/g, '').slice(0, 11), o = d;
   if (d.length > 9) o = d.slice(0, 3) + '.' + d.slice(3, 6) + '.' + d.slice(6, 9) + '-' + d.slice(9);
   else if (d.length > 6) o = d.slice(0, 3) + '.' + d.slice(3, 6) + '.' + d.slice(6);
@@ -30886,7 +30890,7 @@ async function contaPrimeiro() {
   var err = document.getElementById('clErr'), email = String(_cl.dados.clEmail || '').toLowerCase(), cpf = _cl.dados.clCpf || '', senha = _clVal('clSenha');
   var sf = document.getElementById('clSemForms'); if (sf) sf.style.display = 'none';
   if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(email)) { err.textContent = _clErro('email'); return; }
-  if (!_clCpfOk(cpf)) { err.textContent = _clErro('cpf'); return; }
+  if (!_clCpfOk(cpf) && String(cpf).replace(/\D/g, '').replace(/^0+/, '').length < 10) { err.textContent = _clErro('cpf_tel'); return; }   // v705: CPF ou WhatsApp
   if (senha.length < 6) { err.textContent = _clErro('senha'); return; }
   _clOcupado(true);
   var r = await _clPost({ type: 'conta_primeiro', email: email, cpf: cpf, senha: senha });
@@ -31050,7 +31054,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v704';
+var APP_SHELL_V = 'metodo-gh-v705';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
