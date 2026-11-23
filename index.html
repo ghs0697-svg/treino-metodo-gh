@@ -13161,7 +13161,7 @@ function syncNotaToServer_(di, ei, w, nota) {
 // relógio do .gs pelo canal de notify de sempre, com 1 aviso por dia no máximo.
 function _tlemKey() { return 'gh_treinolem_' + SHEET_ID; }
 function _tlemLoad() { try { return JSON.parse(localStorage.getItem(_tlemKey()) || 'null'); } catch (_) { return null; } }
-function _tlemStore(p) { try { localStorage.setItem(_tlemKey(), JSON.stringify(p)); } catch (_) {} }
+function _tlemStore(p) { try { localStorage.setItem(_tlemKey(), JSON.stringify(p)); } catch (_) {} try { _locAgenda_(); } catch (_) {} }
 const TLEM_DIAS = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'];   // ISO: 1=seg ... 7=dom
 let _tlemSel = null;
 function _tlemChipRefresh() {
@@ -13221,6 +13221,7 @@ async function salvarTlem() {
       if (nativeOk && typeof registerPushSubscription === 'function') push = await registerPushSubscription();
       else if (typeof _iosForaDoApp_ === 'function' && _iosForaDoApp_()) push = { ok: false, reason: 'ios-not-installed' };
     } catch (_) {}
+    if ((!push || !push.ok) && _locNot_() && await _locAgendaJa_(true)) push = { ok: true };   // v706: app da loja 1.0.3+
     if (!push || !push.ok) {
       _tlAviso = (typeof _lojaSemPush_ === 'function' && _lojaSemPush_())
         ? 'Lembrete salvo. Neste app, por enquanto, o aviso com o app fechado ainda não chega.'
@@ -21127,6 +21128,65 @@ function urlBase64ToUint8Array(base64) {
 function _lojaSemPush_() {
   try { return typeof _LOJA !== 'undefined' && !!_LOJA && !('PushManager' in window && 'Notification' in window); } catch (_) { return false; }
 }
+// v706 (GH 23/11, Renan: "seria legal mesmo em segundo plano"): no app da loja a partir da 1.0.3 (plugin LocalNotifications)
+// o PRÓPRIO celular agenda os avisos de refeição, água e "hoje tem treino" nos horários que o aluno marcou. Chegam com o app
+// fechado e sem servidor. Ids nossos: 71000+refeição, 72000+hora da água, 73000+dia da semana (ISO). Na 1.0.2 e antes o plugin
+// não existe e nada disso roda.
+function _locNot_() {
+  try { const L = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.LocalNotifications; return (L && typeof L.schedule === 'function' && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) ? L : null; } catch (_) { return null; }
+}
+let _locAgT = null;
+function _locAgenda_() { if (!_locNot_()) return; clearTimeout(_locAgT); _locAgT = setTimeout(() => { _locAgendaJa_(false); }, 500); }
+async function _locAgendaJa_(pede) {
+  const L = _locNot_(); if (!L || typeof SHEET_ID === 'undefined' || !SHEET_ID) return false;
+  try {
+    const en = (typeof _lang === 'function' && _lang() === 'en'), lista = [];
+    const mp = _refHoras();
+    Object.keys(mp).forEach(k => {
+      const r = mp[k], i = parseInt(k, 10);
+      if (!r || !r.on || !/^\d{2}:\d{2}$/.test(r.h || '') || !(i >= 0 && i < 100)) return;
+      const [hh, mm] = r.h.split(':').map(Number);
+      let nome = ''; try { nome = _refNome(i); } catch (_) {}
+      lista.push({ id: 71000 + i, title: '🍽 ' + (nome || r.nome || (en ? 'Meal' : 'Refeição')),
+        body: en ? r.h + '. Time to eat. After the meal, mark it as done in the app.' : r.h + '. Tá na hora. Depois de comer, marca como feita no app.',
+        schedule: { on: { hour: hh, minute: mm }, allowWhileIdle: true } });
+    });
+    if (isWaterNotifOn()) {
+      const { ini, fim } = _waterJanela();
+      for (let h = 0; h < 24; h++) {
+        const dentro = (ini === 0 && fim === 24) || (ini < fim ? (h >= ini && h < fim) : (h >= ini || h < fim));
+        if (!dentro) continue;
+        lista.push({ id: 72000 + h, title: en ? '💧 Water time!' : '💧 Hora da água!', body: en ? 'Had some water? Tap +1 in the app.' : 'Já tomou água? Marca +1 copo no app.',
+          schedule: { on: { hour: h, minute: 0 }, allowWhileIdle: true } });
+      }
+    }
+    const tl = _tlemLoad();
+    if (tl && tl.on && tl.d && tl.d.length && /^\d{2}:\d{2}$/.test(tl.h || '')) {
+      const [hh, mm] = tl.h.split(':').map(Number);
+      tl.d.forEach(n => {
+        n = Number(n); if (!(n >= 1 && n <= 7)) return;
+        lista.push({ id: 73000 + n, title: en ? "It's training day! 💪" : 'Hoje tem treino! 💪',
+          body: en ? "This is the reminder YOU set. Today's workout is ready in the app." : 'Esse é o lembrete que TU marcou. O treino de hoje já tá no app, bora.',
+          schedule: { on: { weekday: (n % 7) + 1, hour: hh, minute: mm }, allowWhileIdle: true } });   // Capacitor: 1 = domingo
+      });
+    }
+    let ok = false;
+    if (lista.length) {
+      let st = await L.checkPermissions();
+      if (st.display !== 'granted' && (pede || st.display === 'prompt' || st.display === 'prompt-with-rationale')) st = await L.requestPermissions();
+      ok = st.display === 'granted';
+    }
+    const pend = await L.getPending();
+    const nossos = ((pend && pend.notifications) || []).filter(n => n.id >= 71000 && n.id < 74000).map(n => ({ id: n.id }));
+    if (nossos.length) await L.cancel({ notifications: nossos });
+    if (ok) await L.schedule({ notifications: lista });
+    return ok;
+  } catch (_) { return false; }
+}
+try {
+  window.addEventListener('load', () => setTimeout(_locAgenda_, 4000));
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') _locAgenda_(); });
+} catch (_) {}
 function _iosForaDoApp_() {
   try { return /iPad|iPhone|iPod/.test(navigator.userAgent) && !((window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone); } catch (_) { return false; }
 }
@@ -21241,6 +21301,7 @@ async function unregisterPushSubscription() {
 async function toggleWaterNotif() {
   if (isWaterNotifOn()) {
     localStorage.setItem(waterNotifKey(), '0');
+    try { _locAgenda_(); } catch (_) {}   // v706
     if (window._waterNotifInt) { clearInterval(window._waterNotifInt); window._waterNotifInt = null; }
     // v559: desligar a água cancelava a inscrição inteira, e o lembrete de refeição e o de treino paravam de chegar com o
     // app fechado sem ninguém avisar. Com outro lembrete ligado, a inscrição fica e vai pro servidor com a água desligada.
@@ -21271,6 +21332,7 @@ async function toggleWaterNotif() {
   localStorage.setItem(waterNotifKey(), '1');
   startWaterNotif();
   renderWaterToggleState();
+  if (!pushResult.ok && _locNot_() && await _locAgendaJa_(true)) pushResult = { ok: true };   // v706: app da loja 1.0.3+
 
   let msg;
   if (pushResult.ok) {
@@ -21323,6 +21385,7 @@ function waterJanelaMudou() {
   if (!(ini >= 0 && ini <= 23)) ini = 7; if (!(fim >= 1 && fim <= 24)) fim = 23;
   if (ini === fim) fim = ini + 1;   // "das 7h às 7h" não existe: vira 7h às 8h
   try { localStorage.setItem(waterJanelaKey(), JSON.stringify({ ini, fim })); } catch (_) {}
+  try { _locAgenda_(); } catch (_) {}   // v706
   renderWaterJanela();
   // a inscrição do servidor leva a janela: reenvia quando este aparelho já está inscrito
   try { if (localStorage.getItem('gh_pushEndpoint')) registerPushSubscription(); } catch (_) {}
@@ -27660,6 +27723,7 @@ function _refHoras() {
 }
 function _refHorasSave(map) {
   try { localStorage.setItem(_refHorasKey(), JSON.stringify(map)); } catch (_) {}
+  try { _locAgenda_(); } catch (_) {}   // v706
   clearTimeout(window._refSyncT);
   window._refSyncT = setTimeout(_refHorasSync, 1500);
 }
@@ -27839,6 +27903,7 @@ async function salvarRefHora() {
     let push = { ok: false, reason: 'no-permission' };
     if (nativeOk) push = await registerPushSubscription();
     else if (_iosForaDoApp_()) push = { ok: false, reason: 'ios-not-installed' };   // v549
+    if (!push.ok && _locNot_() && await _locAgendaJa_(true)) push = { ok: true };   // v706: app da loja 1.0.3+
     if (push.ok) {
       _refToast('Lembrete ativado', (ajustou ? 'Encaixei em ' + h + ' (o lembrete sai de 10 em 10 min). ' : '') + 'Te aviso nesse horário, mesmo com o app fechado. 🤝');
     } else if (push.reason === 'ios-not-installed' && !_lojaSemPush_()) {
@@ -31054,7 +31119,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v705';
+var APP_SHELL_V = 'metodo-gh-v706';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
