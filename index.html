@@ -1248,6 +1248,7 @@
     .isb-marca { top: calc(77dvh / var(--fz, 1)); width: calc(25.12dvh / var(--fz, 1)); }
   }
   html.intro-fade .isb { animation: isIn .45s ease both; }
+  html.intro-nat.intro-fade .isb { animation: isIn .5s ease .3s both; }   /* v703: no app da loja a foto só entra depois que a marca da abertura nativa apagou (sem as duas marcas cruzando) */
   @keyframes isIn { from { opacity: 0; } to { opacity: 1; } }
   .intro-splash.out { animation: isOut .42s ease .18s forwards; }
   .intro-splash.out .isb-marca { animation: isImgOut .2s ease forwards; }
@@ -6462,7 +6463,7 @@ html[data-theme="light"] [style*="color:#e0a05c"] { color: hsl(31, 40%, 36%) !im
 })();
 </script>
 <script>/* v673 (GH 18/11): no app da loja o padrão é o Escuro (igual às capturas das lojas); no navegador segue o Claro. Escolha gravada no Mais sempre vence. */try{var _t=localStorage.getItem('gh-tema'),_lj=false;try{_lj=/[?&]loja=1(&|$)/.test(location.search)||!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());}catch(_){}if(_t==='claro'||(_t!=='escuro'&&!_lj))document.documentElement.setAttribute('data-theme','light');}catch(e){}</script>
-<script>/* v641 + v702: a abertura é decidida aqui, antes do primeiro quadro. Build novo do iPhone (MetodoGH-ab2): a abertura é a nativa, o app só avisa quando a tela está pronta (3). */try{(function(){var p=new URLSearchParams(location.search),ua=navigator.userAgent||'';if(/MetodoGH-ab2/.test(ua)){window._introHead=3;return;}if(p.has('editor')||p.has('admin')||p.get('edit')==='1')return;var nat=false;try{nat=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform());}catch(e){}var loja=nat||p.get('loja')==='1';if(!loja&&window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)return;if(sessionStorage.getItem('gh_intro_seen')==='1')return;sessionStorage.setItem('gh_intro_seen','1');var d=document.documentElement;var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);var nat2=loja&&(ios||/Android/.test(ua));d.classList.add('intro-on');if(nat2||performance.now()>1300)d.classList.add('intro-fade');window._introHead=nat2?2:1;})();}catch(e){}</script>
+<script>/* v641 + v702: a abertura é decidida aqui, antes do primeiro quadro. Build novo do iPhone (MetodoGH-ab2): a abertura é a nativa, o app só avisa quando a tela está pronta (3). */try{(function(){var p=new URLSearchParams(location.search),ua=navigator.userAgent||'';if(/MetodoGH-ab2/.test(ua)){window._introHead=3;return;}if(p.has('editor')||p.has('admin')||p.get('edit')==='1')return;var nat=false;try{nat=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform());}catch(e){}var loja=nat||p.get('loja')==='1';if(!loja&&window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)return;if(sessionStorage.getItem('gh_intro_seen')==='1')return;sessionStorage.setItem('gh_intro_seen','1');var d=document.documentElement;var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);var nat2=loja&&(ios||/Android/.test(ua));d.classList.add('intro-on');if(nat2||performance.now()>1300)d.classList.add('intro-fade');if(nat2)d.classList.add('intro-nat');window._introHead=nat2?2:1;})();}catch(e){}</script>
 </head>
 <body>
 <!-- v701 (GH 23/11): o GH da marca é o monograma do ícone do app (G na frente do H). Desenho em vetor da Cinzel Black, mesmo lugar e mesmo ouro do ícone. -->
@@ -15905,7 +15906,8 @@ let _introOn = false, _introMin = 0, _introNat = 0, _introPend = 0;
         // redesenho (ninguém vê), e a espera conta a partir dos quadros que saíram de verdade: com o app ainda montando a tela
         // os quadros atrasam, e contar só o relógio soltava a abertura com a nativa ainda por cima (marca fantasma sobre o login).
         const _and = /Android/.test(navigator.userAgent);
-        const solta = () => { _introNat = 0; _introMin = Date.now() + (_and ? 0 : 250); if (_introPend) { _introPend = 0; _introDayReady(''); } };
+        const solta = () => { _introNat = 0; _introMin = Date.now() + 1300;   // v703: a abertura B fica ~1 s inteira na tela depois que a nativa sai
+        if (_introPend) { _introPend = 0; _introDayReady(''); } };
         if (_and) {
           let px = null; try { px = document.createElement('i'); px.style.cssText = 'position:absolute;left:0;top:0;width:2px;height:2px;pointer-events:none;background:#0D0D0D'; el.appendChild(px); } catch (_) {}
           let k = 0, t3 = 0;
@@ -15945,7 +15947,7 @@ function _introClose() {
     return;
   }
   el.classList.add('out');
-  setTimeout(() => { document.documentElement.classList.remove('intro-on', 'intro-fade'); el.classList.remove('out'); }, 640);   // v641: 0,18 s da marca + 0,42 s da cortina
+  setTimeout(() => { document.documentElement.classList.remove('intro-on', 'intro-fade', 'intro-nat'); el.classList.remove('out'); }, 640);   // v641: 0,18 s da marca + 0,42 s da cortina
 }
 
 // ══ Scroll reveal ══
@@ -31048,7 +31050,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v702';
+var APP_SHELL_V = 'metodo-gh-v703';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
