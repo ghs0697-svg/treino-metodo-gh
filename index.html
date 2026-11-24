@@ -9754,6 +9754,60 @@ const params = new URLSearchParams(window.location.search);
 // v598: APP DA LOJA (App Store e Play Store). Só com ?loja=1 (a casca nativa abre assim) ou dentro do Capacitor: quem abre
 // sem link pessoal e sem aluno guardado vê o login da conta em vez do portão do treinador. Sem a chave, nada muda.
 var _LOJA = false; try { _LOJA = params.get('loja') === '1' || !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()); } catch (_) {}
+// v707 (GH 24/11): app da LOJA (1.0.3+). A webview nativa nao tem tudo que o navegador tem. Aqui o app usa o nativo:
+// Android sem folha de compartilhar e sem download (PDF, imagem, recado caiam no vazio) -> plugin Share + Filesystem;
+// iPhone sem manter a tela acesa no descanso/treino -> plugin KeepAwake. Na 1.0.2 os plugins nao existem e nada muda.
+(function () {
+  try {
+    const C = window.Capacitor;
+    if (!C || !C.isNativePlatform || !C.isNativePlatform()) return;
+    const P = C.Plugins || {}, Sh = P.Share, Fs = P.Filesystem, KA = P.KeepAwake;
+    const plat = (C.getPlatform && C.getPlatform()) || '';
+    if (Sh && Fs && typeof Sh.share === 'function') {
+      const blobs = new Map();
+      const _cou = URL.createObjectURL.bind(URL);
+      URL.createObjectURL = function (o) { const u = _cou(o); try { if (o instanceof Blob) { blobs.set(u, o); setTimeout(() => blobs.delete(u), 120000); } } catch (_) {} return u; };
+      const b64 = (blob) => new Promise((ok, er) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1] || ''); r.onerror = er; r.readAsDataURL(blob); });
+      const nativoShare = async (d) => {
+        d = d || {}; const o = {};
+        if (d.title) o.title = String(d.title); if (d.text) o.text = String(d.text); if (d.url) o.url = String(d.url);
+        if (d.files && d.files.length) {
+          o.files = [];
+          for (const f of d.files) {
+            const nome = String((f && f.name) || 'arquivo').replace(/[^\w.\-]+/g, '_');
+            const w = await Fs.writeFile({ path: 'gh' + Date.now() + '/' + nome, data: await b64(f), directory: 'CACHE', recursive: true });
+            o.files.push(w.uri);
+          }
+        }
+        try { await Sh.share(o); }
+        catch (e) { if (/cancel/i.test(String((e && (e.message || e.code)) || ''))) { const x = new Error('Share canceled'); x.name = 'AbortError'; throw x; } throw e; }
+      };
+      // nativo sempre: no iPhone o compartilhar da webview exige toque "fresco" e falha depois de gerar PDF/imagem
+      try { Object.defineProperty(navigator, 'share', { value: nativoShare, configurable: true, writable: true }); Object.defineProperty(navigator, 'canShare', { value: () => true, configurable: true, writable: true }); } catch (_) {}
+      const baixa = (a) => {
+        const h = a.href || '', nome = a.getAttribute('download') || 'arquivo';
+        const bl = blobs.get(h);
+        (bl ? Promise.resolve(bl) : fetch(h).then(r => r.blob()))
+          .then(b => nativoShare({ files: [new File([b], nome, { type: b.type || '' })] }))
+          .catch(e => { if (!e || e.name !== 'AbortError') try { _ghToast('Não consegui abrir o compartilhar agora. Tenta de novo.', 4000); } catch (_) {} });
+      };
+      const ehDown = (a) => a && a.hasAttribute && a.hasAttribute('download') && /^(blob:|data:)/.test(a.href || '');
+      const _clk = HTMLAnchorElement.prototype.click;
+      HTMLAnchorElement.prototype.click = function () { if (ehDown(this)) { baixa(this); return; } return _clk.call(this); };
+      document.addEventListener('click', (ev) => { const a = ev.target && ev.target.closest && ev.target.closest('a'); if (ehDown(a)) { ev.preventDefault(); baixa(a); } }, true);
+    }
+    if (plat === 'ios' && KA && typeof KA.keepAwake === 'function') {
+      let vivos = 0;
+      const wl = { request: async () => {
+        await KA.keepAwake(); vivos++;
+        const s = new EventTarget(); s.released = false; s.type = 'screen';
+        s.release = async () => { if (s.released) return; s.released = true; vivos = Math.max(0, vivos - 1); if (!vivos) { try { await KA.allowSleep(); } catch (_) {} } try { s.dispatchEvent(new Event('release')); } catch (_) {} };
+        return s;
+      } };
+      try { Object.defineProperty(navigator, 'wakeLock', { value: wl, configurable: true }); } catch (_) {}
+    }
+  } catch (_) {}
+})();
 try { if (_LOJA) document.documentElement.classList.add('app-loja'); } catch (_) {}
 var _cl = { tela: 'entrar', dados: {} };   // estado da tela de conta (aqui em cima: initContaLoja roda antes do bloco da conta)
 let SHEET_ID = params.get('sheet');
@@ -31119,7 +31173,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v706';
+var APP_SHELL_V = 'metodo-gh-v707';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
