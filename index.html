@@ -3454,13 +3454,53 @@
   }
 
   /* ── Editor Mode ── */
-  .admin-tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+  .admin-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 16px; }
   .admin-tab {
     flex: 1; padding: 10px 8px; background: var(--card); border: 1px solid var(--gold-dim);
     border-radius: 6px; color: var(--gold-dim); font-weight: 700; font-size: 12px;
     cursor: pointer; text-align: center; letter-spacing: 1px; transition: all 0.2s;
   }
   .admin-tab.active { background: var(--gold-bg, var(--gold)); color: var(--dark); border-color: var(--gold); }
+  /* v716: aba Diluição */
+  .dl-intro { color: var(--fg-2, #a39a86); font-size: 13px; line-height: 1.45; margin: 0 0 12px; }
+  .dl-campo { display: grid; gap: 5px; margin-bottom: 12px; min-width: 0; }
+  .dl-campo label, .dl-rot { color: var(--gold); font-size: 12px; font-weight: 600; letter-spacing: .5px; }
+  .dl-lin { display: flex; gap: 8px; min-width: 0; }
+  .dl-lin input, .dl-lin select, .dl-campo > input { min-width: 0; padding: 10px 12px; background: var(--dark, #111); border: 1px solid var(--gold-dim); border-radius: 8px; color: var(--fg, #ece6d8); font-size: 16px; font-family: inherit; }
+  .dl-lin input { flex: 1 1 100px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .dl-lin select { flex: 0 0 auto; }
+  .dl-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .dl-chips button { background: transparent; color: var(--gold); border: 1px solid var(--gold-dim); border-radius: 999px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .dl-chips button.on { background: var(--gold); color: var(--dark, #111); border-color: var(--gold); }
+  .dl-dupla { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+  @media (max-width: 520px) { .dl-dupla { grid-template-columns: 1fr; } }
+  .dl-res { border: 1px solid var(--gold); border-radius: 10px; padding: 14px; display: grid; gap: 10px; }
+  .dl-big { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .dl-big b { font-size: 48px; line-height: 1; color: var(--gold); font-variant-numeric: tabular-nums; }
+  .dl-big span { font-size: 18px; font-weight: 700; color: var(--fg, #ece6d8); }
+  .dl-sub { color: var(--fg-2, #a39a86); font-size: 13px; margin-top: -4px; }
+  .dl-seringa { width: 100%; height: auto; display: block; }
+  .dl-seringa .dl-emb { fill: var(--gold-dim); opacity: .5; } .dl-seringa .dl-agu { fill: var(--fg-2, #a39a86); }
+  .dl-seringa .dl-liq { fill: var(--gold); opacity: .45; } .dl-seringa .dl-corpo { fill: none; stroke: var(--fg, #ece6d8); stroke-width: 2; }
+  .dl-seringa .dl-risco { stroke: var(--fg, #ece6d8); } .dl-seringa .dl-num { fill: var(--fg-2, #a39a86); font-size: 12px; font-family: inherit; }
+  .dl-seringa .dl-marca { stroke: var(--gold); stroke-width: 3; } .dl-seringa .dl-marca-tx { fill: var(--gold); font-size: 14px; font-weight: 700; font-family: inherit; }
+  .dl-kv { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .dl-kv div { border-top: 1px solid var(--gold-dim); padding-top: 6px; min-width: 0; }
+  .dl-kv small { display: block; font-size: 10.5px; color: var(--fg-2, #a39a86); letter-spacing: .4px; }
+  .dl-kv strong { font-size: 14px; color: var(--fg, #ece6d8); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .dl-aviso { border-radius: 8px; padding: 9px 11px; font-size: 13px; line-height: 1.4; background: rgba(240,184,96,.12); color: #f0b860; margin-bottom: 6px; }
+  .dl-aviso.ruim { background: rgba(255,138,122,.12); color: #ff8a7a; }
+  .dl-txt { margin: 0; padding: 10px 12px; border-radius: 8px; background: rgba(212,175,106,.1); color: var(--fg, #ece6d8); font-size: 13px; line-height: 1.45; user-select: all; }
+  .dl-copia { width: auto; margin: 0; justify-self: start; }
+  .dl-tab { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; margin-top: 6px; }
+  .dl-tab th, .dl-tab td { text-align: left; padding: 7px 6px; border-bottom: 1px solid var(--gold-dim); font-size: 13px; color: var(--fg, #ece6d8); }
+  .dl-tab th { font-size: 11px; color: var(--fg-2, #a39a86); font-weight: 600; }
+  .dl-tab tr.atual td { color: var(--gold); font-weight: 700; }
+  .dl-nota { color: var(--fg-2, #a39a86); font-size: 12px; line-height: 1.45; margin: 10px 0 0; }
+  html[data-theme="light"] .dl-lin input, html[data-theme="light"] .dl-lin select, html[data-theme="light"] .dl-campo > input { background: #fff; color: #1d1a14; border-color: rgba(138,100,16,.35); }
+  html[data-theme="light"] .dl-chips button.on { color: #fff; }
+  html[data-theme="light"] .dl-aviso { color: #9a5a00; background: #fff3dc; }
+  html[data-theme="light"] .dl-aviso.ruim { color: #a3271b; background: #fde8e5; }
   .editor-toolbar { display: flex; gap: 6px; margin: 12px 0; flex-wrap: wrap; justify-content: center; }
   .ed-tpl-btn {
     padding: 10px 18px; background: var(--card); border: 1px solid var(--gold-dim);
@@ -6929,6 +6969,7 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
     <button class="admin-tab" onclick="switchAdminTab('dieta')">EDITAR DIETA</button>
     <button class="admin-tab" onclick="switchAdminTab('treino')">EDITAR TREINO</button>
     <button class="admin-tab" style="position:relative;" onclick="switchAdminTab('atendimento')">ATENDIMENTO<span class="sup-dot" id="atDotTab" style="top:3px;right:3px;"></span></button>
+    <button class="admin-tab" onclick="switchAdminTab('diluicao')">DILUIÇÃO</button>
   </div>
 
   <div class="admin-field">
@@ -7015,6 +7056,38 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
       <button class="admin-btn" style="background:#4CAF50;border-color:#4CAF50;" onclick="publishToSheet('TREINO')">PUBLICAR NA PLANILHA</button>
       <span class="ed-status" id="treinoStatus"></span>
     </div>
+  </div>
+
+  <!-- ── Tab: Diluição de peptídeos (v716, GH 25/11 pro Vitor): ampola + água + dose = unidades na seringa U-100 ── -->
+  <div id="adminTabDiluicao" style="display:none;">
+    <div class="ed-section-label">DILUIÇÃO DE PEPTÍDEOS</div>
+    <p class="dl-intro">Coloca o que vem no frasco, quanto de água vai e a dose. A conta devolve quantas unidades puxar na seringa de insulina.</p>
+    <div class="dl-campo"><label for="dlNome">Peptídeo (opcional)</label><input type="text" id="dlNome" placeholder="O nome que está no frasco" autocomplete="off" oninput="dlCalcula()"></div>
+    <div class="dl-campo"><label for="dlAmp">Quanto tem na ampola</label>
+      <div class="dl-lin"><input type="text" id="dlAmp" inputmode="decimal" value="10" autocomplete="off" oninput="dlCalcula()"><select id="dlAmpU" aria-label="Unidade da ampola" onchange="dlUnid('amp')"><option value="mg">mg</option><option value="mcg">mcg</option><option value="UI">UI</option></select></div></div>
+    <div class="dl-campo"><label for="dlAgua">Água bacteriostática (ml)</label>
+      <div class="dl-lin"><input type="text" id="dlAgua" inputmode="decimal" value="2" autocomplete="off" oninput="dlCalcula()"></div>
+      <div class="dl-chips" id="dlAguaChips"><button type="button" onclick="dlAgua(1)">1 ml</button><button type="button" onclick="dlAgua(2)">2 ml</button><button type="button" onclick="dlAgua(3)">3 ml</button><button type="button" onclick="dlAgua(5)">5 ml</button></div></div>
+    <div class="dl-dupla">
+      <div class="dl-campo"><label for="dlDose">Dose por aplicação</label>
+        <div class="dl-lin"><input type="text" id="dlDose" inputmode="decimal" value="0,5" autocomplete="off" oninput="dlCalcula()"><select id="dlDoseU" aria-label="Unidade da dose" onchange="dlUnid('dose')"><option value="mg">mg</option><option value="mcg">mcg</option><option value="UI">UI</option></select></div></div>
+      <div class="dl-campo"><label for="dlSer">Seringa</label>
+        <div class="dl-lin"><select id="dlSer" onchange="dlCalcula()" style="flex:1 1 auto"><option value="100">100 unidades (1 ml)</option><option value="50">50 unidades (0,5 ml)</option><option value="30">30 unidades (0,3 ml)</option></select></div></div>
+    </div>
+    <div class="dl-res" aria-live="polite">
+      <div class="dl-rot">Puxar na seringa</div>
+      <div class="dl-big"><b id="dlUn">10</b><span id="dlUnTx">unidades</span></div>
+      <div class="dl-sub" id="dlMl"></div>
+      <svg class="dl-seringa" id="dlSvg" viewBox="0 0 600 120" role="img" aria-label="Seringa marcada até a dose"></svg>
+      <div class="dl-kv"><div><small>Concentração</small><strong id="dlConc"></strong></div><div><small>1 unidade tem</small><strong id="dlPorU"></strong></div><div><small>Doses no frasco</small><strong id="dlNd"></strong></div></div>
+      <div id="dlAvisos"></div>
+      <div class="dl-rot">Texto pronto pro aluno</div>
+      <p class="dl-txt" id="dlTxt"></p>
+      <button type="button" class="admin-btn secondary dl-copia" id="dlCopia" onclick="dlCopia()">COPIAR TEXTO</button>
+    </div>
+    <div class="dl-rot" style="margin-top:14px">Mesma dose com outra quantidade de água</div>
+    <div style="overflow-x:auto"><table class="dl-tab"><thead><tr><th>Água</th><th>Concentração</th><th>Puxar</th></tr></thead><tbody id="dlTab"></tbody></table></div>
+    <p class="dl-nota">Menos água deixa cada unidade mais forte. Mais água dá números maiores, mais fáceis de medir. A conta vale pra seringa de insulina U-100 (100 unidades = 1 ml) e só converte a dose que já foi prescrita.</p>
   </div>
 
   <!-- ── Tab: Atendimento (chat de suporte com os alunos; espelho da aba SUPORTE_CHAT) ── -->
@@ -29933,15 +30006,82 @@ let editorData = [];
 const APPS_SCRIPT_URL_KEY = 'gh_editor_script_url';
 
 function switchAdminTab(tab) {
-  ['Link','Dieta','Treino','Atendimento'].forEach(t => {
+  ['Link','Dieta','Treino','Atendimento','Diluicao'].forEach(t => {
     const el = document.getElementById('adminTab' + t);
     if (el) el.style.display = t.toLowerCase() === tab ? 'block' : 'none';
   });
   const tabs = document.querySelectorAll('.admin-tab');
-  const keys = ['link','dieta','treino','atendimento'];
+  const keys = ['link','dieta','treino','atendimento','diluicao'];
   tabs.forEach((btn, i) => btn.classList.toggle('active', keys[i] === tab));
+  const idF = document.getElementById('adminSheetId'), campoId = idF && idF.closest('.admin-field'); if (campoId) campoId.style.display = tab === 'diluicao' ? 'none' : '';   // v716: a calculadora não usa planilha
+  if (tab === 'diluicao') dlCalcula();
   // Atendimento (chat de suporte): carrega/atualiza as conversas ao entrar; para o polling ao sair
   if (tab === 'atendimento') { _atRefresh(); _atPollStart(); } else { _atPollStop(); }
+}
+
+// ══ v716 DILUIÇÃO DE PEPTÍDEOS (GH 25/11, pro Vitor) ══
+// ampola (mg, mcg ou UI) + ml de água bacteriostática + dose = unidades na seringa de insulina U-100 (100 unidades = 1 ml).
+// Só converte a dose prescrita, não sugere dose. Nada é guardado nem enviado.
+function _dlNum(s) { const t = String(s || '').trim().replace(/\s/g, ''); if (!t) return NaN; return Number(/,/.test(t) ? t.replace(/\./g, '').replace(',', '.') : t); }
+function _dlBr(x, d) { if (!isFinite(x)) return ''; return Number(x.toFixed(d)).toLocaleString('pt-BR', { maximumFractionDigits: d }); }
+function _dlBase(v, u) { return u === 'UI' ? v : (u === 'mg' ? v * 1000 : v); }   // mg e mcg viram mcg
+function _dlQtd(b, u) { if (u === 'UI') return _dlBr(b, 2) + ' UI'; return b >= 1000 ? _dlBr(b / 1000, 3) + ' mg' : _dlBr(b, 1) + ' mcg'; }
+// conta pura (o teste chama direto): devolve { erro } ou { un, ml, conc, porU, nd, ... }
+function dlConta(amp, au, agua, dose, du) {
+  if (!(amp > 0)) return { erro: 'Coloca quanto tem na ampola.' };
+  if (!(agua > 0)) return { erro: 'Coloca a quantidade de água em ml.' };
+  if (!(dose > 0)) return { erro: 'Coloca a dose por aplicação.' };
+  if ((au === 'UI') !== (du === 'UI')) return { erro: 'Ampola e dose precisam estar na mesma medida: UI com UI, ou mg e mcg.' };
+  const ampB = _dlBase(amp, au), doseB = _dlBase(dose, du), conc = ampB / agua, ml = doseB / conc;
+  return { ampB, doseB, conc, ml, un: ml * 100, porU: conc / 100, nd: ampB / doseB };
+}
+let _dlUltimo = '';
+function _dlDesenha(un, cap) {
+  const svg = document.getElementById('dlSvg'); if (!svg) return;
+  const x0 = 70, x1 = 520, y = 34, h = 44, k = (x1 - x0) / cap, passo = cap === 100 ? 2 : 1, grande = cap === 100 ? 10 : 5;
+  let t = '<rect class="dl-emb" x="20" y="' + (y + 10) + '" width="' + (x0 - 20) + '" height="' + (h - 20) + '" rx="4"/><rect class="dl-agu" x="' + x1 + '" y="' + (y + h / 2 - 4) + '" width="62" height="8" rx="2"/>';
+  const w = Math.max(0, Math.min(un, cap)) * k;
+  t += '<rect class="dl-liq" x="' + (x1 - w) + '" y="' + y + '" width="' + w + '" height="' + h + '"/><rect class="dl-corpo" x="' + x0 + '" y="' + y + '" width="' + (x1 - x0) + '" height="' + h + '" rx="6"/>';
+  for (let u = 0; u <= cap; u += passo) { const xx = x1 - u * k, g = u % grande === 0;
+    t += '<line class="dl-risco" x1="' + xx + '" y1="' + y + '" x2="' + xx + '" y2="' + (y + (g ? 16 : 9)) + '" stroke-width="' + (g ? 1.6 : 1) + '"/>';
+    if (g) t += '<text class="dl-num" x="' + xx + '" y="' + (y + h + 18) + '" text-anchor="middle">' + u + '</text>'; }
+  if (un > 0 && un <= cap) { const xx = x1 - un * k; t += '<line class="dl-marca" x1="' + xx + '" y1="' + (y - 10) + '" x2="' + xx + '" y2="' + (y + h + 4) + '"/><text class="dl-marca-tx" x="' + xx + '" y="' + (y - 14) + '" text-anchor="middle">' + _dlBr(un, 1) + '</text>'; }
+  svg.innerHTML = t;
+}
+function dlUnid(qual) {
+  const a = document.getElementById('dlAmpU'), d = document.getElementById('dlDoseU');
+  if (qual === 'amp') { if (a.value === 'UI') d.value = 'UI'; else if (d.value === 'UI') d.value = 'mg'; }
+  else { if (d.value === 'UI') a.value = 'UI'; else if (a.value === 'UI') a.value = 'mg'; }
+  dlCalcula();
+}
+function dlAgua(v) { const e = document.getElementById('dlAgua'); if (e) { e.value = String(v); dlCalcula(); } }
+function dlCalcula() {
+  const $ = id => document.getElementById(id); if (!$('dlAmp')) return;
+  const amp = _dlNum($('dlAmp').value), agua = _dlNum($('dlAgua').value), dose = _dlNum($('dlDose').value), au = $('dlAmpU').value, du = $('dlDoseU').value, cap = +$('dlSer').value, nome = $('dlNome').value.trim();
+  [...$('dlAguaChips').querySelectorAll('button')].forEach(b => b.classList.toggle('on', parseFloat(b.textContent) === agua));
+  const r = dlConta(amp, au, agua, dose, du), esc = escTrainer;
+  if (r.erro) { $('dlUn').textContent = '?'; $('dlUnTx').textContent = 'unidades'; $('dlMl').textContent = r.erro; ['dlConc', 'dlPorU', 'dlNd', 'dlTxt'].forEach(i => $(i).textContent = ''); $('dlTab').innerHTML = ''; $('dlAvisos').innerHTML = ''; _dlDesenha(0, cap); _dlUltimo = ''; return; }
+  $('dlUn').textContent = _dlBr(r.un, 1); $('dlUnTx').textContent = Math.abs(r.un - 1) < 1e-9 ? 'unidade' : 'unidades';
+  $('dlMl').textContent = _dlBr(r.ml, 3) + ' ml de líquido';
+  $('dlConc').textContent = _dlQtd(r.conc, au) + '/ml'; $('dlPorU').textContent = _dlQtd(r.porU, au);
+  $('dlNd').textContent = _dlBr(Math.floor(r.nd + 1e-9), 0) + (r.nd % 1 > 0.05 ? ' e sobra' : '');
+  _dlDesenha(r.un, cap);
+  const av = [], aviso = (t, ruim) => av.push('<div class="dl-aviso' + (ruim ? ' ruim' : '') + '">' + esc(t) + '</div>');
+  if (r.doseB > r.ampB) aviso('A dose é maior que o frasco inteiro. Confere se ampola e dose estão na medida certa (mg ou mcg).', true);
+  else if (r.un > cap) aviso('Passa da seringa de ' + cap + ' unidades. Aplica em ' + Math.ceil(r.un / cap) + ' vezes, troca pra uma seringa maior ou dilui em menos água.', true);
+  else if (r.un < 2) aviso('Menos de 2 unidades é difícil de medir certo. Com mais água o número sobe: veja a tabela abaixo.');
+  if (r.un <= cap && r.un >= 2 && Math.abs(r.un * 2 - Math.round(r.un * 2)) > 0.04) aviso('A seringa marca de ' + (cap === 100 ? '2 em 2' : '1 em 1') + ' unidades. Arredonda pra ' + _dlBr(Math.round(r.un * 2) / 2, 1) + ' ou ajusta a água pra dar um número redondo.');
+  $('dlAvisos').innerHTML = av.join('');
+  _dlUltimo = (nome ? nome + ': ' : '') + 'ampola de ' + _dlBr(amp, 3) + ' ' + au + ' com ' + _dlBr(agua, 2) + ' ml de água bacteriostática fica com ' + _dlQtd(r.conc, au) + ' por ml. Pra dose de ' + _dlBr(dose, 3) + ' ' + du + ', puxa ' + _dlBr(r.un, 1) + ' unidades na seringa de insulina (' + _dlBr(r.ml, 3) + ' ml).';
+  $('dlTxt').textContent = _dlUltimo;
+  const ls = [1, 1.5, 2, 2.5, 3, 4, 5]; if (ls.indexOf(agua) < 0) ls.push(agua); ls.sort((a, b) => a - b);
+  $('dlTab').innerHTML = ls.map(a => { const c = r.ampB / a; return '<tr class="' + (a === agua ? 'atual' : '') + '"><td>' + _dlBr(a, 2) + ' ml</td><td>' + _dlQtd(c, au) + '/ml</td><td>' + _dlBr(r.doseB / c * 100, 1) + ' un</td></tr>'; }).join('');
+}
+function dlCopia() {
+  const b = document.getElementById('dlCopia'); if (!_dlUltimo || !b) return;
+  const ok = t => { b.textContent = t; setTimeout(() => { b.textContent = 'COPIAR TEXTO'; }, 1600); };
+  const sel = () => { try { const r = document.createRange(); r.selectNodeContents(document.getElementById('dlTxt')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); } catch (_) {} ok('SELECIONADO'); };
+  try { navigator.clipboard.writeText(_dlUltimo).then(() => ok('COPIADO'), sel); } catch (_) { sel(); }
 }
 
 // ══ ATENDIMENTO (painel do treinador): a equipe responde o chat de suporte dos alunos ══
@@ -31220,7 +31360,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v715';
+var APP_SHELL_V = 'metodo-gh-v716';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
