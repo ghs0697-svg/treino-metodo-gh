@@ -4113,6 +4113,7 @@
   .di-mo-campo input { width: 100%; box-sizing: border-box; background: #0c0c0c; color: #fff; border: 1px solid #444; border-radius: 8px; padding: 9px 10px; font-size: 16px; font-weight: 800; font-family: inherit; font-variant-numeric: tabular-nums; }
   .di-mo-campo input:focus { outline: none; border-color: #DDB65C; }
   .di-mo-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
+  .di-mo-chips button.di-mo-lip.on { background: rgba(221, 182, 92, 0.18); border-color: #E3BE6B; }
   .di-mo-chips button { background: transparent; color: #E3BE6B; border: 1px solid rgba(221, 182, 92, 0.5); border-radius: 999px; padding: 6px 11px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; }
   .di-mo-calc { font-size: 12.5px; line-height: 1.4; color: #bbb; min-height: 18px; margin: 0 0 8px; }
   .di-mo-calc.erro { color: #ff8a80; font-weight: 800; }
@@ -31220,7 +31221,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v713';
+var APP_SHELL_V = 'metodo-gh-v714';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
@@ -32845,7 +32846,9 @@ function _diMoIni(j) {
   let alergia = ''; if (alN && !/^(nao|n|nenhum|nenhuma|nada)\b/.test(alN)) { alergia = alTxt; if (/^sim\b/.test(alN)) { const k = (f.respostas || []).findIndex(y => /alergia a algum alimento/.test(N(_teFiTxt(y.p)))); const prox = k >= 0 && f.respostas[k + 1]; alergia = prox && String(prox.r || '').trim() ? String(prox.r).trim() : 'sim (não disse qual)'; } }
   const faltando = (f.respostas || []).filter(y => /estejam faltando/.test(N(_teFiTxt(y.p))) && String(y.r || '').trim() && !_teFiNeg(y.r)).map(y => String(y.r).replace(/<[^>]*>/g, '').trim());
   const coracao = (f.respostas || []).some(y => /problema de coracao|dores no peito|pressao arterial ou problema de coracao/.test(N(_teFiTxt(y.p))) && /^sim\b/.test(N(y.r).trim()));
-  return { f, peso, alt, idade, sexo, nivelTxt: nivel < 0 ? '' : niveis[nivel][1], degrau, fator: fat[usado], fatorTxt: degrau < 0 ? 'sem resposta de atividade, usei moderada' : (degrau === 0 ? 'sedentário' : 'conta um nível abaixo do que marcou'),
+  // v714 (GH 25/11): colesterol ou triglicérides na anamnese (sintomas, problema de saúde ou o que ele escreveu do exame) liga sozinho a gordura boa
+  const lipAnam = (f.respostas || []).some(y => /sintomas|problema de saude|exames de sangue|exame/.test(N(_teFiTxt(y.p))) && /colesterol|triglic|\bldl\b/.test(N(String(y.r == null ? '' : y.r))) && !_teFiNeg(y.r));
+  return { f, lipAnam, peso, alt, idade, sexo, nivelTxt: nivel < 0 ? '' : niveis[nivel][1], degrau, fator: fat[usado], fatorTxt: degrau < 0 ? 'sem resposta de atividade, usei moderada' : (degrau === 0 ? 'sedentário' : 'conta um nível abaixo do que marcou'),
     tmb, get: tmb ? tmb * fat[usado] : null, objTxt, obj, modeloTxt: R(/modelo de planejamento/), turno: R(/qual turno treina/), freq: _diMoNum(R(/quantas vezes por semana/)),
     glu: _diMoSim(f, /intolerancia ao gluten/), lac: _diMoSim(f, /intolerancia a lactose/), pos: _diMoSim(f, /abacaxi ou mamao/), alergia, faltando, coracao };
 }
@@ -32875,7 +32878,7 @@ function _diMoTreino(turno, toks) {
 }
 // comida do aluno: o que marcou, mais os básicos que entram sempre (arroz, feijão, ovos, whey, pão, tapioca, aveia, leite, iogurte)
 const _DIMO_STOP = /^(sim|nao|que|com|sem|uma|uns|dos|das|tem|por|mas|meu|ele|ela|pra|para|tenho|alergia|alergico|alergica|alimento|alimentos|algum|alguns|alguma|muito|pouco|leve|forte|quando|como|fico|tipo|todos|todas|tudo|nenhum|nenhuma|intolerancia|frutos|carne|carnes|disse|qual|pele|coceira|incha|inchaco)$/;
-function _diMoComida(ini) {
+function _diMoComida(ini, lip) {
   const f = ini.f, N = _teFiNorm, lac = ini.lac, tirei = [];
   let al = N(ini.alergia || '');
   if (/peixe/.test(al)) al += ' salmao sardinha atum tilapia';
@@ -32902,15 +32905,20 @@ function _diMoComida(ini) {
   const queijo = []; if (tem(pb, /mussarela|mucarela|queijo/)) queijo.push('Queijo mussarela'); if (tem(pb, /requeij/)) queijo.push('Requeijão'); if (tem(pb, /ricota/)) queijo.push('Ricota');
   let whey = tem(pm, /ervilha/) && !tem(pm, /whey/) ? 'Proteína de ervilha' : ((lac || tem(pm, /whey isolado/)) ? 'Whey isolado' : 'Whey');
   if (proibe(whey)) whey = 'Proteína de ervilha';
-  const gordMarcada = ok([tem(gd, /oliva|azeite/) ? 'Azeite de oliva' : (tem(gd, /manteiga/) ? 'Manteiga' : '')])[0] || '';
+  let gordMarcada = ok([tem(gd, /oliva|azeite/) ? 'Azeite de oliva' : (tem(gd, /manteiga/) ? 'Manteiga' : '')])[0] || '';
+  // v714 (GH 25/11): "exame de colesterol e triglicerídeo irregular tem que colocar gorduras poli e monoinsaturadas (oleaginosas)":
+  // o prato vai com azeite (manteiga sai da frente) e o lanche ganha castanha ou pasta de amendoim mesmo sem ele ter marcado
+  const manteigaFora = !!lip && gordMarcada === 'Manteiga' && !proibe('Azeite de oliva');
+  if (manteigaFora) gordMarcada = 'Azeite de oliva';
   const gord = gordMarcada || ok(['Azeite de oliva'])[0] || '';   // sem gordura marcada entra o azeite, pra gordura do dia não ficar abaixo do piso
-  const gordL = ok([tem(gd, /castanha|nozes|amendoa/) ? 'Castanhas' : '', tem(gd, /pasta de amendoim/) ? 'Pasta de amendoim' : ''])[0] || '';
+  const gordLMarc = ok([tem(gd, /castanha|nozes|amendoa/) ? 'Castanhas' : '', tem(gd, /pasta de amendoim/) ? 'Pasta de amendoim' : ''])[0] || '';
+  const gordL = gordLMarc || (lip ? ok(['Castanhas', 'Pasta de amendoim'])[0] || '' : '');
   const frutas = [], fora = [];
   fr.forEach(x => { const n = N(x); if (/limao/.test(n)) return; const m = _DIMO_FRUTA.find(e => e[0].test(n));
     if (m) { if (!frutas.some(a => a.nome === m[1]) && !proibe(m[1])) frutas.push({ nome: m[1], q: m[2] }); }
     else { const nome = x.split('/')[0].replace(/\([^)]*\)/g, '').trim(); if (nome && !proibe(nome)) fora.push({ nome: nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase(), q: '100g' }); } });
   return { protMain, carbMain, leg: ok(leg), so, mi, liq, queijo: ok(lac ? queijo.map(q => q + ' sem lactose') : queijo), whey, gord, gordL, frutas: frutas.concat(fora).slice(0, 4), pos: ok(['Abacaxi', 'Mamão']),
-    semProt: !carnes.length, semOvo, glu, tirei, gordPadrao: !gordMarcada && !!gord };
+    semProt: !carnes.length, semOvo, glu, tirei, gordPadrao: !gordMarcada && !!gord, lip: !!lip, manteigaFora, gordLPadrao: !!gordL && !gordLMarc };
 }
 
 // ── quantidades ──
@@ -32960,7 +32968,7 @@ function _diMoAloca(dia, toks, bump) {
 }
 // gordura da refeição leve (castanha ou pasta de amendoim), só quando ele marcou e ainda falta gordura
 function _diMoGordL(t, cm, acc) {
-  if (!cm.gordL) return null; const falta = t.g - acc.g; if (falta < 6) return null;
+  if (!cm.gordL) return null; const falta = t.g - acc.g; if (falta < (cm.lip ? 4 : 6)) return null;
   const m = GHM.lookup(cm.gordL); if (!m || !(m.g > 0)) return null;
   return ['', cm.gordL, Math.max(10, Math.min(30, Math.round(falta / m.g * 100 / 5) * 5)) + 'g', ''];
 }
@@ -33044,11 +33052,12 @@ function _diMoMonta(rows, ini, op) {
   let G = Math.max(Math.round(0.8 * peso), Math.round(0.2 * K / 9)), C = (K - 4 * P - 9 * G) / 4;
   if (C < 60) { G = Math.max(Math.round(0.6 * peso), Math.round(0.2 * K / 9)); C = (K - 4 * P - 9 * G) / 4; }
   if (C < 20) return { erro: 'Com ' + _diMacN(K) + ' kcal e ' + Math.round(P) + ' g de proteína quase não sobra carbo. Sobe as calorias ou baixa a proteína.' };
-  const toks = _diMoModelo(ini.modeloTxt) || ['desjejum', 'almoco', 'lanche', 'janta'], cm = _diMoComida(ini), n = toks.length;
+  const toks = _diMoModelo(ini.modeloTxt) || ['desjejum', 'almoco', 'lanche', 'janta'], cm = _diMoComida(ini, op.lip), n = toks.length;
   const alv = _diMoAloca({ kc: K, p: P, c: C, g: G }, toks, _diMoTreino(ini.turno, toks));
   const notas = [], extra = [];
   if (!rows.some(r => /^(cardio|aerob)/.test(sec(r)))) {
     if (ini.coracao) notas.push('Não escrevi o cardio: ele marcou coração, dor no peito ou remédio de pressão. Esse texto é contigo.');
+    else if (op.lip) extra.push(['cardio', '5x na semana', '30 min', 'Caminhada em ritmo firme ou bicicleta, no mínimo 150 minutos na semana. Teu exame veio com o colesterol ou o triglicerídeo alto, e o cardio é o que mais ajuda a baixar. Conta quando tu sua e fica levemente ofegante. Com relógio, pelo menos 120 batimentos.']);   // v714
     else extra.push(['cardio', (ini.freq ? ini.freq + 'x na semana' : '3 a 4x na semana'), '20 a 30 min', 'Caminhada em ritmo firme ou bicicleta. Conta quando tu sua e fica levemente ofegante. Com relógio, pelo menos 120 batimentos.']);
   }
   const constroi = () => { const novas = [];
@@ -33092,6 +33101,10 @@ function _diMoMonta(rows, ini, op) {
   if (cm.glu) notas.push('Glúten: pão sem glúten, sem rap10, mingau com farinha de arroz.');
   if (ini.lac) notas.push('Intolerância à lactose: leite, iogurte e queijo sem lactose, whey isolado.');
   ini.faltando.forEach(t => notas.push('Ele escreveu que gosta e estava faltando: "' + t + '". Isso entra na mão.'));
+  if (cm.lip) { const temL = !!cm.gordL && out.some(r => r[1] === cm.gordL), temG = !!cm.gord && out.some(r => r[1] === cm.gord);
+    const pos = [temG ? cm.gord.toLowerCase() + ' no prato' : '', temL ? cm.gordL.toLowerCase() + ' nas refeições leves' : ''].filter(Boolean).join(' e ');
+    notas.push('Colesterol ou triglicérides alto: ' + (pos ? 'gordura em ' + pos : 'a proteína e o lanche já cobriram a gordura do dia') + (cm.manteigaFora ? ', a manteiga que ele marcou saiu da frente' : '') + '. Cardio em 150 min na semana. Peixe e abacate entram na mão se ele come. Ômega 3 3000 e psyllium saem no Montar dos suplementos, marcando em "O exame mostrou".');
+    if (!temL) notas.push(cm.gordL ? 'Nenhuma refeição leve teve folga de gordura pra ' + cm.gordL.toLowerCase() + ': põe na mão se quiser a oleaginosa no dia.' : 'Oleaginosa ficou fora pela alergia dele.'); }
   if (cm.gordPadrao && out.some(r => r[1] === cm.gord)) notas.push('Ele não marcou azeite nem manteiga. Pus azeite de oliva no prato pra gordura do dia não ficar baixa.');
   if (tot && tot.g < G - 12) notas.push('A gordura do dia ficou em ' + Math.round(tot.g) + ' g (o cálculo pedia ' + Math.round(G) + ' g) e o carbo cobriu a diferença.');
   if (tot && (Math.abs(tot.kc - K) > K * 0.04 || Math.abs(tot.p - P) > 8)) notas.push('O total ficou fora do que tu digitou (' + _diMacN(Math.round(tot.kc / 10) * 10) + ' kcal e ' + Math.round(tot.p) + ' g de proteína): as porções bateram no limite. Ajusta na mão ou muda o modelo de refeições.');
@@ -33252,6 +33265,8 @@ function diMoAbre() {
   _diMoDesenha(); if (!_diMo.j) _diMoCarrega(false);
 }
 function diMoFecha(tudo) { const o = document.getElementById('diMo'); if (o) o.hidden = true; _diMo.pronto = null; if (tudo) { _diMo.j = null; _diMo.v = {}; _diMo.erro = ''; _diMo.car = false; _diMo.aba = 'ini'; } }
+function _diMoLip(ini) { const v = _diMo.v.ini || {}; return v.lip != null ? !!v.lip : !!(ini && ini.lipAnam); }
+function diMoLip() { const v = _diMo.v.ini || (_diMo.v.ini = {}); ['Peso', 'Kc', 'P'].forEach(k => { const e = document.getElementById('diMo' + k); if (e) v[k] = e.value; }); v.lip = !_diMoLip(_diMoIni(_diMo.j)); _diMoDesenha(); }
 function diMoAba(a) { _diMo.aba = a; _diMo.pronto = null; _diMoDesenha(); }
 function _diMoAgora() { const c = _diMacCalc(dietaData || []), b = c.blocos[0]; return b && b.t.n ? b.t : null; }
 function _diMoLe(id) { const e = document.getElementById(id); if (!e) return null; const v = String(e.value || '').replace(/\./g, '').replace(',', '.').replace(/[^\d.]/g, ''); return v ? parseFloat(v) : null; }
@@ -33303,9 +33318,11 @@ function _diMoDesenha() {
       h += '<div class="di-mo-campos">' + campo('diMoPeso', 'Peso (kg)', v.Peso != null ? v.Peso : (ini.peso ? String(ini.peso).replace('.', ',') : ''), 'decimal') + campo('diMoKc', 'Calorias do dia', v.Kc != null ? v.Kc : (kc0 ? _diMacN(kc0) : '')) + campo('diMoP', 'Proteína (g)', v.P != null ? v.P : p0) + '</div>';
       if (get) h += chips([['Secar forte', 'diMoKcal(-800,' + get + ')'], ['Secar', 'diMoKcal(-500,' + get + ')'], ['Secar leve', 'diMoKcal(-250,' + get + ')'], ['Manter', 'diMoKcal(0,' + get + ')'], ['Crescer', 'diMoKcal(200,' + get + ')']]);
       h += chips([['1,8 g por kg', 'diMoProt(1.8)'], ['2,0 g por kg', 'diMoProt(2)'], ['2,2 g por kg', 'diMoProt(2.2)']]);
+      const lip = _diMoLip(ini);   // v714
+      h += '<div class="di-mo-chips"><button type="button" class="di-mo-lip' + (lip ? ' on' : '') + '" aria-pressed="' + lip + '" onclick="diMoLip()">' + (lip ? '✓ ' : '') + 'Colesterol ou triglicérides alto no exame</button></div>';
       h += '<div class="di-mo-calc" id="diMoCalc"></div>';
-      const cm = _diMoComida(ini);
-      h += '<div class="di-mo-com"><b>Vai usar</b> ' + e(cm.protMain.join(', ')) + '. ' + e(cm.carbMain.join(', ')) + '. ' + (cm.frutas.length ? e(cm.frutas.map(x => x.nome).join(', ')) + '. ' : 'Sem fruta marcada. ') + (cm.gord ? e(cm.gord) + (cm.gordPadrao ? ' (ele não marcou gordura).' : '.') : 'Sem gordura.') + '</div>';
+      const cm = _diMoComida(ini, lip);
+      h += '<div class="di-mo-com"><b>Vai usar</b> ' + e(cm.protMain.join(', ')) + '. ' + e(cm.carbMain.join(', ')) + '. ' + (cm.frutas.length ? e(cm.frutas.map(x => x.nome).join(', ')) + '. ' : 'Sem fruta marcada. ') + (cm.gord ? e(cm.gord) + (cm.gordPadrao ? ' (ele não marcou gordura).' : '.') : 'Sem gordura.') + (cm.gordL ? ' ' + e(cm.gordL) + ' nas refeições leves' + (cm.gordLPadrao ? ' (pelo colesterol).' : '.') : '') + (cm.manteigaFora ? ' Manteiga saiu da frente.' : '') + '</div>';
       if (ini.alergia) h += '<div class="te-ent-aviso">Alergia: ' + e(ini.alergia) + '</div>';
       if (agora) h += '<div class="te-ent-aviso">Esta dieta já tem refeições. Montar TROCA as refeições de agora pelas novas. Suplemento, protocolo, regra e orientação ficam.</div>';
       h += _diMoFdsCard();   // v697
@@ -33342,7 +33359,7 @@ function _diMoValida() {
 }
 function _diMoPoe(rows) { teSnapshot(); dietaData.length = 0; rows.forEach(r => dietaData.push(r)); }
 function diMoMontaIni() {
-  const ini = _diMoIni(_diMo.j); if (!ini) return; const op = _diMoValida(); if (!op) return;
+  const ini = _diMoIni(_diMo.j); if (!ini) return; const op = _diMoValida(); if (!op) return; op.lip = _diMoLip(ini);   // v714
   let r; try { r = _diMoMonta(dietaData, ini, op); } catch (_) { r = { erro: 'Não consegui montar com esses números. Confere as calorias e a proteína.' }; }
   if (r.erro) { _diMo.pronto = { tit: 'Não montou', res: r.erro, notas: [] }; _diMoDesenha(); _diMo.pronto = null; return; }
   try { const fs = _diMoFdsPoe(r.rows, _diMo.j, false); if (fs.n) r.notas.unshift('Fim de semana: ' + fs.n + (fs.n === 1 ? ' linha' : ' linhas') + ' em "Teu dia · Fim de semana"' + (fs.se ? ' e um "Se acontecer" pro churrasco ou a família' : '') + '.'); r.notas = r.notas.concat(fs.notas); } catch (_) {}   // v697
