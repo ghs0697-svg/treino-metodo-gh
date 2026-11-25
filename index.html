@@ -4113,7 +4113,6 @@
   .di-mo-campo input { width: 100%; box-sizing: border-box; background: #0c0c0c; color: #fff; border: 1px solid #444; border-radius: 8px; padding: 9px 10px; font-size: 16px; font-weight: 800; font-family: inherit; font-variant-numeric: tabular-nums; }
   .di-mo-campo input:focus { outline: none; border-color: #DDB65C; }
   .di-mo-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
-  .di-mo-chips button.di-mo-lip.on { background: rgba(221, 182, 92, 0.18); border-color: #E3BE6B; }
   .di-mo-chips button { background: transparent; color: #E3BE6B; border: 1px solid rgba(221, 182, 92, 0.5); border-radius: 999px; padding: 6px 11px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; }
   .di-mo-calc { font-size: 12.5px; line-height: 1.4; color: #bbb; min-height: 18px; margin: 0 0 8px; }
   .di-mo-calc.erro { color: #ff8a80; font-weight: 800; }
@@ -31221,7 +31220,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v714';
+var APP_SHELL_V = 'metodo-gh-v715';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
@@ -32848,7 +32847,8 @@ function _diMoIni(j) {
   const coracao = (f.respostas || []).some(y => /problema de coracao|dores no peito|pressao arterial ou problema de coracao/.test(N(_teFiTxt(y.p))) && /^sim\b/.test(N(y.r).trim()));
   // v714 (GH 25/11): colesterol ou triglicérides na anamnese (sintomas, problema de saúde ou o que ele escreveu do exame) liga sozinho a gordura boa
   const lipAnam = (f.respostas || []).some(y => /sintomas|problema de saude|exames de sangue|exame/.test(N(_teFiTxt(y.p))) && /colesterol|triglic|\bldl\b/.test(N(String(y.r == null ? '' : y.r))) && !_teFiNeg(y.r));
-  return { f, lipAnam, peso, alt, idade, sexo, nivelTxt: nivel < 0 ? '' : niveis[nivel][1], degrau, fator: fat[usado], fatorTxt: degrau < 0 ? 'sem resposta de atividade, usei moderada' : (degrau === 0 ? 'sedentário' : 'conta um nível abaixo do que marcou'),
+  const temExame = (f.respostas || []).some(y => /exames de sangue/.test(N(_teFiTxt(y.p))) && String(y.r == null ? '' : y.r).trim() && !_teFiNeg(y.r));
+  return { f, lipAnam, temExame, peso, alt, idade, sexo, nivelTxt: nivel < 0 ? '' : niveis[nivel][1], degrau, fator: fat[usado], fatorTxt: degrau < 0 ? 'sem resposta de atividade, usei moderada' : (degrau === 0 ? 'sedentário' : 'conta um nível abaixo do que marcou'),
     tmb, get: tmb ? tmb * fat[usado] : null, objTxt, obj, modeloTxt: R(/modelo de planejamento/), turno: R(/qual turno treina/), freq: _diMoNum(R(/quantas vezes por semana/)),
     glu: _diMoSim(f, /intolerancia ao gluten/), lac: _diMoSim(f, /intolerancia a lactose/), pos: _diMoSim(f, /abacaxi ou mamao/), alergia, faltando, coracao };
 }
@@ -33265,8 +33265,13 @@ function diMoAbre() {
   _diMoDesenha(); if (!_diMo.j) _diMoCarrega(false);
 }
 function diMoFecha(tudo) { const o = document.getElementById('diMo'); if (o) o.hidden = true; _diMo.pronto = null; if (tudo) { _diMo.j = null; _diMo.v = {}; _diMo.erro = ''; _diMo.car = false; _diMo.aba = 'ini'; } }
-function _diMoLip(ini) { const v = _diMo.v.ini || {}; return v.lip != null ? !!v.lip : !!(ini && ini.lipAnam); }
-function diMoLip() { const v = _diMo.v.ini || (_diMo.v.ini = {}); ['Peso', 'Kc', 'P'].forEach(k => { const e = document.getElementById('diMo' + k); if (e) v[k] = e.value; }); v.lip = !_diMoLip(_diMoIni(_diMo.j)); _diMoDesenha(); }
+// v715 (GH 25/11: "pq uma chave? coloca junto com as outras regras"): sem chave. Liga sozinho pela anamnese ou pelo que o
+// treinador marcou em "O exame mostrou" no Montar dos suplementos deste aluno. Devolve o motivo, ou '' quando não liga.
+function _diMoLip(ini) {
+  const mesmo = _suMo.j && _diMo.j && (_suMo.j === _diMo.j || (_suMo.j.sheetId === _diMo.j.sheetId && _suMo.j.linha === _diMo.j.linha));
+  const marcou = mesmo && [_suMo.v, _suMo.rv].some(v => v && v.exame && (v.exame.ldl || v.exame.trig));
+  return marcou ? 'marcado no exame' : (ini && ini.lipAnam ? 'pela anamnese' : '');
+}
 function diMoAba(a) { _diMo.aba = a; _diMo.pronto = null; _diMoDesenha(); }
 function _diMoAgora() { const c = _diMacCalc(dietaData || []), b = c.blocos[0]; return b && b.t.n ? b.t : null; }
 function _diMoLe(id) { const e = document.getElementById(id); if (!e) return null; const v = String(e.value || '').replace(/\./g, '').replace(',', '.').replace(/[^\d.]/g, ''); return v ? parseFloat(v) : null; }
@@ -33318,11 +33323,12 @@ function _diMoDesenha() {
       h += '<div class="di-mo-campos">' + campo('diMoPeso', 'Peso (kg)', v.Peso != null ? v.Peso : (ini.peso ? String(ini.peso).replace('.', ',') : ''), 'decimal') + campo('diMoKc', 'Calorias do dia', v.Kc != null ? v.Kc : (kc0 ? _diMacN(kc0) : '')) + campo('diMoP', 'Proteína (g)', v.P != null ? v.P : p0) + '</div>';
       if (get) h += chips([['Secar forte', 'diMoKcal(-800,' + get + ')'], ['Secar', 'diMoKcal(-500,' + get + ')'], ['Secar leve', 'diMoKcal(-250,' + get + ')'], ['Manter', 'diMoKcal(0,' + get + ')'], ['Crescer', 'diMoKcal(200,' + get + ')']]);
       h += chips([['1,8 g por kg', 'diMoProt(1.8)'], ['2,0 g por kg', 'diMoProt(2)'], ['2,2 g por kg', 'diMoProt(2.2)']]);
-      const lip = _diMoLip(ini);   // v714
-      h += '<div class="di-mo-chips"><button type="button" class="di-mo-lip' + (lip ? ' on' : '') + '" aria-pressed="' + lip + '" onclick="diMoLip()">' + (lip ? '✓ ' : '') + 'Colesterol ou triglicérides alto no exame</button></div>';
       h += '<div class="di-mo-calc" id="diMoCalc"></div>';
+      const lp = _diMoLip(ini), lip = !!lp;   // v715: automático, igual glúten e lactose
       const cm = _diMoComida(ini, lip);
       h += '<div class="di-mo-com"><b>Vai usar</b> ' + e(cm.protMain.join(', ')) + '. ' + e(cm.carbMain.join(', ')) + '. ' + (cm.frutas.length ? e(cm.frutas.map(x => x.nome).join(', ')) + '. ' : 'Sem fruta marcada. ') + (cm.gord ? e(cm.gord) + (cm.gordPadrao ? ' (ele não marcou gordura).' : '.') : 'Sem gordura.') + (cm.gordL ? ' ' + e(cm.gordL) + ' nas refeições leves' + (cm.gordLPadrao ? ' (pelo colesterol).' : '.') : '') + (cm.manteigaFora ? ' Manteiga saiu da frente.' : '') + '</div>';
+      if (lip) h += '<div class="te-ent-aviso">Colesterol ou triglicérides alto (' + e(lp) + '): azeite no prato, castanha ou pasta de amendoim nas leves e cardio de 150 min na semana.</div>';
+      else if (ini.temExame) h += '<div class="te-ent-linha">Tem exame anexado. Se veio colesterol ou triglicérides alto, marca em "O exame mostrou" no Montar dos suplementos que a dieta segue junto.</div>';
       if (ini.alergia) h += '<div class="te-ent-aviso">Alergia: ' + e(ini.alergia) + '</div>';
       if (agora) h += '<div class="te-ent-aviso">Esta dieta já tem refeições. Montar TROCA as refeições de agora pelas novas. Suplemento, protocolo, regra e orientação ficam.</div>';
       h += _diMoFdsCard();   // v697
@@ -33359,7 +33365,7 @@ function _diMoValida() {
 }
 function _diMoPoe(rows) { teSnapshot(); dietaData.length = 0; rows.forEach(r => dietaData.push(r)); }
 function diMoMontaIni() {
-  const ini = _diMoIni(_diMo.j); if (!ini) return; const op = _diMoValida(); if (!op) return; op.lip = _diMoLip(ini);   // v714
+  const ini = _diMoIni(_diMo.j); if (!ini) return; const op = _diMoValida(); if (!op) return; op.lip = !!_diMoLip(ini);   // v715
   let r; try { r = _diMoMonta(dietaData, ini, op); } catch (_) { r = { erro: 'Não consegui montar com esses números. Confere as calorias e a proteína.' }; }
   if (r.erro) { _diMo.pronto = { tit: 'Não montou', res: r.erro, notas: [] }; _diMoDesenha(); _diMo.pronto = null; return; }
   try { const fs = _diMoFdsPoe(r.rows, _diMo.j, false); if (fs.n) r.notas.unshift('Fim de semana: ' + fs.n + (fs.n === 1 ? ' linha' : ' linhas') + ' em "Teu dia · Fim de semana"' + (fs.se ? ' e um "Se acontecer" pro churrasco ou a família' : '') + '.'); r.notas = r.notas.concat(fs.notas); } catch (_) {}   // v697
