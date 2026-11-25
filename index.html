@@ -4115,6 +4115,7 @@
     #diMac .di-mac-bts { flex-wrap: wrap; gap: 4px; }
     #diMac .di-mac-bts .di-mo-abre, #diMac .di-mac-bts .di-mac-b, #diMac .di-mac-bts .di-tudo-btn { flex: 1 1 auto; padding: 8px 3px; font-size: 11.5px; min-width: 0; white-space: nowrap; }
     .di-tudo-x { display: none; }
+    #diMac .di-mac-bts .hp-mo-abre { display: none; }   /* v712: no celular o atalho do Danones de cima some (não cabe na linha); fica o botão do bloco PROTOCOLOS */
     .di-mo-campo { font-size: 10px; }
     .di-mo-chips button { padding: 8px 11px; }
   }
@@ -31173,7 +31174,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v711';
+var APP_SHELL_V = 'metodo-gh-v712';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
@@ -40185,6 +40186,7 @@ function _diMacBarra(algumAberto) {
     <div class="di-mac-nums" onclick="diMacPainel()" title="Total do dia pelos alimentos. Toca pra digitar as calorias e a proteína"></div>
     <div class="di-mac-bts">
       <button type="button" class="di-mo-abre" onclick="diMoAbre()" title="Montar a dieta pela anamnese inicial, ou ajustar pela anamnese de reajuste">Montar</button>
+      <button type="button" class="di-mo-abre hp-mo-abre" onclick="hpMoAbre()" title="Danones: montar ou reajustar o protocolo hormonal e de peptídeos pela mestre e pela anamnese, sem IA">💉<span class="hp-mo-x"> Danones</span></button>   <!-- v712 -->
       <button type="button" class="di-mac-b" onclick="diMacMexe(-100)" title="Tira 100 kcal do dia no carbo. A proteína fica">Secar mais</button>
       <button type="button" class="di-mac-b" onclick="diMacMexe(100)" title="Põe 100 kcal no dia no carbo. A proteína fica">Crescer mais</button>
       <button type="button" class="di-mac-b fino" onclick="diMacPainel()" title="Digitar as calorias e a proteína do dia">Digitar</button>
