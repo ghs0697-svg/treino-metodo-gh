@@ -31173,7 +31173,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v707';
+var APP_SHELL_V = 'metodo-gh-v708';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
@@ -34864,8 +34864,10 @@ const GHSU = (() => {
     // v668 (GH 18/11: "são protetores hepáticos naturais, pode fazer aí"): dose e horário mais usados nos protocolos entregues
     tudca: ['TUDCA', '250mg', 'Duas vezes ao dia: pós-desjejum e pós-janta', /^tudca|^tauroursodes/, 'PÓS-DESJEJUM'],
     sawpalmetto: ['Saw Palmetto', '300mg', 'Pós-desjejum', /^saw ?palmetto|^serenoa/],
+    // v708 (skill reajuste 6.4): ioimbina só no reajuste em déficit, pela versão. A linha existente é cuidada à parte (está no FORA)
+    ioimbina: ['Ioimbina', '10mg', 'Ao acordar, em jejum', /ioimbin|yohimb/],
   };
-  const ORDEM = ['vinagre', 'boswellia', 'arnica', 'ashwa', 'cactin', 'dimpless', 'canela', 'cromo', 'omega', 'morosil', 'multi', 'd3', 'b12', 'folico', 'policosanol', 'coq10', 'nac', 'silimarina', 'tudca', 'selenio', 'sawpalmetto', 'nattokinase', 'vitc', 'biotina', 'bacopa', 'rhodiola', 'berberina', 'psyllium', 'enzimas', 'probiotico', 'ferro', 'inositol', 'glutamina', 'curcuma', 'glucosamina', 'tirosina', 'cafeina', 'taurina', 'betaalanina', 'citrulina', 'whey', 'sono', 'magnesio', 'zinco', 'passiflora', 'teanina', 'htp', 'creatina'];
+  const ORDEM = ['vinagre', 'boswellia', 'arnica', 'ashwa', 'cactin', 'dimpless', 'ioimbina', 'canela', 'cromo', 'omega', 'morosil', 'multi', 'd3', 'b12', 'folico', 'policosanol', 'coq10', 'nac', 'silimarina', 'tudca', 'selenio', 'sawpalmetto', 'nattokinase', 'vitc', 'biotina', 'bacopa', 'rhodiola', 'berberina', 'psyllium', 'enzimas', 'probiotico', 'ferro', 'inositol', 'glutamina', 'curcuma', 'glucosamina', 'tirosina', 'cafeina', 'taurina', 'betaalanina', 'citrulina', 'whey', 'sono', 'magnesio', 'zinco', 'passiflora', 'teanina', 'htp', 'creatina'];
   // o que entra por gatilho da anamnese ou do exame (v668) ou pelo toque do treinador, na ordem em que aparece na tela
   const EXTRAS = [['cafeina', 'Cafeína'], ['taurina', 'Taurina'], ['betaalanina', 'Beta-alanina'], ['citrulina', 'Citrulina'], ['glutamina', 'Glutamina'], ['probiotico', 'Probiótico'], ['psyllium', 'Psyllium'], ['vinagre', 'Vinagre de maçã'], ['curcuma', 'Cúrcuma'], ['glucosamina', 'Glucosamina e condroitina'], ['nac', 'NAC'], ['silimarina', 'Silimarina'], ['tudca', 'TUDCA'], ['selenio', 'Selênio'], ['sawpalmetto', 'Saw Palmetto'], ['teanina', 'L-Teanina'], ['cactin', 'Cactin'], ['dimpless', 'Dimpless']];
   const ESTATINA = /statina|crestor|lipitor|zocor|vytorin|trezor|rosucor|plenance/, ESTIMULANTE = /venvanse|ritalina|concerta|lisdexanfetamina|metilfenidato|anfetamina|modafinil/;
@@ -34873,7 +34875,7 @@ const GHSU = (() => {
   const NOME = { omega: 'Ômega 3', creatina: 'Creatina', whey: 'Whey', magnesio: 'Magnésio', morosil: 'Morosil', enzimas: 'Enzimas digestivas', ashwa: 'Ashwagandha', rhodiola: 'Rhodiola', htp: '5-HTP', bacopa: 'Bacopa', tirosina: 'L-Tirosina', vitc: 'Vitamina C', zinco: 'Zinco', biotina: 'Biotina',
     sono: 'Fórmula do Sono', passiflora: 'Passiflora', boswellia: 'Boswellia', arnica: 'Arnica', d3: 'Vitamina D3', b12: 'B12', ferro: 'Ferro', policosanol: 'Policosanol', nattokinase: 'Nattokinase', berberina: 'Berberina', folico: 'Metilfolato', multi: 'Multivitamínico',
     coq10: 'Coenzima Q10', canela: 'Canela', cromo: 'Cromo picolinato', inositol: 'Inositol', vinagre: 'Vinagre de maçã', cactin: 'Cactin', dimpless: 'Dimpless', nac: 'NAC', silimarina: 'Silimarina', selenio: 'Selênio', psyllium: 'Psyllium', probiotico: 'Probiótico',
-    glutamina: 'Glutamina', curcuma: 'Cúrcuma', glucosamina: 'Glucosamina e condroitina', cafeina: 'Cafeína', taurina: 'Taurina', betaalanina: 'Beta-alanina', citrulina: 'Citrulina', teanina: 'L-Teanina', tudca: 'TUDCA', sawpalmetto: 'Saw Palmetto' };
+    glutamina: 'Glutamina', curcuma: 'Cúrcuma', glucosamina: 'Glucosamina e condroitina', cafeina: 'Cafeína', taurina: 'Taurina', betaalanina: 'Beta-alanina', citrulina: 'Citrulina', teanina: 'L-Teanina', tudca: 'TUDCA', sawpalmetto: 'Saw Palmetto', ioimbina: 'Ioimbina' };
   // o que não é do Montar: fica como está, nunca entra, nunca sai, nunca muda
   const FORA = /testo|enantato|cipionato|propionato|durateston|deca\b|nandrol|\bnpp\b|trembol|oxandrol|primobol|bolden|masteron|drostanol|stanoz|dianabol|hemogenin|oximetol|turinabol|\bdhb\b|anastrozol|tamoxif|clomif|\bhcg\b|gonadotrof|cabergol|tirzep|retatrut|semaglut|ozempic|mounjaro|\bcjc\b|ipamorel|\bbpc\b|tb-? ?500|mots-? ?c|ghk|tesamorel|somatrop|clembut|clenbut|ioimbina|yohimb|sibutram|levotirox|\bt3\b|\bt4\b|glifage|metformina|finaster|minoxidil|sildenafil|tadalafil/;
   const PSIQ = /sertralina|fluoxetina|escitalopram|paroxetina|venlafaxina|desvenlafaxina|duloxetina|bupropiona|citalopram|amitriptilina|nortriptilina|trazodona|mirtazapina|antidepress|venvanse|ritalina|concerta|lisdexanfetamina|metilfenidato|litio|quetiapina|risperidona|olanzapina|aripiprazol|clonazepam|rivotril|alprazolam|zolpidem|lamotrigina|topiramato|pregabalina/;
@@ -34935,6 +34937,43 @@ const GHSU = (() => {
   }
 
   const ANTICOAG = /marevan|varfarina|warfarin|coumadin|eliquis|apixaban|xarelto|rivaroxaban|pradaxa|dabigatran|lixiana|edoxaban|clexane|enoxaparina|heparina|anticoagulante|clopidogrel|plavix|ticagrelor|brilinta|\baas\b|aspirina|acido acetilsalicilico/;
+  // ── v708 (GH 25/11, "1a"): ESCADA DE DOSE no reajuste. A dose sobe quando a resposta do reajuste ou o exame mostram que a queixa
+  // continua. Com "passo", sobe um degrau por reajuste; sem, vai direto à dose da regra. Nunca passa do teto e nunca desce.
+  // Os degraus param na dose do método; passam dela só onde a skill escreve o número (ômega 3000, magnésio 800 em ciclo com
+  // pressão alta, vitamina D 10000, berberina 3 vezes, ioimbina 20 no homem e 10 na mulher). ──
+  const ESCADA = { omega: [1000, 2000, 3000], magnesio: [300, 400, 600, 800], passiflora: [200, 300, 500], ashwa: [300, 600], d3: [7000, 10000], melatonina: [3, 5, 10], nattokinase: [100, 200], vitc: [500, 1000], zinco: [15, 20, 30] };
+  const IOIMB = { H: [10, 20], M: [5, 10] };
+  const RE_DOSE = /(\d+(?:[.,]\d+)?)\s*(mg|g\b|mcg|ui)/i;
+  const fmtDose = (k, v) => k === 'd3' ? v + 'UI' : (k === 'vitc' && v >= 1000 ? v / 1000 + 'g' : v + 'mg');
+  // b = dose que ele tinha antes deste reajuste (base). Sem base, a linha entrou neste reajuste e não sobe.
+  function escala(k, r, x, notas, b) {
+    if (!x || !x.sobe || b == null) return null;
+    const nome = NOME[k] || String(r[1]).trim();
+    const naQtd = RE_DOSE.test(String(r[2])), noNome = !naQtd && RE_DOSE.test(String(r[1]));
+    if (noNome && /\+/.test(String(r[1]))) { notas.push(nome + ': ' + x.sobe + ', mas a dose está dentro de uma fórmula. Confere se sobe.'); return null; }
+    const tem = dose(naQtd ? r[2] : r[1]), ate = x.ate || dose(x.d);
+    if (!ate) return null;
+    if (!tem || !b) { notas.push(nome + ': ' + x.sobe + ' e a linha está sem dose. Confere se chega a ' + fmtDose(k, ate) + '.'); return null; }
+    if (b >= ate) { if (x.passo) notas.push(nome + ' já está em ' + fmtDose(k, b) + ', o teto da escada, e ' + x.sobe + '. Não subi mais: confere com o GH.'); return null; }
+    const novo = x.passo ? ((ESCADA[k] || []).find(v => v > b && v <= ate) || ate) : ate;
+    if (tem >= novo) return null;
+    const y = r.slice();
+    if (naQtd) y[2] = String(y[2]).replace(RE_DOSE, fmtDose(k, novo)); else if (noNome) y[1] = String(y[1]).replace(RE_DOSE, fmtDose(k, novo)); else y[2] = fmtDose(k, novo);
+    return { r: y, txt: nome + ': de ' + fmtDose(k, b) + ' pra ' + fmtDose(k, novo) + ', porque ' + x.sobe };
+  }
+  // ioimbina (skill reajuste 6.4): só em déficit; homem 10mg na 2.0 e 20mg na 3.0, mulher 5mg e depois 10mg; da 4.0 em diante não escala
+  const ioimbAlvo = P => (!P.deficit || !(P.versao >= 2) || P.versao >= 4) ? 0 : IOIMB[P.sexo === 'F' ? 'M' : 'H'][P.versao >= 3 ? 1 : 0];
+  const ioimbTrava = P => P.pressao ? 'ele toma remédio de pressão' : nrm(P.remedios).match(ESTIMULANTE) ? 'ele usa remédio estimulante' : P.reaAns ? 'a ansiedade seguiu alta ou piorou no reajuste' : '';
+  function ioimbina(r, P, notas, b) {
+    if (!P.deficit) { notas.push('Ioimbina só fica em déficit (regra da skill): a linha ficou, confere se sai.'); return null; }
+    const alvo = ioimbAlvo(P); if (!alvo || b == null || b >= alvo) return null;
+    const tem = dose(r[1] + ' ' + r[2]); if (!tem || tem >= alvo) return null;
+    const tr = ioimbTrava(P); if (tr) { notas.push('Não subi a ioimbina: ' + tr + '.'); return null; }
+    const y = r.slice(), naQtd = RE_DOSE.test(String(r[2]));
+    if (naQtd) y[2] = String(y[2]).replace(RE_DOSE, alvo + 'mg'); else y[1] = String(y[1]).replace(RE_DOSE, alvo + 'mg');
+    return { r: y, txt: 'Ioimbina: de ' + b + 'mg pra ' + alvo + 'mg, porque é a versão ' + P.versao + '.0 em déficit' };
+  }
+
   // o que este aluno leva: { chave: [nome, dose, horário] }
   function pede(P, notas) {
     const q = {}, poe = (k, o) => { const era = q[k] && dose(q[k].d); q[k] = Object.assign({ n: ITEM[k][0], d: ITEM[k][1], o: ITEM[k][2] }, q[k] || {}, o || {}); if (era && dose(q[k].d) < era) q[k].d = era >= 1000 && k === 'omega' ? era + 'mg' : q[k].d; };
@@ -34945,22 +34984,29 @@ const GHSU = (() => {
     else poe('whey', { n: P.alergiaLeite ? 'Proteína vegetal (ervilha e arroz)' : (P.lactose ? 'Whey protein isolado' : 'Whey protein'), d: P.wheyNaDieta ? '30g por dose' : '30g', o: P.wheyNaDieta ? 'Nas refeições da dieta em que ele aparece' : 'Pós-treino' });
     if (P.deficit) poe('morosil');
     if (f.has('digestao')) poe('enzimas');
-    if (f.has('humor')) { poe('ashwa'); if (psiq) notas.push('Humor marcado, mas usa remédio que pede cuidado: o 5-HTP ficou fora. Confere a ashwagandha com o GH.'); else poe('htp'); poe('omega', { d: '2000mg' }); }
+    if (f.has('humor')) { poe('ashwa'); if (psiq) notas.push('Humor marcado, mas usa remédio que pede cuidado: o 5-HTP ficou fora. Confere a ashwagandha com o GH.'); else poe('htp'); poe('omega', { d: '2000mg', sobe: 'humor marcado' }); if (q.ashwa) q.ashwa.sobe = q.ashwa.sobe || 'humor marcado'; }
     if (f.has('foco')) { poe('bacopa'); if (psiq) notas.push('Foco marcado, mas usa remédio que pede cuidado: a L-Tirosina ficou fora.'); else poe('tirosina'); }
-    if (f.has('imunidade')) { poe('vitc', { d: '1g' }); poe('zinco'); }
-    if (f.has('pele')) { poe('biotina'); poe('vitc'); poe('zinco'); }
+    if (f.has('imunidade')) { poe('vitc', { d: '1g', sobe: 'imunidade marcada' }); poe('zinco', { sobe: 'imunidade marcada' }); }
+    if (f.has('pele')) { poe('biotina'); poe('vitc'); poe('zinco', { sobe: (q.zinco && q.zinco.sobe) || 'pele, cabelo e unha marcados' }); }
     if (P.sonoRuim) poe('sono');
     if (P.ansiedadeAlta) poe('passiflora');
     if (P.estresseAlto && !q.ashwa) poe('ashwa');
+    // v708: escada pelas notas do PRÓPRIO reajuste (sono 1 ou 2, ansiedade 4, 5 ou pior, estresse 4 ou 5). Com cafeína antes do
+    // treino a passiflora fica, mas não sobe (skill reajuste 6.4)
+    if (P.reaSono && q.magnesio) Object.assign(q.magnesio, { sobe: 'o sono piorou no reajuste', ate: 600, passo: true });
+    if (P.reaAns && q.passiflora) { if (P.cafeinaPre) notas.push('A ansiedade seguiu alta ou piorou, mas ele usa cafeína antes do treino: a passiflora fica na dose que está, sem subir.'); else Object.assign(q.passiflora, { sobe: 'a ansiedade seguiu alta ou piorou no reajuste', ate: 500, passo: true }); }
+    if (P.reaEst && q.ashwa) Object.assign(q.ashwa, { sobe: 'o estresse ficou em 4 ou 5 no reajuste', ate: 600, passo: true });
     if (P.libido) { poe('rhodiola'); poe('ashwa', { o: 'Antes de dormir' }); notas.push('Queda de libido marcada, sem acompanhamento hormonal: entraram Rhodiola e Ashwagandha. O resto dessa conduta é com o GH.'); }
-    if (P.dorArticular || P.artrose) { poe('omega', { d: '3000mg' }); poe('magnesio', { n: 'Magnésio Glicinato' }); }
+    if (P.dorArticular || P.artrose) { poe('omega', { d: '3000mg', sobe: 'dor articular' }); poe('magnesio', { n: 'Magnésio Glicinato' }); }
     if (P.artrose) { poe('boswellia'); poe('arnica'); }
     const ex = P.exame || {};
-    if (ex.d3) poe('d3'); if (ex.b12) poe('b12'); if (ex.ferritina) poe('ferro'); if (ex.ldl) poe('policosanol'); if (ex.trig) poe('omega', { d: '3000mg' }); if (ex.glicose) poe('berberina'); if (ex.zinco) poe('zinco'); if (ex.folico) poe('folico');
+    if (ex.d3) poe('d3', P.tipo === 'reajuste' ? { sobe: 'a vitamina D segue baixa no exame', ate: 10000, passo: true } : {}); if (ex.b12) poe('b12'); if (ex.ferritina) poe('ferro'); if (ex.ldl) poe('policosanol'); if (ex.trig) poe('omega', { d: '3000mg', sobe: 'triglicérides alto no exame' }); if (ex.glicose) poe('berberina'); if (ex.zinco) poe('zinco'); if (ex.folico) poe('folico');
     // v667: o resto da tabela de glicemia e insulina da skill
     if (ex.glicJejum) { poe('canela'); poe('cromo'); }
     if (ex.insulina) { poe('berberina'); poe('canela'); }
     if (ex.homa) { poe('berberina'); poe('inositol'); }
+    // v708: no reajuste, glicada, insulina ou HOMA ainda alterados levam a berberina de 2 pra 3 vezes ao dia (skill: 2 a 3 vezes)
+    if (P.tipo === 'reajuste' && q.berberina && (ex.glicose || ex.insulina || ex.homa)) q.berberina.tres = 'a glicada, a insulina ou o HOMA seguem alterados no exame';
     // v668: o que o exame liga dos suplementos do levantamento (motivos das observações dos protocolos entregues)
     // v669 (Entregas #4825): vinagre de maçã só quando ele já usa; glicada e HOMA chamam berberina, jejum chama canela e cromo (acima).
     if (ex.ldl) poe('psyllium');
@@ -34971,6 +35017,18 @@ const GHSU = (() => {
       if (afina) notas.push('Hematócrito alto marcado, mas ele usa remédio que afina o sangue (' + afina[0] + '): a Nattokinase ficou fora. Esse caso é com o médico dele.');
       else { poe('nattokinase'); notas.push('Nattokinase entrou pelo hematócrito alto. Confere antes de entregar: não vale pra quem usa anticoagulante, tem hemofilia ou fez cirurgia nas últimas 4 semanas.'); }
     }
+    // v708 (skill 3.3, cardiovascular): ciclo com pressão alta leva o magnésio reforçado (800mg); Hemogenin ou oximetolona no bloco,
+    // ou ciclo com pressão alta, levam Nattokinase, menos em quem usa remédio que afina o sangue. Do bloco só se olha o nome.
+    if (P.ciclo && P.pressao) poe('magnesio', { d: '800mg', sobe: 'ciclo hormonal com pressão alta', ate: 800 });
+    if (P.hemogenin || (P.ciclo && P.pressao)) {
+      const afina = nrm(P.remedios).match(ANTICOAG), porque = P.hemogenin ? 'Hemogenin no bloco do protocolo' : 'ciclo hormonal com pressão alta';
+      if (afina) notas.push('A regra pede Nattokinase (' + porque + '), mas ele usa remédio que afina o sangue (' + afina[0] + '): ficou fora.');
+      else { const ja = !!q.nattokinase; poe('nattokinase', { sobe: porque, ate: 200 }); if (!ja) notas.push('Nattokinase entrou por ' + porque + '. Confere antes de entregar: não vale pra quem tem hemofilia ou fez cirurgia nas últimas 4 semanas.'); }
+    }
+    // v708 (skill 3.3): em ciclo, da versão 2.0 em diante, o ômega vai pelo menos a 2000mg
+    if (P.tipo === 'reajuste' && P.ciclo && P.versao >= 2 && dose(q.omega.d) < 2000) poe('omega', { d: '2000mg', sobe: 'ciclo hormonal da versão 2.0 em diante' });
+    // v708: ioimbina nova no reajuste em déficit, versão 2.0 ou 3.0, sem pressão, estimulante ou ansiedade em alta
+    if (P.tipo === 'reajuste' && ioimbAlvo(P)) { const tr = ioimbTrava(P); if (tr) notas.push('A versão em déficit pede ioimbina, mas ' + tr + ': não entrou.'); else poe('ioimbina', { d: ioimbAlvo(P) + 'mg' }); }
     if (P.multi && MULTI_MOTIVO[P.multi]) poe('multi', { o: 'Pós-desjejum. ' + MULTI_MOTIVO[P.multi] });
     // v667: Coenzima Q10 pra quem usa estatina ou tem mais de 50 anos (o painel já traz marcado e o treinador confirma)
     if (P.coq10) poe('coq10');
@@ -34997,10 +35055,21 @@ const GHSU = (() => {
     const chaveDe = r => { const n = nrm(r[1]); if (FORA.test(n)) return null; for (const k of ORDEM) if (ITEM[k][3].test(n)) return k; return null; };
     const usado = new Set(); let fora = 0;
     const saida = [];
+    // v708: dose de cada item ANTES deste reajuste. Vem do treinador (P.base, guardada no primeiro Montar do reajuste) ou é lida agora
+    const chaveEsc = r => { const n = nrm(r[1] + ' ' + r[2]); if (/ioimbin|yohimb/.test(n)) return 'ioimbina'; const k = chaveDe(r); return k === 'sono' && /^melatonina/.test(nrm(r[1])) ? 'melatonina' : k; };
+    const baseAgora = {};
+    rows.forEach(r => { if (!ehSupl(r) || sep(r)) return; const k = chaveEsc(r); if (!k || baseAgora[k] != null) return; baseAgora[k] = k === 'berberina' ? (/desjejum|cafe da manha|3x|tres vezes/.test(nrm(r[3])) ? 3 : 2) : (dose(/ioimbin|yohimb/.test(nrm(r[1] + ' ' + r[2])) ? r[1] + ' ' + r[2] : (RE_DOSE.test(String(r[2])) ? r[2] : r[1])) || 0); });
+    const base = P.base && typeof P.base === 'object' ? P.base : baseAgora;
     for (const r of rows) {
       if (!ehSupl(r)) { saida.push(r); continue; }
       if (sep(r)) { saida.push(r); continue; }
       const n = nrm(r[1] + ' ' + r[2] + ' ' + r[3]);
+      if (/ioimbin|yohimb/.test(n)) {
+        usado.add('ioimbina');
+        const x = rea ? ioimbina(r, P, notas, base.ioimbina) : null;
+        if (x) { mudou.push(x.txt); saida.push(x.r); } else { fora++; saida.push(r); }
+        continue;
+      }
       if (FORA.test(n)) {
         if (!rea && /glifage|metformina/.test(n)) { saiu.push(r[1]); notas.push('Glifage não entra mais no protocolo inicial: a linha saiu. Se a glicose pede controle, marca em "O exame mostrou" o que veio da glicose.'); continue; }
         fora++; saida.push(r); continue;
@@ -35014,10 +35083,15 @@ const GHSU = (() => {
       usado.add(k);
       const novo = ['supl', q[k].n, q[k].d, q[k].o];
       if (rea && k !== 'multi') {
-        // reajuste: o que ele já usa fica como está. Só a dose sobe quando a regra pede mais do que tem.
-        const tem = dose(r[1] + ' ' + r[2]), quer = dose(q[k].d);
-        if (k === 'omega' && tem && quer && quer > tem) { const x = r.slice(); x[2] = q[k].d; mudou.push(NOME[k] + ': de ' + String(r[2]).trim() + ' pra ' + q[k].d); saida.push(x); }
-        else { if (k === 'omega' && !tem && quer > 1000) notas.push('A regra pede ' + q[k].d + ' de ômega 3 e a linha atual está em "' + String(r[2]).trim() + '": confere se chega lá.'); ficou.push(r[1]); saida.push(r); }
+        // reajuste: o que ele já usa fica como está. v708 (GH 25/11, "1a"): a dose sobe pela escada quando a resposta do reajuste,
+        // o exame ou a regra pedem mais do que ele tem (ver ESCADA)
+        let x = null;
+        if (k === 'berberina' && q[k].tres) {
+          if (base.berberina === 3) notas.push('Berberina já está 3 vezes ao dia, o teto da escada, e ' + q[k].tres + '. Confere com o GH.');
+          else if (base.berberina === 2 && !/desjejum|cafe da manha|3x|tres vezes/.test(nrm(r[3]))) { const y = r.slice(); y[3] = 'Uma cápsula antes do desjejum, uma antes do almoço e uma antes da janta'; x = { r: y, txt: 'Berberina: pra 3 vezes ao dia, porque ' + q[k].tres }; }
+        } else if (k === 'sono' && /^melatonina/.test(nrm(r[1]))) x = P.reaSono ? escala('melatonina', r, { sobe: 'o sono piorou no reajuste', ate: 10, passo: true }, notas, base.melatonina) : null;
+        else x = escala(k, r, q[k], notas, base[k]);
+        if (x) { mudou.push(x.txt); saida.push(x.r); } else { ficou.push(r[1]); saida.push(r); }
         continue;
       }
       if (canon(r[1]) === canon(novo[1]) && nrm(r[2]) === nrm(novo[2]) && nrm(r[3]) === nrm(novo[3])) { ficou.push(r[1]); saida.push(r); }
@@ -35062,9 +35136,9 @@ const GHSU = (() => {
     if (P.remedios) notas.push('Usa remédio: ' + String(P.remedios).slice(0, 160) + '. Confere interação antes de entregar.');
     if (P.alergiaLeite) notas.push('Alergia a leite: o whey virou proteína vegetal.');
     else if (P.lactose && q.whey) notas.push('Intolerância à lactose: o whey é o isolado.');
-    return { rows: saida, entrou, saiu, mudou, ficou, notas, total: saida.filter(r => ehSupl(r) && !sep(r)).length };
+    return { rows: saida, entrou, saiu, mudou, ficou, notas, base, total: saida.filter(r => ehSupl(r) && !sep(r)).length };
   }
-  return { monta, fatoresDe, gatilhos, oral, gesta, ITEM, NOME, MULTI_MOTIVO, EXTRAS, estatina, nrm };
+  return { monta, fatoresDe, gatilhos, oral, gesta, ITEM, NOME, MULTI_MOTIVO, EXTRAS, estatina, nrm, ESCADA, IOIMB };
 })();
 
 // ── v664 (GH 17/11, plano B): MONTAR A SUPLEMENTAÇÃO dentro do editor da dieta, sem IA. Lê da anamnese inicial o que ele
@@ -35144,8 +35218,23 @@ function _suMoReaValores(ini, rea) {
     if (rea.sonoCmp != null && rea.sonoCmp <= 2) v.sonoRuim = true;
     if (rea.ans != null && (rea.ans >= 4 || (antes != null && rea.ans > antes))) v.ansiedadeAlta = true;
     if (rea.est != null && rea.est >= 4) v.estresseAlto = true;
+    // v708: as notas do próprio reajuste, que movem a escada de dose
+    v.reaSono = rea.sonoCmp != null && rea.sonoCmp <= 2;
+    v.reaAns = rea.ans != null && (rea.ans >= 4 || (antes != null && rea.ans > antes));
+    v.reaEst = rea.est != null && rea.est >= 4;
   }
+  const va = _suMoVersaoAtual(_suMo.j); v.versao = va ? Math.min(Math.floor(va) + 1, 4) : 2;
   _suMo.rv = v; return v;
+}
+// v708: versão atual da mestre (vem na ficha), o que o bloco do protocolo tem (só o nome, nunca a dose) e se ele usa cafeína antes do treino
+function _suMoVersaoAtual(j) { const m = ((j && j.mestre) || []).find(x => x && /vers[aã]o atual/i.test(String(x.p || ''))); const n = m ? parseFloat(String(m.r).replace(',', '.')) : NaN; return isFinite(n) ? n : 0; }
+function _suMoBlocoInfo() {
+  const L = (Array.isArray(dietaData) ? dietaData : []).filter(r => /^(proto|ciclo)$/.test(String((r && r[0]) || '').toLowerCase().trim())).map(r => _teFiNorm(String(r[1] || '')));
+  return { ciclo: L.some(t => /testo|enantato|cipionato|durateston|deca\b|nandrol|\bnpp\b|trembol|masteron|drostanol|primobol|bolden|\bdhb\b|oxandrol|hemogenin|oximetol|dianabol|stanoz|turinabol/.test(t)), hemogenin: L.some(t => /hemogenin|oximetol/.test(t)) };
+}
+function _suMoCafePre(ini) {
+  const N = _teFiNorm, g = (ini && ini.g668) || {};
+  return /capsula|pronto/.test(N(g.preTreino || '')) || /cafeina|pre-? ?treino/.test(N((ini && ini.usa) || '')) || (Array.isArray(dietaData) ? dietaData : []).some(r => String((r && r[0]) || '').toLowerCase().trim() === 'supl' && /cafeina|pre-? ?treino/.test(N(String(r[1] || ''))));
 }
 function suMoAba(a) { _suMo.aba = a; _suMo.pronto = null; _suMoDesenha(); }
 function suMoSet(k, val) {
@@ -35210,6 +35299,13 @@ function _suMoDesenha() {
   h += grupo('Whey', _SUMO_WHEY.map(p => [p[1], "suMoSet('whey','" + p[0] + "')", v.whey === p[0]]));
   h += grupo('Em déficit e com gordura acima de 20%', [['Não', "suMoSet('deficit',false)", !v.deficit], ['Sim', "suMoSet('deficit',true)", !!v.deficit]]);
   h += grupo('O exame mostrou', _SUMO_EX.map(p => [p[1], "suMoSet('exame','" + p[0] + "')", !!v.exame[p[0]]]));
+  if (ehRea) {
+    // v708 (GH 25/11, "1a"): escada de dose. A versão vem da mestre (atual + 1) e o treinador corrige no toque
+    h += grupo('Versão que está saindo', [[2, '2.0'], [3, '3.0'], [4, '4.0 ou mais']].map(p => [p[1], "suMoSet('versao'," + p[0] + ")", v.versao === p[0]]));
+    const sob = [v.reaSono ? 'o sono piorou' : '', v.reaAns ? 'a ansiedade seguiu alta ou piorou' : '', v.reaEst ? 'o estresse ficou em 4 ou 5' : ''].filter(Boolean);
+    h += '<div class="di-mo-dados su-mo-escada"><b>Escada de dose</b><br>' + e(sob.length ? 'Neste reajuste ' + sob.join(', ') + ': o que cuida disso sobe um degrau.' : 'Neste reajuste nenhuma nota pede subir dose pelo sono, ansiedade ou estresse.') +
+      '<br>' + e('Degraus: magnésio 300, 400, 600 (800 só em ciclo com pressão alta); passiflora 200, 300, 500 (com cafeína antes do treino não sobe); ashwagandha 300, 600; melatonina 3, 5, 10; vitamina D 7000, 10000 com o exame ainda baixo; berberina de 2 pra 3 vezes com a glicada ainda alta; ioimbina em déficit, homem 10 na 2.0 e 20 na 3.0, mulher 5 e 10. Ômega, vitamina C e zinco vão direto à dose da regra. Nunca passa do teto e nunca desce.') + '</div>';
+  }
   h += grupo('Multivitamínico', _SUMO_MULTI.map(p => [p[1], "suMoSet('multi','" + p[0] + "')", v.multi === p[0]]));
   // v668: cada um já vem marcado quando a anamnese, o exame ou o bloco do protocolo pede (o motivo aparece embaixo); o toque acrescenta ou tira
   h += grupo('Também pode entrar', [['Coenzima Q10', "suMoSet('tem','coq10')", !!v.coq10]].concat(GHSU.EXTRAS.map(p => [p[1], "suMoSet('extra','" + p[0] + "')", !!(v.extra && v.extra[p[0]])])));
@@ -35234,9 +35330,15 @@ function _suMoDesenha() {
 function suMoMonta() {
   const ehRea = _suMo.aba === 'rea', v = ehRea ? _suMo.rv : _suMo.v; if (!v || !Array.isArray(dietaData)) return;
   const ini = _suMoIni(_suMo.j);
-  const perfil = { tipo: ehRea ? 'reajuste' : 'inicial', fatores: _SUMO_FAT.map(p => p[0]).filter(k => v.fat[k]), sonoRuim: !!v.sonoRuim, ansiedadeAlta: !!v.ansiedadeAlta, estresseAlto: !!v.estresseAlto, dorArticular: !!v.dorArticular, artrose: !!v.artrose, libido: !!v.libido,
+  const bl = _suMoBlocoInfo(), g6 = (ini && ini.g668) || {};
+  const perfil = { tipo: ehRea ? 'reajuste' : 'inicial', reaSono: ehRea && !!v.reaSono, reaAns: ehRea && !!v.reaAns, reaEst: ehRea && !!v.reaEst, versao: ehRea ? (v.versao || 2) : 1, sexo: ini ? ini.sexo : '', pressao: !!g6.pressao, ciclo: bl.ciclo, hemogenin: bl.hemogenin, cafeinaPre: _suMoCafePre(ini), fatores: _SUMO_FAT.map(p => p[0]).filter(k => v.fat[k]), sonoRuim: !!v.sonoRuim, ansiedadeAlta: !!v.ansiedadeAlta, estresseAlto: !!v.estresseAlto, dorArticular: !!v.dorArticular, artrose: !!v.artrose, libido: !!v.libido,
     lactose: v.whey === 'iso', alergiaLeite: v.whey === 'veg', semWhey: v.whey === 'sem', wheyNaDieta: _suMoWheyNaDieta(), deficit: !!v.deficit, multi: v.multi || '', exame: Object.assign({}, v.exame), coq10: !!v.coq10, extras: GHSU.EXTRAS.map(p => p[0]).filter(k => v.extra && v.extra[k]), temExame: !!(ini && ini.temExame), jaUsa: ini ? ini.usa : '', remedios: ini ? ini.remedios : '' };
+  // v708: a escada sobe a partir da dose de ANTES deste reajuste: o primeiro Montar guarda as doses, os seguintes usam a mesma base
+  const rea = ehRea ? _suMoRea(_suMo.j) : null, chB = ehRea ? String(trainerSheetId || '') + '|' + ((rea && rea.data) || '') : '';
+  let bases = {}; try { bases = JSON.parse(localStorage.getItem('gh_su_escada_v1') || '{}') || {}; } catch (_) { bases = {}; }
+  if (ehRea && bases[chB]) perfil.base = bases[chB];
   let r; try { r = GHSU.monta(dietaData.map(x => (x || []).slice()), perfil); } catch (_) { r = null; }
+  if (r && ehRea && !bases[chB] && r.base) { try { bases[chB] = r.base; const ks = Object.keys(bases); if (ks.length > 300) ks.slice(0, ks.length - 300).forEach(k => delete bases[k]); localStorage.setItem('gh_su_escada_v1', JSON.stringify(bases)); } catch (_) {} }
   if (!r) { _suMo.pronto = { tit: 'Não montou', res: 'Não consegui montar a suplementação. Ajusta na mão pelo editor.', notas: [], ok: false }; _suMoDesenha(); _suMo.pronto = null; return; }
   const antes = dietaData.map(x => (x || []).slice());
   // as linhas que não são de suplemento voltam inteiras, com todas as colunas que já tinham
