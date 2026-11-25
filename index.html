@@ -31360,7 +31360,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v716';
+var APP_SHELL_V = 'metodo-gh-v717';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
@@ -33409,7 +33409,12 @@ function diMoFecha(tudo) { const o = document.getElementById('diMo'); if (o) o.h
 // treinador marcou em "O exame mostrou" no Montar dos suplementos deste aluno. Devolve o motivo, ou '' quando não liga.
 function _diMoLip(ini) {
   const mesmo = _suMo.j && _diMo.j && (_suMo.j === _diMo.j || (_suMo.j.sheetId === _diMo.j.sheetId && _suMo.j.linha === _diMo.j.linha));
-  const marcou = mesmo && [_suMo.v, _suMo.rv].some(v => v && v.exame && (v.exame.ldl || v.exame.trig));
+  const vs = mesmo ? [_suMo.v, _suMo.rv].filter(v => v && v.exame) : [];
+  const marcou = vs.some(v => v.exame.ldl || v.exame.trig);
+  // v717: o treinador mexeu nas marcas do exame nos suplementos = vale o que ele marcou; senão vale a leitura do exame
+  if (vs.some(v => v.exameMexido)) return marcou ? 'marcado no exame' : (ini && ini.lipAnam ? 'pela anamnese' : '');
+  const x = _exEntrada(_diMo.j);
+  if (x && x.st === 'ok' && x.r.lip) return 'pelo exame: ' + x.r.lipMot;
   return marcou ? 'marcado no exame' : (ini && ini.lipAnam ? 'pela anamnese' : '');
 }
 function diMoAba(a) { _diMo.aba = a; _diMo.pronto = null; _diMoDesenha(); }
@@ -33464,11 +33469,18 @@ function _diMoDesenha() {
       if (get) h += chips([['Secar forte', 'diMoKcal(-800,' + get + ')'], ['Secar', 'diMoKcal(-500,' + get + ')'], ['Secar leve', 'diMoKcal(-250,' + get + ')'], ['Manter', 'diMoKcal(0,' + get + ')'], ['Crescer', 'diMoKcal(200,' + get + ')']]);
       h += chips([['1,8 g por kg', 'diMoProt(1.8)'], ['2,0 g por kg', 'diMoProt(2)'], ['2,2 g por kg', 'diMoProt(2.2)']]);
       h += '<div class="di-mo-calc" id="diMoCalc"></div>';
+      const exL = ini.temExame ? _exPede(_diMo.j, () => { const o2 = document.getElementById('diMo'); if (o2 && !o2.hidden && !_diMo.pronto) { diMoGuarda(); _diMoDesenha(); } }) : null;   // v717: lê o exame anexado
       const lp = _diMoLip(ini), lip = !!lp;   // v715: automático, igual glúten e lactose
       const cm = _diMoComida(ini, lip);
       h += '<div class="di-mo-com"><b>Vai usar</b> ' + e(cm.protMain.join(', ')) + '. ' + e(cm.carbMain.join(', ')) + '. ' + (cm.frutas.length ? e(cm.frutas.map(x => x.nome).join(', ')) + '. ' : 'Sem fruta marcada. ') + (cm.gord ? e(cm.gord) + (cm.gordPadrao ? ' (ele não marcou gordura).' : '.') : 'Sem gordura.') + (cm.gordL ? ' ' + e(cm.gordL) + ' nas refeições leves' + (cm.gordLPadrao ? ' (pelo colesterol).' : '.') : '') + (cm.manteigaFora ? ' Manteiga saiu da frente.' : '') + '</div>';
       if (lip) h += '<div class="te-ent-aviso">Colesterol ou triglicérides alto (' + e(lp) + '): azeite no prato, castanha ou pasta de amendoim nas leves e cardio de 150 min na semana.</div>';
-      else if (ini.temExame) h += '<div class="te-ent-linha">Tem exame anexado. Se veio colesterol ou triglicérides alto, marca em "O exame mostrou" no Montar dos suplementos que a dieta segue junto.</div>';
+      else if (ini.temExame) {
+        h += '<div class="te-ent-linha">' + (!exL ? 'Tem exame anexado, mas sem o arquivo do Drive na resposta. Se veio colesterol ou triglicérides alto, marca em "O exame mostrou" no Montar dos suplementos que a dieta segue junto.'
+          : exL.st === 'lendo' ? 'Lendo o exame anexado\u2026'
+          : exL.st !== 'ok' ? 'Não consegui ler o exame agora. Se veio colesterol ou triglicérides alto, marca em "O exame mostrou" no Montar dos suplementos que a dieta segue junto.'
+          : (exL.r.valores && (exL.r.valores.ldl || exL.r.valores.trig || exL.r.valores.coltot || exL.r.valores.hdl)) ? 'Exame lido: colesterol e triglicérides dentro do corte.'
+          : 'Exame lido, mas sem colesterol nem triglicérides nele.' + (_exNaoLidos(exL) ? ' Tem arquivo que é foto ou PDF escaneado: confere esse.' : '')) + '</div>';
+      }
       if (ini.alergia) h += '<div class="te-ent-aviso">Alergia: ' + e(ini.alergia) + '</div>';
       if (agora) h += '<div class="te-ent-aviso">Esta dieta já tem refeições. Montar TROCA as refeições de agora pelas novas. Suplemento, protocolo, regra e orientação ficam.</div>';
       h += _diMoFdsCard();   // v697
@@ -35340,7 +35352,8 @@ const GHSU = (() => {
     // linha que ficou sem dose ou sem horário: o treinador completa
     saida.forEach(x => { if (!ehSupl(x) || sep(x)) return; if (!/\d+\s*(mg|g\b|mcg|ui|ml|c[áa]ps|caps|dose|colher|gota|comprimid|sache|scoop)/i.test(x.slice(1).join(' '))) notas.push('Linha sem dose: ' + x[1] + '. Completa antes de entregar.'); else if (!String(x[3]).trim() && !temSep) notas.push('Linha sem horário: ' + x[1] + '. Completa antes de entregar.'); });
     if (fora) notas.push('Tem ' + fora + (fora === 1 ? ' linha' : ' linhas') + ' de remédio, hormônio ou queima na suplementação: o Montar não mexe ' + (fora === 1 ? 'nela' : 'nelas') + '. Confere com o GH.');
-    if (P.temExame && !Object.keys(P.exame || {}).some(k => P.exame[k])) notas.push('Tem exame anexado: lê e marca em "O exame mostrou" o que veio alterado. O Montar não lê o arquivo.');
+    if (P.exameLido && P.exameLido.naoLidos) notas.push((P.exameLido.naoLidos === 1 ? '1 arquivo do exame é foto ou PDF escaneado' : P.exameLido.naoLidos + ' arquivos do exame são foto ou PDF escaneado') + ': o Montar não leu. Confere esses antes de entregar.');
+    else if (P.temExame && !P.exameLido && !Object.keys(P.exame || {}).some(k => P.exame[k])) notas.push('Tem exame anexado que o Montar não leu: abre e marca em "O exame mostrou" o que veio alterado.');
     else if (!rea && !P.temExame && !Object.keys(P.exame || {}).some(k => P.exame[k])) notas.push('Sem exame anexado: a corretiva saiu só pela anamnese. Vale pedir os exames.');
     if (P.jaUsa) notas.push('Na anamnese, o que já usa: ' + String(P.jaUsa).slice(0, 160) + '. Confere se algo repete ou precisa sair.');
     if (P.remedios) notas.push('Usa remédio: ' + String(P.remedios).slice(0, 160) + '. Confere interação antes de entregar.');
@@ -35360,6 +35373,49 @@ const GHSU = (() => {
 const _suMo = { car: false, erro: '', senha: false, j: null, v: null, rv: null, pronto: null, aba: '' };
 const _SUMO_FAT = [['digestao', 'Digestão'], ['humor', 'Humor'], ['foco', 'Foco'], ['imunidade', 'Imunidade'], ['pele', 'Pele, cabelo e unha']];
 const _SUMO_TEM = [['sonoRuim', 'Sono ruim'], ['ansiedadeAlta', 'Ansiedade alta'], ['estresseAlto', 'Estresse alto'], ['dorArticular', 'Dor articular'], ['artrose', 'Artrose ou tendinite em laudo'], ['libido', 'Queda de libido']];
+// v717 (GH 25/11, "a Entregas analisa os exames, o motor tbm deveria"): o Montar lê sozinho o exame de sangue anexado.
+// A Vercel (action=le_exame) baixa o PDF da anamnese, acha os valores pelo nome do marcador e devolve as marcas pelos cortes da skill.
+// Foto e PDF escaneado não têm texto: o treinador confere esses. Marca que o treinador mexer depois vale mais que a leitura.
+const _exLe = new Map();
+function _exIds(j) {
+  const fs = ((j && j.fichas) || []).filter(f => f && f.fonte === 'reajuste').concat(((j && j.fichas) || []).filter(f => f && f.fonte !== 'reajuste'));   // o mais novo primeiro
+  const ids = [];
+  fs.forEach(f => (f.respostas || []).forEach(y => { if (!/exame/.test(_teFiNorm(_teFiTxt(y.p)))) return; String(y.r == null ? '' : y.r).replace(/[-\w]{25,}/g, id => { if (ids.indexOf(id) < 0) ids.push(id); return id; }); }));
+  return ids.slice(0, 12);
+}
+function _exEntrada(j) { const ids = _exIds(j); return ids.length ? (_exLe.get(ids.join(',')) || null) : null; }
+function _exPede(j, depois) {
+  const ids = _exIds(j); if (!ids.length) return null;
+  const chave = ids.join(','); let x = _exLe.get(chave);
+  if (x) { if (x.st === 'lendo' && depois && x.cbs.indexOf(depois) < 0) x.cbs.push(depois); return x; }
+  const tok = localStorage.getItem('gh_trainer_token') || ''; if (!tok || typeof LOG_ENDPOINT === 'undefined') return null;
+  x = { st: 'lendo', r: null, cbs: depois ? [depois] : [] }; _exLe.set(chave, x);
+  const sexo = (typeof _suMoIni === 'function' ? ((_suMoIni(j) || {}).sexo || '') : '');
+  fetch(LOG_ENDPOINT + '?action=le_exame&token=' + encodeURIComponent(tok) + '&sexo=' + encodeURIComponent(sexo) + '&ids=' + chave + '&_=' + Date.now(), { cache: 'no-store' })
+    .then(r => r.json()).then(r => { if (!r || !r.ok) throw new Error('le_exame'); x.st = 'ok'; x.r = r; }).catch(() => { x.st = 'erro'; })
+    .then(() => { const cbs = x.cbs; x.cbs = []; cbs.forEach(f => { try { f(); } catch (_) {} }); });
+  return x;
+}
+// liga as marcas lidas na tela (uma vez só, e nunca por cima do que o treinador já tocou)
+function _exAplica(v, tipo, x) {
+  if (!v || !x || x.st !== 'ok' || v.exameMexido || v.exameAplicado) return;
+  v.exameAplicado = true; Object.assign(v.exame, (x.r && x.r[tipo]) || {});
+}
+const _EX_VER = { su: ['vitd', 'b12', 'ferritina', 'coltot', 'ldl', 'hdl', 'trig', 'a1c', 'glic', 'insulina', 'homa', 'zinco', 'folico', 'hemat', 'tgo', 'tgp', 'ggt'], hp: ['hemat', 'testo', 'e2', 'prolactina', 'dht', 'tgo', 'tgp', 'ggt'] };
+function _exNaoLidos(x) { return x && x.st === 'ok' ? (x.r.arquivos || []).filter(a => !a.lido).length : 0; }
+function _exResumo(x, tipo, e) {
+  if (!x) return '';
+  if (x.st === 'lendo') return '<div class="di-mo-dados ex-lido"><b>Exame anexado</b><br>Lendo o exame…</div>';
+  if (x.st !== 'ok') return '<div class="te-ent-aviso ex-lido">Não consegui ler o exame agora: abre o exame e marca em "O exame mostrou" o que veio alterado.</div>';
+  const r = x.r, V = r.valores || {}, br = n => String(n).replace('.', ',');
+  const lista = _EX_VER[tipo].filter(k => V[k]).map(k => V[k].nome + ' ' + (V[k].acima ? 'acima de ' : '') + br(V[k].v) + (V[k].un ? ' ' + V[k].un : ''));
+  const lidos = (r.arquivos || []).filter(a => a.lido).length, nao = _exNaoLidos(x);
+  let h = '<div class="di-mo-dados ex-lido"><b>Lido do exame</b><br>' + (lista.length ? e(lista.join(', ')) : (lidos ? 'Nenhum destes marcadores no exame.' : 'Nenhum arquivo deu pra ler.'));
+  if (tipo === 'hp' && r.mot && r.mot.e2pct) h += '<br>' + e('Estradiol em proporção: ' + r.mot.e2pct.replace(/^estradiol /, ''));
+  h += '<br>' + e(Object.keys(r[tipo] || {}).length ? 'Já veio marcado aqui em cima pelo exame. Toca pra corrigir.' : (lidos ? 'Nada passou do corte.' : '')) + '</div>';
+  if (nao) h += '<div class="te-ent-aviso ex-lido">' + nao + (nao === 1 ? ' arquivo do exame é foto ou PDF escaneado' : ' arquivos do exame são foto ou PDF escaneado') + ': o Montar não lê. Abre e marca o que veio alterado.</div>';
+  return h;
+}
 const _SUMO_EX = [['d3', 'Vitamina D baixa'], ['b12', 'B12 baixa'], ['ferritina', 'Ferritina baixa'], ['ldl', 'Colesterol alto'], ['trig', 'Triglicérides alto'], ['glicose', 'Glicada 5,7 ou mais'], ['glicJejum', 'Glicemia de jejum 100 a 125'], ['insulina', 'Insulina acima de 12'], ['homa', 'HOMA-IR acima de 2,5'], ['zinco', 'Zinco baixo'], ['folico', 'Ácido fólico baixo'], ['hemat', 'Hematócrito acima de 50'], ['figado', 'TGO, TGP ou GGT alto']];
 const _SUMO_WHEY = [['', 'Comum'], ['iso', 'Isolado (lactose)'], ['veg', 'Vegetal (alergia a leite)'], ['sem', 'Não compra']];
 const _SUMO_MULTI = [['', 'Não'], ['exame', 'Hipovitaminose no exame'], ['escritorio', 'Escritório sem sol'], ['desregrada', 'Alimentação desregrada']];
@@ -35449,7 +35505,7 @@ function _suMoCafePre(ini) {
 function suMoAba(a) { _suMo.aba = a; _suMo.pronto = null; _suMoDesenha(); }
 function suMoSet(k, val) {
   const v = _suMo.aba === 'rea' ? _suMo.rv : _suMo.v; if (!v) return;
-  if (k === 'fat') v.fat[val] = !v.fat[val]; else if (k === 'exame') v.exame[val] = !v.exame[val]; else if (k === 'extra') { if (!v.extra) v.extra = {}; v.extra[val] = !v.extra[val]; } else if (k === 'tem') { v[val] = !v[val]; if (val === 'artrose' && v.artrose) v.dorArticular = true; } else v[k] = val;
+  if (k === 'fat') v.fat[val] = !v.fat[val]; else if (k === 'exame') { v.exame[val] = !v.exame[val]; v.exameMexido = true; } else if (k === 'extra') { if (!v.extra) v.extra = {}; v.extra[val] = !v.extra[val]; } else if (k === 'tem') { v[val] = !v[val]; if (val === 'artrose' && v.artrose) v.dorArticular = true; } else v[k] = val;
   _suMoDesenha();
 }
 async function _suMoCarrega(fresh) {
@@ -35508,7 +35564,9 @@ function _suMoDesenha() {
   h += grupo('Também tem', _SUMO_TEM.map(p => [p[1], "suMoSet('tem','" + p[0] + "')", !!v[p[0]]]));
   h += grupo('Whey', _SUMO_WHEY.map(p => [p[1], "suMoSet('whey','" + p[0] + "')", v.whey === p[0]]));
   h += grupo('Em déficit e com gordura acima de 20%', [['Não', "suMoSet('deficit',false)", !v.deficit], ['Sim', "suMoSet('deficit',true)", !!v.deficit]]);
+  const exL = _exPede(_suMo.j, () => { const o2 = document.getElementById('suMo'); if (o2 && !o2.hidden && !_suMo.pronto) _suMoDesenha(); }); _exAplica(v, 'su', exL);
   h += grupo('O exame mostrou', _SUMO_EX.map(p => [p[1], "suMoSet('exame','" + p[0] + "')", !!v.exame[p[0]]]));
+  h += _exResumo(exL, 'su', e);
   if (ehRea) {
     // v708 (GH 25/11, "1a"): escada de dose. A versão vem da mestre (atual + 1) e o treinador corrige no toque
     h += grupo('Versão que está saindo', [[2, '2.0'], [3, '3.0'], [4, '4.0 ou mais']].map(p => [p[1], "suMoSet('versao'," + p[0] + ")", v.versao === p[0]]));
@@ -35524,7 +35582,7 @@ function _suMoDesenha() {
   h += '<div class="di-mo-dica su-mo-extra">Cada um entra com a dose e o horário mais usados nos protocolos já entregues. Depois é só ajustar na linha. Toca pra tirar o que não for o caso. O Dimpless vem marcado quando ela responde que a celulite incomoda; em anamnese antiga, sem essa pergunta, é no toque.</div>';
   const av = [];
   if (ini && ini.secar && !v.deficit) av.push('O objetivo dele é emagrecer. Se a gordura passa de 20%, marca o déficit aqui em cima que entra o Morosil.');
-  if (ini && ini.temExame && !_SUMO_EX.some(p => v.exame[p[0]])) av.push('Ele anexou exame de sangue. O Montar não lê o arquivo: abre o exame e marca em "O exame mostrou" o que veio alterado.');
+  if (ini && ini.temExame && !exL && !_SUMO_EX.some(p => v.exame[p[0]])) av.push('Ele anexou exame de sangue, mas a resposta não tem o arquivo do Drive: abre o exame e marca em "O exame mostrou" o que veio alterado.');
   if (ini && ini.libido && ini.horm) av.push('Marcou queda de libido e contratou o acompanhamento hormonal: essa conduta é com o GH.');
   if (_suMoGesta(ini) && (_suMoQueda(ini) || /saw ?palmetto/.test(_teFiNorm(ini.usa || '')))) av.push('A anamnese fala em gravidez ou em tentar engravidar: o Saw Palmetto não veio marcado. Confere com ela antes de pôr.');
   if (ini && ini.remedios) av.push('Usa remédio (' + ini.remedios + '). Confere interação antes de entregar.');
@@ -35542,7 +35600,8 @@ function suMoMonta() {
   const ini = _suMoIni(_suMo.j);
   const bl = _suMoBlocoInfo(), g6 = (ini && ini.g668) || {};
   const perfil = { tipo: ehRea ? 'reajuste' : 'inicial', reaSono: ehRea && !!v.reaSono, reaAns: ehRea && !!v.reaAns, reaEst: ehRea && !!v.reaEst, versao: ehRea ? (v.versao || 2) : 1, sexo: ini ? ini.sexo : '', pressao: !!g6.pressao, ciclo: bl.ciclo, hemogenin: bl.hemogenin, cafeinaPre: _suMoCafePre(ini), fatores: _SUMO_FAT.map(p => p[0]).filter(k => v.fat[k]), sonoRuim: !!v.sonoRuim, ansiedadeAlta: !!v.ansiedadeAlta, estresseAlto: !!v.estresseAlto, dorArticular: !!v.dorArticular, artrose: !!v.artrose, libido: !!v.libido,
-    lactose: v.whey === 'iso', alergiaLeite: v.whey === 'veg', semWhey: v.whey === 'sem', wheyNaDieta: _suMoWheyNaDieta(), deficit: !!v.deficit, multi: v.multi || '', exame: Object.assign({}, v.exame), coq10: !!v.coq10, extras: GHSU.EXTRAS.map(p => p[0]).filter(k => v.extra && v.extra[k]), temExame: !!(ini && ini.temExame), jaUsa: ini ? ini.usa : '', remedios: ini ? ini.remedios : '' };
+    lactose: v.whey === 'iso', alergiaLeite: v.whey === 'veg', semWhey: v.whey === 'sem', wheyNaDieta: _suMoWheyNaDieta(), deficit: !!v.deficit, multi: v.multi || '', exame: Object.assign({}, v.exame), coq10: !!v.coq10, extras: GHSU.EXTRAS.map(p => p[0]).filter(k => v.extra && v.extra[k]), temExame: !!(ini && ini.temExame), jaUsa: ini ? ini.usa : '', remedios: ini ? ini.remedios : '',
+      exameLido: (() => { const x = _exEntrada(_suMo.j); return x && x.st === 'ok' ? { lidos: (x.r.arquivos || []).filter(a => a.lido).length, naoLidos: _exNaoLidos(x) } : null; })() };
   // v708: a escada sobe a partir da dose de ANTES deste reajuste: o primeiro Montar guarda as doses, os seguintes usam a mesma base
   const rea = ehRea ? _suMoRea(_suMo.j) : null, chB = ehRea ? String(trainerSheetId || '') + '|' + ((rea && rea.data) || '') : '';
   let bases = {}; try { bases = JSON.parse(localStorage.getItem('gh_su_escada_v1') || '{}') || {}; } catch (_) { bases = {}; }
@@ -37331,7 +37390,7 @@ function _hpMoValores(ini) {
 function hpMoAba(a) { _hpMo.aba = a; _hpMo.pronto = null; _hpMoDesenha(); }
 function hpMoSet(k, val) {
   const v = _hpMo.v; if (!v) return;
-  if (k === 'exame') v.exame[val] = !v.exame[val];
+  if (k === 'exame') { v.exame[val] = !v.exame[val]; v.exameMexido = true; }
   else if (k === 'pept') { const i = v.objetivosPept.indexOf(val); if (i >= 0) v.objetivosPept.splice(i, 1); else v.objetivosPept.push(val); }
   else if (k === 'bool') v[val] = !v[val];
   else v[k] = val;
@@ -37458,7 +37517,9 @@ function _hpMoDesenha() {
           ['Celulite (102.2)', "hpMoSet('bool','celulite')", !!v.celulite]
         ] : [])
       ]);
+      const exL = _exPede(_hpMo.j, () => { const o2 = document.getElementById('hpMo'); if (o2 && !o2.hidden && !_hpMo.pronto) _hpMoDesenha(); }); _exAplica(v, 'hp', exL);
       h += grupo('O exame mostrou', _HPMO_EX.map(p => [p[1], "hpMoSet('exame','" + p[0] + "')", !!v.exame[p[0]]]));
+      h += _exResumo(exL, 'hp', e);
     }
     if (v.contratouPeptideos) {
       h += grupo('Objetivos de peptídeos (132)', _HPMO_PEPT.map(p => [p[1], "hpMoSet('pept','" + p[0] + "')", v.objetivosPept.includes(p[0])]));
