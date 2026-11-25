@@ -31492,7 +31492,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v718';
+var APP_SHELL_V = 'metodo-gh-v719';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
@@ -35533,7 +35533,7 @@ function _exAplica(v, tipo, x) {
   if (!v || !x || x.st !== 'ok' || v.exameMexido || v.exameAplicado) return;
   v.exameAplicado = true; Object.assign(v.exame, (x.r && x.r[tipo]) || {});
 }
-const _EX_VER = { su: ['vitd', 'b12', 'ferritina', 'coltot', 'ldl', 'hdl', 'trig', 'a1c', 'glic', 'insulina', 'homa', 'zinco', 'folico', 'hemat', 'tgo', 'tgp', 'ggt'], hp: ['hemat', 'testo', 'e2', 'prolactina', 'dht', 'tgo', 'tgp', 'ggt'] };
+const _EX_VER = { su: ['vitd', 'b12', 'ferritina', 'coltot', 'ldl', 'hdl', 'trig', 'a1c', 'glic', 'insulina', 'homa', 'zinco', 'folico', 'hemat', 'hemog', 'tgo', 'tgp', 'ggt', 'tsh'], hp: ['hemat', 'hemog', 'testo', 'e2', 'prolactina', 'dht', 'tgo', 'tgp', 'ggt', 'tsh'] };
 function _exNaoLidos(x) { return x && x.st === 'ok' ? (x.r.arquivos || []).filter(a => !a.lido).length : 0; }
 function _exResumo(x, tipo, e) {
   if (!x) return '';
@@ -35545,6 +35545,7 @@ function _exResumo(x, tipo, e) {
   let h = '<div class="di-mo-dados ex-lido"><b>Lido do exame</b><br>' + (lista.length ? e(lista.join(', ')) : (lidos ? 'Nenhum destes marcadores no exame.' : 'Nenhum arquivo deu pra ler.'));
   if (tipo === 'hp' && r.mot && r.mot.e2pct) h += '<br>' + e('Estradiol em proporção: ' + r.mot.e2pct.replace(/^estradiol /, ''));
   h += '<br>' + e(Object.keys(r[tipo] || {}).length ? 'Já veio marcado aqui em cima pelo exame. Toca pra corrigir.' : (lidos ? 'Nada passou do corte.' : '')) + '</div>';
+  (r.alertas || []).forEach(a => { h += '<div class="te-ent-aviso ex-lido">' + e(a) + '</div>'; });   // v719: o que a skill manda parar ou encaminhar
   if (nao) h += '<div class="te-ent-aviso ex-lido">' + nao + (nao === 1 ? ' arquivo do exame é foto ou PDF escaneado' : ' arquivos do exame são foto ou PDF escaneado') + ': o Montar não lê. Abre e marca o que veio alterado.</div>';
   return h;
 }
