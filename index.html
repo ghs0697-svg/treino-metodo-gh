@@ -1549,6 +1549,14 @@
   .esf-apchips { flex-wrap: wrap; gap: 6px; margin-top: 6px; }
   .esf-apchip { background: #101013; border: 1px solid #2c2c33; color: #cfcfd6; font-size: 11.5px; padding: 7px 9px; border-radius: 8px; cursor: pointer; }
   .esf-apchip.sel { background: #5a3b1a; color: #ffd9a0; border-color: #c98a3a; }
+  /* v713 (GH 25/11): Spot = o parceiro ajudou a completar alguma repetição. Uma caixinha por exercício, vai pra aba ESFORCO col I */
+  .spot-row { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; margin-top: 8px; padding: 6px 2px; min-height: 34px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .spot-cb { width: 20px; height: 20px; margin: 0; flex: none; accent-color: var(--gold, #D4AF6A); cursor: pointer; }
+  .spot-tx { font-size: 13px; font-weight: 600; color: var(--fg, #e8e8ee); }
+  .spot-row.on .spot-tx { color: var(--gold, #D4AF6A); }
+  .spot-sub { flex-basis: 100%; padding-left: 30px; font-size: 11.5px; line-height: 1.35; color: var(--fg-2, #9a9aa0); }
+  .exercise-card .spot-row { margin: 0; padding: 8px 14px 10px; border-top: 1px solid var(--glass-line, rgba(255,255,255,.08)); }
+  .exercise-card .spot-tx { font-size: 12.5px; }
   /* Anotação livre do aluno (ideia de aluno, 17/08): mesmo padrão discreto do toggle de aparelho */
   .esf-nototoggle { margin-top: 9px; background: transparent; border: none; color: #9a9aa0; font-size: 12px; cursor: pointer; padding: 4px 0; display: block; text-align: left; }
   .esf-nototoggle.has { color: var(--gold); }
@@ -10157,6 +10165,7 @@ const I18N_EN = {
   'Sobrou 1': '1 left', 'Sobrou 0: no limite': 'Did them all, nothing left',
   'Travei antes de terminar': 'Too heavy, failed before finishing',
   '⚠️ Problema no aparelho?': '⚠️ Machine problem?', 'Máquina ruim': 'Bad machine',
+  '🤝 Spot (fiz com ajuda)': '🤝 Spot (I had help)', 'Marca se um parceiro te ajudou a completar alguma repetição.': 'Tick it if a partner helped you finish any rep.',
   'Não sinto o músculo': "Can't feel the muscle", 'Carga estranha': 'Weight feels off',
   '🩹 Sentindo dor?': '🩹 Feeling pain?', '📝 Quer anotar como foi?': '📝 Add a note?',
   '📝 Ver a tua anotação': '📝 View your note',
@@ -12928,6 +12937,9 @@ function esfKey(d, e, w) { return `gh_esf_${STUDENT_ID}_d${d}_e${e}_w${w}`; }
 function loadEsf(d, e, w) { return localStorage.getItem(esfKey(d, e, w)) || ""; }
 function apfKey(d, e, w) { return `gh_apf_${STUDENT_ID}_d${d}_e${e}_w${w}`; }
 function loadApf(d, e, w) { return localStorage.getItem(apfKey(d, e, w)) || ""; }
+// v713 (GH 25/11): Spot (fiz com ajuda) por exercício e semana. 'sim' / 'nao' (desmarcou) / vazio (nunca mexeu).
+function spotKey(d, e, w) { return `gh_spot_${STUDENT_ID}_d${d}_e${e}_w${w}`; }
+function loadSpot(d, e, w) { try { return localStorage.getItem(spotKey(d, e, w)) === 'sim'; } catch (_) { return false; } }
 function saveEsf(d, e, w, esf, apf) {
   localStorage.setItem(esfKey(d, e, w), esf || '');
   localStorage.setItem(apfKey(d, e, w), apf || '');
@@ -13190,7 +13202,17 @@ function syncEsforcoToServer_(di, ei, w, esforco, aparelho) {
     aparelho: aparelho || '',
     ts: new Date().toISOString()
   };
-  _enviaComFila_('esforco', payload, p => `${p.di}|${p.ei}|${p.w}`);   // v591: na fila antes de tentar (app fechado no meio do envio nao perde)
+  _enviaComFila_('esforco', payload, _kEsfFila_);   // v591: na fila antes de tentar (app fechado no meio do envio nao perde)
+}
+// v713: a fila do esforço guarda o Spot em linha PRÓPRIA (esforço e aparelho vazios). A chave separa as duas, senão marcar o
+// Spot tirava da fila um esforço ainda não enviado do mesmo exercício (e vice-versa).
+function _kEsfFila_(p) { return `${p.di}|${p.ei}|${p.w}` + (p.spot ? '|spot' : ''); }
+function syncSpotToServer_(di, ei, w, marcado) {
+  if (!SHEET_ID || typeof LOG_ENDPOINT === 'undefined') return;
+  _enviaComFila_('esforco', {
+    type: 'esforco', sheetId: SHEET_ID, studentName: (document.getElementById('infoNome')?.textContent || '').trim(),
+    di: di, ei: ei, w: w, esforco: '', aparelho: '', spot: marcado ? 'sim' : 'nao', ts: new Date().toISOString()
+  }, _kEsfFila_);
 }
 
 // Espelha o syncEsforcoToServer_. Fire-and-forget + fila offline: o aluno anota na academia
@@ -17466,6 +17488,26 @@ function _progChipHtml(di, ei, nomeEx) {
 }
 const _ESF_OPTS = [['sobrou3', 'Sobrou 3 ou mais: fácil'], ['sobrou2', 'Sobrou 2'], ['sobrou1', 'Sobrou 1'], ['falha_ult', 'Sobrou 0: no limite'], ['falha_antes', 'Travei antes de terminar']];   // v532: mesma palavra da coluna
 const _ESF_AP = [['maquina_ruim', 'Máquina ruim'], ['nao_sinto', 'Não sinto o músculo'], ['carga_estranha', 'Carga estranha']];
+// v713 (GH 25/11): caixinha "Spot (fiz com ajuda)" em todo exercício. comExplica = linha de explicação embaixo (modo treino).
+function _spotHtml(di, key, comExplica) {
+  try {
+    const on = loadSpot(di, key, currentWeek);
+    return `<label class="spot-row${on ? ' on' : ''}" data-di="${di}" data-key="${key}" onclick="event.stopPropagation()">`
+      + `<input type="checkbox" class="spot-cb"${on ? ' checked' : ''} onchange="onSpot(${di},'${key}',this)" aria-label="Spot: fiz com ajuda do parceiro">`
+      + `<span class="spot-tx">🤝 Spot (fiz com ajuda)</span>`
+      + (comExplica ? `<span class="spot-sub">Marca se um parceiro te ajudou a completar alguma repetição.</span>` : '')
+      + `</label>`;
+  } catch (_) { return ''; }
+}
+function onSpot(di, key, cb) {
+  const on = !!(cb && cb.checked);
+  try { localStorage.setItem(spotKey(di, key, currentWeek), on ? 'sim' : 'nao'); } catch (_) {}
+  syncSpotToServer_(di, key, currentWeek, on);
+  document.querySelectorAll('.spot-row[data-di="' + di + '"][data-key="' + key + '"]').forEach(l => {
+    l.classList.toggle('on', on);
+    const c = l.querySelector('.spot-cb'); if (c && c !== cb) c.checked = on;
+  });
+}
 function _focusEsforcoBlock(di, key, compact) {
   const curE = loadEsf(di, key, currentWeek);
   const curA = (loadApf(di, key, currentWeek) || '').split(',').filter(Boolean);
@@ -17708,6 +17750,7 @@ function _focusRender() {
     if (ex.b.obs) html += `<div class="focus-obs">${_glossWrap(_dx(ex.b.obs))}</div>`;
     html += _focusCargaBlock(_focusDi, `${_focusIdx}b`, 'Carga B');
     html += _focusEsforcoBlock(_focusDi, String(_focusIdx));
+    html += _spotHtml(_focusDi, String(_focusIdx), true);   // v713
   } else {
     if (ex.warmup) html += `<span class="focus-badge">AQUECIMENTO</span>`;
     // respeita o substituto ativo (se o aluno trocou na lista, o player mostra o substituto) + botão próprio
@@ -17721,6 +17764,7 @@ function _focusRender() {
     if (!ex.warmup) { try { html += _progChipHtml(_focusDi, _focusIdx, _fact.name); } catch (_) {} }   // v548: a dica "hoje tenta X" também aparece no modo treino
     if (!ex.warmup) html += _focusCargaBlock(_focusDi, String(_focusIdx), 'Carga de hoje');
     if (!ex.warmup) html += _focusEsforcoBlock(_focusDi, String(_focusIdx));
+    if (!ex.warmup) html += _spotHtml(_focusDi, String(_focusIdx), true);   // v713
     // v548: "não consegui fazer" dentro do modo treino (aparelho quebrado, sem tempo). Antes só dava pra passar com a seta e o dia nunca fechava.
     if (!ex.warmup && !isDone(_focusDi, _focusIdx)) html += `<button type="button" class="focus-sub-btn" style="margin-top:12px;" onclick="focusSkip()">${isSkipped(_focusDi, _focusIdx) ? 'Desfazer o "não consegui fazer"' : 'Não consegui fazer este exercício'}</button>`;
   }
@@ -19281,6 +19325,7 @@ function _renderExercisesMiolo_() {
               <span class="carga-saved" id="sv-${di}-${ei}" style="text-align:left;">&#10003; salvo</span>
             </div>
             ${_focusEsforcoBlock(di, ei, true)}
+            ${_spotHtml(di, ei)}
           </div>`;
       }
 
@@ -19344,7 +19389,8 @@ function _renderExercisesMiolo_() {
           ${_forcaChipHtml(di, ei)}
           ${_estagChipHtml(di, ei)}
           ${_progChipHtml(di, ei, act.name)}
-          ${_focusEsforcoBlock(di, ei, true)}` : ''}
+          ${_focusEsforcoBlock(di, ei, true)}
+          ${_spotHtml(di, ei)}` : ''}
         </div>`;
     })(); } catch (_e) { try { console.error('[gh] card ' + di + '/' + ei, _e); } catch (_) {} return _cardFalhaHtml_(ex, di, ei); } }).join("");
     try { const _sa = _semanaAvisoHtml(di); if (_sa) div.insertAdjacentHTML('afterbegin', _sa); } catch (_) {}   // v470
@@ -31174,7 +31220,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v712';
+var APP_SHELL_V = 'metodo-gh-v713';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
@@ -38094,7 +38140,8 @@ async function renderEsforcoPanel() {
       const s = byKey[`${di}|${ei}`];
       const m = _esfMarker(s);
       const ultimo = (s && s.recent && s.recent.length) ? (_ESF_LABEL[s.recent[s.recent.length - 1].esforco] || '...') : '...';
-      const apTags = (s && s.aparelho) ? Object.entries(s.aparelho).map(([k, v]) => `<span class="esf-aptag">${_ESF_APLABEL[k] || k} ×${v}</span>`).join('') : '';
+      const apTags = ((s && s.aparelho) ? Object.entries(s.aparelho).map(([k, v]) => `<span class="esf-aptag">${_ESF_APLABEL[k] || k} ×${v}</span>`).join('') : '')
+        + ((s && s.spot) ? `<span class="esf-aptag">🤝 Spot em ${s.spot} semana${s.spot === 1 ? '' : 's'}</span>` : '');   // v713
       return `<div class="esf-row">
         <div class="esf-exname">${escTrainer(ex.name || '·')}</div>
         <div class="esf-meta">${(s && s.n) ? `último: <b>${ultimo}</b> · ${s.n}×` : 'sem marcação'} ${apTags}</div>
