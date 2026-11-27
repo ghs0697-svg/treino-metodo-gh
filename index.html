@@ -3863,6 +3863,8 @@
   .sim-foto > span { font-size:11.5px; color:#9a968e; text-align:center; padding:0 10px; line-height:1.4; }
   .sim-foto > span.toca { text-decoration:underline; cursor:pointer; }
   .sim-img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; transform-origin:50% 50%; pointer-events:none; -webkit-user-drag:none; }
+  .sim-img.gir { inset:auto; left:50%; top:50%; width:133.334%; height:75%; }   /* v725: foto girada de lado. A caixa é 3 por 4, a foto deitada ocupa 4 por 3 e gira no centro */
+  .sim-semang { font-size:10.5px; line-height:1.35; color:var(--fg-2, #8d8579); text-align:center; margin-top:5px; }
   .sim-grade { position:absolute; inset:0; pointer-events:none; z-index:1; background-image:linear-gradient(to right, rgba(255,255,255,.42) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.42) 1px, transparent 1px); background-size:10% 7.5%; }
   .sim-grade::after { content:''; position:absolute; top:0; bottom:0; left:50%; width:2px; margin-left:-1px; background:rgba(255,255,255,.9); box-shadow:0 0 0 1px rgba(0,0,0,.35); }
   .sim-l { position:absolute; touch-action:none; z-index:2; }
@@ -23913,12 +23915,16 @@ function _simMomentos(rounds, regs) {
   const out = [];
   (rounds || []).forEach((r, i) => { if (!r) return; const f = {}, it = [];
     SIM_ANG.forEach(a => { if (r.roles && r.roles[a] && r.roles[a].fid) { f[a] = it.length; it.push({ fid: String(r.roles[a].fid), tipo: 'a' }); } });
-    (r.outras || []).forEach(o => { if (o && o.fid) it.push({ fid: String(o.fid), tipo: 'a' }); });
-    if (it.length) out.push({ k: 'a|' + (r.folder || r.num || i), dt: String(r.date || ''), ms: Number(r.dateMs) || _simMs(r.date), de: 'avaliação', f: f, it: it }); });
+    const sa = [];   // v725: fotos sem ângulo marcado (pasta antiga), em ordem de nome
+    (r.outras || []).filter(o => o && o.fid).sort((x, y) => String(x.name || '').localeCompare(String(y.name || ''), 'pt', { numeric: true })).forEach(o => { sa.push(it.length); it.push({ fid: String(o.fid), tipo: 'a' }); });
+    if (it.length) out.push({ k: 'a|' + (r.folder || r.num || i), dt: String(r.date || ''), ms: Number(r.dateMs) || _simMs(r.date), de: 'avaliação', f: f, it: it, sa: sa }); });
   (regs || []).forEach(r => { if (!r) return; const f = {}, it = [];
     SIM_ANG.forEach(a => { if (r.fotos && r.fotos[a]) { f[a] = it.length; it.push({ fid: String(r.fotos[a]), tipo: 'r' }); } });
     if (it.length) out.push({ k: 'r|' + r.date, dt: String(r.date || '').replace(/-/g, '/'), ms: _simMs(r.date), de: 'registro', f: f, it: it }); });
   out.sort((a, b) => a.ms - b.ms);
+  // v725: avaliações com a mesma data (pastas antigas subidas no mesmo dia) ganham nome, senão os botões ficam iguais
+  const rep = {}; out.forEach(m => { if (m.de === 'avaliação') rep[m.dt] = (rep[m.dt] || 0) + 1; });
+  let na = 0; out.forEach(m => { if (m.de !== 'avaliação') return; na++; if (rep[m.dt] > 1) m.rot = 'Avaliação ' + na; });
   return out;
 }
 function _simSel() { return _sim.mom.filter(m => _sim.sel.indexOf(m.k) >= 0); }
@@ -23926,10 +23932,28 @@ function _simSel() { return _sim.mom.filter(m => _sim.sel.indexOf(m.k) >= 0); }
 function _simFotoDe(m) {
   const t = _sim.troca[m.k];
   if (t != null && m.it[t]) return m.it[t];
-  return m.f[_sim.ang] != null ? m.it[m.f[_sim.ang]] : null;
+  if (m.f[_sim.ang] != null) return m.it[m.f[_sim.ang]];
+  // v725: data sem foto deste ângulo mas com foto sem ângulo marcado: mostra uma delas em vez da caixa vazia.
+  // A ordem das fotos antigas não é fixa (conferido em aluno real), então é palpite: a pessoa troca na mão.
+  const sa = m.sa || [];
+  if (!sa.length) return null;
+  const k = SIM_ANG.filter(a => m.f[a] == null).indexOf(_sim.ang);
+  return m.it[sa[Math.min(Math.max(k, 0), sa.length - 1)]];
 }
-function _simAj(fid) { return _sim.aj[fid] || (_sim.aj[fid] = { z: 1, x: 0, y: 0 }); }
-function _simTransf(aj) { return 'translate(' + (aj.x * 100).toFixed(2) + '%,' + (aj.y * 100).toFixed(2) + '%) scale(' + aj.z + ')'; }
+// a foto que está na coluna foi escolhida por palpite (sem ângulo marcado)?
+function _simPalpite(m) { return m.f[_sim.ang] == null && !!(m.sa || []).length; }
+// v725: giro da foto (tem foto guardada deitada). Fica lembrado só neste aparelho, nada vai pro servidor.
+function _simGiraMapa() { try { const o = JSON.parse(localStorage.getItem('gh_sim_gira') || '{}'); return (o && typeof o === 'object') ? o : {}; } catch (_) { return {}; } }
+function _simGiraGuarda(fid, r) {
+  try { const o = _simGiraMapa(); delete o[fid]; if (r) o[fid] = r; const ks = Object.keys(o); while (ks.length > 300) delete o[ks.shift()]; localStorage.setItem('gh_sim_gira', JSON.stringify(o)); } catch (_) {}
+}
+function _simAj(fid) { return _sim.aj[fid] || (_sim.aj[fid] = { z: 1, x: 0, y: 0, r: (+_simGiraMapa()[fid] || 0) % 4 }); }
+function _simTransf(aj) {
+  const r = (aj.r || 0) % 4;
+  // de lado: a imagem tem a largura da altura da caixa (ver .sim-img.gir), então o passo do arrasto muda de medida
+  if (r % 2) return 'translate(-50%,-50%) translate(' + (aj.x * 75).toFixed(2) + '%,' + (aj.y * 133.333).toFixed(2) + '%) scale(' + aj.z + ') rotate(' + (r * 90) + 'deg)';
+  return 'translate(' + (aj.x * 100).toFixed(2) + '%,' + (aj.y * 100).toFixed(2) + '%) scale(' + aj.z + ')' + (r ? ' rotate(180deg)' : '');
+}
 // caixa da foto na medida do dedo (a página pode estar com a letra aumentada, que é zoom)
 function _simCaixa(el) {
   const r = el.getBoundingClientRect(); let fz = 1;
@@ -23974,7 +23998,7 @@ function simDeNovo() { const sid = _sim.sid; _sim.estado = ''; simAbre(sid); }
 
 function _simColHtml(m, i) {
   const e = escapeFotosTxt, f = _simFotoDe(m);
-  let h = '<div class="sim-col"><div class="sim-data">' + e(m.dt || 'sem data') + '</div>';
+  let h = '<div class="sim-col"><div class="sim-data">' + e(m.rot || m.dt || 'sem data') + '</div>';
   if (!f) {
     h += '<div class="sim-foto"><span>Sem foto de ' + SIM_ANG_NOME[_sim.ang].toLowerCase() + ' nesta data</span></div>';
     h += '<div class="sim-aj">' + (m.it.length ? '<button type="button" class="sim-troca" onclick="simTroca(' + i + ')">Ver outra foto desta data</button>' : '') + '</div>';
@@ -23982,13 +24006,15 @@ function _simColHtml(m, i) {
   }
   const aj = _simAj(f.fid), src = _sim.img[f.fid];
   h += '<div class="sim-foto' + (aj.z > 1 ? ' zoom' : '') + '" data-fid="' + e(f.fid) + '">'
-    + (src && src !== 'x' ? '<img class="sim-img" src="' + src + '" alt="" draggable="false" onerror="simImgErro(' + i + ')" style="transform:' + _simTransf(aj) + '">'
+    + (src && src !== 'x' ? '<img class="sim-img' + ((aj.r || 0) % 2 ? ' gir' : '') + '" src="' + src + '" alt="" draggable="false" onerror="simImgErro(' + i + ')" style="transform:' + _simTransf(aj) + '">'
       : (src === 'x' ? '<span class="toca" onclick="simFotoDeNovo(' + i + ')">Não consegui abrir esta foto. Toca pra tentar de novo.</span>' : '<span>carregando…</span>'))
     + (_sim.grade ? '<div class="sim-grade"></div>' : '')
     + (_sim.linhas[f.fid] || []).map((l, j) => '<div class="sim-l ' + (l.t === 'h' ? 'h' : 'v') + '" data-i="' + j + '" style="' + (l.t === 'h' ? 'top' : 'left') + ':' + (l.p * 100).toFixed(2) + '%"></div>').join('')
     + '</div>';
   h += '<div class="sim-aj"><button type="button" onclick="simZoom(' + i + ',-1)" aria-label="Afastar a foto">−</button><button type="button" class="sim-pc" onclick="simZoom(' + i + ',0)" aria-label="Voltar pro tamanho inteiro">' + Math.round(aj.z * 100) + '%</button><button type="button" onclick="simZoom(' + i + ',1)" aria-label="Aproximar a foto">+</button>'
+    + '<button type="button" class="sim-troca" onclick="simGira(' + i + ')" aria-label="Girar a foto">Girar</button>'
     + (m.it.length > 1 ? '<button type="button" class="sim-troca" onclick="simTroca(' + i + ')">Trocar foto</button>' : '') + '</div>';
+  if (_simPalpite(m)) h += '<div class="sim-semang">Foto sem ângulo marcado.' + (m.it.length > 1 ? ' Se não for a de ' + SIM_ANG_NOME[_sim.ang].toLowerCase() + ', toca em Trocar foto.' : '') + '</div>';
   return h + '</div>';
 }
 
@@ -24001,10 +24027,10 @@ function _simDesenha() {
   const pal0 = document.getElementById('simPalco'), sx = pal0 ? pal0.scrollLeft : 0, sy = c.scrollTop;
   const sel = _simSel(), temLinha = sel.some(m => { const f = _simFotoDe(m); return f && (_sim.linhas[f.fid] || []).length; });
   let h = '<div class="sim-rot">Ângulo</div><div class="sim-chips">' + SIM_ANG.map(a => '<button type="button" class="sim-chip' + (_sim.ang === a ? ' on' : '') + '" onclick="simAng(\'' + a + '\')">' + SIM_ANG_NOME[a] + '</button>').join('') + '</div>';
-  h += '<div class="sim-rot">Datas<span>escolhe até ' + SIM_MAX + '</span></div><div class="sim-chips">' + _sim.mom.map((m, i) => '<button type="button" class="sim-chip' + (_sim.sel.indexOf(m.k) >= 0 ? ' on' : '') + '" onclick="simData(' + i + ')">' + e(m.dt || 'sem data') + '<small>' + m.de + '</small></button>').join('') + '</div>';
+  h += '<div class="sim-rot">Datas<span>escolhe até ' + SIM_MAX + '</span></div><div class="sim-chips">' + _sim.mom.map((m, i) => '<button type="button" class="sim-chip' + (_sim.sel.indexOf(m.k) >= 0 ? ' on' : '') + '" onclick="simData(' + i + ')">' + e(m.rot || m.dt || 'sem data') + '<small>' + (m.rot ? e(m.dt) : m.de) + '</small></button>').join('') + '</div>';
   h += '<div class="sim-ferr"><button type="button" class="sim-bt' + (_sim.grade ? ' on' : '') + '" onclick="simGrade()">Grade</button><button type="button" class="sim-bt" onclick="simLinha(\'h\')">+ Linha deitada</button><button type="button" class="sim-bt" onclick="simLinha(\'v\')">+ Linha em pé</button>'
     + (temLinha ? '<button type="button" class="sim-bt" onclick="simLimpa()">Limpar linhas</button>' : '') + '</div>';
-  h += '<p class="sim-dica">Arrasta a linha até o ombro, o quadril ou o joelho. Pra tirar uma linha, arrasta ela pra fora da foto. Com a foto aproximada, arrasta a foto pra alinhar.</p>';
+  h += '<p class="sim-dica">Arrasta a linha até o ombro, o quadril ou o joelho. Pra tirar uma linha, arrasta ela pra fora da foto. Com a foto aproximada, arrasta a foto pra alinhar. Foto deitada: toca em Girar.</p>';
   h += sel.length ? '<div class="sim-palco n' + sel.length + '" id="simPalco">' + sel.map((m, i) => _simColHtml(m, i)).join('') + '</div>' : '<div class="sim-aviso">Escolhe uma data aí em cima.</div>';
   h += '<p class="sim-nota">As linhas ajudam a comparar, não valem como laudo de postura. Foto torta ou tirada de outra distância muda o desenho: tira sempre no mesmo lugar, com o celular reto e na altura do umbigo.</p>';
   c.innerHTML = h;
@@ -24063,8 +24089,15 @@ function simZoom(i, d) {
 // passa pela próxima foto da mesma data (serve pra data que só tem foto sem ângulo marcado)
 function simTroca(i) {
   const m = _simSel()[i]; if (!m || !m.it.length) return;
-  const at = _sim.troca[m.k] != null ? _sim.troca[m.k] : (m.f[_sim.ang] != null ? m.f[_sim.ang] : -1);
+  const at = m.it.indexOf(_simFotoDe(m));   // v725: a que está na tela, mesmo quando veio do palpite
   _sim.troca[m.k] = (at + 1) % m.it.length;
+  _simDesenha();
+}
+function simGira(i) {
+  const m = _simSel()[i], f = m && _simFotoDe(m); if (!f) return;
+  const aj = _simAj(f.fid);
+  aj.r = ((aj.r || 0) + 1) % 4; aj.x = 0; aj.y = 0;
+  _simGiraGuarda(f.fid, aj.r);
   _simDesenha();
 }
 function simFotoDeNovo(i) { const m = _simSel()[i], f = m && _simFotoDe(m); if (!f) return; delete _sim.img[f.fid]; try { delete _rsImgCache[f.fid]; delete _cmpState.imgCache[f.fid]; } catch (_) {} _simDesenha(); }
@@ -31839,7 +31872,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v724';
+var APP_SHELL_V = 'metodo-gh-v725';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
