@@ -31492,7 +31492,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v719';
+var APP_SHELL_V = 'metodo-gh-v720';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
@@ -33977,7 +33977,7 @@ const GHTR = (() => {
 
   // ── vagas: cada sigla vira o primeiro exercício da lista que o perfil permite ──
   function VAGAS(P) {
-    const o = P.dor.ombro, l = P.dor.lombar, c = P.dor.cotovelo;
+    const o = P.dor.ombro, l = P.dor.lombar, c = P.dor.cotovelo, j = P.dor.joelho;
     return {
       cruI: ['Crucifixo Inclinado', 'Crucifixo Inclinado no Cross'], cruIx: ['Crucifixo Inclinado no Cross', 'Crucifixo Inclinado'],
       supI: o ? ['Supino Inclinado na Máquina', 'Supino Inclinado com Halteres'] : ['Supino Inclinado com Halteres', 'Supino Inclinado na Máquina'],
@@ -34004,7 +34004,7 @@ const GHTR = (() => {
       panS: ['Panturrilha Sentado'], panP: ['Panturrilha em Pé', 'Panturrilha no Leg 45º'],
       hack: l ? ['Agachamento Hack'] : ['Agachamento Hack', 'Agachamento Smith', 'Agachamento Livre'],
       agL: l ? ['Agachamento Hack'] : ['Agachamento Smith', 'Agachamento Livre', 'Agachamento Hack'],
-      leg: ['Leg Press 45º'], legU: ['Leg Press 45º Unilateral', 'Búlgaro'], bul: ['Búlgaro', 'Leg Press 45º Unilateral'], bulF: l ? ['Búlgaro'] : ['Búlgaro', 'Afundo Smith'], ext: ['Cadeira Extensora'],
+      leg: j ? ['Leg Press 45º Unilateral'] : ['Leg Press 45º'], legU: ['Leg Press 45º Unilateral', 'Búlgaro'], bul: ['Búlgaro', 'Leg Press 45º Unilateral'], bulF: l ? ['Búlgaro'] : ['Búlgaro', 'Afundo Smith'], ext: ['Cadeira Extensora'],
       mesa: ['Mesa Flexora', 'Cadeira Flexora'], cadF: ['Cadeira Flexora', 'Mesa Flexora'], fleU: ['Flexora Unilateral em Pé', 'Cadeira Flexora'],
       sti: l ? ['Stiff no Hiperextensor'] : ['Stiff', 'Stiff no Hiperextensor'],
       abdu: ['Cadeira Abdutora'], adu: ['Cadeira Adutora'], abdX: ['Abdução no Cross', 'Cadeira Abdutora'],
@@ -34309,6 +34309,7 @@ const GHTR = (() => {
   const COSTAS_RE = /REMADA|PUXADA|PULLDOWN|PULLOVER|SERROTE/, FORA_TETO = /ALONGAMENT|MOBILIDAD|MANGUITO/;
   function tetoDe(P) { const t = String(P.tempo || ''); return (/40|45|menos de 50/i.test(t) && !/60|90/.test(t)) ? 6 : (P.freq === 3 ? 8 : 7); }
 
+  const FRANCES = 'Tríceps Francês no Cross';
   function montaSemana(P, des) {
     const V = VAGAS(P), ab = ABRE(P), teto = tetoDe(P), curto = teto === 6;
     const W = { P, dias: [], usados: new Map(), notas: [], split: des[0] };
@@ -34335,15 +34336,27 @@ const GHTR = (() => {
       d.nTrab = d.itens.length - (abre !== 'nada' ? 1 : 0);
       W.dias.push(d);
     });
+    // v720 (GH 27/11): o Tríceps Francês é prioridade. Semana com tríceps e sem francês troca um tríceps por ele:
+    // o testa primeiro (mesmo padrão, cotovelo acima do tronco), senão o último pulley. Não abre vaga nova.
+    const tri = []; W.dias.forEach(d => d.itens.forEach((n, i) => { if (/TRICEPS/.test(nrm(n))) tri.push({ d, i, n }); }));
+    if (tri.length && !tri.some(x => /FRANCES/.test(nrm(x.n)))) {
+      if (!EX[FRANCES] || P.veto.some(re => re.test(FRANCES))) W.notas.push('O Tríceps Francês é prioridade do método e ficou fora desta semana porque está na lista do que o aluno não faz. Confere antes de entregar.');
+      else {
+        const alvo = tri.find(x => /TESTA/.test(nrm(x.n))) || tri[tri.length - 1];
+        const q = W.usados.get(alvo.n) || 0; if (q > 1) W.usados.set(alvo.n, q - 1); else W.usados.delete(alvo.n);
+        alvo.d.itens[alvo.i] = FRANCES; W.usados.set(FRANCES, 1);
+      }
+    }
     return W;
   }
 
-  function restricaoDe(P) {
+  function restricaoDe(P, W) {
     const f = [];
     if (P.dor.lombar) f.push('Como tu marcou dor na lombar, o agachamento vai no Hack, que tem encosto, e o stiff vai no banco de lombar, com a coluna reta do começo ao fim.');
     if (P.dor.ombro) f.push('Como tu marcou dor no ombro, o que empurra vai na máquina e a elevação frontal vai na polia, que pesam menos na articulação.');
     if (P.dor.cotovelo) f.push('Como tu marcou dor no cotovelo, as puxadas e as roscas vão com a palma pra cima, que poupa a articulação.');
-    if (P.dor.joelho) f.push('Como tu marcou dor no joelho, desce só até onde não dói e sobe a carga com calma. Doeu de verdade, para e me avisa.');
+    const legUni = !!(W && W.dias.some(d => d.itens.some(n => /LEG PRESS 45 UNILATERAL/.test(chave(n)))));
+    if (P.dor.joelho) f.push('Como tu marcou dor no joelho, ' + (legUni ? 'o leg press vai com uma perna de cada vez, que pede menos peso. Nos exercícios de perna, ' : '') + 'desce só até onde não dói e sobe a carga com calma. Doeu de verdade, para e me avisa.');
     return f.join(' ');
   }
   const PRI_ROT = { peito: 'peito', costas: 'costas', ombro: 'ombros', quad: 'quadríceps', braco: 'braços', posterior: 'posterior de coxa', gluteo: 'glúteos' };
@@ -34366,7 +34379,7 @@ const GHTR = (() => {
     P.dor = P.dor || {}; P.veto = P.veto || [];
     P.menor = P.idade > 0 && P.idade < 18; if (P.menor) P.nivel = 'Iniciante';
     P.niv = nivelDe(P.nivel); P.pri = priDe(P.prioridade);
-    if (!P.restricao) P.restricao = restricaoDe(P);
+    const semRestricao = !P.restricao;
     if (!(P.freq >= 3 && P.freq <= 6)) return { erro: 'Por enquanto o Montar faz de 3 a 6 treinos na semana. Com ' + (P.freq || 'essa') + ' frequência, monta na mão.' };
     P.prefK = prefDe(P.pref);
     let des = null, notaPref = '';
@@ -34377,6 +34390,7 @@ const GHTR = (() => {
     if (!des) des = P.sexo === 'M' ? desenhoHomem(P.freq, P.pri, tetoDe(P) === 6) : desenhoMulher(P.freq, P.pri);
     if (!des) return { erro: 'Homem com prioridade em glúteo em 4 treinos não fecha nas regras: o glúteo cairia em dias seguidos. Esse eu deixo pra tu montar na mão.' };
     const W = montaSemana(P, des);
+    if (semRestricao) P.restricao = restricaoDe(P, W);
     const ele = P.sexo === 'M' ? 'Ele' : 'Ela';
     if (P.prefK !== 'C' && P.sexo !== 'M') notaPref = 'Ela marcou que gosta de treinar com ' + PREF_TXT[P.prefK] + '. Pra mulher o Montar usa o desenho feminino do método, com inferiores abrindo a semana. Se quiser outro formato, monta na mão.';
     else if (P.prefK === 'A') notaPref = proprio ? 'Ele pediu um a dois músculos por dia: a semana saiu nesse formato, com um segundo estímulo dos músculos grandes e de braço em outro dia.'
@@ -34544,7 +34558,7 @@ const GHTR = (() => {
     ombro: /^SUPINO RETO$|DESENVOLVIMENTO COM HALTERES|ELEVACAO FRONTAL NEUTRA/,
     cotovelo: /REMADA CURVADA PRONADA|REMADA PRONADA|REMADA UNILATERAL|PUXADA ALTA PRONADA|ROSCA DIRETA COM BARRA W/,
   };
-  const podeEntrar = (P, n, ult) => { const u = chave(n); return EX[n] && !(P.dor.lombar && NAO_ENTRA.lombar.test(u)) && !(P.dor.ombro && NAO_ENTRA.ombro.test(u)) && !(P.dor.cotovelo && NAO_ENTRA.cotovelo.test(u)) && !(P.sexo === 'M' && /PELVICA 2D|AFUNDO|ABDUCAO NO CROSS|COICE|ABDUTORA EM PE/.test(u)) && !(/FLEXORA LIVRE/.test(u) && (P.niv !== 'ava' || P.dor.joelho)) && !(P.sexo !== 'M' && !ult && /LEG PRESS 45 UNILATERAL/.test(u)) && !(!P.dor.cotovelo && /REMADA BAIXA SUPINADA/.test(u)) && !P.veto.some(re => re.test(n)); };
+  const podeEntrar = (P, n, ult) => { const u = chave(n); return EX[n] && !(P.dor.lombar && NAO_ENTRA.lombar.test(u)) && !(P.dor.ombro && NAO_ENTRA.ombro.test(u)) && !(P.dor.cotovelo && NAO_ENTRA.cotovelo.test(u)) && !(P.sexo === 'M' && /PELVICA 2D|AFUNDO|ABDUCAO NO CROSS|COICE|ABDUTORA EM PE/.test(u)) && !(/FLEXORA LIVRE/.test(u) && (P.niv !== 'ava' || P.dor.joelho)) && !(P.sexo !== 'M' && !ult && !P.dor.joelho && /LEG PRESS 45 UNILATERAL/.test(u)) && !(P.dor.joelho && u === 'LEG PRESS 45') && !(!P.dor.cotovelo && /REMADA BAIXA SUPINADA/.test(u)) && !P.veto.some(re => re.test(n)); };
   const ehPreparo = r => String((r && r[7]) || '').toLowerCase().trim() === 'sim' || /ALONGAMENT|MOBILIDAD|MANGUITO|DESCOMPRESS|AQUECIMENTO/.test(chave(r && r[1]));
   const GIRA_ANCORA = { 3: 1, 7: 1, 9: 1 };
   const FASE = { 2: 'Consolidação', 3: 'Rotação', 4: 'Reconstrução de força', 5: 'Intensificação', 6: 'Consolidação', 7: 'Volta ao básico', 8: 'Consolidação', 9: 'Rotação' };
@@ -34749,6 +34763,8 @@ const GHTR = (() => {
       if (!roda) return false;
       if (roda === 'flexora') return !(semanaVelha.has('MESA FLEXORA') && semanaVelha.has('CADEIRA FLEXORA'));
       if (roda === 'lombar' && /HIPEREXTENS/.test(chave(nome)) && !temStiff) return false;
+      if (/TRICEPS FRANCES/.test(chave(nome))) return false;                          // v720: o francês é prioridade, não sai da semana
+      if (P.dor.joelho && /LEG PRESS 45 UNILATERAL/.test(chave(nome))) return false;   // v720: com joelho, o leg press segue uma perna por vez
       return !SO_DE_DIA[roda];
     };
     // posição dentro do dia: vale pro giro e pra troca entre dias. ns = nomes do dia já com o candidato no lugar i
@@ -34785,6 +34801,8 @@ const GHTR = (() => {
       d.linhas.forEach((r, i) => {
         if (ehPreparo(r)) return;
         const ehAnc = anc.indexOf(r) >= 0, roda = rodaDe(r[1]);
+        // v720 (GH 27/11): joelho com problema troca o leg press bilateral pelo unilateral, mesmo sendo o pesado do dia
+        if (P.dor.joelho && chave(r[1]) === 'LEG PRESS 45' && !nomes().some((x, k) => k !== i && /LEG PRESS 45 UNILATERAL/.test(x)) && !P.veto.some(re => re.test('Leg Press 45º Unilateral'))) { nova[i] = linha(P, d.n, 'Leg Press 45º Unilateral'); d.mud[i] = true; return; }
         const limpa = () => { const x = r.slice(); x[5] = String(x[5] || '').replace(MINHA_OBS, ''); x[3] = repsLimpa(x[2], x[3], P.niv); return x; };
         if (ehAnc && !gira) { d.fica[i] = true; nova[i] = limpa(); return; }
         const novo = giraNoLugar(roda, r[1]) ? escolhe(roda, r[1], i) : null;
@@ -34796,6 +34814,14 @@ const GHTR = (() => {
       trab.forEach(r => semana.add(chave(r[1])));
       ontem = new Set(trab.map(famNome));
     });
+    // v720 (GH 27/11): semana com tríceps e sem Tríceps Francês troca um tríceps por ele: o testa primeiro, senão o último pulley
+    {
+      const tri = []; T.dias.forEach(d => d.linhas.forEach((r, i) => { if (!ehPreparo(r) && /TRICEPS/.test(chave(r[1]))) tri.push({ d, i, u: chave(r[1]) }); }));
+      if (tri.length && !tri.some(x => /FRANCES/.test(x.u))) {
+        if (!EX[FRANCES] || P.veto.some(re => re.test(FRANCES))) notas.push('O Tríceps Francês é prioridade do método e ficou fora desta semana porque está na lista do que o aluno não faz. Confere antes de entregar.');
+        else { const alvo = tri.find(x => /TESTA/.test(x.u)) || tri[tri.length - 1]; alvo.d.linhas[alvo.i] = linha(P, alvo.d.n, FRANCES); alvo.d.mud[alvo.i] = true; alvo.d.fica[alvo.i] = false; semana.add(chave(FRANCES)); }
+      }
+    }
     // troca entre dias: o exercício de um dia vai pro outro e vice-versa. A semana fica a mesma (nenhuma regra de semana se perde)
     // e cada dia ganha um exercício que não tinha. Só entra onde o dia ainda mudou menos da metade.
     const funcTroca = n => { const k = rodaDe(n); return k === 'flex2' ? 'flexora' : k === 'abd_polia' ? 'abducao' : (!k && /^PANTURRILHA (EM PE|NO LEG|SENTAD)/.test(chave(n))) ? 'pant' : k; };
@@ -34960,6 +34986,7 @@ function _trMoIni(j) {
     const prox = resp[k + 1], t = prox && /resposta anterior|se sim|qual|onde|explique/.test(N(_teFiTxt(prox.p))) ? _trMoLimpa(prox.r) : '';
     limites.push(rot + (t ? ': ' + t : ' (marcou sim e não escreveu qual)'));
   });
+  if (limites.some(t => /joelh|menisc|patel|condromal|\blca\b|\blcp\b|cruzado/i.test(t))) dor.joelho = true;   // v720: joelho declarado em cirurgia, lesão ou limitação conta igual à dor
   const nota = teste => { const y = resp.find(z => { const q = N(_teFiTxt(z.p)); return teste(q) && /^[1-5]$/.test(String(z.r == null ? '' : z.r).trim()); }); return y ? +String(y.r).trim() : null; };
   return { f, sexo, idade, freq, freqTxt, tempoTxt, curto, nivel, nivelTxt, pri, priTxt, priFora, pref, prefTxt, dor, limites, objTxt: _trMoLimpa(R(/objetivo principal/)), sono: nota(q => /\bsono\b/.test(q) && !/hora|quant/.test(q)), estresse: nota(q => /nivel de estresse/.test(q)) };
 }
@@ -35116,7 +35143,8 @@ function _trMoDesenha() {
   }
   if (ini && ini.idade && ini.idade < 18) av.push('Menor de 18 anos: sai como iniciante, parando com 2 a 3 repetições no tanque.');
   (ini ? ini.limites : []).forEach(t => av.push(t + '. O Montar não lê texto livre: depois de montar, confere e troca na mão o que bater nisso.'));
-  if (v.dor.joelho) av.push('Dor no joelho: o Montar mantém os exercícios e escreve o aviso de amplitude. Se for lesão de verdade, troca o agachamento e o búlgaro na mão.');
+  if (v.dor.joelho) av.push('Dor no joelho: o leg press sai com uma perna de cada vez, que pega menos peso, e o Montar escreve o aviso de amplitude. Se for lesão de verdade, troca o agachamento e o búlgaro na mão.');
+  if (v.dor.cotovelo) av.push('Cotovelo: o Tríceps Francês fica na semana, porque é prioridade do método. Se a dor é justo nele, troca na mão.');
   if (v.sexo === 'M' && v.freq === 4 && v.pri === 'gluteo') av.push('Homem com prioridade em glúteo em 4 treinos não fecha nas regras. Escolhe outra prioridade ou monta esse na mão.');
   if (_trMoTemTreino()) av.push('Este treino já tem exercícios. Montar TROCA todos pelos novos e reescreve as orientações do topo. O link do aluno fica.');
   h += av.map(t => '<div class="te-ent-aviso">' + e(t) + '</div>').join('');
