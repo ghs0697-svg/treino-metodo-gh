@@ -3266,6 +3266,7 @@
   }
   .diet-food-name { color: var(--white); font-size: 13px; font-weight: 500; }
   .diet-food-qty { color: var(--gold); font-size: 12px; font-weight: 600; white-space: nowrap; margin-left: 8px; }
+  .diet-food-qty-l { white-space: normal; text-align: right; max-width: 62%; }
   .diet-food-obs { color: var(--muted); font-size: 11px; font-style: italic; margin-top: 2px; }
   /* linha de alternativa inline (op no meio da refeição): troca equivalente, tom de apoio */
   .diet-food-alt { background: rgba(212,175,55,.04); }
@@ -28829,12 +28830,12 @@ function renderFoodItem(a) {
   if (a.alt) {
     // linha de alternativa inline ("op" no meio da refeição): troca equivalente, não item novo
     return `<div class="diet-food-item diet-food-alt">
-      <div class="diet-food-main"><span class="diet-food-name">&#128260; ${_dx(a.nome)}</span>${a.qtd ? `<span class="diet-food-qty">${_dx(a.qtd)}</span>` : ''}</div>
+      <div class="diet-food-main"><span class="diet-food-name">&#128260; ${_dx(a.nome)}</span>${a.qtd ? `<span class="diet-food-qty${String(a.qtd).length > 24 ? ' diet-food-qty-l' : ''}">${_dx(a.qtd)}</span>` : ''}</div>
       ${a.obs ? `<div class="diet-food-obs">${_dx(a.obs)}</div>` : ''}
     </div>`;
   }
   return `<div class="diet-food-item">
-    <div class="diet-food-main"><span class="diet-food-name">${_dx(a.nome)}</span>${a.qtd ? `<span class="diet-food-qty">${_dx(a.qtd)}</span>` : ''}</div>
+    <div class="diet-food-main"><span class="diet-food-name">${_dx(a.nome)}</span>${a.qtd ? `<span class="diet-food-qty${String(a.qtd).length > 24 ? ' diet-food-qty-l' : ''}">${_dx(a.qtd)}</span>` : ''}</div>
     ${a.obs ? `<div class="diet-food-obs">${_dx(a.obs)}</div>` : ''}
   </div>`;
 }
@@ -31492,7 +31493,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v721';
+var APP_SHELL_V = 'metodo-gh-v722';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
@@ -33120,7 +33121,10 @@ function _diMoIni(j) {
   // v714 (GH 25/11): colesterol ou triglicérides na anamnese (sintomas, problema de saúde ou o que ele escreveu do exame) liga sozinho a gordura boa
   const lipAnam = (f.respostas || []).some(y => /sintomas|problema de saude|exames de sangue|exame/.test(N(_teFiTxt(y.p))) && /colesterol|triglic|\bldl\b/.test(N(String(y.r == null ? '' : y.r))) && !_teFiNeg(y.r));
   const temExame = (f.respostas || []).some(y => /exames de sangue/.test(N(_teFiTxt(y.p))) && String(y.r == null ? '' : y.r).trim() && !_teFiNeg(y.r));
-  return { f, lipAnam, temExame, peso, alt, idade, sexo, nivelTxt: nivel < 0 ? '' : niveis[nivel][1], degrau, fator: fat[usado], fatorTxt: degrau < 0 ? 'sem resposta de atividade, usei moderada' : (degrau === 0 ? 'sedentário' : 'conta um nível abaixo do que marcou'),
+  // v722: 1 = pesa tudo, 2 = pesa só em casa, 3 = não pesa, 0 = sem resposta (anamnese de antes da pergunta)
+  const balancaTxt = R(/balanca de cozinha/).replace(/<[^>]*>/g, '').trim(), bn = N(balancaTxt);
+  const balanca = !bn ? 0 : (/nao consigo|tudo em colher/.test(bn) ? 3 : (/fora de casa|em casa eu peso/.test(bn) ? 2 : (/^sim\b/.test(bn) ? 1 : 0)));
+  return { f, balanca, balancaTxt, lipAnam, temExame, peso, alt, idade, sexo, nivelTxt: nivel < 0 ? '' : niveis[nivel][1], degrau, fator: fat[usado], fatorTxt: degrau < 0 ? 'sem resposta de atividade, usei moderada' : (degrau === 0 ? 'sedentário' : 'conta um nível abaixo do que marcou'),
     tmb, get: tmb ? tmb * fat[usado] : null, objTxt, obj, modeloTxt: R(/modelo de planejamento/), turno: R(/qual turno treina/), freq: _diMoNum(R(/quantas vezes por semana/)),
     glu: _diMoSim(f, /intolerancia ao gluten/), lac: _diMoSim(f, /intolerancia a lactose/), pos: _diMoSim(f, /abacaxi ou mamao/), alergia, faltando, coracao };
 }
@@ -33329,6 +33333,86 @@ function _diMoAgua(rows, peso) {
   let fim = 0; rows.forEach((x, i) => { const t = sec(x); if (t === 'info' || t === 'meta' || t === 'aluno') fim = i; });
   rows.splice(fim + 1, 0, ['meta', 'Água', String(l).replace('.', ',') + ' litros por dia', DI_AGUA_NOITE]);
 }
+// v722 (GH 27/11/2026): "coloque na anamnese uma pergunta sobre a dieta, se o aluno consegue calcular com balança ou se ele
+// precisa que tenha opções em colheres (ou algo assim, qnd n pode usar balança)". A pergunta é "Na dieta, você consegue pesar a
+// comida numa balança de cozinha?" (lida pelo texto). Pesa tudo ou em branco: grama, como sempre. Pesa só em casa: grama
+// primeiro e a medida caseira junto em toda quantidade. Não pesa: medida primeiro e o grama entre parênteses. A tabela é a da
+// Entregas (medida-caseira.json): arredonda pra meia medida, nunca menos de meia. O grama fica sempre escrito, então macros,
+// lista de compras e Secar mais / Crescer mais continuam lendo a mesma quantidade.
+const DI_CAS = { 'arroz': ['colher de sopa cheia', 25], 'arroz integral': ['colher de sopa cheia', 20], 'batata doce': ['colher de sopa cheia', 40, 'picada ou amassada'], 'batata inglesa': ['colher de sopa cheia', 30, 'picada'], 'mandioca': ['colher de sopa cheia', 35, 'picada'], 'macarrao sem gluten': ['colher de sopa cheia', 25], 'feijao': ['concha média', 85], 'lentilha': ['concha média', 80], 'grao de bico': ['colher de sopa cheia', 22], 'carne bovina magra': ['palma da mão', 100], 'carne suina magra': ['palma da mão', 100], 'frango sem pele': ['palma da mão', 100], 'peixe': ['palma da mão', 100], 'salmao': ['palma da mão', 100], 'aveia': ['colher de sopa', 15], 'farinha de arroz': ['colher de sopa', 12], 'tapioca': ['colher de sopa cheia', 20], 'rap10': ['unidade', 33], 'leite': ['copo americano', 190], 'leite sem lactose': ['copo americano', 190], 'iogurte natural': ['pote', 170], 'iogurte sem lactose': ['pote', 170], 'queijo mussarela': ['fatia média', 15], 'requeijao': ['colher de sopa cheia', 30], 'ricota': ['colher de sopa cheia', 20], 'whey': ['scoop do pote', 30], 'whey isolado': ['scoop do pote', 30], 'proteina de ervilha': ['scoop do pote', 30], 'azeite de oliva': ['colher de sopa', 8], 'manteiga': ['colher de chá', 5], 'castanhas': ['colher de sopa cheia', 15], 'pasta de amendoim': ['colher de sopa', 15], 'abacaxi': ['fatia média', 75], 'mamao': ['fatia média', 100] };
+const DI_CAS_PL = { 'colher de sopa cheia': ['colheres de sopa cheias', 1], 'colher de sopa': ['colheres de sopa', 1], 'colher de chá': ['colheres de chá', 1], 'concha média': ['conchas médias', 1], 'palma da mão': ['palmas da mão', 1], 'unidade': ['unidades', 1], 'copo americano': ['copos americanos', 0], 'pote': ['potes', 0], 'fatia média': ['fatias médias', 1], 'scoop do pote': ['scoops do pote', 0] };   // [plural, feminino]
+const DI_CAS_LEG = 'Medidas caseiras', DI_CAS_SCOOP = 'Confere o tamanho do scoop no rótulo';
+function _diCasAcha(nome) { const n = _teFiNorm(String(nome || '').replace(/<[^>]*>/g, '')).trim(); return DI_CAS[n] || DI_CAS[n.replace(/ sem lactose$/, '')] || null; }
+function _diCasTxt(med, n) {
+  const pl = DI_CAS_PL[med]; if (!pl) return '';
+  const meio = pl[1] ? 'meia' : 'meio', i = Math.floor(n), tem = n - i >= 0.5;
+  if (i < 1) return meio + ' ' + med;
+  return i + (tem ? ' e ' + meio : '') + ' ' + (i >= 2 ? pl[0] : med);
+}
+// "100g" ou "200ml" de um alimento da tabela vira [grama, medida]; fora da tabela devolve null
+function _diCasPar(nome, q) {
+  const m = /^\s*(\d+(?:[.,]\d+)?)\s*(g|ml)\s*$/i.exec(String(q == null ? '' : q)), e = m && _diCasAcha(nome); if (!e) return null;
+  const v = parseFloat(m[1].replace(',', '.')); if (!(v > 0)) return null;
+  const txt = _diCasTxt(e[0], Math.max(0.5, Math.round(v / e[1] * 2) / 2));
+  return txt ? [m[1] + m[2].toLowerCase(), txt] : null;
+}
+// a quantidade na coluna: "100g (4 colheres de sopa cheias)" ou "4 colheres de sopa cheias (100g)"
+function _diCasQ(nome, q, modo) { const p = _diCasPar(nome, q); return p ? (modo === 3 ? p[1] + ' (' + p[0] + ')' : p[0] + ' (' + p[1] + ')') : null; }
+// a alternativa escrita no nome: "Arroz (100g, 4 colheres de sopa cheias)" ou "Arroz (4 colheres de sopa cheias, 100g)"
+function _diCasAlt(peca, modo) {
+  const m = /^([^()|]*?)\s*\(\s*(\d+(?:[.,]\d+)?\s*(?:g|ml))\s*\)(\s*)$/i.exec(String(peca || '')), p = m && _diCasPar(m[1], m[2]);
+  return p ? m[1] + ' (' + (modo === 3 ? p[1] + ', ' + p[0] : p[0] + ', ' + p[1]) + ')' + m[3] : null;
+}
+// o caminho de volta: tira a medida e devolve só o grama, pra Secar mais / Crescer mais mexerem no número e a medida ser refeita
+const _DI_CAS_RE = (() => { const M = '(?:mei[ao]|\\d+(?: e mei[ao])?) [^\\d(),|]+', G = '\\d+(?:[.,]\\d+)?\\s*(?:g|ml)';
+  return { q2: new RegExp('^\\s*(' + G + ')\\s*\\(' + M + '\\)\\s*$', 'i'), q3: new RegExp('^\\s*' + M + '\\((' + G + ')\\)\\s*$', 'i'),
+    a2: new RegExp('^([^()|]*\\()(' + G + '), ' + M + '(\\).*)$', 'i'), a3: new RegExp('^([^()|]*\\()' + M + ', (' + G + ')(\\).*)$', 'i') }; })();
+function _diCasTiraQ(q) { q = String(q == null ? '' : q); let m = _DI_CAS_RE.q2.exec(q); if (m) return { limpo: m[1], modo: 2 }; m = _DI_CAS_RE.q3.exec(q); return m ? { limpo: m[1], modo: 3 } : null; }
+function _diCasTiraAlt(t) { t = String(t || ''); let m = _DI_CAS_RE.a2.exec(t); if (m) return { limpo: m[1] + m[2] + m[3], modo: 2 }; m = _DI_CAS_RE.a3.exec(t); return m ? { limpo: m[1] + m[2] + m[3], modo: 3 } : null; }
+// a linha que explica as medidas pro aluno (só o que a tabela da Entregas diz). Sem texto, a linha sai.
+function _diCasLegenda(rows, txt) {
+  const sec = r => String((r && r[0]) || '').toLowerCase().trim(), i = rows.findIndex(r => sec(r) === 'regra' && String(r[1] || '').trim() === DI_CAS_LEG);
+  if (!txt) { if (i >= 0) rows.splice(i, 1); return; }
+  if (i >= 0) { rows[i][2] = txt; rows[i][3] = ''; return; }
+  let fim = 0; rows.forEach((x, k) => { if (['info', 'meta', 'aluno', 'regra'].indexOf(sec(x)) >= 0) fim = k; });
+  rows.splice(fim + 1, 0, ['regra', DI_CAS_LEG, txt, '']);
+}
+// passa a dieta montada pra medida caseira. modo 2 = pesa só em casa, modo 3 = não pesa; outro valor não mexe em quantidade.
+function _diMoCaseira(rows, modo, notas) {
+  if (modo !== 2 && modo !== 3) { _diCasLegenda(rows, ''); return; }
+  const sec = r => String((r && r[0]) || '').toLowerCase().trim(), so = t => String(t || '').replace(/\s*\(.*$/, '').trim();
+  const usou = {}, preparo = [], sem = []; let dentro = false;
+  const usa = nome => { const e = _diCasAcha(nome); if (!e) return; usou[e[0]] = 1; if (e[2]) { const t = so(nome).toLowerCase() + ' ' + e[2]; if (preparo.indexOf(t) < 0) preparo.push(t); } };
+  const falta = nome => { const t = so(nome).toLowerCase(); if (t && sem.indexOf(t) < 0) sem.push(t); };
+  const EM_G = /^\s*\d+(?:[.,]\d+)?\s*(?:g|ml)\s*$/i;
+  rows.forEach(r => { const s = sec(r);
+    if (s === 'ref') { dentro = true; return; }
+    if (s === 'op' || s === 'obs' || s === 'nota') return;
+    if (s !== '' && s !== 'alimento' && s !== 'food') { dentro = false; return; }
+    if (!dentro) return;
+    const nome = String(r[1] || ''), q = String(r[2] == null ? '' : r[2]).trim();
+    if (q) {
+      const d = /^0*(\d+)\s*doses?$/i.exec(q), e = _diCasAcha(nome), scoop = !!(d && e && /^scoop/.test(e[0]));
+      const novo = _diCasQ(nome, scoop ? (+d[1] * e[1]) + 'g' : q, modo);
+      if (novo) { r[2] = novo; usa(nome); if (scoop && !String(r[3] || '').trim()) r[3] = DI_CAS_SCOOP; }
+      else if (EM_G.test(q)) falta(nome);
+      return;
+    }
+    if (nome.indexOf('(') < 0) return;
+    r[1] = nome.split(/(\s*\|\s*)/).map((p, j) => { if (j % 2) return p;
+      const novo = _diCasAlt(p, modo); if (novo) { usa(so(p)); return novo; }
+      if (/\(\s*\d+(?:[.,]\d+)?\s*(?:g|ml)\s*\)/i.test(p)) falta(so(p)); return p; }).join('');
+  });
+  const leg = ['As medidas valem pro alimento pronto (cozido, assado ou grelhado).'];
+  if (usou['palma da mão']) leg.push('Palma da mão: filé do tamanho e da espessura da tua palma, sem os dedos.');
+  if (usou['copo americano']) leg.push('Copo americano: 190 ml.');
+  if (preparo.length) leg.push('Na colher: ' + preparo.join(', ') + '.');
+  _diCasLegenda(rows, Object.keys(usou).length ? leg.join(' ') : '');
+  if (notas) {
+    notas.push(modo === 3 ? 'Balança: ele não consegue pesar. Toda quantidade saiu em medida caseira, com o grama entre parênteses.' : 'Balança: ele pesa em casa e fora usa colher. Toda quantidade saiu em grama com a medida caseira junto.');
+    if (sem.length) notas.push('Sem medida caseira na tabela: ' + sem.join(', ') + '. Ficou só em grama: escreve a medida na mão.');
+  }
+}
 // monta a dieta inteira. Devolve { rows, tot, alvo, notas } ou { erro }
 function _diMoMonta(rows, ini, op) {
   const sec = r => String((r && r[0]) || '').toLowerCase().trim(), PR = t => t === 'almoco' || t === 'janta';
@@ -33381,6 +33465,7 @@ function _diMoMonta(rows, ini, op) {
   const inf = out.find(r => sec(r) === 'info'); if (inf && !String(inf[3] || '').trim() && ini.objTxt) inf[3] = ini.objTxt.replace(/<[^>]*>/g, '').trim();
   const tot = _diMoMeta(out);
   _diMoAgua(out, peso);
+  _diMoCaseira(out, ini.balanca, notas);
   if (!_diMoModelo(ini.modeloTxt)) notas.push('Ele não respondeu o modelo de refeições. Montei em 4: desjejum, almoço, lanche e janta.');
   if (cm.semProt) notas.push(cm.protMain.length ? 'Ele não marcou carne, frango nem peixe. O almoço e a janta saíram com ovos: troca na mão.' : 'Ele não marcou carne, frango nem peixe, e ovo está fora. O almoço e a janta saíram SEM proteína: põe na mão.');
   if (ini.alergia) notas.push('Alergia: ' + ini.alergia + '. ' + (cm.tirei.length ? 'Deixei de fora: ' + cm.tirei.join(', ').toLowerCase() + '. ' : 'Nada do que eu ia usar bateu pelo nome. ') + 'Confere a dieta inteira.');
@@ -33606,7 +33691,7 @@ function _diMoDesenha() {
     if (!ini) h += '<div class="te-ent-linha">Não achei a anamnese inicial deste aluno. Sem ela não tem o que ele come nem o modelo de refeições: monta na mão ou copia de outro aluno.</div>';
     else {
       const d = [ini.sexo === 'M' ? 'Homem' : ini.sexo === 'F' ? 'Mulher' : '', ini.idade ? Math.round(ini.idade) + ' anos' : '', ini.alt ? String((ini.alt / 100).toFixed(2)).replace('.', ',') + ' m' : '', ini.nivelTxt].filter(Boolean).join(' · ');
-      h += '<div class="di-mo-dados">' + e(d || 'Faltam dados do corpo na anamnese') + (ini.objTxt ? '<br>Objetivo: ' + e(ini.objTxt.replace(/<[^>]*>/g, '')) : '') + (ini.modeloTxt ? '<br>Modelo: ' + e(ini.modeloTxt.replace(/<[^>]*>/g, '')) : '') + (ini.turno ? '<br>Treina: ' + e(ini.turno.replace(/<[^>]*>/g, '').toLowerCase()) : '') + '</div>';
+      h += '<div class="di-mo-dados">' + e(d || 'Faltam dados do corpo na anamnese') + (ini.objTxt ? '<br>Objetivo: ' + e(ini.objTxt.replace(/<[^>]*>/g, '')) : '') + (ini.modeloTxt ? '<br>Modelo: ' + e(ini.modeloTxt.replace(/<[^>]*>/g, '')) : '') + (ini.turno ? '<br>Treina: ' + e(ini.turno.replace(/<[^>]*>/g, '').toLowerCase()) : '') + (ini.balanca ? '<br>Balança: ' + e(ini.balancaTxt.toLowerCase()) : '') + '</div>';
       const get = ini.get ? Math.round(ini.get / 10) * 10 : null;
       h += get ? '<div class="di-mo-get">Gasto estimado: perto de <b>' + _diMacN(get) + ' kcal</b> por dia <small>(' + e(ini.fatorTxt) + ')</small></div>' : '<div class="di-mo-get">Sem peso, altura, idade ou sexo na anamnese não dá pra estimar o gasto. Digita as calorias.</div>';
       const kc0 = get ? Math.max(ini.sexo === 'F' ? 1200 : 1500, Math.round((get + (ini.obj === 'crescer' ? 200 : ini.obj === 'secar' ? -500 : ini.obj === 'saude' ? -300 : 0)) / 50) * 50) : '';
@@ -36517,70 +36602,74 @@ const GHHP = (() => {
     return { hormonal: false, peptideos: false, versaoAtual: 0, temMestre: false };
   }
 
-  // R11: pergunta achada pelo texto; número só como reserva com (?!\d|\.\d)
+  // R11: pergunta achada pelo texto; número só como reserva com (?!\d|\.\d). Renumeração 27/11/2026: Seção 7 = 127 a 139.
   function leAnamneseSecao7(fichaInicial) {
     const resp = (fichaInicial && Array.isArray(fichaInicial.respostas)) ? fichaInicial.respostas : [];
-    const busca = (numStr, reTxt) => {
+    const busca = (numSpec, reTxt, reExclui) => {
       let hit = reTxt ? resp.find(y => y && reTxt.test(nrm(y.p))) : null;
-      if (!hit && numStr) {
-        const reNum = new RegExp('^\\s*' + numStr.replace('.', '\\.') + '(?!\\d|\\.\\d)');
-        hit = resp.find(y => y && reNum.test(String(y.p || '')));
+      if (!hit && numSpec) {
+        const nums = Array.isArray(numSpec) ? numSpec : [numSpec];
+        for (const n of nums) {
+          const reNum = new RegExp('^\\s*' + String(n).replace('.', '\\.') + '(?!\\d|\\.\\d)');
+          hit = resp.find(y => y && reNum.test(String(y.p || '')) && (!reExclui || !reExclui.test(nrm(y.p))));
+          if (hit) break;
+        }
       }
       return hit ? String(hit.r == null ? '' : hit.r).replace(/<[^>]*>/g, '').trim() : '';
     };
     const sim = v => /^sim\b/.test(nrm(v));
     const nao = v => /^nao\b/.test(nrm(v));
 
-    const q126 = busca('126', /ja fez uso de hormonios/);
-    const q127 = busca('127', /quais substancias utilizou/);
-    const q128 = busca('128', /tem atualmente algum desses sintomas/);
-    const q129 = busca('129', /esta utilizando hormonios atualmente/);
-    const q130 = busca('130', /quais substancias, dosagem media e por quanto tempo/);
-    const q131 = busca('131', /intencao a longo prazo/);
-    const q132 = busca('132', /o que vamos otimizar/);
-    const q133 = busca('133', /historico familiar ou pessoal de cancer/);
-    const q134 = busca('134', /tolerancia as injecoes subcutaneas/);
-    const q135 = busca('135', /problema de tireoide/);
-    const q136 = busca('136', /muita letargia ou retencao de liquidos/);
-    const q137 = busca('137', /estomago e sensivel/);
-    const q138 = busca('138', /comprometimento inegociavel|ferramentas de sinalizacao avancada/);
+    const q127 = busca('127', /ja fez uso de hormonios/);
+    const q128 = busca('128', /quais substancias utilizou/);
+    const q129 = busca('129', /tem atualmente algum desses sintomas/);
+    const q130 = busca('130', /esta utilizando hormonios atualmente/);
+    const q131 = busca('131', /quais substancias, dosagem media e por quanto tempo/);
+    const q132 = busca('132', /intencao a longo prazo/);
+    const q133 = busca('133', /o que vamos otimizar/);
+    const q134 = busca(['134', '133'], /historico familiar ou pessoal de cancer/, /o que vamos otimizar/);
+    const q135 = busca('135', /tolerancia as injecoes subcutaneas/);
+    const q136 = busca('136', /problema de tireoide/);
+    const q137 = busca('137', /muita letargia ou retencao de liquidos/);
+    const q138 = busca('138', /estomago e sensivel/);
+    const q139 = busca('139', /comprometimento inegociavel|ferramentas de sinalizacao avancada/);
 
-    const s128 = nrm(q128);
-    const histTxt = nrm(q127 + ' ' + q130);
-    const basePreferida = /durateston/.test(nrm(q130)) ? 'Durateston'
-      : (/cipionato/.test(nrm(q130)) ? 'Cipionato de Testosterona' : '');
+    const s129 = nrm(q129);
+    const histTxt = nrm(q128 + ' ' + q131);
+    const basePreferida = /durateston/.test(nrm(q131)) ? 'Durateston'
+      : (/cipionato/.test(nrm(q131)) ? 'Cipionato de Testosterona' : '');
     const re6m = /(\b(?:[6-9]|[1-9]\d)\s*(?:mes(?:es)?|m\b)|\b(?:\d{1,2}|um|uma)\s*anos?\b|continuo|sempre)/;
     const re4m = /(\b(?:[4-9]|[1-9]\d)\s*(?:mes(?:es)?|m\b)|\b(?:\d{1,2}|um|uma)\s*anos?\b)/;
-    const usaHormonio6m = (sim(q126) || sim(q129)) && re6m.test(histTxt);
-    const usaDecaAntiga = sim(q129) && /\bdeca\b|nandrolona/.test(nrm(q130)) && re4m.test(nrm(q130));
+    const usaHormonio6m = (sim(q127) || sim(q130)) && re6m.test(histTxt);
+    const usaDecaAntiga = sim(q130) && /\bdeca\b|nandrolona/.test(nrm(q131)) && re4m.test(nrm(q131));
 
-    const o132 = nrm(q132);
+    const o133 = nrm(q133);
     const objetivosPept = [];
-    if (/aceleracao metabolica|queima de gordura/.test(o132)) objetivosPept.push('metabolico');
-    if (/controle absoluto de apetite|resistencia a insulina/.test(o132)) objetivosPept.push('apetite');
-    if (/hipertrofia|densidade muscular|pump/.test(o132)) objetivosPept.push('hipertrofia');
-    if (/regeneracao de lesoes|tendoes|articulacoes/.test(o132)) objetivosPept.push('lesoes');
-    if (/cura gastrica|intestinal|refluxo/.test(o132)) objetivosPept.push('gastrico');
-    if (/otimizacao de sono|recuperacao do snc/.test(o132)) objetivosPept.push('sono');
-    if (/rejuvenescimento|colageno|pele e cabelo/.test(o132)) objetivosPept.push('pele');
-    if (/libido|erecao|potencia sexual/.test(o132)) objetivosPept.push('libido');
-    if (/bronzeamento|protecao uv/.test(o132)) objetivosPept.push('bronzeamento');
+    if (/aceleracao metabolica|queima de gordura/.test(o133)) objetivosPept.push('metabolico');
+    if (/controle absoluto de apetite|resistencia a insulina/.test(o133)) objetivosPept.push('apetite');
+    if (/hipertrofia|densidade muscular|pump/.test(o133)) objetivosPept.push('hipertrofia');
+    if (/regeneracao de lesoes|tendoes|articulacoes/.test(o133)) objetivosPept.push('lesoes');
+    if (/cura gastrica|intestinal|refluxo/.test(o133)) objetivosPept.push('gastrico');
+    if (/otimizacao de sono|recuperacao do snc/.test(o133)) objetivosPept.push('sono');
+    if (/rejuvenescimento|colageno|pele e cabelo/.test(o133)) objetivosPept.push('pele');
+    if (/libido|erecao|potencia sexual/.test(o133)) objetivosPept.push('libido');
+    if (/bronzeamento|protecao uv/.test(o133)) objetivosPept.push('bronzeamento');
 
     return {
-      jaUsouHormonio: sim(q126), historicoHormonio: q127,
-      usaHormonioAtual: sim(q129), substanciasAtuais: q130,
+      jaUsouHormonio: sim(q127), historicoHormonio: q128,
+      usaHormonioAtual: sim(q130), substanciasAtuais: q131,
       usaHormonio6m, basePreferida, usaDecaAntiga,
-      intencaoLongoPrazo: q131, preservarFertilidade: /fertilid|filho|engravidar/.test(nrm(q131)),
-      gineco: /ginecomastia|peito sensivel/.test(s128), retencao: /retencao de liquido/.test(s128) || sim(q136),
-      libido: /queda de libido|disfuncao eretil/.test(s128), quedaCabelo128: /queda de cabelo/.test(s128),
-      acne: /oleosidade|acne/.test(s128), dorArticularCronica: /dor articular cronica/.test(s128),
-      irritacaoOuInsonia: /alteracoes de humor|irritabilidade|depressao|insonia recente/.test(s128),
-      figado128: /perfil lipidico e figado|figado/.test(s128),
-      objetivosPept, cancer: sim(q133),
-      aversaoInjecaoSC: /aversao|oral, nasal ou topica/.test(nrm(q134)),
-      tireoide: sim(q135), letargiaRetencao: sim(q136), estomago: sim(q137),
-      comprometimentoNegado: nao(q138),
-      secao7Vazia: ![q126, q127, q128, q129, q130, q131, q132, q133, q134, q135, q136, q137, q138].some(Boolean)
+      intencaoLongoPrazo: q132, preservarFertilidade: /fertilid|filho|engravidar/.test(nrm(q132)),
+      gineco: /ginecomastia|peito sensivel/.test(s129), retencao: /retencao de liquido/.test(s129) || sim(q137),
+      libido: /queda de libido|disfuncao eretil/.test(s129), quedaCabelo128: /queda de cabelo/.test(s129),
+      acne: /oleosidade|acne/.test(s129), dorArticularCronica: /dor articular cronica/.test(s129),
+      irritacaoOuInsonia: /alteracoes de humor|irritabilidade|depressao|insonia recente/.test(s129),
+      figado128: /perfil lipidico e figado|figado/.test(s129),
+      objetivosPept, cancer: sim(q134),
+      aversaoInjecaoSC: /aversao|oral, nasal ou topica/.test(nrm(q135)),
+      tireoide: sim(q136), letargiaRetencao: sim(q137), estomago: sim(q138),
+      comprometimentoNegado: nao(q139),
+      secao7Vazia: ![q127, q128, q129, q130, q131, q132, q133, q134, q135, q136, q137, q138, q139].some(Boolean)
     };
   }
 
@@ -36649,7 +36738,7 @@ const GHHP = (() => {
     let versao = P.versao || 1;
     if (!rea && (P.nivel === 'Avançado' || P.nivel === 'Atleta') && P.usaHormonio6m) {
       versao = Math.max(versao, 2);
-      notas.push('Avançado/Atleta com histórico hormonal >= 6 meses (126/127/130): inicia direto na versão 2.0 (conferir coluna F da planilha mestre para 2.0).');
+      notas.push('Avançado/Atleta com histórico hormonal >= 6 meses (127/128/131): inicia direto na versão 2.0 (conferir coluna F da planilha mestre para 2.0).');
     }
 
     const injs = [], oraisOut = [];
@@ -36725,7 +36814,7 @@ const GHHP = (() => {
         // R5: tratar TODOS os orais existentes (nunca só atual.orais[0])
         if (atual.orais.length) {
           if (semOral) {
-            atual.orais.forEach(o => notas.push(`Oral ${o.nome} removido por alteração hepática (128/exame), renal ou estômago sensível (137).`));
+            atual.orais.forEach(o => notas.push(`Oral ${o.nome} removido por alteração hepática (129/exame), renal ou estômago sensível (138).`));
             if (injs.length < 3 && !temPreservado) {
               const temCurto = injs.some(x => FREQ_3X.test(x.nome));
               const subInj = quedaCabelo ? ((temCurto || P.preferirNPP) ? 'NPP (Fenilpropionato de Nandrolona)' : 'Deca (Decanoato de Nandrolona)') : 'Masteron Enantato';
@@ -36828,7 +36917,7 @@ const GHHP = (() => {
           injs.push({ nome: 'Masteron Propionato', dose: 300 });
           if (semOral) {
             injs.push({ nome: 'DHB (Dihidroboldenona)', dose: 200 });
-            notas.push('Sem Trembolona (triagem) e sem oral (128/137): entrou DHB 200mg.');
+            notas.push('Sem Trembolona (triagem) e sem oral (129/138): entrou DHB 200mg.');
           } else {
             oraisOut.push({ nome: 'Oxandrolona', dose: 40, obs: 'Dose única 30 a 45 min antes do treino (nos dias sem treino, no mesmo horário)' });
             notas.push('Sem Trembolona (estresse/sono/humor/psiquiátrico): entrou Oxandrolona 40mg.');
@@ -36847,7 +36936,7 @@ const GHHP = (() => {
         injs.push({ nome: nandroPadrao, dose: 200 });
         if (!semOral) oraisOut.push({ nome: 'Turinabol', dose: 40, obs: 'Dose única 30 a 45 min antes do treino' });
         else injs.push({ nome: 'DHB (Dihidroboldenona)', dose: 150 });
-        notas.push('Queda de cabelo marcada (102.3/128): Masteron e derivados de DHT vetados. Manter xampu de cetoconazol; não usar Finasterida com Nandrolona.');
+        notas.push('Queda de cabelo marcada (102.3/129): Masteron e derivados de DHT vetados. Manter xampu de cetoconazol; não usar Finasterida com Nandrolona.');
       } else if (riscoCardio) {
         injs.push({ nome: baseTesto, dose: 250 });
         injs.push({ nome: 'Masteron Enantato', dose: 200 });
@@ -36863,7 +36952,7 @@ const GHHP = (() => {
         injs.push({ nome: nandroPadrao, dose: versao >= 2 ? 300 : 200 });
         if (semOral) {
           injs.push({ nome: 'Masteron Enantato', dose: 200 });
-          notas.push('Sem oral por fígado alterado ou estômago sensível (128/137): entrou Masteron Enantato 200mg.');
+          notas.push('Sem oral por fígado alterado ou estômago sensível (129/138): entrou Masteron Enantato 200mg.');
         } else {
           if (versao >= 2) injs.push({ nome: 'Boldenona', dose: 200 });
           oraisOut.push({ nome: 'Hemogenin (Oximetolona)', dose: versao >= 2 ? 100 : 50, obs: obsHemoH });
@@ -36873,7 +36962,7 @@ const GHHP = (() => {
         injs.push({ nome: 'Masteron Enantato', dose: versao >= 2 ? 300 : 200 });
         if (semOral) {
           injs.push({ nome: nandroPadrao, dose: 200 });
-          notas.push(`Sem oral por fígado alterado ou estômago sensível (128/137): entrou ${nandroPadrao} 200mg.`);
+          notas.push(`Sem oral por fígado alterado ou estômago sensível (129/138): entrou ${nandroPadrao} 200mg.`);
         } else oraisOut.push({ nome: 'Hemogenin (Oximetolona)', dose: versao >= 2 ? 100 : 50, obs: obsHemoH });
       }
     }
@@ -36890,7 +36979,7 @@ const GHHP = (() => {
         notas.push('Tendinite/dor articular crônica: considerar NPP ou Deca 200mg (não acrescentado automaticamente em ativação ou com linha mantida).');
       } else if (P.sazonalVerao || P.fase === 'secar') {
         const qual = injs.some(x => FREQ_3X.test(x.nome)) ? 'NPP 200mg' : 'Deca 200mg';
-        decisoes.push(`Tendinite/dor articular crônica (128) em fase de secar: a) Entra ${qual}/semana para acelerar recuperação articular; b) Fica de fora para não reter água.`);
+        decisoes.push(`Tendinite/dor articular crônica (129) em fase de secar: a) Entra ${qual}/semana para acelerar recuperação articular; b) Fica de fora para não reter água.`);
       } else if (injs.length < 3) {
         const ehCurto = injs.some(x => !x.primo2x && FREQ_3X.test(x.nome));
         const qualN = (ehCurto || P.preferirNPP) ? 'NPP (Fenilpropionato de Nandrolona)' : 'Deca (Decanoato de Nandrolona)';
@@ -36967,7 +37056,7 @@ const GHHP = (() => {
     if (ex.prolactinaAlta) {
       supl.push(['supl', 'Cabergolina (Dostinex)', '0,5mg', 'A cada 10 dias, antes de dormir, via oral (engolir). Comprar na farmácia de manipulação']);
     } else if (P.usaDecaAntigaSemExame && !temTrembo) {
-      notas.push('Usa Deca há meses (129/130) sem exame de prolactina: exigir prolactina nos exames antes de iniciar Cabergolina.');
+      notas.push('Usa Deca há meses (130/131) sem exame de prolactina: exigir prolactina nos exames antes de iniciar Cabergolina.');
     } else if (temTrembo || doseNandroFinal >= 300) {
       supl.push(['supl', 'Cabergolina (Dostinex)', '0,5mg', '2x por mês (dias 1 e 15), antes de dormir, via oral (engolir). Comprar na farmácia de manipulação']);
     }
@@ -36975,7 +37064,7 @@ const GHHP = (() => {
     if (P.acne) {
       if (!BRA_PRESSAO.test(nrm(P.remedios))) {
         supl.push(['supl', 'Espironolactona', '25mg', 'Pós-desjejum, por 30 dias, via oral (engolir). Comprar na farmácia de manipulação']);
-      } else notas.push('Acne ativa (128), mas aluno usa anti-hipertensivo com risco de interação (BRA/olmesartana): Espironolactona segurada para avaliação do GH.');
+      } else notas.push('Acne ativa (129), mas aluno usa anti-hipertensivo com risco de interação (BRA/olmesartana): Espironolactona segurada para avaliação do GH.');
       supl.push(['supl', 'Zinco Quelato', '50mg', 'Pós-almoço, via oral (engolir)']);
       supl.push(['supl', 'Niacinamida (Vitamina B3)', '500mg', 'Pós-almoço, via oral (engolir)']);
       dicas.push(['dica', 'Cuidado tópico (acne)', 'Sabonete com peróxido de benzoíla 5% ou ácido salicílico', 'Aplicar 1 a 2x ao dia no banho em costas, ombros e peito.']);
@@ -37060,7 +37149,7 @@ const GHHP = (() => {
               proto.push(o0.raw.slice());
               notas.push(`Reajuste feminino: ${o0.nome} (${o0.doseTxt || 'sem mg'}) fora da faixa (${minO} a ${maxO}mg) ou sem unidade em mg; linha mantida como está para conferência.`);
             } else if (P.estomago) {
-              notas.push(`Reajuste feminino: ${o0.nome} removido por estômago sensível (137).`);
+              notas.push(`Reajuste feminino: ${o0.nome} removido por estômago sensível (138).`);
             } else if (/hemogenin|oximetol/i.test(o0.nome) && dHemoAlvo > o0.dose) {
               temOralAtivo = true;
               const dHemoTxt = P.treinoNoturno ? `${dHemoAlvo}mg nos dias de inferiores` : `${dHemoAlvo}mg + 200mg de cafeína`;
@@ -37117,7 +37206,7 @@ const GHHP = (() => {
         supl.push(['supl', 'Silimarina (Cardo Mariano)', '200mg', 'Pós-desjejum e pós-janta, via oral (engolir)']);
         supl.push(['supl', 'NAC (N-acetilcisteína)', '600mg', 'Pós-desjejum e pós-janta, via oral (engolir)']);
         supl.push(['supl', 'TUDCA', '250mg', 'Pós-desjejum e pós-janta, via oral (engolir)']);
-      } else notas.push('Estômago sensível/gastrite (137) na aluna: Hemogenin oral deixado de fora.');
+      } else notas.push('Estômago sensível/gastrite (138) na aluna: Hemogenin oral deixado de fora.');
       if (versao >= 5 && !P.estomago && !temOralIni) proto.push(['proto', 'Oxandrolona', `${versao >= 6 ? 15 : 10}mg por dia`, 'Dose única 30 a 45 min antes do treino, via oral (engolir).']);
       if (versao >= 4) decisoes.push(`Hormonal feminino v${versao}.0 acima do padrão oficial 3.0: confirmar doses com o GH antes de liberar.`);
     }
@@ -37155,7 +37244,7 @@ const GHHP = (() => {
         if (P.ansiedade != null && P.ansiedade >= 4) travas.push('ansiedade alta');
         if (P.sono != null && P.sono <= 2) travas.push('sono ruim');
         if (PSIQ.test(nrm(P.remedios))) travas.push('remédio psiquiátrico/estimulante');
-        if (P.estomago) travas.push('refluxo/gastrite (137)');
+        if (P.estomago) travas.push('refluxo/gastrite (138)');
         if (P.fase === 'crescer') travas.push('fase de ganhar massa');
         if (travas.length && !P.clembuterolAutorizado) decisoes.push(`Clembuterol segurado por triagem (${travas.join(', ')}): a) Manter de fora; b) Liberar mesmo assim.`);
         else {
@@ -37167,7 +37256,7 @@ const GHHP = (() => {
             atual.rawT4.forEach(r => proto.push(r.slice()));
             notas.push('T4 (Levotiroxina) já estava no bloco: dose mantida sem alteração automática junto do Clembuterol.');
           } else if (P.tireoide) {
-            notas.push('Aluno marcou problema de tireoide (pergunta 135): T4 (Levotiroxina) não adicionado automaticamente com o Clembuterol (confirmar com o GH).');
+            notas.push('Aluno marcou problema de tireoide (pergunta 136): T4 (Levotiroxina) não adicionado automaticamente com o Clembuterol (confirmar com o GH).');
           } else {
             substituidos.add('t4');
             const doseT4 = P.jaUsaClemb1ml ? '75mcg por dia' : '50mcg na 1ª semana, subindo para 75mcg a partir da 2ª semana';
@@ -37185,7 +37274,7 @@ const GHHP = (() => {
         atual.rawSomatropina.forEach(r => proto.push(r.slice()));
         notas.push('Somatropina já estava no bloco: linha(s) e dose mantidas como estavam para conferência.');
       } else if (P.cancer && !P.cancerFamiliarConfirmado) {
-        notas.push('Somatropina vetada por histórico de câncer na pergunta 133.');
+        notas.push('Somatropina vetada por histórico de câncer na pergunta 134.');
       } else if (P.jaUsaSomatropina && P.contratouPeptideos) {
         substituidos.add('somatropina');
         proto.push(['proto', 'Somatropina (GH)', '2 UI por dia', 'Subcutâneo (na barriga ou prega cutânea), antes do treino. Reduzida para acompanhar CJC-1295 sem DAC e Ipamorelin à noite.']);
@@ -37250,7 +37339,7 @@ const GHHP = (() => {
       };
     };
 
-    if (P.aversaoInjecaoSC) notas.push('Pergunta 134: aluno marcou aversão a injeções subcutâneas (prefere oral, nasal ou tópica quando houver).');
+    if (P.aversaoInjecaoSC) notas.push('Pergunta 135: aluno marcou aversão a injeções subcutâneas (prefere oral, nasal ou tópica quando houver).');
     if (/ozempic|wegovy|semaglutida|mounjaro|tirzepatida/.test(nrm(P.remedios || '')) && vaiTerReta) {
       notas.push('Aluno relatou GLP-1 nos medicamentos atuais (Ozempic/Mounjaro/Tirzepatida/Semaglutida): nunca usar junto da Retatrutida nem somar Glifage.');
     }
@@ -37266,10 +37355,10 @@ const GHHP = (() => {
       if (cancerVetando && PEPT_CANCER_VETADOS.test(nome)) {
         if (rea && existFams.has(fam)) {
           // Regra 06/10: no reajuste, manter peptídeo que já vinha do bloco anterior enquanto aguarda confirmação do GH
-          notas.push(`Regra P2 (pergunta 133: câncer): ${nome} já existia no bloco anterior e foi mantido no reajuste até confirmação do GH se é apenas familiar.`);
+          notas.push(`Regra P2 (pergunta 134: câncer): ${nome} já existia no bloco anterior e foi mantido no reajuste até confirmação do GH se é apenas familiar.`);
         } else {
           vetadosCancer++;
-          notas.push(`Regra P2 (pergunta 133: câncer): ${nome} retido/vetado até confirmação expressa do GH se é apenas familiar.`);
+          notas.push(`Regra P2 (pergunta 134: câncer): ${nome} retido/vetado até confirmação expressa do GH se é apenas familiar.`);
           return;
         }
       }
@@ -37306,7 +37395,7 @@ const GHHP = (() => {
       add('Ipamorelin', doseCjcIpa, `${hCjc}, subcutâneo (na barriga ou prega cutânea). Aplicar no mesmo horário do CJC-1295 sem DAC.`);
       add('Mots-c', '1mg por dia', 'Todo dia ao acordar, subcutâneo (na barriga ou prega cutânea).');
       add('GHK-Cu', '1mg por aplicação', '3x por semana (segunda, quarta e sexta, total de 3mg na semana), subcutâneo (na barriga ou prega cutânea).', { ghk: true });
-      notas.push('Pergunta 132 com 5 ou mais objetivos: aplicado corte padrão de 6 compostos (SS-31, Retatrutida, CJC-1295 sem DAC, Ipamorelin, Mots-c e GHK-Cu + Zinco 20mg). Ficaram de fora: BPC-157, TB-500 e Selank.');
+      notas.push('Pergunta 133 com 5 ou mais objetivos: aplicado corte padrão de 6 compostos (SS-31, Retatrutida, CJC-1295 sem DAC, Ipamorelin, Mots-c e GHK-Cu + Zinco 20mg). Ficaram de fora: BPC-157, TB-500 e Selank.');
     } else {
       if (temObj('metabolico')) {
         if (cancerVetando && !rea) add('AOD-9604', '300mcg por dia', 'Em jejum pela manhã, subcutâneo (na barriga ou prega cutânea). Alternativa segura sem ação no eixo GH/IGF-1.');
@@ -37360,11 +37449,11 @@ const GHHP = (() => {
         : 'CJC-1295 + Ipamorelin à noite: conferir horário da janta na Dieta e no Teu dia para até 2 horas antes de dormir.');
     }
 
-    if (cancerVetando) decisoes.push('Histórico de câncer marcado na pergunta 133 (P2): a) Manter apenas bloco seguro; b) É histórico apenas familiar, liberar protocolo completo.');
+    if (cancerVetando) decisoes.push('Histórico de câncer marcado na pergunta 134 (P2): a) Manter apenas bloco seguro; b) É histórico apenas familiar, liberar protocolo completo.');
 
     if (!itens.length) {
-      if (vetadosCancer > 0) notas.push('Todos os peptídeos dos objetivos marcados foram vetados pela pergunta 133 (histórico de câncer): bloco de peptídeos não escrito até confirmação do GH.');
-      else notas.push('Nenhum objetivo de peptídeos selecionado (pergunta 132 vazia): bloco de peptídeos não escrito. Verificar objetivos no WhatsApp ou formulário separado.');
+      if (vetadosCancer > 0) notas.push('Todos os peptídeos dos objetivos marcados foram vetados pela pergunta 134 (histórico de câncer): bloco de peptídeos não escrito até confirmação do GH.');
+      else notas.push('Nenhum objetivo de peptídeos selecionado (pergunta 133 vazia): bloco de peptídeos não escrito. Verificar objetivos no WhatsApp ou formulário separado.');
       return { temReta: false };
     }
 
@@ -37383,7 +37472,7 @@ const GHHP = (() => {
         existPeptPorFam.get(f).push(x);
       }
     });
-    if (sairamCancer.length) notas.push('Peptídeos do bloco anterior vetados pela pergunta 133 (histórico de câncer): ' + sairamCancer.join(', ') + '.');
+    if (sairamCancer.length) notas.push('Peptídeos do bloco anterior vetados pela pergunta 134 (histórico de câncer): ' + sairamCancer.join(', ') + '.');
     if (sairamSemObj.length) notas.push('Peptídeos do bloco anterior que saíram (sem objetivo correspondente): ' + sairamSemObj.join(', ') + '.');
 
     const temHormNoBloco = !!flags.modulos.hormonal || (!P.contratouHormonal && (atual.injetaveis.length > 0 || atual.orais.length > 0));
@@ -37446,11 +37535,11 @@ const GHHP = (() => {
     const flags = { modulos: { hormonal: false, peptideos: false, tpc: false, abertas: false }, limpaEspera: false };
 
     if ((P.contratouHormonal || P.contratouPeptideos) && P.secao7Vazia) {
-      notas.push('Seção 7 vazia (perguntas 126 a 138): conferir o formulário separado antes de liberar.');
+      notas.push('Seção 7 vazia (perguntas 127 a 139): conferir o formulário separado antes de liberar.');
     }
 
     if (P.contraindicacaoDura) {
-      notas.push('Bloqueio de segurança ativo (contraindicação médica dura ou pergunta 138 = "Não"): bloco hormonal/peptídeos segurado para decisão do GH.');
+      notas.push('Bloqueio de segurança ativo (contraindicação médica dura ou pergunta 139 = "Não"): bloco hormonal/peptídeos segurado para decisão do GH.');
       return { proto: [], supl: [], dicas: [], notas, decisoes, temReta: false, substituidos: [], modulos: flags.modulos, limpaEspera: false, usouCache, baseAtual: atual };
     }
 
@@ -38050,14 +38139,14 @@ function _hpMoDesenha() {
   if (v.avisoPeptSemMestre) h += '<div class="te-ent-aviso">A planilha mestre diz Não para peptídeos, mas existem peptídeos na dieta (regra GH 27/11: quem renova e já usava peptídeos mantém o bloco; liga o módulo abaixo se quiser ajustar).</div>';
 
   const res7 = [
-    s7.historicoHormonio ? '127 (histórico): ' + s7.historicoHormonio : '',
-    s7.substanciasAtuais ? '130 (uso atual): ' + s7.substanciasAtuais : '',
-    s7.intencaoLongoPrazo ? '131 (longo prazo): ' + s7.intencaoLongoPrazo : '',
-    s7.aversaoInjecaoSC ? '134: aversão a injeção SC (prefere oral/nasal/tópica)' : ''
+    s7.historicoHormonio ? '128 (histórico): ' + s7.historicoHormonio : '',
+    s7.substanciasAtuais ? '131 (uso atual): ' + s7.substanciasAtuais : '',
+    s7.intencaoLongoPrazo ? '132 (longo prazo): ' + s7.intencaoLongoPrazo : '',
+    s7.aversaoInjecaoSC ? '135: aversão a injeção SC (prefere oral/nasal/tópica)' : ''
   ].filter(Boolean);
-  if (res7.length) h += '<div class="di-mo-dados"><b>Seção 7 (126 a 138)</b><br>' + res7.map(e).join('<br>') + '</div>';
+  if (res7.length) h += '<div class="di-mo-dados"><b>Seção 7 (127 a 139)</b><br>' + res7.map(e).join('<br>') + '</div>';
   if ((v.contratouHormonal || v.contratouPeptideos) && ini.secao7Vazia) h += '<div class="te-ent-aviso">Seção 7 vazia: conferir o formulário separado (quem comprou hormonal ou peptídeos depois responde fora da anamnese inicial).</div>';
-  if (ini.comprometimentoNegado) h += '<div class="te-ent-aviso">Pergunta 138 (comprometimento inegociável) = Não: bloqueio de segurança veio marcado.</div>';
+  if (ini.comprometimentoNegado) h += '<div class="te-ent-aviso">Pergunta 139 (comprometimento inegociável) = Não: bloqueio de segurança veio marcado.</div>';
 
   if (_hpMo.aba === 'ajuste') {
     const blocoAj = GHHP.leBlocoAtual(typeof dietaData !== 'undefined' ? dietaData : []);
@@ -38077,7 +38166,7 @@ function _hpMoDesenha() {
       ['Hormonal', "hpMoSet('bool','contratouHormonal')", !!v.contratouHormonal],
       ['Peptídeos', "hpMoSet('bool','contratouPeptideos')", !!v.contratouPeptideos],
       ['Só linhas abertas (GH preenche)', "hpMoSet('bool','linhasAbertas')", !!v.linhasAbertas],
-      ['Segurar bloco (veto/Q138)', "hpMoSet('bool','contraindicacaoDura')", !!v.contraindicacaoDura],
+      ['Segurar bloco (veto/Q139)', "hpMoSet('bool','contraindicacaoDura')", !!v.contraindicacaoDura],
       ...(!v.contratouHormonal ? [['Testo baixa s/ hormonal (OK GH)', "hpMoSet('bool','testoBaixaSemHormonal')", !!v.testoBaixaSemHormonal]] : [])
     ]);
     h += grupo('Sexo, nível e fase', [
@@ -38088,24 +38177,24 @@ function _hpMoDesenha() {
     ]);
     h += grupo('Versão que está saindo', [1, 2, 3, 4, 5, 6].map(n => [n + '.0', "hpMoSet('versao'," + n + ')', v.versao === n]));
     if (v.contratouHormonal) {
-      h += grupo('Triagem clínica e flags (126 a 138)', [
+      h += grupo('Triagem clínica e flags (127 a 139)', [
         ['Sazonal verão (out a dez)', "hpMoSet('bool','sazonalVerao')", !!v.sazonalVerao],
         ...(_hpMo.aba === 'reajuste' ? [['Virar bloco para fase/verão', "hpMoSet('bool','virarFase')", !!v.virarFase]] : []),
-        ['Avançado c/ 6m+ uso (127/130)', "hpMoSet('bool','usaHormonio6m')", !!v.usaHormonio6m],
+        ['Avançado c/ 6m+ uso (128/131)', "hpMoSet('bool','usaHormonio6m')", !!v.usaHormonio6m],
         ['Pressão alta', "hpMoSet('bool','pressao')", !!v.pressao],
         ['Risco cardio', "hpMoSet('bool','cardio')", !!v.cardio],
         ['Obesidade II+ (IMC>=35)', "hpMoSet('bool','obesidade2')", !!v.obesidade2],
         ['Problema renal', "hpMoSet('bool','rim')", !!v.rim],
         ['Hemofilia', "hpMoSet('bool','hemofilia')", !!v.hemofilia],
         ['Cirurgia < 4 sem', "hpMoSet('bool','cirurgia4sem')", !!v.cirurgia4sem],
-        ['Estômago sensível (137)', "hpMoSet('bool','estomago')", !!v.estomago],
-        ['Fígado/lipídico alterado (128)', "hpMoSet('bool','figado')", !!v.figado],
-        ['Queda de cabelo (102.3/128)', "hpMoSet('bool','quedaCabelo')", !!v.quedaCabelo],
-        ['Gineco / sensibilidade (128)', "hpMoSet('bool','gineco')", !!v.gineco],
+        ['Estômago sensível (138)', "hpMoSet('bool','estomago')", !!v.estomago],
+        ['Fígado/lipídico alterado (129)', "hpMoSet('bool','figado')", !!v.figado],
+        ['Queda de cabelo (102.3/129)', "hpMoSet('bool','quedaCabelo')", !!v.quedaCabelo],
+        ['Gineco / sensibilidade (129)', "hpMoSet('bool','gineco')", !!v.gineco],
         ['Gineco intensa', "hpMoSet('bool','ginecoIntensa')", !!v.ginecoIntensa],
-        ['Acne / oleosidade (128)', "hpMoSet('bool','acne')", !!v.acne],
-        ['Humor/irritação ou insônia (128)', "hpMoSet('bool','irritacaoOuInsonia')", !!v.irritacaoOuInsonia],
-        ['Dor articular / tendinite (128)', "hpMoSet('bool','tendiniteArticular')", !!v.tendiniteArticular],
+        ['Acne / oleosidade (129)', "hpMoSet('bool','acne')", !!v.acne],
+        ['Humor/irritação ou insônia (129)', "hpMoSet('bool','irritacaoOuInsonia')", !!v.irritacaoOuInsonia],
+        ['Dor articular / tendinite (129)', "hpMoSet('bool','tendiniteArticular')", !!v.tendiniteArticular],
         ['Cirurgia recente/agendada', "hpMoSet('bool','cirurgia')", !!v.cirurgia],
         ['Pós-cirurgia (OK GH)', "hpMoSet('bool','posCirurgiaAutorizado')", !!v.posCirurgiaAutorizado],
         ['Preferir NPP (Caminho A)', "hpMoSet('bool','preferirNPP')", !!v.preferirNPP],
@@ -38113,7 +38202,7 @@ function _hpMoDesenha() {
         ['Problema de tireoide (não mexer em T4)', "hpMoSet('bool','tireoide')", !!v.tireoide],
         ['Treino à noite (sem cafeína)', "hpMoSet('bool','treinoNoturno')", !!v.treinoNoturno],
         ['Oral só dias prioridade', "hpMoSet('bool','oralNoPrioritario')", !!v.oralNoPrioritario],
-        ['Preservar fertilidade (131)', "hpMoSet('bool','preservarFertilidade')", !!v.preservarFertilidade],
+        ['Preservar fertilidade (132)', "hpMoSet('bool','preservarFertilidade')", !!v.preservarFertilidade],
         ['Clembuterol', "hpMoSet('bool','clembuterol')", !!v.clembuterol],
         ...(v.clembuterol ? [['Clemb. liberado GH', "hpMoSet('bool','clembuterolAutorizado')", !!v.clembuterolAutorizado], ['Já fazia 1ml Clemb.', "hpMoSet('bool','jaUsaClemb1ml')", !!v.jaUsaClemb1ml]] : []),
         ['Somatropina (pedido GH)', "hpMoSet('bool','somatropina')", !!v.somatropina],
@@ -38133,8 +38222,8 @@ function _hpMoDesenha() {
       h += _exResumo(exL, 'hp', e);
     }
     if (v.contratouPeptideos) {
-      h += grupo('Objetivos de peptídeos (132)', _HPMO_PEPT.map(p => [p[1], "hpMoSet('pept','" + p[0] + "')", v.objetivosPept.includes(p[0])]));
-      h += grupo('Opções de peptídeos e câncer (133 e 134)', [
+      h += grupo('Objetivos de peptídeos (133)', _HPMO_PEPT.map(p => [p[1], "hpMoSet('pept','" + p[0] + "')", v.objetivosPept.includes(p[0])]));
+      h += grupo('Opções de peptídeos e câncer (134 e 135)', [
         ['Padrão desempenho', "hpMoSet('bool','padraoDesempenho')", !!v.padraoDesempenho],
         ['Corte financeiro (enxuto)', "hpMoSet('bool','corteFinanceiro')", !!v.corteFinanceiro],
         ['Retatrutida em escada (1-2-3-4mg)', "hpMoSet('bool','retaEscada')", !!v.retaEscada],
@@ -38142,8 +38231,8 @@ function _hpMoDesenha() {
         ['Retatrutida 4mg (secar)', "hpMoSet('bool','reta4mg')", !!v.reta4mg],
         ['Migrando de Tirzepatida', "hpMoSet('bool','migraTirzepatida')", !!v.migraTirzepatida],
         ['Janta perto de dormir', "hpMoSet('bool','jantaPertoDormir')", !!v.jantaPertoDormir],
-        ['Aversão a injeção SC (134)', "hpMoSet('bool','aversaoInjecaoSC')", !!v.aversaoInjecaoSC],
-        ['Histórico câncer (133)', "hpMoSet('bool','cancer')", !!v.cancer],
+        ['Aversão a injeção SC (135)', "hpMoSet('bool','aversaoInjecaoSC')", !!v.aversaoInjecaoSC],
+        ['Histórico câncer (134)', "hpMoSet('bool','cancer')", !!v.cancer],
         ['Câncer apenas familiar (OK GH)', "hpMoSet('bool','cancerFamiliarConfirmado')", !!v.cancerFamiliarConfirmado]
       ]);
     }
@@ -40938,7 +41027,12 @@ function _diMacN(n) { return Math.round(n).toLocaleString('pt-BR'); }
 //  b) dentro do nome, uma por alternativa: "Arroz (120g) | Massa (120g) | Batata inglesa (250g)", "Ovo (04)".
 function _diMacTx(x, virg) { return Number.isInteger(x) ? String(x) : String(Math.round(x * 10) / 10).replace('.', virg ? ',' : '.'); }
 function _diMacPlural(pal, n) { const base = /^un$/i.test(pal) ? pal : pal.replace(/s$/i, ''); return /^un$/i.test(base) || n === 1 ? base : base + 's'; }
-function _diMacQtd(nome, q) {
+function _diMacQtd(nome, q) {   // v722: quantidade com medida caseira
+  const c = _diCasTiraQ(q); if (!c) return _diMacQtdPuro(nome, q);
+  const r = _diMacQtdPuro(nome, c.limpo); if (!r) return null;
+  return { tipo: r.tipo, v: r.v, fmt: n => { const t = r.fmt(n); return _diCasQ(nome, t, c.modo) || t; } };
+}
+function _diMacQtdPuro(nome, q) {
   q = String(q == null ? '' : q); if (/\([^)]*\d/.test(String(nome || ''))) return null;
   let m = /^(\s*)(\d+(?:[.,]\d+)?)(\s*)(g|ml)\b(.*)$/i.exec(q);
   if (m) {
@@ -40956,7 +41050,12 @@ function _diMacQtd(nome, q) {
   return null;
 }
 // uma alternativa escrita no nome: "Arroz (130g cozido)", "Banana (01)", "Pão integral (03 fatias)"
-function _diMacAlt(txt) {
+function _diMacAlt(txt) {   // v722: alternativa com medida caseira
+  const c = _diCasTiraAlt(txt); if (!c) return _diMacAltPuro(txt);
+  const r = _diMacAltPuro(c.limpo); if (!r) return null;
+  return { tipo: r.tipo, v: r.v, fmt: n => { const t = r.fmt(n); return _diCasAlt(t, c.modo) || t; } };
+}
+function _diMacAltPuro(txt) {
   const m = /^([^()\d]*\()(\s*)(\d+(?:[.,]\d+)?)(\s*)((?:g|ml)\b)?([^)\d]*\)[^\d]*)$/i.exec(String(txt || ''));
   if (!m) return null;
   const v = parseFloat(m[3].replace(',', '.')), virg = m[3].indexOf(',') >= 0;
