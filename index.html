@@ -9927,6 +9927,96 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
 function _h(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function _hj(s) { return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/\r?\n/g, ' '); }
 // v592: a planilha (gviz) sem resposta deixava o app no "carregando" sem fim. Teto por tentativa e, se pedido, uma repetição.
+// ══ v724: DIA QUE A LEITURA DEVOLVE VAZIO ══
+// A leitura da planilha (gviz) decide o tipo de cada coluna pela maioria das células. Na coluna do dia, célula do tipo da
+// minoria (dia gravado como número no meio de dias em texto, ou o contrário) volta vazia. O exercício ficava sem dia e a
+// regra v522 colava ele no dia de cima: o Treino 6 inteiro aparecia dentro do Treino 5 (caso da Sala #5946, 26 planilhas).
+// Aqui o app pede de novo SÓ as linhas que vieram sem dia: num pedaço pequeno a coluna tem um tipo só e o dia volta.
+// Só aceita a resposta se o nome do exercício de cada linha bater com o da leitura inteira. Planilha sã não faz pedido a mais.
+const _TDP = { max: 8, ms: 6000 };
+// registros do CSV com a posição do 1º campo no texto (pra trocar só ele, o resto do texto fica igual byte a byte)
+function _csvRegs_(text) {
+  const s = String(text == null ? '' : text), regs = [];
+  let ini = 0, fimA = -1, cols = [], cur = '', q = false;
+  const fecha = fim => { cols.push(cur.trim()); if (fimA < 0) fimA = fim; cur = ''; };
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (q) { if (ch === '"') { if (s[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === ',') fecha(i);
+    else if (ch === '\n') { fecha(s[i - 1] === '\r' ? i - 1 : i); regs.push({ ini: ini, fimA: fimA, c: cols }); ini = i + 1; fimA = -1; cols = []; }
+    else if (ch !== '\r') cur += ch;
+  }
+  if (q) return null;   // aspas desencontradas: não mexe em nada
+  if (cur || cols.length) { fecha(s.length); regs.push({ ini: ini, fimA: fimA, c: cols }); }
+  return regs;
+}
+// índices (0 = cabeçalho) das linhas de exercício que vieram sem dia. Mesmo critério do leitor do aluno (v522 e v547).
+function _treinoSemDia_(regs) {
+  const out = []; let info = false;
+  for (let i = 1; i < regs.length; i++) {
+    const c = regs[i].c, a = String(c[0] || ''), b = String(c[1] || ''), al = a.toLowerCase();
+    if (al === 'restrict' || al === 'link') continue;
+    if (!a && /^http/i.test(b)) continue;
+    if (!info && (a === '' || al === 'info') && (b || c[2] || c[3] || c[4])) { info = true; continue; }   // linha do nome do aluno
+    if (a !== '' || !b || /^@treino/i.test(b) || !/^\s*\d+\s*x/i.test(String(c[2] || ''))) continue;
+    out.push(i);
+  }
+  return out;
+}
+// devolve { text, achou, consertou, falhou }. text = o mesmo CSV com o dia de volta nas linhas recuperadas.
+// falhou = algum pedido não respondeu ou não bateu (quem chama decide se usa o texto assim mesmo).
+// sobrou = tinha mais trecho que o teto de pedidos (os primeiros foram consertados).
+// quantas leituras seguidas o pedido das linhas falhou neste aparelho (0 apaga)
+function _tdpFalha_(v) {
+  const k = 'gh_tdp_falha_' + (typeof SHEET_ID !== 'undefined' ? SHEET_ID : '');
+  try { if (v === undefined) return parseInt(localStorage.getItem(k) || '0', 10) || 0; if (v) localStorage.setItem(k, String(v)); else localStorage.removeItem(k); } catch (_) {}
+  return 0;
+}
+async function _treinoCsvComDia_(sid, text) {
+  const r = { text: text, achou: 0, consertou: 0, falhou: false, sobrou: false };
+  try {
+    if (!sid || typeof text !== 'string' || !text) return r;
+    const regs = _csvRegs_(text);
+    if (!regs || regs.length < 3) return r;
+    const sem = _treinoSemDia_(regs);
+    r.achou = sem.length;
+    if (!sem.length) return r;
+    const trechos = [];
+    sem.forEach(i => { const u = trechos[trechos.length - 1]; if (u && u[1] === i - 1) u[1] = i; else trechos.push([i, i]); });
+    const dias = {};
+    const pede = async (a, b) => {
+      const ctl = typeof AbortController === 'function' ? new AbortController() : null;
+      const tm = setTimeout(() => { try { ctl && ctl.abort(); } catch (_) {} }, _TDP.ms);
+      try {
+        const resp = await fetch('https://docs.google.com/spreadsheets/d/' + sid + '/gviz/tq?tqx=out:csv&sheet=TREINO&headers=0&range=A' + (a + 1) + ':B' + (b + 1) + '&_=' + Date.now(), Object.assign({ cache: 'no-store' }, ctl ? { signal: ctl.signal } : {}));
+        if (!resp.ok) return false;
+        const rg = _csvRegs_(await resp.text());
+        if (!rg || rg.length !== b - a + 1) return false;
+        for (let k = 0; k < rg.length; k++) if (String(rg[k].c[1] || '') !== String(regs[a + k].c[1] || '')) return false;   // linha de outro exercício: não é a mesma planilha que eu li
+        rg.forEach((x, k) => { const v = String(x.c[0] || ''); if (/^\d{1,2} ?[a-z]{0,3}$/i.test(v)) dias[a + k] = v; });
+        return true;
+      } catch (_) { return false; } finally { clearTimeout(tm); }
+    };
+    if (trechos.length > _TDP.max) r.sobrou = true;   // teto de pedidos: conserta os que cabem; não é falha de leitura
+    const usa = trechos.slice(0, _TDP.max);
+    const ok1 = await Promise.all(usa.map(t => pede(t[0], t[1])));
+    if (ok1.some(x => !x)) r.falhou = true;
+    // trecho comprido em que sobrou linha sem dia (dois tipos misturados dentro do trecho): uma linha por vez
+    const resto = [];
+    usa.forEach((t, n) => { if (!ok1[n] || t[0] === t[1]) return; for (let i = t[0]; i <= t[1]; i++) if (dias[i] == null) resto.push(i); });
+    if (resto.length > _TDP.max) r.sobrou = true;
+    const ok2 = await Promise.all(resto.slice(0, _TDP.max).map(i => pede(i, i)));
+    if (ok2.some(x => !x)) r.falhou = true;
+    const idx = Object.keys(dias).map(Number).sort((x, y) => y - x);   // de baixo pra cima, pra posição de cima não andar
+    let t = text;
+    idx.forEach(i => { const g = regs[i]; t = t.slice(0, g.ini) + '"' + dias[i] + '"' + t.slice(g.fimA); });
+    r.text = t; r.consertou = idx.length;
+    if (idx.length) { try { if (window.__ghAvisa) window.__ghAvisa('planilha: ' + idx.length + ' exercício(s) com o dia devolvido vazio pela leitura, recuperado(s)', 'treino v724'); } catch (_) {} }
+  } catch (_) { r.falhou = true; }
+  return r;
+}
+
 async function _fetchPlanilha_(url, opts, tentativas) {
   let ultimo = null;
   const vezes = Math.max(1, tentativas || 2);
@@ -18787,6 +18877,7 @@ async function loadFromSheets(injectedText) {
       if (!res.ok) throw new Error('Não foi possível acessar a planilha. Verifique se ela está compartilhada (qualquer pessoa com link = leitor).');
 
       text = await res.text();
+      try { text = (await _treinoCsvComDia_(SHEET_ID, text)).text; } catch (_) {}   // v724: dia que a leitura devolveu vazio
       _cacheDepois = text;   // v547: só vai pro cache DEPOIS de montar o treino (o cache não recebe mais planilha que não deu pra ler)
     }
     const rows = parseCSV(text);
@@ -27118,7 +27209,12 @@ async function _fetchCsvRaw(tab) {
   try {
     const r = await _fetchPlanilha_(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}&headers=0&_=${Date.now()}`, { cache: 'no-store' }, 1);   // v592
     if (!r.ok) return null;
-    return await r.text();
+    const t = await r.text();
+    if (tab !== 'TREINO') return t;
+    const c = await _treinoCsvComDia_(SHEET_ID, t);   // v724
+    if (!c.falhou) { _tdpFalha_(0); return c.text; }
+    if (_tdpFalha_() >= 1) return c.text;   // 2ª falha seguida: não prende o treino antigo
+    _tdpFalha_(1); return null;
   } catch (_) { return null; }
 }
 
@@ -30913,7 +31009,8 @@ async function loadTreinoFromSheet() {
   try {
     const resp = await fetch(url, { cache: 'no-store' });
     if (!resp.ok) throw new Error('Planilha nao encontrada');
-    const text = await resp.text();
+    let text = await resp.text();
+    try { text = (await _treinoCsvComDia_(sheetId, text)).text; } catch (_) {}   // v724
     editorTreinoData = parseCSV(text).map(r => {
       while (r.length < 8) r.push('');
       return r.slice(0, 8);
@@ -31742,7 +31839,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v723';
+var APP_SHELL_V = 'metodo-gh-v724';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
@@ -33589,8 +33686,8 @@ function _diMoAgua(rows, peso) {
 // primeiro e a medida caseira junto em toda quantidade. Não pesa: medida primeiro e o grama entre parênteses. A tabela é a da
 // Entregas (medida-caseira.json): arredonda pra meia medida, nunca menos de meia. O grama fica sempre escrito, então macros,
 // lista de compras e Secar mais / Crescer mais continuam lendo a mesma quantidade.
-const DI_CAS = { 'arroz': ['colher de sopa cheia', 25], 'arroz integral': ['colher de sopa cheia', 20], 'batata doce': ['colher de sopa cheia', 40, 'picada ou amassada'], 'batata inglesa': ['colher de sopa cheia', 30, 'picada'], 'mandioca': ['colher de sopa cheia', 35, 'picada'], 'macarrao sem gluten': ['colher de sopa cheia', 25], 'feijao': ['concha média', 85], 'lentilha': ['concha média', 80], 'grao de bico': ['colher de sopa cheia', 22], 'carne bovina magra': ['palma da mão', 100], 'carne suina magra': ['palma da mão', 100], 'frango sem pele': ['palma da mão', 100], 'peixe': ['palma da mão', 100], 'salmao': ['palma da mão', 100], 'aveia': ['colher de sopa', 15], 'farinha de arroz': ['colher de sopa', 12], 'tapioca': ['colher de sopa cheia', 20], 'rap10': ['unidade', 33], 'leite': ['copo americano', 190], 'leite sem lactose': ['copo americano', 190], 'iogurte natural': ['pote', 170], 'iogurte sem lactose': ['pote', 170], 'queijo mussarela': ['fatia média', 15], 'requeijao': ['colher de sopa cheia', 30], 'ricota': ['colher de sopa cheia', 20], 'whey': ['scoop do pote', 30], 'whey isolado': ['scoop do pote', 30], 'proteina de ervilha': ['scoop do pote', 30], 'azeite de oliva': ['colher de sopa', 8], 'manteiga': ['colher de chá', 5], 'castanhas': ['colher de sopa cheia', 15], 'pasta de amendoim': ['colher de sopa', 15], 'abacaxi': ['fatia média', 75], 'mamao': ['fatia média', 100], 'macarrao': ['colher de sopa cheia', 25], 'massa integral': ['colher de sopa cheia', 25], 'cuscuz': ['colher de sopa cheia', 25], 'polenta': ['colher de sopa cheia', 30], 'abobora': ['colher de sopa cheia', 35, 'picada'], 'sardinha': ['unidade', 25], 'atum': ['colher de sopa cheia', 20], 'camarao': ['colher de sopa cheia', 20], 'tofu': ['fatia média', 30], 'carne de soja hidratada': ['colher de sopa cheia', 25], 'manga': ['xícara', 140, 'picada'], 'uva': ['unidade', 5], 'framboesa': ['xícara', 120], 'morango': ['unidade', 12], 'melancia': ['fatia média', 200], 'melao': ['fatia média', 90], 'abacate': ['colher de sopa cheia', 30], 'coco': ['colher de sopa', 10, 'ralado'] };
-const DI_CAS_PL = { 'colher de sopa cheia': ['colheres de sopa cheias', 1], 'colher de sopa': ['colheres de sopa', 1], 'colher de chá': ['colheres de chá', 1], 'concha média': ['conchas médias', 1], 'palma da mão': ['palmas da mão', 1], 'unidade': ['unidades', 1], 'copo americano': ['copos americanos', 0], 'pote': ['potes', 0], 'fatia média': ['fatias médias', 1], 'scoop do pote': ['scoops do pote', 0], 'xícara': ['xícaras', 1] };   // [plural, feminino]
+const DI_CAS = { 'arroz': ['colher de sopa cheia', 25], 'arroz integral': ['colher de sopa cheia', 20], 'batata doce': ['colher de sopa cheia', 40, 'picada ou amassada'], 'batata inglesa': ['colher de sopa cheia', 30, 'picada'], 'mandioca': ['colher de sopa cheia', 35, 'picada'], 'macarrao sem gluten': ['colher de sopa cheia', 25], 'feijao': ['concha média', 85], 'lentilha': ['concha média', 80], 'grao de bico': ['colher de sopa cheia', 22], 'carne bovina magra': ['palma da mão', 100], 'carne suina magra': ['palma da mão', 100], 'frango sem pele': ['palma da mão', 100], 'peixe': ['palma da mão', 100], 'salmao': ['palma da mão', 100], 'aveia': ['colher de sopa', 15], 'farinha de arroz': ['colher de sopa', 12], 'tapioca': ['colher de sopa cheia', 20], 'rap10': ['unidade', 33], 'leite': ['copo americano', 190], 'leite sem lactose': ['copo americano', 190], 'iogurte natural': ['pote', 170], 'iogurte sem lactose': ['pote', 170], 'queijo mussarela': ['fatia média', 15], 'requeijao': ['colher de sopa cheia', 30], 'ricota': ['colher de sopa cheia', 20], 'whey': ['scoop do pote', 30], 'whey isolado': ['scoop do pote', 30], 'proteina de ervilha': ['scoop do pote', 30], 'azeite de oliva': ['colher de sopa', 8], 'manteiga': ['colher de chá', 5], 'castanhas': ['colher de sopa cheia', 15], 'pasta de amendoim': ['colher de sopa', 15], 'abacaxi': ['fatia média', 75], 'mamao': ['fatia média', 100], 'macarrao': ['colher de sopa cheia', 25], 'massa integral': ['colher de sopa cheia', 25], 'cuscuz': ['colher de sopa cheia', 25], 'polenta': ['colher de sopa cheia', 30], 'abobora': ['colher de sopa cheia', 35, 'picada'], 'sardinha': ['unidade', 25], 'atum': ['colher de sopa cheia', 20], 'camarao': ['colher de sopa cheia', 20], 'tofu': ['fatia média', 30], 'carne de soja hidratada': ['colher de sopa cheia', 25], 'manga': ['xícara de chá', 140, 'picada'], 'uva': ['unidade', 5], 'framboesa': ['xícara de chá', 120], 'morango': ['unidade', 12], 'melancia': ['fatia média', 200], 'melao': ['fatia média', 90], 'abacate': ['colher de sopa cheia', 30], 'coco': ['colher de sopa', 10, 'ralado'] };
+const DI_CAS_PL = { 'colher de sopa cheia': ['colheres de sopa cheias', 1], 'colher de sopa': ['colheres de sopa', 1], 'colher de chá': ['colheres de chá', 1], 'concha média': ['conchas médias', 1], 'palma da mão': ['palmas da mão', 1], 'unidade': ['unidades', 1], 'copo americano': ['copos americanos', 0], 'pote': ['potes', 0], 'fatia média': ['fatias médias', 1], 'scoop do pote': ['scoops do pote', 0], 'xícara de chá': ['xícaras de chá', 1] };   // [plural, feminino]
 const DI_CAS_LEG = 'Medidas caseiras', DI_CAS_SCOOP = 'Confere o tamanho do scoop no rótulo';
 function _diCasAcha(nome) { const n = _teFiNorm(String(nome || '').replace(/<[^>]*>/g, '')).trim(); return DI_CAS[n] || DI_CAS[n.replace(/ sem lactose$/, '')] || null; }
 function _diCasTxt(med, n) {
@@ -33656,6 +33753,7 @@ function _diMoCaseira(rows, modo, notas) {
   const leg = ['As medidas valem pro alimento pronto (cozido, assado ou grelhado).'];
   if (usou['palma da mão']) leg.push('Palma da mão: filé do tamanho e da espessura da tua palma, sem os dedos.');
   if (usou['copo americano']) leg.push('Copo americano: 190 ml.');
+  if (usou['xícara de chá']) leg.push('Xícara de chá: 240 ml.');   // v724 (Entregas, Sala #5954)
   if (preparo.length) leg.push('Como medir: ' + preparo.join(', ') + '.');
   _diCasLegenda(rows, Object.keys(usou).length ? leg.join(' ') : '');
   if (notas) {
@@ -38584,7 +38682,10 @@ async function trainerLoadSheet(presetSid) {
     ]);
     const tText = tResp.ok ? await tResp.text() : '';
     const dText = dResp.ok ? await dResp.text() : '';
-    const tParsed = tText ? parseCSVCru(tText).map(r => { while (r.length < 8) r.push(''); return r.slice(0, 8); }) : [];
+    let _tDia = null;   // v724
+    if (tText) { try { _tDia = await _treinoCsvComDia_(sid, tText); } catch (_) { _tDia = null; } }
+    if (_tDia && (_tDia.falhou || _tDia.sobrou) && _tDia.achou > _tDia.consertou) setTimeout(() => { try { _ghToast('Não consegui ler o dia de ' + (_tDia.achou - _tDia.consertou) + ' exercício(s) desta planilha. Antes de salvar o treino, fecha e abre o aluno de novo', 9000); } catch (_) {} }, 900);
+    const tParsed = tText ? parseCSVCru(_tDia ? _tDia.text : tText).map(r => { while (r.length < 8) r.push(''); return r.slice(0, 8); }) : [];
     const dParsed = dText ? parseCSVCru(dText).map(r => { while (r.length < 4) r.push(''); return r.slice(0, 4); }) : [];
     _teBaseGuarda_(sid, tResp.ok ? tText : null, dResp.ok ? dText : null);   // v659: referência pro aviso de "mudou depois que abriu"
     _teEntGuarda_(sid, tParsed.length >= 2 ? tParsed : null, dParsed.length >= 2 ? dParsed : null);   // v660: o que já está salvo, pro Entregar
@@ -40692,7 +40793,8 @@ function _teCopTreino_(atual, fonte) {
 async function _teCopLe_(sid) {
   const st = Date.now();
   const [t, d] = await Promise.all(['TREINO', 'DIETA'].map(a => fetch('https://docs.google.com/spreadsheets/d/' + sid + '/gviz/tq?tqx=out:csv&sheet=' + a + '&headers=0&_=' + st).then(r => r.ok ? r.text() : '').catch(() => '')));
-  const tp = t ? parseCSVCru(t).map(r => { while (r.length < 8) r.push(''); return r.slice(0, 8); }) : [];
+  let tc = t; if (t) { try { tc = (await _treinoCsvComDia_(sid, t)).text; } catch (_) { tc = t; } }   // v724
+  const tp = tc ? parseCSVCru(tc).map(r => { while (r.length < 8) r.push(''); return r.slice(0, 8); }) : [];
   const dp = d ? parseCSVCru(d).map(r => { while (r.length < 4) r.push(''); return r.slice(0, 4); }) : [];
   return { t: tp.length >= 2 ? tp : null, d: dp.length >= 2 ? dp : null };
 }
