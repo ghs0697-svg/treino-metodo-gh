@@ -31492,7 +31492,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v720';
+var APP_SHELL_V = 'metodo-gh-v721';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
@@ -33316,6 +33316,19 @@ function _diMoMeta(rows) {   // linha "Macros do dia" com o total que ficou
   }
   return b.t;
 }
+// v721 (GH 27/11/2026): "orientar a segurar um pouco a água antes de dormir", pra não acordar de noite e atrapalhar o sono.
+// A linha da água da dieta fecha a observação com a orientação da noite. Dieta sem linha de água ganha uma, com a meta pelo
+// peso (a mesma conta da tela de água: AGUA_ML_KG por kg, de meio em meio litro). O total do dia não muda.
+const DI_AGUA_NOITE = 'Segura um pouco a água na última hora antes de dormir, pra não acordar pra fazer xixi e atrapalhar o sono.';
+function _diMoAgua(rows, peso) {
+  const sec = r => String((r && r[0]) || '').toLowerCase().trim();
+  const r = rows.find(x => (sec(x) === 'meta' || sec(x) === 'regra') && /^(?:[áa]gua|hidrata[çc][ãa]o)$/i.test(String(x[1] || '').trim()));
+  if (r) { const d = String(r[3] || '').trim(); if (!/dormir|deitar|sono/i.test(d)) r[3] = d ? d.replace(/[.;,\s]+$/, '') + '. ' + DI_AGUA_NOITE : DI_AGUA_NOITE; return; }
+  const kg = Number(peso); if (!(kg >= 30 && kg <= 300)) return;
+  const l = _aguaMetaDoPeso(kg);
+  let fim = 0; rows.forEach((x, i) => { const t = sec(x); if (t === 'info' || t === 'meta' || t === 'aluno') fim = i; });
+  rows.splice(fim + 1, 0, ['meta', 'Água', String(l).replace('.', ',') + ' litros por dia', DI_AGUA_NOITE]);
+}
 // monta a dieta inteira. Devolve { rows, tot, alvo, notas } ou { erro }
 function _diMoMonta(rows, ini, op) {
   const sec = r => String((r && r[0]) || '').toLowerCase().trim(), PR = t => t === 'almoco' || t === 'janta';
@@ -33367,6 +33380,7 @@ function _diMoMonta(rows, ini, op) {
   const out = melhor.out;
   const inf = out.find(r => sec(r) === 'info'); if (inf && !String(inf[3] || '').trim() && ini.objTxt) inf[3] = ini.objTxt.replace(/<[^>]*>/g, '').trim();
   const tot = _diMoMeta(out);
+  _diMoAgua(out, peso);
   if (!_diMoModelo(ini.modeloTxt)) notas.push('Ele não respondeu o modelo de refeições. Montei em 4: desjejum, almoço, lanche e janta.');
   if (cm.semProt) notas.push(cm.protMain.length ? 'Ele não marcou carne, frango nem peixe. O almoço e a janta saíram com ovos: troca na mão.' : 'Ele não marcou carne, frango nem peixe, e ovo está fora. O almoço e a janta saíram SEM proteína: põe na mão.');
   if (ini.alergia) notas.push('Alergia: ' + ini.alergia + '. ' + (cm.tirei.length ? 'Deixei de fora: ' + cm.tirei.join(', ').toLowerCase() + '. ' : 'Nada do que eu ia usar bateu pelo nome. ') + 'Confere a dieta inteira.');
@@ -36394,8 +36408,9 @@ function _meMoDesenha() {
   o.innerHTML = h + '</div>'; o.hidden = false;
 }
 
-// v710/v711: DANONES (plano B, sem IA): motor do protocolo hormonal e de peptídeos (GHHP + _hpMo), escrito pelo GH com o Gemini.
-// v711: título único PROTOCOLO. Versão X.0 e peptídeo antigo mantido no reajuste com câncer na 133. Passou nos 13 testes de 99-setup/revisao-plano-b/teste-motor-hormonal.mjs. Botão "💉 Danones" no bloco PROTOCOLOS / CICLOS do editor da dieta.
+// v722: DANONES (plano B, sem IA): motor do protocolo hormonal e de peptídeos (GHHP + _hpMo), atualizado pela Gemini em 27/11/2026.
+// Base: v721 (integração _exPede/_exAplica/_exResumo, botão fixo Danones, cache gh_hp_escada_v1, 13/13 no contrato).
+// Consertos v722 (revisão Site #5809): (1) aba "Ajustar composto" ligada na tela Danones com prévia ao vivo e aplicação via GHHP.poe/_diMoPoe sem salvar sozinho; (2) na troca de oral em ajustaComposto, substitui só a linha do próprio composto e o adjuvante oral criado pelo motor (casando palavra inteira de oral conhecido, nunca palavra genérica nem avisos de segurança; outras linhas que citam o oral ficam intactas com nota).
 
 const GHHP = (() => {
   const nrm = s => String(s == null ? '' : s).replace(/<[^>]*>/g, ' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
@@ -36435,11 +36450,11 @@ const GHHP = (() => {
   const PEPT_CANCER_VETADOS = /bpc[\s-]*157|tb[\s-]*500|tb4|ghk[\s-]*cu|cjc[\s-]*1295|ipamorel|ghrp|hexarelin|sermorelin|tesamorel|mk[\s-]*677|ibutamoren|mots[\s-]*c|igf[\s-]*1|somatrop|saizen|genotropin|melanotan/i;
   const RE_ESPERA = /comeca no proximo reajuste|ainda nao comecou|ativar no reajuste/i;
 
-  const ESTRUT_HORM = /^(protocolo hormonal|aplicacao e rodizio|painel laboratorial|sinais de virilizacao|condicao de hematocrito|controle de hematocrito|cafeina \(adjuvante do oral\))/i;
+  const ESTRUT_HORM = /^(protocolo hormonal|aplicacao e rodizio|painel laboratorial|sinais de virilizacao|condicao de hematocrito|controle de hematocrito|cafeina \(adjuvante do oral\)|o que tu ja usa|como medir a dose|pressao arterial|sinais de alerta|se um dia quiser parar)/i;
   const ESTRUT_PEPT = /^(protocolo de peptideos|compra dos frascos|reconstituicao e conservacao)/i;
   const ESTRUT_TPC = /^(tpc:|hcg:|exames ao fim da semana 6)/i;
   const ESTRUT_ABERTO = /^protocolo\./i;
-  const PROTO_ESTRUTURAL = /^(protocolo hormonal|protocolo de peptideos|protocolo\.|tpc:|hcg:|aplicacao e rodizio|painel laboratorial|sinais de virilizacao|compra dos frascos|reconstituicao e conservacao|condicao de hematocrito|controle de hematocrito|exames ao fim da semana 6|cafeina \(adjuvante do oral\))/i;
+  const PROTO_ESTRUTURAL = /^(protocolo hormonal|protocolo de peptideos|protocolo\.|tpc:|hcg:|aplicacao e rodizio|painel laboratorial|sinais de virilizacao|compra dos frascos|reconstituicao e conservacao|condicao de hematocrito|controle de hematocrito|exames ao fim da semana 6|cafeina \(adjuvante do oral\)|o que tu ja usa|como medir a dose|pressao arterial|sinais de alerta|se um dia quiser parar)/i;
   const ehTitPept = r => {
     const nm = nrm(r[1]), ob = nrm(r[3]);
     return /^protocolo de peptideos/i.test(nm) || (/^protocolo\./i.test(nm) && /frasco isolado|1 substancia por frasco/.test(ob));
@@ -36457,7 +36472,7 @@ const GHHP = (() => {
     const m = t.match(/cjc[\s-]*1295|ipamorel|mots[\s-]*c|ss[\s-]*31|retatrutida|ghk[\s-]*cu|bpc[\s-]*157|tb[\s-]*500|pt[\s-]*141|dsip|epitalon|selank|semax|aod[\s-]*9604|kpv|melanotan|tirzepatida|semaglutida/);
     return m ? m[0].replace(/[\s-]+/g, '') : t;
   };
-  const ehCompostoConhecido = nm => INJ_ANAB.test(nm) || ORAL_ANAB.test(nm) || PEPT_RE.test(nm) || /somatropina|\bgh\b|clembuterol|clenbuterol|lavizoo/.test(nm);
+  const ehCompostoConhecido = nm => INJ_ANAB.test(nm) || ORAL_ANAB.test(nm) || PEPT_RE.test(nm) || /somatropina|\bgh\b|clembuterol|clenbuterol|lavizoo|\bt4\b|levotiroxina/.test(nm);
 
   const arred50 = (v, min, max) => {
     const r = Math.round((Number(v) || 0) / 50) * 50;
@@ -36575,8 +36590,8 @@ const GHHP = (() => {
     const linhas = arr.filter((r, idx) => ehProtoLinha(r, idx, cab));
     const injetaveis = [], orais = [], peptideos = [], extras = [];
     let temBloco = linhas.length > 0, ativarNoReajuste = false, temRetatrutida = false;
-    let temSomatropina = false, temClembuterol = false, jaUsaClemb1ml = false;
-    const rawSomatropina = [], rawClembuterol = [];
+    let temSomatropina = false, temClembuterol = false, jaUsaClemb1ml = false, temT4 = false;
+    const rawSomatropina = [], rawClembuterol = [], rawT4 = [];
     linhas.forEach(r => {
       const nome = String(r[1] || '').trim(), doseTxt = String(r[2] || '').trim(), obs = String(r[3] || '').trim();
       const nm = nrm(nome), tudo = nrm(nome + ' ' + doseTxt + ' ' + obs);
@@ -36593,12 +36608,13 @@ const GHHP = (() => {
         if (/\b1\s*ml\b|25\s*mcg/.test(tudo) && !/\b2\s*ml\b|50\s*mcg/.test(tudo)) jaUsaClemb1ml = true;
         return;
       }
+      if (/\bt4\b|levotiroxina|puran|euthyrox/.test(nm)) { temT4 = true; rawT4.push(r.slice()); return; }
       if (PEPT_RE.test(nm)) { peptideos.push({ nome, dose: val, doseTxt, obs, raw: r.slice() }); return; }
       if (ORAL_ANAB.test(nm)) { orais.push({ nome, dose: val, doseTxt, obs, temMg, raw: r.slice() }); return; }
       if (INJ_ANAB.test(nm)) { injetaveis.push({ nome, dose: val, doseTxt, obs, temMg, raw: r.slice() }); return; }
       extras.push(r.slice());
     });
-    return { linhas, temBloco, injetaveis, orais, peptideos, extras, ativarNoReajuste, temRetatrutida, temSomatropina, rawSomatropina, temClembuterol, rawClembuterol, jaUsaClemb1ml };
+    return { linhas, temBloco, injetaveis, orais, peptideos, extras, ativarNoReajuste, temRetatrutida, temSomatropina, rawSomatropina, temClembuterol, rawClembuterol, jaUsaClemb1ml, temT4, rawT4 };
   }
 
   function escalaInjetavelH(nome, doseAtual) {
@@ -36625,6 +36641,10 @@ const GHHP = (() => {
     const quedaCabelo = !!P.quedaCabelo;
     const semTrembo = (P.estresse != null && P.estresse >= 4) || (P.ansiedade != null && P.ansiedade >= 4) || (P.sono != null && P.sono <= 2) || (P.adesao != null && P.adesao <= 2) || PSIQ.test(nrm(P.remedios)) || !!P.irritacaoOuInsonia;
     const baseTesto = P.basePreferida && /durateston|cipionato|propionato/i.test(P.basePreferida) ? P.basePreferida : 'Enantato de Testosterona';
+    const nandroPadrao = P.preferirNPP ? 'NPP (Fenilpropionato de Nandrolona)' : 'Deca (Decanoato de Nandrolona)';
+    const obsHemoH = P.treinoNoturno
+      ? 'Dose única 30 a 45 min antes do treino (nos dias sem treino, no mesmo horário). Sem cafeína junto. Tomar com refeição'
+      : 'Dose integral 30 a 45 min antes do treino junto com Cafeína 400mg. Tomar com refeição';
 
     let versao = P.versao || 1;
     if (!rea && (P.nivel === 'Avançado' || P.nivel === 'Atleta') && P.usaHormonio6m) {
@@ -36639,7 +36659,7 @@ const GHHP = (() => {
       injs.push({ nome: 'Enantato de Testosterona', dose: 250 });
       injs.push({ nome: 'Deca (Decanoato de Nandrolona)', dose: 200 });
       notas.push('Protocolo pós-cirurgia autorizado pelo GH: Testo 250 + Deca 200, sem Hemogenin e sem Cafeína 400mg. Rodízio dorsal/glúteo (evitar abdômen).');
-    } else if (rea && atual.injetaveis.length) {
+    } else if (rea && atual.injetaveis.length && !P.virarFase) {
       atual.injetaveis.forEach(x => substituidos.add(nrm(x.nome)));
       atual.orais.forEach(x => substituidos.add(nrm(x.nome)));
       if (atual.ativarNoReajuste) {
@@ -36661,6 +36681,13 @@ const GHHP = (() => {
             return;
           }
           const d0 = x.dose;
+          const ehBold = /boldenona/i.test(x.nome);
+          if (ehBold && hctAlto) {
+            injs.push({ nome: x.nome, dose: d0, rawPreservado: x.raw, podeEscalar: false });
+            decisoes.push(`Hematócrito alto com ${x.nome} (${d0}mg/sem): a) Reduzir ou trocar por composto que não eleve hematócrito; b) Manter com Nattokinase e monitoramento.`);
+            notas.push(`Reajuste: ${x.nome} não foi escalado por hematócrito alto.`);
+            return;
+          }
           const ehSeco = /masteron|trembolona|primobolan|dhb/i.test(x.nome);
           const ehVol = /testo|durateston|deca|npp|boldenona/i.test(x.nome);
           let d1 = d0;
@@ -36669,7 +36696,7 @@ const GHHP = (() => {
             injs.push({ nome: x.nome, dose: d1 });
             notas.push(`Reajuste: ${x.nome} escalado de ${d0}mg para ${d1}mg/semana.`);
           } else {
-            injs.push({ nome: x.nome, dose: d0, rawPreservado: x.raw, podeEscalar: d0 < teto });
+            injs.push({ nome: x.nome, dose: d0, rawPreservado: x.raw, podeEscalar: d0 < teto && !(ehBold && hctAlto) });
             if (d0 >= teto) notas.push(`Reajuste: ${x.nome} mantido no teto da faixa (${d0}mg/semana).`);
           }
         });
@@ -36681,6 +36708,18 @@ const GHHP = (() => {
               notas.push(`Reajuste: ${x.nome} escalado de ${x.dose}mg para ${d1}mg/semana.`);
               x.dose = d1; delete x.rawPreservado; delete x.podeEscalar; subiuAlgum = true; break;
             }
+          }
+        }
+        // Alertas de coerência de fase e queda de cabelo no reajuste (sem remover composto sem ordem)
+        if (secar && injs.some(x => /deca|boldenona/i.test(x.nome))) {
+          decisoes.push('Bloco atual tem composto de volume (Deca/Boldenona) em fase de secar: a) Ligar "Virar bloco para fase/verão" para migrar para ciclo seco; b) Manter compostos atuais e só escalar.');
+        } else if (!secar && injs.some(x => /trembolona/i.test(x.nome))) {
+          decisoes.push('Bloco atual tem Trembolona em fase de ganhar massa: a) Ligar "Virar bloco para fase/verão" para migrar para off-season; b) Manter compostos atuais.');
+        }
+        if (quedaCabelo) {
+          const dhtNoBloco = injs.concat(atual.orais).filter(x => /masteron|primobolan|oxandrol|stanoz/i.test(x.nome));
+          if (dhtNoBloco.length) {
+            decisoes.push(`Queda de cabelo marcada com derivado de DHT no bloco (${dhtNoBloco.map(x => x.nome).join(', ')}): a) Manter como está (decisão do GH); b) Substituir por Deca ou Turinabol (danones §3.7).`);
           }
         }
         // R5: tratar TODOS os orais existentes (nunca só atual.orais[0])
@@ -36701,13 +36740,31 @@ const GHHP = (() => {
                 oraisOut.push({ nome: o0.nome, dose: o0.dose, rawPreservado: o0.raw });
                 notas.push(`Reajuste: ${o0.nome} (${o0.doseTxt || 'sem mg'}) está fora da faixa (${minO} a ${maxO}mg) ou sem unidade em mg; linha mantida como está para conferência.`);
               } else if (/hemogenin|oximetol/i.test(o0.nome) && (hctAlto || P.pressao || secar)) {
-                oraisOut.push({ nome: 'Oxandrolona', dose: 40, obs: 'Dose única 30 a 45 min antes do treino (nos dias sem treino, no mesmo horário)' });
-                notas.push(`Reajuste: ${o0.nome} trocado por Oxandrolona 40mg para secar/proteger hematócrito e pressão.`);
+                if (quedaCabelo) {
+                  oraisOut.push({ nome: 'Turinabol', dose: 40, obs: 'Dose única 30 a 45 min antes do treino (nos dias sem treino, no mesmo horário)' });
+                  notas.push(`Reajuste: ${o0.nome} trocado por Turinabol 40mg (queda de cabelo marcada, decisão GH 27/11).`);
+                } else {
+                  oraisOut.push({ nome: 'Oxandrolona', dose: 40, obs: 'Dose única 30 a 45 min antes do treino (nos dias sem treino, no mesmo horário)' });
+                  notas.push(`Reajuste: ${o0.nome} trocado por Oxandrolona 40mg para secar/proteger hematócrito e pressão.`);
+                }
                 subiuAlgum = true;
               } else if (/hemogenin|oximetol/i.test(o0.nome) && !secar && !hctAlto && !P.pressao && o0.dose < 100) {
                 const novaD = Math.min(100, o0.dose + 50);
-                oraisOut.push({ nome: o0.nome, dose: novaD, obs: 'Dose integral 30 a 45 min antes do treino junto com Cafeína 400mg (cafeína potencializa absorção). Tomar com refeição' });
+                oraisOut.push({ nome: o0.nome, dose: novaD, obs: obsHemoH });
                 notas.push(`Reajuste: ${o0.nome} escalado de ${o0.dose}mg para ${novaD}mg/dia.`);
+                subiuAlgum = true;
+              } else if (/dianabol|metandrosten/i.test(o0.nome) && !secar && o0.dose < 20) {
+                oraisOut.push({ nome: o0.nome, dose: 20, obs: 'Dose única 30 a 45 min antes do treino' });
+                notas.push(`Reajuste: ${o0.nome} escalado de ${o0.dose}mg para 20mg/dia.`);
+                subiuAlgum = true;
+              } else if (/halotest/i.test(o0.nome) && o0.dose < 20) {
+                oraisOut.push({ nome: o0.nome, dose: 20, obs: 'Dose única 30 a 45 min antes do treino' });
+                notas.push(`Reajuste: ${o0.nome} escalado de ${o0.dose}mg para 20mg/dia.`);
+                subiuAlgum = true;
+              } else if (/turinabol/i.test(o0.nome) && o0.dose < 50) {
+                const novaT = Math.min(50, o0.dose + 10);
+                oraisOut.push({ nome: o0.nome, dose: novaT, obs: 'Dose única 30 a 45 min antes do treino' });
+                notas.push(`Reajuste: ${o0.nome} escalado de ${o0.dose}mg para ${novaT}mg/dia.`);
                 subiuAlgum = true;
               } else {
                 oraisOut.push({ nome: o0.nome, dose: o0.dose, rawPreservado: o0.raw });
@@ -36719,25 +36776,53 @@ const GHHP = (() => {
             notas.push('Há composto mantido para conferência: nenhum composto novo foi acrescentado automaticamente.');
           } else {
             const novoOral = secar
-              ? { nome: 'Oxandrolona', dose: 40, obs: 'Dose única 30 a 45 min antes do treino (nos dias sem treino, no mesmo horário)' }
-              : { nome: 'Hemogenin (Oximetolona)', dose: 50, obs: 'Dose integral 30 a 45 min antes do treino junto com Cafeína 400mg (cafeína potencializa absorção). Tomar com refeição' };
+              ? (quedaCabelo
+                ? { nome: 'Turinabol', dose: 40, obs: 'Dose única 30 a 45 min antes do treino (nos dias sem treino, no mesmo horário)' }
+                : { nome: 'Oxandrolona', dose: 40, obs: 'Dose única 30 a 45 min antes do treino (nos dias sem treino, no mesmo horário)' })
+              : { nome: 'Hemogenin (Oximetolona)', dose: 50, obs: obsHemoH };
             oraisOut.push(novoOral);
             notas.push(`Reajuste: adicionado ${novoOral.nome} ${novoOral.dose}mg/dia.`);
             subiuAlgum = true;
           }
         }
+        // Regra GH 10/11: no reajuste a dose nunca fica parada sem evolução ou decisão
+        if (!subiuAlgum && !temPreservado) {
+          if (injs.length < 3) {
+            const temCurto = injs.some(x => FREQ_3X.test(x.nome));
+            const novoInj = secar
+              ? (quedaCabelo ? { nome: 'DHB (Dihidroboldenona)', dose: 150 } : (!injs.some(x => /masteron/i.test(x.nome)) ? { nome: temCurto ? 'Masteron Propionato' : 'Masteron Enantato', dose: 200 } : (!semTrembo ? { nome: temCurto ? 'Trembolona Acetato' : 'Trembolona Enantato', dose: 200 } : { nome: 'DHB (Dihidroboldenona)', dose: 150 })))
+              : (!injs.some(x => /deca|npp|nandrol/i.test(x.nome)) ? { nome: nandroPadrao, dose: 200 } : (!hctAlto && !riscoCardio ? { nome: 'Boldenona', dose: 200 } : { nome: 'DHB (Dihidroboldenona)', dose: 150 }));
+            if (!injs.some(x => nrm(x.nome) === nrm(novoInj.nome))) {
+              injs.push(novoInj);
+              notas.push(`Reajuste (compostos anteriores no teto): adicionado ${novoInj.nome} ${novoInj.dose}mg/semana.`);
+              subiuAlgum = true;
+            }
+          }
+          if (!subiuAlgum) {
+            decisoes.push('Todos os compostos do bloco atual já estão no teto da faixa: a) Virar bloco para nova fase/verão ou trocar o oral (ex.: Halotestin em v5+); b) Manter teto atual com OK do GH.');
+          }
+        }
       }
     } else {
+      if (rea && P.virarFase && (atual.injetaveis.length || atual.orais.length)) {
+        const antigos = atual.injetaveis.concat(atual.orais).map(x => x.nome);
+        notas.push('Virada de fase/verão ativada no reajuste. Compostos anteriores substituídos: ' + antigos.join(', ') + '.');
+      }
       atual.injetaveis.forEach(x => substituidos.add(nrm(x.nome)));
       atual.orais.forEach(x => substituidos.add(nrm(x.nome)));
-      const doseTesto = versao >= 2 ? 500 : (P.sazonalVerao ? 300 : 250);
-      if (P.sazonalVerao) {
+      const aplicaVerao = !!P.sazonalVerao && (versao >= 2 || P.nivel === 'Avançado' || P.nivel === 'Atleta');
+      if (P.sazonalVerao && !aplicaVerao) {
+        notas.push('Sazonalidade de verão (bloco da época 02/11) vale apenas para v2.0+ ou avançados (decisão GH 27/11): mantido protocolo inicial v1.0 sem Trembolona nem Oxandrolona.');
+      }
+      const doseTesto = versao >= 2 ? 500 : (aplicaVerao ? 300 : 250);
+      if (aplicaVerao) {
         if (quedaCabelo) {
+          const nandroVerao = (P.semCondicaoFinanceira || P.corteFinanceiro) ? 'Deca (Decanoato de Nandrolona)' : 'NPP (Fenilpropionato de Nandrolona)';
           injs.push({ nome: baseTesto, dose: Math.max(300, doseTesto) });
-          injs.push({ nome: 'NPP (Fenilpropionato de Nandrolona)', dose: 200 });
+          injs.push({ nome: nandroVerao, dose: 200 });
           injs.push({ nome: 'DHB (Dihidroboldenona)', dose: 200 });
-          if (!semOral) oraisOut.push({ nome: 'Oxandrolona', dose: 40, obs: 'Dose única 30 a 45 min antes do treino (nos dias sem treino, no mesmo horário)' });
-          notas.push('Queda de cabelo marcada (102.3/128) na sazonalidade de verão: Masteron e Trembolona vetados; aplicado Enantato + NPP + DHB' + (!semOral ? ' + Oxandrolona 40mg.' : '.'));
+          if (!semOral) oraisOut.push({ nome: 'Turinabol', dose: 40, obs: 'Dose única 30 a 45 min antes do treino (nos dias sem treino, no mesmo horário)' });
+          notas.push(`Queda de cabelo marcada na sazonalidade de verão (GH 27/11): Masteron, Trembolona e Oxandrolona vetados; aplicado Enantato + ${nandroVerao} + DHB` + (!semOral ? ' + Turinabol 40mg.' : '.'));
         } else if (semTrembo) {
           injs.push({ nome: baseTesto, dose: Math.max(300, doseTesto) });
           injs.push({ nome: 'Masteron Propionato', dose: 300 });
@@ -36755,11 +36840,11 @@ const GHHP = (() => {
         }
       } else if (P.cirurgia) {
         injs.push({ nome: baseTesto, dose: Math.max(250, doseTesto) });
-        injs.push({ nome: 'NPP (Fenilpropionato de Nandrolona)', dose: 200 });
+        injs.push({ nome: nandroPadrao, dose: 200 });
         injs.push({ nome: 'Masteron Enantato', dose: 200, notaAluno: 'Escolhi o Masteron e não um comprimido de propósito: com a tua cirurgia, não quero nada que suba a pressão agora.' });
       } else if (quedaCabelo) {
         injs.push({ nome: baseTesto, dose: Math.max(250, doseTesto) });
-        injs.push({ nome: 'NPP (Fenilpropionato de Nandrolona)', dose: 200 });
+        injs.push({ nome: nandroPadrao, dose: 200 });
         if (!semOral) oraisOut.push({ nome: 'Turinabol', dose: 40, obs: 'Dose única 30 a 45 min antes do treino' });
         else injs.push({ nome: 'DHB (Dihidroboldenona)', dose: 150 });
         notas.push('Queda de cabelo marcada (102.3/128): Masteron e derivados de DHT vetados. Manter xampu de cetoconazol; não usar Finasterida com Nandrolona.');
@@ -36774,24 +36859,22 @@ const GHHP = (() => {
         }
         notas.push('Hematócrito alto ou risco cardiovascular: Boldenona e Hemogenin vetados.');
       } else if (P.fase === 'crescer') {
-        const nandro = P.preferirNPP ? 'NPP (Fenilpropionato de Nandrolona)' : 'Deca (Decanoato de Nandrolona)';
         injs.push({ nome: baseTesto, dose: versao >= 2 ? 500 : 300 });
-        injs.push({ nome: nandro, dose: versao >= 2 ? 300 : 200 });
+        injs.push({ nome: nandroPadrao, dose: versao >= 2 ? 300 : 200 });
         if (semOral) {
           injs.push({ nome: 'Masteron Enantato', dose: 200 });
           notas.push('Sem oral por fígado alterado ou estômago sensível (128/137): entrou Masteron Enantato 200mg.');
         } else {
           if (versao >= 2) injs.push({ nome: 'Boldenona', dose: 200 });
-          oraisOut.push({ nome: 'Hemogenin (Oximetolona)', dose: versao >= 2 ? 100 : 50, obs: 'Dose integral 30 a 45 min antes do treino junto com Cafeína 400mg (cafeína potencializa absorção). Tomar com refeição' });
+          oraisOut.push({ nome: 'Hemogenin (Oximetolona)', dose: versao >= 2 ? 100 : 50, obs: obsHemoH });
         }
       } else {
         injs.push({ nome: baseTesto, dose: versao >= 2 ? 400 : 300 });
         injs.push({ nome: 'Masteron Enantato', dose: versao >= 2 ? 300 : 200 });
         if (semOral) {
-          const nandroSec = P.preferirNPP ? 'NPP (Fenilpropionato de Nandrolona)' : 'Deca (Decanoato de Nandrolona)';
-          injs.push({ nome: nandroSec, dose: 200 });
-          notas.push(`Sem oral por fígado alterado ou estômago sensível (128/137): entrou ${nandroSec} 200mg.`);
-        } else oraisOut.push({ nome: 'Hemogenin (Oximetolona)', dose: versao >= 2 ? 100 : 50, obs: 'Dose integral 30 a 45 min antes do treino junto com Cafeína 400mg (cafeína potencializa absorção). Tomar com refeição' });
+          injs.push({ nome: nandroPadrao, dose: 200 });
+          notas.push(`Sem oral por fígado alterado ou estômago sensível (128/137): entrou ${nandroPadrao} 200mg.`);
+        } else oraisOut.push({ nome: 'Hemogenin (Oximetolona)', dose: versao >= 2 ? 100 : 50, obs: obsHemoH });
       }
     }
 
@@ -36827,6 +36910,9 @@ const GHHP = (() => {
 
     flags.modulos.hormonal = true;
     proto.push(['proto', `PROTOCOLO. Versão ${versao}.0`, '', '']);
+    if (P.usaHormonioAtual && !rea) {
+      proto.push(['proto', 'O que tu já usa', 'É substituído, não somado', 'Os compostos daqui entram no lugar do que tu já usa hoje, nunca somados.']);
+    }
     injs.forEach(x => {
       if (x.rawPreservado) { proto.push(x.rawPreservado.slice()); return; }
       const div = divideDose(x.dose, vezes);
@@ -36845,15 +36931,17 @@ const GHHP = (() => {
         const obsFinal = /via oral/i.test(obsLimpa) ? `${obsLimpa}.${priTxt}` : `${obsLimpa}, via oral (engolir).${priTxt}`;
         proto.push(['proto', oral.nome, `${oral.dose}mg por dia`, obsFinal]);
       });
-      if (temHemo) {
-        proto.push(['proto', 'Cafeína (adjuvante do oral)', '400mg por dia', 'Dose total do dia (não somar com pré-treino comercial). Tomar 30 a 45 min antes do treino junto com o Hemogenin para potencializar absorção, via oral (engolir).']);
+      if (temHemo && !P.treinoNoturno) {
+        proto.push(['proto', 'Cafeína (adjuvante do oral)', '400mg por dia', 'Dose total do dia (não somar com pré-treino comercial). Tomar 30 a 45 min antes do treino junto com o Hemogenin, via oral (engolir).']);
+      } else if (temHemo && P.treinoNoturno) {
+        notas.push('Treino à noite detectado: Hemogenin saiu sem Cafeína 400mg para não prejudicar o sono.');
       }
-      supl.push(['supl', 'NAC (N-acetilcisteína)', '600mg', 'Duas vezes ao dia: pós-desjejum e pós-janta, via oral (engolir). Proteção hepática']);
-      supl.push(['supl', 'Silimarina (Cardo Mariano)', '200mg', 'Duas vezes ao dia: pós-desjejum e pós-janta, via oral (engolir). Proteção hepática']);
-      supl.push(['supl', 'TUDCA', '250mg', 'Duas vezes ao dia: pós-desjejum e pós-janta, via oral (engolir). Proteção hepática']);
+      supl.push(['supl', 'NAC (N-acetilcisteína)', '600mg', 'Duas vezes ao dia: pós-desjejum e pós-janta, via oral (engolir)']);
+      supl.push(['supl', 'Silimarina (Cardo Mariano)', '200mg', 'Duas vezes ao dia: pós-desjejum e pós-janta, via oral (engolir)']);
+      supl.push(['supl', 'TUDCA', '250mg', 'Duas vezes ao dia: pós-desjejum e pós-janta, via oral (engolir)']);
     } else if ((versao >= 2 && !P.cirurgia) || P.posCirurgiaAutorizado) {
-      supl.push(['supl', 'NAC (N-acetilcisteína)', '600mg', 'Duas vezes ao dia: pós-desjejum e pós-janta, via oral (engolir). Proteção hepática']);
-      supl.push(['supl', 'Silimarina (Cardo Mariano)', '200mg', 'Duas vezes ao dia: pós-desjejum e pós-janta, via oral (engolir). Proteção hepática']);
+      supl.push(['supl', 'NAC (N-acetilcisteína)', '600mg', 'Duas vezes ao dia: pós-desjejum e pós-janta, via oral (engolir)']);
+      supl.push(['supl', 'Silimarina (Cardo Mariano)', '200mg', 'Duas vezes ao dia: pós-desjejum e pós-janta, via oral (engolir)']);
     }
 
     if (P.preservarFertilidade && !ativando) {
@@ -36866,34 +36954,36 @@ const GHHP = (() => {
     const precisaAnastro = !!ex.estradiolAlto || doseTestoFinal >= 500 || (P.nivel === 'Atleta' && (!!P.acne || !!P.retencao || doseTestoFinal >= 400));
     if (precisaAnastro && !(doseTestoFinal <= 250 && !ex.estradiolAlto)) {
       const freqA = versao >= 3 && ex.estradiolMuitoAlto ? '3x por semana (segunda, quarta e sexta)' : '2x por semana (segunda e sexta)';
-      supl.push(['supl', 'Anastrozol', '0,5mg', `${freqA}, pós-desjejum, via oral (engolir). Seguir até o exame de 30 dias mostrar estradiol em 40 ou menos (nunca zerar estradiol; alvo 20 a 40). Comprar na farmácia de manipulação`]);
+      supl.push(['supl', 'Anastrozol', '0,5mg', `${freqA}, pós-desjejum, via oral (engolir), até o próximo exame de controle. Comprar na farmácia de manipulação`]);
+      notas.push('Anastrozol incluído na suplementação (critério interno GH: manter até exame de 30 dias mostrar estradiol em 40 ou menos; alvo 3 a 4% da testosterona total, nunca zerar).');
     }
 
     if (P.gineco || P.ginecoIntensa) {
       const doseT = P.ginecoIntensa ? '40mg, 3x por semana por 30 dias' : '10mg, a cada 3 dias';
-      supl.push(['supl', 'Tamoxifeno', doseT, 'Pós-desjejum, via oral (engolir). Anda junto com o Anastrozol para resolver sensibilidade mamária. Não suspender a nandrolona. Comprar na farmácia de manipulação']);
+      supl.push(['supl', 'Tamoxifeno', doseT, 'Pós-desjejum, via oral (engolir). Comprar na farmácia de manipulação']);
+      notas.push('Tamoxifeno incluído na suplementação por sensibilidade mamária (anda junto com o Anastrozol, sem suspender a nandrolona).');
     }
 
     if (ex.prolactinaAlta) {
-      supl.push(['supl', 'Cabergolina (Dostinex)', '0,5mg', 'A cada 10 dias, antes de dormir, via oral (engolir). Controle de prolactina. Comprar na farmácia de manipulação']);
+      supl.push(['supl', 'Cabergolina (Dostinex)', '0,5mg', 'A cada 10 dias, antes de dormir, via oral (engolir). Comprar na farmácia de manipulação']);
     } else if (P.usaDecaAntigaSemExame && !temTrembo) {
       notas.push('Usa Deca há meses (129/130) sem exame de prolactina: exigir prolactina nos exames antes de iniciar Cabergolina.');
     } else if (temTrembo || doseNandroFinal >= 300) {
-      supl.push(['supl', 'Cabergolina (Dostinex)', '0,5mg', '2x por mês (dias 1 e 15), antes de dormir, via oral (engolir). Prevenção de prolactina. Comprar na farmácia de manipulação']);
+      supl.push(['supl', 'Cabergolina (Dostinex)', '0,5mg', '2x por mês (dias 1 e 15), antes de dormir, via oral (engolir). Comprar na farmácia de manipulação']);
     }
 
     if (P.acne) {
       if (!BRA_PRESSAO.test(nrm(P.remedios))) {
-        supl.push(['supl', 'Espironolactona', '25mg', 'Pós-desjejum, por 30 dias, via oral (engolir). Controle de espinhas e oleosidade. Comprar na farmácia de manipulação']);
+        supl.push(['supl', 'Espironolactona', '25mg', 'Pós-desjejum, por 30 dias, via oral (engolir). Comprar na farmácia de manipulação']);
       } else notas.push('Acne ativa (128), mas aluno usa anti-hipertensivo com risco de interação (BRA/olmesartana): Espironolactona segurada para avaliação do GH.');
-      supl.push(['supl', 'Zinco Quelato', '50mg', 'Pós-almoço, via oral (engolir). Apoio para acne ativa']);
-      supl.push(['supl', 'Niacinamida (Vitamina B3)', '500mg', 'Pós-almoço, via oral (engolir). Anti-inflamatório cutâneo para acne durante o protocolo']);
+      supl.push(['supl', 'Zinco Quelato', '50mg', 'Pós-almoço, via oral (engolir)']);
+      supl.push(['supl', 'Niacinamida (Vitamina B3)', '500mg', 'Pós-almoço, via oral (engolir)']);
       dicas.push(['dica', 'Cuidado tópico (acne)', 'Sabonete com peróxido de benzoíla 5% ou ácido salicílico', 'Aplicar 1 a 2x ao dia no banho em costas, ombros e peito.']);
     }
 
     if (ex.dhtAlto) {
       if (!injs.some(x => /masteron|deca|npp|nandrol/i.test(x.nome))) {
-        supl.push(['supl', 'Finasterida', '1mg', 'Pós-desjejum, por 30 dias, via oral (engolir). Controle de DHT. Comprar na farmácia de manipulação']);
+        supl.push(['supl', 'Finasterida', '1mg', 'Pós-desjejum, por 30 dias, via oral (engolir). Comprar na farmácia de manipulação']);
       } else notas.push('DHT alto no exame: retirar derivados de DHT do ciclo; não prescrever Finasterida junto de Masteron ou Nandrolona.');
     }
 
@@ -36901,15 +36991,22 @@ const GHHP = (() => {
     if (ex.hemat54) proto.push(['proto', 'Controle de hematócrito acima de 54%', 'Doação de sangue', 'Realizar doação de sangue junto da Nattokinase e repetir hemograma.']);
     if (hctAlto || riscoCardio || versao >= 2) {
       if (temAnticoag) notas.push('Nattokinase contraindicada (uso de anticoagulante, hemofilia ou cirurgia recente/próxima de 4 semanas).');
-      else supl.push(['supl', 'Nattokinase', '200mg', 'Pós-almoço, via oral (engolir). Fluidez sanguínea e controle de hematócrito e pressão']);
+      else {
+        supl.push(['supl', 'Nattokinase', '200mg', 'Ao acordar em jejum, via oral (engolir)']);
+        supl.push(['supl', 'Nattokinase', '200mg', 'Antes de dormir, via oral (engolir)']);
+      }
     } else if (doseTestoFinal > 0 || doseNandroFinal > 0 || oraisOut.some(o => /hemogenin/i.test(o.nome))) {
-      proto.push(['proto', 'Condição de hematócrito', 'Se passar de 50%: Nattokinase 200mg/dia', 'Caso o hemograma de controle passe de 50%, iniciar Nattokinase 200mg pós-almoço (exceto se usar anticoagulante, hemofilia ou cirurgia recente).']);
+      proto.push(['proto', 'Condição de hematócrito', 'Se passar de 50%: Nattokinase 200mg 2x/dia', 'Caso o hemograma passe de 50%, iniciar Nattokinase 200mg ao acordar em jejum e 200mg antes de dormir. Acima de 54%, doação de sangue junto.']);
     }
 
     const rodizioTxt = P.posCirurgiaAutorizado ? 'Rodízio: dorsal e glúteo (evitar abdômen).' : 'Rodízio: ventro-glúteo (glúteo médio), quadríceps (vasto lateral), dorsal (latíssimo) e deltóide (lateral).';
     proto.push(['proto', 'Aplicação e rodízio', `${vezes}x na semana (${diasTxt})`, `Todos os óleos na mesma seringa, pela manhã ou antes do treino (nunca antes de dormir). ${rodizioTxt}`]);
+    proto.push(['proto', 'Como medir a dose', 'Sempre em mg', 'O ml muda de frasco para frasco. Olha no rótulo quantos mg tem em cada ml e divide a dose por esse número.']);
     const prazoExame = P.posCirurgiaAutorizado ? 'A cada 4 a 6 semanas' : ((oraisOut.length && !P.temExame) ? 'Em 15 dias e depois a cada 3 meses' : 'A cada 3 meses');
-    proto.push(['proto', 'Painel laboratorial obrigatório', prazoExame, 'Gonadal (Testosterona total e livre, LH, FSH, Estradiol), Hepático (TGO, TGP, GGT, bilirrubinas), Renal (Cistatina C), Lipidograma completo, Hemograma' + ((temTrembo || doseNandroFinal > 0 || P.usaDecaAntigaSemExame) ? ', Prolactina' : '') + (P.somatropina ? ', IGF-1 e glicemia de jejum' : '') + '.']);
+    proto.push(['proto', 'Painel laboratorial obrigatório', prazoExame, 'Hemograma completo, testosterona total e livre, LH, FSH, estradiol, TGO, TGP, GGT, bilirrubinas, ureia, creatinina, Cistatina C, lipidograma completo, glicose e insulina de jejum, PSA e vitamina D' + ((temTrembo || doseNandroFinal > 0 || P.usaDecaAntigaSemExame) ? ', prolactina' : '') + (P.somatropina ? ', IGF-1' : '') + '.']);
+    proto.push(['proto', 'Pressão arterial', 'Toda semana', 'Mede sentado, em repouso, sempre no mesmo dia e horário. Passou de 14 por 9, avisa no mesmo dia.']);
+    proto.push(['proto', 'Sinais de alerta', 'Não espera', 'Falta de ar, dor no peito, dor de cabeça forte ou inchaço numa perna só: pronto-socorro na hora, e avisa depois. Mamilo sensível ou inchado, pele ou olho amarelado ou urina escura: avisa no mesmo dia.']);
+    proto.push(['proto', 'Se um dia quiser parar', 'Avisa antes', 'Nunca para de uma vez por conta. A saída tem passo a passo próprio: chama antes.']);
   }
 
   // R2, R3, R4, R5 aplicados ao hormonal feminino no reajuste
@@ -36966,7 +37063,9 @@ const GHHP = (() => {
               notas.push(`Reajuste feminino: ${o0.nome} removido por estômago sensível (137).`);
             } else if (/hemogenin|oximetol/i.test(o0.nome) && dHemoAlvo > o0.dose) {
               temOralAtivo = true;
-              proto.push(['proto', o0.nome, `${dHemoAlvo}mg + 200mg de cafeína`, 'Dose única 30 min antes dos treinos de posterior, quadríceps e glúteo, via oral (engolir).']);
+              const dHemoTxt = P.treinoNoturno ? `${dHemoAlvo}mg nos dias de inferiores` : `${dHemoAlvo}mg + 200mg de cafeína`;
+              const oHemoTxt = P.treinoNoturno ? 'Dose única 30 min antes dos treinos de posterior, quadríceps e glúteo, via oral (engolir). Sem cafeína junto.' : 'Dose única 30 min antes dos treinos de posterior, quadríceps e glúteo, via oral (engolir).';
+              proto.push(['proto', o0.nome, dHemoTxt, oHemoTxt]);
               notas.push(`Reajuste feminino: ${o0.nome} escalado de ${o0.dose}mg para ${dHemoAlvo}mg/dia.`);
             } else {
               temOralAtivo = true;
@@ -36978,44 +37077,64 @@ const GHHP = (() => {
             notas.push('Há composto mantido para conferência: nenhum oral novo foi acrescentado automaticamente.');
           } else {
             temOralAtivo = true;
-            proto.push(['proto', 'Hemogenin (Oximetolona)', `${dHemoAlvo}mg + 200mg de cafeína`, 'Dose única 30 min antes dos treinos de posterior, quadríceps e glúteo, via oral (engolir).']);
+            const dHemoTxt = P.treinoNoturno ? `${dHemoAlvo}mg nos dias de inferiores` : `${dHemoAlvo}mg + 200mg de cafeína`;
+            const oHemoTxt = P.treinoNoturno ? 'Dose única 30 min antes dos treinos de posterior, quadríceps e glúteo, via oral (engolir). Sem cafeína junto.' : 'Dose única 30 min antes dos treinos de posterior, quadríceps e glúteo, via oral (engolir).';
+            proto.push(['proto', 'Hemogenin (Oximetolona)', dHemoTxt, oHemoTxt]);
             notas.push(`Reajuste feminino: adicionado Hemogenin (Oximetolona) ${dHemoAlvo}mg.`);
           }
         }
 
-        if (versao >= 5 && !temPreservado && !P.estomago && !atual.orais.some(o => /oxandrol/i.test(o.nome))) {
+        if (versao >= 5 && !temPreservado && !P.estomago && !temOralAtivo) {
           const dOxa = versao >= 6 ? 15 : 10;
           temOralAtivo = true;
           proto.push(['proto', 'Oxandrolona', `${dOxa}mg por dia`, 'Dose única 30 a 45 min antes do treino, via oral (engolir).']);
           notas.push(`Reajuste feminino: adicionado Oxandrolona ${dOxa}mg/dia.`);
+        } else if (versao >= 5 && temOralAtivo && !atual.orais.some(o => /oxandrol/i.test(o.nome))) {
+          decisoes.push(`Hormonal feminino v${versao}.0 já tem oral ativo (teto de 1 oral): confirmar com o GH se mantém ou substitui por Oxandrolona ${versao >= 6 ? 15 : 10}mg.`);
         }
         if (temOralAtivo) {
-          supl.push(['supl', 'Silimarina (Cardo Mariano)', '200mg', 'Pós-desjejum e pós-janta, via oral (engolir). Suporte hepático do oral']);
-          supl.push(['supl', 'NAC (N-acetilcisteína)', '600mg', 'Pós-desjejum e pós-janta, via oral (engolir). Suporte hepático do oral']);
+          supl.push(['supl', 'Silimarina (Cardo Mariano)', '200mg', 'Pós-desjejum e pós-janta, via oral (engolir)']);
+          supl.push(['supl', 'NAC (N-acetilcisteína)', '600mg', 'Pós-desjejum e pós-janta, via oral (engolir)']);
+          supl.push(['supl', 'TUDCA', '250mg', 'Pós-desjejum e pós-janta, via oral (engolir)']);
         }
         if (versao >= 4) decisoes.push(`Hormonal feminino v${versao}.0 acima do padrão oficial 3.0: confirmar doses com o GH antes de liberar.`);
       }
     } else if (P.primoPulseMulher) {
       proto.push(['proto', 'Primobolan (Metenolona Enantato)', '100mg por semana', '50mg na segunda e 50mg na quinta, intramuscular (no glúteo ou quadríceps).']);
       proto.push(['proto', 'Oxandrolona', '10mg por dia de treino prioritário', `Dose única 30 a 45 min antes do treino apenas nos dias de ${P.musculoPrioritario || 'músculo prioritário'}, via oral (engolir).`]);
-      supl.push(['supl', 'Silimarina (Cardo Mariano)', '300mg', 'Pós-lanche da tarde, via oral (engolir). Suporte hepático da Oxandrolona']);
-      supl.push(['supl', 'NAC (N-acetilcisteína)', '600mg', 'Pós-lanche da tarde, via oral (engolir). Suporte hepático da Oxandrolona']);
+      supl.push(['supl', 'Silimarina (Cardo Mariano)', '300mg', 'Pós-lanche da tarde, via oral (engolir)']);
+      supl.push(['supl', 'NAC (N-acetilcisteína)', '600mg', 'Pós-lanche da tarde, via oral (engolir)']);
+      supl.push(['supl', 'TUDCA', '250mg', 'Pós-desjejum e pós-janta, via oral (engolir)']);
     } else {
       const injNome = secar ? 'Masteron Enantato' : 'NPP (Fenilpropionato de Nandrolona)';
       proto.push(['proto', injNome, `${dInjAlvo}mg por semana`, `${divideDose(dInjAlvo, 2)}, intramuscular (no glúteo médio ou quadríceps vasto lateral).`]);
+      let temOralIni = false;
       if (!P.estomago) {
-        proto.push(['proto', 'Hemogenin (Oximetolona)', `${dHemoAlvo}mg + 200mg de cafeína`, 'Dose única 30 min antes dos treinos de posterior, quadríceps e glúteo, via oral (engolir).']);
-        supl.push(['supl', 'Silimarina (Cardo Mariano)', '200mg', 'Pós-desjejum e pós-janta, via oral (engolir). Suporte hepático do oral']);
-        supl.push(['supl', 'NAC (N-acetilcisteína)', '600mg', 'Pós-desjejum e pós-janta, via oral (engolir). Suporte hepático do oral']);
+        temOralIni = true;
+        const dHemoTxt = P.treinoNoturno ? `${dHemoAlvo}mg nos dias de inferiores` : `${dHemoAlvo}mg + 200mg de cafeína`;
+        const oHemoTxt = P.treinoNoturno ? 'Dose única 30 min antes dos treinos de posterior, quadríceps e glúteo, via oral (engolir). Sem cafeína junto.' : 'Dose única 30 min antes dos treinos de posterior, quadríceps e glúteo, via oral (engolir).';
+        proto.push(['proto', 'Hemogenin (Oximetolona)', dHemoTxt, oHemoTxt]);
+        supl.push(['supl', 'Silimarina (Cardo Mariano)', '200mg', 'Pós-desjejum e pós-janta, via oral (engolir)']);
+        supl.push(['supl', 'NAC (N-acetilcisteína)', '600mg', 'Pós-desjejum e pós-janta, via oral (engolir)']);
+        supl.push(['supl', 'TUDCA', '250mg', 'Pós-desjejum e pós-janta, via oral (engolir)']);
       } else notas.push('Estômago sensível/gastrite (137) na aluna: Hemogenin oral deixado de fora.');
-      if (versao >= 5) proto.push(['proto', 'Oxandrolona', `${versao >= 6 ? 15 : 10}mg por dia`, 'Dose única 30 a 45 min antes do treino, via oral (engolir).']);
+      if (versao >= 5 && !P.estomago && !temOralIni) proto.push(['proto', 'Oxandrolona', `${versao >= 6 ? 15 : 10}mg por dia`, 'Dose única 30 a 45 min antes do treino, via oral (engolir).']);
       if (versao >= 4) decisoes.push(`Hormonal feminino v${versao}.0 acima do padrão oficial 3.0: confirmar doses com o GH antes de liberar.`);
     }
 
-    if (P.celulite) notas.push('Pergunta 102.2 (celulite) = Sim: Masteron, Oximetolona e Oxandrolona favorecem a melhora da celulite.');
-    proto.push(['proto', 'Aplicação e rodízio', '2x na semana (segunda e quinta)', 'Pela manhã ou antes do treino (nunca antes de dormir). Rodízio: quadríceps (vasto lateral) e glúteo (médio). Cálculo ml: (mg semanal ÷ mg/ml do frasco) ÷ 2.']);
+    if (P.celulite) {
+      notas.push('Pergunta 102.2 (celulite) = Sim: Masteron, Oximetolona e Oxandrolona favorecem a melhora da celulite.');
+      if (!secar && !P.primoPulseMulher) {
+        decisoes.push('Aluna com celulite marcada em fase de ganhar massa (NPP pode reter líquido): a) Manter NPP para ganho de massa; b) Trocar por Masteron Enantato ou Primobolan para favorecer celulite.');
+      }
+    }
+    proto.push(['proto', 'Aplicação e rodízio', '2x na semana (segunda e quinta)', 'Pela manhã ou antes do treino (nunca antes de dormir). Rodízio: quadríceps (vasto lateral) e glúteo (médio).']);
+    proto.push(['proto', 'Como medir a dose', 'Sempre em mg', 'O ml muda de frasco para frasco. Olha no rótulo quantos mg tem em cada ml e divide a dose por esse número.']);
     proto.push(['proto', 'Sinais de virilização (ATENÇÃO)', 'Parar imediatamente em voz grave ou clitoromegalia', 'Voz grave ou rouca persistente ou clitoromegalia: parar imediatamente. Acne severa ou queda de cabelo androgênica: reduzir dose. Alteração menstrual por 3 meses ou mais: investigar.']);
-    proto.push(['proto', 'Painel laboratorial obrigatório', 'A cada 3 meses', 'Testosterona total e livre, Estradiol, FSH, LH, Progesterona, SHBG, TSH, T4, Prolactina, HbA1c, Lipidograma, Hemograma, PCR, TGO, TGP e GGT.']);
+    proto.push(['proto', 'Painel laboratorial obrigatório', 'A cada 3 meses', 'Hemograma completo, testosterona total e livre, estradiol, FSH, LH, progesterona, SHBG, TSH, T4 livre, prolactina, HbA1c, lipidograma completo, TGO, TGP, GGT, Cistatina C e PCR-us.']);
+    proto.push(['proto', 'Pressão arterial', 'Toda semana', 'Mede sentada, em repouso, sempre no mesmo dia e horário. Passou de 14 por 9, avisa no mesmo dia.']);
+    proto.push(['proto', 'Sinais de alerta', 'Não espera', 'Falta de ar, dor no peito, dor de cabeça forte ou inchaço numa perna só: pronto-socorro na hora, e avisa depois. Pele ou olho amarelado ou urina escura: avisa no mesmo dia.']);
+    proto.push(['proto', 'Se um dia quiser parar', 'Avisa antes', 'Nunca para de uma vez por conta. A saída tem passo a passo próprio: chama antes.']);
   }
 
   function adicionaClembSomatropina(P, atual, notas, decisoes, proto, substituidos) {
@@ -37024,6 +37143,11 @@ const GHHP = (() => {
         substituidos.add('clembuterol');
         atual.rawClembuterol.forEach(r => proto.push(r.slice()));
         notas.push('Clembuterol já estava no bloco: linha(s) e dose mantidas como estavam para conferência.');
+        if (atual.temT4 && Array.isArray(atual.rawT4) && atual.rawT4.length) {
+          substituidos.add('t4');
+          atual.rawT4.forEach(r => proto.push(r.slice()));
+          notas.push('T4 (Levotiroxina) já estava no bloco: linha(s) e dose mantidas como estavam para conferência.');
+        }
       } else {
         const travas = [];
         if (P.pressao) travas.push('pressão alta');
@@ -37038,6 +37162,20 @@ const GHHP = (() => {
           substituidos.add('clembuterol');
           const dose = P.jaUsaClemb1ml ? '2ml de Lavizoo por dia (50mcg)' : '1ml de Lavizoo (25mcg) na 1ª semana, subindo para 2ml (50mcg) a partir da 2ª semana';
           proto.push(['proto', 'Clembuterol (Lavizoo 25mcg/ml)', dose, 'Ao acordar, medir com seringa sem agulha, via oral (engolir). Uso diário conforme prescrição.']);
+          if (atual.temT4 && Array.isArray(atual.rawT4) && atual.rawT4.length) {
+            substituidos.add('t4');
+            atual.rawT4.forEach(r => proto.push(r.slice()));
+            notas.push('T4 (Levotiroxina) já estava no bloco: dose mantida sem alteração automática junto do Clembuterol.');
+          } else if (P.tireoide) {
+            notas.push('Aluno marcou problema de tireoide (pergunta 135): T4 (Levotiroxina) não adicionado automaticamente com o Clembuterol (confirmar com o GH).');
+          } else {
+            substituidos.add('t4');
+            const doseT4 = P.jaUsaClemb1ml ? '75mcg por dia' : '50mcg na 1ª semana, subindo para 75mcg a partir da 2ª semana';
+            const obsT4 = P.jaUsaClemb1ml
+              ? 'Ao acordar em jejum, 30 min antes do desjejum, só com água (longe de café, cálcio e ferro), via oral (engolir). Acompanha o Clembuterol 2ml. Ao encerrar a fase, fazer desmame obrigatório: 50mcg e depois 25mcg até tirar (nunca cortar de uma vez).'
+              : 'Ao acordar em jejum, 30 min antes do desjejum, só com água (longe de café, cálcio e ferro), via oral (engolir). 50mcg com 1ml de Lavizoo na 1ª semana; sobe para 75mcg com 2ml a partir da 2ª semana. Ao encerrar a fase, fazer desmame obrigatório: 50mcg e depois 25mcg até tirar (nunca cortar de uma vez).';
+            proto.push(['proto', 'T4 (Levotiroxina)', doseT4, obsT4]);
+          }
         }
       }
     }
@@ -37048,6 +37186,10 @@ const GHHP = (() => {
         notas.push('Somatropina já estava no bloco: linha(s) e dose mantidas como estavam para conferência.');
       } else if (P.cancer && !P.cancerFamiliarConfirmado) {
         notas.push('Somatropina vetada por histórico de câncer na pergunta 133.');
+      } else if (P.jaUsaSomatropina && P.contratouPeptideos) {
+        substituidos.add('somatropina');
+        proto.push(['proto', 'Somatropina (GH)', '2 UI por dia', 'Subcutâneo (na barriga ou prega cutânea), antes do treino. Reduzida para acompanhar CJC-1295 sem DAC e Ipamorelin à noite.']);
+        notas.push('Exceção GH 25/11 (aluno já usa Somatropina + contratou peptídeos): Somatropina reduzida para 2 UI pré-treino com CJC-1295 sem DAC 150mcg + Ipamorelin 150mcg à noite.');
       } else {
         substituidos.add('somatropina');
         proto.push(['proto', 'Somatropina (GH)', '3 UI ao acordar + 3 UI antes do treino', 'Subcutâneo (na barriga ou prega cutânea), todo dia. Em dia sem treino, aplicar apenas 3 UI ao acordar em jejum. A Somatropina entra no lugar de CJC-1295 e Ipamorelin (nunca juntos). Exames: IGF-1 e glicemia de jejum.']);
@@ -37072,9 +37214,46 @@ const GHHP = (() => {
     const rea = P.tipo === 'reajuste' || P.tipo === 'renovacao';
     const objs = Array.isArray(P.objetivosPept) ? P.objetivosPept.slice() : [];
     const cancerVetando = !!P.cancer && !P.cancerFamiliarConfirmado;
-    const hCjc = P.jantaPertoDormir ? 'Ao acordar em jejum' : 'À noite, 1h antes de dormir';
+    const temObj = k => objs.includes(k);
+    const jaUsaReta = !!atual.temRetatrutida || !!P.jaUsaRetatrutida;
+    const vaiTerReta = jaUsaReta || !!P.migraTirzepatida || temObj('apetite') || (!P.corteFinanceiro && objs.length >= 5) || (!!P.padraoDesempenho && P.fase === 'secar') || (!!P.corteFinanceiro && P.fase === 'secar');
+    const cjcExcecaoSoma = !!P.somatropina && !!P.jaUsaSomatropina;
+    const doseCjcIpa = cjcExcecaoSoma ? '150mcg' : '200mcg';
+    const hCjc = P.jantaPertoDormir
+      ? 'Ao acordar em jejum'
+      : (vaiTerReta
+        ? 'À noite, 1 hora antes de dormir (jantar até 3 horas antes de deitar, de barriga vazia)'
+        : 'À noite, 1 hora antes de dormir (jantar até 2 horas antes de deitar, de barriga vazia)');
+
+    const retaDoseObs = () => {
+      if (P.migraTirzepatida) {
+        return {
+          dose: '2,5mg na 1ª semana, 3mg na 2ª semana e 4mg da 3ª semana em diante',
+          obs: 'Iniciar no dia da próxima dose da Tirzepatida (nunca usar as duas juntas), em jejum, subcutâneo (na barriga ou prega cutânea).'
+        };
+      }
+      if (jaUsaReta) {
+        return {
+          dose: (P.fase === 'secar' && P.reta4mg) ? '4mg por semana' : '2,5mg por semana',
+          obs: 'Segunda-feira em jejum, subcutâneo (na barriga ou prega cutânea).'
+        };
+      }
+      if (P.retaEscada !== false && !P.reta4mg) {
+        return {
+          dose: 'Semana 1: 1mg · Semana 2: 2mg · Semana 3: 3mg · Semana 4 em diante: 4mg',
+          obs: 'Uma vez por semana (segunda-feira em jejum), subcutâneo (na barriga ou prega cutânea).'
+        };
+      }
+      return {
+        dose: P.reta4mg ? '4mg por semana' : '2,5mg por semana',
+        obs: 'Segunda-feira em jejum, subcutâneo (na barriga ou prega cutânea).'
+      };
+    };
 
     if (P.aversaoInjecaoSC) notas.push('Pergunta 134: aluno marcou aversão a injeções subcutâneas (prefere oral, nasal ou tópica quando houver).');
+    if (/ozempic|wegovy|semaglutida|mounjaro|tirzepatida/.test(nrm(P.remedios || '')) && vaiTerReta) {
+      notas.push('Aluno relatou GLP-1 nos medicamentos atuais (Ozempic/Mounjaro/Tirzepatida/Semaglutida): nunca usar junto da Retatrutida nem somar Glifage.');
+    }
 
     const existFams = new Set(atual.peptideos.map(x => famPept(x.nome)));
 
@@ -37094,27 +37273,39 @@ const GHHP = (() => {
           return;
         }
       }
-      if (P.somatropina && /cjc[\s-]*1295|ipamorel/i.test(nome)) return;
+      if (P.somatropina && !cjcExcecaoSoma && /cjc[\s-]*1295|ipamorel/i.test(nome)) return;
       itens.push(Object.assign({ nome, dose, obs, fam }, extra || {}));
     };
 
-    const temObj = k => objs.includes(k);
-
-    if (P.padraoDesempenho) {
+    if (P.corteFinanceiro) {
+      // Regra §5.5.1: SS-31 sai por último (infraestrutura), CJC + Ipamorelin andam juntos
+      add('SS-31', '1mg por dia', 'Em jejum pela manhã, subcutâneo (na barriga ou prega cutânea).');
+      add('Mots-c', '1mg por dia', 'Todo dia ao acordar, subcutâneo (na barriga ou prega cutânea).');
+      if (P.fase === 'secar' || temObj('apetite') || jaUsaReta) {
+        const rr = retaDoseObs();
+        add('Retatrutida', rr.dose, rr.obs, { retatrutida: true });
+      } else {
+        add('CJC-1295 sem DAC', doseCjcIpa, `${hCjc}, subcutâneo (na barriga ou prega cutânea). Aplicar no mesmo horário do Ipamorelin.`);
+        add('Ipamorelin', doseCjcIpa, `${hCjc}, subcutâneo (na barriga ou prega cutânea). Aplicar no mesmo horário do CJC-1295 sem DAC.`);
+      }
+      notas.push('Corte FINANCEIRO aplicado (§5.5.1, não clínico): mantido SS-31 (sai por último) + Mots-c + foco da fase. Registrar para próximos reajustes que não houve contraindicação clínica.');
+    } else if (P.padraoDesempenho) {
       add('Mots-c', '1mg por dia', 'Todo dia ao acordar, subcutâneo (na barriga ou prega cutânea).');
       add('SS-31', '1mg por dia', 'Em jejum pela manhã, subcutâneo (na barriga ou prega cutânea).');
-      add('CJC-1295 sem DAC', '200mcg', `${hCjc}, subcutâneo (na barriga ou prega cutânea). Aplicar no mesmo horário do Ipamorelin.`);
-      add('Ipamorelin', '200mcg', `${hCjc}, subcutâneo (na barriga ou prega cutânea). Aplicar no mesmo horário do CJC-1295 sem DAC.`);
-      if (P.fase === 'secar' || temObj('apetite') || temObj('metabolico')) {
-        add('Retatrutida', P.reta4mg ? '4mg por semana' : '2,5mg por semana', 'Segunda-feira em jejum, subcutâneo (na barriga ou prega cutânea).', { retatrutida: true });
+      add('CJC-1295 sem DAC', doseCjcIpa, `${hCjc}, subcutâneo (na barriga ou prega cutânea). Aplicar no mesmo horário do Ipamorelin.`);
+      add('Ipamorelin', doseCjcIpa, `${hCjc}, subcutâneo (na barriga ou prega cutânea). Aplicar no mesmo horário do CJC-1295 sem DAC.`);
+      if (P.fase === 'secar' || temObj('apetite')) {
+        const rr = retaDoseObs();
+        add('Retatrutida', rr.dose, rr.obs, { retatrutida: true });
       }
     } else if (objs.length >= 5) {
       add('SS-31', '1mg por dia', 'Em jejum pela manhã, subcutâneo (na barriga ou prega cutânea).');
-      add('Retatrutida', P.reta4mg ? '4mg por semana' : '2,5mg por semana', 'Segunda-feira em jejum, subcutâneo (na barriga ou prega cutânea).', { retatrutida: true });
-      add('CJC-1295 sem DAC', '200mcg', `${hCjc}, subcutâneo (na barriga ou prega cutânea). Aplicar no mesmo horário do Ipamorelin.`);
-      add('Ipamorelin', '200mcg', `${hCjc}, subcutâneo (na barriga ou prega cutânea). Aplicar no mesmo horário do CJC-1295 sem DAC.`);
+      const rr = retaDoseObs();
+      add('Retatrutida', rr.dose, rr.obs, { retatrutida: true });
+      add('CJC-1295 sem DAC', doseCjcIpa, `${hCjc}, subcutâneo (na barriga ou prega cutânea). Aplicar no mesmo horário do Ipamorelin.`);
+      add('Ipamorelin', doseCjcIpa, `${hCjc}, subcutâneo (na barriga ou prega cutânea). Aplicar no mesmo horário do CJC-1295 sem DAC.`);
       add('Mots-c', '1mg por dia', 'Todo dia ao acordar, subcutâneo (na barriga ou prega cutânea).');
-      add('GHK-Cu', '3mg por semana', '1mg na segunda, 1mg na quarta e 1mg na sexta, subcutâneo (na barriga ou prega cutânea).', { ghk: true });
+      add('GHK-Cu', '1mg por aplicação', '3x por semana (segunda, quarta e sexta, total de 3mg na semana), subcutâneo (na barriga ou prega cutânea).', { ghk: true });
       notas.push('Pergunta 132 com 5 ou mais objetivos: aplicado corte padrão de 6 compostos (SS-31, Retatrutida, CJC-1295 sem DAC, Ipamorelin, Mots-c e GHK-Cu + Zinco 20mg). Ficaram de fora: BPC-157, TB-500 e Selank.');
     } else {
       if (temObj('metabolico')) {
@@ -37122,25 +37313,24 @@ const GHHP = (() => {
         else {
           add('Mots-c', '1mg por dia', 'Todo dia ao acordar, subcutâneo (na barriga ou prega cutânea).');
           add('SS-31', '1mg por dia', 'Em jejum pela manhã, subcutâneo (na barriga ou prega cutânea).');
+          if ((P.versao || 1) >= 3) notas.push('Peptídeos v3.0+ com objetivo metabólico: AOD-9604 300mcg/dia disponível como progressão (§5.5/§5.11).');
         }
-        add('Retatrutida', P.reta4mg ? '4mg por semana' : '2,5mg por semana', 'Segunda-feira em jejum, subcutâneo (na barriga ou prega cutânea).', { retatrutida: true });
       }
       if (temObj('apetite')) {
-        const doseReta = P.migraTirzepatida ? '2,5mg na 1ª semana, 3mg na 2ª semana e 4mg da 3ª semana em diante'
-          : (P.fase === 'crescer' && atual.temRetatrutida ? '2,5mg por semana' : (P.reta4mg ? '4mg por semana' : '2,5mg por semana'));
-        const obsReta = P.migraTirzepatida ? 'Iniciar no dia da próxima dose da Tirzepatida (nunca usar as duas juntas), em jejum, subcutâneo (na barriga ou prega cutânea).'
-          : 'Segunda-feira em jejum, subcutâneo (na barriga ou prega cutânea).';
-        add('Retatrutida', doseReta, obsReta, { retatrutida: true });
+        const rr = retaDoseObs();
+        add('Retatrutida', rr.dose, rr.obs, { retatrutida: true });
       }
       if (temObj('hipertrofia')) {
-        add('CJC-1295 sem DAC', '200mcg', `${hCjc}, subcutâneo (na barriga ou prega cutânea). Aplicar no mesmo horário do Ipamorelin.`);
-        add('Ipamorelin', '200mcg', `${hCjc}, subcutâneo (na barriga ou prega cutânea). Aplicar no mesmo horário do CJC-1295 sem DAC.`);
+        add('CJC-1295 sem DAC', doseCjcIpa, `${hCjc}, subcutâneo (na barriga ou prega cutânea). Aplicar no mesmo horário do Ipamorelin.`);
+        add('Ipamorelin', doseCjcIpa, `${hCjc}, subcutâneo (na barriga ou prega cutânea). Aplicar no mesmo horário do CJC-1295 sem DAC.`);
       }
-      if (temObj('lesoes')) {
+      if (temObj('lesoes') || (P.tendiniteArticular && objs.length > 0)) {
+        if (!temObj('lesoes') && P.tendiniteArticular) notas.push('Peptídeos por sintoma (§5.3.1): BPC-157 + TB-500 incluídos por dor articular/tendinite declarada na anamnese.');
         add('BPC-157', '500mcg por dia', P.aversaoInjecaoSC ? 'Via oral (engolir), em jejum.' : 'Subcutâneo (na barriga ou prega cutânea), 1x ao dia.');
         add('TB-500', '2mg, 2x por semana', 'Segunda e quinta, subcutâneo (na barriga ou prega cutânea).');
       }
-      if (temObj('gastrico')) {
+      if (temObj('gastrico') || (P.estomago && objs.length > 0)) {
+        if (!temObj('gastrico') && P.estomago) notas.push('Peptídeos por sintoma (§5.3.1): KPV incluído por estômago sensível declarado na anamnese.');
         add('KPV', '250mcg, 2x ao dia', 'Via oral (engolir), manhã e noite. Ação direta na mucosa gástrica e intestinal.');
       }
       if (temObj('sono')) {
@@ -37148,7 +37338,8 @@ const GHHP = (() => {
         add('DSIP', '100mcg', 'Dose única antes de dormir, uso curto, subcutâneo (na barriga ou prega cutânea).');
       }
       if (temObj('pele')) {
-        add('GHK-Cu', '3mg por semana', '1mg na segunda, 1mg na quarta e 1mg na sexta, subcutâneo (na barriga ou prega cutânea).', { ghk: true });
+        add('GHK-Cu', '1mg por aplicação', '3x por semana (segunda, quarta e sexta, total de 3mg na semana), subcutâneo (na barriga ou prega cutânea).', { ghk: true });
+        add('BPC-157', '500mcg por dia', P.aversaoInjecaoSC ? 'Via oral (engolir), em jejum.' : 'Subcutâneo (na barriga ou prega cutânea), 1x ao dia.');
         if (temObj('longevidade')) add('Epitalon', '1mg por dia', 'Por 10 dias (repetir a cada 6 meses), subcutâneo (na barriga ou prega cutânea).');
       }
       if (temObj('libido')) {
@@ -37158,8 +37349,15 @@ const GHHP = (() => {
       if (temObj('bronzeamento')) add('Melanotan I', '250mcg', 'Subcutâneo (na barriga ou prega cutânea).');
     }
 
-    if (atual.temRetatrutida && !itens.some(x => x.retatrutida)) {
-      add('Retatrutida', P.fase === 'secar' && P.reta4mg ? '4mg por semana' : '2,5mg por semana', 'Segunda-feira em jejum, subcutâneo (na barriga ou prega cutânea).', { retatrutida: true });
+    if (jaUsaReta && !itens.some(x => x.retatrutida)) {
+      const rr = retaDoseObs();
+      add('Retatrutida', rr.dose, rr.obs, { retatrutida: true });
+    }
+
+    if (itens.some(x => x.fam === 'cjc1295') && !P.jantaPertoDormir) {
+      notas.push(vaiTerReta
+        ? 'CJC-1295 + Ipamorelin com Retatrutida: conferir horário da janta na Dieta e no Teu dia para até 3 horas antes de dormir.'
+        : 'CJC-1295 + Ipamorelin à noite: conferir horário da janta na Dieta e no Teu dia para até 2 horas antes de dormir.');
     }
 
     if (cancerVetando) decisoes.push('Histórico de câncer marcado na pergunta 133 (P2): a) Manter apenas bloco seguro; b) É histórico apenas familiar, liberar protocolo completo.');
@@ -37199,26 +37397,43 @@ const GHHP = (() => {
       famsEmitidas.add(f);
       substituidos.add(nrm(x.nome));
       if (x.retatrutida) temReta = true;
-      if (x.ghk) supl.push(['supl', 'Zinco Quelato', '20mg', 'Pós-almoço, via oral (engolir). Acompanha o GHK-Cu']);
+      if (x.ghk) supl.push(['supl', 'Zinco Quelato', '20mg', 'Pós-almoço, via oral (engolir)']);
       if (existPeptPorFam.has(f)) {
-        // R6: se a família já existe, vale a linha existente (sem duplicar linhas idênticas)
-        const vistos = new Set();
-        existPeptPorFam.get(f).forEach(ex => {
-          const sig = JSON.stringify(ex.raw.slice(0, 4));
-          if (vistos.has(sig)) return;
-          vistos.add(sig);
-          proto.push(ex.raw.slice());
-          notas.push(`Peptídeo ${ex.nome} (${ex.doseTxt || 'dose atual'}) já existia no bloco: mantido como estava.`);
-        });
+        const cjcExist = existPeptPorFam.get('cjc1295') || [];
+        const cjcNoTeto = rea && cjcExist.length > 0 && cjcExist.every(ex => !/com dac/i.test(ex.nome) && ex.dose >= 300);
+        // R6: se a família já existe, vale a linha existente, salvo quando há regra explícita de escalada (Retatrutida 4mg ou CJC/Ipa no teto 300mcg, GH 09/11) com nota R3
+        if (f === 'retatrutida' && P.fase === 'secar' && P.reta4mg && existPeptPorFam.get(f).every(ex => ex.dose > 0 && ex.dose < 4)) {
+          proto.push(['proto', x.nome, x.dose, x.obs]);
+          notas.push(`Reajuste: Retatrutida escalada para ${x.dose} (opção Retatrutida 4mg marcada pelo treinador).`);
+        } else if (f === 'cjc1295' && cjcNoTeto) {
+          proto.push(['proto', 'CJC-1295 com DAC', '1mg por semana', 'Uma vez por semana, subcutâneo (na barriga ou prega cutânea). Acompanhar IGF-1 nos exames de controle.']);
+          notas.push('Reajuste (teto 300mcg atingido, GH 09/11): CJC-1295 sem DAC escalado para CJC-1295 com DAC 1mg por semana (monitorar IGF-1).');
+        } else if (f === 'ipamorel' && cjcNoTeto && existPeptPorFam.get(f).every(ex => ex.dose >= 300 && ex.dose < 400)) {
+          proto.push(['proto', 'Ipamorelin', '400mcg', `${hCjc}, subcutâneo (na barriga ou prega cutânea).`]);
+          notas.push('Reajuste (teto CJC/Ipa atingido, GH 09/11): Ipamorelin escalado de 300mcg para 400mcg por noite.');
+        } else {
+          const vistos = new Set();
+          existPeptPorFam.get(f).forEach(ex => {
+            const sig = JSON.stringify(ex.raw.slice(0, 4));
+            if (vistos.has(sig)) return;
+            vistos.add(sig);
+            proto.push(ex.raw.slice());
+            notas.push(`Peptídeo ${ex.nome} (${ex.doseTxt || 'dose atual'}) já existia no bloco: mantido como estava.`);
+          });
+        }
       } else {
         proto.push(['proto', x.nome, x.dose, x.obs]);
       }
     });
 
+    if ((P.versao || 1) >= 3 && !flags.modulos.hormonal) {
+      supl.push(['supl', 'NAC (N-acetilcisteína)', '600mg', 'Duas vezes ao dia: pós-desjejum e pós-janta, via oral (engolir)']);
+      supl.push(['supl', 'Silimarina (Cardo Mariano)', '200mg', 'Duas vezes ao dia: pós-desjejum e pós-janta, via oral (engolir)']);
+    }
     proto.push(['proto', 'Compra dos frascos', 'Isolados (1 por frasco)', 'Nunca comprar combos com 2 ou mais compostos no mesmo frasco, para poder ajustar doses independentemente.']);
     proto.push(['proto', 'Reconstituição e conservação', 'Água bacteriostática · geladeira 28 dias', 'Fórmula: mg do frasco ÷ ml de água = mg/ml (10 UI da seringa de insulina = 0,1ml). Guardar na geladeira após diluir e descartar em 28 dias.']);
     if (!flags.modulos.hormonal) {
-      proto.push(['proto', 'Painel laboratorial obrigatório', 'A cada 3 meses', 'IGF-1, Testosterona total e livre, LH, FSH, Estradiol, Lipidograma, Glicemia de jejum, HbA1c, HOMA-IR, PCR-us, TGO, TGP, GGT, Cistatina C e Hemograma.']);
+      proto.push(['proto', 'Painel laboratorial obrigatório', 'A cada 3 meses', 'IGF-1, testosterona total e livre, LH, FSH, estradiol, lipidograma completo, glicemia de jejum, HbA1c, HOMA-IR, PCR-us, TGO, TGP, GGT, Cistatina C e hemograma completo.']);
     }
     return { temReta };
   }
@@ -37265,9 +37480,9 @@ const GHHP = (() => {
     }
 
     if (!P.contratouHormonal && P.testoBaixaSemHormonal) {
-      supl.push(['supl', 'Tamoxifeno', '10mg', 'Pós-desjejum, 1x ao dia, via oral (engolir). Apoio à testosterona endógena. Comprar na farmácia de manipulação']);
-      supl.push(['supl', 'Ashwagandha', '600mg', 'Antes de dormir, via oral (engolir). Modulador de cortisol']);
-      supl.push(['supl', 'Rhodiola', '300mg', 'Pós-desjejum, via oral (engolir). Modulador de cortisol']);
+      supl.push(['supl', 'Tamoxifeno', '10mg', 'Pós-desjejum, 1x ao dia, via oral (engolir). Comprar na farmácia de manipulação']);
+      supl.push(['supl', 'Ashwagandha', '600mg', 'Antes de dormir, via oral (engolir)']);
+      supl.push(['supl', 'Rhodiola', '300mg', 'Pós-desjejum, via oral (engolir)']);
       notas.push('Sem hormonal contratado: aplicado apoio à testosterona endógena na suplementação.');
     }
 
@@ -37297,7 +37512,8 @@ const GHHP = (() => {
 
     const suplMap = new Map();
     supl.forEach(r => {
-      const k = nrm(r[1]);
+      const nmS = nrm(r[1]);
+      const k = nmS === 'nattokinase' ? `${nmS}|${momentoDe(r[3])}` : nmS;
       if (!suplMap.has(k) || doseVal(r[2]) > doseVal(suplMap.get(k)[2])) suplMap.set(k, r);
     });
 
@@ -37305,6 +37521,11 @@ const GHHP = (() => {
   }
 
   function poe(dietaAtual, res) {
+    if (res && res.ajustePontual && Array.isArray(res.rowsAjustadas)) {
+      const saidaAj = res.rowsAjustadas.map(r => (Array.isArray(r) ? r.slice() : [String(r == null ? '' : r)]));
+      const cabAj = cabCiclo(saidaAj);
+      return { rows: saidaAj, totalProto: saidaAj.filter((r, i) => ehProtoLinha(r, i, cabAj)).length, totalSupl: 0, preservadas: 0, notas: (res.notas || []).slice() };
+    }
     const rows = (Array.isArray(dietaAtual) ? dietaAtual : []).map(r => (Array.isArray(r) ? r.slice() : [String(r == null ? '' : r)]));
     const notas = (res.notas || []).slice();
     const temProtoNovo = !!(res.proto && res.proto.length);
@@ -37319,6 +37540,7 @@ const GHHP = (() => {
       (res.baseAtual.peptideos || []).forEach(x => baseNomes.add(nrm(x.nome)));
       (res.baseAtual.rawSomatropina || []).forEach(x => baseNomes.add(nrm(x[1])));
       (res.baseAtual.rawClembuterol || []).forEach(x => baseNomes.add(nrm(x[1])));
+      (res.baseAtual.rawT4 || []).forEach(x => baseNomes.add(nrm(x[1])));
     }
 
     const ehGeridaPeloMotor = r => {
@@ -37337,6 +37559,7 @@ const GHHP = (() => {
       if (subs.has(nm) || novosProtoNomes.has(nm)) return true;
       if (subs.has('somatropina') && /somatropina|\bgh\b/.test(nm)) return true;
       if (subs.has('clembuterol') && /clembuterol|clenbuterol|lavizoo/.test(nm)) return true;
+      if (subs.has('t4') && /\bt4\b|levotiroxina|puran|euthyrox/.test(nm)) return true;
       if (res.usouCache && ehCompostoConhecido(nm) && !baseNomes.has(nm)) return true;
       return false;
     };
@@ -37373,12 +37596,32 @@ const GHHP = (() => {
       (String(r[1] || '').trim() && String(r[1] || '').trim() === String(r[1] || '').trim().toUpperCase() && !/\d/.test(String(r[1] || ''))));
 
     const suplExist = new Map();
-    saida.forEach((r, idx) => { if (sec(r) === 'supl' && !sep(r) && nrm(r[1])) suplExist.set(nrm(r[1]), idx); });
+    const suplExistMom = new Map();
+    saida.forEach((r, idx) => {
+      if (sec(r) === 'supl' && !sep(r) && nrm(r[1])) {
+        suplExist.set(nrm(r[1]), idx);
+        suplExistMom.set(`${nrm(r[1])}|${momentoDe(r[3])}`, idx);
+      }
+    });
 
     const suplNovos = [];
     (res.supl || []).forEach(r => {
       const k = nrm(r[1]);
-      if (suplExist.has(k)) {
+      const kMom = `${k}|${momentoDe(r[3])}`;
+      if (k === 'nattokinase') {
+        if (suplExistMom.has(kMom)) {
+          const exRow = saida[suplExistMom.get(kMom)];
+          if (nrm(exRow[2]) !== nrm(r[2])) {
+            notas.push(`Suplementação já tinha ${exRow[1]} (${exRow[2] || 'sem dose'}); o motor sugeriu ${r[2]}. Linha mantida como estava para conferência.`);
+          }
+        } else {
+          if (suplExist.has(k) && !suplExistMom.has('nattokinase|0') && !suplExistMom.has('nattokinase|8')) {
+            const exRow = saida[suplExist.get(k)];
+            notas.push(`Suplementação já tinha ${exRow[1]} (${exRow[3] || 'outro horário'}); adicionada Nattokinase 200mg manhã (jejum) e noite (GH 27/11). Conferir se remove a linha antiga.`);
+          }
+          suplNovos.push([String(r[0] || 'supl'), String(r[1] || ''), String(r[2] || ''), String(r[3] || '')]);
+        }
+      } else if (suplExist.has(k)) {
         const exRow = saida[suplExist.get(k)];
         if (nrm(exRow[2]) !== nrm(r[2])) {
           notas.push(`Suplementação já tinha ${exRow[1]} (${exRow[2] || 'sem dose'}); o motor sugeriu ${r[2]}. Linha mantida como estava para conferência.`);
@@ -37432,11 +37675,130 @@ const GHHP = (() => {
     return { rows: saida, totalProto: saida.filter((r, i) => ehProtoLinha(r, i, cabFim)).length, totalSupl: suplNovos.length, preservadas: preservadasManuais.length, notas };
   }
 
-  return { monta, poe, leMestre, leAnamneseSecao7, leBlocoAtual, escalaInjetavelH, divideDose, arred50, doseVal, famPept, FAIXA_H };
+  // Regra GH 26/11 (caso Karla L1080): ajuste pontual de composto/dose no bloco proto existente.
+  // Se o composto já está no bloco: substitui só a dose (e obs se informada).
+  // Se é outra substância do mesmo slot (ex.: oral novo onde já existe outro oral): substitui a substância sem empilhar.
+  // v722: nunca reescreve avisos de segurança ou linhas manuais; só atualiza a linha do próprio composto e o adjuvante oral criado pelo motor (palavra inteira de oral conhecido).
+  // v723: sem lookbehind para compatibilidade com iPhone iOS < 16.4 (Safari/WebKit).
+  const ORAL_TOKEN_RE = /(^|[^A-Za-zÀ-ÿ0-9])(oxandrolona|anavar|hemogenin|oximetolona|dianabol|metandrostenolona|turinabol|halotestin|stanozolol|winstrol)(?![A-Za-zÀ-ÿ0-9])/i;
+  const ORAL_SINONIMOS = {
+    oxandrolona: ['oxandrolona', 'anavar'], anavar: ['oxandrolona', 'anavar'],
+    hemogenin: ['hemogenin', 'oximetolona'], oximetolona: ['hemogenin', 'oximetolona'],
+    dianabol: ['dianabol', 'metandrostenolona'], metandrostenolona: ['dianabol', 'metandrostenolona'],
+    turinabol: ['turinabol'], halotestin: ['halotestin'],
+    stanozolol: ['stanozolol', 'winstrol'], winstrol: ['stanozolol', 'winstrol']
+  };
+  const ehAdjuvanteOralDoMotor = nm => /^cafeina \(adjuvante do oral\)$/.test(nm);
+
+  function ajustaComposto(dietaAtual, ajuste) {
+    const rows = (Array.isArray(dietaAtual) ? dietaAtual : []).map(r => (Array.isArray(r) ? r.slice() : [String(r == null ? '' : r)]));
+    const aj = ajuste || {};
+    const nomeNovo = String(aj.nome || '').trim();
+    const doseNova = String(aj.dose || '').trim();
+    const obsNova = aj.obs != null && String(aj.obs).trim() !== '' ? String(aj.obs).trim() : null;
+    const notas = [];
+    if (!nomeNovo) return { rows, notas: ['Ajuste pontual ignorado: nome do composto vazio.'], previa: null };
+
+    const cab = cabCiclo(rows);
+    const nmNovo = nrm(nomeNovo);
+    const ehOralNovo = aj.slot === 'oral' || (!aj.slot && ORAL_ANAB.test(nmNovo));
+    const ehPeptNovo = aj.slot === 'pept' || (!aj.slot && PEPT_RE.test(nmNovo));
+    const famNovo = ehPeptNovo ? famPept(nomeNovo) : '';
+
+    const mesmoComposto = r => {
+      const nm = nrm(r[1]);
+      if (!nm || PROTO_ESTRUTURAL.test(nm)) return false;
+      if (nm === nmNovo) return true;
+      if (ehPeptNovo && famPept(r[1]) === famNovo) return true;
+      if (/hemogenin|oximetol/.test(nm) && /hemogenin|oximetol/.test(nmNovo)) return true;
+      if (/oxandrol|anavar/.test(nm) && /oxandrol|anavar/.test(nmNovo)) return true;
+      if (/dianabol|metandrosten/.test(nm) && /dianabol|metandrosten/.test(nmNovo)) return true;
+      if (/turinabol/.test(nm) && /turinabol/.test(nmNovo)) return true;
+      if (/halotest/.test(nm) && /halotest/.test(nmNovo)) return true;
+      if (/testosterona|enantato de testo|cipionato de testo/.test(nm) && /testosterona|enantato de testo|cipionato de testo/.test(nmNovo)) return true;
+      if (/masteron|drostanol/.test(nm) && /masteron|drostanol/.test(nmNovo)) return true;
+      if (/primobolan|metenolona/.test(nm) && /primobolan|metenolona/.test(nmNovo)) return true;
+      if (/\bdeca\b|decanoato de nandrolona/.test(nm) && /\bdeca\b|decanoato de nandrolona/.test(nmNovo)) return true;
+      if (/\bnpp\b|fenilpropionato de nandrolona/.test(nm) && /\bnpp\b|fenilpropionato de nandrolona/.test(nmNovo)) return true;
+      if (/trembolona/.test(nm) && /trembolona/.test(nmNovo)) return true;
+      if (/boldenona/.test(nm) && /boldenona/.test(nmNovo)) return true;
+      if (/\bdhb\b|dihidroboldenona/.test(nm) && /\bdhb\b|dihidroboldenona/.test(nmNovo)) return true;
+      return false;
+    };
+
+    const idxMesmo = rows.findIndex((r, i) => ehProtoLinha(r, i, cab) && mesmoComposto(r));
+    if (idxMesmo >= 0) {
+      const ant = rows[idxMesmo].slice();
+      rows[idxMesmo] = [ant[0] || 'proto', ant[1], doseNova || ant[2], obsNova !== null ? obsNova : (ant[3] || '')];
+      notas.push(`Ajuste pontual: ${ant[1]} teve a dose atualizada de "${ant[2]}" para "${rows[idxMesmo][2]}".`);
+      return { rows, notas, previa: { acao: 'troca_dose', anterior: ant, nova: rows[idxMesmo].slice(), removidos: [] } };
+    }
+
+    if (ehOralNovo) {
+      const removidos = [];
+      let idxInserir = -1;
+      const saida = [];
+      rows.forEach((r, i) => {
+        if (ehProtoLinha(r, i, cab) && ORAL_ANAB.test(nrm(r[1])) && !PROTO_ESTRUTURAL.test(nrm(r[1]))) {
+          if (idxInserir < 0) idxInserir = saida.length;
+          removidos.push(String(r[1] || '').trim());
+          return;
+        }
+        saida.push(r);
+      });
+      const novaLinha = ['proto', nomeNovo, doseNova, obsNova || 'Via oral (engolir), dose única, 30 a 45 minutos antes do treino.'];
+      if (idxInserir >= 0) {
+        saida.splice(idxInserir, 0, novaLinha);
+        const mNovoTok = nomeNovo.match(ORAL_TOKEN_RE);
+        const rotuloNovo = mNovoTok ? mNovoTok[2] : nomeNovo;
+        const cabS = cabCiclo(saida);
+        removidos.forEach(antNome => {
+          const mAntTok = String(antNome || '').match(ORAL_TOKEN_RE);
+          if (mAntTok) {
+            const toks = ORAL_SINONIMOS[mAntTok[2].toLowerCase()] || [mAntTok[2].toLowerCase()];
+            const rePalavraInteira = new RegExp('(^|[^A-Za-zÀ-ÿ0-9])(?:' + toks.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')(?![A-Za-zÀ-ÿ0-9])', 'gi');
+            saida.forEach((r, i) => {
+              if (!ehProtoLinha(r, i, cabS) || i === idxInserir || !r[3]) return;
+              if (!rePalavraInteira.test(String(r[3]))) return;
+              rePalavraInteira.lastIndex = 0;
+              if (ehAdjuvanteOralDoMotor(nrm(r[1]))) {
+                r[3] = String(r[3]).replace(rePalavraInteira, (m, pre) => pre + rotuloNovo);
+                notas.push(`Ajuste pontual: referência ao oral atualizada na linha do motor "${r[1]}".`);
+              } else {
+                notas.push(`A linha "${r[1]}" ainda cita ${mAntTok[2]}: mantida intacta para conferência manual.`);
+              }
+            });
+          }
+          notas.push(`Ajuste pontual: ${antNome} substituído por ${nomeNovo} (${doseNova}) no slot de oral.`);
+        });
+        return { rows: saida, notas, previa: { acao: 'substitui_oral', anterior: null, nova: novaLinha.slice(), removidos } };
+      } else {
+        let pos = saida.findIndex((r, i) => ehProtoLinha(r, i, cabCiclo(saida)) && /aplicacao|como medir|painel/i.test(nrm(r[1])));
+        if (pos < 0) pos = saida.length;
+        saida.splice(pos, 0, novaLinha);
+        notas.push(`Ajuste pontual: adicionado ${nomeNovo} (${doseNova}) no bloco do protocolo.`);
+        return { rows: saida, notas, previa: { acao: 'adiciona', anterior: null, nova: novaLinha.slice(), removidos: [] } };
+      }
+    }
+
+    const novaLinha = ['proto', nomeNovo, doseNova, obsNova || ''];
+    let pos = rows.findIndex((r, i) => ehProtoLinha(r, i, cab) && /aplicacao|como medir|painel/i.test(nrm(r[1])));
+    if (pos < 0) pos = rows.length;
+    rows.splice(pos, 0, novaLinha);
+    notas.push(`Ajuste pontual: adicionado ${nomeNovo} (${doseNova}) no bloco do protocolo.`);
+    return { rows, notas, previa: { acao: 'adiciona', anterior: null, nova: novaLinha.slice(), removidos: [] } };
+  }
+
+  return { monta, poe, ajustaComposto, leMestre, leAnamneseSecao7, leBlocoAtual, escalaInjetavelH, divideDose, arred50, doseVal, famPept, FAIXA_H };
 })();
 
-// ── UI do Editor da Dieta (_hpMo) + Auto-injeção do botão no #trainerEditor ──
-const _hpMo = { car: false, erro: '', senha: false, j: null, v: null, pronto: null, aba: '' };
+// ── UI do Editor da Dieta (_hpMo) ──
+const _hpMo = { car: false, erro: '', senha: false, j: null, v: null, pronto: null, aba: '', aj: { nome: '', dose: '', obs: '' } };
+const _HPMO_AJ_ATALHOS = [
+  'Oximetolona (Hemogenin)', 'Oxandrolona', 'Turinabol', 'Dianabol', 'Halotestin',
+  'Enantato de Testosterona', 'Masteron Enantato', 'Masteron Propionato',
+  'Deca (Decanoato de Nandrolona)', 'NPP (Fenilpropionato de Nandrolona)', 'Primobolan', 'Retatrutida'
+];
 const _HPMO_PEPT = [
   ['metabolico', 'Metabólico e queima'], ['apetite', 'Apetite e insulina'], ['hipertrofia', 'Hipertrofia e pump'],
   ['lesoes', 'Lesões e articulações'], ['gastrico', 'Cura gástrica/intestinal'], ['sono', 'Sono profundo e SNC'],
@@ -37464,6 +37826,8 @@ function _hpMoIni(j) {
   const txtSaudeN = N(txtSaude);
 
   let cirurgiaRecente = false;
+  let treinoNoturno = false;
+  let semCondicaoFinanceira = false;
   const anoAtual = new Date().getFullYear();
   const reCirRecente = new RegExp('recente|agendad|marcada|proxima|meses|semana|pos-?op|recuperac|este ano|esse ano|' + anoAtual);
   if (f && Array.isArray(f.respostas)) {
@@ -37473,7 +37837,19 @@ function _hpMoIni(j) {
       const det = N(prox ? prox.r : '');
       if (reCirRecente.test(det)) cirurgiaRecente = true;
     }
+    const respTurno = f.respostas.find(y => /qual turno treina/.test(N(y && y.p)));
+    const respHora = f.respostas.find(y => /em qual horario ja treina ou pretende treinar/.test(N(y && y.p)));
+    if (respTurno && /noite/.test(N(respTurno.r))) treinoNoturno = true;
+    if (respHora) {
+      const hm = String(respHora.r || '').match(/(\d{1,2})/);
+      if (hm && parseInt(hm[1], 10) >= 18) treinoNoturno = true;
+    }
+    const respFin = f.respostas.find(y => /orcamento|financeir|gastar com suplement|quanto pode investir/.test(N(y && y.p)));
+    if (respFin && /apertad|baixo|pouco|nao tenho condic|limitad|ate\s*150|ate\s*200|questao financeira/.test(N(respFin.r))) semCondicaoFinanceira = true;
   }
+  const txtUsoAtual = N([s.remedios, s7.substanciasAtuais].join(' '));
+  const jaUsaRetatrutida = /retatrut|retraturt/.test(txtUsoAtual);
+  const jaUsaSomatropina = /somatrop|\bgh\b|saizen|genotropin|norditropin/.test(txtUsoAtual);
 
   const imc = (d.peso && d.alt) ? (d.peso / Math.pow(d.alt / 100, 2)) : null;
   const gestante = (d.sexo === 'F' || t.sexo === 'F') && (typeof GHSU !== 'undefined' && typeof GHSU.gesta === 'function' ? GHSU.gesta(txtSaude) : /gravid|gestante|gestacao|engravid|tentante/.test(txtSaudeN));
@@ -37501,9 +37877,11 @@ function _hpMoIni(j) {
     cirurgia: cirurgiaRecente, cancer: s7.cancer,
     gestante, lactante, cancerHormono: false,
     aversaoInjecaoSC: s7.aversaoInjecaoSC, comprometimentoNegado: s7.comprometimentoNegado,
-    usaHormonio6m: s7.usaHormonio6m, basePreferida: s7.basePreferida,
+    usaHormonio6m: s7.usaHormonio6m, usaHormonioAtual: !!s7.usaHormonioAtual, basePreferida: s7.basePreferida,
     usaDecaAntigaSemExame: s7.usaDecaAntiga && !s.temExame,
     preservarFertilidade: s7.preservarFertilidade,
+    tireoide: !!s7.tireoide || !!g6.tireoide, semCondicaoFinanceira,
+    treinoNoturno, jaUsaRetatrutida, jaUsaSomatropina,
     sazonalVerao: mesAtual >= 10 && mesAtual <= 12,
     objetivosPept: s7.objetivosPept,
     secao7Vazia: !!s7.secao7Vazia
@@ -37526,8 +37904,8 @@ function _hpMoValores(ini) {
     avisoPeptSemMestre: ini.mestre.temMestre && !ini.mestre.peptideos && temPeptAntes,
     versao: temAntes ? Math.min(6, Math.floor(vAtual) + 1) : 1,
     sexo: ini.sexo || 'M', fase: ini.fase || 'secar', nivel: ini.nivel || 'Intermediário',
-    usaHormonio6m: !!ini.usaHormonio6m, basePreferida: ini.basePreferida || '',
-    sazonalVerao: !!ini.sazonalVerao, linhasAbertas: false,
+    usaHormonio6m: !!ini.usaHormonio6m, usaHormonioAtual: !!ini.usaHormonioAtual, basePreferida: ini.basePreferida || '',
+    sazonalVerao: !!ini.sazonalVerao, virarFase: false, linhasAbertas: false, treinoNoturno: !!ini.treinoNoturno,
     contraindicacaoDura: !!ini.comprometimentoNegado,
     pressao: !!ini.pressao, cardio: !!ini.cardio, obesidade2: !!ini.obesidade2, rim: !!ini.rim,
     hemofilia: !!ini.hemofilia, cirurgia4sem: false,
@@ -37538,17 +37916,70 @@ function _hpMoValores(ini) {
     gestante: !!ini.gestante, lactante: !!ini.lactante, cancerHormono: !!ini.cancerHormono, bfAlto25: false,
     preservarFertilidade: !!ini.preservarFertilidade, aversaoInjecaoSC: !!ini.aversaoInjecaoSC,
     usaDecaAntigaSemExame: !!ini.usaDecaAntigaSemExame,
-    posCirurgiaAutorizado: false, preferirNPP: false, oralNoPrioritario: false, testoBaixaSemHormonal: false,
+    posCirurgiaAutorizado: false, preferirNPP: false, semCondicaoFinanceira: !!ini.semCondicaoFinanceira, tireoide: !!ini.tireoide, oralNoPrioritario: false, testoBaixaSemHormonal: false,
     clembuterol: !!bloco.temClembuterol, clembuterolAutorizado: false, jaUsaClemb1ml: !!bloco.jaUsaClemb1ml,
-    somatropina: !!bloco.temSomatropina, primobolanAprovado: false, primoPulseMulher: false,
+    somatropina: !!bloco.temSomatropina || !!ini.jaUsaSomatropina, jaUsaSomatropina: !!bloco.temSomatropina || !!ini.jaUsaSomatropina,
+    primobolanAprovado: false, primoPulseMulher: false,
     cancer: !!ini.cancer, cancerFamiliarConfirmado: false, jantaPertoDormir: false,
-    padraoDesempenho: false, reta4mg: false, migraTirzepatida: false,
+    padraoDesempenho: false, corteFinanceiro: false, retaEscada: !temAntes && !ini.jaUsaRetatrutida && !bloco.temRetatrutida,
+    jaUsaRetatrutida: !!ini.jaUsaRetatrutida || !!bloco.temRetatrutida, reta4mg: false, migraTirzepatida: false,
     exame: {}, objetivosPept: ini.objetivosPept.slice()
   };
   return _hpMo.v;
 }
 
 function hpMoAba(a) { _hpMo.aba = a; _hpMo.pronto = null; _hpMoDesenha(); }
+function _hpMoAjPreviaHtml() {
+  const e = typeof escTrainer === 'function' ? escTrainer : (x => String(x == null ? '' : x));
+  const a = _hpMo.aj || {};
+  const nm = String(a.nome || '').trim(), ds = String(a.dose || '').trim();
+  if (!nm || !ds) return '<div class="di-mo-dica">Escolhe ou digita o composto e a dose nova para ver a prévia antes de aplicar.</div>';
+  const aj = GHHP.ajustaComposto(typeof dietaData !== 'undefined' ? dietaData : [], { nome: nm, dose: ds, obs: String(a.obs || '').trim() ? a.obs : null });
+  const pr = aj.previa || {};
+  const lin = pr.nova ? `${pr.nova[1]} | ${pr.nova[2]}${pr.nova[3] ? ' | ' + pr.nova[3] : ''}` : '';
+  return '<div class="di-mo-dados"><b>Prévia do ajuste (ainda não aplicado)</b><br>' +
+    (lin ? '<div class="te-ent-res">' + e(lin) + '</div>' : '') +
+    (aj.notas || []).map(t => '<div class="te-ent-linha">' + e(t) + '</div>').join('') + '</div>';
+}
+function hpMoAjSet(k, val) {
+  if (!_hpMo.aj) _hpMo.aj = { nome: '', dose: '', obs: '' };
+  _hpMo.aj[k] = String(val == null ? '' : val);
+  const box = typeof document !== 'undefined' ? document.getElementById('hpAjPrevia') : null;
+  if (box) box.innerHTML = _hpMoAjPreviaHtml();
+}
+function hpMoAjPick(nome) {
+  if (!_hpMo.aj) _hpMo.aj = { nome: '', dose: '', obs: '' };
+  _hpMo.aj.nome = String(nome || '');
+  _hpMoDesenha();
+}
+function hpMoAplicaAjuste() {
+  if (typeof dietaData === 'undefined' || !Array.isArray(dietaData)) return;
+  const a = _hpMo.aj || {};
+  const nm = String(a.nome || '').trim(), ds = String(a.dose || '').trim();
+  if (!nm || !ds) {
+    _hpMo.pronto = { tit: 'Falta composto ou dose', res: 'Informa o composto e a dose nova antes de aplicar.', notas: [], decisoes: [] };
+    _hpMoDesenha();
+    _hpMo.pronto = null;
+    return;
+  }
+  try {
+    const aj = GHHP.ajustaComposto(dietaData, { nome: nm, dose: ds, obs: String(a.obs || '').trim() ? a.obs : null });
+    const aplicado = GHHP.poe(dietaData, { ajustePontual: true, rowsAjustadas: aj.rows, notas: aj.notas });
+    _diMoPoe(aplicado.rows);
+    if (typeof DIETA_OPEN_BLOCKS !== 'undefined') DIETA_OPEN_BLOCKS.add('proto');
+    if (typeof currentEditMode !== 'undefined' && currentEditMode !== 'dieta') switchEditMode('dieta'); else if (typeof renderCurrentEditor === 'function') renderCurrentEditor();
+    _hpMo.pronto = {
+      tit: 'Ajuste aplicado',
+      res: `${aplicado.totalProto} linhas no bloco do protocolo. Confere tudo e salva a aba.`,
+      notas: aplicado.notas, decisoes: []
+    };
+    _hpMoDesenha();
+  } catch (_) {
+    _hpMo.pronto = { tit: 'Não aplicou', res: 'Não consegui aplicar o ajuste. Se algo mudou, o botão de desfazer volta como estava.', notas: [], decisoes: [] };
+    _hpMoDesenha();
+    _hpMo.pronto = null;
+  }
+}
 function hpMoSet(k, val) {
   const v = _hpMo.v; if (!v) return;
   if (k === 'exame') { v.exame[val] = !v.exame[val]; v.exameMexido = true; }
@@ -37578,7 +38009,7 @@ function hpMoAbre() {
 function hpMoFecha(tudo) {
   const o = document.getElementById('hpMo'); if (o) o.hidden = true;
   _hpMo.pronto = null;
-  if (tudo) { _hpMo.j = null; _hpMo.v = null; _hpMo.aba = ''; _hpMo.erro = ''; _hpMo.car = false; }
+  if (tudo) { _hpMo.j = null; _hpMo.v = null; _hpMo.aba = ''; _hpMo.erro = ''; _hpMo.car = false; _hpMo.aj = { nome: '', dose: '', obs: '' }; }
 }
 function _hpMoDesenha() {
   let o = document.getElementById('hpMo');
@@ -37607,6 +38038,7 @@ function _hpMoDesenha() {
   h += '<div class="di-mo-abas">' +
     '<button type="button" class="' + (_hpMo.aba === 'inicial' ? 'on' : '') + '" onclick="hpMoAba(\'inicial\')">Inicial</button>' +
     '<button type="button" class="' + (_hpMo.aba === 'reajuste' ? 'on' : '') + '" onclick="hpMoAba(\'reajuste\')">Reajuste / Renovação</button>' +
+    '<button type="button" class="' + (_hpMo.aba === 'ajuste' ? 'on' : '') + '" onclick="hpMoAba(\'ajuste\')">Ajustar composto</button>' +
     '<button type="button" class="' + (_hpMo.aba === 'tpc' ? 'on' : '') + '" onclick="hpMoAba(\'tpc\')">TPC</button></div>';
 
   h += '<div class="te-conf-lista di-mo-corpo">';
@@ -37614,8 +38046,8 @@ function _hpMoDesenha() {
     'Hormonal: <b>' + (ini.mestre.hormonal ? 'Sim' : 'Não') + '</b> · Peptídeos: <b>' + (ini.mestre.peptideos ? 'Sim' : 'Não') + '</b>' +
     (ini.mestre.versaoAtual ? ' · Versão atual: <b>' + ini.mestre.versaoAtual + '.0</b>' : '') + '</div>';
 
-  if (v.avisoHormSemMestre) h += '<div class="te-ent-aviso">A planilha mestre diz Não para hormonal, mas existe bloco hormonal na dieta: ele ficará intacto salvo se tu ligar o módulo abaixo.</div>';
-  if (v.avisoPeptSemMestre) h += '<div class="te-ent-aviso">A planilha mestre diz Não para peptídeos, mas existem peptídeos na dieta: eles ficarão intactos salvo se tu ligar o módulo abaixo.</div>';
+  if (v.avisoHormSemMestre) h += '<div class="te-ent-aviso">A planilha mestre diz Não para hormonal, mas existe bloco hormonal na dieta (regra GH 27/11: quem renova e já usava hormonal mantém o bloco; liga o módulo abaixo se quiser escalar).</div>';
+  if (v.avisoPeptSemMestre) h += '<div class="te-ent-aviso">A planilha mestre diz Não para peptídeos, mas existem peptídeos na dieta (regra GH 27/11: quem renova e já usava peptídeos mantém o bloco; liga o módulo abaixo se quiser ajustar).</div>';
 
   const res7 = [
     s7.historicoHormonio ? '127 (histórico): ' + s7.historicoHormonio : '',
@@ -37627,7 +38059,20 @@ function _hpMoDesenha() {
   if ((v.contratouHormonal || v.contratouPeptideos) && ini.secao7Vazia) h += '<div class="te-ent-aviso">Seção 7 vazia: conferir o formulário separado (quem comprou hormonal ou peptídeos depois responde fora da anamnese inicial).</div>';
   if (ini.comprometimentoNegado) h += '<div class="te-ent-aviso">Pergunta 138 (comprometimento inegociável) = Não: bloqueio de segurança veio marcado.</div>';
 
-  if (_hpMo.aba !== 'tpc') {
+  if (_hpMo.aba === 'ajuste') {
+    const blocoAj = GHHP.leBlocoAtual(typeof dietaData !== 'undefined' ? dietaData : []);
+    const atuais = blocoAj.injetaveis.concat(blocoAj.orais, blocoAj.peptideos).map(x => x.nome);
+    const aj = _hpMo.aj || { nome: '', dose: '', obs: '' };
+    const listaPick = [...new Set(atuais.concat(_HPMO_AJ_ATALHOS))];
+    h += '<div class="di-mo-dica">Regra de ajuste pontual: se o composto já está no bloco, troca só a dose; se é outro oral no mesmo slot, substitui sem empilhar.</div>';
+    if (atuais.length) h += '<div class="di-mo-dados"><b>No bloco atual:</b> ' + atuais.map(e).join(' · ') + '</div>';
+    h += grupo('Escolher composto', listaPick.map(nm => [nm, "hpMoAjPick('" + nm.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;') + "')", aj.nome === nm]));
+    h += '<div class="di-mo-dados">' +
+      '<label style="display:block;margin-bottom:6px"><b>Composto</b><br><input id="hpAjNome" type="text" style="width:100%" value="' + e(aj.nome) + '" placeholder="Ex.: Oximetolona (Hemogenin)" oninput="hpMoAjSet(\'nome\',this.value)"></label>' +
+      '<label style="display:block;margin-bottom:6px"><b>Dose nova</b><br><input id="hpAjDose" type="text" style="width:100%" value="' + e(aj.dose) + '" placeholder="Ex.: 5mg nos dias de inferiores" oninput="hpMoAjSet(\'dose\',this.value)"></label>' +
+      '<label style="display:block"><b>Observação (opcional)</b><br><input id="hpAjObs" type="text" style="width:100%" value="' + e(aj.obs) + '" placeholder="Deixa vazio para manter ou usar padrão" oninput="hpMoAjSet(\'obs\',this.value)"></label></div>';
+    h += '<div id="hpAjPrevia">' + _hpMoAjPreviaHtml() + '</div>';
+  } else if (_hpMo.aba !== 'tpc') {
     h += grupo('Módulos ativos', [
       ['Hormonal', "hpMoSet('bool','contratouHormonal')", !!v.contratouHormonal],
       ['Peptídeos', "hpMoSet('bool','contratouPeptideos')", !!v.contratouPeptideos],
@@ -37645,6 +38090,7 @@ function _hpMoDesenha() {
     if (v.contratouHormonal) {
       h += grupo('Triagem clínica e flags (126 a 138)', [
         ['Sazonal verão (out a dez)', "hpMoSet('bool','sazonalVerao')", !!v.sazonalVerao],
+        ...(_hpMo.aba === 'reajuste' ? [['Virar bloco para fase/verão', "hpMoSet('bool','virarFase')", !!v.virarFase]] : []),
         ['Avançado c/ 6m+ uso (127/130)', "hpMoSet('bool','usaHormonio6m')", !!v.usaHormonio6m],
         ['Pressão alta', "hpMoSet('bool','pressao')", !!v.pressao],
         ['Risco cardio', "hpMoSet('bool','cardio')", !!v.cardio],
@@ -37663,11 +38109,15 @@ function _hpMoDesenha() {
         ['Cirurgia recente/agendada', "hpMoSet('bool','cirurgia')", !!v.cirurgia],
         ['Pós-cirurgia (OK GH)', "hpMoSet('bool','posCirurgiaAutorizado')", !!v.posCirurgiaAutorizado],
         ['Preferir NPP (Caminho A)', "hpMoSet('bool','preferirNPP')", !!v.preferirNPP],
+        ['Sem condição financeira (Deca no lugar de NPP)', "hpMoSet('bool','semCondicaoFinanceira')", !!v.semCondicaoFinanceira],
+        ['Problema de tireoide (não mexer em T4)', "hpMoSet('bool','tireoide')", !!v.tireoide],
+        ['Treino à noite (sem cafeína)', "hpMoSet('bool','treinoNoturno')", !!v.treinoNoturno],
         ['Oral só dias prioridade', "hpMoSet('bool','oralNoPrioritario')", !!v.oralNoPrioritario],
         ['Preservar fertilidade (131)', "hpMoSet('bool','preservarFertilidade')", !!v.preservarFertilidade],
         ['Clembuterol', "hpMoSet('bool','clembuterol')", !!v.clembuterol],
         ...(v.clembuterol ? [['Clemb. liberado GH', "hpMoSet('bool','clembuterolAutorizado')", !!v.clembuterolAutorizado], ['Já fazia 1ml Clemb.', "hpMoSet('bool','jaUsaClemb1ml')", !!v.jaUsaClemb1ml]] : []),
         ['Somatropina (pedido GH)', "hpMoSet('bool','somatropina')", !!v.somatropina],
+        ...(v.somatropina ? [['Já usa Somatropina (2 UI + CJC/Ipa)', "hpMoSet('bool','jaUsaSomatropina')", !!v.jaUsaSomatropina]] : []),
         ['Primobolan aprovado GH', "hpMoSet('bool','primobolanAprovado')", !!v.primobolanAprovado],
         ...(v.sexo === 'F' ? [
           ['Gestante (veto)', "hpMoSet('bool','gestante')", !!v.gestante],
@@ -37686,6 +38136,9 @@ function _hpMoDesenha() {
       h += grupo('Objetivos de peptídeos (132)', _HPMO_PEPT.map(p => [p[1], "hpMoSet('pept','" + p[0] + "')", v.objetivosPept.includes(p[0])]));
       h += grupo('Opções de peptídeos e câncer (133 e 134)', [
         ['Padrão desempenho', "hpMoSet('bool','padraoDesempenho')", !!v.padraoDesempenho],
+        ['Corte financeiro (enxuto)', "hpMoSet('bool','corteFinanceiro')", !!v.corteFinanceiro],
+        ['Retatrutida em escada (1-2-3-4mg)', "hpMoSet('bool','retaEscada')", !!v.retaEscada],
+        ['Já usa Retatrutida', "hpMoSet('bool','jaUsaRetatrutida')", !!v.jaUsaRetatrutida],
         ['Retatrutida 4mg (secar)', "hpMoSet('bool','reta4mg')", !!v.reta4mg],
         ['Migrando de Tirzepatida', "hpMoSet('bool','migraTirzepatida')", !!v.migraTirzepatida],
         ['Janta perto de dormir', "hpMoSet('bool','jantaPertoDormir')", !!v.jantaPertoDormir],
@@ -37698,7 +38151,11 @@ function _hpMoDesenha() {
     h += '<div class="te-ent-aviso">Monta a TPC completa de 6 semanas (HCG subcutâneo no bloco proto + Tamoxifeno via oral na suplementação + exames ao fim da semana 6). Peptídeos existentes são mantidos.</div>';
   }
   h += '<div class="di-mo-dica">Adjuvantes orais manipulados (Anastrozol, Tamoxifeno, Cabergolina, Espironolactona, Finasterida) e protetores entram automaticamente na Suplementação para a farmácia de manipulação.</div></div>';
-  h += '<div class="te-conf-pe"><button type="button" class="te-conf-salva" onclick="hpMoFecha()">Fechar</button><button type="button" class="te-conf-salva ok" onclick="hpMoMonta()">Montar protocolo</button></div>';
+  h += '<div class="te-conf-pe"><button type="button" class="te-conf-salva" onclick="hpMoFecha()">Fechar</button>' +
+    (_hpMo.aba === 'ajuste'
+      ? '<button type="button" class="te-conf-salva ok" onclick="hpMoAplicaAjuste()">Aplicar ajuste</button>'
+      : '<button type="button" class="te-conf-salva ok" onclick="hpMoMonta()">Montar protocolo</button>') +
+    '</div>';
   o.innerHTML = h + '</div>'; o.hidden = false;
 }
 
@@ -37748,7 +38205,7 @@ function hpMoMonta() {
   }
 }
 
-if (typeof module !== 'undefined' && module.exports) module.exports = { GHHP };
+if (typeof module !== 'undefined' && module.exports) module.exports = { GHHP, _hpMo, hpMoAba, hpMoAjSet, hpMoAjPick, hpMoAplicaAjuste, _hpMoDesenha };
 
 function openTrainerSheetModal() {
   document.getElementById('trainerSheetIdInput').value = '';
