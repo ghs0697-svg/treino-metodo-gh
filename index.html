@@ -31872,7 +31872,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v725';
+var APP_SHELL_V = 'metodo-gh-v726';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
@@ -34484,7 +34484,7 @@ const GHTR = (() => {
       panS: ['Panturrilha Sentado'], panP: ['Panturrilha em Pé', 'Panturrilha no Leg 45º'],
       hack: l ? ['Agachamento Hack'] : ['Agachamento Hack', 'Agachamento Smith', 'Agachamento Livre'],
       agL: l ? ['Agachamento Hack'] : ['Agachamento Smith', 'Agachamento Livre', 'Agachamento Hack'],
-      leg: j ? ['Leg Press 45º Unilateral'] : ['Leg Press 45º'], legU: ['Leg Press 45º Unilateral', 'Búlgaro'], bul: ['Búlgaro', 'Leg Press 45º Unilateral'], bulF: l ? ['Búlgaro'] : ['Búlgaro', 'Afundo Smith'], ext: ['Cadeira Extensora'],
+      leg: (j && P.legUni) ? ['Leg Press 45º Unilateral'] : ['Leg Press 45º'], legU: ['Leg Press 45º Unilateral', 'Búlgaro'], bul: ['Búlgaro', 'Leg Press 45º Unilateral'], bulF: l ? ['Búlgaro'] : ['Búlgaro', 'Afundo Smith'], ext: ['Cadeira Extensora'],
       mesa: ['Mesa Flexora', 'Cadeira Flexora'], cadF: ['Cadeira Flexora', 'Mesa Flexora'], fleU: ['Flexora Unilateral em Pé', 'Cadeira Flexora'],
       sti: l ? ['Stiff no Hiperextensor'] : ['Stiff', 'Stiff no Hiperextensor'],
       abdu: ['Cadeira Abdutora'], adu: ['Cadeira Adutora'], abdX: ['Abdução no Cross', 'Cadeira Abdutora'],
@@ -34835,7 +34835,7 @@ const GHTR = (() => {
     if (P.dor.lombar) f.push('Como tu marcou dor na lombar, o agachamento vai no Hack, que tem encosto, e o stiff vai no banco de lombar, com a coluna reta do começo ao fim.');
     if (P.dor.ombro) f.push('Como tu marcou dor no ombro, o que empurra vai na máquina e a elevação frontal vai na polia, que pesam menos na articulação.');
     if (P.dor.cotovelo) f.push('Como tu marcou dor no cotovelo, as puxadas e as roscas vão com a palma pra cima, que poupa a articulação.');
-    const legUni = !!(W && W.dias.some(d => d.itens.some(n => /LEG PRESS 45 UNILATERAL/.test(chave(n)))));
+    const legUni = !!(W && W.dias.some(d => d.itens.some(n => /LEG PRESS 45 UNILATERAL/.test(chave(n)))) && !W.dias.some(d => d.itens.some(n => chave(n) === 'LEG PRESS 45')));   // v726: com as duas pernas em outro dia, a frase não promete uma perna
     if (P.dor.joelho) f.push('Como tu marcou dor no joelho, ' + (legUni ? 'o leg press vai com uma perna de cada vez, que pede menos peso. Nos exercícios de perna, ' : '') + 'desce só até onde não dói e sobe a carga com calma. Doeu de verdade, para e me avisa.');
     return f.join(' ');
   }
@@ -35038,7 +35038,7 @@ const GHTR = (() => {
     ombro: /^SUPINO RETO$|DESENVOLVIMENTO COM HALTERES|ELEVACAO FRONTAL NEUTRA/,
     cotovelo: /REMADA CURVADA PRONADA|REMADA PRONADA|REMADA UNILATERAL|PUXADA ALTA PRONADA|ROSCA DIRETA COM BARRA W/,
   };
-  const podeEntrar = (P, n, ult) => { const u = chave(n); return EX[n] && !(P.dor.lombar && NAO_ENTRA.lombar.test(u)) && !(P.dor.ombro && NAO_ENTRA.ombro.test(u)) && !(P.dor.cotovelo && NAO_ENTRA.cotovelo.test(u)) && !(P.sexo === 'M' && /PELVICA 2D|AFUNDO|ABDUCAO NO CROSS|COICE|ABDUTORA EM PE/.test(u)) && !(/FLEXORA LIVRE/.test(u) && (P.niv !== 'ava' || P.dor.joelho)) && !(P.sexo !== 'M' && !ult && !P.dor.joelho && /LEG PRESS 45 UNILATERAL/.test(u)) && !(P.dor.joelho && u === 'LEG PRESS 45') && !(!P.dor.cotovelo && /REMADA BAIXA SUPINADA/.test(u)) && !P.veto.some(re => re.test(n)); };
+  const podeEntrar = (P, n, ult) => { const u = chave(n); return EX[n] && !(P.dor.lombar && NAO_ENTRA.lombar.test(u)) && !(P.dor.ombro && NAO_ENTRA.ombro.test(u)) && !(P.dor.cotovelo && NAO_ENTRA.cotovelo.test(u)) && !(P.sexo === 'M' && /PELVICA 2D|AFUNDO|ABDUCAO NO CROSS|COICE|ABDUTORA EM PE/.test(u)) && !(/FLEXORA LIVRE/.test(u) && (P.niv !== 'ava' || P.dor.joelho)) && !(P.sexo !== 'M' && !ult && !P.dor.joelho && /LEG PRESS 45 UNILATERAL/.test(u)) && !(P.dor.joelho && P.legUni && u === 'LEG PRESS 45') && !(!P.dor.cotovelo && /REMADA BAIXA SUPINADA/.test(u)) && !P.veto.some(re => re.test(n)); };
   const ehPreparo = r => String((r && r[7]) || '').toLowerCase().trim() === 'sim' || /ALONGAMENT|MOBILIDAD|MANGUITO|DESCOMPRESS|AQUECIMENTO/.test(chave(r && r[1]));
   const GIRA_ANCORA = { 3: 1, 7: 1, 9: 1 };
   const FASE = { 2: 'Consolidação', 3: 'Rotação', 4: 'Reconstrução de força', 5: 'Intensificação', 6: 'Consolidação', 7: 'Volta ao básico', 8: 'Consolidação', 9: 'Rotação' };
@@ -35244,7 +35244,7 @@ const GHTR = (() => {
       if (roda === 'flexora') return !(semanaVelha.has('MESA FLEXORA') && semanaVelha.has('CADEIRA FLEXORA'));
       if (roda === 'lombar' && /HIPEREXTENS/.test(chave(nome)) && !temStiff) return false;
       if (/TRICEPS FRANCES/.test(chave(nome))) return false;                          // v720: o francês é prioridade, não sai da semana
-      if (P.dor.joelho && /LEG PRESS 45 UNILATERAL/.test(chave(nome))) return false;   // v720: com joelho, o leg press segue uma perna por vez
+      if (P.dor.joelho && P.legUni && /LEG PRESS 45 UNILATERAL/.test(chave(nome))) return false;   // v726: joelho com a escolha "uma perna", o leg press segue uma perna por vez
       return !SO_DE_DIA[roda];
     };
     // posição dentro do dia: vale pro giro e pra troca entre dias. ns = nomes do dia já com o candidato no lugar i
@@ -35281,8 +35281,8 @@ const GHTR = (() => {
       d.linhas.forEach((r, i) => {
         if (ehPreparo(r)) return;
         const ehAnc = anc.indexOf(r) >= 0, roda = rodaDe(r[1]);
-        // v720 (GH 27/11): joelho com problema troca o leg press bilateral pelo unilateral, mesmo sendo o pesado do dia
-        if (P.dor.joelho && chave(r[1]) === 'LEG PRESS 45' && !nomes().some((x, k) => k !== i && /LEG PRESS 45 UNILATERAL/.test(x)) && !P.veto.some(re => re.test('Leg Press 45º Unilateral'))) { nova[i] = linha(P, d.n, 'Leg Press 45º Unilateral'); d.mud[i] = true; return; }
+        // v726 (GH 27/11, "Sempre não, mas acho bacana ter a opção"): só troca o bilateral pelo unilateral quando o treinador escolheu uma perna
+        if (P.dor.joelho && P.legUni && chave(r[1]) === 'LEG PRESS 45' && !nomes().some((x, k) => k !== i && /LEG PRESS 45 UNILATERAL/.test(x)) && !P.veto.some(re => re.test('Leg Press 45º Unilateral'))) { nova[i] = linha(P, d.n, 'Leg Press 45º Unilateral'); d.mud[i] = true; return; }
         const limpa = () => { const x = r.slice(); x[5] = String(x[5] || '').replace(MINHA_OBS, ''); x[3] = repsLimpa(x[2], x[3], P.niv); return x; };
         if (ehAnc && !gira) { d.fica[i] = true; nova[i] = limpa(); return; }
         const novo = giraNoLugar(roda, r[1]) ? escolhe(roda, r[1], i) : null;
@@ -35510,6 +35510,8 @@ function _trMoDesenhaRea(o, h) {
   h += grupo('Nível', ['Iniciante', 'Intermediário', 'Avançado'].map(n => [n, "trMoSetR('nivel','" + n + "')", v.nivel === n]));
   h += grupo('Prioridade', _TRMO_PRI.map(p => [p[1], "trMoSetR('pri','" + p[0] + "')", v.pri === p[0]]));
   h += grupo('Sente dor em', _TRMO_DOR.map(p => [p[1], "trMoSetR('dor','" + p[0] + "')", !!v.dor[p[0]]]));
+  if (v.legUni == null) { const lp = (tem ? trainerData : []).filter(r => /^\d/.test(String((r && r[0]) || '').trim())).map(r => String(r[1] || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()).filter(n => /LEG PRESS 45/.test(n)); v.legUni = lp.length > 0 && lp.every(n => /UNILATERAL/.test(n)); }   // v726: quem já faz só com uma perna segue assim
+  if (v.dor.joelho) h += grupo('Leg press', [['Duas pernas', "trMoSetR('legUni',false)", !v.legUni], ['Uma perna de cada vez', "trMoSetR('legUni',true)", !!v.legUni]]);
   h += grupo('Sono (1 ruim, 5 ótimo)', [0, 1, 2, 3, 4, 5].map(n => [n ? String(n) : 'Não sei', "trMoSetR('sono'," + n + ')', v.sono === n]));
   h += grupo('Estresse (1 baixo, 5 alto)', [0, 1, 2, 3, 4, 5].map(n => [n ? String(n) : 'Não sei', "trMoSetR('estresse'," + n + ')', v.estresse === n]));
   const def = v.deficit == null ? !!_TRMO_DEF[v.versao] : v.deficit;
@@ -35536,7 +35538,7 @@ function trMoGira() {
   const ini = _trMoIni(_trMo.j), atual = trainerData || [];
   const nome = String(typeof trainerStudentNameHint === 'string' && trainerStudentNameHint ? trainerStudentNameHint : ((_trMo.j && _trMo.j.nome) || ''));
   const perfil = { nome, sexo: v.sexo, nivel: v.nivel, prioridade: _TRMO_PRI_TXT[v.pri] || 'Corpo todo', objetivo: 'Hipertrofia', tempo: ini && ini.curto ? 'Entre 40 e 50 minutos' : 'Entre 60 e 90 minutos', idade: ini && ini.idade ? ini.idade : null, sono: v.sono || null, estresse: v.estresse || null,
-    dor: Object.assign({}, v.dor), veto: [], versao: v.versao, hormonal: !!v.hormonal, deficitForte: v.deficit == null ? !!_TRMO_DEF[v.versao] : !!v.deficit, migra: v.migra !== false, remonta: v.remonta === false ? false : undefined, pref: (ini && ini.pref) || 'C', video: n => (typeof _BANK_IDX !== 'undefined' && _BANK_IDX[_bankKey(n)]) || '' };
+    dor: Object.assign({}, v.dor), legUni: !!(v.dor.joelho && v.legUni), veto: [], versao: v.versao, hormonal: !!v.hormonal, deficitForte: v.deficit == null ? !!_TRMO_DEF[v.versao] : !!v.deficit, migra: v.migra !== false, remonta: v.remonta === false ? false : undefined, pref: (ini && ini.pref) || 'C', video: n => (typeof _BANK_IDX !== 'undefined' && _BANK_IDX[_bankKey(n)]) || '' };
   let r; try { r = GHTR.reajusta(atual.map(x => (x || []).slice()), perfil, GHSR.rotulaSemana, n => (GHSR.meta(n) || {}).grupo); } catch (_) { r = { erro: 'Não consegui girar esse treino. Ajusta na mão pelo editor.' }; }
   if (r.erro) { _trMo.pronto = { tit: 'Não girou', res: r.erro, notas: [], ok: false }; _trMoDesenha(); _trMo.pronto = null; return; }
   teUndoStack.push({ mode: 'treino', data: JSON.parse(JSON.stringify(atual)) }); while (teUndoStack.length > TE_UNDO_MAX) teUndoStack.shift(); teUpdateUndoBtn();
@@ -35609,6 +35611,7 @@ function _trMoDesenha() {
   h += grupo('Prioridade', _TRMO_PRI.map(p => [p[1], "trMoSet('pri','" + p[0] + "')", v.pri === p[0]]));
   h += grupo('Como gosta de treinar', _TRMO_PREF.map(p => [p[1], "trMoSet('pref','" + p[0] + "')", (v.pref || 'C') === p[0]]));
   h += grupo('Sente dor em', _TRMO_DOR.map(p => [p[1], "trMoSet('dor','" + p[0] + "')", !!v.dor[p[0]]]));
+  if (v.dor.joelho) h += grupo('Leg press', [['Duas pernas', "trMoSet('legUni',false)", !v.legUni], ['Uma perna de cada vez', "trMoSet('legUni',true)", !!v.legUni]]);   // v726: escolha do treinador
   const av = [];
   if (ini && ini.freq != null && !(ini.freq >= 3 && ini.freq <= 6)) av.push('Ele marcou ' + ini.freqTxt + ' na frequência. O Montar faz de 3 a 6 treinos na semana: escolhe aqui em cima quantos vão ser, ou monta esse na mão.');
   if (ini && ini.priFora) av.push('A prioridade que ele marcou (' + ini.priTxt + ') não tem desenho próprio. Deixei em corpo todo: escolhe o grupo mais perto, ou acrescenta volume na mão depois.');
@@ -35623,7 +35626,8 @@ function _trMoDesenha() {
   }
   if (ini && ini.idade && ini.idade < 18) av.push('Menor de 18 anos: sai como iniciante, parando com 2 a 3 repetições no tanque.');
   (ini ? ini.limites : []).forEach(t => av.push(t + '. O Montar não lê texto livre: depois de montar, confere e troca na mão o que bater nisso.'));
-  if (v.dor.joelho) av.push('Dor no joelho: o leg press sai com uma perna de cada vez, que pega menos peso, e o Montar escreve o aviso de amplitude. Se for lesão de verdade, troca o agachamento e o búlgaro na mão.');
+  if (v.dor.joelho) av.push(v.legUni ? 'Dor no joelho: o leg press sai com uma perna de cada vez, que pega menos peso, e o Montar escreve o aviso de amplitude. Se for lesão de verdade, troca o agachamento e o búlgaro na mão.'
+    : 'Dor no joelho: o leg press sai com as duas pernas e o Montar escreve o aviso de amplitude. Se quiser com uma perna de cada vez, que pega menos peso, marca em Leg press aqui em cima. Se for lesão de verdade, troca o agachamento e o búlgaro na mão.');
   if (v.dor.cotovelo) av.push('Cotovelo: o Tríceps Francês fica na semana, porque é prioridade do método. Se a dor é justo nele, troca na mão.');
   if (v.sexo === 'M' && v.freq === 4 && v.pri === 'gluteo') av.push('Homem com prioridade em glúteo em 4 treinos não fecha nas regras. Escolhe outra prioridade ou monta esse na mão.');
   if (_trMoTemTreino()) av.push('Este treino já tem exercícios. Montar TROCA todos pelos novos e reescreve as orientações do topo. O link do aluno fica.');
@@ -35649,7 +35653,7 @@ function trMoMonta() {
   if (_trMoTemTreino() && !confirm('Este treino já tem exercícios. Montar troca todos pelos novos. Confirma?')) return;
   const nome = String(typeof trainerStudentNameHint === 'string' && trainerStudentNameHint ? trainerStudentNameHint : ((_trMo.j && _trMo.j.nome) || ''));
   const perfil = { nome, sexo: v.sexo, freq: v.freq, tempo: v.curto ? 'Entre 40 e 50 minutos' : 'Entre 60 e 90 minutos', nivel: v.nivel, prioridade: _TRMO_PRI_TXT[v.pri] || 'Corpo todo', objetivo: 'Hipertrofia', idade: ini && ini.idade ? ini.idade : null, sono: ini ? ini.sono : null, estresse: ini ? ini.estresse : null,
-    dor: Object.assign({}, v.dor), veto: [], pref: v.pref || 'C', video: n => (typeof _BANK_IDX !== 'undefined' && _BANK_IDX[_bankKey(n)]) || '' };
+    dor: Object.assign({}, v.dor), legUni: !!(v.dor.joelho && v.legUni), veto: [], pref: v.pref || 'C', video: n => (typeof _BANK_IDX !== 'undefined' && _BANK_IDX[_bankKey(n)]) || '' };
   let r; try { r = GHTR.monta(perfil, GHSR.rotulaSemana, n => (GHSR.meta(n) || {}).grupo); } catch (_) { r = { erro: 'Não consegui montar com essas escolhas. Tenta outra combinação ou monta na mão.' }; }
   if (r.erro) { _trMo.pronto = { tit: 'Não montou', res: r.erro, notas: [], ok: false }; _trMoDesenha(); _trMo.pronto = null; return; }
   _trMoPoe(r.rows);
