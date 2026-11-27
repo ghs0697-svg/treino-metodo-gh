@@ -3832,6 +3832,53 @@
   .rs-cmp-pair .cell { flex:1; aspect-ratio:3/4; background:#141416; border:1px solid #26262b; border-radius:8px; overflow:hidden; display:flex; align-items:center; justify-content:center; }
   .rs-cmp-pair .cell img { width:100%; height:100%; object-fit:cover; }
   .rs-cmp-pair .cell span { font-size:11px; color:#5d5a54; }
+  /* ── v723: simetrógrafo (linhas por cima da foto, até 5 datas) ── */
+  .sim-ov { position:fixed; inset:0; background:var(--bg, #0c0c0d); z-index:10004; display:none; flex-direction:column; color:var(--fg, #f1ede4); }
+  .sim-ov.on { display:flex; }
+  .sim-head { padding:calc(12px + env(safe-area-inset-top, 0px)) 14px 12px; border-bottom:1px solid var(--glass-line, #26262b); display:flex; align-items:center; gap:12px; flex-shrink:0; }
+  .sim-volta { background:var(--gold-bg, var(--gold)); color:#15100a; border:none; padding:7px 13px; border-radius:8px; font-weight:700; font-size:13px; cursor:pointer; }
+  .sim-tit { font-weight:700; font-size:15px; color:var(--gold); }
+  .sim-corpo { flex:1; overflow-y:auto; overflow-x:hidden; padding:10px 14px calc(28px + env(safe-area-inset-bottom, 0px)); min-height:0; }
+  .sim-aviso { text-align:center; color:var(--fg-2, #9a9389); font-size:13px; line-height:1.5; padding:34px 10px; }
+  .sim-aviso a { color:var(--gold); text-decoration:underline; }
+  .sim-rot { font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--fg-2, #8d8579); margin:10px 0 6px; font-weight:700; }
+  .sim-rot span { text-transform:none; letter-spacing:0; font-weight:400; margin-left:6px; }
+  .sim-chips { display:flex; gap:6px; flex-wrap:wrap; }
+  .sim-chip { background:var(--glass, #1a1a1c); border:1px solid var(--glass-line, #2a2a2f); color:var(--fg, #ddd); border-radius:999px; padding:7px 12px; font-size:12.5px; font-weight:600; cursor:pointer; line-height:1.15; font-family:inherit; }
+  .sim-chip small { display:block; font-size:9.5px; font-weight:500; opacity:.7; }
+  .sim-chip.on { background:var(--gold-bg, var(--gold)); color:#15100a; border-color:var(--gold); }
+  .sim-ferr { display:flex; gap:6px; flex-wrap:wrap; margin:12px 0 4px; }
+  .sim-bt { background:var(--glass-2, #222); border:1px solid var(--glass-line, #333); color:var(--fg, #eee); border-radius:9px; padding:8px 11px; font-size:12.5px; font-weight:600; cursor:pointer; font-family:inherit; }
+  .sim-bt.on { border-color:var(--gold); color:var(--gold); }
+  .sim-dica { font-size:11.5px; line-height:1.45; color:var(--fg-2, #8d8579); margin:6px 0 0; }
+  .sim-palco { display:flex; gap:8px; overflow-x:auto; padding:8px 0 6px; -webkit-overflow-scrolling:touch; }
+  .sim-col { flex:0 0 44%; min-width:0; max-width:440px; }
+  .sim-col:first-child { margin-left:auto; }
+  .sim-col:last-child { margin-right:auto; }
+  .sim-palco.n2 .sim-col { flex:1 1 0; }
+  .sim-palco.n1 .sim-col { flex:0 1 440px; }
+  .sim-data { font-size:12px; font-weight:700; text-align:center; margin-bottom:5px; color:var(--fg, #eee); }
+  .sim-foto { position:relative; aspect-ratio:3/4; background:#0b0b0c; border:1px solid var(--glass-line, #26262b); border-radius:10px; overflow:hidden; display:flex; align-items:center; justify-content:center; touch-action:pan-x pan-y; user-select:none; -webkit-user-select:none; }
+  .sim-foto.zoom { touch-action:none; cursor:grab; }
+  .sim-foto > span { font-size:11.5px; color:#9a968e; text-align:center; padding:0 10px; line-height:1.4; }
+  .sim-foto > span.toca { text-decoration:underline; cursor:pointer; }
+  .sim-img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; transform-origin:50% 50%; pointer-events:none; -webkit-user-drag:none; }
+  .sim-grade { position:absolute; inset:0; pointer-events:none; z-index:1; background-image:linear-gradient(to right, rgba(255,255,255,.42) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.42) 1px, transparent 1px); background-size:10% 7.5%; }
+  .sim-grade::after { content:''; position:absolute; top:0; bottom:0; left:50%; width:2px; margin-left:-1px; background:rgba(255,255,255,.9); box-shadow:0 0 0 1px rgba(0,0,0,.35); }
+  .sim-l { position:absolute; touch-action:none; z-index:2; }
+  .sim-l.h { left:0; right:0; height:28px; margin-top:-14px; cursor:ns-resize; }
+  .sim-l.v { top:0; bottom:0; width:28px; margin-left:-14px; cursor:ew-resize; }
+  .sim-l::before { content:''; position:absolute; background:#ffd54a; box-shadow:0 0 0 1px rgba(0,0,0,.6); }
+  .sim-l.h::before { left:0; right:0; top:13px; height:2px; }
+  .sim-l.v::before { top:0; bottom:0; left:13px; width:2px; }
+  .sim-l.pega::before { background:#fff; }
+  .sim-l.sai::before { background:#e5484d; }
+  .sim-aj { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:6px; flex-wrap:wrap; }
+  .sim-aj button { background:var(--glass-2, #222); border:1px solid var(--glass-line, #333); color:var(--fg, #eee); border-radius:8px; min-width:34px; height:32px; font-size:15px; font-weight:700; cursor:pointer; padding:0 9px; font-family:inherit; }
+  .sim-aj button.sim-pc { font-size:11.5px; font-weight:600; min-width:50px; }
+  .sim-aj button.sim-troca { font-size:11.5px; font-weight:600; }
+  .sim-nota { font-size:11.5px; line-height:1.5; color:var(--fg-2, #8d8579); margin-top:12px; }
+  @media (min-width: 900px) { .sim-col { flex:1 1 0; } }
   .rs-menu { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:10004; display:none; align-items:flex-end; }
   .rs-menu.on { display:flex; }
   .rs-menu-sheet { width:100%; background:#1b1b1e; border-radius:16px 16px 0 0; padding:10px 10px calc(10px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:8px; }
@@ -9445,6 +9492,7 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
         <button class="cmp-share-btn" id="cmpShareBtn" onclick="cmpShare()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Compartilhar antes/depois</button>
         <div id="cmpEvoArea"></div>
       </div>
+      <button type="button" class="te-btn ghost" id="simAbreCmp" onclick="simAbre()" style="width:100%;margin-top:12px;">📐 Simetrógrafo: linhas na foto</button>
     </div><!-- /fotosPaneComparar -->
 
     <button class="te-btn ghost" onclick="fotosFechar()" style="width:100%;margin-top:12px;">Fechar</button>
@@ -23690,7 +23738,7 @@ async function loadRegistrosSemanais() {
     _rsRegistros = regs;
     if (!regs.length) { box.innerHTML = '<p style="color:#666;font-size:11px;font-style:italic;margin:4px 0 0;">Ainda não tens registros aqui. Manda as fotos de hoje pra começar teu histórico.</p>'; return; }
     const chips = regs.map((r, i) => `<span class="rs-hist-chip" onclick="verRegistroSemana(${i})">${escapeFotosTxt(r.date)}</span>`).join('');
-    const cmp = regs.length >= 2 ? `<button class="water-btn" style="margin-top:10px;width:100%;" onclick="abrirCompararSemanas()">📊 Comparar duas semanas</button>` : '';
+    const cmp = (regs.length >= 2 ? `<button class="water-btn" style="margin-top:10px;width:100%;" onclick="abrirCompararSemanas()">📊 Comparar duas semanas</button>` : '') + `<button class="water-btn" id="simAbreRs" style="margin-top:8px;width:100%;" onclick="simAbre()">📐 Simetrógrafo: linhas na foto</button>`;
     box.innerHTML = `<div style="color:#8d8579;font-size:11px;margin-bottom:6px;">Teu histórico (${regs.length}), toca numa data pra ver:</div><div class="rs-hist">${chips}</div>${cmp}`;
   } catch (_) {
     // v550: falha de rede ou do servidor não é "ainda não tens registros" (quem tinha 8 semanas de registro lia isso)
@@ -23755,6 +23803,207 @@ async function _rsLoadImg(fid, cell) {
     const j = await (await fetch(`${LOG_ENDPOINT}?action=registro_semanal_img&fid=${encodeURIComponent(fid)}&_=${Date.now()}`, { cache: 'no-store' })).json();
     if (j && j.ok) { const src = `data:${j.mime};base64,${j.b64}`; _rsImgCache[fid] = src; cell.innerHTML = `<img src="${src}">`; }
   } catch (_) {}
+}
+
+// ══════════════════════════════════════════════════════════════
+// ══ v723 (GH 27/11/2026): SIMETRÓGRAFO ══
+// Linhas de arrastar por cima da foto, grade e até 5 datas lado a lado, pro aluno e pro treinador.
+// Usa as fotos que o app já guarda: as rodadas da avaliação (fotos_list / foto_img) e o registro semanal
+// (registros_semanais_list / registro_semanal_img). Nada é gravado: linha, zoom e data vivem só nesta tela.
+// ══════════════════════════════════════════════════════════════
+const SIM_MAX = 5, SIM_LINHAS_MAX = 8;
+const SIM_ANG = ['frente', 'costas', 'direito', 'esquerdo'];
+const SIM_ANG_NOME = { frente: 'Frente', costas: 'Costas', direito: 'Perfil direito', esquerdo: 'Perfil esquerdo' };
+const _sim = { sid: '', estado: '', mom: [], sel: [], ang: 'frente', grade: false, linhas: {}, aj: {}, troca: {}, img: {}, pend: {}, vez: 0, arr: false, redes: false };
+
+function _simMs(dt) { const m = /^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/.exec(String(dt || '').trim()); return m ? new Date(+m[3], +m[2] - 1, +m[1]).getTime() : 0; }
+// junta as duas fontes numa lista só, da data mais antiga pra mais nova
+function _simMomentos(rounds, regs) {
+  const out = [];
+  (rounds || []).forEach((r, i) => { if (!r) return; const f = {}, it = [];
+    SIM_ANG.forEach(a => { if (r.roles && r.roles[a] && r.roles[a].fid) { f[a] = it.length; it.push({ fid: String(r.roles[a].fid), tipo: 'a' }); } });
+    (r.outras || []).forEach(o => { if (o && o.fid) it.push({ fid: String(o.fid), tipo: 'a' }); });
+    if (it.length) out.push({ k: 'a|' + (r.folder || r.num || i), dt: String(r.date || ''), ms: Number(r.dateMs) || _simMs(r.date), de: 'avaliação', f: f, it: it }); });
+  (regs || []).forEach(r => { if (!r) return; const f = {}, it = [];
+    SIM_ANG.forEach(a => { if (r.fotos && r.fotos[a]) { f[a] = it.length; it.push({ fid: String(r.fotos[a]), tipo: 'r' }); } });
+    if (it.length) out.push({ k: 'r|' + r.date, dt: String(r.date || '').replace(/-/g, '/'), ms: _simMs(r.date), de: 'registro', f: f, it: it }); });
+  out.sort((a, b) => a.ms - b.ms);
+  return out;
+}
+function _simSel() { return _sim.mom.filter(m => _sim.sel.indexOf(m.k) >= 0); }
+// a foto da coluna: a do ângulo escolhido, ou a que a pessoa trocou na mão
+function _simFotoDe(m) {
+  const t = _sim.troca[m.k];
+  if (t != null && m.it[t]) return m.it[t];
+  return m.f[_sim.ang] != null ? m.it[m.f[_sim.ang]] : null;
+}
+function _simAj(fid) { return _sim.aj[fid] || (_sim.aj[fid] = { z: 1, x: 0, y: 0 }); }
+function _simTransf(aj) { return 'translate(' + (aj.x * 100).toFixed(2) + '%,' + (aj.y * 100).toFixed(2) + '%) scale(' + aj.z + ')'; }
+// caixa da foto na medida do dedo (a página pode estar com a letra aumentada, que é zoom)
+function _simCaixa(el) {
+  const r = el.getBoundingClientRect(); let fz = 1;
+  try { fz = parseFloat(getComputedStyle(document.body).zoom) || 1; } catch (_) {}
+  const k = (r.width > 0 && el.offsetWidth > 0) ? (el.offsetWidth * fz) / r.width : 1, q = Math.abs(k - 1) < 0.03 ? 1 : k;
+  return { left: r.left * q, top: r.top * q, width: r.width * q, height: r.height * q };
+}
+
+function _simOv() {
+  let ov = document.getElementById('simOv');
+  if (ov) return ov;
+  ov = document.createElement('div');
+  ov.id = 'simOv'; ov.className = 'sim-ov';
+  ov.innerHTML = '<div class="sim-head"><button type="button" class="sim-volta" onclick="simFecha()">← Voltar</button><div class="sim-tit">Simetrógrafo</div></div><div class="sim-corpo" id="simCorpo"></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('pointerdown', _simPega);
+  return ov;
+}
+function simFecha() { const ov = document.getElementById('simOv'); if (ov) ov.classList.remove('on'); }
+
+// sid: a planilha do aluno. Sem ele, é o aluno abrindo as próprias fotos.
+async function simAbre(sid) {
+  sid = String(sid || (typeof SHEET_ID !== 'undefined' && SHEET_ID) || '');
+  _simOv().classList.add('on');
+  if (!sid || typeof LOG_ENDPOINT === 'undefined') { _sim.estado = 'erro'; _simDesenha(); return; }
+  if (_sim.sid === sid && _sim.estado === 'ok') { _simDesenha(); return; }   // reabrir não busca de novo
+  const vez = ++_sim.vez;
+  _sim.sid = sid; _sim.estado = 'car'; _sim.mom = []; _sim.sel = []; _sim.troca = {};
+  _simDesenha();
+  const pega = async acao => { try { const j = await (await fetch(LOG_ENDPOINT + '?action=' + acao + '&id=' + encodeURIComponent(sid) + '&_=' + Date.now(), { cache: 'no-store' })).json(); return (j && j.ok !== false) ? j : null; } catch (_) { return null; } };
+  const [a, r] = await Promise.all([pega('fotos_list'), pega('registros_semanais_list')]);
+  if (vez !== _sim.vez) return;
+  if (!a && !r) { _sim.estado = 'erro'; _simDesenha(); return; }
+  _sim.mom = _simMomentos(a && a.rounds, r && r.registros);
+  const n = _sim.mom.length;
+  _sim.sel = n <= 2 ? _sim.mom.map(m => m.k) : [_sim.mom[0].k, _sim.mom[n - 1].k];   // abre no antes e depois: a mais antiga e a mais nova
+  _sim.ang = SIM_ANG.find(x => _simSel().some(m => m.f[x] != null)) || 'frente';
+  _sim.estado = 'ok';
+  _simDesenha();
+}
+function simDeNovo() { const sid = _sim.sid; _sim.estado = ''; simAbre(sid); }
+
+function _simColHtml(m, i) {
+  const e = escapeFotosTxt, f = _simFotoDe(m);
+  let h = '<div class="sim-col"><div class="sim-data">' + e(m.dt || 'sem data') + '</div>';
+  if (!f) {
+    h += '<div class="sim-foto"><span>Sem foto de ' + SIM_ANG_NOME[_sim.ang].toLowerCase() + ' nesta data</span></div>';
+    h += '<div class="sim-aj">' + (m.it.length ? '<button type="button" class="sim-troca" onclick="simTroca(' + i + ')">Ver outra foto desta data</button>' : '') + '</div>';
+    return h + '</div>';
+  }
+  const aj = _simAj(f.fid), src = _sim.img[f.fid];
+  h += '<div class="sim-foto' + (aj.z > 1 ? ' zoom' : '') + '" data-fid="' + e(f.fid) + '">'
+    + (src && src !== 'x' ? '<img class="sim-img" src="' + src + '" alt="" draggable="false" onerror="simImgErro(' + i + ')" style="transform:' + _simTransf(aj) + '">'
+      : (src === 'x' ? '<span class="toca" onclick="simFotoDeNovo(' + i + ')">Não consegui abrir esta foto. Toca pra tentar de novo.</span>' : '<span>carregando…</span>'))
+    + (_sim.grade ? '<div class="sim-grade"></div>' : '')
+    + (_sim.linhas[f.fid] || []).map((l, j) => '<div class="sim-l ' + (l.t === 'h' ? 'h' : 'v') + '" data-i="' + j + '" style="' + (l.t === 'h' ? 'top' : 'left') + ':' + (l.p * 100).toFixed(2) + '%"></div>').join('')
+    + '</div>';
+  h += '<div class="sim-aj"><button type="button" onclick="simZoom(' + i + ',-1)" aria-label="Afastar a foto">−</button><button type="button" class="sim-pc" onclick="simZoom(' + i + ',0)" aria-label="Voltar pro tamanho inteiro">' + Math.round(aj.z * 100) + '%</button><button type="button" onclick="simZoom(' + i + ',1)" aria-label="Aproximar a foto">+</button>'
+    + (m.it.length > 1 ? '<button type="button" class="sim-troca" onclick="simTroca(' + i + ')">Trocar foto</button>' : '') + '</div>';
+  return h + '</div>';
+}
+
+function _simDesenha() {
+  const c = document.getElementById('simCorpo'); if (!c) return;
+  const e = escapeFotosTxt;
+  if (_sim.estado === 'car') { c.innerHTML = '<div class="sim-aviso">Buscando as fotos…</div>'; return; }
+  if (_sim.estado === 'erro') { c.innerHTML = '<div class="sim-aviso">Não consegui buscar as fotos agora. Confere a internet e <a href="#" onclick="simDeNovo();return false;">tenta de novo</a>.</div>'; return; }
+  if (!_sim.mom.length) { c.innerHTML = '<div class="sim-aviso">Ainda não tem foto guardada aqui. Manda as fotos pelo app (frente, costas e os dois perfis) que elas aparecem nesta tela.</div>'; return; }
+  const pal0 = document.getElementById('simPalco'), sx = pal0 ? pal0.scrollLeft : 0, sy = c.scrollTop;
+  const sel = _simSel(), temLinha = sel.some(m => { const f = _simFotoDe(m); return f && (_sim.linhas[f.fid] || []).length; });
+  let h = '<div class="sim-rot">Ângulo</div><div class="sim-chips">' + SIM_ANG.map(a => '<button type="button" class="sim-chip' + (_sim.ang === a ? ' on' : '') + '" onclick="simAng(\'' + a + '\')">' + SIM_ANG_NOME[a] + '</button>').join('') + '</div>';
+  h += '<div class="sim-rot">Datas<span>escolhe até ' + SIM_MAX + '</span></div><div class="sim-chips">' + _sim.mom.map((m, i) => '<button type="button" class="sim-chip' + (_sim.sel.indexOf(m.k) >= 0 ? ' on' : '') + '" onclick="simData(' + i + ')">' + e(m.dt || 'sem data') + '<small>' + m.de + '</small></button>').join('') + '</div>';
+  h += '<div class="sim-ferr"><button type="button" class="sim-bt' + (_sim.grade ? ' on' : '') + '" onclick="simGrade()">Grade</button><button type="button" class="sim-bt" onclick="simLinha(\'h\')">+ Linha deitada</button><button type="button" class="sim-bt" onclick="simLinha(\'v\')">+ Linha em pé</button>'
+    + (temLinha ? '<button type="button" class="sim-bt" onclick="simLimpa()">Limpar linhas</button>' : '') + '</div>';
+  h += '<p class="sim-dica">Arrasta a linha até o ombro, o quadril ou o joelho. Pra tirar uma linha, arrasta ela pra fora da foto. Com a foto aproximada, arrasta a foto pra alinhar.</p>';
+  h += sel.length ? '<div class="sim-palco n' + sel.length + '" id="simPalco">' + sel.map((m, i) => _simColHtml(m, i)).join('') + '</div>' : '<div class="sim-aviso">Escolhe uma data aí em cima.</div>';
+  h += '<p class="sim-nota">As linhas ajudam a comparar, não valem como laudo de postura. Foto torta ou tirada de outra distância muda o desenho: tira sempre no mesmo lugar, com o celular reto e na altura do umbigo.</p>';
+  c.innerHTML = h;
+  const pal = document.getElementById('simPalco'); if (pal) pal.scrollLeft = sx;
+  c.scrollTop = sy;
+  sel.forEach(m => { const f = _simFotoDe(m); if (f) _simCarregaImg(f); });
+}
+
+async function _simCarregaImg(f) {
+  if (_sim.img[f.fid] || _sim.pend[f.fid]) return;
+  let ja = ''; try { ja = (f.tipo === 'r' ? _rsImgCache[f.fid] : _cmpState.imgCache[f.fid]) || ''; } catch (_) {}
+  if (ja) _sim.img[f.fid] = ja;
+  else {
+    _sim.pend[f.fid] = 1;
+    try {
+      const url = LOG_ENDPOINT + '?action=' + (f.tipo === 'r' ? 'registro_semanal_img' : 'foto_img') + '&fid=' + encodeURIComponent(f.fid) + (f.tipo === 'r' ? '' : '&w=1280') + '&_=' + Date.now();
+      const j = await (await fetch(url, { cache: 'no-store' })).json();
+      _sim.img[f.fid] = (j && j.ok && j.b64) ? 'data:' + (j.mime || 'image/jpeg') + ';base64,' + j.b64 : 'x';
+    } catch (_) { _sim.img[f.fid] = 'x'; }
+    delete _sim.pend[f.fid];
+  }
+  const ov = document.getElementById('simOv');
+  if (!ov || !ov.classList.contains('on')) return;
+  if (_sim.arr) _sim.redes = true; else _simDesenha();   // no meio de um arrasto a tela só se refaz quando o dedo soltar
+}
+
+function simAng(a) { if (SIM_ANG.indexOf(a) < 0) return; _sim.ang = a; _sim.troca = {}; _simDesenha(); }
+function simData(i) {
+  const m = _sim.mom[i]; if (!m) return;
+  const j = _sim.sel.indexOf(m.k);
+  if (j >= 0) _sim.sel.splice(j, 1);
+  else if (_sim.sel.length >= SIM_MAX) { _ghToast('Dá pra comparar até ' + SIM_MAX + ' datas. Tira uma pra pôr outra.'); return; }
+  else _sim.sel.push(m.k);
+  _simDesenha();
+}
+function simGrade() { _sim.grade = !_sim.grade; _simDesenha(); }
+// linha nova entra em toda foto que está na tela, no meio; cada foto arrasta a sua
+function simLinha(t) {
+  t = t === 'v' ? 'v' : 'h'; let pos = 0, cheio = 0;
+  _simSel().forEach(m => { const f = _simFotoDe(m); if (!f) return;
+    const arr = _sim.linhas[f.fid] || (_sim.linhas[f.fid] = []);
+    if (arr.length >= SIM_LINHAS_MAX) { cheio++; return; }
+    const n = arr.filter(l => l.t === t).length, p = Math.max(0.06, Math.min(0.94, 0.5 + (n % 2 ? 1 : -1) * Math.ceil(n / 2) * 0.09));
+    arr.push({ t: t, p: p }); pos++; });
+  if (!pos) _ghToast(cheio ? 'Cada foto leva até ' + SIM_LINHAS_MAX + ' linhas. Tira uma pra pôr outra.' : 'Escolhe uma data com foto pra pôr a linha.');
+  _simDesenha();
+}
+function simLimpa() { _simSel().forEach(m => { const f = _simFotoDe(m); if (f) delete _sim.linhas[f.fid]; }); _simDesenha(); }
+function simZoom(i, d) {
+  const m = _simSel()[i], f = m && _simFotoDe(m); if (!f) return;
+  const aj = _simAj(f.fid);
+  aj.z = d === 0 ? 1 : Math.max(1, Math.min(3, Math.round((aj.z + (d > 0 ? 0.1 : -0.1)) * 10) / 10));
+  const lim = (aj.z - 1) / 2; aj.x = Math.max(-lim, Math.min(lim, aj.x)); aj.y = Math.max(-lim, Math.min(lim, aj.y));
+  _simDesenha();
+}
+// passa pela próxima foto da mesma data (serve pra data que só tem foto sem ângulo marcado)
+function simTroca(i) {
+  const m = _simSel()[i]; if (!m || !m.it.length) return;
+  const at = _sim.troca[m.k] != null ? _sim.troca[m.k] : (m.f[_sim.ang] != null ? m.f[_sim.ang] : -1);
+  _sim.troca[m.k] = (at + 1) % m.it.length;
+  _simDesenha();
+}
+function simFotoDeNovo(i) { const m = _simSel()[i], f = m && _simFotoDe(m); if (!f) return; delete _sim.img[f.fid]; try { delete _rsImgCache[f.fid]; delete _cmpState.imgCache[f.fid]; } catch (_) {} _simDesenha(); }
+// imagem que chegou mas não abre (arquivo quebrado) também vira "toca pra tentar de novo"
+function simImgErro(i) { const m = _simSel()[i], f = m && _simFotoDe(m); if (!f || _sim.img[f.fid] === 'x') return; _sim.img[f.fid] = 'x'; if (_sim.arr) _sim.redes = true; else _simDesenha(); }
+
+// dedo ou mouse desceu: na linha, arrasta a linha; na foto aproximada, arrasta a foto
+function _simPega(ev) {
+  const t = ev.target; if (!t || !t.closest) return;
+  const foto = t.closest('.sim-foto'); if (!foto || !foto.dataset.fid) return;
+  const linha = t.closest('.sim-l'), fid = foto.dataset.fid, cx = _simCaixa(foto);
+  const fim = (move, solta) => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', solta); window.removeEventListener('pointercancel', solta); _sim.arr = false; _sim.redes = false; _simDesenha(); };
+  if (linha) {
+    const arr = _sim.linhas[fid] || [], l = arr[+linha.dataset.i]; if (!l) return;
+    try { ev.preventDefault(); } catch (_) {}
+    _sim.arr = true; linha.classList.add('pega');
+    const move = e2 => { const p = l.t === 'h' ? (e2.clientY - cx.top) / cx.height : (e2.clientX - cx.left) / cx.width; l.p = p;
+      linha.style[l.t === 'h' ? 'top' : 'left'] = (Math.max(-0.04, Math.min(1.04, p)) * 100).toFixed(2) + '%'; linha.classList.toggle('sai', p < 0 || p > 1); };
+    const solta = () => { if (l.p < 0 || l.p > 1) { const j = arr.indexOf(l); if (j >= 0) arr.splice(j, 1); } fim(move, solta); };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', solta); window.addEventListener('pointercancel', solta);
+    return;
+  }
+  const aj = _simAj(fid), img = foto.querySelector('.sim-img');
+  if (aj.z <= 1 || !img) return;
+  try { ev.preventDefault(); } catch (_) {}
+  _sim.arr = true;
+  const x0 = ev.clientX, y0 = ev.clientY, ax = aj.x, ay = aj.y, lim = (aj.z - 1) / 2;
+  const move = e2 => { aj.x = Math.max(-lim, Math.min(lim, ax + (e2.clientX - x0) / cx.width)); aj.y = Math.max(-lim, Math.min(lim, ay + (e2.clientY - y0) / cx.height)); img.style.transform = _simTransf(aj); };
+  const solta = () => fim(move, solta);
+  window.addEventListener('pointermove', move); window.addEventListener('pointerup', solta); window.addEventListener('pointercancel', solta);
 }
 
 async function enviarFotos() {
@@ -31493,7 +31742,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v722';
+var APP_SHELL_V = 'metodo-gh-v723';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
@@ -32224,6 +32473,7 @@ const _CAMADAS_VOLTAR = [
   ['.evo-overlay.show', el => el.classList.remove('show')],
   ['#achOverlay.show', () => achClose()],
   ['#mealPhotoModal.on', () => mealPhotoClose()],
+  ['#simOv.on', () => simFecha()],   // v723
   ['#rsCmpOverlay.on', el => el.classList.remove('on')],
   ['.history-modal-overlay.show', el => el.classList.remove('show')],
   ['.te-modal-overlay.show', el => teHide(el.id)],
@@ -33339,8 +33589,8 @@ function _diMoAgua(rows, peso) {
 // primeiro e a medida caseira junto em toda quantidade. Não pesa: medida primeiro e o grama entre parênteses. A tabela é a da
 // Entregas (medida-caseira.json): arredonda pra meia medida, nunca menos de meia. O grama fica sempre escrito, então macros,
 // lista de compras e Secar mais / Crescer mais continuam lendo a mesma quantidade.
-const DI_CAS = { 'arroz': ['colher de sopa cheia', 25], 'arroz integral': ['colher de sopa cheia', 20], 'batata doce': ['colher de sopa cheia', 40, 'picada ou amassada'], 'batata inglesa': ['colher de sopa cheia', 30, 'picada'], 'mandioca': ['colher de sopa cheia', 35, 'picada'], 'macarrao sem gluten': ['colher de sopa cheia', 25], 'feijao': ['concha média', 85], 'lentilha': ['concha média', 80], 'grao de bico': ['colher de sopa cheia', 22], 'carne bovina magra': ['palma da mão', 100], 'carne suina magra': ['palma da mão', 100], 'frango sem pele': ['palma da mão', 100], 'peixe': ['palma da mão', 100], 'salmao': ['palma da mão', 100], 'aveia': ['colher de sopa', 15], 'farinha de arroz': ['colher de sopa', 12], 'tapioca': ['colher de sopa cheia', 20], 'rap10': ['unidade', 33], 'leite': ['copo americano', 190], 'leite sem lactose': ['copo americano', 190], 'iogurte natural': ['pote', 170], 'iogurte sem lactose': ['pote', 170], 'queijo mussarela': ['fatia média', 15], 'requeijao': ['colher de sopa cheia', 30], 'ricota': ['colher de sopa cheia', 20], 'whey': ['scoop do pote', 30], 'whey isolado': ['scoop do pote', 30], 'proteina de ervilha': ['scoop do pote', 30], 'azeite de oliva': ['colher de sopa', 8], 'manteiga': ['colher de chá', 5], 'castanhas': ['colher de sopa cheia', 15], 'pasta de amendoim': ['colher de sopa', 15], 'abacaxi': ['fatia média', 75], 'mamao': ['fatia média', 100] };
-const DI_CAS_PL = { 'colher de sopa cheia': ['colheres de sopa cheias', 1], 'colher de sopa': ['colheres de sopa', 1], 'colher de chá': ['colheres de chá', 1], 'concha média': ['conchas médias', 1], 'palma da mão': ['palmas da mão', 1], 'unidade': ['unidades', 1], 'copo americano': ['copos americanos', 0], 'pote': ['potes', 0], 'fatia média': ['fatias médias', 1], 'scoop do pote': ['scoops do pote', 0] };   // [plural, feminino]
+const DI_CAS = { 'arroz': ['colher de sopa cheia', 25], 'arroz integral': ['colher de sopa cheia', 20], 'batata doce': ['colher de sopa cheia', 40, 'picada ou amassada'], 'batata inglesa': ['colher de sopa cheia', 30, 'picada'], 'mandioca': ['colher de sopa cheia', 35, 'picada'], 'macarrao sem gluten': ['colher de sopa cheia', 25], 'feijao': ['concha média', 85], 'lentilha': ['concha média', 80], 'grao de bico': ['colher de sopa cheia', 22], 'carne bovina magra': ['palma da mão', 100], 'carne suina magra': ['palma da mão', 100], 'frango sem pele': ['palma da mão', 100], 'peixe': ['palma da mão', 100], 'salmao': ['palma da mão', 100], 'aveia': ['colher de sopa', 15], 'farinha de arroz': ['colher de sopa', 12], 'tapioca': ['colher de sopa cheia', 20], 'rap10': ['unidade', 33], 'leite': ['copo americano', 190], 'leite sem lactose': ['copo americano', 190], 'iogurte natural': ['pote', 170], 'iogurte sem lactose': ['pote', 170], 'queijo mussarela': ['fatia média', 15], 'requeijao': ['colher de sopa cheia', 30], 'ricota': ['colher de sopa cheia', 20], 'whey': ['scoop do pote', 30], 'whey isolado': ['scoop do pote', 30], 'proteina de ervilha': ['scoop do pote', 30], 'azeite de oliva': ['colher de sopa', 8], 'manteiga': ['colher de chá', 5], 'castanhas': ['colher de sopa cheia', 15], 'pasta de amendoim': ['colher de sopa', 15], 'abacaxi': ['fatia média', 75], 'mamao': ['fatia média', 100], 'macarrao': ['colher de sopa cheia', 25], 'massa integral': ['colher de sopa cheia', 25], 'cuscuz': ['colher de sopa cheia', 25], 'polenta': ['colher de sopa cheia', 30], 'abobora': ['colher de sopa cheia', 35, 'picada'], 'sardinha': ['unidade', 25], 'atum': ['colher de sopa cheia', 20], 'camarao': ['colher de sopa cheia', 20], 'tofu': ['fatia média', 30], 'carne de soja hidratada': ['colher de sopa cheia', 25], 'manga': ['xícara', 140, 'picada'], 'uva': ['unidade', 5], 'framboesa': ['xícara', 120], 'morango': ['unidade', 12], 'melancia': ['fatia média', 200], 'melao': ['fatia média', 90], 'abacate': ['colher de sopa cheia', 30], 'coco': ['colher de sopa', 10, 'ralado'] };
+const DI_CAS_PL = { 'colher de sopa cheia': ['colheres de sopa cheias', 1], 'colher de sopa': ['colheres de sopa', 1], 'colher de chá': ['colheres de chá', 1], 'concha média': ['conchas médias', 1], 'palma da mão': ['palmas da mão', 1], 'unidade': ['unidades', 1], 'copo americano': ['copos americanos', 0], 'pote': ['potes', 0], 'fatia média': ['fatias médias', 1], 'scoop do pote': ['scoops do pote', 0], 'xícara': ['xícaras', 1] };   // [plural, feminino]
 const DI_CAS_LEG = 'Medidas caseiras', DI_CAS_SCOOP = 'Confere o tamanho do scoop no rótulo';
 function _diCasAcha(nome) { const n = _teFiNorm(String(nome || '').replace(/<[^>]*>/g, '')).trim(); return DI_CAS[n] || DI_CAS[n.replace(/ sem lactose$/, '')] || null; }
 function _diCasTxt(med, n) {
@@ -33406,7 +33656,7 @@ function _diMoCaseira(rows, modo, notas) {
   const leg = ['As medidas valem pro alimento pronto (cozido, assado ou grelhado).'];
   if (usou['palma da mão']) leg.push('Palma da mão: filé do tamanho e da espessura da tua palma, sem os dedos.');
   if (usou['copo americano']) leg.push('Copo americano: 190 ml.');
-  if (preparo.length) leg.push('Na colher: ' + preparo.join(', ') + '.');
+  if (preparo.length) leg.push('Como medir: ' + preparo.join(', ') + '.');
   _diCasLegenda(rows, Object.keys(usou).length ? leg.join(' ') : '');
   if (notas) {
     notas.push(modo === 3 ? 'Balança: ele não consegue pesar. Toda quantidade saiu em medida caseira, com o grama entre parênteses.' : 'Balança: ele pesa em casa e fora usa colher. Toda quantidade saiu em grama com a medida caseira junto.');
@@ -39188,6 +39438,7 @@ async function renderRaioXPanel() {
       ajRecent.map(a => `<div class="rx-det-row"><span class="rx-tag esf-m-equip">${escTrainer(a.tipo || '?')}</span> ${escTrainer(a.msg || '')} <span style="margin-left:auto;color:#6f6f76;white-space:nowrap;">há ${a.diasAtras}d</span></div>`).join('') + `</div>`;
   }
 
+  html += `<div class="rx-det"><div class="rx-det-h">Fotos do aluno</div><button type="button" class="te-btn ghost" id="simAbreRx" onclick="simAbre(trainerSheetId)" style="width:100%;margin-top:6px;">📐 Simetrógrafo: linhas na foto</button></div>`;   // v723
   if (!temRaiox) html += `<div class="rx-hint">Adesão e dúvidas/ajustes acendem após o deploy do endpoint raio-x no Apps Script.</div>`;
   html += `</div>`;
   cont.innerHTML = html;
