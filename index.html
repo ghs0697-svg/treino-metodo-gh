@@ -9494,7 +9494,7 @@ body.modo-simples .ex-vid-pill { flex-wrap: wrap; row-gap: 1px; border-radius: 1
         <button class="cmp-share-btn" id="cmpShareBtn" onclick="cmpShare()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Compartilhar antes/depois</button>
         <div id="cmpEvoArea"></div>
       </div>
-      <button type="button" class="te-btn ghost" id="simAbreCmp" onclick="simAbre()" style="width:100%;margin-top:12px;">📐 Simetrógrafo: linhas na foto</button>
+      <button type="button" class="te-btn ghost" id="simAbreCmp" onclick="simAbre()" style="display:none;width:100%;margin-top:12px;">📐 Simetrógrafo: linhas na foto</button>
     </div><!-- /fotosPaneComparar -->
 
     <button class="te-btn ghost" onclick="fotosFechar()" style="width:100%;margin-top:12px;">Fechar</button>
@@ -23831,7 +23831,7 @@ async function loadRegistrosSemanais() {
     _rsRegistros = regs;
     if (!regs.length) { box.innerHTML = '<p style="color:#666;font-size:11px;font-style:italic;margin:4px 0 0;">Ainda não tens registros aqui. Manda as fotos de hoje pra começar teu histórico.</p>'; return; }
     const chips = regs.map((r, i) => `<span class="rs-hist-chip" onclick="verRegistroSemana(${i})">${escapeFotosTxt(r.date)}</span>`).join('');
-    const cmp = (regs.length >= 2 ? `<button class="water-btn" style="margin-top:10px;width:100%;" onclick="abrirCompararSemanas()">📊 Comparar duas semanas</button>` : '') + `<button class="water-btn" id="simAbreRs" style="margin-top:8px;width:100%;" onclick="simAbre()">📐 Simetrógrafo: linhas na foto</button>`;
+    const cmp = (regs.length >= 2 ? `<button class="water-btn" style="margin-top:10px;width:100%;" onclick="abrirCompararSemanas()">📊 Comparar duas semanas</button>` : '') + (SIM_ALUNO ? `<button class="water-btn" id="simAbreRs" style="margin-top:8px;width:100%;" onclick="simAbre()">📐 Simetrógrafo: linhas na foto</button>` : '');
     box.innerHTML = `<div style="color:#8d8579;font-size:11px;margin-bottom:6px;">Teu histórico (${regs.length}), toca numa data pra ver:</div><div class="rs-hist">${chips}</div>${cmp}`;
   } catch (_) {
     // v550: falha de rede ou do servidor não é "ainda não tens registros" (quem tinha 8 semanas de registro lia isso)
@@ -23904,6 +23904,7 @@ async function _rsLoadImg(fid, cell) {
 // Usa as fotos que o app já guarda: as rodadas da avaliação (fotos_list / foto_img) e o registro semanal
 // (registros_semanais_list / registro_semanal_img). Nada é gravado: linha, zoom e data vivem só nesta tela.
 // ══════════════════════════════════════════════════════════════
+const SIM_ALUNO = false;   // v727 (GH 28/11): foto de aluno sai fora do centro e de tamanhos diferentes, a linha não serve; o aluno não vê o botão até o ajuste automático ficar bom. Treinador segue vendo no Raio-X.
 const SIM_MAX = 5, SIM_LINHAS_MAX = 8;
 const SIM_ANG = ['frente', 'costas', 'direito', 'esquerdo'];
 const SIM_ANG_NOME = { frente: 'Frente', costas: 'Costas', direito: 'Perfil direito', esquerdo: 'Perfil esquerdo' };
@@ -31872,7 +31873,7 @@ async function painelGateSubmit() {
 //     8s e sem campo focado — nunca no meio de treino digitado.
 // v672: o carimbo sai do bloco do service worker. O app da loja (WKWebView) não tem service worker e o Mais mostrava "Método GH · app" sem número.
 // Carimbo do shell: TEM que casar com o CACHE_NAME do sw.js. Todo deploy bumpa os dois.
-var APP_SHELL_V = 'metodo-gh-v726';
+var APP_SHELL_V = 'metodo-gh-v727';
 window.GH_APP_V = APP_SHELL_V;   // versão visível na aba Mais (suporte enxerga o que o aluno roda)
 if ('serviceWorker' in navigator) {
   (function () {
